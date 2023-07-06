@@ -15,6 +15,9 @@ on:
     branches:
       - master
       - release-*
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build-core-job:
@@ -190,7 +193,7 @@ jobs:
           tests_report_url: ${{ steps.github-publish-integration-tests.outputs.tests_report_url }}
         if: (success() || failure()) && steps.github-publish-integration-tests.outputs.tests_report_url != ''
   postman-tests-setup-job:
-    name: Postman tests matrix setup
+    name: Postman Matrix Setup
     runs-on: ubuntu-latest
     outputs:
       built_image_name: ${{ steps.build-dotcms-image.outputs.built_image_name }}
@@ -238,7 +241,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        parallel_collection: ['graphql', 'workflow', 'template', 'page', 'container', 'pp', '*']
+        parallel_collection: ['graphql', 'workflow', 'template', 'page', 'container', 'pp', 'experiment', 'container', '*']
     env:
       PUBLISH_MODE: ALL
       DEBUG: true
@@ -263,7 +266,7 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
       - id: run-postman-tests
         name: Run Postman Tests
-        timeout-minutes: 80
+        timeout-minutes: 90
         uses: ./.github/actions/run-postman-tests
         with:
           built_image_name: ${{ needs.postman-tests-setup-job.outputs.built_image_name }}
@@ -287,7 +290,7 @@ jobs:
           run_identifier: ${{ steps.run-postman-tests.outputs.normalized_parallel_collection }}
         if: (success() || failure()) && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
   postman-tests-complete-job:
-    name: Postman tests complete
+    name: Close Postman Tests
     runs-on: ubuntu-latest
     needs: run-postman-tests-job
     if: (success() || failure()) && needs.run-postman-tests-job.outputs.tests_results_skip_report != 'true'
@@ -328,7 +331,7 @@ jobs:
         if: (success() || failure()) && steps.github-close-test-results.outputs.tests_report_url != ''
 
   test-results-handler-job:
-    name: Tests results handler
+    name: Tests Results Handler
     runs-on: ubuntu-latest
     needs: [run-unit-tests-job, run-integration-tests-job, run-postman-tests-job]
     if: (success() || failure()) && (needs.run-unit-tests-job.outputs.tests_results_report_url != '' || needs.run-integration-tests-job.outputs.postgres_tests_results_report_url != '' || needs.run-postman-tests-job.outputs.tests_results_report_url != '')

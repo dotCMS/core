@@ -10,3 +10,9 @@ export interface DotLayout {
     themeId?: string;
     width: string;
 }
+
+export interface DotTemplateDesigner {
+    layout: DotLayout;
+    title?: string;
+    themeId: string;
+}

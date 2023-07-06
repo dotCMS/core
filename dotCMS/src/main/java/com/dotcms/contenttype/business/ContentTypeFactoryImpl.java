@@ -187,7 +187,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     DotPreconditions.checkArgument(UtilMethods.isSet(pageIdentifier), "pageIdentifier is required");
 
     return new DotConnect()
-        .setSQL("select url_map_pattern from structure where url_map_pattern is not null and page_detail=?")
+        .setSQL("select url_map_pattern from structure where url_map_pattern is not null and page_detail=? order by url_map_pattern desc")
         .addParam(pageIdentifier)
         .loadObjectResults()
         .stream()

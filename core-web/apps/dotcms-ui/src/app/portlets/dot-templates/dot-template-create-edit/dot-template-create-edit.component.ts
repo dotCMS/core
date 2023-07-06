@@ -246,7 +246,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
             value = {
                 ...this.form.value,
                 layout,
-                theme: themeId
+                theme: themeId || null
             };
         }
 

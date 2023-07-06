@@ -5,6 +5,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -12,10 +14,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
+
+import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
+import org.apache.batik.util.XMLResourceDescriptor;
 import org.apache.commons.codec.digest.DigestUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -24,6 +32,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import com.twelvemonkeys.image.ResampleOp;
 import io.vavr.control.Try;
+import org.w3c.dom.Document;
 
 public class ImageFilterApiImpl implements ImageFilterAPI {
 
@@ -98,6 +107,15 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
     @Override
     public Dimension getWidthHeight(final File imageFile) {
 
+        if (imageFile == null) {
+            throw new DotRuntimeException("imageFile is null");
+        }
+
+        if (imageFile.getName().toLowerCase().endsWith(".svg")) {
+            return getWidthHeightofSVG(imageFile);
+        }
+
+
         try (ImageInputStream inputStream = ImageIO.createImageInputStream(imageFile)) {
             final ImageReader reader = getReader(imageFile, inputStream);
             try {
@@ -112,6 +130,31 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
         }
 
     }
+
+    @VisibleForTesting
+    Dimension getWidthHeightofSVG(@Nonnull final File imageFile) {
+        SAXSVGDocumentFactory factory = new SAXSVGDocumentFactory(
+                XMLResourceDescriptor.getXMLParserClassName());
+
+        try (InputStream is = Files.newInputStream(imageFile.toPath())) {
+            Document document = factory.createDocument(imageFile.toURI().toString(), is);
+
+            String viewBox = document.getDocumentElement().getAttribute("viewBox");
+            String[] viewBoxValues = viewBox.split(" ");
+
+            float x = Float.parseFloat(viewBoxValues[2]);
+            float y = Float.parseFloat(viewBoxValues[3]);
+
+
+            return new Dimension(Math.round(x), Math.round(y));
+
+        } catch (Exception e) {
+            throw new DotRuntimeException("unable to parse svg file: " + imageFile.getAbsolutePath() + " : " + e.getMessage(), e);
+        }
+    }
+
+
+
 
     /**
      * gets the reader based on both the input stream and the file extension
@@ -173,7 +216,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
                     return reader.read(0);
                 }
 
-                return this.resizeImage(reader.read(0), width, height, DEFAULT_RESAMPLE_OPT);
+                return this.resizeImage(reader.read(0), width, height, resampleOption);
 
             } finally {
                 reader.dispose();

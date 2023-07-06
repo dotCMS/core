@@ -1,4 +1,6 @@
-<p-tabView>
+<p-tabView
+    [styleClass]="(featureFlagIsOn$ | async) && 'dot-template-builder__new-template-builder'"
+>
     <p-tabPanel
         [header]="item.type === 'advanced' ? ('code' | dm) : ('design' | dm)"
         data-testId="builder"
@@ -7,7 +9,7 @@
             <dot-template-advanced
                 [didTemplateChanged]="didTemplateChanged"
                 [body]="item.body"
-                (updateTemplate)="updateTemplate.emit($event)"
+                (updateTemplate)="onTemplateItemChange($event)"
                 (save)="save.emit($event)"
                 (cancel)="cancel.emit()"
             ></dot-template-advanced>
@@ -15,9 +17,22 @@
         <ng-template #elseBlock>
             <ng-template #enabledComponent>
                 <dotcms-template-builder
-                    [templateLayout]="item.layout"
+                    [layout]="item.layout"
+                    [themeId]="item.theme"
+                    [containerMap]="item.containers"
+                    (templateChange)="onTemplateItemChange($event)"
                     data-testId="new-template-builder"
-                ></dotcms-template-builder>
+                >
+                    <dot-global-message toolbar-left></dot-global-message>
+                    <button
+                        [label]="'Publish' | dm"
+                        (click)="saveAndPublish.emit(item)"
+                        type="button"
+                        data-testId="save-and-publish-btn"
+                        toolbar-actions-right
+                        pButton
+                    ></button>
+                </dotcms-template-builder>
             </ng-template>
             <ng-template #disabledComponent>
                 <dot-edit-layout-designer
@@ -25,7 +40,7 @@
                     [disablePublish]="item.live"
                     [layout]="item.layout"
                     (saveAndPublish)="saveAndPublish.emit($event)"
-                    (updateTemplate)="updateTemplate.emit($event)"
+                    (updateTemplate)="onTemplateItemChange($event)"
                     (save)="save.emit($event)"
                 ></dot-edit-layout-designer>
             </ng-template>

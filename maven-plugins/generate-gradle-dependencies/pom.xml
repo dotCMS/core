@@ -61,6 +61,6 @@
             <artifactId>maven-core</artifactId>
             <scope>provided</scope>
         </dependency>
-        <!-- Add any other dependencies required by your plugin -->
+
     </dependencies>
 </project>

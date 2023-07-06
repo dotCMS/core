@@ -1,23 +1,5 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import java.io.File;
-import java.io.OutputStream;
-import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.InternalServerErrorException;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
@@ -26,10 +8,10 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -41,6 +23,26 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.InternalServerErrorException;
+import java.io.File;
+import java.io.OutputStream;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
 
 class MonitorHelper {
@@ -89,15 +91,15 @@ class MonitorHelper {
     
     static Tuple2<Long,MonitorStats> cachedStats=null;
     
-    
-    
     MonitorStats getMonitorStats() throws Throwable{
-
         if(cachedStats!=null && cachedStats._1 > System.currentTimeMillis()) {
             return cachedStats._2;
         }
-        
-        
+        return getMonitorStatsNoCache();
+    }
+    
+    MonitorStats getMonitorStatsNoCache() throws Throwable{
+
         final MonitorStats monitorStats = new MonitorStats();
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
@@ -127,7 +129,7 @@ class MonitorHelper {
         return monitorStats;
     }
 
-    private boolean isDBHealthy(final long timeOut) throws Throwable {
+    boolean isDBHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
@@ -143,6 +145,7 @@ class MonitorHelper {
                         }
                     }
                     catch(Exception e) {
+                        Logger.warn(getClass(), "db connection failing:" + e.getMessage() );
                         return false;
                     }
                     finally{
@@ -152,7 +155,7 @@ class MonitorHelper {
 
     }
 
-    private boolean isIndexHealthy(final String index, final long timeOut) throws Throwable {
+    boolean isIndexHealthy(final String index, final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
@@ -174,25 +177,28 @@ class MonitorHelper {
                                 RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,
                                         RequestOptions.DEFAULT));
                         return response.getHits().getTotalHits().value>0;
+                    }catch(Exception e) {
+                        Logger.warn(getClass(), "ES connection failing: " + e.getMessage() );
+                        return false;
                     }finally{
                         DbConnectionFactory.closeSilently();
                     }
                 }));
     }
 
-    private boolean isCacheHealthy(final long timeOut) throws Throwable {
+    boolean isCacheHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
                 .withFallback(Boolean.FALSE)
                 .get(this.failFastBooleanPolicy(timeOut, () -> {
                     try{
-                        Identifier id =  APILocator.getIdentifierAPI().loadFromCache(Host.SYSTEM_HOST);
-                        if(id==null || !UtilMethods.isSet(id.getId())){
-                            id =  APILocator.getIdentifierAPI().find(Host.SYSTEM_HOST);
-                            id =  APILocator.getIdentifierAPI().loadFromCache(Host.SYSTEM_HOST);
-                        }
-                        return id!=null && UtilMethods.isSet(id.getId());
+                        // load system host contentlet
+                        Contentlet con = APILocator.getContentletAPI().findContentletByIdentifier(Host.SYSTEM_HOST,false,APILocator.getLanguageAPI().getDefaultLanguage().getId(),APILocator.systemUser(),false);
+                        return UtilMethods.isSet(con::getIdentifier);
+                    }catch(Exception e) {
+                        Logger.warn(getClass(), "Cache is failing: " + e.getMessage() );
+                        return false;
                     }finally{
                         DbConnectionFactory.closeSilently();
                     }
@@ -210,7 +216,6 @@ class MonitorHelper {
 
         @Override
         public Boolean call() throws Exception {
-            // TODO Auto-generated method stub
             final String uuid=UUIDUtil.uuid();
             final String realPath = initialPath
                     + "monitor"
@@ -229,7 +234,7 @@ class MonitorHelper {
 
     }
     
-    private boolean isLocalFileSystemHealthy(final long timeOut) throws Throwable {
+    boolean isLocalFileSystemHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
@@ -239,7 +244,7 @@ class MonitorHelper {
     }
 
 
-    private boolean isAssetFileSystemHealthy(final long timeOut) throws Throwable {
+    boolean isAssetFileSystemHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())

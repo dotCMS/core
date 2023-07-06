@@ -1,6 +1,7 @@
 package com.dotcms.junit;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -11,22 +12,32 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import org.apache.commons.logging.Log;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC;
 import static com.dotmarketing.util.Config.USE_CONFIG_TEST_OVERRIDE_TRACKER;
 
 public class RuleWatcher extends TestWatcher {
 
+    public static final String USE_TEST_TYPE_TRACKER = "USE_TEST_TYPE_TRACKER";
     public static final String USE_TEST_INDEXER_TRACKER = "USE_TEST_INDEXER_TRACKER";
     public static final String USE_TEST_TRANSACTION_TRACKER = "USE_TEST_TRANSACTION_TRACKER";
     public static final String TEST_TRANSACTION_TRACKER_AUTO_CLOSE_TYPE = "TEST_TRANSACTION_TRACKER_AUTO_CLOSE_TYPE";
     public static final String TRANSACTION_AUTO_CLOSE_DEFAULT = "rollback";
     private Map<Integer, Map<String, String>> overrides = new ConcurrentHashMap<>();
+
+    private Set<String> contentTypes = new HashSet<>();
 
     @Override
     protected void starting(Description description) {
@@ -37,7 +48,21 @@ public class RuleWatcher extends TestWatcher {
                         "starting..."));
         Logger.info(RuleWatcher.class, ">>>>>>>>>>>>>>>>>>>>>>>>>>");
         configOverrideTrackerBefore(description);
+        configureContentTypeTracker(description);
 
+    }
+
+    private void configureContentTypeTracker(Description description) {
+        if (Config.getBooleanProperty(USE_TEST_TYPE_TRACKER, false)) {
+            try {
+                contentTypes.clear();
+                List<ContentType> types = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .findAll();
+                types.stream().map(ContentType::variable).forEach(contentTypes::add);
+            } catch (DotDataException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @Override
@@ -45,12 +70,56 @@ public class RuleWatcher extends TestWatcher {
         Logger.info(RuleWatcher.class, ">>>>>>>>>cleanup>>>>>>>>>>");
         transactionTrackerAfter(description);
         configOverrideTrackerAfter(description);
+        contentTypeTrackerAfter(description);
         indexerTrackerAfter();
         Logger.info(RuleWatcher.class,
                 String.format(">>> %s - %s",
                         description,
                         "finished..."));
     }
+
+    private void contentTypeTrackerAfter(Description description) {
+        if (Config.getBooleanProperty(USE_TEST_TYPE_TRACKER, false)) {
+            try {
+                List<ContentType> types = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .findAll();
+                if (!types.isEmpty()) {
+                    Logger.info(RuleWatcher.class, "Checking for created content types");
+                    HashSet<ContentType> createdTypes = types.stream()
+                            .filter(c -> !contentTypes.contains(c.variable()))
+                            .collect(Collectors.toCollection(HashSet::new));
+
+                    boolean asyncDelete = Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC);
+                    if (!createdTypes.isEmpty()) {
+                        try {
+                            Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC, false);
+
+                            createdTypes.forEach(c -> {
+                                try {
+                                    Logger.info(RuleWatcher.class,
+                                            "Deleting content type " + c.variable());
+                                    APILocator.getContentTypeAPI(APILocator.systemUser(),
+                                            false).delete(c);
+                                } catch (Exception e) {
+                                    Logger.error(this.getClass(),
+                                            "Error deleting content type in cleanup "
+                                                    + c.variable(),
+                                            e);
+                                }
+                            });
+                        } finally {
+                            Config.setProperty(DELETE_CONTENT_TYPE_ASYNC, asyncDelete);
+                        }
+                    }
+                }
+
+                contentTypes.clear();
+            } catch (DotDataException e) {
+                Logger.error(this.getClass(), "Error deleting content types in cleanup", e);
+            }
+        }
+    }
+
     //TODO: these should be moved to different classes they could be handled as their own Rules
 
     private static void indexerTrackerAfter() {

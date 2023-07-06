@@ -6944,6 +6944,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return findAllVersions(identifier, true, user, respectFrontendRoles);
     }
 
+    /**
+     *  Returns all versions of a contentlet given a set of identifiers
+     * @param identifiers
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Override
+    public List<Contentlet> findLiveOrWorkingVersions(Set<String> identifiers, User user,
+            boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> allVersions = contentFactory.findLiveOrWorkingVersions(identifiers);
+        if (allVersions.isEmpty()) {
+            return List.of();
+        }
+        return allVersions.stream().filter(contentlet -> {
+            try {
+                return permissionAPI.doesUserHavePermission(contentlet,
+                        PermissionAPI.PERMISSION_READ, user, respectFrontendRoles);
+            } catch (DotDataException e) {
+                return false;
+            }
+        }).collect(Collectors.toList());
+    }
+
     @CloseDBIfOpened
     @Override
     public List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant,

@@ -533,31 +533,32 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     @Override
     public void deleteWorkflowTaskByContentletIdAnyLanguage(final String webAsset)
             throws DotDataException {
-
         final DotConnect db = new DotConnect();
         db.setSQL("SELECT * FROM workflow_task WHERE webasset = ?");
         db.addParam(webAsset);
-
         final List<WorkflowTask> tasksToClearFromCache = this
                 .convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
 
-        new DotConnect().setSQL(
-                        "delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ?)")
-                .addParam(webAsset).loadResult();
+		if (tasksToClearFromCache.isEmpty()) {
+		    return;
+		}
+		final String parameters = "(" + String.join(",", tasksToClearFromCache.stream().map(q->"?").collect(Collectors.toList())) +")";
 
-        new DotConnect().setSQL(
-                        "delete from workflow_history where workflowtask_id   in (select id from workflow_task where webasset = ?)")
-                .addParam(webAsset).loadResult();
+		db.setSQL("delete from workflow_comment where workflowtask_id in " + parameters);
+        tasksToClearFromCache.forEach(t -> db.addParam(t.getId()));
+		db.loadResult();
 
-        new DotConnect().setSQL(
-                        "delete from workflowtask_files where workflowtask_id in (select id from workflow_task where webasset = ?)")
-                .addParam(webAsset).loadResult();
+		db.setSQL("delete from workflow_history where workflowtask_id in " + parameters);
+        tasksToClearFromCache.forEach(t -> db.addParam(t.getId()));
+        db.loadResult();
 
-        new DotConnect().setSQL("delete from workflow_task where webasset = ?")
-                .addParam(webAsset).loadResult();
+        db.setSQL("delete from workflowtask_files where workflowtask_id in " + parameters   );
+        tasksToClearFromCache.forEach(t -> db.addParam(t.getId()));
+        db.loadResult();
+
+		db.setSQL("delete from workflow_task where webasset = ?").addParam(webAsset).loadResult();
 
         tasksToClearFromCache.forEach(cache::remove);
-
     }
 
     @Override

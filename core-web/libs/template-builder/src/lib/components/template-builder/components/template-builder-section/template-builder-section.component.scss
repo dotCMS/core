@@ -4,8 +4,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: $color-palette-primary-300;
+    background: $color-palette-primary-200;
     height: 5rem;
     color: $color-palette-primary;
     font-size: $font-size-xl;
+    border-radius: $spacing-1;
 }

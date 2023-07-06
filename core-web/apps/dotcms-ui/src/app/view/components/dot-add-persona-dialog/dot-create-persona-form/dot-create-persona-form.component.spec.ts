@@ -178,7 +178,7 @@ describe('DotCreatePersonaFormComponent', () => {
 
             const removeButton: DebugElement = fixture.debugElement.query(By.css('button'));
             removeButton.triggerEventHandler('click', {});
-            expect(removeButton.nativeElement.innerText).toBe('REMOVE');
+            expect(removeButton.nativeElement.innerText).toBe('Remove');
             expect(component.form.get('photo').value).toEqual('');
             expect(component.tempUploadedFile).toEqual(null);
         });

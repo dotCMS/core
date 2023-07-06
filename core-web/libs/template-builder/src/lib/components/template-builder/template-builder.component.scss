@@ -8,16 +8,31 @@
     flex: 1;
 }
 
+.template-builder__container {
+    display: flex;
+    gap: $spacing-4;
+    padding-top: $spacing-3;
+
+    .grid-stack {
+        flex: 1;
+    }
+
+    .template-builder__sidebar--small {
+        width: 16.25rem; // 260px
+    }
+    .template-builder__sidebar--large {
+        width: 21.25rem; // 340px
+    }
+}
+
+.template-builder__container--right {
+    flex-direction: row-reverse;
+}
+
 // Class added by the gridstack library when the widget is being dragged
 dotcms-add-widget.ui-draggable-dragging {
     transform: rotate(-3.66deg);
     box-shadow: $md-shadow-6;
-}
-
-dotcms-template-builder-background-columns {
-    position: absolute;
-    inset: 0 3.2rem;
-    z-index: -1;
 }
 
 dotcms-add-widget {
@@ -28,12 +43,10 @@ dotcms-add-widget {
 p-toolbar {
     position: sticky;
     top: 0;
-    z-index: 2;
 }
 
 dotcms-template-builder-section {
     margin-top: $spacing-3;
-    margin-bottom: $spacing-4;
 }
 
 p-divider {
@@ -44,4 +57,25 @@ p-divider {
     .p-toolbar-group-end {
         gap: $spacing-1;
     }
+
+    .layout-toolbar {
+        border-color: $color-palette-gray-300;
+        padding: 0 $spacing-5;
+    }
+    .p-toolbar {
+        padding: 0.1rem $spacing-5;
+        border-color: $color-palette-black-op-10;
+    }
+
+    .p-divider {
+        &.p-component {
+            color: $color-palette-gray-300;
+        }
+    }
+}
+
+.template-builder__main {
+    padding: 0 $spacing-5 5rem $spacing-5;
+    height: 100%;
+    overflow-y: auto;
 }

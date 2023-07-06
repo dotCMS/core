@@ -1,17 +1,9 @@
 <button
     class="p-button-text p-button-vertical"
-    [label]="'dot.template.builder.toolbar.button.layout.label' | dm"
-    (onClick)="selectTheme.emit()"
+    [label]="'dot.template.builder.toolbar.button.theme.label' | dm"
+    (click)="selectTheme.emit()"
     data-testid="btn-select-theme"
     pButton
     icon="pi pi-palette"
 ></button>
-<button
-    class="p-button-text p-button-vertical"
-    [label]="'dot.template.builder.toolbar.button.theme.label' | dm"
-    (onClick)="selectLayout.emit()"
-    data-testid="btn-select-layout"
-    pButton
->
-    <span class="p-button-icon material-icons">view_quilt</span>
-</button>
+<dot-layout-properties [group]="group"></dot-layout-properties>

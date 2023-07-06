@@ -6,15 +6,16 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContainersService, DotMessageService } from '@dotcms/data-access';
+import { DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
-import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
+import { CONTAINER_MAP_MOCK, DOT_MESSAGE_SERVICE_TB_MOCK, ITEMS_MOCK } from '../../utils/mocks';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 export default {
-    title: 'Components/Box',
+    title: 'Library/Template Builder/Components/Box',
     component: TemplateBuilderBoxComponent,
     decorators: [
         moduleMetadata({
@@ -29,6 +30,10 @@ export default {
                 {
                     provide: DotMessageService,
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+                },
+                {
+                    provide: DotContainersService,
+                    useValue: new DotContainersServiceMock()
                 }
             ]
         })
@@ -39,30 +44,26 @@ const Template: Story<TemplateBuilderBoxComponent> = (args: TemplateBuilderBoxCo
     props: args
 });
 
-const items = [
-    { identifier: 'demo.dotcms.com' },
-    { identifier: 'System Container' },
-    { identifier: 'demo.dotcms.com' },
-    { identifier: 'demo.dotcms.com' },
-    { identifier: 'demo.dotcms.com' },
-    { identifier: 'demo.dotcms.com' }
-];
-
 export const Small = Template.bind({});
 
 export const Medium = Template.bind({});
 
 export const Large = Template.bind({});
 
+const containerMap = CONTAINER_MAP_MOCK;
+
 Small.args = {
     width: 1,
-    items
+    ITEMS: ITEMS_MOCK,
+    containerMap
 };
 Medium.args = {
     width: 3,
-    items
+    ITEMS: ITEMS_MOCK,
+    containerMap
 };
 Large.args = {
     width: 10,
-    items
+    ITEMS: ITEMS_MOCK,
+    containerMap
 };
