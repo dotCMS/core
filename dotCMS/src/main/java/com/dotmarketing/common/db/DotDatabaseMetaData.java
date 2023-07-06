@@ -10,10 +10,21 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Encapsulates database metada operations operations.
@@ -595,6 +606,22 @@ public class DotDatabaseMetaData {
             return getIndicesMSSQL(tableName, dotConnect);
         }
         throw new UnsupportedOperationException("This Operation isn't supported for the current database type");
+    }
+
+    /**
+     * Returns the list of Indices for a given database table.
+     *
+     * @param conn              The current database {@link Connection} object, retrievable via the
+     *                          {@link DbConnectionFactory#getConnection()}.
+     * @param schema            The schema name for the database. If not necessary, it can be {@code null}.
+     * @param table             The table name.
+     * @param uniqueIndicesOnly Indicates if only unique indices should be returned.
+     * @return A {@link ResultSet} object containing the list of indices for the given table.
+     * @throws SQLException If an error occurs while retrieving the indices.
+     */
+    public ResultSet getIndices(final Connection conn, final String schema, final String table, final boolean uniqueIndicesOnly) throws SQLException {
+        final DatabaseMetaData dbMetadata = conn.getMetaData();
+        return dbMetadata.getIndexInfo(conn.getCatalog(), schema, table, uniqueIndicesOnly, false);
     }
 
     /**
