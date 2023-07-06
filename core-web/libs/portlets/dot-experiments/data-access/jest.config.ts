@@ -9,7 +9,19 @@ export default {
             stringifyContentPathRegex: '\\.(html|svg)$'
         }
     },
-    coverageDirectory: '../../../../coverage/libs/portlets/dot-experiments/data-access',
+    coverageDirectory: '../../../../../target/core-web-reports/',
+    coverageReporters: [['lcovonly', { file: 'TEST-data-access-experiment.lcov' }]],
+    reporters: [
+        'default',
+        ['github-actions', { silent: false }],
+        [
+            'jest-junit',
+            {
+                outputDirectory: '../target/core-web-reports',
+                outputName: 'TEST-data-access-experiment.xml'
+            }
+        ]
+    ],
     transform: {
         '^.+\\.(ts|mjs|js|html)$': 'jest-preset-angular'
     },

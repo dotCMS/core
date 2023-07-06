@@ -15,6 +15,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.start': 'When the experiment start'
 });
 
+const EMPTY_TEXT = '';
 const SHORT_TEXT = 'short text';
 const LONG_TEXT =
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed condimentum eros sit amet malesuada mattis. Morbi ac congue lectus, ut vestibulum velit. Ut sed ornare metus. Proin a orci lacus. Aenean odio lacus, fringilla eu ipsum non, pellentesque sagittis purus. Integer non.';
@@ -23,9 +24,7 @@ const NEW_EXPERIMENT_DESCRIPTION = 'new experiment description';
 describe('DotExperimentsExperimentSummaryComponent', () => {
     let spectator: Spectator<DotExperimentsInlineEditTextComponent>;
     const createComponent = createComponentFactory({
-        imports: [],
         component: DotExperimentsInlineEditTextComponent,
-
         providers: [
             {
                 provide: DotMessageService,
@@ -74,7 +73,7 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
 
         it('should show a icon to edit', () => {
             expect(spectator.query(byTestId('text-input'))).toExist();
-            expect(spectator.query(byTestId('text-input-icon'))).toExist();
+            expect(spectator.query(byTestId('text-input-button'))).toExist();
         });
 
         it('should change the `maxLength` Validator if the `@Input maxCharacterLength` is sent', () => {
@@ -85,10 +84,50 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
             expect(spectator.component.form.invalid).toEqual(true);
         });
 
+        it('should emit text trimmed from the input', () => {
+            const TEXT_WITH_SPACES = '  text with spaces  ';
+            const TEXT_WITHOUT_SPACES = 'text with spaces';
+
+            let output;
+            spectator.output('textChanged').subscribe((result) => (output = result));
+
+            spectator.component.form.controls['text'].setValue(TEXT_WITH_SPACES);
+            spectator.component.saveAction();
+
+            expect(output).toBe(TEXT_WITHOUT_SPACES);
+        });
+
+        it('should add the Validator `required` if the `@Input required` is true', () => {
+            spectator.setInput('text', EMPTY_TEXT);
+            spectator.setInput('required', true);
+
+            spectator.component.form.controls['text'].setValue(SHORT_TEXT);
+            expect(spectator.component.form.invalid).toEqual(false);
+
+            spectator.component.form.controls['text'].setValue(EMPTY_TEXT);
+            expect(spectator.component.form.invalid).toEqual(true);
+        });
+
         describe('/interactions', () => {
             it('should show an input if you click on edit', () => {
-                spectator.dispatchMouseEvent(byTestId('text-input'), 'click');
+                spectator.click(byTestId('text-input'));
                 expect(spectator.query(byTestId('inplace-input'))).toExist();
+            });
+
+            it('should not show an input if you press `ESC` in the keyboard', () => {
+                jest.spyOn(spectator.component, 'deactivateInplace');
+
+                spectator.click(byTestId('text-input'));
+                expect(spectator.query(byTestId('inplace-input'))).toExist();
+
+                spectator.dispatchKeyboardEvent(
+                    spectator.query(byTestId('inplace-input')),
+                    'keydown',
+                    'Escape'
+                );
+
+                expect(spectator.component.deactivateInplace).toHaveBeenCalled();
+                expect(spectator.query(byTestId('inplace-input'))).not.toExist();
             });
 
             it('should save button be disabled if the input has more than `MAX_INPUT_DESCRIPTIVE_LENGTH` ', () => {
@@ -127,7 +166,7 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
                 expect(spectator.query(ButtonDirective).loading).toBe(true);
             });
 
-            it('should deactivate the inplace if isLoading input has `previusValue= true` and `currentValue = false` ', () => {
+            it('should deactivate the inplace if isLoading input has `previousValue= true` and `currentValue = false` ', () => {
                 const deactivate = jest.spyOn(spectator.component.inplace, 'deactivate');
                 // saving
                 spectator.setInput('isLoading', true);
@@ -135,6 +174,37 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
                 spectator.setInput('isLoading', false);
 
                 expect(deactivate).toHaveBeenCalled();
+            });
+
+            it('should show `dot-field-validation-message` message error by default', () => {
+                spectator.setInput('text', SHORT_TEXT);
+                spectator.setInput('required', true);
+
+                spectator.click(byTestId('text-input'));
+
+                spectator.component.form.controls['text'].setValue(EMPTY_TEXT);
+                spectator.component.form.updateValueAndValidity();
+                spectator.detectComponentChanges();
+
+                expect(spectator.component.form.invalid).toEqual(true);
+
+                expect(spectator.query(DotFieldValidationMessageComponent)).toExist();
+            });
+
+            it("shouldn't show `dot-field-validation-message` message error if the showError input is `false`", () => {
+                spectator.setInput('text', SHORT_TEXT);
+                spectator.setInput('required', true);
+                spectator.setInput('showErrorMsg', false);
+
+                spectator.click(byTestId('text-input'));
+
+                spectator.component.form.controls['text'].setValue(EMPTY_TEXT);
+                spectator.component.form.updateValueAndValidity();
+                spectator.detectComponentChanges();
+
+                expect(spectator.component.form.invalid).toEqual(true);
+
+                expect(spectator.query(DotFieldValidationMessageComponent)).not.toExist();
             });
         });
     });

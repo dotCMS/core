@@ -38,7 +38,8 @@ import {
     DotPageRender,
     DotPageRenderState,
     DotVariantData,
-    ESContent
+    ESContent,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
@@ -84,6 +85,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     paletteCollapsed = false;
     isEnterpriseLicense = false;
     variantData: Observable<DotVariantData>;
+    featureFlagSeo = FeaturedFlags.FEATURE_FLAG_SEO_IMPROVEMENTS;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();

@@ -98,7 +98,7 @@ public class TreeNode {
      * Clones the current TreeNode and filters its assets based on the provided status and language.
      * It can also optionally filter out empty folders based on the showEmptyFolders parameter.
      *
-     * @param status           A boolean indicating whether the assets should be live (true) or
+     * @param live             A boolean indicating whether the assets should be live (true) or
      *                         working (false).
      * @param language         A string representing the language of the assets to be included in
      *                         the cloned node.
@@ -110,16 +110,23 @@ public class TreeNode {
      * the provided status and language, and its folders filtered based on the showEmptyFolders
      * parameter.
      */
-    public TreeNode cloneAndFilterAssets(final boolean status, final String language,
+    public TreeNode cloneAndFilterAssets(final boolean live, final String language,
                                          final boolean showEmptyFolders) {
 
         TreeNode newNode = new TreeNode(this.folder, true);
 
         // Clone and filter assets based on the status and language
-        if (this.assets != null) {
+        boolean includeAssets = includeAssets();
+        if (includeAssets && this.assets != null) {
             List<AssetView> filteredAssets = this.assets.stream()
-                    .filter(asset -> asset.live() == status
-                            && asset.lang().equalsIgnoreCase(language))
+                    .filter((asset) -> {
+
+                        if (live) {
+                            return asset.live() && asset.lang().equalsIgnoreCase(language);
+                        }
+
+                        return asset.working() && asset.lang().equalsIgnoreCase(language);
+                    })
                     .collect(Collectors.toList());
             newNode.assets(filteredAssets);
         }
@@ -132,7 +139,7 @@ public class TreeNode {
                 continue;
             }
 
-            TreeNode clonedChild = child.cloneAndFilterAssets(status, language, showEmptyFolders);
+            TreeNode clonedChild = child.cloneAndFilterAssets(live, language, showEmptyFolders);
 
             if (showEmptyFolders
                     || !clonedChild.assets.isEmpty()
@@ -145,6 +152,88 @@ public class TreeNode {
         }
 
         return newNode;
+    }
+
+    /**
+     * Collects unique statuses and languages from the current node and its children.
+     *
+     * @param showEmptyFolders A boolean indicating whether to include empty folders
+     * @return a TreeNodeInfo object containing the collected statuses and languages
+     */
+    public TreeNodeInfo collectUniqueStatusesAndLanguages(final boolean showEmptyFolders) {
+
+        TreeNodeInfo nodeInfo = new TreeNodeInfo();
+        collectUniqueStatusesAndLanguagesHelper(nodeInfo, showEmptyFolders);
+        return nodeInfo;
+    }
+
+    /**
+     * Collects unique statuses and languages from the current tree node and its children.
+     *
+     * @param showEmptyFolders A boolean indicating whether to include empty folders
+     * @param nodeInfo         A TreeNodeInfo object containing the collected statuses and languages
+     */
+    private void collectUniqueStatusesAndLanguagesHelper(TreeNodeInfo nodeInfo, final boolean showEmptyFolders) {
+
+        boolean includeAssets = includeAssets();
+        if (includeAssets && assets() != null) {
+            for (AssetView asset : assets()) {
+
+                if (asset.live()) {
+                    nodeInfo.addLiveLanguage(asset.lang());
+                    nodeInfo.incrementAssetsCount();
+                }
+                if (asset.working()) {
+                    nodeInfo.addWorkingLanguage(asset.lang());
+                    nodeInfo.incrementAssetsCount();
+                }
+
+                nodeInfo.addLanguage(asset.lang());
+            }
+        }
+
+        for (TreeNode child : children()) {
+
+            // If we have an explicit rule to exclude this folder, we skip it
+            if (child.folder().explicitGlobExclude()) {
+                continue;
+            }
+
+            if (showEmptyFolders
+                    || !child.assets().isEmpty()
+                    || hasAssetsInSubtree(child)) {
+
+                if (child.folder().implicitGlobInclude() || hasIncludeInSubtree(child)) {
+
+                    child.collectUniqueStatusesAndLanguagesHelper(nodeInfo, showEmptyFolders);
+
+                    nodeInfo.incrementFoldersCount();
+                }
+            }
+        }
+    }
+
+    /**
+     * Determines whether the assets should be included for the current TreeNode based on its folder's
+     * include and exclude rules.
+     *
+     * @return {@code true} if the assets should be included, {@code false} otherwise.
+     */
+    private boolean includeAssets() {
+
+        // Handling a special case for the root folder
+        var rootFolder = this.folder().path().equals("/");
+        var includeAssets = true;
+
+        if (rootFolder) {
+            if (this.folder().explicitGlobExclude()) {
+                return false;
+            }
+
+            return this.folder().explicitGlobInclude() || this.folder().implicitGlobInclude();
+        }
+
+        return includeAssets;
     }
 
     /**

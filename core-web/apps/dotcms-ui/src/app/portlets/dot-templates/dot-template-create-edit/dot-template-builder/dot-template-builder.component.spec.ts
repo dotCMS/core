@@ -22,7 +22,7 @@ import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotEventsService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
-import { DotLayout } from '@dotcms/dotcms-models';
+import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -41,8 +41,9 @@ import {
         <ng-content select="[toolbar-actions-right]"></ng-content>`
 })
 class TemplateBuilderMockComponent {
-    @Input() templateLayout: DotLayout;
-    @Output() layoutChange: EventEmitter<Event> = new EventEmitter();
+    @Input() layout: DotLayout;
+    @Input() themeId: string;
+    @Output() templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter();
 }
 
 @Component({
@@ -98,7 +99,9 @@ export class IframeMockComponent {
     selector: 'p-tabView',
     template: '<ng-content></ng-content>'
 })
-export class TabViewMockComponent {}
+export class TabViewMockComponent {
+    @Input() styleClass: string;
+}
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
@@ -126,6 +129,12 @@ class DotTestHostComponent {
     @ViewChild('builder') builder: DotTemplateBuilderComponent;
     item: DotTemplateItem;
 }
+
+const ITEM_FOR_NEW_TEMPLATE_BUILDER = {
+    ...EMPTY_TEMPLATE_DESIGN,
+    theme: '123',
+    live: true
+};
 
 describe('DotTemplateBuilderComponent', () => {
     let component: DotTemplateBuilderComponent;
@@ -178,6 +187,7 @@ describe('DotTemplateBuilderComponent', () => {
         fixture = TestBed.createComponent(DotTemplateBuilderComponent);
         de = fixture.debugElement;
         component = fixture.componentInstance;
+
         dotPropertiesService = TestBed.inject(DotPropertiesService);
         spyOn(component.save, 'emit');
         spyOn(component.updateTemplate, 'emit');
@@ -186,11 +196,7 @@ describe('DotTemplateBuilderComponent', () => {
 
     describe('design', () => {
         beforeEach(() => {
-            component.item = {
-                ...EMPTY_TEMPLATE_DESIGN,
-                theme: '123',
-                live: true
-            };
+            component.item = ITEM_FOR_NEW_TEMPLATE_BUILDER;
             fixture.detectChanges();
         });
 
@@ -257,15 +263,19 @@ describe('DotTemplateBuilderComponent', () => {
             expect(component).toBeTruthy();
         });
 
+        it('should set the themeId @Input correctly', () => {
+            const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
+            expect(templateBuilder.componentInstance.themeId).toBe('123');
+        });
+
         it('should emit events from new-template-builder when the layout is changed', () => {
-            const builder = de.query(By.css('[data-testId="new-template-builder"]'));
-            const layout = EMPTY_TEMPLATE_DESIGN.layout;
+            const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
+            const template = {
+                layout: EMPTY_TEMPLATE_DESIGN.layout,
+                themeId: '123'
+            } as DotTemplateDesigner;
 
-            spyOn(component, 'onLayoutChange').and.callThrough();
-
-            builder.triggerEventHandler('layoutChange', layout);
-
-            expect(component.onLayoutChange).toHaveBeenCalledWith(layout);
+            templateBuilder.triggerEventHandler('templateChange', template);
             expect(component.updateTemplate.emit).toHaveBeenCalled();
         });
 
@@ -276,6 +286,17 @@ describe('DotTemplateBuilderComponent', () => {
 
             (btnsave.nativeElement as HTMLElement).click();
             expect(component.saveAndPublish.emit).toHaveBeenCalled();
+        });
+
+        it('should add style classes if new template builder feature flag is on', () => {
+            fixture = TestBed.createComponent(DotTemplateBuilderComponent); // new fixture as async pipe was running before function was replaced
+            fixture.componentInstance.item = ITEM_FOR_NEW_TEMPLATE_BUILDER;
+            fixture.detectChanges();
+            const tabView = fixture.debugElement.query(By.css('p-tabView'));
+            const tabViewComponent: TabViewMockComponent = tabView.componentInstance;
+            expect(tabViewComponent.styleClass).toEqual(
+                'dot-template-builder__new-template-builder'
+            );
         });
     });
 
@@ -347,6 +368,9 @@ describe('DotTemplateBuilderComponent', () => {
                 theme: '123'
             };
             hostFixture.detectChanges();
+            const builder = hostFixture.debugElement.query(
+                By.css('dot-edit-layout-designer')
+            ).componentInstance;
             dotTestHostComponent.builder.historyIframe = {
                 iframeElement: {
                     nativeElement: {
@@ -362,6 +386,9 @@ describe('DotTemplateBuilderComponent', () => {
                 ...EMPTY_TEMPLATE_DESIGN,
                 theme: 'dotcms-123'
             };
+
+            builder.updateTemplate.emit(dotTestHostComponent.item);
+
             hostFixture.detectChanges();
             expect(
                 dotTestHostComponent.builder.historyIframe.iframeElement.nativeElement.contentWindow

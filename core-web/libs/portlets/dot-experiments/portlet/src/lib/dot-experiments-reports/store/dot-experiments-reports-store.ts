@@ -19,7 +19,7 @@ import {
     DEFAULT_VARIANT_ID,
     DotExperiment,
     DotExperimentResults,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotExperimentVariantDetail,
     DotResultGoal,
     DotResultVariant,
@@ -120,9 +120,9 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
 
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
         Object.values([
-            DotExperimentStatusList.ENDED,
-            DotExperimentStatusList.RUNNING,
-            DotExperimentStatusList.ARCHIVED
+            DotExperimentStatus.ENDED,
+            DotExperimentStatus.RUNNING,
+            DotExperimentStatus.ARCHIVED
         ]).includes(experiment?.status)
     );
 
@@ -170,7 +170,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                                         : this.dotMessageService.get(
                                               'dot.common.http.error.400.experiment.analytics-app-not-configured.header'
                                           ),
-                                    message: error.message.split('.')[0]
+                                    message: error.message
                                 }
                             });
 
@@ -326,7 +326,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             bayesianResult.suggestedWinner === BayesianStatusResponse.NONE;
 
         if (!hasSessions || isNoneBayesianSuggestionWinner) {
-            return experiment.status === DotExperimentStatusList.ENDED
+            return experiment.status === DotExperimentStatus.ENDED
                 ? ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
                 : ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS;
         }
@@ -335,7 +335,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             return { ...ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND };
         }
 
-        return experiment.status === DotExperimentStatusList.ENDED
+        return experiment.status === DotExperimentStatus.ENDED
             ? { ...ReportSummaryLegendByBayesianStatus.WINNER }
             : { ...ReportSummaryLegendByBayesianStatus.PRELIMINARY_WINNER };
     }

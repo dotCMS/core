@@ -1003,13 +1003,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             return analyticsHelper.appFromHost(currentHost);
         } catch (final IllegalStateException e) {
             throw new DotDataException(
-                    Try.of(() ->
-                        LanguageUtil.get(
-                            user,
-                            "analytics.app.not.configured",
-                            AnalyticsHelper.extractMissingAnalyticsProps(e)))
-                    .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())),
-                e);
+                Try.of(() ->
+                    LanguageUtil.get(
+                        user,
+                        "analytics.app.not.configured",
+                        AnalyticsHelper.extractMissingAnalyticsProps(e)))
+                    .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())));
         }
     }
 

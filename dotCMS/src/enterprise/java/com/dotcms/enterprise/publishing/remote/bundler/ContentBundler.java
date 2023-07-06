@@ -289,14 +289,14 @@ public class ContentBundler implements IBundler {
 		Map<String, Contentlet> contents = new HashMap<>();
 
 		for (ContentletVersionInfo contentletVersionInfo : contentletVersionInfos) {
-				if (UtilMethods.isSet(contentletVersionInfo.getLiveInode())) {
-					final Optional<Contentlet> optionalContentlet = contentletAPI.findInDb(
-							contentletVersionInfo.getLiveInode());
+			if (UtilMethods.isSet(contentletVersionInfo.getLiveInode())) {
+				final Optional<Contentlet> optionalContentlet = contentletAPI.findInDb(
+						contentletVersionInfo.getLiveInode());
 
-					if (optionalContentlet.isPresent()) {
-						contents.put(contentletVersionInfo.getLiveInode(), optionalContentlet.get());
-					}
+				if (optionalContentlet.isPresent()) {
+					contents.put(contentletVersionInfo.getLiveInode(), optionalContentlet.get());
 				}
+			}
 
 			if (UtilMethods.isSet(contentletVersionInfo.getWorkingInode())) {
 				final Optional<Contentlet> optionalContentlet = contentletAPI.findInDb(
@@ -438,6 +438,7 @@ public class ContentBundler implements IBundler {
 						multiTreeMap.put("relation_type", uniqueId);
 						multiTreeMap.put("tree_order", personalizedContentlet.getTreeOrder());
 						multiTreeMap.put("personalization", personalizedContentlet.getPersonalization());
+						multiTreeMap.put("variantId", con.getVariantId());
 						multiTreesList.add( multiTreeMap );
 					}
 				}

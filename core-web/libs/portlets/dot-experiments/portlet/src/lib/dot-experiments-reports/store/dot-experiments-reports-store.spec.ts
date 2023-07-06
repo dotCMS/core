@@ -15,7 +15,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     BayesianStatusResponse,
     ComponentStatus,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotExperimentVariantDetail,
     ReportSummaryLegendByBayesianStatus
 } from '@dotcms/dotcms-models';
@@ -132,7 +132,7 @@ describe('DotExperimentsReportsStore', () => {
         dotExperimentsService.getById.mockReturnValue(
             of({
                 ...EXPERIMENT_MOCK,
-                status: DotExperimentStatusList.RUNNING
+                status: DotExperimentStatus.RUNNING
             })
         );
         dotExperimentsService.getResults.mockReturnValue(of(EXPERIMENT_MOCK_RESULTS));
@@ -149,7 +149,7 @@ describe('DotExperimentsReportsStore', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
-                    status: DotExperimentStatusList.ENDED
+                    status: DotExperimentStatus.ENDED
                 })
             );
             dotExperimentsService.getResults.mockReturnValue(
@@ -162,7 +162,7 @@ describe('DotExperimentsReportsStore', () => {
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.status).toEqual(DotExperimentStatusList.ENDED);
+                expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
             });
             store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
                 expect(summaryWinnerLegend).toEqual(
@@ -176,7 +176,7 @@ describe('DotExperimentsReportsStore', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
-                    status: DotExperimentStatusList.RUNNING
+                    status: DotExperimentStatus.RUNNING
                 })
             );
             dotExperimentsService.getResults.mockReturnValue(
@@ -189,7 +189,7 @@ describe('DotExperimentsReportsStore', () => {
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+                expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
             });
             store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
                 expect(summaryWinnerLegend).toEqual(
@@ -204,7 +204,7 @@ describe('DotExperimentsReportsStore', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
-                    status: DotExperimentStatusList.ENDED
+                    status: DotExperimentStatus.ENDED
                 })
             );
             dotExperimentsService.getResults.mockReturnValue(
@@ -221,7 +221,7 @@ describe('DotExperimentsReportsStore', () => {
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
             store.state$.subscribe(({ experiment, results }) => {
-                expect(experiment.status).toEqual(DotExperimentStatusList.ENDED);
+                expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
                 expect(results.bayesianResult.suggestedWinner).toEqual(BayesianStatusResponse.TIE);
             });
             store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
@@ -236,7 +236,7 @@ describe('DotExperimentsReportsStore', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
-                    status: DotExperimentStatusList.RUNNING
+                    status: DotExperimentStatus.RUNNING
                 })
             );
             dotExperimentsService.getResults.mockReturnValue(
@@ -253,7 +253,7 @@ describe('DotExperimentsReportsStore', () => {
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
             store.state$.subscribe(({ experiment, results }) => {
-                expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+                expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
                 expect(results.bayesianResult.suggestedWinner).toEqual(BayesianStatusResponse.TIE);
             });
             store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
@@ -268,7 +268,7 @@ describe('DotExperimentsReportsStore', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
-                    status: DotExperimentStatusList.ENDED
+                    status: DotExperimentStatus.ENDED
                 })
             );
             dotExperimentsService.getResults.mockReturnValue(
@@ -285,7 +285,7 @@ describe('DotExperimentsReportsStore', () => {
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
             store.state$.subscribe(({ experiment, results }) => {
-                expect(experiment.status).toEqual(DotExperimentStatusList.ENDED);
+                expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
                 expect(results.bayesianResult.suggestedWinner).toEqual(BayesianStatusResponse.NONE);
             });
             store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
@@ -300,7 +300,7 @@ describe('DotExperimentsReportsStore', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
-                    status: DotExperimentStatusList.RUNNING
+                    status: DotExperimentStatus.RUNNING
                 })
             );
             dotExperimentsService.getResults.mockReturnValue(
@@ -317,7 +317,7 @@ describe('DotExperimentsReportsStore', () => {
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
             store.state$.subscribe(({ experiment, results }) => {
-                expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+                expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
                 expect(results.bayesianResult.suggestedWinner).toEqual(BayesianStatusResponse.NONE);
             });
             store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
@@ -334,7 +334,7 @@ describe('DotExperimentsReportsStore', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
-                    status: DotExperimentStatusList.ENDED
+                    status: DotExperimentStatus.ENDED
                 })
             );
             dotExperimentsService.getResults.mockReturnValue(
@@ -351,7 +351,7 @@ describe('DotExperimentsReportsStore', () => {
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
             store.state$.subscribe(({ experiment, results }) => {
-                expect(experiment.status).toEqual(DotExperimentStatusList.ENDED);
+                expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
                 expect(results.bayesianResult.suggestedWinner).toEqual(winnerVariantId);
             });
             store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
@@ -366,7 +366,7 @@ describe('DotExperimentsReportsStore', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
-                    status: DotExperimentStatusList.RUNNING
+                    status: DotExperimentStatus.RUNNING
                 })
             );
             dotExperimentsService.getResults.mockReturnValue(
@@ -383,7 +383,7 @@ describe('DotExperimentsReportsStore', () => {
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
             store.state$.subscribe(({ experiment, results }) => {
-                expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+                expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
                 expect(results.bayesianResult.suggestedWinner).toEqual(winnerVariantId);
             });
             store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
@@ -438,7 +438,7 @@ describe('DotExperimentsReportsStore', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
-                    status: DotExperimentStatusList.RUNNING
+                    status: DotExperimentStatus.RUNNING
                 })
             );
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);

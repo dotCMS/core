@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 
 import { MultiSelectModule } from 'primeng/multiselect';
 
-import { DotDropdownSelectOption, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import { DotDropdownSelectOption, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
@@ -28,5 +28,5 @@ export class DotExperimentsStatusFilterComponent {
     options: Array<DotDropdownSelectOption<string>>;
 
     @Output()
-    switch = new EventEmitter<DotExperimentStatusList[]>();
+    switch = new EventEmitter<DotExperimentStatus[]>();
 }
