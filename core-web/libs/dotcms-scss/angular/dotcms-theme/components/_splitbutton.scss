@@ -28,15 +28,15 @@
         text-transform: capitalize;
 
         .p-button-label {
-            color: $white;
-            font-size: $font-size-md;
+            color: inherit;
+            font-size: inherit;
             line-height: 140%;
             text-transform: capitalize;
         }
 
         .p-button-icon,
         .pi {
-            color: $white;
+            color: inherit;
             font-size: $font-size-lg;
             line-height: 140%;
         }
@@ -62,7 +62,7 @@
 
             .p-button-label {
                 color: $white;
-                font-size: $font-size-lg;
+                font-size: inherit;
                 line-height: 140%;
                 text-transform: capitalize;
             }
@@ -73,15 +73,6 @@
                 font-size: $font-size-xl;
                 line-height: 140%;
             }
-        }
-
-        .p-button-label {
-            font-size: $font-size-lg;
-        }
-
-        .p-button-icon,
-        .pi {
-            font-size: $font-size-xl;
         }
     }
 
@@ -102,26 +93,16 @@
             gap: 0.25rem;
             border-radius: 0.25rem 0 0 0.25rem;
             padding: 0 $spacing-1;
-
             font-size: $font-size-sm;
 
             .p-button-label {
-                font-size: $font-size-sm;
+                font-size: inherit;
             }
 
             .p-button-icon,
             .pi {
                 font-size: $font-size-md;
             }
-        }
-
-        .p-button-label {
-            font-size: $font-size-lg;
-        }
-
-        .p-button-icon,
-        .pi {
-            font-size: $font-size-xl;
         }
     }
 }
@@ -224,7 +205,7 @@
         color: $black;
 
         .p-button-label {
-            color: $black;
+            color: inherit;
         }
         .p-button-icon,
         .pi {
@@ -246,7 +227,7 @@
             color: $black;
 
             .p-button-label {
-                color: $black;
+                color: inherit;
             }
             .p-button-icon,
             .pi {
@@ -268,12 +249,10 @@
             background-color: transparent;
             color: $color-accessible-text-red;
 
-            .p-button-label {
-                color: $color-accessible-text-red;
-            }
+            .p-button-label,
             .p-button-icon,
             .pi {
-                color: $color-accessible-text-red;
+                color: inherit;
             }
 
             &:hover {
@@ -296,8 +275,9 @@
         color: $color-palette-gray-500;
 
         .p-button-label,
-        .p-button-icon {
-            color: $color-palette-gray-500;
+        .p-button-icon,
+        .pi {
+            color: inherit;
         }
 
         &.p-button-text {
