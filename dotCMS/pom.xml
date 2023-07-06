@@ -53,11 +53,6 @@
              dotcms repackaged dependencies
           *****************************
         -->
-
-        <dependency>
-            <groupId>com.dotcms</groupId>
-            <artifactId>ant-tooling</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.aopalliance-repackaged</artifactId>
@@ -1360,6 +1355,65 @@
             <artifactId>disruptor</artifactId>
         </dependency>
 
+        <!-- Weld CDI -->
+
+
+        <dependency>
+            <groupId>org.jboss.weld.servlet</groupId>
+            <artifactId>weld-servlet-shaded</artifactId>
+            <version>3.1.9.Final</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.weld</groupId>
+            <artifactId>weld-junit5</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.weld.se</groupId>
+                    <artifactId>weld-se-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.weld.se</groupId>
+            <artifactId>weld-se-shaded</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>jandex</artifactId>
+            <version>3.0.5</version>
+        </dependency>
+
+        <!-- SmallRye Config -->
+
+        <dependency>
+            <groupId>io.smallrye.config</groupId>
+            <artifactId>smallrye-config</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.microprofile-ext.config-ext</groupId>
+            <artifactId>configsource-properties</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.microprofile-ext.config-ext</groupId>
+            <artifactId>configsource-yaml</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.microprofile-ext.config-ext</groupId>
+            <artifactId>configsource-memory</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.microprofile-ext.config-ext</groupId>
+            <artifactId>configsource-providers</artifactId>
+        </dependency>
 
     </dependencies>
     <dependencyManagement>
