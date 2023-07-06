@@ -17,6 +17,10 @@
             height: 100%;
             display: flex;
 
+            .p-button {
+                height: 100%;
+            }
+
             .p-button-label {
                 color: $black;
             }
