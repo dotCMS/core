@@ -21,7 +21,7 @@ import { filter, mergeMap, map, take, toArray } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @Component({
@@ -35,7 +35,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         ButtonModule,
         OverlayPanelModule,
         PanelModule,
-        DividerModule
+        DividerModule,
+        DotMessagePipeModule
     ],
     providers: [DotDevicesService],
     selector: 'dot-device-selector-seo',
@@ -50,6 +51,11 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     options: DotDevice[] = [];
     placeholder = '';
+    socialMediaTiles = [
+        { label: 'Facebook', icon: 'pi pi-facebook' },
+        { label: 'Twitter', icon: 'pi pi-twitter' },
+        { label: 'LinkedIn', icon: 'pi pi-linkedin' }
+    ];
     defaultOptions: DotDevice[] = [
         {
             name: 'Mobile Portrait',

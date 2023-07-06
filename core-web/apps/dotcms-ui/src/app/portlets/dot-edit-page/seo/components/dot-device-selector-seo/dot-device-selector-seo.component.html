@@ -2,7 +2,9 @@
     <div class="dotDeviceSelector__column">
         <div class="dotDeviceSelector__panel">
             <div class="dotDeviceSelector__header">
-                <h3 class="dotDeviceSelector__header-title">Devices</h3>
+                <h3 class="dotDeviceSelector__header-title">
+                    {{ 'editpage.device.selector.title' | dm }}
+                </h3>
                 <p-button icon="pi pi-plus" styleClass="p-button-rounded p-button-text"></p-button>
             </div>
             <div class="dotDeviceSelector__content">
@@ -42,21 +44,18 @@
     <div class="dotDeviceSelector__column">
         <div class="dotDeviceSelector__panel">
             <div class="dotDeviceSelector__header">
-                <h3 class="dotDeviceSelector__header-title">Social Media Tiles</h3>
+                <h3 class="dotDeviceSelector__header-title">
+                    {{ 'editpage.device.selector.media.tiles' | dm }}
+                </h3>
             </div>
             <div class="dotDeviceSelector__content">
                 <ul class="device-list">
-                    <li class="device-list__item device-list__item-media">
-                        <i class="pi pi-facebook" style="font-size: 1rem"></i>
-                        Facebook
-                    </li>
-                    <li class="device-list__item device-list__item-media">
-                        <i class="pi pi-twitter" style="font-size: 1rem"></i>
-                        Twitter
-                    </li>
-                    <li class="device-list__item device-list__item-media">
-                        <i class="pi pi-linkedin" style="font-size: 1rem"></i>
-                        Linkedin
+                    <li
+                        class="device-list__item device-list__item-media"
+                        *ngFor="let tile of socialMediaTiles"
+                    >
+                        <i [class]="tile.icon" style="font-size: 1rem"></i>
+                        {{ tile.label }}
                     </li>
                 </ul>
             </div>
@@ -64,7 +63,9 @@
 
         <div class="dotDeviceSelector__panel">
             <div class="dotDeviceSelector__header">
-                <h3 class="dotDeviceSelector__header-title">Search Engine Results Pages</h3>
+                <h3 class="dotDeviceSelector__header-title">
+                    {{ 'editpage.device.selector.search.engine' | dm }}
+                </h3>
             </div>
             <div class="dotDeviceSelector__content">
                 <ul class="device-list">
@@ -76,7 +77,7 @@
             </div>
         </div>
         <div class="dotDeviceSelector__link--container">
-            <a class="dotDeviceSelector__link"> Open in New Tab </a>
+            <a class="dotDeviceSelector__link"> {{ 'editpage.device.selector.new.tab' | dm }} </a>
             <i class="pi pi-external-link" style="font-size: 1rem"></i>
         </div>
     </div>
