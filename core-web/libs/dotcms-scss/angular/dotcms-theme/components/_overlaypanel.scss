@@ -29,19 +29,3 @@
     background: $bg-hover;
     color: $white;
 }
-
-.p-overlaypanel:after {
-    border: solid transparent;
-}
-
-.p-overlaypanel:before {
-    border: solid transparent;
-}
-
-.p-overlaypanel.p-overlaypanel-flipped:after {
-    border-top-color: $white;
-}
-
-.p-overlaypanel.p-overlaypanel-flipped:before {
-    border-top-color: $white;
-}
