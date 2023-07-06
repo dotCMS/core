@@ -43,13 +43,13 @@ describe('DotMenuComponent', () => {
         component.float = true;
         component.model = menuItems;
         fixture.detectChanges();
-        button = fixture.debugElement.query(By.css('.dot-menu__button'));
+        button = fixture.debugElement.query(By.css('[data-testid="dot-menu-button"]'));
     });
 
     it('should set the button to float', () => {
         component.float = false;
         fixture.detectChanges();
-        button = fixture.debugElement.query(By.css('.dot-menu__button'));
+        button = fixture.debugElement.query(By.css('[data-testid="dot-menu-button"]'));
 
         expect(
             (button.componentInstance.styleClass as string).includes('p-button-text')

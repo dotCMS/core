@@ -252,7 +252,7 @@ describe('ActionMenuButtonComponent', () => {
         comp.actions = fakeActions;
         comp.item = mockContentType;
         fixture.detectChanges();
-        const actionButtonMenu = de.query(By.css('.dot-menu__button'));
+        const actionButtonMenu = de.query(By.css('[data-testid="dot-menu-button"]'));
         actionButtonMenu.triggerEventHandler('click', {
             stopPropagation: () => {
                 //
