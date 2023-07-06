@@ -184,6 +184,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        Task230119MigrateContentToProperPersonaTagAndRemoveDupTagsTest.class,
         RulesAPIImplIntegrationTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
@@ -609,8 +610,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ManifestUtilTest.class,
         ZipUtilTest.class,
         PopulateContentletAsJSONJobTest.class,
-        Task230426AlterVarcharLengthOfLockedByColTest.class,
-        Task230119MigrateContentToProperPersonaTagAndRemoveDupTagsTest.class
+        Task230426AlterVarcharLengthOfLockedByColTest.class
 
 })
 public class MainSuite {

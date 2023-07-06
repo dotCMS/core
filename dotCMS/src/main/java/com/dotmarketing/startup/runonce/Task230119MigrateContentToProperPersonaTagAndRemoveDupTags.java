@@ -29,7 +29,8 @@ public class Task230119MigrateContentToProperPersonaTagAndRemoveDupTags extends 
             + "               JOIN tag ON tag_inode.tag_id = tag.tag_id\n"
             + "      WHERE tagname LIKE '%:persona') aux,\n"
             + "     tag\n"
-            + "WHERE tag.tagname = REPLACE(aux.tagname, ':persona', '');\n"
+            + "WHERE tag.tagname = REPLACE(aux.tagname, ':persona', '') "
+            + "AND NOT EXISTS (SELECT 1 FROM tag_inode WHERE tag.tag_id = tag_id AND aux.inode = inode);\n"
             + "\n"
             + (DbConnectionFactory.isPostgres() ? DELETE_BAD_RELS_POSTGRES : DELETE_BAD_RELS_MSSQL)
             + "\n"
