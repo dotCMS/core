@@ -70,6 +70,17 @@ public interface SamlAuthenticationService {
                                  final IdentityProviderConfiguration identityProviderConfiguration);
 
     /**
+     * Resolve all the attributes, non only the stardard ones.
+     *
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @param identityProviderConfiguration {@link IdentityProviderConfiguration}
+     * @return Attributes
+     */
+    Map<String, String> resolveAllAttributes(final HttpServletRequest request, final HttpServletResponse response,
+                                 final IdentityProviderConfiguration identityProviderConfiguration);
+
+    /**
      * Render the metadata as a XML
      * @param writer
      * @param identityProviderConfiguration
