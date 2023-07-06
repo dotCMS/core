@@ -23,7 +23,7 @@ import {
     DotResultGoal,
     DotResultVariant,
     ExperimentLineChartDatasetDefaultProperties,
-    monthsOfTheYear,
+    MonthsOfTheYear,
     ReportSummaryLegendByBayesianStatus,
     SummaryLegend,
     Variant
@@ -309,7 +309,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         return labels.map((item) => {
             const date = new Date(item);
             const day = date.getDate();
-            const monthTranslated = this.dotMessageService.get(monthsOfTheYear[date.getMonth()]);
+            const monthTranslated = this.dotMessageService.get(MonthsOfTheYear[date.getMonth()]);
 
             return `${monthTranslated}-${day}`;
         });

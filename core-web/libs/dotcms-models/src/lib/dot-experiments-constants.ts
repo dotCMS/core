@@ -167,7 +167,7 @@ export const daysOfTheWeek = [
     'Saturday'
 ];
 
-export const monthsOfTheYear = [
+export const MonthsOfTheYear = [
     'months.january.short',
     'months.february.short',
     'months.march.short',
