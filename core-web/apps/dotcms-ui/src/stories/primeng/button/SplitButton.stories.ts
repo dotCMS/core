@@ -6,6 +6,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { SplitButtonModule } from 'primeng/splitbutton';
 
+import {
+    BasicSplitButtonTemplate,
+    OutlinedSplitButtonTemplate,
+    TextSplitButtonTemplate
+} from './templates';
+
 export default {
     title: 'PrimeNG/Button/SplitButton',
     decorators: [
@@ -18,7 +24,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'SplitButton groups a set of commands in an overlay with a default command: https://primefaces.org/primeng/showcase/#/splitbutton'
+                    'SplitButton groups a set of commands in an overlay with a default command: https://primeng.org/splitbutton'
             }
         }
     },
@@ -57,48 +63,51 @@ const items = [
     }
 ];
 
-const PrimaryTemplate = `
-    <p><p-splitButton label="Save" [model]="items"></p-splitButton></p>
-    <p><p-splitButton label="Save" icon="pi pi-check" [model]="items"></p-splitButton></p>
-    <p><p-splitButton label="Save" icon="pi pi-check" iconPos="right" [model]="items"></p-splitButton></p>
-    <p><p-splitButton label="Disabled" disabled="true"></p-splitButton></p>
-`;
-export const Primary: Story = () => {
+export const Basic: Story = () => {
     return {
-        template: PrimaryTemplate,
+        template: BasicSplitButtonTemplate,
         props: {
             items
         }
     };
 };
 
-Primary.parameters = {
+Basic.parameters = {
     docs: {
         source: {
-            code: PrimaryTemplate
+            code: BasicSplitButtonTemplate
         }
     }
 };
-
-const SecondaryTemplate = `
-    <p><p-splitButton label="Save" [model]="items" styleClass="p-button-secondary"></p-splitButton></p>
-    <p><p-splitButton label="Save" icon="pi pi-check" styleClass="p-button-secondary" [model]="items"></p-splitButton></p>
-    <p><p-splitButton label="Save" icon="pi pi-check" iconPos="right" styleClass="p-button-secondary" [model]="items"></p-splitButton></p>
-    <p><p-splitButton label="Disabled" disabled="true" styleClass="p-button-secondary"></p-splitButton></p>
-`;
-export const Secondary: Story = () => {
+export const Outlined: Story = () => {
     return {
-        template: SecondaryTemplate,
+        template: OutlinedSplitButtonTemplate,
         props: {
             items
         }
     };
 };
 
-Secondary.parameters = {
+Outlined.parameters = {
     docs: {
         source: {
-            code: SecondaryTemplate
+            code: OutlinedSplitButtonTemplate
+        }
+    }
+};
+export const Text: Story = () => {
+    return {
+        template: TextSplitButtonTemplate,
+        props: {
+            items
+        }
+    };
+};
+
+Text.parameters = {
+    docs: {
+        source: {
+            code: TextSplitButtonTemplate
         }
     }
 };

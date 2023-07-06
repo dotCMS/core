@@ -769,3 +769,494 @@ export const IconOnlyTextTemplate = `<div style="display: flex; gap: 24px; flex-
 </div>
 </div>
 `;
+
+// Split Button
+
+export const BasicSplitButtonTemplate = `<div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton label="Save" [model]="items" styleClass="p-button-lg"></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-lg"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-lg"
+    ></p-splitButton>
+    <p-splitButton label="Disabled" disabled="true" styleClass="p-button-lg"></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton label="Save" [model]="items"></p-splitButton>
+    <p-splitButton label="Save" icon="pi pi-check" [model]="items"></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+    ></p-splitButton>
+    <p-splitButton label="Disabled" disabled="true"></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton label="Save" [model]="items" styleClass="p-button-sm"></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-sm"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-sm"
+    ></p-splitButton>
+    <p-splitButton label="Disabled" disabled="true" styleClass="p-button-sm"></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-lg p-button-secondary"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-lg p-button-secondary"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-lg p-button-secondary"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-lg p-button-secondary"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton label="Save" [model]="items" styleClass="p-button-secondary"></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-secondary"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-secondary"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-secondary"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-sm p-button-secondary"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-sm p-button-secondary"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-sm p-button-secondary"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-sm p-button-secondary"
+    ></p-splitButton>
+</div>
+</div>
+`;
+
+export const OutlinedSplitButtonTemplate = `<div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton label="Save" [model]="items" styleClass="p-button-lg p-button-outlined"></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-lg p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-lg p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-lg p-button-outlined"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton label="Save" [model]="items" styleClass="p-button-outlined"></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-outlined"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-sm p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-sm p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-sm p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-sm p-button-outlined"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-lg p-button-secondary p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-lg p-button-secondary p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-lg p-button-secondary p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-lg p-button-secondary p-button-outlined"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-secondary p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-secondary p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-secondary p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-secondary p-button-outlined"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-sm p-button-secondary p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-sm p-button-secondary p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-sm p-button-secondary p-button-outlined"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-sm p-button-secondary p-button-outlined"
+    ></p-splitButton>
+</div>
+</div>
+
+`;
+
+export const TextSplitButtonTemplate = `<div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-lg p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-lg p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-lg p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-lg p-button-text"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton label="Save" [model]="items" styleClass="p-button-text"></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-text"
+    ></p-splitButton>
+    <p-splitButton label="Disabled" disabled="true" styleClass="p-button-text"></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-sm p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-sm p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-sm p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-sm p-button-text"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-lg p-button-secondary p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-lg p-button-secondary p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-lg p-button-secondary p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-lg p-button-secondary p-button-text"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-secondary p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-secondary p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-secondary p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-secondary p-button-text"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-sm p-button-secondary p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-sm p-button-secondary p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-sm p-button-secondary p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-sm p-button-secondary p-button-text"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-lg p-button-danger p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-lg p-button-danger p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-lg p-button-danger p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-lg p-button-danger p-button-text"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-danger p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-danger p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-danger p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-danger p-button-text"
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-sm p-button-danger p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        [model]="items"
+        styleClass="p-button-sm p-button-danger p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-check"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-sm p-button-danger p-button-text"
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-sm p-button-danger p-button-text"
+    ></p-splitButton>
+</div>
+</div>
+
+`;
