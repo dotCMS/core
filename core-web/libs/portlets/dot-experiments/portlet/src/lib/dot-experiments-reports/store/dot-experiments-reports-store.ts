@@ -15,7 +15,6 @@ import {
     BayesianNoWinnerStatus,
     BayesianStatusResponse,
     ComponentStatus,
-    daysOfTheWeek,
     DEFAULT_VARIANT_ID,
     DotExperiment,
     DotExperimentResults,
@@ -24,6 +23,7 @@ import {
     DotResultGoal,
     DotResultVariant,
     ExperimentLineChartDatasetDefaultProperties,
+    monthsOfTheYear,
     ReportSummaryLegendByBayesianStatus,
     SummaryLegend,
     Variant
@@ -301,15 +301,17 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
 
     private getChartLabels(variants: DotResultGoal['variants']) {
         return variants[DEFAULT_VARIANT_ID].details
-            ? this.addWeekdayToDateLabels(Object.keys(variants[DEFAULT_VARIANT_ID].details))
+            ? this.parseDaysLabels(Object.keys(variants[DEFAULT_VARIANT_ID].details))
             : [];
     }
 
-    private addWeekdayToDateLabels(labels: Array<string>): string[][] {
+    private parseDaysLabels(labels: Array<string>): string[] {
         return labels.map((item) => {
-            const date = new Date(item).getDay();
+            const date = new Date(item);
+            const day = date.getDate();
+            const monthTranslated = this.dotMessageService.get(monthsOfTheYear[date.getMonth()]);
 
-            return [this.dotMessageService.get(daysOfTheWeek[date]), item];
+            return `${monthTranslated}-${day}`;
         });
     }
 

@@ -4,7 +4,7 @@ import {
     SpectatorService,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, zip } from 'rxjs';
 
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -51,7 +51,19 @@ const messageServiceMock = new MockDotMessageService({
     Wednesday: 'Wednesday',
     Thursday: 'Thursday',
     Friday: 'Friday',
-    Saturday: 'Saturday'
+    Saturday: 'Saturday',
+    'months.january.short': 'Jan',
+    'months.february.short': 'Feb',
+    'months.march.short': 'Mar',
+    'months.april.short': 'Apr',
+    'months.may.short': 'May',
+    'months.june.short': 'Jun',
+    'months.july.short': 'Jul',
+    'months.august.short': 'Aug',
+    'months.september.short': 'Sep',
+    'months.october.short': 'Oct',
+    'months.november.short': 'Nov',
+    'months.december.short': 'Dec'
 });
 
 describe('DotExperimentsReportsStore', () => {
@@ -188,15 +200,15 @@ describe('DotExperimentsReportsStore', () => {
 
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
-            store.state$.subscribe(({ experiment }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
-            });
-            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
-                expect(summaryWinnerLegend).toEqual(
-                    ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS
-                );
-                done();
-            });
+            zip(store.state$, store.summaryWinnerLegend$).subscribe(
+                ([{ experiment }, summaryWinnerLegend]) => {
+                    expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
+                    expect(summaryWinnerLegend).toEqual(
+                        ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS
+                    );
+                    done();
+                }
+            );
         });
     });
     describe('Bayesian response map hasSession > 0', () => {
@@ -220,16 +232,19 @@ describe('DotExperimentsReportsStore', () => {
 
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
-            store.state$.subscribe(({ experiment, results }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
-                expect(results.bayesianResult.suggestedWinner).toEqual(BayesianStatusResponse.TIE);
-            });
-            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
-                expect(summaryWinnerLegend).toEqual(
-                    ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
-                );
-                done();
-            });
+            zip(store.state$, store.summaryWinnerLegend$).subscribe(
+                ([{ experiment, results }, summaryWinnerLegend]) => {
+                    expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
+                    expect(results.bayesianResult.suggestedWinner).toEqual(
+                        BayesianStatusResponse.TIE
+                    );
+
+                    expect(summaryWinnerLegend).toEqual(
+                        ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
+                    );
+                    done();
+                }
+            );
         });
 
         it('should summaryWinnerLegend$ get `NO_WINNER_FOUND` when experiment status `RUNNING` and winnerSuggestion=`TIE`', (done) => {
@@ -252,16 +267,19 @@ describe('DotExperimentsReportsStore', () => {
 
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
-            store.state$.subscribe(({ experiment, results }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
-                expect(results.bayesianResult.suggestedWinner).toEqual(BayesianStatusResponse.TIE);
-            });
-            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
-                expect(summaryWinnerLegend).toEqual(
-                    ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
-                );
-                done();
-            });
+            zip(store.state$, store.summaryWinnerLegend$).subscribe(
+                ([{ experiment, results }, summaryWinnerLegend]) => {
+                    expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
+                    expect(results.bayesianResult.suggestedWinner).toEqual(
+                        BayesianStatusResponse.TIE
+                    );
+
+                    expect(summaryWinnerLegend).toEqual(
+                        ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
+                    );
+                    done();
+                }
+            );
         });
 
         it('should summaryWinnerLegend$ get `NO_WINNER_FOUND` when experiment status `ENDED` and winnerSuggestion=`NONE`', (done) => {
@@ -284,16 +302,19 @@ describe('DotExperimentsReportsStore', () => {
 
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
-            store.state$.subscribe(({ experiment, results }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
-                expect(results.bayesianResult.suggestedWinner).toEqual(BayesianStatusResponse.NONE);
-            });
-            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
-                expect(summaryWinnerLegend).toEqual(
-                    ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
-                );
-                done();
-            });
+            zip(store.state$, store.summaryWinnerLegend$).subscribe(
+                ([{ experiment, results }, summaryWinnerLegend]) => {
+                    expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
+                    expect(results.bayesianResult.suggestedWinner).toEqual(
+                        BayesianStatusResponse.NONE
+                    );
+
+                    expect(summaryWinnerLegend).toEqual(
+                        ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
+                    );
+                    done();
+                }
+            );
         });
 
         it('should summaryWinnerLegend$ get `NO_ENOUGH_SESSIONS` when experiment status `RUNNING` and winnerSuggestion=`NONE`', (done) => {
@@ -316,16 +337,19 @@ describe('DotExperimentsReportsStore', () => {
 
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
-            store.state$.subscribe(({ experiment, results }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
-                expect(results.bayesianResult.suggestedWinner).toEqual(BayesianStatusResponse.NONE);
-            });
-            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
-                expect(summaryWinnerLegend).toEqual(
-                    ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS
-                );
-                done();
-            });
+            zip(store.state$, store.summaryWinnerLegend$).subscribe(
+                ([{ experiment, results }, summaryWinnerLegend]) => {
+                    expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
+                    expect(results.bayesianResult.suggestedWinner).toEqual(
+                        BayesianStatusResponse.NONE
+                    );
+
+                    expect(summaryWinnerLegend).toEqual(
+                        ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS
+                    );
+                    done();
+                }
+            );
         });
 
         it('should summaryWinnerLegend$ get `WINNER` when experiment status `ENDED` and winnerSuggestion has a variantId`', (done) => {
@@ -350,14 +374,15 @@ describe('DotExperimentsReportsStore', () => {
 
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
-            store.state$.subscribe(({ experiment, results }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
-                expect(results.bayesianResult.suggestedWinner).toEqual(winnerVariantId);
-            });
-            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
-                expect(summaryWinnerLegend).toEqual(ReportSummaryLegendByBayesianStatus.WINNER);
-                done();
-            });
+            zip(store.state$, store.summaryWinnerLegend$).subscribe(
+                ([{ experiment, results }, summaryWinnerLegend]) => {
+                    expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
+                    expect(results.bayesianResult.suggestedWinner).toEqual(winnerVariantId);
+
+                    expect(summaryWinnerLegend).toEqual(ReportSummaryLegendByBayesianStatus.WINNER);
+                    done();
+                }
+            );
         });
 
         it('should summaryWinnerLegend$ get `PRELIMINARY_WINNER` when experiment status `RUNNING` and winnerSuggestion has a variantId', (done) => {
@@ -382,16 +407,17 @@ describe('DotExperimentsReportsStore', () => {
 
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
-            store.state$.subscribe(({ experiment, results }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
-                expect(results.bayesianResult.suggestedWinner).toEqual(winnerVariantId);
-            });
-            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
-                expect(summaryWinnerLegend).toEqual(
-                    ReportSummaryLegendByBayesianStatus.PRELIMINARY_WINNER
-                );
-                done();
-            });
+            zip(store.state$, store.summaryWinnerLegend$).subscribe(
+                ([{ experiment, results }, summaryWinnerLegend]) => {
+                    expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
+                    expect(results.bayesianResult.suggestedWinner).toEqual(winnerVariantId);
+
+                    expect(summaryWinnerLegend).toEqual(
+                        ReportSummaryLegendByBayesianStatus.PRELIMINARY_WINNER
+                    );
+                    done();
+                }
+            );
         });
     });
 
@@ -446,21 +472,21 @@ describe('DotExperimentsReportsStore', () => {
 
         it('should get all the xLabels', (done) => {
             const expectedXLabels = [
-                ['Saturday', '04/01/2023'],
-                ['Sunday', '04/02/2023'],
-                ['Monday', '04/03/2023'],
-                ['Tuesday', '04/04/2023'],
-                ['Wednesday', '04/05/2023'],
-                ['Thursday', '04/06/2023'],
-                ['Friday', '04/07/2023'],
-                ['Saturday', '04/08/2023'],
-                ['Sunday', '04/09/2023'],
-                ['Monday', '04/10/2023'],
-                ['Tuesday', '04/11/2023'],
-                ['Wednesday', '04/12/2023'],
-                ['Thursday', '04/13/2023'],
-                ['Friday', '04/14/2023'],
-                ['Saturday', '04/15/2023']
+                'Apr-1',
+                'Apr-2',
+                'Apr-3',
+                'Apr-4',
+                'Apr-5',
+                'Apr-6',
+                'Apr-7',
+                'Apr-8',
+                'Apr-9',
+                'Apr-10',
+                'Apr-11',
+                'Apr-12',
+                'Apr-13',
+                'Apr-14',
+                'Apr-15'
             ];
 
             store.getChartData$.subscribe(({ labels }) => {
