@@ -21,6 +21,9 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
             .p-splitbutton {
                 border-bottom: solid 1px $color-palette-gray-300;
                 display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 2.8125rem; // 45px
 
                 &:hover {
                     background-color: $bg-hover;
@@ -31,6 +34,11 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
                     padding: $spacing-2 $spacing-3;
                     background: none;
                     color: $font-color-base;
+
+                    .pi {
+                        color: $font-color-base;
+                        font-size: $font-size-md;
+                    }
                 }
 
                 .p-splitbutton-defaultbutton {
@@ -38,13 +46,15 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
                         text-align: left;
                         text-transform: none;
                         font-weight: normal;
+                        color: $font-color-base;
                     }
-                }
 
-                .p-button-icon-left {
-                    color: $color-palette-gray-700;
-                    width: 18px;
-                    margin-right: $spacing-3;
+                    .p-button-icon-left {
+                        color: $color-palette-gray-700;
+                        width: 18px;
+                        font-size: $font-size-md;
+                        margin-right: $spacing-3;
+                    }
                 }
             }
         }
