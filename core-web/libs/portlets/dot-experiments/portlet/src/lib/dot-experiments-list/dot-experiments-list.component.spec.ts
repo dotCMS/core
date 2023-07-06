@@ -8,11 +8,15 @@ import {
 import { provideComponentStore } from '@ngrx/component-store';
 import { of } from 'rxjs';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
+import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
+import { DotCurrentUserService, DotMessageService } from '@dotcms/data-access';
+import { CoreWebService, CoreWebServiceMock, LoggerService } from '@dotcms/dotcms-js';
 import { ComponentStatus, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -22,6 +26,7 @@ import {
     getExperimentAllMocks,
     getExperimentMock
 } from '@dotcms/utils-testing';
+import { DotCurrentUserServiceMock } from '@portlets/dot-starter/dot-starter-resolver.service.spec';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -38,6 +43,20 @@ const EXPERIMENT_MOCKS = getExperimentAllMocks();
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 
+const VM_LIST_EXPERIMENTS_MOCKS$: VmListExperiments = {
+    pageId: '',
+    pageTitle: '',
+    experiments: [],
+    filterStatus: [],
+    experimentsFiltered: [],
+    isLoading: true,
+    sidebar: {
+        status: ComponentStatus.IDLE,
+        isOpen: false
+    },
+    addToBundleContentId: null
+};
+
 describe('ExperimentsListComponent', () => {
     let spectator: Spectator<DotExperimentsListComponent>;
     let dotExperimentsStatusFilterComponent: DotExperimentsStatusFilterComponent;
@@ -49,6 +68,7 @@ describe('ExperimentsListComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsListComponent,
         componentProviders: [provideComponentStore(DotExperimentsListStore)],
+        imports: [DotAddToBundleModule, HttpClientTestingModule],
         providers: [
             ConfirmationService,
             mockProvider(DotExperimentsStore, DotExperimentsStoreMock),
@@ -64,7 +84,10 @@ describe('ExperimentsListComponent', () => {
             {
                 provide: ActivatedRoute,
                 useClass: ActivatedRouteListStoreMock
-            }
+            },
+            { provide: CoreWebService, useClass: CoreWebServiceMock },
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
+            mockProvider(LoggerService)
         ]
     });
 
@@ -77,20 +100,7 @@ describe('ExperimentsListComponent', () => {
     });
 
     it('should show the skeleton component when is loading', () => {
-        const vmListExperimentsMock$: VmListExperiments = {
-            pageId: '',
-            pageTitle: '',
-            experiments: [],
-            filterStatus: [],
-            experimentsFiltered: [],
-            isLoading: true,
-            sidebar: {
-                status: ComponentStatus.IDLE,
-                isOpen: false
-            },
-            addToBundleContentId: null
-        };
-        spectator.component.vm$ = of(vmListExperimentsMock$);
+        spectator.component.vm$ = of({ ...VM_LIST_EXPERIMENTS_MOCKS$ });
         spectator.detectComponentChanges();
 
         dotExperimentsListSkeletonComponent = spectator.query(DotExperimentsListSkeletonComponent);
@@ -98,20 +108,7 @@ describe('ExperimentsListComponent', () => {
     });
 
     it('should show the empty component when is not loading and no experiments', () => {
-        const vmListExperimentsMock$: VmListExperiments = {
-            pageId: '',
-            pageTitle: '',
-            experiments: [],
-            filterStatus: [],
-            experimentsFiltered: [],
-            isLoading: false,
-            sidebar: {
-                status: ComponentStatus.IDLE,
-                isOpen: false
-            },
-            addToBundleContentId: null
-        };
-        spectator.component.vm$ = of(vmListExperimentsMock$);
+        spectator.component.vm$ = of({ ...VM_LIST_EXPERIMENTS_MOCKS$, isLoading: false });
         spectator.detectComponentChanges();
 
         dotExperimentsEmptyExperimentsComponent = spectator.query(
@@ -121,20 +118,11 @@ describe('ExperimentsListComponent', () => {
     });
 
     it('should show the filters component and add experiment button exist when has experiments', () => {
-        const vmListExperimentsMock$: VmListExperiments = {
-            pageId: '',
-            pageTitle: '',
+        spectator.component.vm$ = of({
+            ...VM_LIST_EXPERIMENTS_MOCKS$,
             experiments: getExperimentAllMocks(),
-            filterStatus: [],
-            experimentsFiltered: [],
-            isLoading: false,
-            sidebar: {
-                status: ComponentStatus.IDLE,
-                isOpen: false
-            },
-            addToBundleContentId: null
-        };
-        spectator.component.vm$ = of(vmListExperimentsMock$);
+            isLoading: false
+        });
         spectator.detectComponentChanges();
 
         dotExperimentsStatusFilterComponent = spectator.query(DotExperimentsStatusFilterComponent);
@@ -236,5 +224,25 @@ describe('ExperimentsListComponent', () => {
                 queryParamsHandling: 'merge'
             }
         );
+    });
+
+    it('should show and remove add to bundle dialog', () => {
+        spectator.component.vm$ = of({
+            ...VM_LIST_EXPERIMENTS_MOCKS$,
+            experiments: getExperimentAllMocks(),
+            isLoading: false,
+            addToBundleContentId: '123'
+        });
+        spectator.detectComponentChanges();
+
+        const addToBundle = spectator.query(DotAddToBundleComponent);
+
+        expect(addToBundle.assetIdentifier).toEqual('123');
+
+        addToBundle.close();
+
+        spectator.detectComponentChanges();
+
+        expect(spectator.query(DotAddToBundleComponent)).not.toExist();
     });
 });
