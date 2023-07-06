@@ -6,33 +6,3 @@ a:focus,
 a:active {
     text-decoration: none;
 }
-
-// This styles are the same as .p-button.p-button-text in _buttons.scss,
-// the problem is the :enabled pseudoclass, hyperlink tag doesn't have that pseudoclass
-
-.p-button {
-    background-color: transparent;
-    color: $black;
-    overflow: hidden;
-    max-width: 100%;
-
-    .p-button-label {
-        color: $black;
-        @include truncate-text;
-    }
-    .p-button-icon,
-    .pi {
-        color: $color-palette-primary;
-    }
-
-    &:hover {
-        background-color: $color-palette-primary-100;
-    }
-    &:active {
-        background-color: $color-palette-primary-op-20;
-    }
-    &:focus {
-        background-color: transparent;
-        box-shadow: 0px 0px 0px 2.8px rgba(18, 67, 227, 0.2); // Ask what should we do
-    }
-}

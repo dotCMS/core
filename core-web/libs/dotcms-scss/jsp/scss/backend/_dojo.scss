@@ -100,7 +100,7 @@ select[multiple] {
         }
         &.dijitDropDownButtonFocused {
             background-color: $color-palette-primary;
-            box-shadow: 0px 0px 0px 2.8px rgba(18, 67, 227, 0.2); // Ask what should we do
+            outline: 2.8px solid $color-palette-primary-op-20; // Ask what should we do
         }
 
         &.dijitDropDownButtonDisabled {
@@ -128,7 +128,7 @@ select[multiple] {
         }
         &.dijitDropDownButtonFocused {
             background-color: $color-palette-primary;
-            box-shadow: 0px 0px 0px 2.8px rgba(18, 67, 227, 0.2); // Ask what should we do
+            outline: 2.8px solid $color-palette-primary-op-20; // Ask what should we do
         }
 
         &.dijitDropDownButtonDisabled {
