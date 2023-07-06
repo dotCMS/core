@@ -5,11 +5,13 @@ import {
     EventEmitter,
     HostBinding,
     Input,
+    OnChanges,
     OnInit,
-    Output
+    Output,
+    SimpleChanges
 } from '@angular/core';
 
-import { filter, map, mergeMap, take, toArray } from 'rxjs/operators';
+import { filter, map, flatMap, take, toArray } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice } from '@dotcms/dotcms-models';
@@ -20,7 +22,7 @@ import { DotDevice } from '@dotcms/dotcms-models';
     styleUrls: ['./dot-device-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotDeviceSelectorComponent implements OnInit {
+export class DotDeviceSelectorComponent implements OnInit, OnChanges {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
     @HostBinding('class.disabled') disabled: boolean;
@@ -38,6 +40,12 @@ export class DotDeviceSelectorComponent implements OnInit {
         this.loadOptions();
     }
 
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes.value && !changes.value.firstChange) {
+            this.loadOptions();
+        }
+    }
+
     /**
      * Track changes in the dropwdow
      * @param DotDevice device
@@ -51,7 +59,7 @@ export class DotDeviceSelectorComponent implements OnInit {
             .get()
             .pipe(
                 take(1),
-                mergeMap((devices: DotDevice[]) => devices),
+                flatMap((devices: DotDevice[]) => devices),
                 filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
                 toArray(),
                 map((devices: DotDevice[]) =>
