@@ -39,6 +39,7 @@ export class SuggestionsService {
         currentLanguage
     }: ContentletFilters): Observable<DotCMSContentlet[]> {
         const search = filter.includes('-') ? filter : `*${filter}*`;
+
         return this.http
             .post('/api/content/_search', {
                 query: `+contentType:${contentType} +languageId:${currentLanguage} +deleted:false +working:true +catchall:${search} title:'${filter}'^15`,
