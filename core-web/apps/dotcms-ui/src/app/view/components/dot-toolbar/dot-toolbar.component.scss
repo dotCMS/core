@@ -10,17 +10,16 @@
             }
         }
 
-        p-button {
+        .p-button-icon-only.p-button {
             .p-button-icon.pi {
                 color: $white;
             }
-
-            .p-button:hover {
+            &:hover {
                 background-color: $color-palette-white-op-30;
             }
 
-            .p-button:focus {
-                box-shadow: none;
+            &:focus {
+                outline: none;
             }
         }
     }
