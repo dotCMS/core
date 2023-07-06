@@ -4,4 +4,5 @@ export interface DotDevice {
     cssWidth: string;
     name: string;
     inode: string;
+    icon?: string;
 }

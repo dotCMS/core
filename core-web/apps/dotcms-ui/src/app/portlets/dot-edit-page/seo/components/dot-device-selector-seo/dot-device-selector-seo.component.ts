@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -5,37 +6,99 @@ import {
     EventEmitter,
     HostBinding,
     Input,
-    OnChanges,
     OnInit,
-    Output,
-    SimpleChanges
+    Output
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
-import { filter, flatMap, map, take, toArray } from 'rxjs/operators';
+import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
+import { DropdownModule } from 'primeng/dropdown';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PanelModule } from 'primeng/panel';
+
+import { filter, mergeMap, map, take, toArray } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @Component({
+    standalone: true,
+    imports: [
+        CommonModule,
+        DropdownModule,
+        FormsModule,
+        DotIconModule,
+        DotPipesModule,
+        ButtonModule,
+        OverlayPanelModule,
+        PanelModule,
+        DividerModule
+    ],
+    providers: [DotDevicesService],
     selector: 'dot-device-selector-seo',
     templateUrl: './dot-device-selector-seo.component.html',
     styleUrls: ['./dot-device-selector-seo.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotDeviceSelectorSeoComponent implements OnInit, OnChanges {
+export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
     @HostBinding('class.disabled') disabled: boolean;
 
     options: DotDevice[] = [];
     placeholder = '';
-    defaultOptions = [
-        { name: 'Mobile Portrait', icon: 'pi pi-mobile', cssHeight: '390', cssWidth: '844' },
-        { name: 'Mobile Landscape', icon: 'pi pi-mobile', cssHeight: '844', cssWidth: '390' },
-        { name: 'HD Monitor', icon: 'pi pi-desktop', cssHeight: '1920', cssWidth: '1080' },
-        { name: '4K Monitor', icon: 'pi pi-desktop', cssHeight: '3840', cssWidth: '2160' },
-        { name: 'Table Portrait', icon: 'pi pi-tablet', cssHeight: '820', cssWidth: '1180' },
-        { name: 'Table Landscape', icon: 'pi pi-tablet', cssHeight: '1180', cssWidth: '820' }
+    defaultOptions: DotDevice[] = [
+        {
+            name: 'Mobile Portrait',
+            icon: 'pi pi-mobile',
+            cssHeight: '390',
+            cssWidth: '844',
+            inode: '0',
+            identifier: ''
+        },
+        {
+            name: 'Mobile Landscape',
+            icon: 'pi pi-mobile',
+            cssHeight: '844',
+            cssWidth: '390',
+            inode: '0',
+            identifier: ''
+        },
+        {
+            name: 'HD Monitor',
+            icon: 'pi pi-desktop',
+            cssHeight: '1920',
+            cssWidth: '1080',
+            inode: '0',
+            identifier: ''
+        },
+        {
+            name: '4K Monitor',
+            icon: 'pi pi-desktop',
+            cssHeight: '3840',
+            cssWidth: '2160',
+            inode: '0',
+            identifier: ''
+        },
+        {
+            name: 'Table Portrait',
+            icon: 'pi pi-tablet',
+            cssHeight: '820',
+            cssWidth: '1180',
+            inode: '0',
+            identifier: ''
+        },
+        {
+            name: 'Table Landscape',
+            icon: 'pi pi-tablet',
+            cssHeight: '1180',
+            cssWidth: '820',
+            inode: '0',
+            identifier: ''
+        }
     ];
 
     constructor(
@@ -46,12 +109,6 @@ export class DotDeviceSelectorSeoComponent implements OnInit, OnChanges {
 
     ngOnInit() {
         this.loadOptions();
-    }
-
-    ngOnChanges(changes: SimpleChanges) {
-        if (changes.value && !changes.value.firstChange) {
-            this.loadOptions();
-        }
     }
 
     /**
@@ -67,7 +124,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit, OnChanges {
             .get()
             .pipe(
                 take(1),
-                flatMap((devices: DotDevice[]) => devices),
+                mergeMap((devices: DotDevice[]) => devices),
                 filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
                 toArray(),
                 map((devices: DotDevice[]) =>
@@ -80,14 +137,8 @@ export class DotDeviceSelectorSeoComponent implements OnInit, OnChanges {
             .subscribe(
                 (devices: DotDevice[]) => {
                     this.options = devices;
-                    this.disabled = this.options.length < 2;
-
-                    if (this.disabled) {
-                        this.placeholder = 'No devices';
-                    }
                 },
                 () => {
-                    this.disabled = true;
                     this.placeholder = 'No devices';
                 },
                 () => {

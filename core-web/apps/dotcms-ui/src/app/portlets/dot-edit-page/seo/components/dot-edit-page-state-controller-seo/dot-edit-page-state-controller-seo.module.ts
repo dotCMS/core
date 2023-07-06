@@ -12,7 +12,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info-seo.component';
 import { DotEditPageStateControllerSeoComponent } from './dot-edit-page-state-controller-seo.component';
 
-import { DotDeviceSelectorSeoModule } from '../dot-device-selector-seo/dot-device-selector-seo.module';
+import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-device-selector-seo.component';
 
 @NgModule({
     declarations: [DotEditPageStateControllerSeoComponent, DotEditPageLockInfoSeoComponent],
@@ -25,7 +25,7 @@ import { DotDeviceSelectorSeoModule } from '../dot-device-selector-seo/dot-devic
         DotPipesModule,
         TooltipModule,
         ButtonModule,
-        DotDeviceSelectorSeoModule
+        DotDeviceSelectorSeoComponent
     ]
 })
 export class DotEditPageStateControllerSeoModule {}
