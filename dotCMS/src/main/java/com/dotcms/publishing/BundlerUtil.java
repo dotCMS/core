@@ -308,13 +308,6 @@ public class BundlerUtil {
         }
     }
 
-    private static ObjectMapper getObjectMapper() {
-        if (objectMapper == null) {
-            objectMapper = new ObjectMapper();
-        }
-        return objectMapper;
-    }
-
     private static ObjectMapper getCustomMapper() {
         if (customMapper == null) {
             customMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
@@ -324,7 +317,7 @@ public class BundlerUtil {
 
 
     public static void objectToJSON( final Object obj, final OutputStream outputStream) {
-        final ObjectMapper mapper = getObjectMapper();
+        final ObjectMapper mapper = getCustomMapper();
 
         try {
             mapper.writeValue(outputStream, obj);
@@ -384,7 +377,7 @@ public class BundlerUtil {
      * @return A deserialized object
      */
     public static <T> T jsonToObject(File f, Class<T> clazz){
-    	final ObjectMapper mapper = getObjectMapper();
+    	final ObjectMapper mapper = getCustomMapper();
 
     	BufferedInputStream input = null;
 		try {

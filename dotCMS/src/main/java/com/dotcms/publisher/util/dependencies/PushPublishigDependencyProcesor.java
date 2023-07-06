@@ -805,15 +805,15 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                                 experiment.pageId()));
             }
 
-//            final List<Contentlet> contentOnVariants = APILocator.getContentletAPI().getAllContentByVariants(user, false,
-//                            experiment.trafficProportion().variants().stream()
-//                                    .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
-//                                    .toArray(String[]::new)).stream()
-//                    .filter((contentlet -> Try.of(contentlet::isWorking)
-//                            .getOrElse(false))).collect(Collectors.toList());
-//
-//            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentOnVariants,
-//                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
+            final List<Contentlet> contentOnVariants = APILocator.getContentletAPI().getAllContentByVariants(user, false,
+                            experiment.trafficProportion().variants().stream()
+                                    .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
+                                    .toArray(String[]::new)).stream()
+                    .filter((contentlet -> Try.of(contentlet::isWorking)
+                            .getOrElse(false))).collect(Collectors.toList());
+
+            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentOnVariants,
+                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
 
         } catch (final DotDataException | DotSecurityException e) {
             Logger.error(this, String.format("An error occurred when processing dependencies on Experiment '%s' [%s]: %s",

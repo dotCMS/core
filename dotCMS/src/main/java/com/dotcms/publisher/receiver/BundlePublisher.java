@@ -11,6 +11,7 @@ import com.dotcms.enterprise.publishing.remote.handler.ContainerHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentTypeHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentWorkflowHandler;
+import com.dotcms.enterprise.publishing.remote.handler.ExperimentHandler;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandler;
 import com.dotcms.enterprise.publishing.remote.handler.HostHandler;
 import com.dotcms.enterprise.publishing.remote.handler.LanguageHandler;
@@ -125,6 +126,7 @@ public class BundlePublisher extends Publisher {
         handlers.add(new TemplateHandler(config));
         handlers.add(new LanguageHandler(config));
         handlers.add(new LanguageVariablesHandler(config));
+        handlers.add(new ExperimentHandler(config));
         handlers.add(new ContentHandler(config));
         handlers.add(new ContentWorkflowHandler(config));
         handlers.add(new OSGIHandler(config));

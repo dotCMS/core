@@ -12,8 +12,11 @@ import com.dotmarketing.portlets.rules.model.Rule;
  */
 public class ExperimentWrapper {
 
-	private Experiment experiment = null;
+	private Experiment experiment;
 	private Operation operation = null;
+
+	public ExperimentWrapper() {
+	}
 
 	/**
 	 * Builds a wrapper for the specified {@link Experiment} object.
