@@ -71,7 +71,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
 
         this.saveTemplateDebounce();
         this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
-        this.saveChangesBeforeLeave();
+        this.subscribeOnChangeBeforeLeaveHandler();
     }
 
     ngOnDestroy() {
@@ -226,7 +226,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
      * @private
      * @memberof DotEditLayoutComponent
      */
-    private saveChangesBeforeLeave(): void {
+    private subscribeOnChangeBeforeLeaveHandler(): void {
         this.dotEditLayoutService.closeEditLayout$
             .pipe(takeUntil(this.destroy$))
             .subscribe((res) => {
