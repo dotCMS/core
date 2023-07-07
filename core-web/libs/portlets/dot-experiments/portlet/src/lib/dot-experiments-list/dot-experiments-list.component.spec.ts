@@ -6,17 +6,16 @@ import {
     SpyObject
 } from '@ngneat/spectator/jest';
 import { provideComponentStore } from '@ngrx/component-store';
+import { MockModule } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
-import { DotCurrentUserService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock, LoggerService } from '@dotcms/dotcms-js';
+import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -26,7 +25,6 @@ import {
     getExperimentAllMocks,
     getExperimentMock
 } from '@dotcms/utils-testing';
-import { DotCurrentUserServiceMock } from '@portlets/dot-starter/dot-starter-resolver.service.spec';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -68,7 +66,7 @@ describe('ExperimentsListComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsListComponent,
         componentProviders: [provideComponentStore(DotExperimentsListStore)],
-        imports: [DotAddToBundleModule, HttpClientTestingModule],
+        imports: [MockModule(DotAddToBundleModule)],
         providers: [
             ConfirmationService,
             mockProvider(DotExperimentsStore, DotExperimentsStoreMock),
@@ -84,10 +82,7 @@ describe('ExperimentsListComponent', () => {
             {
                 provide: ActivatedRoute,
                 useClass: ActivatedRouteListStoreMock
-            },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
-            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
-            mockProvider(LoggerService)
+            }
         ]
     });
 
@@ -239,7 +234,7 @@ describe('ExperimentsListComponent', () => {
 
         expect(addToBundle.assetIdentifier).toEqual('123');
 
-        addToBundle.close();
+        addToBundle.cancel.emit(true);
 
         spectator.detectComponentChanges();
 

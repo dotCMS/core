@@ -5,10 +5,10 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { MockModule } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, NgModule, Output } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -19,12 +19,7 @@ import { Menu } from 'primeng/menu';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
-import {
-    DotCurrentUserService,
-    DotMessageService,
-    DotSessionStorageService
-} from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock, LoggerService } from '@dotcms/dotcms-js';
+import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -33,7 +28,6 @@ import {
     getExperimentMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotCurrentUserServiceMock } from '@portlets/dot-starter/dot-starter-resolver.service.spec';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
@@ -68,6 +62,29 @@ const ActivatedRouteMock = {
     },
     parent: { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA }
 };
+
+// TODO: Use ng-mocks to mock the component automatically
+@Component({
+    selector: 'dot-add-to-bundle',
+    template: 'chart - mocked component'
+})
+// eslint-disable-next-line @angular-eslint/component-class-suffix
+class DotAddToBundleComponentMock {
+    @Input()
+    assetIdentifier: string;
+    @Output() cancel = new EventEmitter<boolean>();
+    options: unknown;
+
+    close(): void {
+        this.cancel.emit(true);
+    }
+}
+
+@NgModule({
+    declarations: [DotAddToBundleComponentMock],
+    exports: [DotAddToBundleComponentMock]
+})
+export class DotAddToBundleModuleMock {}
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'Scheduling'
@@ -107,7 +124,8 @@ describe('DotExperimentsConfigurationComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationComponent,
         componentProviders: [DotExperimentsConfigurationStore],
-        imports: [DotAddToBundleModule, HttpClientTestingModule],
+        imports: [MockModule(DotAddToBundleModule)],
+
         providers: [
             ConfirmationService,
             {
@@ -118,9 +136,6 @@ describe('DotExperimentsConfigurationComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
-            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
-            mockProvider(LoggerService),
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
             mockProvider(Router),
@@ -205,6 +220,8 @@ describe('DotExperimentsConfigurationComponent', () => {
 
         spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu')), 'click');
         spectator.detectComponentChanges();
+
+        //Add to bundle
         spectator.query(Menu).model[3].command();
 
         spectator.detectComponentChanges();
@@ -213,7 +230,7 @@ describe('DotExperimentsConfigurationComponent', () => {
 
         expect(addToBundle.assetIdentifier).toEqual(EXPERIMENT_MOCK.identifier);
 
-        addToBundle.close();
+        addToBundle.cancel.emit(true);
 
         spectator.detectComponentChanges();
 
