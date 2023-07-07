@@ -22,7 +22,7 @@ import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotDevice,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageMode,
     DotPageRenderState,
     DotPersona
@@ -192,7 +192,7 @@ describe('DotPageStateService', () => {
 
             expect(dotExperimentsService.getByStatus).toHaveBeenCalledWith(
                 '123',
-                DotExperimentStatusList.RUNNING
+                DotExperimentStatus.RUNNING
             );
 
             service.state$.subscribe((state: DotPageRenderState) => {

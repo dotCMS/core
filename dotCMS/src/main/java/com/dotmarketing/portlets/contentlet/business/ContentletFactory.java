@@ -17,7 +17,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.elasticsearch.ElasticsearchException;
@@ -391,6 +390,16 @@ public abstract class ContentletFactory {
      * @throws DotSecurityException
      */
     public abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, final Integer maxResults) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Retrieves all versions for a list of contentlet identifiers
+	 * @param identifiers
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public abstract List<Contentlet> findLiveOrWorkingVersions(final Set<String> identifiers)
+			throws DotDataException, DotSecurityException;
 
 	/**
 	 * 

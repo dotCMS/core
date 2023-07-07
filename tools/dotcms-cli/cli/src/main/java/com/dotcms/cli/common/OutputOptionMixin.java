@@ -1,22 +1,17 @@
 package com.dotcms.cli.common;
 
-import static io.quarkus.devtools.messagewriter.MessageIcons.ERROR_ICON;
-import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
-
-import com.dotcms.api.provider.ClientObjectMapper;
-import com.dotcms.api.provider.YAMLMapperSupplier;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.devtools.messagewriter.MessageWriter;
-
-import java.io.File;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.ColorScheme;
 import picocli.CommandLine.Model.CommandSpec;
+
+import java.io.PrintWriter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+import static io.quarkus.devtools.messagewriter.MessageIcons.ERROR_ICON;
+import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
 
 public class OutputOptionMixin implements MessageWriter {
 
@@ -84,6 +79,15 @@ public class OutputOptionMixin implements MessageWriter {
 
     public boolean isAnsiEnabled() {
         return CommandLine.Help.Ansi.AUTO.enabled();
+    }
+
+    public void print(String text) {
+        out().print(colorScheme().ansi().new Text(text, colorScheme()));
+        out().flush(); // print is not flushing like println does
+    }
+
+    public void println(String text) {
+        out().println(colorScheme().ansi().new Text(text, colorScheme()));
     }
 
     public void printText(String... text) {

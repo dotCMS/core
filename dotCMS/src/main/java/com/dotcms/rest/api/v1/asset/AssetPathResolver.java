@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.asset;
 
 import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.DOUBLE_SLASH;
 import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -51,6 +50,20 @@ public class AssetPathResolver {
      * @throws DotSecurityException
      */
     public ResolvedAssetAndPath resolve(final String url, final User user)
+            throws DotDataException, DotSecurityException{
+       return resolve(url, user, false);
+    }
+
+    /**
+     * Main entry point for resolving a path to an asset. This method will attempt to resolve the path to a folder or
+     * @param url
+     * @param user
+     * @param createMissingFolders
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public ResolvedAssetAndPath resolve(final String url, final User user, final boolean createMissingFolders)
             throws DotDataException, DotSecurityException {
 
         try {
@@ -68,10 +81,10 @@ public class AssetPathResolver {
             }
 
             //This line determines if the path is a folder
-            final Optional<Folder> folder = resolveFolder(path, host, user);
+            final Optional<Folder> folder = resolveExistingFolder(path, host, user);
             if(folder.isEmpty()){
                 //if we've got this far we need to verify if the path is an asset. The folder will be expected to be the parent folder
-                Optional<FolderAndAsset> folderAndAsset = resolveAssetAndFolder(uri.getPath(), host, user);
+                Optional<FolderAndAsset> folderAndAsset = resolveAssetAndFolder(uri.getPath(), host, user, createMissingFolders);
                 if(folderAndAsset.isEmpty()){
                     throw new NotFoundInDbException(String.format("Unable to determine a valid folder or asset from uri: [%s].", url));
                 }
@@ -129,7 +142,7 @@ public class AssetPathResolver {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Optional<Folder> resolveFolder(final String rawPath, final Host host, final User user) throws DotDataException, DotSecurityException {
+    Optional<Folder> resolveExistingFolder(final String rawPath, final Host host, final User user) throws DotDataException, DotSecurityException {
         Preconditions.checkNotEmpty(rawPath,IllegalArgumentException.class, String.format("Failed determining path from [%s].", rawPath));
         String path = BLANK.equals(rawPath) ? FORWARD_SLASH : rawPath;
         path = !path.endsWith(FORWARD_SLASH) ? path + FORWARD_SLASH : path;
@@ -151,7 +164,7 @@ public class AssetPathResolver {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Optional<FolderAndAsset> resolveAssetAndFolder(final String rawPath, final Host host, final User user)
+    Optional<FolderAndAsset> resolveAssetAndFolder(final String rawPath, final Host host, final User user, final boolean createMissingFolder)
             throws DotDataException, DotSecurityException {
         final String startsWithForwardSlash = "^\\/[a-zA-Z0-9\\.\\-]+$";
         // if our path starts with / followed by a string  then we're looking at file asset in the root folder
@@ -169,13 +182,21 @@ public class AssetPathResolver {
 
         final String parentFolderPath = Try.of(()-> rawPath.substring(0, index)).getOrNull();
         final String assetName = Try.of(()->rawPath.substring(index + 1)).getOrNull();
-        final Folder parentFolder = folderAPI.findFolderByPath(parentFolderPath + FORWARD_SLASH, host, user, false);
+        final String folderPath = parentFolderPath + FORWARD_SLASH;
+        final Folder parentFolder = folderAPI.findFolderByPath(folderPath, host, user, false);
 
         if (null != parentFolder && UtilMethods.isSet(parentFolder.getInode())) {
             return Optional.of(
                     FolderAndAsset.builder().folder(parentFolder).asset(assetName).build()
             );
         }
+
+       if(createMissingFolder){
+           final Folder folder = folderAPI.createFolders(folderPath, host, user, false);
+           return Optional.of(
+                   FolderAndAsset.builder().folder(folder).asset(assetName).build()
+           );
+       }
 
         return Optional.empty();
     }

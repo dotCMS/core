@@ -9,13 +9,13 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperimentStatusList, ExperimentSteps } from '@dotcms/dotcms-models';
+import { DotExperimentStatus, ExperimentSteps } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
@@ -54,7 +54,8 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
             mockProvider(DotExperimentsService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(ActivatedRoute, ACTIVE_ROUTE_MOCK_CONFIG),
-            mockProvider(MessageService)
+            mockProvider(MessageService),
+            mockProvider(ConfirmationService)
         ]
     });
 
@@ -116,7 +117,7 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         dotExperimentsService.getById.mockReturnValue(
             of({
                 ...EXPERIMENT_MOCK,
-                ...{ status: DotExperimentStatusList.RUNNING }
+                ...{ status: DotExperimentStatus.RUNNING }
             })
         );
 
