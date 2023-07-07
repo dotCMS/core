@@ -43,3 +43,5 @@ export interface DotTemplate {
     selectedimage?: string;
     themeId?: string;
 }
+
+export type DotTemplateBuilderTemplate = Pick<DotTemplate, 'layout' | 'containers'>;

@@ -30,7 +30,7 @@ export const MAX_INPUT_TITLE_LENGTH = 50;
 export const MAX_INPUT_DESCRIPTIVE_LENGTH = 255;
 
 // Keep the order of this enum is important to respect the order of the experiment listing.
-export enum DotExperimentStatusList {
+export enum DotExperimentStatus {
     RUNNING = 'RUNNING',
     SCHEDULED = 'SCHEDULED',
     DRAFT = 'DRAFT',
@@ -41,46 +41,79 @@ export enum DotExperimentStatusList {
 export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
         label: 'draft',
-        value: DotExperimentStatusList.DRAFT
+        value: DotExperimentStatus.DRAFT
     },
     {
         label: 'running',
-        value: DotExperimentStatusList.RUNNING
+        value: DotExperimentStatus.RUNNING
     },
     {
         label: 'ended',
-        value: DotExperimentStatusList.ENDED
+        value: DotExperimentStatus.ENDED
     },
     {
         label: 'archived',
-        value: DotExperimentStatusList.ARCHIVED
+        value: DotExperimentStatus.ARCHIVED
     },
     {
         label: 'scheduled',
-        value: DotExperimentStatusList.SCHEDULED
+        value: DotExperimentStatus.SCHEDULED
     }
 ];
 
-export const GoalsConditionsParametersList: Array<DotDropdownSelectOption<GOAL_PARAMETERS>> = [
-    {
-        label: 'experiments.goal.conditions.params.url.label',
-        value: GOAL_PARAMETERS.URL,
-        inactive: false
-    }
-];
+export const GoalsConditionsParametersListByType: Partial<
+    Record<GOAL_TYPES, Array<DotDropdownSelectOption<GOAL_PARAMETERS>>>
+> = {
+    [GOAL_TYPES.URL_PARAMETER]: [
+        {
+            label: 'experiments.goal.conditions.params.query_param.label',
+            value: GOAL_PARAMETERS.QUERY_PARAM,
+            inactive: false
+        }
+    ],
+    [GOAL_TYPES.REACH_PAGE]: [
+        {
+            label: 'experiments.goal.conditions.params.url.label',
+            value: GOAL_PARAMETERS.URL,
+            inactive: false
+        }
+    ]
+};
 
-export const GoalsConditionsOperatorsList: Array<DotDropdownSelectOption<GOAL_OPERATORS>> = [
-    {
-        label: 'experiments.goal.conditions.operators.contains.label',
-        value: GOAL_OPERATORS.CONTAINS,
-        inactive: false
-    },
-    {
-        label: 'experiments.goal.conditions.operators.equals.label',
-        value: GOAL_OPERATORS.EQUALS,
-        inactive: false
-    }
-];
+type SelectOptionsOperators = Array<DotDropdownSelectOption<GOAL_OPERATORS>>;
+export const GoalsConditionsOperatorsListByType: Partial<
+    Record<GOAL_TYPES, SelectOptionsOperators>
+> = {
+    [GOAL_TYPES.URL_PARAMETER]: [
+        {
+            label: 'experiments.goal.conditions.operators.contains.label',
+            value: GOAL_OPERATORS.CONTAINS,
+            inactive: false
+        },
+        {
+            label: 'experiments.goal.conditions.operators.equals.label',
+            value: GOAL_OPERATORS.EQUALS,
+            inactive: false
+        },
+        {
+            label: 'experiments.goal.conditions.operators.exists.label',
+            value: GOAL_OPERATORS.EXISTS,
+            inactive: false
+        }
+    ],
+    [GOAL_TYPES.REACH_PAGE]: [
+        {
+            label: 'experiments.goal.conditions.operators.contains.label',
+            value: GOAL_OPERATORS.CONTAINS,
+            inactive: false
+        },
+        {
+            label: 'experiments.goal.conditions.operators.equals.label',
+            value: GOAL_OPERATORS.EQUALS,
+            inactive: false
+        }
+    ]
+};
 
 export enum SIDEBAR_STATUS {
     OPEN = 'OPEN',
@@ -113,6 +146,14 @@ export const GOALS_METADATA_MAP: Record<GOAL_TYPES, { label: string; description
     [GOAL_TYPES.CLICK_ON_ELEMENT]: {
         label: 'experiments.goal.click_on_element.name',
         description: 'experiments.goal.click_on_element.description'
+    },
+    [GOAL_TYPES.URL_PARAMETER]: {
+        label: 'experiments.goal.url_parameter.name',
+        description: 'experiments.goal.url_parameter.description'
+    },
+    [GOAL_TYPES.EXIT_RATE]: {
+        label: 'experiments.goal.exit_rate.name',
+        description: 'experiments.goal.exit_rate.description'
     }
 };
 
@@ -124,6 +165,21 @@ export const daysOfTheWeek = [
     'Thursday',
     'Friday',
     'Saturday'
+];
+
+export const MonthsOfTheYear = [
+    'months.january.short',
+    'months.february.short',
+    'months.march.short',
+    'months.april.short',
+    'months.may.short',
+    'months.june.short',
+    'months.july.short',
+    'months.august.short',
+    'months.september.short',
+    'months.october.short',
+    'months.november.short',
+    'months.december.short'
 ];
 
 export type SummaryLegend = { icon: string; legend: string };
@@ -168,3 +224,26 @@ export const ReportSummaryLegendByBayesianStatus: Record<BayesianLegendStatus, S
         legend: 'experiments.summary.suggested-winner.no-enough-sessions'
     }
 };
+
+type DotExperimentListAction = 'delete' | 'configuration' | 'archive' | 'addToBundle';
+export const AllowedActionsByExperimentStatus: Record<
+    DotExperimentListAction,
+    Array<DotExperimentStatus>
+> = {
+    ['delete']: [DotExperimentStatus.DRAFT, DotExperimentStatus.SCHEDULED],
+    ['configuration']: [
+        DotExperimentStatus.RUNNING,
+        DotExperimentStatus.ENDED,
+        DotExperimentStatus.ARCHIVED
+    ],
+    ['archive']: [DotExperimentStatus.ENDED],
+    ['addToBundle']: [
+        DotExperimentStatus.DRAFT,
+        DotExperimentStatus.RUNNING,
+        DotExperimentStatus.ENDED,
+        DotExperimentStatus.ARCHIVED,
+        DotExperimentStatus.SCHEDULED
+    ]
+};
+
+export const CONFIGURATION_CONFIRM_DIALOG_KEY = 'confirmDialog';

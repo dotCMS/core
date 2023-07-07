@@ -1,8 +1,10 @@
 <!--Advance template support was removed on commit https://github.com/dotCMS/core-web/pull/589-->
 <ng-template #enabledComponent>
     <dotcms-template-builder
-        [templateLayout]="pageState.layout"
-        (layoutChange)="onLayoutChange($event)"
+        [layout]="pageState.layout"
+        [themeId]="pageState.template.theme"
+        [containerMap]="pageState.containerMap"
+        (templateChange)="nextUpdateTemplate($event)"
         data-testId="new-template-builder"
     >
         <dot-global-message toolbar-left></dot-global-message>

@@ -9,10 +9,13 @@ import {
     DotPageRenderService,
     DotSessionStorageService
 } from '@dotcms/data-access';
+import {
+    DotExperimentExperimentResolver,
+    DotExperimentsConfigResolver,
+    DotExperimentsService
+} from '@dotcms/portlets/dot-experiments/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotExperimentExperimentResolver } from '@portlets/dot-experiments/shared/resolvers/dot-experiment-experiment.resolver';
-import { DotExperimentsConfigResolver } from '@portlets/dot-experiments/shared/resolvers/dot-experiments-config-resolver';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotEnterpriseLicenseResolver } from '@portlets/shared/resolvers/dot-enterprise-license-resolver.service';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
@@ -44,7 +47,8 @@ import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/do
         DotSessionStorageService,
         DotPageLayoutService,
         DotFeatureFlagResolver,
-        DotFavoritePageService
+        DotFavoritePageService,
+        DotEnterpriseLicenseResolver
     ]
 })
 export class DotEditPageModule {}

@@ -90,6 +90,7 @@ import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
@@ -231,15 +232,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
     }
 
-    private void addRefererCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
-
-        final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
-                page, "referer");
-
-        final Goals newGoal = createNewGoals(goals, refererCondition);
-        builder.goals(newGoal);
-    }
-
     private void addUrlCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
 
         final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
@@ -263,18 +255,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .stream()
                 .anyMatch(condition ->conditionName .equals(condition.parameter()));
     }
-    private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(final HTMLPageAsset page,
+    private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(
+            final HTMLPageAsset page,
             final String conditionName) {
 
-        try {
             return com.dotcms.analytics.metrics.Condition.builder()
                     .parameter(conditionName)
-                    .operator(Operator.CONTAINS)
-                    .value(page.getURI().replace("index", ""))
+                    .operator(Operator.REGEX)
+                    .value(ExperimentUrlPatternCalculator.INSTANCE.calculateUrlRegexPattern(page))
                     .build();
-        } catch (DotDataException e) {
-            throw new RuntimeException(e);
-        }
+
     }
 
     private void saveTargetingConditions(final Experiment experiment, final User user)
@@ -908,10 +898,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
      * </ul>
      *
      * @param experiment
+     * @param user
      * @return
      */
     @Override
-    public ExperimentResults getResults(final Experiment experiment) throws DotDataException, DotSecurityException {
+    public ExperimentResults getResults(final Experiment experiment, final User user) throws DotDataException, DotSecurityException {
         final String experimentId = experiment.id()
             .orElseThrow(() -> new IllegalArgumentException("The Experiment must have an Identifier"));
         final Experiment experimentFromDataBase = find(experimentId, APILocator.systemUser())
@@ -921,7 +912,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
             "The Experiment must be RUNNING or ENDED to get results");
 
-        final List<BrowserSession> events = getEvents(experiment);
+        final List<BrowserSession> events = getEvents(experiment, user);
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
             experiment, events);
 
@@ -959,11 +950,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public List<BrowserSession> getEvents(final Experiment experiment) {
+    public List<BrowserSession> getEvents(final Experiment experiment, final User user) throws DotDataException {
         try{
-            final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
-
-            final AnalyticsApp analyticsApp = analyticsHelper.appFromHost(currentHost);
+            final AnalyticsApp analyticsApp = resolveAnalyticsApp(user);
 
             final CubeJSClient cubeClient = new CubeJSClient(
                     analyticsApp.getAnalyticsProperties().analyticsReadUrl());
@@ -1005,6 +994,21 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             return sessions;
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private AnalyticsApp resolveAnalyticsApp(final User user) throws DotDataException, DotSecurityException {
+        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
+        try {
+            return analyticsHelper.appFromHost(currentHost);
+        } catch (final IllegalStateException e) {
+            throw new DotDataException(
+                Try.of(() ->
+                    LanguageUtil.get(
+                        user,
+                        "analytics.app.not.configured",
+                        AnalyticsHelper.extractMissingAnalyticsProps(e)))
+                    .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())));
         }
     }
 

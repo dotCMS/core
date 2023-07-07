@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
+/**
+ * Resolved Asset And Path is a json representation of a resolved asset and path
+ */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
 @JsonDeserialize(as = ResolvedAssetAndPath.Builder.class)

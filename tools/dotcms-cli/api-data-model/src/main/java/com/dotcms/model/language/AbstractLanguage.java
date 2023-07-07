@@ -14,13 +14,16 @@ public interface AbstractLanguage {
 
     Optional<Long> id();
 
-    String languageCode();
+    Optional<String> languageCode();
 
-    String countryCode();
+    Optional<String> countryCode();
 
-    String language();
+    Optional<String> language();
 
-    String country();
+    Optional<String> country();
 
-    boolean defaultLanguage();
+    Optional<Boolean> defaultLanguage();
+
+    String isoCode();
+
 }

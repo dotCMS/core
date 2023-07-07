@@ -3,5 +3,15 @@
         display: block;
         height: 100%;
         overflow: auto;
+        padding-right: 5rem;
+        overflow-y: hidden;
+    }
+}
+
+::ng-deep {
+    dotcms-template-builder {
+        .layout-toolbar.p-toolbar {
+            padding-right: 0;
+        }
     }
 }

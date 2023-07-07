@@ -1,60 +1,60 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 import { of } from 'rxjs';
 
-import { NgFor, AsyncPipe } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { NgFor, NgIf, AsyncPipe, NgClass } from '@angular/common';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { DynamicDialogModule, DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotContainersService, DotMessageService } from '@dotcms/data-access';
-import { DotContainerOptionsDirective, DotMessagePipeModule } from '@dotcms/ui';
-import { DotContainersServiceMock } from '@dotcms/utils-testing';
+import {
+    DotMessageService,
+    DotContainersService,
+    DotEventsService,
+    PaginatorService
+} from '@dotcms/data-access';
+import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotMessagePipeModule } from '@dotcms/ui';
+import {
+    DotContainersServiceMock,
+    CoreWebServiceMock,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
 
-import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
-import { AddWidgetComponent } from './components/add-widget/add-widget.component';
-import { RemoveConfirmDialogComponent } from './components/remove-confirm-dialog/remove-confirm-dialog.component';
-import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
-import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
-import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
-import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
-import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
+import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import {
+    CONTAINER_MAP_MOCK,
     DOT_MESSAGE_SERVICE_TB_MOCK,
     FULL_DATA_MOCK,
     MOCK_STYLE_CLASSES_FILE
 } from './utils/mocks';
 
 export default {
-    title: 'Template Builder',
+    title: 'Library/Template Builder',
     component: TemplateBuilderComponent,
     decorators: [
         moduleMetadata({
             imports: [
                 NgFor,
+                NgIf,
                 AsyncPipe,
-                TemplateBuilderRowComponent,
-                AddWidgetComponent,
-                TemplateBuilderBoxComponent,
+                NgClass,
+                TemplateBuilderComponentsModule,
                 DotMessagePipeModule,
-                RemoveConfirmDialogComponent,
                 BrowserAnimationsModule,
-                TemplateBuilderBackgroundColumnsComponent,
-                TemplateBuilderSectionComponent,
-                AddStyleClassesDialogComponent,
                 DynamicDialogModule,
                 HttpClientModule,
                 ButtonModule,
-                TemplateBuilderActionsComponent,
                 ToolbarModule,
                 DividerModule,
-                DotContainerOptionsDirective
+                DropdownModule
             ],
             providers: [
                 DotTemplateBuilderStore,
@@ -72,8 +72,20 @@ export default {
                 {
                     provide: HttpClient,
                     useValue: {
-                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE)
+                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE),
+                        request: () => of({})
                     }
+                },
+                {
+                    provide: PaginatorService
+                },
+                {
+                    provide: SiteService,
+                    useValue: new SiteServiceMock()
+                },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: DotEventsService
                 }
             ]
         })
@@ -83,7 +95,11 @@ export default {
 const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponent) => ({
     props: args,
     template: `
-        <dotcms-template-builder [templateLayout]="templateLayout">
+        <dotcms-template-builder
+            [layout]="layout"
+            [themeId]="themeId"
+            [containerMap]="containerMap"
+        >
             <button
                 [label]="'Publish'"
                 toolbar-actions-right
@@ -97,5 +113,16 @@ const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponen
 export const Base = Template.bind({});
 
 Base.args = {
-    templateLayout: { body: FULL_DATA_MOCK }
+    layout: {
+        body: FULL_DATA_MOCK,
+        header: true,
+        footer: false,
+        sidebar: {
+            location: 'left',
+            width: 'medium',
+            containers: []
+        }
+    },
+    themeId: '123',
+    containerMap: CONTAINER_MAP_MOCK
 };

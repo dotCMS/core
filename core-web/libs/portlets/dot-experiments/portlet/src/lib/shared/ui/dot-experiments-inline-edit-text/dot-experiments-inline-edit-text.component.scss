@@ -1,0 +1,64 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    min-height: 2.2rem;
+    flex-wrap: wrap;
+    align-content: center;
+    position: relative;
+
+    .text-muted {
+        color: $color-palette-gray-600;
+    }
+
+    form {
+        &.small {
+            i {
+                font-size: $font-size-xs;
+                margin-top: -0.375rem;
+            }
+        }
+    }
+
+    dot-field-validation-message {
+        position: absolute;
+        bottom: -1.125rem;
+    }
+
+    &::ng-deep {
+        .p-disabled,
+        .p-component {
+            width: 100%;
+
+            &:disabled {
+                opacity: 0.8;
+            }
+        }
+
+        p-inplace .p-inplace {
+            .p-inplace-display {
+                padding: 0;
+                white-space: pre-wrap;
+
+                i {
+                    margin-left: $spacing-1;
+                    margin-right: $spacing-1;
+                    font-size: $font-size-sm;
+                }
+
+                &.p-disabled {
+                    color: $color-palette-gray-800;
+                }
+
+                &:not(.p-disabled):hover {
+                    background: transparent;
+                }
+            }
+
+            .p-inplace-content {
+                display: flex;
+                flex-direction: column;
+            }
+        }
+    }
+}
