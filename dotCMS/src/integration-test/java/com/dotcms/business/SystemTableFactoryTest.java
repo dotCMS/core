@@ -5,14 +5,17 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDuplicateDataException;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -49,7 +52,7 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
         final String value1 = "value1";
         final String value2 = "value2";
 
-        final SystemTableFactory systemTableFactory = null;
+        final SystemTableFactory systemTableFactory = FactoryLocator.getSystemTableFactory();
 
         if (null != systemTableFactory) {
 
@@ -86,10 +89,10 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
     @Test(expected = DotDuplicateDataException.class)
     public void test_double_insert () throws Throwable {
 
-        final String key1 = "key1";
+        final String key1 = "key13";
         final String value1 = "value1";
 
-        final SystemTableFactory systemTableFactory = null;
+        final SystemTableFactory systemTableFactory = FactoryLocator.getSystemTableFactory();
 
         if (null != systemTableFactory) {
 
@@ -120,7 +123,7 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
         final String key1 = "key10";
         final String value1 = "value1";
 
-        final SystemTableFactory systemTableFactory = null;
+        final SystemTableFactory systemTableFactory = FactoryLocator.getSystemTableFactory();
 
         if (null != systemTableFactory) {
 
@@ -142,7 +145,7 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
 
         final String key1 = "key10";
 
-        final SystemTableFactory systemTableFactory = null;
+        final SystemTableFactory systemTableFactory = FactoryLocator.getSystemTableFactory();
 
         if (null != systemTableFactory) {
 
@@ -163,27 +166,37 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
     @Test()
     public void test_find_all () throws Throwable {
 
-        final String key1 = "key1";
-        final String value1 = "value1";
-        final String key1 = "key2";
-        final String value1 = "value2";
+        final String key1 = "key11";
+        final String value1 = "value11";
+        final String key2 = "key22";
+        final String value2 = "value22";
 
-        final SystemTableFactory systemTableFactory = null;
+        final SystemTableFactory systemTableFactory = FactoryLocator.getSystemTableFactory();
 
         if (null != systemTableFactory) {
 
-            systemTableFactory.clearCache();
-            // SAVE + FIND
-            LocalTransaction.wrap(()->systemTableFactory.save(key1, value1));
-            final Optional<String> value1FromDB =  closeConn(()->systemTableFactory.find(key1));
-            Assert.assertTrue("Should return something",  value1FromDB.isPresent());
-            Assert.assertEquals(
-                    "The value previous added should be the same of the value recovery from the db with the key: " + key1,
-                    value1, value1FromDB.get());
-
-            // this should throw an exception since the key1 already exist.
-            LocalTransaction.wrap(()->systemTableFactory.save(key1, value1));
-            Assert.fail("The duplicate key should throw an exception");
+            try {
+                systemTableFactory.clearCache();
+                // SAVE + FIND
+                LocalTransaction.wrap(() -> systemTableFactory.save(key1, value1));
+                LocalTransaction.wrap(() -> systemTableFactory.save(key2, value2));
+                final Map<String, String> value1FromDB = closeConn(() -> systemTableFactory.findAll());
+                Assert.assertTrue("Should has key1", value1FromDB.containsKey(key1));
+                Assert.assertTrue("Should has key2", value1FromDB.containsKey(key2));
+                Assert.assertEquals(
+                        "The value previous added should be the same of the value recovery from the db with the key: " + key1,
+                        value1, value1FromDB.get(key1));
+                Assert.assertEquals(
+                        "The value previous added should be the same of the value recovery from the db with the key: " + key2,
+                        value2, value1FromDB.get(key2));
+            } finally {
+                try {
+                    LocalTransaction.wrap(() -> systemTableFactory.delete(key1));
+                    LocalTransaction.wrap(() -> systemTableFactory.delete(key2));
+                } catch (Throwable e) {
+                    Logger.debug(this, e.getMessage());
+                }
+            }
         }
     }
 }
