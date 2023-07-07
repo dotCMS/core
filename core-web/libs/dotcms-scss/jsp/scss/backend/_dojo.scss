@@ -78,7 +78,7 @@ select[multiple] {
             color: $white;
             line-height: $action-button-size;
             margin: 0;
-            font-size: 1.25rem;
+            font-size: $font-size-lg;
         }
 
         .dijitButtonNode {

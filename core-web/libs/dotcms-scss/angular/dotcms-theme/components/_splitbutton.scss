@@ -4,7 +4,7 @@
 .p-splitbutton {
     .p-splitbutton-menubutton {
         border-radius: 0 $border-radius-md $border-radius-md 0;
-        height: 2.5rem;
+        height: $field-height-md;
         padding: 0 $spacing-1;
         border: none;
 
@@ -19,7 +19,7 @@
     .p-splitbutton-defaultbutton {
         gap: $spacing-1;
         padding: 0 $spacing-3;
-        height: 2.5rem;
+        height: $field-height-md;
         border-radius: $border-radius-md 0 0 $border-radius-md;
         border: none;
         color: $white;
@@ -45,7 +45,7 @@
     &.p-button-lg {
         .p-splitbutton-menubutton {
             border-radius: 0 $border-radius-lg $border-radius-lg 0;
-            height: 3rem;
+            height: $field-height-lg;
 
             .p-button-icon,
             .pi {
@@ -56,7 +56,7 @@
         }
 
         .p-splitbutton-defaultbutton {
-            height: 3rem;
+            height: $field-height-lg;
             border-radius: $border-radius-lg 0 0 $border-radius-lg;
             font-size: $font-size-lg;
 
@@ -79,7 +79,7 @@
     &.p-button-sm {
         .p-splitbutton-menubutton {
             border-radius: 0 $border-radius-sm $border-radius-sm 0;
-            height: 2rem;
+            height: $field-height-sm;
             padding: 0 $spacing-0;
 
             .p-button-icon,
@@ -89,7 +89,7 @@
         }
 
         .p-splitbutton-defaultbutton {
-            height: 2rem;
+            height: $field-height-sm;
             gap: $spacing-0;
             border-radius: $border-radius-sm 0 0 $border-radius-sm;
             padding: 0 $spacing-1;

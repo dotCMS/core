@@ -8,7 +8,7 @@
 .p-button:not(.p-button-icon-only, .p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     gap: $spacing-1;
     padding: 0 $spacing-3;
-    height: 2.5rem;
+    height: $field-height-md;
     border-radius: $border-radius-md;
     border: none;
     color: $white;
@@ -31,7 +31,7 @@
     }
 
     &.p-button-lg {
-        height: 3rem;
+        height: $field-height-lg;
         border-radius: $border-radius-lg;
         font-size: $font-size-lg;
 
@@ -46,7 +46,7 @@
     }
 
     &.p-button-sm {
-        height: 2rem;
+        height: $field-height-sm;
         gap: $spacing-0;
         padding: 0 $spacing-1;
         border-radius: $border-radius-sm;
@@ -261,8 +261,8 @@ a.p-button.p-button-text {
 
 // Icon Only Buttons Sizes
 .p-button-icon-only:not(.p-splitbutton-menubutton) {
-    height: 2.5rem;
-    width: 2.5rem;
+    height: $field-height-md;
+    width: $field-height-md;
     border: none;
 
     .p-button-icon {
@@ -272,8 +272,8 @@ a.p-button.p-button-text {
     }
 
     &.p-button-sm {
-        height: 2rem;
-        width: 2rem;
+        height: $field-height-sm;
+        width: $field-height-sm;
 
         .p-button-icon {
             font-size: $font-size-md;
