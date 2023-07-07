@@ -1,7 +1,6 @@
 package com.dotcms.business;
 
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.categories.model.Category;
 
 import java.util.Map;
 
@@ -12,16 +11,44 @@ import java.util.Map;
 public abstract class SystemTableFactory  {
 
     /**
-     * 
-     * @param key
+     * Retrieve a value from the system table by key
+     * @param key {@link String}
      * @throws DotDataException
      */
-    protected abstract void find(String key) throws DotDataException;
+    protected abstract String find(String key) throws DotDataException;
 
+    /**
+     * Retrieve all the values from the system table
+     * @return
+     * @throws DotDataException
+     */
     protected abstract Map<String, String> findAll() throws DotDataException;
-    protected abstract void save(String key, String value) throws DotDataException;
-    protected abstract void update(String key, String value) throws DotDataException;
-    protected abstract void delete(Category object) throws DotDataException;
 
+    /**
+     * Create a value in the system table
+     * @param key {@link String} key, should not exist
+     * @param value {@link String} value
+     * @throws DotDataException
+     */
+    protected abstract void save(String key, String value) throws DotDataException;
+
+    /**
+     * Update a value in the system table
+     * @param key {@link String} key, should exist
+     *      * @param value {@link String} value
+     * @throws DotDataException
+     */
+    protected abstract void update(String key, String value) throws DotDataException;
+
+    /**
+     * Deletes a value from the system table
+     * @param key {@link String} key, should exist
+     * @throws DotDataException
+     */
+    protected abstract void delete(String key) throws DotDataException;
+
+    /**
+     * Clear the cache
+     */
     abstract protected  void clearCache();
 }
