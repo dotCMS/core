@@ -30,6 +30,11 @@
             />
         </ng-container>
     </div>
+    <dot-add-to-bundle
+        *ngIf="vm.addToBundleContentId"
+        [assetIdentifier]="vm.addToBundleContentId"
+        (cancel)="vm.addToBundleContentId = null"
+    />
 </ng-container>
 
 <ng-template #noExperiments>

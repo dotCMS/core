@@ -10,6 +10,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 import { tap } from 'rxjs/operators';
 
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     ComponentStatus,
     DotExperiment,
@@ -43,7 +44,8 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         DotDynamicDirective,
         DotMessagePipeModule,
         ButtonModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        DotAddToBundleModule
     ],
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],
