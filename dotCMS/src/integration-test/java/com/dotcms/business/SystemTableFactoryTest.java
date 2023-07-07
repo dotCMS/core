@@ -59,7 +59,7 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
             systemTableFactory.clearCache();
             // SAVE + FIND
             LocalTransaction.wrap(()->systemTableFactory.save(key1, value1));
-            final Optional<String> value1FromDB =  closeConn(()->systemTableFactory.find(key1));
+            final Optional<String> value1FromDB =  wrapOnReadOnlyConn(()->systemTableFactory.find(key1));
             Assert.assertTrue("Should return something",  value1FromDB.isPresent());
             Assert.assertEquals(
                     "The value previous added should be the same of the value recovery from the db with the key: " + key1,
@@ -67,14 +67,14 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
 
             // UPDATE + FIND
             LocalTransaction.wrap(()->systemTableFactory.update(key1, value2));
-            final Optional<String> value2FromDB =  closeConn(()->systemTableFactory.find(key1));
+            final Optional<String> value2FromDB =  wrapOnReadOnlyConn(()->systemTableFactory.find(key1));
             Assert.assertEquals(
                     "The value previous added should be the same of the value recovery from the db with the key: " + key1,
                     value2, value2FromDB);
 
             // DELETE + FIND
             LocalTransaction.wrap(()->systemTableFactory.delete(key1));
-            final Optional<String> value3FromDB =  closeConn(()->systemTableFactory.find(key1));
+            final Optional<String> value3FromDB =  wrapOnReadOnlyConn(()->systemTableFactory.find(key1));
             Assert.assertFalse("Should not return something",  value3FromDB.isPresent());
         }
     }
@@ -99,7 +99,7 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
             systemTableFactory.clearCache();
             // SAVE + FIND
             LocalTransaction.wrap(()->systemTableFactory.save(key1, value1));
-            final Optional<String> value1FromDB =  closeConn(()->systemTableFactory.find(key1));
+            final Optional<String> value1FromDB =  wrapOnReadOnlyConn(()->systemTableFactory.find(key1));
             Assert.assertTrue("Should return something",  value1FromDB.isPresent());
             Assert.assertEquals(
                     "The value previous added should be the same of the value recovery from the db with the key: " + key1,
@@ -180,7 +180,7 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
                 // SAVE + FIND
                 LocalTransaction.wrap(() -> systemTableFactory.save(key1, value1));
                 LocalTransaction.wrap(() -> systemTableFactory.save(key2, value2));
-                final Map<String, String> value1FromDB = closeConn(() -> systemTableFactory.findAll());
+                final Map<String, String> value1FromDB = wrapOnReadOnlyConn(() -> systemTableFactory.findAll());
                 Assert.assertTrue("Should has key1", value1FromDB.containsKey(key1));
                 Assert.assertTrue("Should has key2", value1FromDB.containsKey(key2));
                 Assert.assertEquals(

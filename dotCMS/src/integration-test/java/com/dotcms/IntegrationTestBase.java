@@ -29,7 +29,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.sql.SQLException;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -261,7 +260,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
         }
     }
 
-    protected  <T>  T closeConn (final ReturnableDelegate<T> supplier) throws Throwable {
+    protected  <T>  T wrapOnReadOnlyConn(final ReturnableDelegate<T> supplier) throws Throwable {
 
         try {
             return supplier.execute();
