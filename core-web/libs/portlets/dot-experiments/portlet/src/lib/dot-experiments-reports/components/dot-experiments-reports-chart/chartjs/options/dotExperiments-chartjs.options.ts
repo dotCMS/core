@@ -66,19 +66,17 @@ export const getDotExperimentLineChartJsOptions = ({
                 ticks: {
                     color: ChartColors.ticks.hex,
                     autoSkip: true,
-                    autoSkipPadding: 3,
-                    maxTicksLimit: 10,
-                    padding: 17
+
+                    padding: 10,
+                    align: 'center'
                 },
                 border: {
                     display: true,
-                    color: ChartColors.black
+                    color: ChartColors.xAxis.gridLine
                 },
                 grid: {
-                    display: true,
                     color: ChartColors.xAxis.gridLine,
-                    lineWidth: 0.8,
-                    drawTicks: false
+                    lineWidth: 0.8
                 }
             },
             y: {
@@ -92,7 +90,8 @@ export const getDotExperimentLineChartJsOptions = ({
                     padding: 5
                 },
                 ticks: {
-                    color: ChartColors.ticks.hex
+                    color: ChartColors.ticks.hex,
+                    precision: 0
                 },
                 border: {
                     display: true,
@@ -102,7 +101,9 @@ export const getDotExperimentLineChartJsOptions = ({
                     color: ChartColors.yAxis.gridLine,
                     lineWidth: [0.2],
                     borderDash: [8, 4]
-                }
+                },
+
+                crossAlign: 'center'
             }
         }
     };
