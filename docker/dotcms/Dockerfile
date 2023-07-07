@@ -87,7 +87,7 @@ COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
 # ----------------------------------------------
 # Stage 3:  Copy pg_dump binary
 # ----------------------------------------------
-FROM dotcms/pg-base:15.3 as pg-base
+FROM dotcms/pg-base:15 as pg-base
 
 
 # ----------------------------------------------
@@ -103,17 +103,12 @@ ARG USER_UID="65001"
 ARG USER_GID="65001"
 
 COPY --from=container-base / /
-COPY --from=pg-base /usr/local/pgsql /usr/local/pgsql
-
-# confirm that required postgres client shared libraries are present
-RUN for shared_library in `ldd /usr/local/pgsql/bin/* | awk '{print $3}' | grep '^/' | sort -u`; \
-    do [ -f $shared_library ] || exit 1; \
-    done
+COPY --from=pg-base / /
 
 # Switching to non-root user to install SDKMAN!
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
-ENV PATH=$PATH:/java/bin:/usr/local/pgsql/bin
+ENV PATH=$PATH:/java/bin
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]
