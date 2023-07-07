@@ -2,9 +2,11 @@ package com.dotcms.cli.command.files;
 
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.FilesUtils;
+import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -22,6 +24,18 @@ import java.util.List;
  * <p>This class uses the singleton pattern, and can be accessed by calling {@link #getInstance()}.
  */
 public class TreePrinter {
+
+    final String statusRegularFormat = "@|bold %s|@";
+    final String languageRegularFormat = "@|bold \uD83C\uDF10 %s|@";
+    final String folderRegularFormat = "\uD83D\uDCC2 %s";
+    final String folderDeleteFormat = "@|bold,red \uD83D\uDCC2 %s \u2716|@";
+    final String folderPushFormat = "@|bold,green \uD83D\uDCC2 %s \u2795|@";
+    final String siteRegularFormat = "@|bold %s|@";
+    final String sitePushFormat = "@|bold,green %s \u2795|@";
+    final String assetRegularFormat = "%s";
+    final String assetPushNewFormat = "@|bold,green %s \u2795|@";
+    final String assetPushModifiedFormat = "@|bold,cyan %s \u270E|@";
+    final String assetDeleteFormat = "@|bold,red %s \u2716|@";
 
     /**
      * The {@code TreePrinterHolder} class is used to implement the singleton pattern for the
@@ -41,6 +55,86 @@ public class TreePrinter {
     }
 
     private TreePrinter() {
+    }
+
+    /**
+     * Prints {@link TreeNode} structures to the provided {@link StringBuilder}.
+     * The tree structure is formatted focusing on the push data contained on each asset and folder.
+     *
+     * @param sb               the {@link StringBuilder} to append the tree structure to.
+     * @param treesNodeData    A list of pairs, where each pair represents a folder's local path structure
+     *                         and its corresponding tree node
+     * @param showEmptyFolders A boolean indicating whether to include empty folders in the tree. If
+     *                         set to true, all folders will be included. If set to false, only
+     *                         folders containing assets or having children with assets will be
+     *                         included.
+     */
+    public void formatForPush(StringBuilder sb,
+                              List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> treesNodeData,
+                              final boolean showEmptyFolders) {
+
+        // Let's try to print these tree with some order
+        treesNodeData.sort((o1, o2) -> {
+            var left = o1.getLeft();
+            var right = o2.getLeft();
+            return left.filePath().compareTo(right.filePath());
+        });
+
+        var count = 0;
+
+        for (var treeNodeData : treesNodeData) {
+
+            sb.append(count++ == 0 ? "\r" : "\n").
+                    append(String.format(" Site: [%s] - Status [%s] - Language [%s] --- Folder [%s]\n",
+                            treeNodeData.getLeft().site(),
+                            treeNodeData.getLeft().status(),
+                            treeNodeData.getLeft().language(),
+                            treeNodeData.getLeft().filePath()));
+
+            var localPathStructure = treeNodeData.getLeft();
+            var treeNode = treeNodeData.getRight();
+
+            var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
+
+            if (treeNodePushInfo.hasChanges()) {
+
+                var assetsToPushCount = treeNodePushInfo.assetsToPushCount();
+                if (assetsToPushCount > 0) {
+                    sb.append(String.format(" Push Data: " +
+                                    "@|bold,green [%s]|@ Assets to push: (%s New - %s Modified) " +
+                                    "- @|bold,green [%s]|@ Assets to delete " +
+                                    "- @|bold,green [%s]|@ Folders to push " +
+                                    "- @|bold,green [%s]|@ Folders to delete\n\n",
+                            treeNodePushInfo.assetsToPushCount(),
+                            treeNodePushInfo.assetsNewCount(),
+                            treeNodePushInfo.assetsModifiedCount(),
+                            treeNodePushInfo.assetsToDeleteCount(),
+                            treeNodePushInfo.foldersToPushCount(),
+                            treeNodePushInfo.foldersToDeleteCount()));
+                } else {
+                    sb.append(String.format(" Push Data: " +
+                                    "@|bold,green [%s]|@ Assets to push " +
+                                    "- @|bold,green [%s]|@ Assets to delete " +
+                                    "- @|bold,green [%s]|@ Folders to push " +
+                                    "- @|bold,green [%s]|@ Folders to delete\n\n",
+                            treeNodePushInfo.assetsToPushCount(),
+                            treeNodePushInfo.assetsToDeleteCount(),
+                            treeNodePushInfo.foldersToPushCount(),
+                            treeNodePushInfo.foldersToDeleteCount()));
+                }
+
+                formatByStatus(
+                        sb,
+                        AssetsUtils.StatusToBoolean(localPathStructure.status()),
+                        List.of(localPathStructure.language()),
+                        treeNode,
+                        showEmptyFolders,
+                        true);
+            } else {
+                sb.append(" No changes to push\n\n");
+            }
+
+        }
     }
 
     /**
@@ -77,9 +171,9 @@ public class TreePrinter {
         Collections.sort(sortedWorkingLanguages);
 
         // Live tree
-        formatByStatus(sb, true, sortedLiveLanguages, rootNode, showEmptyFolders);
+        formatByStatus(sb, true, sortedLiveLanguages, rootNode, showEmptyFolders, false);
         // Working tree
-        formatByStatus(sb, false, sortedWorkingLanguages, rootNode, showEmptyFolders);
+        formatByStatus(sb, false, sortedWorkingLanguages, rootNode, showEmptyFolders, false);
     }
 
     /**
@@ -87,14 +181,18 @@ public class TreePrinter {
      * recursively using a short format for each asset in the sortedLanguages list, separated by
      * status.
      *
-     * @param sb              The StringBuilder object to format.
-     * @param isLive          A boolean indicating whether the status to format is Live or Working.
-     * @param sortedLanguages A List of Strings containing the languages to include in the formatted
-     *                        StringBuilder.
-     * @param rootNode        The root TreeNode to start the formatting from.
+     * @param sb               The StringBuilder object to format.
+     * @param isLive           A boolean indicating whether the status to format is Live or Working.
+     * @param sortedLanguages  A List of Strings containing the languages to include in the formatted
+     *                         StringBuilder.
+     * @param rootNode         The root TreeNode to start the formatting from.
+     * @param showEmptyFolders A boolean indicating whether to include empty folders in the tree. If
+     *                         set to true, all folders will be included. If set to false, only folders
+     *                         containing assets or having children with assets will be included.
+     * @param forPushChanges   A boolean indicating whether the formatting is for push changes or not.
      */
     private void formatByStatus(StringBuilder sb, boolean isLive, List<String> sortedLanguages,
-            TreeNode rootNode, final boolean showEmptyFolders) {
+                                TreeNode rootNode, final boolean showEmptyFolders, final boolean forPushChanges) {
 
         if (sortedLanguages.isEmpty()) {
             return;
@@ -110,27 +208,33 @@ public class TreePrinter {
             throw new IllegalArgumentException(error, e);
         }
 
-        var status = FilesUtils.StatusToString(isLive);
-        sb.append("\r ").append(status).append('\n');
+        var status = AssetsUtils.StatusToString(isLive);
+        sb.append("\r ").append(String.format(statusRegularFormat, status)).append('\n');
 
         Iterator<String> langIterator = sortedLanguages.iterator();
         while (langIterator.hasNext()) {
 
             String lang = langIterator.next();
-            TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, lang, showEmptyFolders);
+            TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, lang, showEmptyFolders, forPushChanges);
 
             // Print the filtered tree using the format method starting from the filtered root itself
             boolean isLastLang = !langIterator.hasNext();
             sb.append("     ").
                     append((isLastLang ? "└── " : "├── ")).
-                    append("\uD83C\uDF10 ").
-                    append(lang).append('\n');
+                    append(String.format(languageRegularFormat, lang)).append('\n');
+
+            var siteFormat = siteRegularFormat;
+            if (rootNode.folder().markForPush().isPresent()) {
+                if (rootNode.folder().markForPush().get()) {
+                    siteFormat = sitePushFormat;
+                }
+            }
 
             // Add the domain and parent folder
             sb.append("     ").
                     append((isLastLang ? "    " : "│   ")).
                     append("└── ").
-                    append(rootNode.folder().host()).
+                    append(String.format(siteFormat, rootNode.folder().host())).
                     append('\n');
 
             if (parentPath.isEmpty() || parentPath.equals("/")) {
@@ -142,11 +246,12 @@ public class TreePrinter {
             } else {
 
                 // If the initial path is not the root we need to try to print the folder structure it has
-                var parentFolderIdent = "    ";
+                var parentFolderIdent = isLastLang ? "    " : "";
                 for (var i = 0; i < initialPath.getNameCount(); i++) {
                     sb.append("     ").
                             append((isLastLang ? "    " : "│   ")).
                             append(parentFolderIdent).
+                            append((isLastLang ? "" : "    ")).
                             append("└── ").
                             append(String.format("@|bold \uD83D\uDCC2 %s|@", initialPath.getName(i))).
                             append('\n');
@@ -181,12 +286,23 @@ public class TreePrinter {
     private void format(StringBuilder sb, String prefix, final TreeNode node,
             final String indent, boolean isLastSibling, boolean includeAssets) {
 
+        var folderFormat = folderRegularFormat;
+        if (node.folder().markForDelete().isPresent()) {
+            if (node.folder().markForDelete().get()) {
+                folderFormat = folderDeleteFormat;
+            }
+        } else if (node.folder().markForPush().isPresent()) {
+            if (node.folder().markForPush().get()) {
+                folderFormat = folderPushFormat;
+            }
+        }
+
         String filePrefix;
         String nextIndent;
         if (!node.folder().name().equals("/")) {
             sb.append(prefix).
                     append(isLastSibling ? "└── " : "├── ").
-                    append(String.format("@|bold \uD83D\uDCC2 %s|@", node.folder().name())).
+                    append(String.format(folderFormat, node.folder().name())).
                     append('\n');
 
             filePrefix = indent + (isLastSibling ? "    " : "│   ");
@@ -201,13 +317,34 @@ public class TreePrinter {
             int assetCount = node.assets().size();
             for (int i = 0; i < assetCount; i++) {
 
+                // Calculate the asset format to use
                 AssetView asset = node.assets().get(i);
-                final var fileStr = String.format("%s", asset.name());
+                var assetFormat = assetRegularFormat;
+
+                if (asset.markForDelete().isPresent()) {
+                    if (asset.markForDelete().get()) {
+                        assetFormat = assetDeleteFormat;
+                    }
+                }
+
+                if (asset.markForPush().isPresent()) {
+                    if (asset.markForPush().get()) {
+
+                        assetFormat = assetPushModifiedFormat;
+
+                        if (asset.pushTypeNew().isPresent()) {
+                            if (asset.pushTypeNew().get()) {
+                                assetFormat = assetPushNewFormat;
+                            }
+                        }
+                    }
+                }
+
                 boolean lastAsset = i == assetCount - 1 && node.children().isEmpty();
 
                 sb.append(filePrefix).
                         append(lastAsset ? "└── " : "├── ").
-                        append(fileStr).
+                        append(String.format(assetFormat, asset.name())).
                         append('\n');
             }
         }

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.concurrent.RecursiveTask;
 
 /**
- * Recursive task for traversing a file system directory and building a hierarchical tree
+ * Recursive task for traversing a dotCMS remote location and building a hierarchical tree
  * representation of its contents. This task is used to split the traversal into smaller sub-tasks
  * that can be executed in parallel, allowing for faster traversal of large directory structures.
  */
@@ -21,7 +21,7 @@ public class RemoteFolderTraversalTask extends RecursiveTask<TreeNode> {
     private final int depth;
 
     /**
-     * Constructs a new FolderTraversalTask instance with the specified site name, folder, root
+     * Constructs a new RemoteFolderTraversalTask instance with the specified site name, folder, root
      * flag, and depth.
      *
      * @param retriever The retriever used for REST calls and other operations.

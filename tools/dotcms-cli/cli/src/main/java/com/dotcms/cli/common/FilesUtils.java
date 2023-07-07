@@ -14,19 +14,6 @@ public class FilesUtils {
         //Hide public constructor
     }
 
-    private static final String STATUS_LIVE = "live";
-    private static final String STATUS_WORKING = "working";
-
-    /**
-     * Converts a boolean status to a string representation.
-     *
-     * @param isLive the status to convert
-     * @return the string representation of the status
-     */
-    public static String StatusToString(boolean isLive) {
-        return isLive ? STATUS_LIVE : STATUS_WORKING;
-    }
-
     /**
      * Fallbacks to the default language in case of no languages found scanning the assets.
      *

@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 
 /**
- * Service for traversing a file system directory and building a hierarchical tree representation of
+ * Service for traversing a dotCMS remote location and building a hierarchical tree representation of
  * its contents. The traversal is performed using a ForkJoinPool, which allows for parallel
  * execution of the traversal tasks.
  */
@@ -28,10 +28,10 @@ public class RemoteFolderTraversalServiceImpl implements RemoteFolderTraversalSe
     protected Retriever retriever;
 
     /**
-     * Traverses the file system directory at the specified path and builds a hierarchical tree
+     * Traverses the dotCMS remote location at the specified remote path and builds a hierarchical tree
      * representation of its contents.
      *
-     * @param path                  The path to the directory to traverse.
+     * @param path                  The remote path to the directory to traverse.
      * @param depth                 The maximum depth to traverse the directory tree. If null, the
      *                              traversal will go all the way down to the bottom of the tree.
      * @param includeFolderPatterns The glob patterns for folders to include in the traversal.

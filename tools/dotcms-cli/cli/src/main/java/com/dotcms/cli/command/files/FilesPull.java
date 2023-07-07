@@ -5,7 +5,7 @@ import com.dotcms.api.client.files.PullService;
 import com.dotcms.api.traversal.RemoteFolderTraversalService;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
-import com.dotcms.common.AssetsUtils;
+import com.dotcms.common.LocationUtils;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.SearchByPathRequest;
 import picocli.CommandLine;
@@ -45,11 +45,11 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
             description = "Overrides the local files with the ones from the server.")
     boolean override;
 
-    @CommandLine.Option(names = {"-ie", "--includeEmptyFolders"}, defaultValue = "false",
+    @CommandLine.Option(names = {"-ee", "--excludeEmptyFolders"}, defaultValue = "false",
             description =
                     "When this option is enabled, the pull process will not create empty folders. "
-                            + "By default, this option is disabled, and empty folders will not be created.")
-    boolean includeEmptyFolders;
+                            + "By default, this option is disabled, and empty folders will be created.")
+    boolean excludeEmptyFolders;
 
     @CommandLine.Option(names = {"-ef", "--excludeFolder"},
             paramLabel = "patterns",
@@ -86,7 +86,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
         try {
 
-            if (AssetsUtils.URLIsFolder(source)) {
+            if (LocationUtils.URLIsFolder(source)) {
 
                 var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
                 var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);
@@ -129,7 +129,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
                 // ---
                 // Now we need to pull the contents based on the tree we found
-                pullAssetsService.pullTree(output, result, destination, override, includeEmptyFolders);
+                pullAssetsService.pullTree(output, result, destination, override, !excludeEmptyFolders);
 
             } else {
 

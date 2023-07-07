@@ -2,9 +2,10 @@ package com.dotcms.cli.command.files;
 
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
+import picocli.CommandLine;
+
 import java.util.List;
 import java.util.concurrent.Callable;
-import picocli.CommandLine;
 
 /**
  * This class is responsible for handling the "files" command.
@@ -22,7 +23,8 @@ import picocli.CommandLine;
         subcommands = {
                 FilesTree.class,
                 FilesLs.class,
-                FilesPull.class
+                FilesPull.class,
+                FilesPush.class
         }
 )
 public class FilesCommand implements Callable<Integer> {

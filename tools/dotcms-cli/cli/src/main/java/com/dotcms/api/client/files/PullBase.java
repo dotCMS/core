@@ -8,6 +8,7 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodeInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.FilesUtils;
+import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.language.Language;
 import org.jboss.logging.Logger;
 
@@ -21,6 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
+
+import static com.dotcms.common.LocationUtils.LOCATION_FILES;
 
 public class PullBase {
 
@@ -105,9 +108,9 @@ public class PullBase {
         for (String lang : sortedLanguages) {
 
             // Filter the tree by status and language
-            TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, lang, generateEmptyFolders);
+            TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, lang, generateEmptyFolders, false);
 
-            var rootPath = Paths.get(destination, FilesUtils.StatusToString(isLive), lang, rootNode.folder().host());
+            var rootPath = Paths.get(destination, AssetsUtils.StatusToString(isLive), lang, rootNode.folder().host());
 
             // ---
             var forkJoinPool = ForkJoinPool.commonPool();
@@ -135,7 +138,7 @@ public class PullBase {
     protected String checkBaseStructure(final String destination) throws IOException {
 
         // For the pull of files, everything will be stored in a folder called "files"
-        var filesFolder = Paths.get(destination, "files");
+        var filesFolder = Paths.get(destination, LOCATION_FILES);
 
         // Create the folder if it does not exist
         if (!Files.exists(filesFolder)) {

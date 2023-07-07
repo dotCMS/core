@@ -3,12 +3,14 @@ package com.dotcms.cli.command.files;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
+import org.jboss.logging.Logger;
+import picocli.CommandLine;
+
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
-import picocli.CommandLine;
 
 public abstract class AbstractFilesCommand {
 
@@ -21,6 +23,9 @@ public abstract class AbstractFilesCommand {
     @Inject
     protected RestClientFactory clientFactory;
 
+    @Inject
+    Logger logger;
+
     /**
      * Handles exceptions thrown during the execution of the "tree" and "ls" commands.
      *
@@ -29,6 +34,9 @@ public abstract class AbstractFilesCommand {
      * @return the exit code to be used for the command line interface
      */
     protected int handleFolderTraversalExceptions(String folderPath, Throwable throwable) {
+
+        logger.debug(String.format("Error occurred while processing: [%s] with message: [%s].",
+                folderPath, throwable.getMessage()), throwable);
 
         if (throwable instanceof CompletionException) {
 
