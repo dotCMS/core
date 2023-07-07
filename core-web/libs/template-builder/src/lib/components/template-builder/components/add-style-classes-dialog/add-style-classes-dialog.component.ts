@@ -6,11 +6,12 @@ import {
     ChangeDetectionStrategy,
     Component,
     OnDestroy,
-    OnInit
+    OnInit,
+    ViewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { AutoCompleteModule } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -34,6 +35,9 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
     private destroy$: Subject<void> = new Subject<void>();
 
     public vm$ = this.store.vm$;
+
+    @ViewChild(AutoComplete)
+    autoComplete: AutoComplete;
 
     constructor(
         private ref: DynamicDialogRef,
@@ -111,8 +115,7 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
      */
     onKeyUp(event: KeyboardEvent): void {
         if (event.key === 'Enter' && this.autoCompleteInput.value) {
-            this.onSelect({ cssClass: this.autoCompleteInput.value });
-            this.autoCompleteInput.value = '';
+            this.autoComplete.selectItem({ cssClass: this.autoCompleteInput.value });
         }
     }
 }
