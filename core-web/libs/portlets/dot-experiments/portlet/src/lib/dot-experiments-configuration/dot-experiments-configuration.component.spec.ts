@@ -8,7 +8,7 @@ import {
 import { MockModule } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { Component, EventEmitter, Input, NgModule, Output } from '@angular/core';
+import { Component } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -62,29 +62,6 @@ const ActivatedRouteMock = {
     },
     parent: { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA }
 };
-
-// TODO: Use ng-mocks to mock the component automatically
-@Component({
-    selector: 'dot-add-to-bundle',
-    template: 'chart - mocked component'
-})
-// eslint-disable-next-line @angular-eslint/component-class-suffix
-class DotAddToBundleComponentMock {
-    @Input()
-    assetIdentifier: string;
-    @Output() cancel = new EventEmitter<boolean>();
-    options: unknown;
-
-    close(): void {
-        this.cancel.emit(true);
-    }
-}
-
-@NgModule({
-    declarations: [DotAddToBundleComponentMock],
-    exports: [DotAddToBundleComponentMock]
-})
-export class DotAddToBundleModuleMock {}
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'Scheduling'
