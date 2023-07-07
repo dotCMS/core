@@ -5,9 +5,9 @@
                 <h2 class="flex align-items-center gap-1 uppercase">
                     <dot-icon
                         [ngClass]="{ isDone: vm.trafficProportion.variants?.length > 1 }"
+                        [size]="16"
                         data-testId="variant-title-step-done"
                         name="check_circle"
-                        size="16"
                     ></dot-icon>
                     <span class="p-label-input-required" data-testId="variants-card-header">{{
                         'experiments.configure.variants.name' | dm
@@ -58,7 +58,7 @@
                         tooltipPosition="bottom"
                     >
                         <button
-                            class="p-button-sm p-button-link"
+                            class="p-button-sm p-button-text"
                             [disabled]="!vm.isExperimentADraft"
                             (click)="changeTrafficProportion()"
                             data-testId="variant-weight"
@@ -143,7 +143,7 @@
                 tooltipPosition="bottom"
             >
                 <button
-                    class="p-button-sm p-button-link"
+                    class="p-button-sm p-button-outlined"
                     [disabled]="
                         vm.trafficProportion.variants?.length >= maxVariantsAllowed ||
                         !vm.isExperimentADraft
