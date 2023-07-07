@@ -39,6 +39,8 @@ export interface DotExperimentsConfigurationState {
     status: ComponentStatus;
     stepStatusSidebar: StepStatus;
     configProps: Record<string, string>;
+    hasEnterpriseLicense: boolean;
+    addToBundleContentId: string;
 }
 
 const initialState: DotExperimentsConfigurationState = {
@@ -49,7 +51,9 @@ const initialState: DotExperimentsConfigurationState = {
         isOpen: false,
         experimentStep: null
     },
-    configProps: null
+    configProps: null,
+    hasEnterpriseLicense: false,
+    addToBundleContentId: null
 };
 
 export interface ConfigurationViewModel {
@@ -63,6 +67,7 @@ export interface ConfigurationViewModel {
     isSaving: boolean;
     isDescriptionSaving: boolean;
     menuItems: MenuItem[];
+    addToBundleContentId: string;
 }
 
 @Injectable()
@@ -104,8 +109,10 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ({ stepStatusSidebar }) => checkIfExperimentDescriptionIsSaving(stepStatusSidebar)
     );
 
-    readonly getMenuItems$: Observable<MenuItem[]> = this.select(this.state$, ({ experiment }) =>
-        this.getMenuItems(experiment)
+    readonly getMenuItems$: Observable<MenuItem[]> = this.select(
+        this.state$,
+        ({ experiment, hasEnterpriseLicense }) =>
+            this.getMenuItems(experiment, hasEnterpriseLicense)
     );
 
     // Goals Step //
@@ -210,6 +217,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly setTrafficAllocation = this.updater((state, trafficAllocation: number) => ({
         ...state,
         experiment: { ...state.experiment, trafficAllocation }
+    }));
+
+    readonly showAddToBundle = this.updater((state, addToBundleContentId: string) => ({
+        ...state,
+        addToBundleContentId
     }));
 
     // Effects
@@ -723,7 +735,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.getIsDescriptionSaving$,
         this.getMenuItems$,
         (
-            { experiment, stepStatusSidebar },
+            { experiment, stepStatusSidebar, addToBundleContentId },
             isExperimentADraft,
             isLoading,
             disabledStartExperiment,
@@ -735,6 +747,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ) => ({
             experiment,
             stepStatusSidebar,
+            addToBundleContentId,
             isExperimentADraft,
             isLoading,
             disabledStartExperiment,
@@ -857,8 +870,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly confirmationService: ConfirmationService
     ) {
         const configProps = route.snapshot.data['config'];
+        const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
 
-        super({ ...initialState, configProps });
+        super({ ...initialState, hasEnterpriseLicense, configProps });
     }
 
     private updateTabTitle(experiment: DotExperiment) {
@@ -882,14 +896,16 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         return experiment?.trafficProportion.variants.length < 2 || !experiment?.goals;
     }
 
-    private getMenuItems(experiment: DotExperiment): MenuItem[] {
+    private getMenuItems(experiment: DotExperiment, hasEnterpriseLicense: boolean): MenuItem[] {
         return [
+            // Start experiment
             {
                 label: this.setStartLabel(experiment),
                 visible: experiment?.status === DotExperimentStatus.DRAFT,
                 disabled: this.disableStartExperiment(experiment),
                 command: () => this.startExperiment(experiment)
             },
+            // End experiment
             {
                 label: this.dotMessageService.get('experiments.action.end-experiment'),
                 visible: experiment?.status === DotExperimentStatus.RUNNING,
@@ -910,6 +926,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                     });
                 }
             },
+            // Schedule experiment
             {
                 label: this.dotMessageService.get('experiments.configure.scheduling.cancel'),
                 visible: experiment?.status === DotExperimentStatus.SCHEDULED,
@@ -930,6 +947,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                         }
                     });
                 }
+            },
+            // Add To bundle experiment
+            {
+                label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
+                visible: hasEnterpriseLicense,
+                command: () => this.showAddToBundle(experiment.identifier)
             }
         ];
     }

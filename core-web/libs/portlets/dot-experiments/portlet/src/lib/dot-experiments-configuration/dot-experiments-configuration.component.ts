@@ -11,6 +11,7 @@ import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
@@ -53,7 +54,8 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
         InplaceModule,
         InputTextModule,
         MenuModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        DotAddToBundleModule
     ],
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
