@@ -54,4 +54,17 @@ describe('RemoveConfirmDialogComponent', () => {
 
         expect(rejectEventSpy).toHaveBeenCalled();
     });
+
+    it('should call reject function when esc is pressed', () => {
+        const rejectEventSpy = jest.spyOn(spectator.component.deleteRejected, 'emit');
+
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+        spectator.dispatchMouseEvent(deleteButton, 'onClick');
+
+        const confirmAccept = spectator.query('.p-confirm-popup-accept');
+        expect(confirmAccept).toBeTruthy();
+
+        spectator.component.onEscapePress();
+        expect(rejectEventSpy).toHaveBeenCalled();
+    });
 });
