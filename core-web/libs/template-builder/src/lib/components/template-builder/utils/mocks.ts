@@ -409,3 +409,5 @@ export const SIDEBAR_MOCK = {
 };
 
 export const STYLE_CLASS_MOCK = ['test', 'mock-class'];
+
+export const CLASS_NAME_MOCK = 'custom-class';

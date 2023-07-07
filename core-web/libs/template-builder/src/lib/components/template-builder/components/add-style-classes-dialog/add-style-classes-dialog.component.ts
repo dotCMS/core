@@ -102,4 +102,17 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
     onUnselect(): void {
         this.store.removeLastClass();
     }
+
+    /**
+     * @description Used to listen for enter presses
+     *
+     * @param {KeyboardEvent} event
+     * @memberof AddStyleClassesDialogComponent
+     */
+    onKeyUp(event: KeyboardEvent): void {
+        if (event.key === 'Enter' && this.autoCompleteInput.value) {
+            this.onSelect({ cssClass: this.autoCompleteInput.value });
+            this.autoCompleteInput.value = '';
+        }
+    }
 }
