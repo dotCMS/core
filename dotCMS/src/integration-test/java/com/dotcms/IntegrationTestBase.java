@@ -260,6 +260,13 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
         }
     }
 
+    /**
+     * Wrap the Delegate into a method db read method, that will close the connection at the end
+     * @param supplier
+     * @return
+     * @param <T>
+     * @throws Throwable
+     */
     protected  <T>  T wrapOnReadOnlyConn(final ReturnableDelegate<T> supplier) throws Throwable {
 
         try {
