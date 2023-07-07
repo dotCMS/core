@@ -100,7 +100,7 @@ select[multiple] {
         }
         &.dijitDropDownButtonFocused {
             background-color: $color-palette-primary;
-            outline: 2.8px solid $color-palette-primary-op-20;
+            @include field-focus;
         }
 
         &.dijitDropDownButtonDisabled {
@@ -128,7 +128,7 @@ select[multiple] {
         }
         &.dijitDropDownButtonFocused {
             background-color: $color-palette-primary;
-            outline: 2.8px solid $color-palette-primary-op-20;
+            @include field-focus;
         }
 
         &.dijitDropDownButtonDisabled {

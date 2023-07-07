@@ -110,3 +110,7 @@
     white-space: nowrap;
     width: 1px;
 }
+
+@mixin field-focus {
+    outline: 2.8px solid $color-palette-primary-op-20;
+}

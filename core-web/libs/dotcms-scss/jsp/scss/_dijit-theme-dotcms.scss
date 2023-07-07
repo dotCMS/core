@@ -59,7 +59,7 @@ $button-hover-shadow: 0;
 $button-active-bgcolor: $white;
 $button-active-textcolor: $color-palette-primary;
 $button-active-border: solid 1.5px $color-palette-primary;
-$button-active-shadow: 0px 0px 0px 2.8px rgba(18, 67, 227, 0.2); // Ask what should we do;
+$button-active-shadow: 0;
 
 $button-disabled-bgcolor: $color-palette-gray-200;
 $button-disabled-textcolor: $color-palette-gray-500;

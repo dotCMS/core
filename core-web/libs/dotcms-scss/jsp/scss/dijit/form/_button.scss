@@ -62,6 +62,8 @@
                 $button-active-border,
                 $button-active-textcolor
             );
+
+            @include field-focus;
         }
 
         &Disabled {
