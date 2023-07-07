@@ -502,6 +502,14 @@ export class ActivatedRouteMock {
     }
 }
 
+export const PARENT_RESOLVERS_ACTIVE_ROUTE_DATA = {
+    snapshot: {
+        data: {
+            isEnterprise: true
+        }
+    }
+};
+
 export const ACTIVE_ROUTE_MOCK_CONFIG = {
     snapshot: {
         data: {
@@ -510,7 +518,8 @@ export const ACTIVE_ROUTE_MOCK_CONFIG = {
                 EXPERIMENTS_MAX_DURATION: PROP_NOT_FOUND
             }
         }
-    }
+    },
+    parent: { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA }
 };
 
 export class ActivatedRouteListStoreMock {
@@ -535,5 +544,9 @@ export class ActivatedRouteListStoreMock {
                 }
             }
         };
+    }
+
+    get parent() {
+        return { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA };
     }
 }
