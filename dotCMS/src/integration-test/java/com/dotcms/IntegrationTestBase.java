@@ -4,6 +4,7 @@ import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -257,6 +258,15 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
 
         if (DbConnectionFactory.connectionExists()) {
             DbConnectionFactory.closeSilently(); // start always we a new one
+        }
+    }
+
+    protected  <T>  T closeConn (final ReturnableDelegate<T> supplier) throws Throwable {
+
+        try {
+            return supplier.execute();
+        } finally {
+            DbConnectionFactory.closeSilently();
         }
     }
 }

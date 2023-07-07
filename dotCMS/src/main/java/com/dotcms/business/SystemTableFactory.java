@@ -3,6 +3,7 @@ package com.dotcms.business;
 import com.dotmarketing.exception.DotDataException;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Encapsulates the persistance class for the System table
@@ -15,7 +16,7 @@ public abstract class SystemTableFactory  {
      * @param key {@link String}
      * @throws DotDataException
      */
-    protected abstract String find(String key) throws DotDataException;
+    protected abstract Optional<String> find(String key) throws DotDataException;
 
     /**
      * Retrieve all the values from the system table
