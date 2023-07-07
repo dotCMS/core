@@ -92,7 +92,6 @@ export class DotEditContentHtmlService {
     private docClickSubscription: Subscription;
     private updateContentletInode = false;
     private remoteRendered: boolean;
-    private askToCopy = true;
 
     private readonly docClickHandlers;
 
@@ -673,9 +672,14 @@ export class DotEditContentHtmlService {
         this.updateContentletInode = this.shouldUpdateContentletInode(target);
         this.currentMenuAction = DotContentletMenuAction[type];
 
-        const container = <HTMLElement>target.closest('[data-dot-object="container"]');
-        const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
-        const isInMultiplePages = this.isContentInMultiplePages(contentlet);
+        const { dotMacroType, dotOnNumberOfPages } = target.dataset;
+
+        const isEditContentMacro = dotMacroType === 'edit-contentet-macro';
+        const container: HTMLElement = target.closest('[data-dot-object="container"]');
+        const contentlet: HTMLElement = target.closest('[data-dot-object="contentlet"]');
+        const isInMultiplePages = isEditContentMacro
+            ? +dotOnNumberOfPages >= 1
+            : this.isContentInMultiplePages(contentlet);
 
         const eventData = {
             name: type,
@@ -747,8 +751,6 @@ export class DotEditContentHtmlService {
     }
 
     private handleTinyMCEOnBlurEvent(content: DotInlineEditContent) {
-        // TODO: Remove it from here and add it to the TinyMCE component
-        this.askToCopy = true;
         // If editor is dirty then we continue making the request
         if (!content.isNotDirty) {
             // Add the loading indicator to the field
@@ -814,10 +816,8 @@ export class DotEditContentHtmlService {
             showCopyModal: (data: DotShowCopyModal) => {
                 const { contentlet, container, initEdit, selector } = data;
                 this.showCopyModal(contentlet, container).subscribe((contentlet) => {
-                    const element = (
-                        selector ? contentlet.querySelector(selector) : contentlet
-                    ) as HTMLElement;
-                    initEdit(element);
+                    const element = selector ? contentlet.querySelector(selector) : contentlet;
+                    initEdit(element as HTMLElement);
                 });
             },
             inlineEdit: (data: DotInlineEditContent) => {
@@ -1076,7 +1076,7 @@ export class DotEditContentHtmlService {
     }
 
     private getPersonalizedModel(model: DotPageContainer[]): DotPageContainerPersonalized[] {
-        if (this.currentPersona && this.currentPersona.personalized) {
+        if (this.currentPersona?.personalized) {
             return model.map((container: DotPageContainer) => {
                 return {
                     ...container,
