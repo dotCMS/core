@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
@@ -116,7 +117,8 @@ public class HostFactoryImpl implements HostFactory {
             .SYSTEM_HOST).append("' ");
 
     private static final StringBuilder SITE_IS_LIVE = new StringBuilder().append("cvi.live_inode IS NOT NULL");
-    private static final StringBuilder SITE_IS_LIVE_OR_STOPPED = new StringBuilder().append("cvi.live_inode IS NOT null or " +
+    @VisibleForTesting
+    protected static final StringBuilder SITE_IS_LIVE_OR_STOPPED = new StringBuilder().append("cvi.live_inode IS NOT null or " +
             "(cvi.live_inode IS NULL AND cvi.deleted = false )");
     private static final StringBuilder SITE_IS_STOPPED = new StringBuilder().append("cvi.live_inode IS NULL AND cvi" +
             ".deleted = ").append(getDBFalse());
@@ -129,6 +131,10 @@ public class HostFactoryImpl implements HostFactory {
     private static final StringBuilder SELECT_SITE_COUNT = new StringBuilder().append("SELECT COUNT(cvi.working_inode) ")
             .append("FROM contentlet_version_info cvi, identifier i ").append("WHERE i.asset_subtype = '")
             .append(Host.HOST_VELOCITY_VAR_NAME).append("' ").append(" AND cvi.identifier = i.id ");
+
+    // query that Exact matches should be at the top of the search results.
+    private static final StringBuilder PRIORITIZE_EXACT_MATCHES =
+            new StringBuilder().append("ORDER BY CASE WHEN LOWER(%s) = ? THEN 0 ELSE 1 END");
 
     /**
      * Default class constructor.
@@ -706,7 +712,8 @@ public class HostFactoryImpl implements HostFactory {
      *
      * @return The list of {@link Host} objects that match the specified search criteria.
      */
-    private Optional<List<Host>> search(final String siteNameFilter, final String condition, final boolean
+    @VisibleForTesting
+    protected Optional<List<Host>> search(final String siteNameFilter, final String condition, final boolean
             showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles) {
         final DotConnect dc = new DotConnect();
         final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE);
@@ -724,9 +731,16 @@ public class HostFactoryImpl implements HostFactory {
             sqlQuery.append(AND);
             sqlQuery.append(EXCLUDE_SYSTEM_HOST);
         }
+        if (UtilMethods.isSet(siteNameFilter)) {
+            sqlQuery.append(getSiteNameColumn(PRIORITIZE_EXACT_MATCHES.toString()));
+        }
+
         dc.setSQL(sqlQuery.toString());
         if (UtilMethods.isSet(siteNameFilter)) {
+            // Add the site name filter parameter
             dc.addParam("%" + siteNameFilter.trim() + "%");
+            // Add the site name filter parameter again, but this time for the exact match
+            dc.addParam(siteNameFilter.trim().replace("%", ""));
         }
         if (limit > 0) {
             dc.setMaxRows(limit);
