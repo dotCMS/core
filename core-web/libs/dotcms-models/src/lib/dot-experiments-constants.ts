@@ -210,7 +210,12 @@ export const ReportSummaryLegendByBayesianStatus: Record<BayesianLegendStatus, S
     }
 };
 
-type DotExperimentListAction = 'delete' | 'configuration' | 'archive' | 'addToBundle';
+type DotExperimentListAction =
+    | 'delete'
+    | 'configuration'
+    | 'archive'
+    | 'addToBundle'
+    | 'pushPublish';
 export const AllowedActionsByExperimentStatus: Record<
     DotExperimentListAction,
     Array<DotExperimentStatus>
@@ -223,6 +228,13 @@ export const AllowedActionsByExperimentStatus: Record<
     ],
     ['archive']: [DotExperimentStatus.ENDED],
     ['addToBundle']: [
+        DotExperimentStatus.DRAFT,
+        DotExperimentStatus.RUNNING,
+        DotExperimentStatus.ENDED,
+        DotExperimentStatus.ARCHIVED,
+        DotExperimentStatus.SCHEDULED
+    ],
+    ['pushPublish']: [
         DotExperimentStatus.DRAFT,
         DotExperimentStatus.RUNNING,
         DotExperimentStatus.ENDED,

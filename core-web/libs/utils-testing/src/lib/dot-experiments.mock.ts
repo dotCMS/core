@@ -505,7 +505,8 @@ export class ActivatedRouteMock {
 export const PARENT_RESOLVERS_ACTIVE_ROUTE_DATA = {
     snapshot: {
         data: {
-            isEnterprise: true
+            isEnterprise: true,
+            pushPublishEnvironments: [{ id: '01', name: 'test' }]
         }
     }
 };
