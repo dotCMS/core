@@ -98,12 +98,8 @@
             }
         }
     }
-}
 
-// Split Buttons severities
-
-// Basic Split Button Severity
-.p-splitbutton {
+    // Basic Split Button Severity
     .p-splitbutton-defaultbutton,
     .p-splitbutton-menubutton {
         background-color: $color-palette-primary;
@@ -130,6 +126,8 @@
         }
     }
 }
+
+// Split Buttons severities
 // Oulined Split Button Severity
 
 .p-splitbutton.p-button-outlined {
