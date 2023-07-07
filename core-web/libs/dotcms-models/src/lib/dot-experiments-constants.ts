@@ -167,6 +167,21 @@ export const daysOfTheWeek = [
     'Saturday'
 ];
 
+export const MonthsOfTheYear = [
+    'months.january.short',
+    'months.february.short',
+    'months.march.short',
+    'months.april.short',
+    'months.may.short',
+    'months.june.short',
+    'months.july.short',
+    'months.august.short',
+    'months.september.short',
+    'months.october.short',
+    'months.november.short',
+    'months.december.short'
+];
+
 export type SummaryLegend = { icon: string; legend: string };
 
 export const enum BayesianStatusResponse {
