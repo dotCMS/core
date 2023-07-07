@@ -296,6 +296,15 @@ export const MOCK_SELECTED_STYLE_CLASSES = [
     'd-flex',
     'flex-column',
     'justify-content-center',
+    'align-items-center',
+    'justify-content-start',
+    'justify-content-end',
+    'justify-content-center',
+    'justify-content-between',
+    'justify-content-around',
+    'justify-content-evenly',
+    'align-items-start',
+    'align-items-end',
     'align-items-center'
 ];
 
