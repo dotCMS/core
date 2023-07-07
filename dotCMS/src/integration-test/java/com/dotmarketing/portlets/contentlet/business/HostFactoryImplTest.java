@@ -86,7 +86,13 @@ public class HostFactoryImplTest extends IntegrationTestBase {
 
     }
 
-    // test the method search at class HostFactoryImpl where the filter is "test.com" and should return it first in list
+    /**
+     * Method to test: {@link HostFactoryImpl#search(String, String, boolean, int, int, User, boolean)}
+     * Given Scenario: Create many (20+) sites that have the same text in them
+     * example1.test.com, example2.test.com..., then just test.com
+     * ExpectedResult: Exact matches should be at the top of the search results.
+     *
+     */
     @Test
     public void test_search_shouldReturnExactMatchesFirst() throws DotDataException, DotSecurityException {
         // Initialization
