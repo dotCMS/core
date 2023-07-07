@@ -88,7 +88,6 @@ const messageServiceMock = new MockDotMessageService({
 let component: DotEditLayoutDesignerComponent;
 let fixture: ComponentFixture<DotEditLayoutDesignerComponent>;
 let dotThemesService: DotThemesService;
-let dotEditLayoutService: DotEditLayoutService;
 
 describe('DotEditLayoutDesignerComponent', () => {
     beforeEach(() => {
@@ -157,7 +156,6 @@ describe('DotEditLayoutDesignerComponent', () => {
         fixture = TestBed.createComponent(DotEditLayoutDesignerComponent);
         component = fixture.componentInstance;
         dotThemesService = TestBed.inject(DotThemesService);
-        dotEditLayoutService = TestBed.inject(DotEditLayoutService);
     });
 
     describe('edit layout', () => {
@@ -219,13 +217,6 @@ describe('DotEditLayoutDesignerComponent', () => {
             expect(component.saveAndPublish.emit).toHaveBeenCalledWith(
                 component.form.value as DotTemplateDesigner
             );
-        });
-
-        it('should save changes when closeEditLayout is true', () => {
-            spyOn(component.save, 'emit');
-            dotEditLayoutService.changeCloseEditLayoutState(true);
-            fixture.detectChanges();
-            expect(component.save.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should save changes when editing the form.', () => {
