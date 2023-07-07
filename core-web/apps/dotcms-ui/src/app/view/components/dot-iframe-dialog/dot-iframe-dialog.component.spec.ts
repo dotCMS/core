@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { CommonModule } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -35,8 +34,7 @@ const getTestConfig = (hostComponent) => {
             BrowserAnimationsModule,
             IFrameModule,
             RouterTestingModule,
-            UiDotIconButtonModule,
-            CommonModule
+            UiDotIconButtonModule
         ],
         providers: [
             {
