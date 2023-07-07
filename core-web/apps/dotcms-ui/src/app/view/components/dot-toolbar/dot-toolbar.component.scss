@@ -10,16 +10,18 @@
             }
         }
 
-        .p-button-icon-only.p-button {
-            .p-button-icon.pi {
-                color: $white;
-            }
-            &:hover {
-                background-color: $color-palette-white-op-30;
-            }
+        .toolbar__button-wrapper {
+            .p-button-icon-only.p-button {
+                .p-button-icon.pi {
+                    color: $white;
+                }
+                &:hover {
+                    background-color: $color-palette-white-op-30;
+                }
 
-            &:focus {
-                outline: none;
+                &:focus {
+                    outline: none;
+                }
             }
         }
     }

@@ -28,21 +28,15 @@ describe('DotFieldHelperComponent', () => {
 
     it('should display the overlay panel on click', () => {
         const iconButton = de.query(By.css('p-button')).nativeElement;
-        // const overlayPanel: OverlayPanel = de.query(By.css('p-overlayPanel')).componentInstance;
 
         iconButton.dispatchEvent(new MouseEvent('click'));
-
-        // expect(overlayPanel.visible).toEqual(true);
     });
 
     it('should hide the overlay panel on click', () => {
         const iconButton = de.query(By.css('p-button')).nativeElement;
-        // const overlayPanel: OverlayPanel = de.query(By.css('p-overlayPanel')).componentInstance;
 
         iconButton.dispatchEvent(new MouseEvent('click'));
         iconButton.dispatchEvent(new MouseEvent('click'));
-
-        // expect(overlayPanel.visible).toEqual(false);
     });
 
     it('should have correct attributes  on button', () => {
