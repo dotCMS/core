@@ -1,13 +1,20 @@
-import { Injectable } from '@angular/core';
-import { CoreWebService } from './core-web.service';
 import { Observable, Subject, of, merge } from 'rxjs';
-import { pluck, map, take } from 'rxjs/operators';
-import { LoginService, Auth } from './login.service';
-import { LoggerService } from './logger.service';
+
+import { Injectable } from '@angular/core';
+
+import { pluck, map, take, switchMap, tap } from 'rxjs/operators';
+
+import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
+import { LoggerService } from './logger.service';
+import { LoginService } from './login.service';
 import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper';
 
 /**
+ * @deprecated
+ * This service is deprecated do not use it in new code.
+ * If you need to interact with the sites use the DotSiteService from @dotcms/data-access.
+ *
  * Provide methods and data to hable the sites.
  * @export
  */
@@ -52,11 +59,7 @@ export class SiteService {
             .subscribeToEvents<Site>(['SWITCH_SITE'])
             .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.setCurrentSite(data));
 
-        loginService.watchUser((auth: Auth) => {
-            if (!auth.isLoginAs) {
-                this.loadCurrentSite();
-            }
-        });
+        loginService.watchUser(() => this.loadCurrentSite());
     }
 
     /**
@@ -71,10 +74,11 @@ export class SiteService {
         if (siteIdentifier === this.selectedSite.identifier) {
             name === 'ARCHIVE_SITE'
                 ? this.switchToDefaultSite()
-                      .pipe(take(1))
-                      .subscribe((currentSite: Site) => {
-                          this.switchSite(currentSite);
-                      })
+                      .pipe(
+                          take(1),
+                          switchMap((site) => this.switchSite(site))
+                      )
+                      .subscribe()
                 : this.loadCurrentSite();
         }
     }
@@ -133,8 +137,8 @@ export class SiteService {
     /**
      * Get a site by the id
      *
-     * @param string id
-     * @returns Observable<Site>
+     * @param {string} id
+     * @return {*}  {Observable<Site>}
      * @memberof SiteService
      */
     getSiteById(id: string): Observable<Site> {
@@ -149,21 +153,45 @@ export class SiteService {
     }
 
     /**
-     * Change the current site
-     * @param Site site
+     * Switch site by the id
+     * This method gets a new site by the id and switch to it
+     *
+     * @param {string} id
+     * @return {*}  {Observable<Site>}
      * @memberof SiteService
      */
-    switchSite(site: Site): void {
+    switchSiteById(id: string): Observable<Site> {
+        this.loggerService.debug('Applying a Site Switch');
+
+        return this.getSiteById(id).pipe(
+            switchMap((site) => {
+                // If there is a site we switch to it
+                return site ? this.switchSite(site) : of(null);
+            }),
+            take(1)
+        );
+    }
+
+    /**
+     * Change the current site
+     *
+     * @param {Site} site
+     * @return {*}  {Observable<Site>}
+     * @memberof SiteService
+     */
+    switchSite(site: Site): Observable<Site> {
         this.loggerService.debug('Applying a Site Switch', site.identifier);
-        this.coreWebService
+
+        return this.coreWebService
             .requestView({
                 method: 'PUT',
                 url: `${this.urls.switchSiteUrl}/${site.identifier}`
             })
-            .pipe(take(1))
-            .subscribe(() => {
-                this.setCurrentSite(site);
-            });
+            .pipe(
+                take(1),
+                tap(() => this.setCurrentSite(site)),
+                map(() => site)
+            );
     }
 
     /**

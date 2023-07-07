@@ -15,11 +15,12 @@ import { DotBulkInformationModule } from '@components/_common/dot-bulk-informati
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
+import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotSiteBrowserService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotTemplateListResolver } from '@portlets/dot-templates/dot-template-list/dot-template-list-resolver.service';
+import { DotBinaryOptionSelectorComponent } from '@portlets/shared/dot-binary-option-selector/dot-binary-option-selector.component';
 
-import { DotTemplateSelectorModule } from './components/dot-template-selector/dot-template-selector.module';
 import { DotTemplateListComponent } from './dot-template-list.component';
 
 @NgModule({
@@ -28,6 +29,7 @@ import { DotTemplateListComponent } from './dot-template-list.component';
         CommonModule,
         DotListingDataTableModule,
         DotMessagePipeModule,
+        DotRelativeDatePipe,
         SharedModule,
         CheckboxModule,
         MenuModule,
@@ -37,7 +39,7 @@ import { DotTemplateListComponent } from './dot-template-list.component';
         DotAddToBundleModule,
         DynamicDialogModule,
         DotBulkInformationModule,
-        DotTemplateSelectorModule,
+        DotBinaryOptionSelectorComponent,
         DotEmptyStateModule,
         AutoFocusModule
     ],

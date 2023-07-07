@@ -2,12 +2,12 @@ package com.dotcms.analytics;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.AccessTokenFetchMode;
 import com.dotcms.exception.AnalyticsException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Config;
 
 import java.util.concurrent.TimeUnit;
-
 
 /**
  * Analytics functionality interface.
@@ -30,11 +30,13 @@ public interface AnalyticsAPI {
 
     String ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS_KEY = "analytics.accesstoken.renewattempts";
     int ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS = Config.getIntProperty(ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS_KEY, 3);
-    int ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT = 1000;
+    String ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT_KEY = "analytics.accesstoken.renewtimeout";
+    int ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT = Config.getIntProperty(ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT_KEY, 4000);
 
     String ANALYTICS_KEY_RENEW_ATTEMPTS_KEY = "analytics.key.renewattempts";
     int ANALYTICS_KEY_RENEW_ATTEMPTS = Config.getIntProperty(ANALYTICS_KEY_RENEW_ATTEMPTS_KEY, 3);
-    int ANALYTICS_KEY_RENEW_TIMEOUT = 1000;
+    String ANALYTICS_KEY_RENEW_TIMEOUT_KEY = "analytics.key.renewtimeout";
+    int ANALYTICS_KEY_RENEW_TIMEOUT = Config.getIntProperty(ANALYTICS_KEY_RENEW_TIMEOUT_KEY, 4000);
 
     String ANALYTICS_ACCESS_TOKEN_THREAD_NAME = "access-token-renew";
 
@@ -53,11 +55,11 @@ public interface AnalyticsAPI {
      * from analytics IDP when not found.
      *
      * @param analyticsApp app to associate app's data with
-     * @param fetchWhenNotCached when token is not found in cache layer, get ot from backend
+     * @param fetchMode   fetch mode to use
      * @return the access token if found, otherwise null
      * @throws AnalyticsException if access token cannot be fetched
      */
-    AccessToken getAccessToken(AnalyticsApp analyticsApp, boolean fetchWhenNotCached) throws AnalyticsException;
+    AccessToken getAccessToken(AnalyticsApp analyticsApp, AccessTokenFetchMode fetchMode) throws AnalyticsException;
 
     /**
      * Requests an {@link AccessToken} with associated analytics app data and saves it to be accessible when found.
@@ -92,13 +94,5 @@ public interface AnalyticsAPI {
      * @throws AnalyticsException if analytics key cannot be extracted from response or when saving to app storage
      */
     void resetAnalyticsKey(AnalyticsApp analyticsApp, boolean force) throws AnalyticsException;
-
-    /**
-     * Reset analytics key to the app storage by requesting it again to the configuration server.
-     *
-     * @param analyticsApp resolved analytics app
-     * @throws AnalyticsException if analytics key cannot be extracted from response or when saving to app storage
-     */
-    void resetAnalyticsKey(AnalyticsApp analyticsApp) throws AnalyticsException;
 
 }

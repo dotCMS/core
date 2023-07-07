@@ -1,0 +1,338 @@
+// TODO: check if I can remove this file
+
+.calendar-events {
+    .portlet-sidebar {
+        .listingTable {
+            background-color: $white;
+        }
+    }
+
+    .portlet-toolbar__actions-primary,
+    .portlet-toolbar__actions-secondary {
+        flex: 0 1 auto;
+    }
+
+    .portlet-toolbar__info {
+        flex: 1 0 auto;
+        font-size: $font-size-lg;
+        justify-content: center;
+    }
+}
+
+.calendar-events__list {
+    display: flex;
+}
+
+.calendar-events__list-items,
+.calendar-events__list-ongoing {
+    border: 1px solid $color-palette-gray-400;
+}
+
+.calendar-events__list-items {
+    flex: 3;
+    margin: 0 $spacing-1 * 2;
+}
+
+.calendar-events__list-ongoing {
+    flex: 1;
+    margin-right: $spacing-1 * 2;
+}
+
+.calendar-events__recurence-box {
+    background-color: $color-palette-gray-200;
+    border: solid 1px $color-palette-gray-400;
+    border-radius: $field-border-radius;
+    display: inline-block;
+    margin-top: $spacing-1;
+    padding: $spacing-1;
+}
+
+// LEGACY CALENDAR CODE FROM: /html/portlet/ext/calendar/calendar.css
+
+/* WEEK VIEW STYLES */
+
+.weeklyCalendarBody td {
+    min-height: 400px;
+    height: auto;
+    height: 400px;
+    vertical-align: top;
+    padding: 0px;
+    white-space: normal;
+}
+
+.weeklyViewControls {
+    text-align: left;
+}
+
+/* DAY VIEW STYLES */
+
+#dailyEvents,
+#ongoingEvents {
+    h3 {
+        background: $color-palette-gray-200;
+        padding: $spacing-1;
+        border-bottom: 1px solid $color-palette-gray-400;
+        margin: 0;
+    }
+
+    ul {
+        margin: 0;
+        padding: 0;
+
+        &:last-child li:last-child {
+            border-bottom: none;
+        }
+    }
+
+    li {
+        padding: $spacing-1;
+        margin: 0;
+        border-bottom: 1px solid $color-palette-gray-400;
+
+        [class$="Icon"],
+        [class*="Icon"] {
+            margin-right: calc($spacing-1 / 2);
+        }
+    }
+}
+
+/* MONTH VIEW STYLES */
+
+.calendarBody,
+.weeklyCalendarBody td {
+    min-height: 100px;
+    height: auto;
+    height: 100px;
+    vertical-align: top;
+    padding: 0;
+    border: 1px solid $color-palette-gray-400;
+    border-collapse: collapse;
+}
+
+.emptyDay {
+    background-color: $color-palette-gray-200;
+}
+
+.selectedDay {
+    background-color: #feffc9;
+}
+
+.weekendDay {
+    background-color: #f2f2f2;
+}
+
+.dayNumberSection {
+    font-size: 11px;
+}
+
+.dayNumber {
+    text-align: right;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 3px 3px 0 0;
+
+    a {
+        text-decoration: none;
+    }
+}
+
+.monthDay {
+    img {
+        vertical-align: middle;
+    }
+    a {
+        text-decoration: none;
+        color: black;
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
+
+.allDayEvents {
+    background-color: #cdeafd;
+    margin-bottom: 3px;
+    border-radius: 5px;
+}
+
+.dayEventsSection span {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 77%;
+}
+
+/* NAV MENU STYLES */
+
+.navDay,
+.navLastDay,
+.navSelectedDay {
+    a {
+        color: black;
+        text-decoration: none;
+    }
+}
+
+.navDay,
+.navLastDay {
+    text-align: center;
+    height: 19px;
+    width: 22px;
+}
+
+.navSelectedDay {
+    background-color: $color-palette-black-op-20;
+}
+
+.previousPageLink {
+    float: left;
+}
+
+.nextPageLink {
+    float: right;
+}
+
+.ongoingEventsWrapper {
+    width: 250px;
+    float: left;
+    text-align: left;
+}
+
+.eventDetail {
+    width: 500px;
+
+    .closeButton {
+        float: right;
+        margin-bottom: -10px;
+    }
+
+    .fakeDojoButton {
+        margin: 0 calc($spacing-1 / 2);
+    }
+
+    img {
+        border: 0;
+    }
+}
+
+.viewDetailLink {
+    font-weight: bolder;
+}
+
+#eventDetailTitle {
+    font-weight: bold;
+    font-size: 1.2em;
+    padding-bottom: 5px;
+    width: 459;
+    overflow: hidden;
+}
+
+#eventDetailDate,
+#eventDetailTags,
+#eventDetailCategories {
+    padding-left: 10px;
+}
+
+.calLabel {
+    display: inline-block;
+    width: 90px;
+    font-weight: bold;
+}
+
+.removeFilter {
+    display: block;
+    background: transparent url(/html/js/dojo/custom-build/dijit/themes/dmundra/images/tabClose.png)
+        no-repeat scroll center center;
+    height: 16px;
+    width: 20px;
+    cursor: pointer;
+    float: left;
+    margin-top: 3px;
+}
+
+.closeFilter {
+    display: block;
+    background: transparent url(/html/js/dojo/custom-build/dijit/themes/dmundra/images/tabClose.png)
+        no-repeat scroll center center;
+    height: 24px;
+    width: 24px;
+    cursor: pointer;
+    float: right;
+}
+
+.filtersBox {
+    position: absolute;
+    z-index: 700;
+    background: white;
+    width: 400px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border: 1px solid $color-palette-gray-400;
+}
+
+#categoriesFilterBox,
+#tagsFilterBox {
+    padding: 10px 5px;
+}
+
+.calendarFiltersBox {
+    margin: 20px 5px 0 15px;
+    line-height: 20px;
+    text-align: left;
+}
+
+.tagFilterLink,
+.categoryFilterLink {
+    padding-top: 5px;
+}
+
+.tagFilterLink a,
+.categoryFilterLink a {
+    font-weight: normal;
+    color: black;
+    &:hover {
+        font-weight: normal;
+        color: black;
+        text-decoration: underline;
+    }
+}
+
+.statusLegend {
+    text-align: left;
+    padding-left: 23px;
+    padding-top: 15px;
+    vertical-align: middle;
+    img {
+        vertical-align: middle;
+    }
+}
+
+.calendarActions {
+    text-align: right;
+    padding-right: 15px;
+    padding-top: 15px;
+}
+
+#addEvent {
+    float: left;
+    padding-left: 50px;
+}
+
+#navMonthYearName {
+    background-color: $color-palette-primary;
+    color: $white;
+    cursor: pointer;
+    text-align: center;
+}
+
+.whenListView,
+.ratingListView,
+.tagsListView {
+    padding-left: 21px;
+}
+
+a {
+    &.category_higlighted,
+    &.tag_higlighted {
+        font-weight: bolder;
+    }
+}

@@ -14,6 +14,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotFolderTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.transform.DotMapViewTransformer;
@@ -34,7 +35,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
-import io.vavr.Tuple2;
+import io.vavr.Tuple3;
 import io.vavr.control.Try;
 
 import java.util.*;
@@ -55,52 +56,52 @@ public class BrowserAPIImpl implements BrowserAPI {
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
-
+    private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private static final StringBuilder POSTGRES_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
-            .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'asset' -> 'metadata' ->> ").append("'name' ");
+            .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'fileName' ->> 'value' ");
 
     private static final StringBuilder MSSQL_ASSETNAME_COLUMN = new StringBuilder("JSON_VALUE(c.").append
-            (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("asset.metadata.").append("name')" +
+            (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("fileName.").append("value')" +
             " ");
 
     private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
 
-    private final String OR = " OR ";
+    private static final StringBuilder ASSET_NAME_EQ = new StringBuilder().append("LOWER(%s) = ? ");
 
     /**
-     * Returns a collection of contentlets based on diff attributes of the BrowserQuery
-     * e.g folder, host, archived, baseTypes, language.
-     * After that filters the list of contentlets based on permissions.
-     * @param browserQuery {@link BrowserQuery}
-     * @return list of contentlets
+     * Returns a collection of contentlets based on specific filtering criteria specified via the
+     * {@link BrowserQuery} class, such as: Parent folder, Site, archived/non-archived status, base Content Types,
+     * language, among many others. After that, the resulting list is filtered based on {@code READ} permissions.
+     * <p>It's worth nothing this approach uses both a SQL query and a Lucene query to fetch results. Their results are
+     * combined in order to get a final result set.</p>
+     *
+     * @param browserQuery The {@link BrowserQuery} object specifying the filtering criteria.
+     *
+     * @return The list of filtered contentlets.
      */
     @Override
     @CloseDBIfOpened
     public List<Contentlet> getContentUnderParentFromDB(final BrowserQuery browserQuery) {
-
-        final Tuple2<String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
-
-
+        final Tuple3<String, String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
         final DotConnect dc = new DotConnect().setSQL(sqlQuery._1);
-
-        sqlQuery._2.forEach(o -> dc.addParam(o));
-
+        sqlQuery._3.forEach(dc::addParam);
         try {
             final List<Map<String,String>> inodesMapList =  dc.loadResults();
-
-            final List<String> inodes = new ArrayList<>();
-            for (final Map<String, String> versionInfoMap : inodesMapList) {
-                inodes.add(versionInfoMap.get("inode"));
-            }
-
-            final List<Contentlet> cons  = APILocator.getContentletAPI().findContentlets(inodes);
-
-            return permissionAPI.filterCollection(cons,
+            final List<Contentlet> contentletList = contentletAPI.search(sqlQuery._2, -1, 0, null, browserQuery.user,
+                    false);
+            final Set<String> inodes =
+                    inodesMapList.stream().map(data -> data.get("inode")).collect(Collectors.toSet());
+            contentletList.forEach(contentlet -> inodes.add(contentlet.getInode()));
+            final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(new ArrayList<>(inodes));
+            return permissionAPI.filterCollection(contentlets,
                     PermissionAPI.PERMISSION_READ, true, browserQuery.user);
-
-        } catch (Exception e) {
-            Logger.warnAndDebug(getClass(), "Unable to load browser" + e.getMessage(), e);
-            throw new DotRuntimeException(e);
+        } catch (final Exception e) {
+            final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
+            final String siteName = UtilMethods.isSet(browserQuery.site) ? browserQuery.site.getHostname() : "N/A";
+            final String errorMsg = String.format("Failed to load contents from folder '%s' in Site '%s': %s",
+                    folderPath, siteName, e.getMessage());
+            Logger.warnAndDebug(this.getClass(), errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
         }
     }
 
@@ -213,7 +214,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     private List<Map<String, Object>> filterReturnList(final BrowserQuery browserQuery, final List<Map<String, Object>> returnList) {
 
-        final List<Map<String, Object>> filteredList = new ArrayList<Map<String, Object>>();
+        final List<Map<String, Object>> filteredList = new ArrayList<>();
         for (final Map<String, Object> asset : returnList) {
 
             String name = (String) asset.get("name");
@@ -259,68 +260,100 @@ public class BrowserAPIImpl implements BrowserAPI {
         return filteredList;
     }
 
-    private Tuple2<String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
-
+    /**
+     * Generates both the SQL query and the Lucene query that will be used to search for contents under a given folder
+     * path and filtered by the criteria specified via the {@link BrowserQuery} parameter.
+     *
+     * @param browserQuery The filtering criteria set via the {@link BrowserQuery}.
+     *
+     * @return The {@link Tuple3} object containing (1) the SQL query, (2) the Lucene query, and (3) the parameters that
+     * must be provided for the queries.
+     */
+    private Tuple3<String,String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ? "working_inode" : "live_inode";
-
         final boolean showAllBaseTypes = browserQuery.baseTypes.contains(BaseContentType.ANY);
         final List<Object> parameters = new ArrayList<>();
-
         final StringBuilder sqlQuery = new StringBuilder("select cvi." + workingLiveInode + " as inode "
                 + " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
                 + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
                 + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"+DEFAULT_VARIANT.name()+"' ");
 
+        final StringBuilder luceneQuery = UtilMethods.isSet(browserQuery.luceneQuery)
+                                                  ? new StringBuilder("+title:*" + browserQuery.luceneQuery.trim() + "* ")
+                                                  : new StringBuilder();
+        luceneQuery.append(browserQuery.showWorking ? "+working:true " : "+live:true ");
+        luceneQuery.append(browserQuery.showArchived ? "+deleted:true " : "+deleted:false ");
         if (!showAllBaseTypes) {
-            List<String> baseTypes =
+            final List<String> baseTypes =
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType())).collect(Collectors.toList());
-            sqlQuery.append(" and struc.structuretype in (" + String.join(" , ", baseTypes) + ") ");
+            final List<String> baseTypesNames =
+                    browserQuery.baseTypes.stream().map(Enum::name).collect(Collectors.toList());
+            sqlQuery.append(" and struc.structuretype in (").append(String.join(" , ", baseTypes)).append(") ");
+            luceneQuery.append("+contentType:(").append(String.join(" OR ", baseTypesNames)).append(") ");
         }
         if (browserQuery.languageId > 0) {
-            sqlQuery.append(" and cvi.lang = ? ");
-            parameters.add(browserQuery.languageId);
+            sqlQuery.append(" and cvi.lang in (").append(browserQuery.languageId);
+            luceneQuery.append("+languageId:(").append(browserQuery.languageId);
+
+            final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            if(browserQuery.showDefaultLangItems && browserQuery.languageId != defaultLang){
+                sqlQuery.append(",").append(defaultLang);
+                luceneQuery.append(" OR ").append(defaultLang).append(" ");
+            }
+
+            sqlQuery.append(")");
+            luceneQuery.append(") ");
+
+
         }
         if (browserQuery.site != null) {
-            sqlQuery.append(" and id.host_inode = ? ");
+            sqlQuery.append(" and (id.host_inode = ?) ");
             parameters.add(browserQuery.site.getIdentifier());
+            luceneQuery.append("+conHost:(").append(Host.SYSTEM_HOST).append(" OR ").append(browserQuery.site.getIdentifier()).append(") ");
         }
         if (browserQuery.folder != null) {
             sqlQuery.append(" and id.parent_path=? ");
             parameters.add(browserQuery.folder.getPath());
+            luceneQuery.append("+parentPath:").append(browserQuery.folder.getPath()).append(" ");
         }
         if (UtilMethods.isSet(browserQuery.filter)) {
             final String filterText = browserQuery.filter.toLowerCase().trim();
-            final String[] spliter = filterText.split(" ");
+            final String[] splitter = filterText.split(" ");
 
             sqlQuery.append(" and (");
-            for (int indx = 0; indx < spliter.length; indx++) {
-                final String token = spliter[indx];
+            for (int indx = 0; indx < splitter.length; indx++) {
+                final String token = splitter[indx];
                 if(token.equals(StringPool.BLANK)){
                     continue;
                 }
                 sqlQuery.append(" LOWER(c.title) like ?");
                 parameters.add("%" + token + "%");
-                if(indx + 1 < spliter.length){
+                if (indx + 1 < splitter.length) {
                     sqlQuery.append(" and");
                 }
             }
-
-            sqlQuery.append(OR);
+            sqlQuery.append(" OR ");
             sqlQuery.append(getAssetNameColumn(ASSET_NAME_LIKE.toString()));
             sqlQuery.append(" ) ");
-
             parameters.add("%" + filterText + "%");
         }
 
-        if(browserQuery.showMenuItemsOnly) {
-            sqlQuery.append(" and c.show_on_menu = " + DbConnectionFactory.getDBTrue());
+        if(UtilMethods.isSet(browserQuery.fileName)){
+            final String matchText = browserQuery.fileName.toLowerCase().trim();
+            sqlQuery.append(" and (");
+            sqlQuery.append(" LOWER(id.asset_name) = ?");
+            sqlQuery.append(" ) ");
+            parameters.add( matchText );
         }
 
+        if (browserQuery.showMenuItemsOnly) {
+            sqlQuery.append(" and c.show_on_menu = ").append(DbConnectionFactory.getDBTrue());
+            luceneQuery.append(" +showOnMenu:true ");
+        }
         if (!browserQuery.showArchived) {
-            sqlQuery.append(" and cvi.deleted = " + DbConnectionFactory.getDBFalse());
+            sqlQuery.append(" and cvi.deleted = ").append(DbConnectionFactory.getDBFalse());
         }
-
-        return Tuple.of(sqlQuery.toString(), parameters);
+        return Tuple.of(sqlQuery.toString(),luceneQuery.toString(), parameters);
     }
 
     /**

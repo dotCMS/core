@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import static com.dotcms.experiments.model.AbstractExperiment.Status.ARCHIVED;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.RUNNING;
@@ -14,8 +15,12 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.util.DateUtil.isTimeReach;
 
 import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.bayesian.BayesianAPI;
+import com.dotcms.analytics.bayesian.model.BayesianInput;
+import com.dotcms.analytics.bayesian.model.BayesianResult;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 
+import com.dotcms.analytics.helper.BayesianHelper;
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
@@ -35,16 +40,16 @@ import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
+import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Experiment.Builder;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
-
 import com.dotcms.experiments.model.TrafficProportion;
-
 
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.CollectionsUtils;
@@ -56,6 +61,7 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -64,9 +70,12 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -78,10 +87,10 @@ import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
@@ -99,15 +108,16 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import io.vavr.Lazy;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
-    private Lazy<Boolean> isExperimentEnabled =
-            Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_EXPERIMENTS", false));
+    private static final int VARIANTS_NUMBER_MAX = 3;
+    private static final List<Status> RESULTS_QUERY_VALID_STATUSES = List.of(RUNNING, ENDED);
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
+    final ExperimentsCache experimentsCache = CacheLocator.getExperimentsCache();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     final VariantAPI variantAPI = APILocator.getVariantAPI();
@@ -116,6 +126,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
     final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
     final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
+    final BayesianAPI bayesianAPI = APILocator.getBayesianAPI();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -169,14 +180,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
             addConditionIfIsNeed(goals,
                     APILocator.getHTMLPageAssetAPI().fromContentlet(pageAsContent), builder);
-
         }
 
         if(experiment.targetingConditions().isPresent()) {
             saveTargetingConditions(experiment, user);
         }
 
-        final Experiment experimentToSave = builder.build();
+        Experiment experimentToSave = builder.build();
+
+        Optional<Experiment> existingExperiment = find(experimentToSave.id().get(), user);
+
+        if(experimentToSave.status() == DRAFT && experimentToSave.scheduling().isPresent()
+                && (existingExperiment.isEmpty() || isExistingSchedulingChanging(experimentToSave,
+                existingExperiment))) {
+            experimentToSave = experimentToSave.withScheduling(
+                    Optional.of(validateScheduling(experimentToSave.scheduling().get())));
+        }
 
         factory.save(experimentToSave);
 
@@ -195,32 +214,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     ORIGINAL_VARIANT, user));
         }
 
-        if(savedExperiment.get().status() != RUNNING &&
-                savedExperiment.get().status() != ENDED &&
-                !savedExperiment.get().scheduling().isEmpty()) {
-            validateScheduling(savedExperiment.get().scheduling().get());
-        }
-
         return savedExperiment.get();
+    }
+
+    private static boolean isExistingSchedulingChanging(Experiment experimentToSave,
+            Optional<Experiment> existingExperiment) {
+        return !existingExperiment.get().scheduling().
+                equals(experimentToSave.scheduling());
     }
 
     private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
             final Builder builder) {
 
-        if (goals.primary().type() == MetricType.REACH_PAGE && !hasCondition(goals, "referer")) {
-            addRefererCondition(page, builder, goals);
-        } else if (goals.primary().type() == MetricType.BOUNCE_RATE && !hasCondition(goals, "url")) {
+        if (goals.primary().getMetric().type() == MetricType.BOUNCE_RATE &&
+                !hasCondition(goals, "url")) {
             addUrlCondition(page, builder, goals);
         }
-    }
-
-    private void addRefererCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
-
-        final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
-                page, "referer");
-
-        final Goals newGoal = createNewGoals(goals, refererCondition);
-        builder.goals(newGoal);
     }
 
     private void addUrlCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
@@ -235,24 +244,27 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @NotNull
     private static Goals createNewGoals(final Goals oldGoals,
             final com.dotcms.analytics.metrics.Condition newConditionToAdd) {
-        final Metric newMetric = Metric.builder().from(oldGoals.primary())
+        final Metric newMetric = Metric.builder().from(oldGoals.primary().getMetric())
                 .addConditions(newConditionToAdd).build();
-        return Goals.builder().from(oldGoals).primary(newMetric).build();
+        final Goal newGoal = GoalFactory.create(newMetric);
+        return Goals.builder().from(oldGoals).primary(newGoal).build();
     }
 
     private boolean hasCondition(final Goals goals, final String conditionName){
-        return goals.primary().conditions()
+        return goals.primary().getMetric().conditions()
                 .stream()
                 .anyMatch(condition ->conditionName .equals(condition.parameter()));
     }
-    private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(final HTMLPageAsset page,
+    private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(
+            final HTMLPageAsset page,
             final String conditionName) {
 
-        return com.dotcms.analytics.metrics.Condition.builder()
-                .parameter(conditionName)
-                .operator(Operator.CONTAINS)
-                .value(page.getPageUrl())
-                .build();
+            return com.dotcms.analytics.metrics.Condition.builder()
+                    .parameter(conditionName)
+                    .operator(Operator.REGEX)
+                    .value(ExperimentUrlPatternCalculator.INSTANCE.calculateUrlRegexPattern(page))
+                    .build();
+
     }
 
     private void saveTargetingConditions(final Experiment experiment, final User user)
@@ -285,7 +297,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         Condition condition = targetingCondition.id().isPresent()
             ? Try.of(()->rulesAPI.getConditionById(targetingCondition.id().get(), user, false))
                 .getOrElseThrow(()->new IllegalArgumentException("Invalid targeting Condition Id provided. Id: " + targetingCondition.id().get()))
-            : createCondition(experimentRule, targetingCondition);
+            : createCondition(experimentRule);
 
         condition.setOperator(targetingCondition.operator());
         condition.setConditionletId(targetingCondition.conditionKey());
@@ -299,8 +311,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                         + condition.getConditionletId()));
     }
 
-    private Condition createCondition(final Rule experimentRule,
-            final TargetingCondition targetingCondition) {
+    private Condition createCondition(final Rule experimentRule) {
         final Condition condition = new Condition();
         condition.setConditionGroup(experimentRule.getGroups().get(0).getId());
         return condition;
@@ -389,7 +400,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 ()-> "Only ENDED experiments can be archived",
                 DotStateException.class);
 
-        final Experiment archived = persistedExperiment.get().withStatus(Status.ARCHIVED);
+        final Experiment archived = persistedExperiment.get().withStatus(ARCHIVED);
         return save(archived, user);
     }
 
@@ -456,20 +467,98 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
                 + "have the Goal set.");
 
+        final List<Experiment> runningExperimentsOnPage = list(ExperimentFilter.builder()
+                .pageId(persistedExperiment.pageId())
+                .statuses(Set.of(RUNNING))
+                .build(), user);
+
+        if(!runningExperimentsOnPage.isEmpty()) {
+            final boolean meantToRunNow = persistedExperiment.scheduling().isEmpty();
+
+            if(meantToRunNow) {
+                throw new DotStateException("There is a running Experiment on the same page. Name: "
+                        + runningExperimentsOnPage.get(0).name());
+            }
+
+            final Experiment runningExperiment = runningExperimentsOnPage.get(0);
+            DotPreconditions.isTrue(runningExperiment.scheduling().orElseThrow().endDate()
+                    .orElseThrow().isBefore(persistedExperiment.scheduling().orElseThrow().startDate().orElseThrow()),
+                    ()-> "Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. "
+                            + "Overlapping with Experiment: "
+                            + runningExperiment.name(),
+                    DotStateException.class);
+        }
+
         Experiment toReturn;
 
-        if(persistedExperiment.scheduling().isEmpty() ||
-                (persistedExperiment.scheduling().get().startDate()).isEmpty()
-                        && persistedExperiment.scheduling().get().endDate().isEmpty()) {
+        if(emptyScheduling(persistedExperiment)) {
             final Scheduling scheduling = startNowScheduling(persistedExperiment);
-            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(RUNNING), user);
+            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
+            validateNoConflictsWithScheduledExperiments(experimentToSave, user);
+            toReturn = save(experimentToSave, user);
+            publishExperimentPage(toReturn, user);
             publishContentOnExperimentVariants(user, toReturn);
+            cacheRunningExperiments();
         } else {
             Scheduling scheduling = persistedExperiment.scheduling().get();
-            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED),user);
+            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
+            validateNoConflictsWithScheduledExperiments(experimentToSave, user);
+            toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
         }
 
         return toReturn;
+    }
+
+    private void publishExperimentPage(final Experiment experiment, final User user)
+            throws DotDataException, DotSecurityException {
+        final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(contentletAPI
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false));
+
+        if(htmlPageAsset.isLive()) {
+            return;
+        }
+
+        final List relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, new ArrayList(),
+                true, user, false);
+        relatedNotPublished.stream().filter(asset -> asset instanceof Contentlet).forEach(
+                asset -> Contentlet.class.cast(asset)
+                        .setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE));
+        //Publish the page and the related content
+        htmlPageAsset.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+        try {
+            PublishFactory.publishHTMLPage(htmlPageAsset, relatedNotPublished, user,
+                    false);
+        } catch(WebAssetException e) {
+            throw new DotDataException(e);
+        }
+    }
+
+    private static boolean emptyScheduling(Experiment persistedExperiment) {
+        return persistedExperiment.scheduling().isEmpty() ||
+                (persistedExperiment.scheduling().get().startDate()).isEmpty()
+                        && persistedExperiment.scheduling().get().endDate().isEmpty();
+    }
+
+    private void validateNoConflictsWithScheduledExperiments(final Experiment experimentToCheck,
+            final User user) throws DotDataException {
+
+        final List<Experiment> scheduledExperimentsOnPage = list(ExperimentFilter.builder()
+                .pageId(experimentToCheck.pageId())
+                .statuses(Set.of(SCHEDULED))
+                .build(), user);
+
+        final boolean noConflicts = scheduledExperimentsOnPage.isEmpty() ||
+                scheduledExperimentsOnPage.stream().allMatch(scheduledExperiment -> {
+            final Scheduling scheduling = scheduledExperiment.scheduling().orElseThrow();
+            final Scheduling schedulingToCheck = experimentToCheck.scheduling().orElseThrow();
+            return schedulingToCheck.startDate().orElseThrow().isAfter(scheduling.endDate().orElseThrow()) ||
+                    schedulingToCheck.endDate().orElseThrow().isBefore(scheduling.startDate().orElseThrow());
+        });
+
+        DotPreconditions.isTrue(noConflicts, ()-> "Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. "
+                        + "Overlapping with Experiment: "
+                + scheduledExperimentsOnPage.get(0).name(),
+                DotStateException.class);
     }
 
     @Override
@@ -491,6 +580,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 DotStateException.class);
 
         Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
+        cacheRunningExperiments();
+        publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
 
         return running;
@@ -506,7 +597,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
                 runningExperiment.trafficProportion().variants().stream()
                         .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
-                        .toArray(String[]::new));
+                        .toArray(String[]::new)).stream()
+                        .filter((contentlet -> Try.of(contentlet::isWorking)
+                                .getOrElse(false))).collect(Collectors.toList());
 
         contentletAPI.publish(contentByVariants, user, false);
     }
@@ -529,11 +622,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 "You don't have permission to archive the Experiment. "
                         + "Experiment Id: " + persistedExperimentOpt.get().id());
 
-        DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING,()->
+        DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING, ()->
                         "Only RUNNING experiments can be ended", DotStateException.class);
-
-        DotPreconditions.isTrue(experimentFromFactory.status()!= ENDED,
-                ()-> "Cannot end an already ended Experiment.", DotStateException.class);
 
         DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
                 ()-> "Scheduling not valid.", DotStateException.class);
@@ -544,7 +634,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final Experiment ended = persistedExperimentOpt.get().withStatus(ENDED)
                 .withScheduling(endedScheduling);
-        return save(ended, user);
+        final Experiment saved = save(ended, user);
+
+        cacheRunningExperiments();
+
+        return saved;
     }
 
     @WrapInTransaction
@@ -769,12 +863,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     }
 
-    @CloseDBIfOpened
     @Override
     public List<Experiment> getRunningExperiments() throws DotDataException {
-        return FactoryLocator.getExperimentsFactory().list(
-                ExperimentFilter.builder().statuses(set(Status.RUNNING)).build()
-        );
+        final List<Experiment> cached = experimentsCache.getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
+        if (Objects.nonNull(cached)) {
+            return cached;
+        }
+
+        return cacheRunningExperiments();
     }
 
     @Override
@@ -788,7 +884,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public boolean isAnyExperimentRunning() throws DotDataException {
-        return isExperimentEnabled.get() &&
+        return ConfigExperimentUtil.INSTANCE.isExperimentEnabled() &&
                 !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
     }
 
@@ -802,33 +898,61 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
      * </ul>
      *
      * @param experiment
+     * @param user
      * @return
      */
     @Override
-    public ExperimentResults getResults(final Experiment experiment)
-            throws DotDataException, DotSecurityException {
-
-        final String experimentId = experiment.id().orElseThrow(
-                () -> new IllegalArgumentException("The Experiment must have an Identifier"));
-
-        final Experiment experimentFromDataBase = APILocator.getExperimentsAPI()
-                .find(experimentId, APILocator.systemUser())
+    public ExperimentResults getResults(final Experiment experiment, final User user) throws DotDataException, DotSecurityException {
+        final String experimentId = experiment.id()
+            .orElseThrow(() -> new IllegalArgumentException("The Experiment must have an Identifier"));
+        final Experiment experimentFromDataBase = find(experimentId, APILocator.systemUser())
                 .orElseThrow(() -> new NotFoundException("Experiment not found: " + experimentId));
 
-        DotPreconditions.isTrue(experimentFromDataBase.status() == RUNNING,
-                "The Experiment must be RUNNING");
+        DotPreconditions.isTrue(
+            RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
+            "The Experiment must be RUNNING or ENDED to get results");
 
+        final List<BrowserSession> events = getEvents(experiment, user);
+        final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
+            experiment, events);
 
-        final List<BrowserSession> events = getEvents(experiment);
-        return ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(experiment, events);
+        experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
+
+        return experimentResults;
+    }
+
+    @CloseDBIfOpened
+    private List<Experiment> cacheRunningExperiments() throws DotDataException {
+        final List<Experiment> experiments = FactoryLocator
+            .getExperimentsFactory()
+            .list(ExperimentFilter.builder().statuses(set(Status.RUNNING)).build());
+        experimentsCache.putList(ExperimentsCache.CACHED_EXPERIMENTS_KEY, experiments);
+        return experiments;
+    }
+
+    /**
+     * Calculates Bayesian results based on {@link ExperimentResults} object gathered results from cube.
+     *
+     * @param experimentResults experiments results
+     * @param goalName          goal name to get results from
+     * @return {@link BayesianResult} bayesian results instance
+     */
+    private BayesianResult calcBayesian(final ExperimentResults experimentResults, final String goalName) {
+        DotPreconditions.checkNotNull(experimentResults, "Experiment results should not be null");
+        final int variantsNumber = experimentResults.getSessions().getVariants().size();
+        DotPreconditions.checkArgument(variantsNumber >= 2, "At least two variants should be put to test");
+        DotPreconditions.checkArgument(variantsNumber <= VARIANTS_NUMBER_MAX, "Currently more than variant is not supported");
+
+        final String goal = StringUtils.defaultIfBlank(goalName, PRIMARY_GOAL);
+        final BayesianInput bayesianInput = BayesianHelper.get().toBayesianInput(experimentResults, goal);
+
+        return bayesianAPI.doBayesian(bayesianInput);
     }
 
     @Override
-    public List<BrowserSession> getEvents(Experiment experiment) {
+    public List<BrowserSession> getEvents(final Experiment experiment, final User user) throws DotDataException {
         try{
-            final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
-
-            final AnalyticsApp analyticsApp = analyticsHelper.appFromHost(currentHost);
+            final AnalyticsApp analyticsApp = resolveAnalyticsApp(user);
 
             final CubeJSClient cubeClient = new CubeJSClient(
                     analyticsApp.getAnalyticsProperties().analyticsReadUrl());
@@ -836,7 +960,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
                     .create(experiment);
 
-            final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
+            final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
 
             String previousLookBackWindow = null;
             final List<Event> currentEvents = new ArrayList<>();
@@ -844,7 +968,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
             for (final ResultSetItem resultSetItem : cubeJSResultSet) {
                 final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
-                        .map(lookBackWindow -> lookBackWindow.toString())
+                        .map(Object::toString)
                         .orElse(StringPool.BLANK);
 
                 if (!currentLookBackWindow.equals(previousLookBackWindow)) {
@@ -856,7 +980,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
                 currentEvents.add(new Event(resultSetItem.getAll(),
                             EventType.get(resultSetItem.get("Events.eventType")
-                                    .map(value -> value.toString())
+                                    .map(Object::toString)
                                     .orElseThrow(() -> new IllegalStateException("Type into Event is expected")))
                 ));
 
@@ -870,6 +994,21 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             return sessions;
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private AnalyticsApp resolveAnalyticsApp(final User user) throws DotDataException, DotSecurityException {
+        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
+        try {
+            return analyticsHelper.appFromHost(currentHost);
+        } catch (final IllegalStateException e) {
+            throw new DotDataException(
+                Try.of(() ->
+                    LanguageUtil.get(
+                        user,
+                        "analytics.app.not.configured",
+                        AnalyticsHelper.extractMissingAnalyticsProps(e)))
+                    .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())));
         }
     }
 
@@ -887,6 +1026,74 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         finalizedExperiments.forEach((experiment ->
                 Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
                         new DotStateException("Unable to end Experiment. Cause:" + e))));
+    }
+
+    @Override
+    public Experiment promoteVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException {
+
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        DotPreconditions.isTrue(persistedExperiment.status().equals(Status.RUNNING) ||
+                persistedExperiment.status().equals(ENDED),
+                ()->"Experiment must be running or ended to promote a variant",
+                DotStateException.class);
+
+        DotPreconditions.isTrue(variantName!= null &&
+                        variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                IllegalArgumentException.class);
+
+        final Variant variantToPromote = variantAPI.get(variantName)
+                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+
+        final TreeSet<ExperimentVariant> variantsAfterPromotion =
+                persistedExperiment.trafficProportion()
+                        .variants().stream().map((variant) -> {
+                            if (variant.id().equals(variantName)) {
+                                Try.run(()->variantAPI.promote(variantToPromote, user))
+                                        .getOrElseThrow(()-> new DotRuntimeException("Unable to promote variant. Variant name: " + variantName));
+                                return variant.withPromoted(true);
+                            } else {
+                                return variant.withPromoted(false);
+                            }
+                        }).collect(Collectors.toCollection(TreeSet::new));
+
+        final TrafficProportion trafficProportion = persistedExperiment.trafficProportion()
+                .withVariants(variantsAfterPromotion);
+        Experiment withUpdatedVariants = persistedExperiment.withTrafficProportion(trafficProportion);
+
+        withUpdatedVariants = save(withUpdatedVariants, user);
+
+        if(withUpdatedVariants.status()==RUNNING) {
+            withUpdatedVariants = end(withUpdatedVariants.id().orElseThrow(), user);
+        }
+
+        return withUpdatedVariants;
+    }
+
+    @Override
+    public Experiment cancel(String experimentId, User user)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+
+        final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
+
+        DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),()-> "Experiment with provided id not found",
+                DoesNotExistException.class);
+
+        final Experiment experimentFromFactory = persistedExperimentOpt.get();
+        validatePermissions(user, experimentFromFactory,
+                "You don't have permission to cancel the Experiment. "
+                        + "Experiment Id: " + persistedExperimentOpt.get().id());
+
+        DotPreconditions.isTrue(experimentFromFactory.status()== SCHEDULED, ()->
+                "Only SCHEDULED experiments can be canceled", DotStateException.class);
+
+        DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
+                ()-> "Scheduling not valid.", DotStateException.class);
+
+        return save(experimentFromFactory.withStatus(DRAFT), user);
     }
 
     @Override
@@ -974,13 +1181,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         } else if(scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
             DotPreconditions.checkState(scheduling.endDate().get().isAfter(NOW),
                     "Invalid Scheduling. End date is in the past");
-            DotPreconditions.checkState(
-                    Instant.now().plus(EXPERIMENTS_MAX_DURATION.get(), ChronoUnit.DAYS)
-                            .isAfter(scheduling.endDate().get()),
-                    "Experiment duration must be less than "
-                            + EXPERIMENTS_MAX_DURATION.get() +" days. ");
 
-            toReturn = scheduling.withStartDate(Instant.now());
+            final Instant startDate = scheduling.endDate().get().minus(EXPERIMENTS_MAX_DURATION.get(),
+                    ChronoUnit.DAYS);
+
+            toReturn = scheduling.withStartDate(startDate);
         } else {
             DotPreconditions.checkState(scheduling.startDate().get().isAfter(NOW),
                     "Invalid Scheduling. Start date is in the past");
@@ -990,6 +1195,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
             DotPreconditions.checkState(scheduling.endDate().get().isAfter(scheduling.startDate().get()),
                     "Invalid Scheduling. End date must be after the start date");
+
+            DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
+                            scheduling.endDate().get()).toDays() >= EXPERIMENTS_MIN_DURATION.get(),
+                    "Experiment duration must be at least "
+                            + EXPERIMENTS_MIN_DURATION.get() +" days. ");
 
             DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
                             scheduling.endDate().get()).toDays() <= EXPERIMENTS_MAX_DURATION.get(),
@@ -1002,4 +1212,5 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private boolean hasValidLicense(){
         return (licenseValiditySupplierSupplier.hasValidLicense());
     }
+
 }

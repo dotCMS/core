@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.*;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.logging.LogFactory;
 
@@ -33,8 +34,19 @@ public class CMSFilter implements Filter {
     private final String RELATIVE_ASSET_PATH = APILocator.getFileAssetAPI().getRelativeAssetsRootPath();
     public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
 
+    /*
+     * These enums are used to determine what the current request is.
+     * It is used to determine if the request is a page, a file, a folder, or nothing in the CMS.
+     * In some cases we have to know if the request is a page or if it is an index page. For example, if the request is
+     * an UrlMapping and ends with slash, then it needs to be treated as a page and not as an index page. To achieve this
+     * we use the IAmSubType enum.
+     * */
     public enum IAm {
         PAGE, FOLDER, FILE, NOTHING_IN_THE_CMS
+    }
+
+    public enum IAmSubType {
+        PAGE_INDEX, PAGE_URL_MAP, NONE
     }
 
     @Override
@@ -91,23 +103,23 @@ public class CMSFilter implements Filter {
         }
 
 
-        final IAm iAm  = this.urlUtil.resolveResourceType(IAm.NOTHING_IN_THE_CMS, uri, site, languageId);
+        final Tuple2<IAm,IAmSubType> iAm  =
+                this.urlUtil.resolveResourceType(IAm.NOTHING_IN_THE_CMS, uri, site, languageId);
 
         // if I am a folder without a slash
-        if (iAm == IAm.FOLDER && !uri.endsWith("/")) {
+        if (iAm._1() == IAm.FOLDER && !uri.endsWith("/")) {
             response.setHeader("Location", UtilMethods.isSet(queryString) ? uri + "/?" + queryString : uri + "/");
             Try.run(()->response.setStatus(301));
             return;
         }
 
-        // if I am a Page with a slash
-        if (iAm == IAm.PAGE && uri.endsWith("/")) {
-           uri = uri + CMS_INDEX_PAGE;
-
+        // if I am a Page with a trailing slash
+        if (iAm._1() == IAm.PAGE && iAm._2() == IAmSubType.PAGE_INDEX && uri.endsWith("/")) {
+            uri = uri + CMS_INDEX_PAGE;
         }
         
 
-        if (iAm == IAm.PAGE) {
+        if (iAm._1() == IAm.PAGE) {
             countPageVisit(request);
             countSiteVisit(request, response);
             request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE,
@@ -116,7 +128,7 @@ public class CMSFilter implements Filter {
                     this.urlUtil.getQueryStringFromUri (uri):queryString;
         }
 
-        if (iAm == IAm.FILE) {
+        if (iAm._1() == IAm.FILE) {
             Identifier ident;
             try {
                 // Serving the file through the /dotAsset servlet
@@ -138,13 +150,14 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        if (iAm == IAm.PAGE) {
+        if (iAm._1() == IAm.PAGE) {
 
             final StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
 
             if (UtilMethods.isSet(queryString)) {
                 if (!queryString.contains(WebKeys.HTMLPAGE_LANGUAGE)) {
-                    queryString = queryString + "&" + WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId;
+                    queryString = queryString + "&" + WebKeys.HTMLPAGE_LANGUAGE + "=" +
+                            Try.of(()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()).getOrElse(languageId);
                 }
                 forward.append('?');
                 forward.append(queryString);

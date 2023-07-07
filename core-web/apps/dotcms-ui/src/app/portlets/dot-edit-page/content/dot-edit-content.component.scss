@@ -2,7 +2,7 @@
 @import "mixins";
 
 :host {
-    background-color: $gray-bg;
+    background-color: $color-palette-gray-200;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -12,14 +12,14 @@
 dot-whats-changed,
 .dot-edit__iframe {
     background: $white;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     box-shadow: $md-shadow-4;
     flex-grow: 1;
     overflow: hidden;
 }
 
 .dot-edit__page-wrapper {
-    background-color: $gray-bg;
+    background-color: $color-palette-gray-200;
     height: 100%;
     max-width: 100%;
     padding: $spacing-5;
@@ -47,26 +47,19 @@ dot-whats-changed,
     padding-right: 80px;
 }
 
-.dot-edit__page-wrapper:after {
-    content: "";
-    display: block;
-    height: 1px;
-    width: 66.5rem;
-}
-
 .dot-edit__device-wrapper {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    border: solid 1px $gray-lighter;
+    border: solid 1px $color-palette-gray-300;
 
     .dot-edit__page-wrapper--deviced & {
         flex-grow: 0;
         border-radius: 10px;
         border: 2px solid #ddd;
-        box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.1);
-        background: rgba($white_rgb, 1);
-        background: linear-gradient(135deg, rgba($white_rgb, 1) 0%, rgba(240, 240, 240, 1) 100%);
+        box-shadow: 4px 4px 15px $color-palette-black-op-10;
+        background: $white;
+        background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
         margin: 0 auto;
         padding: 0 10px;
@@ -96,8 +89,8 @@ dot-whats-changed,
                 135deg,
                 rgba(242, 239, 242, 1) 0%,
                 rgba(242, 239, 242, 1) 9%,
-                rgba($white_rgb, 1) 76%,
-                rgba($white_rgb, 1) 100%
+                $white 76%,
+                $white 100%
             );
             filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#f2eff2', endColorstr='#ffffff', GradientType=1);
         }
@@ -146,7 +139,7 @@ dot-whats-changed,
         position: absolute;
         background: $white;
         top: 134px;
-        border: 1px solid $gray-lighter;
+        border: 1px solid $color-palette-gray-300;
         border-radius: 6px 0 0 6px;
         cursor: pointer;
         z-index: 2;

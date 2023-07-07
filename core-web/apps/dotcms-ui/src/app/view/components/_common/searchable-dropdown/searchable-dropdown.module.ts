@@ -8,12 +8,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotIconModule, DotMessagePipeModule, UiDotIconButtonModule } from '@dotcms/ui';
 
 import { SearchableDropdownComponent } from './component';
-
-import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 
 export const SEARCHABLE_NGFACES_MODULES = [
     ButtonModule,

@@ -5,6 +5,7 @@ on:
       - release-*
   repository_dispatch:
     types:
+
       - enterprise-update
 jobs:
   publish_image:

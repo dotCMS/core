@@ -433,7 +433,7 @@ public class MultiTreeFactory {
 	
 
     private static void refreshPageInCache(final String pageIdentifier) throws DotDataException {
-        Set<String> inodes = new HashSet<String>();
+        Set<String> inodes = new HashSet<>();
         List<ContentletVersionInfo> infos = APILocator.getVersionableAPI()
             .findContentletVersionInfos(pageIdentifier);
         for (ContentletVersionInfo versionInfo : infos) {

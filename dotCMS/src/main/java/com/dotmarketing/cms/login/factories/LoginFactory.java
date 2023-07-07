@@ -323,7 +323,7 @@ public class LoginFactory {
         		(0 < PRE_AUTHENTICATOR.length()) &&
         		PRE_AUTHENTICATOR.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"))) {
         		Class ldap_auth_impl_class = Class.forName(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"));
-        		Authenticator ldap_auth_impl = (Authenticator) ldap_auth_impl_class.newInstance();
+        		Authenticator ldap_auth_impl = (Authenticator) ldap_auth_impl_class.getDeclaredConstructor().newInstance();
         		int auth = 0;
 
     			if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {

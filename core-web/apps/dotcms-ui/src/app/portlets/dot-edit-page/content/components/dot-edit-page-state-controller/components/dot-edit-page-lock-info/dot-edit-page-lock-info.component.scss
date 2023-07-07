@@ -2,8 +2,8 @@
 @import "mixins";
 
 :host {
-    font-size: $font-size-small;
-    color: $gray;
+    font-size: $font-size-sm;
+    color: $color-palette-gray-700;
 }
 
 .page-info {

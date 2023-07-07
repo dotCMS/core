@@ -6,7 +6,7 @@ import { SuggestionsListItemComponent } from './components/suggestions-list-item
 import { SuggestionListComponent } from './suggestion-list.component';
 
 export default {
-    title: 'Suggestion List',
+    title: 'Library/Block Editor/Components/Suggestion List',
     decorators: [
         moduleMetadata({
             declarations: [SuggestionListComponent, SuggestionsListItemComponent],

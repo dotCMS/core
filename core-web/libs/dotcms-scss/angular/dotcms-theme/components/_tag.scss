@@ -1,0 +1,48 @@
+@use "variables" as *;
+
+.p-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: $color-palette-primary;
+    color: $white;
+    font-size: $font-size-md;
+    font-weight: $font-weight-regular-bold;
+    padding: $spacing-1 $spacing-3;
+    border-radius: $tag-radius-md;
+}
+
+p-tag.sm {
+    &.sm {
+        .p-tag {
+            font-size: $font-size-sm;
+            padding: $spacing-1 $spacing-2;
+
+            .p-tag-value {
+                line-height: $spacing-3;
+            }
+        }
+    }
+}
+
+.p-tag .p-tag-icon {
+    margin-right: $spacing-1;
+    font-size: $font-size-xs;
+}
+
+p-tag {
+    &.p-tag-success .p-tag {
+        background-color: $color-alert-green-light;
+        color: $color-accessible-text-green;
+    }
+
+    &.p-tag-info .p-tag {
+        background-color: $color-alert-blue-light;
+        color: $color-alert-blue;
+    }
+
+    &.p-tag-warning .p-tag {
+        background-color: $color-alert-yellow-light;
+        color: $color-alert-yellow;
+    }
+}

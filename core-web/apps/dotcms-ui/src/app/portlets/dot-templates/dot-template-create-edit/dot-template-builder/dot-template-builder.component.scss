@@ -13,9 +13,27 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+
+            form {
+                margin-right: 0;
+            }
         }
+
         .p-tabview-panel:not([hidden]) {
             height: 100%;
+        }
+
+        dotcms-template-builder {
+            display: block;
+            height: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .dot-template-builder__new-template-builder {
+            .p-tabview-nav {
+                padding: 0 $spacing-5;
+            }
         }
     }
 }

@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-20.04
     name: SonarQube
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: sonarsource/sonarqube-scan-action@master
@@ -128,13 +128,6 @@ jobs:
             echo "color=#ff2400" >>$GITHUB_OUTPUT
             exit 1;
           fi
-      - name: Push Tests to GitHub
-        id: persist_results
-        if: success() || failure()
-        run: |
-          chmod +x .cicd/github.sh && source .cicd/github.sh
-          persistResults
-          echo "message=$(logResults)" >>$GITHUB_OUTPUT
       - name: Build
         id: build
         working-directory: core-web

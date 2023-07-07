@@ -14,9 +14,8 @@ import {
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -338,6 +337,51 @@ describe('SearchableDropdownComponent', () => {
 
         hostFixture.detectChanges();
         expect(hostComp.placeholder).toEqual(comp.valueString);
+    });
+
+    describe('star class', () => {
+        it('should add the star css class when item has default property set to true', () => {
+            hostComp.data = [
+                {
+                    id: 1,
+                    label: `label`,
+                    name: `label`,
+                    parentPermissionable: {
+                        hostname: 'demo.dotcms.com'
+                    },
+                    default: true
+                }
+            ];
+
+            hostFixture.detectChanges();
+
+            const item = de.query(
+                By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
+            );
+
+            expect(item.classes['star']).toBeTruthy();
+        });
+        it('should not add css star class when item default property is set to false', () => {
+            hostComp.data = [
+                {
+                    id: 1,
+                    label: `label`,
+                    name: `label`,
+                    parentPermissionable: {
+                        hostname: 'demo.dotcms.com'
+                    },
+                    default: false
+                }
+            ];
+
+            hostFixture.detectChanges();
+
+            const item = de.query(
+                By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
+            );
+
+            expect(item.classes['star']).toBeFalsy();
+        });
     });
 });
 

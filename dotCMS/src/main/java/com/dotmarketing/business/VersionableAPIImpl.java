@@ -10,6 +10,7 @@ import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.Debouncer;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.exception.DotDataException;
@@ -202,7 +203,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 			                                    DotStateException, DotSecurityException {
 
 		List<Versionable> versions = versionableFactory.findAllVersions(id);
-		List<Permissionable> pass  = new ArrayList<Permissionable>();
+		List<Permissionable> pass  = new ArrayList<>();
 
 		for (Versionable v : versions) {
 			if (v instanceof Permissionable) {
@@ -211,7 +212,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 		}
 
 		pass = permissionAPI.filterCollection(pass, PermissionAPI.PERMISSION_READ, respectAnonPermissions, user);
-		versions = new ArrayList<Versionable>();
+		versions = new ArrayList<>();
 
 		for (Permissionable p : pass) {
 			if (p instanceof Versionable) {
@@ -286,7 +287,8 @@ public class VersionableAPIImpl implements VersionableAPI {
                     getContentletVersionInfo(identifier, contentlet) :
                     getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId(),
                             contentlet.getVariantId());
-
+            if (info.isEmpty())
+                return false;
             liveInode=info.get().getLiveInode();
         } else {
             final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());
@@ -311,7 +313,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                     contentlet.getVariantId());
         }
 
-        if(!info.isPresent())
+        if(info.isEmpty())
             throw new DotStateException("No version info. Call setWorking first "+identifier.getId());
         return info;
     }
@@ -404,7 +406,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         final Optional<ContentletVersionInfo> contentletVersionInfo =
                 this.versionableFactory.getContentletVersionInfo( identifierId, lang );
 
-        if ( !contentletVersionInfo.isPresent() ) {
+        if ( contentletVersionInfo.isEmpty() ) {
             throw new DotStateException( "No version info. Call setLive first" );
         }
 
@@ -580,7 +582,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                     .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId(),
                             contentlet.getVariantId());
 
-            if(!info.isPresent()) {
+            if(info.isEmpty()) {
                 // Not yet created
                 info = Optional.of(versionableFactory.createContentletVersionInfo(identifier,
                         contentlet.getLanguageId(), versionable.getInode(), contentlet.getVariantId()));
@@ -710,7 +712,12 @@ public class VersionableAPIImpl implements VersionableAPI {
         return versionableFactory.findAllContentletVersionInfos(identifier, variantName);
     }
 	
-	
+	@Override
+    @CloseDBIfOpened
+    public List<ContentletVersionInfo> findAllByVariant(final Variant variant) throws DotDataException{
+        return versionableFactory.findAllByVariant(variant);
+    }
+
 	@WrapInTransaction
 	@Override
 	public void saveVersionInfo(final VersionInfo vInfo) throws DotDataException, DotStateException {
@@ -725,7 +732,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                 .findContentletVersionInfoInDB(contentletVersionInfo.getIdentifier(),
                         contentletVersionInfo.getLang(), contentletVersionInfo.getVariant());
 
-		if(!contentletVersionInfoInDB.isPresent()) {
+		if(contentletVersionInfoInDB.isEmpty()) {
 			versionableFactory.saveContentletVersionInfo(contentletVersionInfo, true);
 		} else {
 		    final ContentletVersionInfo info = contentletVersionInfoInDB.get();

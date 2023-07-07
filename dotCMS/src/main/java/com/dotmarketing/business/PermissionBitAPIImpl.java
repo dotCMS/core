@@ -6,6 +6,8 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -25,6 +27,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
@@ -37,6 +40,7 @@ import com.liferay.portal.NoSuchRoleException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -104,7 +109,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @return List of type Role for a particular permission.  ie.. All roles with read permission from the collection of permissions passed in
 	 */
 	private List<Role> loadRolesForPermission(List<Permission> permissions, int permissionTypeToLoadFor) throws NoSuchRoleException {
-		ArrayList<Role> roles = new ArrayList<Role>();
+		ArrayList<Role> roles = new ArrayList<>();
 		for (Permission permission : permissions) {
 			if(permission.matchesPermission(permissionTypeToLoadFor))	{
 				try {
@@ -131,7 +136,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @return List of type Role for a particular permission.  ie.. All roles with read permission from the collection of permissions passed in
 	 */
 	private List<Role> loadRolesForPermission(List<Permission> permissions, int permissionTypeToLoadFor, String roleNameFilter) throws NoSuchRoleException {
-		SortedSet<Role> roles = new TreeSet<Role>();
+		SortedSet<Role> roles = new TreeSet<>();
 
 		boolean isRoleNameFilterValid = UtilMethods.isSet(roleNameFilter);
 		for (Permission permission : permissions) {
@@ -149,7 +154,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				}
 			}
 		}
-		return new ArrayList<Role>(roles);
+		return new ArrayList<>(roles);
 	}
 
 
@@ -251,32 +256,41 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 	}
 
+	private boolean userPermissions(final UserProxy userProxy, final User userIn) {
+
+		if(userProxy.getPermissionId().equals("user:"+userIn.getUserId())) {
+			return true;
+		}
+		return Try.of(()-> APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("user", userIn)).getOrElse(false);
+	}
+
 	@Override
 	public boolean doesUserHavePermission(Permissionable permissionable, int permissionType, User user) throws DotDataException {
 		return doesUserHavePermission(permissionable, permissionType, user, true);
 	}
 
-	private boolean userPermissions(final UserProxy userProxy, final User userIn) {
-	    
-	    if(userProxy.getPermissionId().equals("user:"+userIn.getUserId())) {
-	        return true;
-	    }
-	    return Try.of(()-> APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("user", userIn)).getOrElse(false);
-	}
-	
-	
-	
 	@CloseDBIfOpened
 	@Override
-	public boolean doesUserHavePermission(final Permissionable permissionable, int permissionType, final User userIn, final boolean respectFrontendRoles) throws DotDataException {
-	    
-	    User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
-	    
-        if(user.getUserId().equals(APILocator.systemUser().getUserId())){
+	public boolean doesUserHavePermission(final Permissionable permissionable,
+										  final int permissionType,
+										  final User userIn,
+										  final boolean respectFrontendRoles) throws DotDataException {
+		return doesUserHavePermission(permissionable, permissionType, userIn, respectFrontendRoles, null);
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public boolean doesUserHavePermission(final Permissionable permissionable,
+										  final int permissionType,
+										  final User userIn,
+										  final boolean respectFrontendRoles,
+										  final Contentlet contentlet) throws DotDataException {
+	    final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
+        if (user.getUserId().equals(APILocator.systemUser().getUserId())){
             return true;
         }
         
-        if(user.isAdmin()) {
+        if (user.isAdmin()) {
             return true;
         }
         
@@ -285,24 +299,29 @@ public class PermissionBitAPIImpl implements PermissionAPI {
             throw new NullPointerException("Permissionable object is null");
         }
         
-        if(UtilMethods.isEmpty(permissionable.getPermissionId())){
-            Logger.debug(this.getClass(), "Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
-            Logger.debug(this.getClass(), "Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+        if (UtilMethods.isEmpty(permissionable.getPermissionId())) {
+            Logger.debug(
+				this.getClass(),
+				"Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
+            Logger.debug(
+				this.getClass(),
+				"Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
             return false;
-            
         }
 
-        // short circut for UserProxy
-        if(permissionable instanceof UserProxy) {
+        // short circuit for UserProxy
+        if (permissionable instanceof UserProxy) {
             return userPermissions((UserProxy) permissionable, user);
         }
-		
 
-		
 		// Folders do not have PUBLISH, use EDIT instead
-		if(PermissionableType.FOLDERS.getCanonicalName().equals(permissionable.getPermissionType()) && permissionType == PERMISSION_PUBLISH){
-			permissionType=PERMISSION_EDIT;
-		}
+		final int expecterPermissionType = PermissionableType
+			.FOLDERS
+			.getCanonicalName()
+			.equals(permissionable.getPermissionType())
+				&& permissionType == PERMISSION_PUBLISH
+			? PERMISSION_EDIT
+			: permissionType;
 
 		Role adminRole;
 		Role anonRole;
@@ -318,73 +337,100 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			throw new DotRuntimeException(e1.getMessage(), e1);
 		}
 
-		if(APILocator.getRoleAPI().doesUserHaveRole(user, adminRole)) {
+		if (APILocator.getRoleAPI().doesUserHaveRole(user, adminRole)) {
 			return true;
 		}
 
-
-
-		final List<Permission> perms =  getPermissions(permissionable, true);
+		final List<Permission> perms = getPermissions(permissionable, true);
 		final boolean isContentlet = permissionable instanceof Contentlet;
-
-
-		for(Permission p : perms){
-			if(p.matchesPermission(permissionType)){
-				if(respectFrontendRoles){
-
-                        //anonymous role should not be able to access non-live contentlet
-                       
-                        if (p.getRoleId().equals(anonRole.getId()) && (!isContentlet
-                                || isLiveContentlet(permissionable))) {
-                            return true;
-                            //if logged in site user has permission
-                        }else if(!user.isAnonymousUser() && p.getRoleId().equals(frontEndUserRole.getId())){
-                            return true;
-                        }
-                   
+		for(final Permission p : perms){
+			if (p.matchesPermission(expecterPermissionType)) {
+				if (respectFrontendRoles) {
+					//anonymous role should not be able to access non-live contentlet
+					if (p.getRoleId().equals(anonRole.getId()) && (!isContentlet || isLiveContentlet(permissionable))) {
+						return true;
+						//if logged in site user has permission
+					}
                 }
 				// if owner and owner has required permission return true
 				try {
-					if(p.getRoleId().equals(cmsOwnerRole.getId()) && permissionable.getOwner() != null && permissionable.getOwner().equals(user.getUserId()) &&
-							checkRelatedPermissions(permissionable.permissionDependencies(permissionType), user)){
+					if (p.getRoleId().equals(cmsOwnerRole.getId())
+						&& permissionable.getOwner() != null
+						&& permissionable.getOwner().equals(user.getUserId())
+						&& checkRelatedPermissions(permissionable.permissionDependencies(expecterPermissionType), user)) {
 						return true;
 					}
 				} catch (DotDataException e1) {
 					Logger.error(this, e1.getMessage(), e1);
 					throw new DotRuntimeException(e1.getMessage(), e1);
 				}
+
+				if (permissionable instanceof WorkflowAction
+					&& workflowActionHasPermission(expecterPermissionType, p, user, contentlet)) {
+					return true;
+				}
 			}
 		}
+
         // front end users cannot read content that is not live
-        if(!user.isBackendUser() && isContentlet && !isLiveContentlet(permissionable) && permissionType == PERMISSION_READ) {
+        if (!user.isBackendUser()
+			&& isContentlet
+			&& !isLiveContentlet(permissionable)
+			&& expecterPermissionType == PERMISSION_READ) {
             Logger.warn(this, String.format("User '%s' cannot verify READ permissions on Contentlet '%s' because it " +
                     "is not live.", user.getUserId(), permissionable.getPermissionId()));
             return false;
         }
 
+		final Set<Role> roles = new HashSet<>(Try
+			.of(() -> APILocator.getRoleAPI().loadRolesForUser(user.getUserId()))
+			.getOrElse(List.of()));
 
-		final Set<Role> roles = new HashSet<>(Try.of(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId())).getOrElse(new ArrayList<>()));
-        
-
-		
 		// remove front end user access for anon user (e.g, /intranet)
 		// Note to selves: it was a mistake to add this role to the Anon user in 5.2.0
-		if(user.isAnonymousUser()) {
+		if (user.isAnonymousUser()) {
             roles.remove(frontEndUserRole);
         }
-		if(!respectFrontendRoles) {
+		if (!respectFrontendRoles) {
 		    roles.remove(frontEndUserRole);
 		    roles.remove(anonRole);
 		    roles.remove(APILocator.getRoleAPI().loadRoleByKey("anonymous"));
 		}
-		
-		Set<String> userRoleIds= roles.stream().map(r->r.getId()).collect(Collectors.toSet());
+		final Set<String> userRoleIds = roles.stream().map(Role::getId).collect(Collectors.toSet());
         
-        
-		return doRolesHavePermission(userRoleIds,getPermissions(permissionable, true),permissionType);
+		return doRolesHavePermission(userRoleIds, getPermissions(permissionable, true), expecterPermissionType);
 	}
 
-    /**
+	/**
+	 * Given an expected permissionType to be satisfied, a resolved "Anyone who can..." style permission, a {@link User}
+	 * and a {@link Contentlet}, evaluates if the contentlet is new. Then verify that the provided permission is the
+	 * actual mentioned style and if it does then finally evaluate the contentlet's content type permissions as a
+	 * fallback.
+	 *
+	 * @param permissionType provided permission type
+	 * @param permission actual permission
+	 * @param user provided user
+	 * @param contentlet contentlet
+	 * @return true if the explained logic takes place, otherwise false
+	 */
+	private boolean workflowActionHasPermission(final int permissionType,
+												final Permission permission,
+												final User user,
+												final Contentlet contentlet) throws DotDataException {
+		if (Objects.nonNull(contentlet) && StringUtils.isBlank(contentlet.getInode())) {
+			final Optional<Role> permRole = Optional.ofNullable(
+				Try
+					.of(() -> APILocator.getRoleAPI().loadRoleById(permission.getRoleId()))
+					.getOrElse((Role) null))
+				.filter(role -> role.getRoleKey().startsWith("cms_workflow_any_who_can"));
+			if (permRole.isPresent())  {
+				return doesUserHavePermission(contentlet.getContentType(), permissionType, user);
+			}
+		}
+		return false;
+	}
+
+	/**
      *
      * @param permissionable
      * @return
@@ -587,8 +633,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 */
 	@WrapInTransaction
 	private void save(Permission permission, Permissionable permissionable, User user, boolean respectFrontendRoles, boolean createEvent) throws DotDataException, DotSecurityException {
-		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user))
-			throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
+		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
+
+			if(!checkIfContentletTypeHasEditPermissions(permissionable, user)) {
+				throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
+			}
+		}
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
@@ -628,6 +678,55 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	}
 
+	/**
+	 * In case the permissionable is a contentlet, we try to check if the content type has edit permissions
+	 * This is applies when the doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) was called previously and has fail.
+	 *
+	 * @param permissionable
+	 * @param user
+	 * @return boolean
+	 * @throws DotDataException
+	 */
+	private boolean checkIfContentletTypeHasEditPermissions(final Permissionable permissionable, final User user) throws DotDataException {
+
+		return permissionable instanceof Contentlet? // we can check if the content type has edit permissions
+				doesUserHavePermission(Contentlet.class.cast(permissionable).getContentType(), PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user):false;
+	}
+
+
+	@Override
+	public boolean doesUserHavePermission(final ContentType permissionable, final int permissionType, final User user) throws DotDataException {
+
+		return doesUserHavePermission(permissionable, permissionType, user, true);
+	}
+
+	@Override
+	public boolean doesUserHavePermission(final ContentType type, final int permissionType,
+										  final User user, final boolean respectFrontendRoles) throws DotDataException {
+
+		    // try the legacy way
+			final boolean hasPermission = this.doesUserHavePermission((Permissionable) type, permissionType, user, respectFrontendRoles);
+
+			// if the user does not have permission, check if the type allows CMS owner
+			if (!hasPermission) {
+
+				final Role cmsOwnerRole = Try.of(() -> APILocator.getRoleAPI().loadCMSOwnerRole())
+						.getOrElseThrow(e -> new DotRuntimeException(e.getMessage(), e));
+
+				final List<Permission> contentTypePermissions = getPermissions(type, true);
+				for(final Permission contentTypePermission : contentTypePermissions) {
+					if (user.isBackendUser() && contentTypePermission.getRoleId().equals(cmsOwnerRole.getId())) {
+
+						if (type.fields(HostFolderField.class).isEmpty() && Host.SYSTEM_HOST.equals(type.host())) {
+							return true;
+						}
+					}
+				}
+			}
+
+			return hasPermission;
+	} // doesUserHavePermission
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionFactory#assignPermissions
 	 * @deprecated Use save(permission) instead.
@@ -648,8 +747,8 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
 		List<Permission> currentPermissions = permissionFactory.getPermissions(permissionable, true);
-		List<String> rolesIncluded = new ArrayList<String>();
-		List<Permission> includingLockedRolePermissions = new ArrayList<Permission>();
+		List<String> rolesIncluded = new ArrayList<>();
+		List<Permission> includingLockedRolePermissions = new ArrayList<>();
 
 		for(Permission current : currentPermissions) {
 			Role role = roleAPI.loadRoleById(current.getRoleId());
@@ -695,7 +794,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public Set<User> getReadUsers(Permissionable permissionable) throws DotDataException {
 		Set<Role> roles = getReadRoles(permissionable);
-		Set<User> users = new HashSet<User>();
+		Set<User> users = new HashSet<>();
 		for (Role role : roles) {
 			try {
 				users.addAll(APILocator.getRoleAPI().findUsersForRole(role));
@@ -712,9 +811,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@Override
 	public Set<Role> getReadRoles(Permissionable permissionable) throws DotDataException {
-		Set<Role> readPermissions = new HashSet<Role>();
+		Set<Role> readPermissions = new HashSet<>();
 		List<Permission> permissions = getPermissions(permissionable);
-		List<Role> roles = new ArrayList<Role>();
+		List<Role> roles = new ArrayList<>();
 		try{
 			roles = loadRolesForPermission(permissions, PermissionAPI.PERMISSION_READ);
 		}catch (NoSuchRoleException nsre) {
@@ -726,9 +825,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@Override
 	public Set<Role> getPublishRoles(Permissionable permissionable) throws DotDataException {
-		Set<Role> publishPermissions = new HashSet<Role>();
+		Set<Role> publishPermissions = new HashSet<>();
 		List<Permission> permissions = getPermissions(permissionable);
-		List<Role> roles = new ArrayList<Role>();
+		List<Role> roles = new ArrayList<>();
 		try{
 			roles = loadRolesForPermission(permissions, PermissionAPI.PERMISSION_PUBLISH);
 		}catch (NoSuchRoleException nsre) {
@@ -741,7 +840,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public Set<User> getWriteUsers(Permissionable permissionable) throws DotDataException {
 		Set<Role> roles = getWriteRoles(permissionable);
-		Set<User> users = new HashSet<User>();
+		Set<User> users = new HashSet<>();
 		for (Role role : roles) {
 			try {
 				List<User> roleUsers = APILocator.getRoleAPI().findUsersForRole(role);
@@ -760,9 +859,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@Override
 	public Set<Role> getWriteRoles(Permissionable permissionable) throws DotDataException {
-		Set<Role> writePermissions = new HashSet<Role>();
+		Set<Role> writePermissions = new HashSet<>();
 		List<Permission> permissions = getPermissions(permissionable);
-		List<Role> roles = new ArrayList<Role>();
+		List<Role> roles = new ArrayList<>();
 		try{
 			roles = loadRolesForPermission(permissions, PermissionAPI.PERMISSION_WRITE);
 		}catch (NoSuchRoleException nsre) {
@@ -776,7 +875,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public Set<Role> getRolesWithPermission(Permissionable permissionable, int permission) throws DotDataException {
 
-		Set<Role> roles = new HashSet<Role>();
+		Set<Role> roles = new HashSet<>();
 		List<Permission> permissions = getPermissions(permissionable);
 		try{
 			roles.addAll(loadRolesForPermission(permissions, permission));
@@ -790,7 +889,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public Set<User> getUsersWithPermission(Permissionable permissionable, int permission) throws DotDataException {
 		Set<Role> roles = getRolesWithPermission(permissionable, permission);
-		Set<User> users = new HashSet<User>();
+		Set<User> users = new HashSet<>();
 		for (Role role : roles) {
 			try {
 				users.addAll(APILocator.getRoleAPI().findUsersForRole(role));
@@ -833,7 +932,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public List<Integer> getPermissionIdsFromRoles(final Permissionable permissionable, final Role[] roles,
 												   final User user) throws DotDataException {
-		Set<Integer> permissions = new TreeSet<Integer>();
+		Set<Integer> permissions = new TreeSet<>();
 		List<Permission> assetsPermissions;
 
 		for (int i = 0; i < roles.length; i++) {
@@ -846,7 +945,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 					for(int permissionType : list) {
 						permissions.add(permissionType);
 					}
-					return new ArrayList<Integer>(permissions);
+					return new ArrayList<>(permissions);
 				}
 			} catch (Exception e) {
 
@@ -870,7 +969,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 		if(user == null){
-			return new ArrayList<Integer>(permissions);
+			return new ArrayList<>(permissions);
 		}
 
 		//add owners permission
@@ -899,7 +998,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 
-		return new ArrayList<Integer>(permissions);
+		return new ArrayList<>(permissions);
 	}
 
 	@Override
@@ -944,7 +1043,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 		finally {
 			if( roleList == null ) {
-				roleList = new ArrayList<Role>(0);
+				roleList = new ArrayList<>(0);
 			}
 		}
 
@@ -955,7 +1054,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public List<Role> getRoles(String inode, int permissionType,
 			String filter, int start, int limit, boolean hideSystemRoles) {
 		List<Role> roleList = getRoles(inode, permissionType, filter, start, limit);
-		List<Role> roleListTemp = new ArrayList<Role>(roleList);
+		List<Role> roleListTemp = new ArrayList<>(roleList);
 		if(hideSystemRoles)
 			for(Role r : roleListTemp) {
 				if(PortalUtil.isSystemRole(r))
@@ -1010,7 +1109,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			}
 			roleList = loadRolesForPermission(permissionList, permissionType, filter);
 
-			List<Role> roleListTemp = new ArrayList<Role>(roleList);
+			List<Role> roleListTemp = new ArrayList<>(roleList);
 			for(Role r : roleListTemp) {
 				if(PortalUtil.isSystemRole(r))
 					roleList.remove(r);
@@ -1046,7 +1145,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 		finally {
 			if( userList == null ) {
-				userList = new ArrayList<User>(0);
+				userList = new ArrayList<>(0);
 			}
 		}
 
@@ -1125,19 +1224,22 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         CacheLocator.getPermissionCache().remove(permissionableId);
     }
 
-    @CloseDBIfOpened
-    @Override
+	@CloseDBIfOpened
+	@Override
 	public <P extends Permissionable> List<P> filterCollection(final List<P> inputList,
 															   final int requiredTypePermission,
-															   final boolean respectFrontendRoles, User user) throws DotDataException, DotSecurityException {
+															   final boolean respectFrontendRoles,
+															   final User user,
+															   final Contentlet contentlet)
+		throws DotDataException, DotSecurityException {
 
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-
-		if ((user != null) && roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole()))
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
+		if ((user != null) && roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())) {
 			return inputList;
+		}
 
-		List<P> permissionables = new ArrayList<P>(inputList);
-		if(permissionables.isEmpty()){
+		final List<P> permissionables = new ArrayList<>(inputList);
+		if (permissionables.isEmpty()) {
 			return permissionables;
 		}
 
@@ -1146,7 +1248,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 		while (i < permissionables.size()) {
 			permissionable = permissionables.get(i);
-			if(!doesUserHavePermission(permissionable, requiredTypePermission, user, respectFrontendRoles)){
+			if (!doesUserHavePermission(
+				permissionable,
+				requiredTypePermission,
+				user,
+				respectFrontendRoles,
+				contentlet)) {
 				permissionables.remove(i);
 			} else {
 				++i;
@@ -1154,6 +1261,17 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 		return permissionables;
+	}
+
+    @CloseDBIfOpened
+    @Override
+	public <P extends Permissionable> List<P> filterCollection(final List<P> inputList,
+															   final int requiredTypePermission,
+															   final boolean respectFrontendRoles,
+															   final User user)
+		throws DotDataException, DotSecurityException {
+
+		return filterCollection(inputList, requiredTypePermission, respectFrontendRoles, user, null);
 	}
 
 	@CloseDBIfOpened
@@ -1165,7 +1283,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		if ((user != null) && roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole()))
 			return inputList;
 
-		List<P> permissionables = new ArrayList<P>(inputList);
+		List<P> permissionables = new ArrayList<>(inputList);
 		if(permissionables.isEmpty()){
 			return permissionables;
 		}
@@ -1320,7 +1438,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
 		}
-		List<String> userRoleIds= new ArrayList<String>();
+		List<String> userRoleIds= new ArrayList<>();
 		for (Role role : roles) {
 			try{
 				String roleID = role.getId();
@@ -1363,7 +1481,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 
 
-		List<String> permissionIdsStr = new ArrayList<String>();
+		List<String> permissionIdsStr = new ArrayList<>();
 		String[] permissionIdArr = requiredPermissions.split(",");
 		if(permissionIdArr.length>0){
 			for(String perId : permissionIdArr){
@@ -1605,6 +1723,11 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 					Host.class.getCanonicalName()
 			);
 
+            final Set<String> ContentTypeInheritableClasses = Sets.newHashSet(
+                            Contentlet.class.getCanonicalName()
+                    );
+			
+			
 			final Set<String> classesToIgnoreHost = Sets
 					.newHashSet(Category.class.getCanonicalName());
 
@@ -1628,11 +1751,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 					for (final Permission permission : permissions) {
 
-						if (finalPermissionableType.equals(Folder.class.getCanonicalName())
-								&& classesToIgnoreFolder.contains(permission.getType())) {
+						if (finalPermissionableType.equals(Structure.class.getCanonicalName())
+								&& !ContentTypeInheritableClasses.contains(permission.getType())) {
 							continue;
 						}
-
+                        if (finalPermissionableType.equals(Folder.class.getCanonicalName())
+                                && classesToIgnoreFolder.contains(permission.getType())) {
+                            continue;
+                        }
 						if (finalPermissionableType.equals(Host.class.getCanonicalName())
 								&& classesToIgnoreHost.contains(permission.getType())) {
 							continue;
@@ -1707,7 +1833,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		Permissionable parentPermissionable=permissionable.getParentPermissionable();
 		if(parentPermissionable!=null) {
 			final List<Permission> assetPermissions = getPermissions(permissionable, true);
-			final Map<String, Inode> inodeCache = new HashMap<String, Inode>();
+			final Map<String, Inode> inodeCache = new HashMap<>();
     		for(Permission p : assetPermissions) {
     			if(!p.getInode().equals(permissionable.getPermissionId())) {
     				final String assetInode = p.getInode();

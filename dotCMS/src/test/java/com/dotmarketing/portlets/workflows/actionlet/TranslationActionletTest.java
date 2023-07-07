@@ -209,7 +209,7 @@ public class TranslationActionletTest extends UnitTestBase {
                 translationUtil.getFieldsOfContentlet(contentlet, TranslationUtilTest.filterTypes, new ArrayList<>()))
                 .thenReturn(fieldsOfContent);
         List<Language> translateTo = getTranslateToAsList();
-        when(translationUtil.getLanguagesByLanguageCodes(Collections.singletonList("all")))
+        when(translationUtil.getLanguagesByLanguageCodes(List.of("all")))
                 .thenReturn(translateTo);
 
         return translationUtil;

@@ -317,7 +317,8 @@
 		if ((currentProtocol === "awss3" || currentProtocol === "static")
 				&& isPlatformLicenseLevel()) {
 
-			dojo.byId("addressRow").hide();
+            dojo.byId("showGetTokenSpan").hide();
+            dojo.byId("addressRow").hide();
 		}
 
 		setAddressRow(false);

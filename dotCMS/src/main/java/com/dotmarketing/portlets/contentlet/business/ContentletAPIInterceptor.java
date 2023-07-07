@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -783,6 +784,41 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public List<Contentlet> findLiveOrWorkingVersions(Set<String> identifiers, User user,
+			boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.findLiveOrWorkingVersions(identifiers, user, respectFrontendRoles);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		List<Contentlet> c = conAPI.findLiveOrWorkingVersions(identifiers, user, respectFrontendRoles);
+		for(ContentletAPIPostHook post : postHooks){
+			post.findLiveOrWorkingVersions(identifiers, user, respectFrontendRoles);
+		}
+		return c;
+	}
+
+	@Override
+	public List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant,
+			final User user, final boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.findAllVersions(identifier, variant, user, respectFrontendRoles);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		List<Contentlet> c = conAPI.findAllVersions(identifier, variant, user, respectFrontendRoles);
+		for(ContentletAPIPostHook post : postHooks){
+			post.findAllVersions(identifier, variant, user, respectFrontendRoles);
+		}
+		return c;
+	}
+
+	@Override
 	public List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles) throws DotSecurityException,	DotDataException, DotStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findAllVersions(identifier, bringOldVersions, user, respectFrontendRoles);
@@ -884,7 +920,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-	public Contentlet findContentletByIdentifierAnyLanguageAndVariant(String identifier) throws DotDataException{
+	public Contentlet findContentletByIdentifierAnyLanguageAnyVariant(String identifier) throws DotDataException{
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletByIdentifierAnyLanguage(identifier);
 			if(!preResult){
@@ -892,7 +928,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		Contentlet c = conAPI.findContentletByIdentifierAnyLanguageAndVariant(identifier);
+		Contentlet c = conAPI.findContentletByIdentifierAnyLanguageAnyVariant(identifier);
 		for(ContentletAPIPostHook post : postHooks){
 			post.findContentletByIdentifierAnyLanguage(identifier);
 		}
@@ -1695,6 +1731,25 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
             post.refresh(type);
         }
     }
+
+	public Contentlet copyContentToVariant(final Contentlet contentlet, final String variantName,
+			final User user) throws DotDataException, DotSecurityException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.saveContentOnVariant(contentlet, variantName, user);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Contentlet saveContentOnVariant = conAPI.copyContentToVariant(contentlet, variantName, user);
+
+		for(ContentletAPIPostHook post : postHooks){
+			post.saveContentOnVariant(contentlet, variantName, user);
+		}
+
+		return saveContentOnVariant;
+    }
 	
 	
 	@Override
@@ -2141,7 +2196,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
     @Override
 	public List<String> getPreHooks() {
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 		for (ContentletAPIPreHook hook : preHooks) {
 			result.add(hook.getClass().getName());
 		}
@@ -2150,7 +2205,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	@Override
 	public List<String> getPostHooks() {
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 		for (ContentletAPIPostHook hook : postHooks) {
 			result.add(hook.getClass().getName());
 		}

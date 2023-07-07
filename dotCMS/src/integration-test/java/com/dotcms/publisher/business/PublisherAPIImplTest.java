@@ -1,30 +1,42 @@
 package com.dotcms.publisher.business;
 
 import static com.dotcms.util.CollectionsUtils.list;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.BundleDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import java.util.Collections;
-import java.util.Date;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.UUIDGenerator;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
@@ -55,7 +67,7 @@ public class PublisherAPIImplTest {
                 .nextPersisted();
 
         final Bundle bundle = new BundleDataGen()
-                .setSavePublishQueueElements(true).addAssets(Collections.singletonList(contentlet))
+                .setSavePublishQueueElements(true).addAssets(List.of(contentlet))
                 .nextPersisted();
 
         insertPublishAuditStatus(Status.FAILED_TO_BUNDLE,bundle.getId());
@@ -198,6 +210,54 @@ public class PublisherAPIImplTest {
         Assert.assertTrue(PublisherAPI.getInstance().getQueueBundleIdsToProcess().stream()
                 .noneMatch(bundleMap-> bundleMap.get("bundle_id").equals(bundle.getId())));
 
+    }
+
+    @Test
+    public void test_addExperimentToPushPublishQueue_shouldAddProperly()
+            throws DotDataException, DotPublisherException, DotSecurityException {
+
+        final Experiment experiment = createExperiment();
+
+        final Bundle bundle = new BundleDataGen().name("Experiments - " + UUIDGenerator.generateUuid())
+                .setSavePublishQueueElements(true).addAssets(List.of(experiment))
+                .nextPersisted();
+
+        final List<PublishQueueElement> queue = PublisherAPI.getInstance().getQueueElementsByBundleId(bundle.getId());
+        Assert.assertEquals(1, queue.size());
+        Assert.assertEquals("experiment", queue.get(0).getType());
+
+    }
+
+    //@Test // TODO remove
+    public void test_addExistingExperiment()
+            throws DotDataException, DotPublisherException, DotSecurityException {
+
+        final Optional<Experiment> experiment = APILocator.getExperimentsAPI().find("47b9a080-f2ca-4e34-a2be-2549a68602be", APILocator.systemUser());
+
+        final Bundle bundle = new BundleDataGen().name("Exsting Experiment - " + UUIDGenerator.generateUuid())
+                .setSavePublishQueueElements(true).addAssets(List.of(experiment.orElseThrow()))
+                .nextPersisted();
+
+        final List<PublishQueueElement> queue = PublisherAPI.getInstance().getQueueElementsByBundleId(bundle.getId());
+        Assert.assertEquals(1, queue.size());
+        Assert.assertEquals("experiment", queue.get(0).getType());
+
+    }
+
+    private static Experiment createExperiment() throws DotDataException, DotSecurityException {
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        Template template = new Template();
+        template.setTitle("a template " + UUIDGenerator.generateUuid());
+        template.setBody("<html><body> I'm mostly empty </body></html>");
+        template = APILocator.getTemplateAPI().saveTemplate(template, host, APILocator.systemUser(), false);
+
+        final Folder folder = new FolderDataGen().nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(1)
+                .nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen().page(page).nextPersisted();
+        return experiment;
     }
 
 }

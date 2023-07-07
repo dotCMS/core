@@ -13,7 +13,7 @@ import com.google.common.collect.ImmutableMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.eclipse.persistence.internal.oxm.mappings.Login;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -69,15 +69,42 @@ public class PageModeTest {
 
     /**
      * Method to test: Test for {@link VelocityServlet#processPageMode(User, HttpServletRequest)}
-     * Given Scenario: Be user logged in should be NAVIGATE_EDIT_MODE
+     * Given Scenario: Be user logged in but the referer is empty
+     * ExpectedResult: Page mode should be PREVIEW
+     *
+     */
+    @Test
+    public void test_be_page_mode_should_be_PREVIEW() {
+
+        final HttpSession session        = new MockSession(UUIDGenerator.uuid());
+        final MockSessionRequest requestSession = new MockSessionRequest(backEndRequest());
+        final MockAttributeRequest request = new MockAttributeRequest(requestSession);
+        session.setAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION, PageMode.NAVIGATE_EDIT_MODE);
+        request.setAttribute(WebKeys.USER, backEndUser);
+        requestSession.setSession(session);
+        LoginMode.set(request, LoginMode.BE);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        final PageMode pageMode = VelocityServlet.processPageMode(backEndUser, request);
+        Assert.assertEquals(LoginMode.BE, LoginMode.get(request));
+        Assert.assertEquals(PageMode.PREVIEW_MODE, pageMode);
+    }
+
+    /**
+     * Method to test: Test for {@link VelocityServlet#processPageMode(User, HttpServletRequest)}
+     * Given Scenario: Be user logged in but the referer is from dotAdmin
      * ExpectedResult: Page mode should be NAVIGATE_EDIT_MODE
      *
      */
     @Test
-    public void test_be_page_mode_should_be_NAVIGATE_EDIT_MODE() {
+    public void backendUserDotAdminReferer() {
 
         final HttpSession session        = new MockSession(UUIDGenerator.uuid());
-        final MockSessionRequest requestSession = new MockSessionRequest(backEndRequest());
+
+        final HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
+        httpServletRequest.setAttribute(WebKeys.USER, backEndUser);
+        when(httpServletRequest.getHeader("referer")).thenReturn("/dotAdmin/test");
+
+        final MockSessionRequest requestSession = new MockSessionRequest(httpServletRequest);
         final MockAttributeRequest request = new MockAttributeRequest(requestSession);
         session.setAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION, PageMode.NAVIGATE_EDIT_MODE);
         request.setAttribute(WebKeys.USER, backEndUser);
@@ -91,12 +118,12 @@ public class PageModeTest {
 
     /**
      * Method to test: Test for {@link VelocityServlet#processPageMode(User, HttpServletRequest)}
-     * Given Scenario: Be user (fe_be) logged in should be NAVIGATE_EDIT_MODE
-     * ExpectedResult: Page mode should be NAVIGATE_EDIT_MODE
+     * Given Scenario: Be user (fe_be) logged in as BE should be PREVIEW
+     * ExpectedResult: Page mode should be LIVE
      *
      */
     @Test
-    public void test_befe_logged_in_be_page_mode_should_be_NAVIGATE_EDIT_MODE() {
+    public void test_befe_logged_in_be_page_mode_should_be_PREVIEW() {
 
         final HttpSession session        = new MockSession(UUIDGenerator.uuid());
         final MockSessionRequest requestSession = new MockSessionRequest(frontBackEndRequest());
@@ -108,7 +135,7 @@ public class PageModeTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
         final PageMode pageMode = VelocityServlet.processPageMode(frontBackEndUser, request);
         Assert.assertEquals(LoginMode.BE, LoginMode.get(request));
-        Assert.assertEquals(PageMode.NAVIGATE_EDIT_MODE, pageMode);
+        Assert.assertEquals(PageMode.PREVIEW_MODE, pageMode);
     }
 
     /**

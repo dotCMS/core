@@ -5,6 +5,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
@@ -13,6 +14,7 @@ import { IframeOverlayService } from '@components/_common/iframe/service/iframe-
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotPaletteModule } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.module';
+import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import {
     DotEditPageService,
     DotESContentService,
@@ -33,11 +35,13 @@ import { DotFormSelectorModule } from './components/dot-form-selector/dot-form-s
 import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
 import { DotEditContentComponent } from './dot-edit-content.component';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
+import { DotCopyContentModalService } from './services/dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
 
+import { DotEditPageToolbarSeoModule } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.module';
 const routes: Routes = [
     {
         component: DotEditContentComponent,
@@ -66,7 +70,9 @@ const routes: Routes = [
         DotEditPageStateControllerModule,
         DotOverlayMaskModule,
         DotPaletteModule,
-        DotIconModule
+        DotIconModule,
+        DotEditPageToolbarSeoModule,
+        DotShowHideFeatureDirective
     ],
     exports: [DotEditContentComponent],
     providers: [
@@ -83,7 +89,9 @@ const routes: Routes = [
         IframeOverlayService,
         DotCustomEventHandlerService,
         DotWorkflowActionsFireService,
-        DotLicenseService
+        DotLicenseService,
+        DialogService,
+        DotCopyContentModalService
     ]
 })
 export class DotEditContentModule {}

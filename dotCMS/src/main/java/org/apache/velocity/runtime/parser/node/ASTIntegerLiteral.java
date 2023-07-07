@@ -81,14 +81,14 @@ public class ASTIntegerLiteral extends SimpleNode
          String str = getFirstTokenImage();
          try
          {
-             value = new Integer( str );
+             value = Integer.valueOf(str);
          }
          catch ( NumberFormatException E1 )
          {
             try
             {
 
-                value = new Long( str );
+                value = Long.valueOf(str);
 
             }
             catch ( NumberFormatException E2 )

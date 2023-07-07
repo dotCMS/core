@@ -10,18 +10,18 @@
         }
 
         &:not([disabled]) {
-            background-color: $brand-primary;
+            background-color: $color-palette-primary;
             box-shadow: $md-shadow-1;
             opacity: 1;
 
             &:hover {
-                background: $brand-primary_mod;
+                background: $color-palette-primary-400;
                 box-shadow: $md-shadow-3;
             }
 
             &:active,
             &:focus {
-                background: $brand-primary_mod;
+                background: $color-palette-primary-400;
             }
         }
     }
@@ -33,7 +33,7 @@
     flex-direction: column;
 
     .p-button.p-button-icon-only.action-button--selected {
-        background: rgba($black, $button-hover-background-opacity);
+        background: $color-palette-black-op-10;
     }
 }
 

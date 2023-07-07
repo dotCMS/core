@@ -3,6 +3,8 @@ package com.dotcms.rendering.velocity.servlet;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.anyString;
@@ -41,6 +43,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -58,6 +61,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.liferay.portal.model.User;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -149,7 +153,6 @@ public class VelocityServletIntegrationTest {
 
         velocityServlet.service(request, response);
 
-        verify(servletOutputStream).write(getNotExperimentJsCode().getBytes());
         verify(response, never()).sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
@@ -183,7 +186,6 @@ public class VelocityServletIntegrationTest {
 
         velocityServlet.service(request, response);
 
-        verify(servletOutputStream).write(getNotExperimentJsCode().getBytes());
         verify(response, never()).sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
@@ -240,7 +242,6 @@ public class VelocityServletIntegrationTest {
                 FORWARD_URL.replace("$1", contentlet.getStringProperty("urlTitle")));
         velocityServlet.service(request, response);
 
-        verify(servletOutputStream).write(getNotExperimentJsCode().getBytes());
         verify(response, never()).sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
@@ -290,7 +291,7 @@ public class VelocityServletIntegrationTest {
         final Template template = new TemplateDataGen().site(host)
                 .withContainer(container.getIdentifier()).nextPersisted();
 
-        final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        final List<ContainerStructure> csList = new ArrayList<>();
         final ContainerStructure containerStructure = new ContainerStructure();
         containerStructure.setStructureId(contentGenericType.id());
         containerStructure.setCode("$!{body}");
@@ -363,8 +364,7 @@ public class VelocityServletIntegrationTest {
             velocityServlet.service(mockRequest, mockResponse);
 
             verify(mockResponse, never()).sendError(anyInt());
-            verify(outputStream).write(
-                    (getNotExperimentJsCode() + "<div>content1</div>").getBytes());
+            verify(outputStream).write("<div>content1</div>".getBytes());
         } finally {
             Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
                     defaultContentToDefaultLanguage);
@@ -396,6 +396,157 @@ public class VelocityServletIntegrationTest {
     }
 
     /**
+     * Method to test: {@link VelocityServlet#service(HttpServletRequest, HttpServletResponse)}
+     * When: A backend user is logged in and request and the referer is empty
+     * Should: Return the page content in {@link PageMode#LIVE}
+     * @throws Exception
+     */
+    @Test
+    public void backendUserRefererEmpty() throws Exception {
+        final User loginUser = mock(User.class);
+        when(loginUser.hasConsoleAccess()).thenReturn(false);
+        when(loginUser.isAnonymousUser()).thenReturn(false);
+        when(loginUser.isBackendUser()).thenReturn(true);
+        when(loginUser.isFrontendUser()).thenReturn(false);
+        when(loginUser.isActive()).thenReturn(true);
+
+        final HttpServletRequest mockRequest = createMockRequest(null, loginUser, LoginMode.BE);
+
+        final ServletOutputStream outputStream = mock(ServletOutputStream.class);
+        when(response.getOutputStream()).thenReturn(outputStream);
+
+        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = createHtmlPageAssetRenderedAPIMock(
+                loginUser, "<html>lol</html>", PageMode.PREVIEW_MODE);
+
+        final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(),
+                pageAssetRenderedAPI);
+        velocityServlet.service(mockRequest, response);
+
+        verifyPageServed("<html>lol</html>", outputStream);
+    }
+
+    private static HTMLPageAssetRenderedAPI createHtmlPageAssetRenderedAPIMock(final User loginUser,
+            final String htmlContent, final PageMode pageMode) throws DotSecurityException, DotDataException {
+        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = mock(
+                HTMLPageAssetRenderedAPIImpl.class);
+
+        final PageContext pageContext = PageContextBuilder.builder()
+                .setPageUri("/lol")
+                .setPageMode(pageMode)
+                .setUser(loginUser)
+                .build();
+
+        when(pageAssetRenderedAPI.getPageHtml(eq(pageContext),
+                Mockito.any(HttpServletRequest.class),
+                Mockito.any(HttpServletResponse.class)))
+                .thenReturn(htmlContent);
+
+        return pageAssetRenderedAPI;
+    }
+
+    /**
+     * Method to test: {@link VelocityServlet#service(HttpServletRequest, HttpServletResponse)}
+     * When: A backend user is logged in and request and the referer is not from dotAdmin
+     * Should: Return the page content in {@link PageMode#LIVE}
+     * @throws Exception
+     */
+    @Test
+    public void backendUserRefererNotDotAdmin() throws Exception {
+
+        final User loginUser = mock(User.class);
+        when(loginUser.hasConsoleAccess()).thenReturn(false);
+        when(loginUser.isAnonymousUser()).thenReturn(false);
+        when(loginUser.isBackendUser()).thenReturn(true);
+        when(loginUser.isFrontendUser()).thenReturn(false);
+        when(loginUser.isActive()).thenReturn(true);
+
+        final HttpServletRequest mockRequest = createMockRequest("/blog/index", loginUser, LoginMode.BE);
+
+        final ServletOutputStream outputStream = mock(ServletOutputStream.class);
+        when(response.getOutputStream()).thenReturn(outputStream);
+
+        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = createHtmlPageAssetRenderedAPIMock(
+                loginUser, "<html>lol</html>", PageMode.PREVIEW_MODE);
+
+        final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(),
+                pageAssetRenderedAPI);
+        velocityServlet.service(mockRequest, response);
+
+        verifyPageServed("<html>lol</html>", outputStream);
+    }
+
+    /**
+     * Method to test: {@link VelocityServlet#service(HttpServletRequest, HttpServletResponse)}
+     * When: A backend user is logged in and request and the referer is from dotAdmin
+     * Should: Return the page content in {@link PageMode#NAVIGATE_EDIT_MODE}
+     * @throws Exception
+     */
+    @Test
+    public void backendUserRefererDotAdmin() throws Exception {
+
+        final User loginUser = mock(User.class);
+        when(loginUser.hasConsoleAccess()).thenReturn(false);
+        when(loginUser.isAnonymousUser()).thenReturn(false);
+        when(loginUser.isBackendUser()).thenReturn(true);
+        when(loginUser.isFrontendUser()).thenReturn(false);
+        when(loginUser.isActive()).thenReturn(true);
+
+        final String responseBody = "<script type=\"text/javascript\">\n" +
+                "var customEvent = window.top.document.createEvent('CustomEvent');\n" +
+                "customEvent.initCustomEvent('ng-event', false, false,  {\n" +
+                "            name: 'load-edit-mode-page',\n" +
+                "            data: 'lol'" +
+                "});\n" +
+                "window.top.document.dispatchEvent(customEvent);" +
+                "</script>";
+
+        final HttpServletRequest mockRequest = createMockRequest("/dotAdmin/blog/index", loginUser, LoginMode.BE);
+
+        final ServletOutputStream outputStream = mock(ServletOutputStream.class);
+        when(response.getOutputStream()).thenReturn(outputStream);
+
+        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = createHtmlPageAssetRenderedAPIMock(
+                loginUser, responseBody, PageMode.NAVIGATE_EDIT_MODE);
+
+        final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(),
+                pageAssetRenderedAPI);
+        velocityServlet.service(mockRequest, response);
+
+        verifyPageServed(responseBody, outputStream);
+    }
+
+    /**
+     * Method to test: {@link VelocityServlet#service(HttpServletRequest, HttpServletResponse)}
+     * When: A backend user is logged in and request and the referer is empty but the disabledNavigateMode is set
+     * Should: Return the page content in {@link PageMode#LIVE}
+     * @throws Exception
+     */
+    @Test
+    public void backendUserDisabledNavigateModeSet() throws Exception {
+        final User loginUser = mock(User.class);
+        when(loginUser.hasConsoleAccess()).thenReturn(false);
+        when(loginUser.isAnonymousUser()).thenReturn(false);
+        when(loginUser.isBackendUser()).thenReturn(true);
+        when(loginUser.isFrontendUser()).thenReturn(false);
+        when(loginUser.isActive()).thenReturn(true);
+
+        final HttpServletRequest mockRequest = createMockRequest("/dotAdmin/blog/index",
+                loginUser, LoginMode.BE, true);
+
+        final ServletOutputStream outputStream = mock(ServletOutputStream.class);
+        when(response.getOutputStream()).thenReturn(outputStream);
+
+        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = createHtmlPageAssetRenderedAPIMock(
+                loginUser, "<html>lol</html>", PageMode.PREVIEW_MODE);
+
+        final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(),
+                pageAssetRenderedAPI);
+        velocityServlet.service(mockRequest, response);
+
+        verifyPageServed("<html>lol</html>", outputStream);
+    }
+
+    /**
      * This is the actual test body
      *
      * @param user
@@ -407,39 +558,57 @@ public class VelocityServletIntegrationTest {
      */
     private void testServerPageFor(final User user, final LoginMode mode)
             throws IOException, DotSecurityException, DotDataException, ServletException {
-        final String pageContent = getNotExperimentJsCode() + "<html>lol</html>";
+        final String pageContent = "<html>lol</html>";
+
+        final String pageUri = "/lol";
 
         VelocityRequestWrapper velocityRequest = mock(VelocityRequestWrapper.class);
-        when(velocityRequest.getRequestURI()).thenReturn("/lol");
+        when(velocityRequest.getRequestURI()).thenReturn(pageUri);
         when(velocityRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
         final HttpSession session = mock(HttpSession.class);
         when(session.getAttribute(LOGIN_MODE_PARAMETER)).thenReturn(mode);
         when(velocityRequest.getSession(Mockito.anyBoolean())).thenReturn(session);
         when(velocityRequest.getSession()).thenReturn(session);
 
+
         final ServletOutputStream outputStream = mock(ServletOutputStream.class);
         when(response.getOutputStream()).thenReturn(outputStream);
 
-        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = mock(
-                HTMLPageAssetRenderedAPIImpl.class);
-        when(pageAssetRenderedAPI.getPageHtml(Mockito.any(PageContext.class),
-                Mockito.any(HttpServletRequest.class),
-                Mockito.any(HttpServletResponse.class))).thenReturn(
-                pageContent);
+        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = createHtmlPageAssetRenderedAPIMock(user,
+                pageContent,
+                mode == LoginMode.BE ? PageMode.PREVIEW_MODE : PageMode.LIVE);
 
         final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(),
                 pageAssetRenderedAPI);
         velocityServlet.service(velocityRequest, response);
-        if (LoginMode.FE == mode) {
-            //Here we verify the page was served normally
-            verify(outputStream, times(1)).write(pageContent.getBytes());
-        } else {
-            //Here the page never got served and a redirect occurred taking the user to EditMode
-            verify(outputStream, never()).write(pageContent.getBytes());
-        }
+        verifyPageServed(pageContent, outputStream);
     }
 
-    private String getNotExperimentJsCode() {
-        return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>\n";
+    private static void verifyPageServed(final String pageContent, final ServletOutputStream outputStream)
+            throws IOException {
+        verify(outputStream, times(1)).write(pageContent.getBytes());
+    }
+
+    public HttpServletRequest createMockRequest(final String referer, final User user, final LoginMode loginMode) {
+        return createMockRequest(referer, user, loginMode, false);
+    }
+    public HttpServletRequest createMockRequest(final String referer, final User user,
+            final LoginMode loginMode, final boolean disabledNavigateMode) {
+
+        VelocityRequestWrapper velocityRequest = mock(VelocityRequestWrapper.class);
+        when(velocityRequest.getRequestURI()).thenReturn("/lol");
+        when(velocityRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+        final HttpSession session = mock(HttpSession.class);
+        when(session.getAttribute(LOGIN_MODE_PARAMETER)).thenReturn(loginMode);
+        when(velocityRequest.getSession(Mockito.anyBoolean())).thenReturn(session);
+        when(velocityRequest.getSession()).thenReturn(session);
+
+        when(velocityRequest.getParameter("disabledNavigateMode")).thenReturn(String.valueOf(disabledNavigateMode));
+
+        if (referer != null) {
+            when(velocityRequest.getHeader("referer")).thenReturn(referer);
+        }
+
+        return velocityRequest;
     }
 }

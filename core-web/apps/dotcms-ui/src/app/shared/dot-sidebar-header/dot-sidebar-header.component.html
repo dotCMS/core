@@ -1,11 +1,13 @@
 <div class="dot-sidebar-header-wrapper">
     <div class="grid dot-sidebar-header">
         <div class="flex col align-items-center">
-            <dot-icon-button
-                [icon]="'close'"
+            <button
+                class="p-button-rounded p-button-text"
                 (click)="closePrimeNgSidebar()"
                 data-testId="header-close-icon"
-            ></dot-icon-button>
+                icon="pi pi-times"
+                pButton
+            ></button>
             <h2 [innerHTML]="dotTitle" data-testId="header-title"></h2>
         </div>
 

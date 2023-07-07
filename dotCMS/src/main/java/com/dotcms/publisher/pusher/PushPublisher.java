@@ -9,6 +9,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.ExperimentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.FolderBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.LanguageBundler;
@@ -148,7 +149,7 @@ public class PushPublisher extends Publisher {
 		try {
 			//Compressing bundle
 			File bundleRoot = BundlerUtil.getBundleRoot(this.config.getName(), false);
-			ArrayList<File> list = new ArrayList<File>(1);
+			ArrayList<File> list = new ArrayList<>(1);
 			list.add(bundleRoot);
 			File bundleFile = new File(bundleRoot + ".tar.gz");
 
@@ -174,7 +175,7 @@ public class PushPublisher extends Publisher {
 			int totalEndpoints = 0;
 			for (Environment environment : environments) {
 				List<PublishingEndPoint> allEndpoints = this.publishingEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
-				List<PublishingEndPoint> endpoints = new ArrayList<PublishingEndPoint>();
+				List<PublishingEndPoint> endpoints = new ArrayList<>();
 				totalEndpoints += (null != allEndpoints) ? allEndpoints.size() : 0;
 
 				Map<String, EndpointDetail> endpointsDetail = endpointsMap.get(environment.getId());
@@ -456,6 +457,7 @@ public class PushPublisher extends Publisher {
 		boolean buildLanguages = false;
 		boolean buildRules = false;
 		boolean buildAsset = false;
+		boolean buildExperiments = false;
 		List<Class> list = new ArrayList<>();
 		for ( PublishQueueElement element : config.getAssets() ) {
 			if ( element.getType().equals(PusheableAsset.CATEGORY.getType()) ) {
@@ -468,6 +470,9 @@ public class PushPublisher extends Publisher {
 				buildLanguages = true;
 			} else if (element.getType().equals(PusheableAsset.RULE.getType())) {
 				buildRules = true;
+			} else if (element.getType().equals(PusheableAsset.EXPERIMENT.getType())) {
+				buildExperiments = true;
+				buildAsset = true;
 			} else {
 				buildAsset = true;
 			}
@@ -509,6 +514,9 @@ public class PushPublisher extends Publisher {
 			list.add( CategoryFullBundler.class );
 		} else { // If we are PP from anywhere else, for example a contentlet, site, folder, etc.
 			list.add(CategoryBundler.class);
+		}
+		if(buildExperiments) {
+			list.add(ExperimentBundler.class);
 		}
 		return list;
 	}

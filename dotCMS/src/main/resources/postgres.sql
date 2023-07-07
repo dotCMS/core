@@ -736,6 +736,7 @@ create table structure (
    mod_date timestamptz,
    sort_order int4,
    icon varchar(255),
+   marked_for_deletion bool not null default false,
    primary key (inode)
 );
 create table cms_role (
@@ -769,7 +770,7 @@ create table permission (
    primary key (id),
    unique (permission_type, inode_id, roleid)
 );
-	create table contentlet (inode varchar(36) not null,
+create table contentlet (inode varchar(36) not null,
 	show_on_menu bool,
 	title varchar(255),
 	mod_date timestamptz,
@@ -780,6 +781,7 @@ create table permission (
 	disabled_wysiwyg varchar(255),
 	identifier varchar(36),
 	language_id int8,
+    variant_id varchar(255) default 'DEFAULT',
 	contentlet_as_json jsonb,
 	date1 timestamptz,
 	date2 timestamptz,
@@ -1991,7 +1993,7 @@ alter table structure add constraint fk_structure_host foreign key (host) refere
 create index idx_template3 on template (lower(title));
 
 CREATE INDEX idx_contentlet_4 ON contentlet (structure_inode);
-
+CREATE INDEX idx_contentlet_variant ON contentlet (variant_id);
 CREATE INDEX idx_contentlet_identifier ON contentlet (identifier);
 
 alter table contentlet add constraint fk_user_contentlet foreign key (mod_user) references user_(userid);
@@ -2095,9 +2097,11 @@ alter table contentlet_version_info add constraint fk_contentlet_version_info_la
 alter table folder add constraint fk_folder_file_structure_type foreign key(default_file_type) references structure(inode);
 
 alter table workflowtask_files add constraint FK_workflow_id foreign key (workflowtask_id) references workflow_task(id);
-
+CREATE INDEX IF NOT EXISTS workflowtask_files_hash_idx ON workflowtask_files USING HASH(workflowtask_id);
 alter table workflow_comment add constraint workflowtask_id_comment_FK foreign key (workflowtask_id) references workflow_task(id);
+CREATE INDEX IF NOT EXISTS workflow_comment_hash_idx ON workflow_comment USING HASH(workflowtask_id);
 alter table workflow_history add constraint workflowtask_id_history_FK foreign key (workflowtask_id) references workflow_task(id);
+CREATE INDEX IF NOT EXISTS workflow_history_hash_idx ON workflow_history USING HASH(workflowtask_id);
 alter table workflow_task add constraint unique_workflow_task unique (webasset,language_id);
 
 alter table contentlet add constraint fk_contentlet_lang foreign key (language_id) references language(id);

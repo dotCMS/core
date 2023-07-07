@@ -750,7 +750,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 actionCommentable(false).
                 requiresCheckout(false).
                 actionNextAssign(adminRoleId).
-                whoCanUse(Collections.singletonList("")).
+                whoCanUse(List.of("")).
                 actionCondition("").
                 build();
 
@@ -1038,7 +1038,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                     final WorkflowAction action = actions.stream().findAny().get();
                     final HttpServletRequest request = mock(HttpServletRequest.class);
                     final FireBulkActionsForm form = new FireBulkActionsForm(null,
-                            Collections.singletonList(contentlet.getInode()), action.getId(), null
+                            List.of(contentlet.getInode()), action.getId(), null
                     );
 
                     final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
@@ -1147,7 +1147,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                         .variable(REQUIRED_TEXT_FIELD_NAME)
                         .required(true)
                         .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build();
-        contentType = contentTypeAPI.save(contentType, Collections.singletonList(field));
+        contentType = contentTypeAPI.save(contentType, List.of(field));
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
@@ -1248,7 +1248,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
                 //  Now Test BulkActions
                 final BulkActionForm form1 = new BulkActionForm(
-                        Collections.singletonList(inode), null
+                        List.of(inode), null
                 );
                 final HttpServletRequest request = mock(HttpServletRequest.class);
                 final Response bulkActionsResponse = workflowResource
@@ -1296,7 +1296,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
                 final HttpServletRequest request1 = mock(HttpServletRequest.class);
                 final FireBulkActionsForm actionsForm1 = new FireBulkActionsForm(null,
-                        Collections.singletonList(inode), saveAction.getId(), null);
+                        List.of(inode), saveAction.getId(), null);
 
                 //This CountDownLatch prevents the finally block from getting reached until after the thread completes
                 final CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -1322,7 +1322,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                         // If we try to find available actions for a  contentlet on which we have fired an action successfully we shouldn't get anything.
                         final HttpServletRequest request2 = mock(HttpServletRequest.class);
                         final BulkActionForm form2 = new BulkActionForm(
-                                Collections.singletonList(inode), null
+                                List.of(inode), null
                         );
 
                         final Response response2 = workflowResource.getBulkActions(request2,
@@ -1343,7 +1343,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                         final HttpServletRequest request3 = mock(HttpServletRequest.class);
                         // If we try to find available actions for the latest inode then we should still see the workflow that owns the action we fired on this contentlet. But not the other ones.
                         final BulkActionForm bulkActionFormAfterSave = new BulkActionForm(
-                                Collections.singletonList(contentletAfterActionApplied.getInode()),
+                                List.of(contentletAfterActionApplied.getInode()),
                                 null
                         );
 
@@ -1470,7 +1470,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
                 //  Now Test BulkActions
                 final BulkActionForm form1 = new BulkActionForm(
-                        Collections.singletonList(inode), null
+                        List.of(inode), null
                 );
                 final HttpServletRequest request = mock(HttpServletRequest.class);
                 final Response findActionsResponse = workflowResource
@@ -1509,7 +1509,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
                 final HttpServletRequest request1 = mock(HttpServletRequest.class);
                 final FireBulkActionsForm actionsForm1 = new FireBulkActionsForm(null,
-                        Collections.singletonList(inode), saveAction.getId(), null);
+                        List.of(inode), saveAction.getId(), null);
 
                 final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
                     try {
@@ -1531,7 +1531,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
                         //  Now Test BulkActions
                         final BulkActionForm form2 = new BulkActionForm(
-                                Collections.singletonList(inode), null
+                                List.of(inode), null
                         );
                         final HttpServletRequest request2 = mock(HttpServletRequest.class);
                         final Response response2 = workflowResource.getBulkActions(request2,
@@ -2325,6 +2325,50 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         return contentType;
     }
+
+    /**
+     * Method to test: {@link WorkflowResource#mapRoleId(String)}
+     * Given Scenario: sents an invalid role and returns exactly the same
+     * ExpectedResult: The bad role is being returned
+     *
+     */
+    @Test
+    public void test_mapRoleId_No_Exist_Success() throws Exception {
+
+        final String invalidRole = "xxxx";
+        Assert.assertEquals(invalidRole, workflowResource.mapRoleId(invalidRole));
+    }
+
+    /**
+     * Method to test: {@link WorkflowResource#mapRoleId(String)}
+     * Given Scenario: Find any role present and sents to the mapRoleId, should return the same role id
+     * ExpectedResult: The role id of the role id sent, should be the same
+     *
+     */
+    @Test
+    public void test_mapRoleId_Role_Id_Success() throws Exception {
+
+        final Optional<Role> roleOpt = APILocator.getRoleAPI().findAllAssignableRoles(false).stream().findFirst();
+        if (roleOpt.isPresent()) {
+            Assert.assertEquals(roleOpt.get().getId(), workflowResource.mapRoleId(roleOpt.get().getId()));
+        }
+    }
+
+    /**
+     * Method to test: {@link WorkflowResource#mapRoleId(String)}
+     * Given Scenario: Find any role present and sents the key to the mapRoleId, should return the same role id of the role key sent
+     * ExpectedResult: should return the same role id of the role key sent
+     *
+     */
+    @Test
+    public void test_mapRoleId_Role_Key_Success() throws Exception {
+
+        final Optional<Role> roleOpt = APILocator.getRoleAPI().findAllAssignableRoles(true).stream().filter(role -> role.getRoleKey() != null).findFirst();
+        if (roleOpt.isPresent()) {
+            Assert.assertEquals(roleOpt.get().getId(), workflowResource.mapRoleId(roleOpt.get().getRoleKey()));
+        }
+    }
+
 
     @Test
     public void testFireActionDefault_ContentWithCategories_Success() throws Exception {

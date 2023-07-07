@@ -1,0 +1,22 @@
+<div class="dot-pages-create-page-dialog__search-container p-input-icon-right">
+    <dot-icon data-testid="dot-pages-create-page-filter-icon" name="search" size="24"></dot-icon>
+    <input
+        #searchInput
+        [placeholder]="'Search' | dm"
+        data-testid="dot-pages-create-page-dialog__keyword-input"
+        type="text"
+        pInputText
+        dotAutofocus
+    />
+</div>
+
+<div class="dot-pages-create-page-dialog__page-types-container">
+    <div
+        class="dot-pages-create-page-dialog__page-item"
+        *ngFor="let item of pageTypes$ | async"
+        (click)="goToCreatePage(item.variable)"
+    >
+        <dot-icon [name]="item.icon" size="18"></dot-icon>
+        {{ item.name }}
+    </div>
+</div>

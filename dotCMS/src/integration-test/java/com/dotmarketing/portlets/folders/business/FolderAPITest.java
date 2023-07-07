@@ -12,16 +12,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TemplateLayoutDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
@@ -825,6 +816,74 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 	}
 
 	/**
+	 * Creates a folder with the following content:
+	 * - A page with diff live and working versions
+	 * - A file asset with diff live and working versions
+	 * - A page with only live version
+	 * - A page with only working version
+	 * - Spanish Version of a page
+	 * - Spanish Version of a file asset
+	 *
+	 * Copies the folder to a new destination.
+	 * Should copy all the content successfully.
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws IOException
+	 */
+	@Test
+	public void test_copyFolder_contentWithLiveAndWorkingVersionsAndMultilingual() throws DotDataException, DotSecurityException, IOException {
+		final Host host = new SiteDataGen().nextPersisted();
+		final Folder folder = new FolderDataGen().site(host).nextPersisted();
+		final ContentType contentTypeToPage = new ContentTypeDataGen().host(host).nextPersisted();
+		final Container container = new ContainerDataGen().withContentType(contentTypeToPage, "")
+				.nextPersisted();
+
+		final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container)
+				.next();
+		final Template template = new TemplateDataGen().drawedBody(templateLayout).nextPersisted();
+
+		final Contentlet htmlPageAsset = new HTMLPageDataGen(host, template).host(host).folder(folder)
+				.languageId(langId).nextPersisted();
+		ContentletDataGen.publish(htmlPageAsset);
+
+		final Contentlet htmlPageAssetNewVersion = APILocator.getContentletAPI().checkout(htmlPageAsset.getInode(),user,false);
+		htmlPageAssetNewVersion.setSortOrder(3);
+		APILocator.getContentletAPI().checkin(htmlPageAssetNewVersion, user, false);
+
+		final Contentlet htmlPageAssetSpanish = APILocator.getContentletAPI().checkout(htmlPageAsset.getInode(),user,false);
+		htmlPageAssetSpanish.setLanguageId(TestDataUtils.getSpanishLanguage().getId());
+		APILocator.getContentletAPI().checkin(htmlPageAssetSpanish, user, false);
+
+		final Contentlet fileAsset = new FileAssetDataGen(folder, "this is content").nextPersisted();
+		ContentletDataGen.publish(fileAsset);
+
+		final Contentlet fileAssetNewVersion = APILocator.getContentletAPI().checkout(fileAsset.getInode(),user,false);
+		fileAsset.setSortOrder(3);
+		APILocator.getContentletAPI().checkin(fileAssetNewVersion, user, false);
+
+		final Contentlet fileAssetSpanish = APILocator.getContentletAPI().checkout(fileAsset.getInode(),user,false);
+		fileAssetSpanish.setLanguageId(TestDataUtils.getSpanishLanguage().getId());
+		APILocator.getContentletAPI().checkin(fileAssetSpanish, user, false);
+
+		final Contentlet htmlPageAssetLive = new HTMLPageDataGen(host, template).host(host).folder(folder)
+				.languageId(langId).nextPersisted();
+		ContentletDataGen.publish(htmlPageAssetLive);
+
+		final Contentlet htmlPageAssetWorking = new HTMLPageDataGen(host, template).host(host).folder(folder)
+				.languageId(langId).nextPersisted();
+
+		final Folder destinationFolder = folderAPI
+				.createFolders("/folderCopyDestinationTest" + System.currentTimeMillis(), host,
+						user, false);
+
+		//Copy folder
+		folderAPI.copy(folderAPI.find(htmlPageAsset.getFolder(), user, false), destinationFolder,
+				user, false);
+
+		Assert.assertEquals(6,folderAPI.getWorkingContent(folder,user,false).size());
+	}
+
+	/**
 	 * <b>Method to test:</b> {@link FolderAPI#copy(Folder, Folder, User, boolean)}<br></br>
 	 * <b>Given Scenario:</b> Copying a folder that contains pieces of content with relation_type (multi_tree table)
 	 * different from {@link ContainerUUID#UUID_LEGACY_VALUE}<br></br>
@@ -857,7 +916,7 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 				.host(host)
 				.setProperty("title", "genericContent")
 				.setProperty("author", "systemUser")
-				.setProperty("body", "Generic Content Body").nextPersisted();
+				.setProperty("body", "{\"type\":\"doc\",\"attrs\":{\"chartCount\":20,\"wordCount\":3,\"readingTime\":1},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Generic Content Body\"}]}]}").nextPersisted();
 
 		/*Relate content to page*/
 		final MultiTree multiTree =  new MultiTree(htmlPageAsset.getIdentifier(),
@@ -1088,7 +1147,7 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		container.setPreLoop("preloop code");
 		container.setPostLoop("postloop code");
 
-		List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+		List<ContainerStructure> csList = new ArrayList<>();
 		ContainerStructure cs = new ContainerStructure();
 		cs.setStructureId(widgetContentType.inode());
 		cs.setCode("<div><h3>content $!{title}</h3><p>$!{body}</p></div>");

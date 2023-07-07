@@ -1,24 +1,23 @@
-import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
+import { fromEvent, merge, Observable, Subject } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { catchError, filter, map, pluck, skip, take, takeUntil, tap } from 'rxjs/operators';
+import { filter, map, pluck, skip, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
     DotAlertConfirmService,
-    DotEditPageService,
+    DotCurrentUserService,
     DotESContentService,
     DotEventsService,
     DotLicenseService,
@@ -35,12 +34,12 @@ import {
     DotExperiment,
     DotIframeEditEvent,
     DotPageContainer,
-    DotPageContainerPersonalized,
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
     DotVariantData,
-    ESContent
+    ESContent,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
@@ -86,6 +85,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     paletteCollapsed = false;
     isEnterpriseLicense = false;
     variantData: Observable<DotVariantData>;
+    featureFlagSeo = FeaturedFlags.FEATURE_FLAG_SEO_IMPROVEMENTS;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -95,7 +95,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dialogService: DialogService,
         private dotContentletEditorService: DotContentletEditorService,
         private dotDialogService: DotAlertConfirmService,
-        private dotEditPageService: DotEditPageService,
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotMessageService: DotMessageService,
         private dotPageStateService: DotPageStateService,
@@ -110,12 +109,13 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
         public sanitizer: DomSanitizer,
         public iframeOverlayService: IframeOverlayService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
         private dotConfigurationService: DotPropertiesService,
         private dotLicenseService: DotLicenseService,
         private dotEventsService: DotEventsService,
         private dotESContentService: DotESContentService,
-        private dotSessionStorageService: DotSessionStorageService
+        private dotSessionStorageService: DotSessionStorageService,
+        private dotCurrentUser: DotCurrentUserService,
+        private dotFavoritePageService: DotFavoritePageService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -124,9 +124,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 },
                 'load-edit-mode-page': (pageRendered: DotPageRender) => {
                     /*
-                        This is the events that gets emitted from the backend when the user
-                        browse from the page internal links
-                    */
+This is the events that gets emitted from the backend when the user
+browse from the page internal links
+*/
 
                     const dotRenderedPageState = new DotPageRenderState(
                         this.pageStateInternal.user,
@@ -203,13 +203,14 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
         this.router.navigate(
             [
-                '/edit-page/experiments/configuration',
+                '/edit-page/experiments/',
                 this.pageStateInternal.page.identifier,
-                experimentId
+                experimentId,
+                'configuration'
             ],
             {
                 queryParams: {
-                    editPageTab: null,
+                    mode: null,
                     variantName: null,
                     experimentId: null
                 },
@@ -259,18 +260,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @memberof DotEditContentComponent
      */
     onFormSelected(item: DotCMSContentType): void {
-        this.dotEditContentHtmlService
-            .renderAddedForm(item.id)
-            .subscribe((model: DotPageContainer[]) => {
-                if (model) {
-                    this.saveToPage(model)
-                        .pipe(take(1))
-                        .subscribe(() => {
-                            this.reload(null);
-                        });
-                }
-            });
-
+        this.dotEditContentHtmlService.renderAddedForm(item.id);
         this.editForm = false;
     }
 
@@ -320,10 +310,15 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      */
     showFavoritePageDialog(openDialog: boolean): void {
         if (openDialog) {
-            const favoritePageUrl = generateDotFavoritePageUrl(this.pageStateInternal);
+            const favoritePageUrl = generateDotFavoritePageUrl({
+                deviceInode: this.pageStateInternal.viewAs.device?.inode,
+                languageId: this.pageStateInternal.viewAs.language.id,
+                pageURI: this.pageStateInternal.page.pageURI,
+                siteId: this.pageStateInternal.site?.identifier
+            });
 
             this.dialogService.open(DotFavoritePageComponent, {
-                header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+                header: this.dotMessageService.get('favoritePage.dialog.header'),
                 width: '80rem',
                 data: {
                     page: {
@@ -342,13 +337,15 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private updateFavoritePageIconStatus(pageUrl: string) {
-        this.dotESContentService
-            .get({
-                itemsPerPage: 10,
-                offset: '0',
-                query: `+contentType:DotFavoritePage +DotFavoritePage.url_dotraw:${pageUrl}`
-            })
-            .pipe(take(1))
+        this.dotCurrentUser
+            .getCurrentUser()
+            .pipe(
+                switchMap(({ userId }) =>
+                    this.dotFavoritePageService
+                        .get({ limit: 10, userId, url: pageUrl })
+                        .pipe(take(1))
+                )
+            )
             .subscribe((response: ESContent) => {
                 const favoritePage = response.jsonObjectView?.contentlets[0];
                 this.dotPageStateService.setFavoritePageHighlight(favoritePage);
@@ -369,59 +366,12 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         return this.route.snapshot.queryParams.url === url;
     }
 
-    private saveContent(event: PageModelChangeEvent): void {
-        this.saveToPage(event.model)
-            .pipe(
-                filter((message: string) => {
-                    return this.shouldReload(event.type) || message === 'error';
-                }),
-                take(1)
-            )
-            .subscribe(() => {
-                this.reload(null);
-            });
-    }
-
     private shouldReload(type: PageModelChangeEventType): boolean {
         return (
-            type !== PageModelChangeEventType.REMOVE_CONTENT &&
-            this.pageStateInternal.page.remoteRendered
+            (type !== PageModelChangeEventType.REMOVE_CONTENT &&
+                this.pageStateInternal.page.remoteRendered) ||
+            type === PageModelChangeEventType.SAVE_ERROR
         );
-    }
-
-    private saveToPage(model: DotPageContainer[]): Observable<string> {
-        this.dotGlobalMessageService.loading(
-            this.dotMessageService.get('dot.common.message.saving')
-        );
-
-        return this.dotEditPageService
-            .save(this.pageStateInternal.page.identifier, this.getPersonalizedModel(model) || model)
-            .pipe(
-                take(1),
-                tap(() => {
-                    this.dotGlobalMessageService.success();
-                }),
-                catchError((error: HttpErrorResponse) => {
-                    this.httpErrorManagerService.handle(error);
-
-                    return of('error');
-                })
-            );
-    }
-
-    private getPersonalizedModel(model: DotPageContainer[]): DotPageContainerPersonalized[] {
-        const persona = this.pageStateInternal.viewAs.persona;
-
-        if (persona && persona.personalized) {
-            return model.map((container: DotPageContainer) => {
-                return {
-                    ...container,
-                    personaTag: persona.keyTag
-                };
-            });
-        }
-
-        return null;
     }
 
     private addContentType($event: DotContentletEventAddContentType): void {
@@ -479,10 +429,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         }
     }
 
-    private editContentlet($event: DotIframeEditEvent): void {
+    private editContentlet(inode: string): void {
         this.dotContentletEditorService.edit({
             data: {
-                inode: $event.dataset.dotInode
+                inode
             },
             events: {
                 load: (event) => {
@@ -495,20 +445,21 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private iframeActionsHandler(event: string): (contentlet: DotIframeEditEvent) => void {
         const eventsHandlerMap = {
-            edit: this.editContentlet.bind(this),
-            code: this.editContentlet.bind(this),
+            edit: this.editHandlder.bind(this),
+            code: ({ dataset }) => this.editContentlet(dataset.dotInode),
             add: this.searchContentlet.bind(this),
             remove: this.removeContentlet.bind(this),
             'add-content': this.addContentType.bind(this),
-            select: () => {
-                this.dotContentletEditorService.clear();
-            },
-            save: () => {
-                this.reload(null);
-            }
+            select: () => this.dotContentletEditorService.clear(),
+            save: () => this.reload(null)
         };
 
         return eventsHandlerMap[event];
+    }
+
+    private editHandlder($event: DotIframeEditEvent): void {
+        const { dotInode: inode } = $event.dataset;
+        this.editContentlet(inode);
     }
 
     private subscribeToNgEvents(): void {
@@ -547,6 +498,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private renderPage(pageState: DotPageRenderState): void {
         this.dotEditContentHtmlService.setCurrentPage(pageState.page);
+        this.dotEditContentHtmlService.setCurrentPersona(pageState.viewAs.persona);
 
         if (this.shouldEditMode(pageState)) {
             if (this.isEnterpriseLicense) {
@@ -611,7 +563,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .subscribe((event: PageModelChangeEvent) => {
                 this.ngZone.run(() => {
                     this.dotPageStateService.updatePageStateHaveContent(event);
-                    this.saveContent(event);
+                    if (this.shouldReload(event.type)) {
+                        this.reload(null);
+                    }
                 });
             });
     }
@@ -656,7 +610,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private getExperimentResolverData(): void {
-        const { variantName, editPageTab } = this.route.snapshot.queryParams;
+        const { variantName, mode } = this.route.snapshot.queryParams;
         this.variantData = this.route.parent.parent.data.pipe(
             take(1),
             pluck('experiment'),
@@ -677,7 +631,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     experimentId: experiment.id,
                     experimentStatus: experiment.status,
                     experimentName: experiment.name,
-                    mode: editPageTab
+                    mode: mode
                 } as DotVariantData;
             })
         );

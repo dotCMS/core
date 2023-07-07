@@ -19,7 +19,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_NAME,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
@@ -29,12 +29,12 @@ import {
     dotcmsContentletMock,
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
+    getExperimentMock,
     MockDotMessageService,
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';
@@ -66,7 +66,7 @@ const dotVariantDataMock: DotVariantData = {
     experimentId: EXPERIMENT_MOCK.id,
     experimentStatus: EXPERIMENT_MOCK.status,
     experimentName: EXPERIMENT_MOCK.name,
-    mode: 'preview'
+    mode: DotPageMode.PREVIEW
 };
 
 const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
@@ -268,7 +268,7 @@ describe('DotEditPageStateControllerComponent', () => {
             it('should show only the preview tab when experiment is not Draft', async () => {
                 componentHost.variant = {
                     ...dotVariantDataMock,
-                    experimentStatus: DotExperimentStatusList.RUNNING
+                    experimentStatus: DotExperimentStatus.RUNNING
                 };
                 fixtureHost.detectChanges();
 

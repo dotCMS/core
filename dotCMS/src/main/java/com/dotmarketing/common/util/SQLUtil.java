@@ -66,7 +66,7 @@ public class SQLUtil {
 			"parent_relation_name","inode");
 	
 	public static List<String> tokenize(String schema) {
-		List<String> ret=new ArrayList<String>();
+		List<String> ret=new ArrayList<>();
 		if (schema!=null) {
 		QueryTokenizer tokenizer=new QueryTokenizer(";","--",true);
 		QueryTokenizer extraTokenizer=null;

@@ -1,4 +1,4 @@
-@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+@use "variables" as *;
 
 :host {
     display: block;
@@ -15,6 +15,7 @@
         position: absolute;
     }
 
+    dot-pages-favorite-page-empty-skeleton,
     .dot-favorite-dialog__thumbnailField {
         margin-bottom: 0;
         min-height: 353px;
@@ -29,7 +30,7 @@
     }
 
     .dot-favorite-dialog__image-container {
-        border: 1px solid $gray-lighter;
+        border: 1px solid $color-palette-gray-300;
         display: block;
         text-align: center;
 
@@ -37,14 +38,16 @@
             object-fit: contain;
             object-position: top;
             height: 348px;
+            max-width: 100%;
         }
     }
 
     ::ng-deep dot-html-to-image {
-        min-height: 353px;
+        height: 353px;
 
         img {
-            border: 1px solid $gray-lighter;
+            background-color: $white;
+            border: 1px solid $color-palette-gray-300;
             height: 353px;
             object-fit: contain;
             width: 100%;

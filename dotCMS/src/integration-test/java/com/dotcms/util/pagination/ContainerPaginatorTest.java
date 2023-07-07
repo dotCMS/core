@@ -1,6 +1,7 @@
 package com.dotcms.util.pagination;
 
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
@@ -39,23 +40,30 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
     public void getPaginatedContainers() throws DotDataException, DotSecurityException {
         // Initialization
         final String ORDER_BY = "title";
-        final String filter = StringPool.BLANK;
+        final String timestamp = String.valueOf(System.currentTimeMillis());
+        final String filter = "Container Paginator Test " + timestamp;
         final int limit = 20;
         final int offset = 2;
         Container containerOne = null;
         Container containerTwo = null;
         Container containerThree = null;
+        // Need to filter to this test.  There could be more than 20 containers in the system.
         final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
                 .siteId(defaultHost.getIdentifier())
+                .filteringCriteria("title", filter)
                 .orderBy(ORDER_BY).build();
         List<Container> containerList = containerAPI.findContainers(user, searchParams);
         final int initialContainerCount = containerList.size();
 
         try {
             // Test data generation
-            containerOne = new ContainerDataGen().site(defaultHost).title("Container One").nextPersisted();
-            containerTwo = new ContainerDataGen().site(defaultHost).title("Container Two").nextPersisted();
-            containerThree = new ContainerDataGen().site(defaultHost).title("Container Three").nextPersisted();
+            containerOne = new ContainerDataGen().site(defaultHost).title(filter+" 1").nextPersisted();
+            containerTwo = new ContainerDataGen().site(defaultHost).title(filter+" 2").nextPersisted();
+            containerThree = new ContainerDataGen().site(defaultHost).title(filter+" 3").nextPersisted();
+
+
+            TestDataUtils.waitForEmptyQueue();
+
             final ContainerPaginator containerPaginator = new ContainerPaginator();
             final PaginatedArrayList<ContainerView> containersViews = containerPaginator.getItems(user, filter, limit, offset, ORDER_BY,
                     OrderDirection.ASC, map(ContainerPaginator.HOST_PARAMETER_ID, defaultHost.getIdentifier()));

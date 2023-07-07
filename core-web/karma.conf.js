@@ -9,22 +9,23 @@ module.exports = () => {
         basePath: '',
         frameworks: ['jasmine', '@angular-devkit/build-angular'],
         plugins: [
-            require('karma-html-reporter'),
             require('karma-jasmine'),
             require('karma-chrome-launcher'),
-            require('karma-jasmine-html-reporter'),
             require('karma-coverage'),
+            require('karma-junit-reporter'),
+            require('karma-summary-reporter'),
             require('@angular-devkit/build-angular/plugins/karma')
         ],
         client: {
             clearContext: false // leave Jasmine Spec Runner output visible in browser
         },
         coverageReporter: {
-            dir: join(__dirname, './coverage'),
+            dir: '../../target/core-web-reports',
             subdir: '.',
-            reporters: [{ type: 'html' }, { type: 'text-summary' }]
+            file: 'TEST-dotcms-ui.lcov',
+            reporters: [{ type: 'lcovonly' }]
         },
-        reporters: ['progress', 'kjhtml', 'html'],
+        reporters: ['junit', 'summary'],
         port: 9876,
         colors: true,
         logLevel: constants.LOG_INFO,
@@ -36,9 +37,23 @@ module.exports = () => {
                 flags: ['--no-sandbox']
             }
         },
-        htmlReporter: {
-            namedFiles: true,
-            reportName: 'report'
+        junitReporter: {
+            subdir: '.',
+            useBrowserName: false,
+            outputDir: '../../target/core-web-reports',
+            outputFile: 'TEST-dotcms-ui.xml'
+        },
+        summaryReporter: {
+            // 'failed', 'skipped' or 'all'
+            show: 'failed',
+            // Limit the spec label to this length
+            specLength: 50,
+            // Show an 'all' column as a summary
+            overviewColumn: true,
+            // Show a list of test clients, 'always', 'never' or 'ifneeded'
+            browserList: 'always',
+            // Use custom symbols to indicate success and failure
+            symbols: { success: 'o', failure: 'x' }
         },
         singleRun: true,
         browserDisconnectTimeout: 20000

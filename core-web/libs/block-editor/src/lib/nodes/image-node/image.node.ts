@@ -2,7 +2,7 @@ import { Image } from '@tiptap/extension-image';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { getImageAttr, imageElement, imageLinkElement } from './helpers';
+import { addImageLanguageId, getImageAttr, imageElement, imageLinkElement } from './helpers';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -15,7 +15,7 @@ declare module '@tiptap/core' {
              * Unset Image Link mark
              */
             unsetImageLink: () => ReturnType;
-            addDotImage: (attrs: DotCMSContentlet | string) => ReturnType;
+            insertImage: (attrs: DotCMSContentlet | string, position?: number) => ReturnType;
         };
     }
 }
@@ -28,7 +28,12 @@ export const ImageNode = Image.extend({
             src: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('src'),
-                renderHTML: (attributes) => ({ src: attributes.src || attributes.data?.asset })
+                renderHTML: (attributes) => ({
+                    src: addImageLanguageId(
+                        attributes.src || attributes.data?.asset,
+                        attributes.data?.languageId
+                    )
+                })
             },
             alt: {
                 default: null,
@@ -40,11 +45,6 @@ export const ImageNode = Image.extend({
                 parseHTML: (element) => element.getAttribute('title'),
                 renderHTML: (attributes) => ({ title: attributes.title || attributes.data?.title })
             },
-            style: {
-                default: null,
-                parseHTML: (element) => element.getAttribute('style'),
-                renderHTML: (attributes) => ({ style: attributes.style })
-            },
             href: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('href'),
@@ -52,10 +52,8 @@ export const ImageNode = Image.extend({
             },
             data: {
                 default: null,
-                parseHTML: (element) => ({
-                    data: element.getAttribute('data')
-                }),
-                renderHTML: (attributes) => ({ data: attributes.data })
+                parseHTML: (element) => element.getAttribute('data'),
+                renderHTML: (attributes) => ({ data: JSON.stringify(attributes.data) })
             }
         };
     },
@@ -81,26 +79,29 @@ export const ImageNode = Image.extend({
                 ({ commands }) => {
                     return commands.updateAttributes(this.name, { href: '' });
                 },
-            addDotImage:
-                (attrs) =>
+            insertImage:
+                (attrs, position) =>
                 ({ chain, state }) => {
                     const { selection } = state;
+                    const { head } = selection;
                     const node = {
                         attrs: getImageAttr(attrs),
                         type: ImageNode.name
                     };
 
-                    return chain().insertContentAt(selection.head, node).run();
+                    return chain()
+                        .insertContentAt(position ?? head, node)
+                        .run();
                 }
         };
     },
 
     renderHTML({ HTMLAttributes }) {
-        const { style = '', href = null } = HTMLAttributes || {};
+        const { href = null, style } = HTMLAttributes || {};
 
         return [
             'div',
-            { style, class: 'node-container' },
+            { class: 'image-container', style },
             href
                 ? imageLinkElement(this.options.HTMLAttributes, HTMLAttributes)
                 : imageElement(this.options.HTMLAttributes, HTMLAttributes)

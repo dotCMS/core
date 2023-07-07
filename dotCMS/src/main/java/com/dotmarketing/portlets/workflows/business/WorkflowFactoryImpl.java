@@ -533,31 +533,32 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     @Override
     public void deleteWorkflowTaskByContentletIdAnyLanguage(final String webAsset)
             throws DotDataException {
-
         final DotConnect db = new DotConnect();
         db.setSQL("SELECT * FROM workflow_task WHERE webasset = ?");
         db.addParam(webAsset);
-
         final List<WorkflowTask> tasksToClearFromCache = this
                 .convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
 
-        new DotConnect().setSQL(
-                        "delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ?)")
-                .addParam(webAsset).loadResult();
+		if (tasksToClearFromCache.isEmpty()) {
+		    return;
+		}
+		final String parameters = "(" + String.join(",", tasksToClearFromCache.stream().map(q->"?").collect(Collectors.toList())) +")";
 
-        new DotConnect().setSQL(
-                        "delete from workflow_history where workflowtask_id   in (select id from workflow_task where webasset = ?)")
-                .addParam(webAsset).loadResult();
+		db.setSQL("delete from workflow_comment where workflowtask_id in " + parameters);
+        tasksToClearFromCache.forEach(t -> db.addParam(t.getId()));
+		db.loadResult();
 
-        new DotConnect().setSQL(
-                        "delete from workflowtask_files where workflowtask_id in (select id from workflow_task where webasset = ?)")
-                .addParam(webAsset).loadResult();
+		db.setSQL("delete from workflow_history where workflowtask_id in " + parameters);
+        tasksToClearFromCache.forEach(t -> db.addParam(t.getId()));
+        db.loadResult();
 
-        new DotConnect().setSQL("delete from workflow_task where webasset = ?")
-                .addParam(webAsset).loadResult();
+        db.setSQL("delete from workflowtask_files where workflowtask_id in " + parameters   );
+        tasksToClearFromCache.forEach(t -> db.addParam(t.getId()));
+        db.loadResult();
+
+		db.setSQL("delete from workflow_task where webasset = ?").addParam(webAsset).loadResult();
 
         tasksToClearFromCache.forEach(cache::remove);
-
     }
 
     @Override
@@ -810,7 +811,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     private Map<String, WorkflowActionClassParameter> loadDefaultActionClassParams(
             final WorkflowActionClass actionClass) {
 
-        final Map<String, WorkflowActionClassParameter> map = new LinkedHashMap<String, WorkflowActionClassParameter>();
+        final Map<String, WorkflowActionClassParameter> map = new LinkedHashMap<>();
 
         if (actionClass != null && actionClass.getActionlet() != null
                 && actionClass.getActionlet().getParameters() != null) {
@@ -857,8 +858,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         if (schemes != null) {
 
             // checks if any of the schemes has been invalidated (save recently and needs to refresh the schemes for the content type).
-            if (!schemes.stream().filter(scheme -> null == cache.getScheme(scheme.getId()))
-                    .findFirst().isPresent()) {
+            if (schemes.stream().filter(scheme -> null == cache.getScheme(scheme.getId()))
+                    .findFirst().isEmpty()) {
                 return schemes;
             }
         }
@@ -1130,7 +1131,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         hu.setQuery(
                 "from workflow_task_files in class com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles where workflowtask_id = ?");
         hu.setParam(task.getId());
-        List<Contentlet> contents = new ArrayList<Contentlet>();
+        List<Contentlet> contents = new ArrayList<>();
         List<WorkFlowTaskFiles> l = hu.list();
 
         for (WorkFlowTaskFiles f : l) {
@@ -1181,7 +1182,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 .doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())
                 || APILocator.getRoleAPI()
                 .doesUserHaveRole(searcher.getUser(), RoleAPI.WORKFLOW_ADMIN_ROLE_KEY))) {
-            final List<Role> userRoles = new ArrayList<Role>();
+            final List<Role> userRoles = new ArrayList<>();
             if (UtilMethods.isSet(searcher.getAssignedTo())) {
 
                 final Role r = APILocator.getRoleAPI().loadRoleById(searcher.getAssignedTo());

@@ -20,7 +20,7 @@ class DotMessageMockPipe implements PipeTransform {
 }
 
 const messageServiceMock = new MockDotMessageService({
-    'contentType.errors.input.maxlength': 'Value must be no more than {0} characters and has {1}',
+    'contentType.errors.input.maxlength': 'Value must be no more than {0} characters',
     'contentType.form.variable.placeholder': 'Will be auto-generated if left empty'
 });
 

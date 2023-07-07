@@ -1,17 +1,17 @@
 @use "variables" as *;
 @import "mixins";
 
-$placeholder-color: rgba($white, 0.5);
+$placeholder-color: $color-palette-white-op-50;
 
 :host {
     flex: 1;
     margin: 0 50px;
 
     .global-search__textbox {
-        background-color: rgba($white, 0.2);
+        background-color: $color-palette-white-op-20;
         border: none;
         color: $white;
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
         height: 36px;
         padding: 0 10px;
         width: 100%;

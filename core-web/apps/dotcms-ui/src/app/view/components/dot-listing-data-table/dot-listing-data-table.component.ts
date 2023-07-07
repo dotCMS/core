@@ -235,25 +235,11 @@ export class DotListingDataTableComponent implements OnInit {
         );
     }
 
-    private formatData(items: Record<string, string>[]): Record<string, unknown>[] {
-        return items.map((item) => {
-            this.dateColumns.forEach(
-                (col) =>
-                    (item[col.fieldName] = this.dotFormatDateService.getRelative(
-                        item[col.fieldName]
-                    ))
-            );
-
-            return item;
-        });
-    }
-
     private setItems(items): void {
         setTimeout(() => {
             // avoid ExpressionChangedAfterItHasBeenCheckedError on p-table on tests.
             // TODO: Double check if versions after prime-ng 11.0.0 solve the need to add this hack.
-            const formattedData = this.dateColumns ? this.formatData(items) : items;
-            this.items = this.mapItems === undefined ? formattedData : this.mapItems(formattedData);
+            this.items = this.mapItems === undefined ? items : this.mapItems(items);
             this.loading = false;
             this.maxLinksPage = this.paginatorService.maxLinksPage;
             this.totalRecords = this.paginatorService.totalRecords;

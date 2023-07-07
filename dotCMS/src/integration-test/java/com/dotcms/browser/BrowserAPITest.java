@@ -1,33 +1,6 @@
 package com.dotcms.browser;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.VariantDataGen;
-import com.dotcms.variant.model.Variant;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotRuntimeException;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.FileUtil;
-import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
@@ -38,9 +11,14 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -50,22 +28,41 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
+import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by Oscar Arrieta on 6/8/17.
  */
-
 public class BrowserAPITest extends IntegrationTestBase {
 
     final BrowserAPI browserAPI = APILocator.getBrowserAPI();
     final FolderAPI folderAPI = APILocator.getFolderAPI();
     final UserAPI userAPI = APILocator.getUserAPI();
-    final HostAPI hostAPI = APILocator.getHostAPI();
 
     static Host testHost;
     static Folder testFolder, testSubFolder;
@@ -121,8 +118,66 @@ public class BrowserAPITest extends IntegrationTestBase {
         testPage = APILocator.getHTMLPageAssetAPI().fromContentlet(HTMLPageDataGen.checkin(page, IndexPolicy.FORCE));
 
         testlink = new LinkDataGen().hostId(testHost.getIdentifier()).title("testLink").parent(testFolder).target("https://google.com").linkType("EXTERNAL").nextPersisted();
-        browserAPIImpl = (BrowserAPIImpl) APILocator.getBrowserAPI();
     }
+
+    /**
+     * Given scenario: Create a folder place multiple versions in different languages of the same content
+     * Expected result: We're testing that BrowserAPI can be used to bring multiple versions of the same content in different languages
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test()
+    public void Test_GetFolderContent_Multiple_Langs() throws DotDataException, DotSecurityException, IOException {
+
+        final SiteDataGen   siteDataGen   = new SiteDataGen();
+        final FolderDataGen folderDataGen = new FolderDataGen();
+        final Host          host          = siteDataGen.nextPersisted();
+        final Folder        folder        = folderDataGen.site(host).nextPersisted();
+
+        final File file = FileUtil.createTemporaryFile("test", ".txt", "this is a test!");
+
+        final Contentlet persisted = new FileAssetDataGen(file)
+                .languageId(1)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+        List<Long> languages = new ArrayList<>();
+        languages.add(persisted.getLanguageId());
+        languages.add(new LanguageDataGen().nextPersisted().getId());
+        languages.add(new LanguageDataGen().nextPersisted().getId());
+
+        for (Long lang:languages) {
+            final Contentlet next = new FileAssetDataGen(file)
+                    .languageId(lang)
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR).next();
+
+            next.setIdentifier(persisted.getIdentifier());
+            next.setInode(null);
+            contentletAPI.checkin(next, APILocator.systemUser(), false);
+        }
+
+        final List<Treeable> contentList = browserAPI.getFolderContentList(
+                BrowserQuery.builder()
+                        .showDotAssets(false)
+                        .showLinks(false)
+                        .withHostOrFolderId(folder.getIdentifier())
+                        .offset(0)
+                        .showFiles(true)
+                        .showFolders(true)
+                        .showWorking(true)
+                        .build());
+
+        assertEquals(3, contentList.size());
+        assertTrue(contentList.stream().allMatch(c->  persisted.getIdentifier().equals(c.getIdentifier())));
+        assertTrue(contentList.stream().map(c->(Contentlet)c).anyMatch(c-> languages.contains( c.getLanguageId())));
+    }
+
 
     /**
      * Method to test: testing the pagination of the BrowserAPI, the test creates a site and a folder, them add 10 files and iterate over them with the browser api
@@ -363,176 +418,168 @@ public class BrowserAPITest extends IntegrationTestBase {
             folderAPI.delete( folder, user, false );
         }
     }
-    
-    
-    
-    
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getFolderContent(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Evaluate the list of Test Cases specified by the {@link #browserApiTestCases()}
+     *     method, and compare the expected results with the ones returned by the API.</li>
+     *     <li><b>Expected Result:</b> The total count and the name of the items returned by the API must match the
+     *     expected ones.</li>
+     * </ul>
+     *
+     * @throws Exception An error occurred when calling the {@link BrowserAPI#getFolderContent(BrowserQuery)} method.
+     */
     @Test
-    public void testingDifferentBrowserAPIResults() throws Exception{
-        for(Tuple3<String,BrowserQuery, Set<String>> testCase : browserApiTestCases()) {
-            String testTitle = testCase._1;
-            Map<String,Object> results = browserAPI.getFolderContent(testCase._2);
-            
-            List<String> list = ((List<Map<String,Object>>) results.get("list")).stream().map(m->(String) m.get("name")).collect(Collectors.toList());
-            
-            assertTrue(testTitle, !list.isEmpty());
-            
-            Set<String> expectedNames = testCase._3;
-            
-            assertTrue(testTitle, list.size()==expectedNames.size());
-            
-            for(String name : list) {
-                System.out.println(testTitle + " - got :" + name);
+    public void testingDifferentBrowserAPIResults() throws Exception {
+        for (final Tuple3<String, BrowserQuery, Set<String>> testCase : browserApiTestCases()) {
+            final String testTitle = testCase._1;
+            final Map<String, Object> results = this.browserAPI.getFolderContent(testCase._2);
+            final List<String> queryResults =
+                    ((List<Map<String, Object>>) results.get("list")).stream().map(m -> (String) m.get("name")).collect(Collectors.toList());
+            assertFalse("Result list for Test Case '" + testTitle + "' cannot be empty", queryResults.isEmpty());
+            final Set<String> expectedNames = testCase._3;
+            assertEquals("The expected list of items in the result list for Test Case '" + testTitle + "' must match" +
+                                 ".", queryResults.size(), expectedNames.size());
+            for (final String name : queryResults) {
+                System.out.println("Test Case '" + testTitle + "' got: " + name);
                 assertTrue(testTitle, expectedNames.contains(name));
             }
-            System.out.println("");
-        }   
+            System.out.println(StringPool.BLANK);
+        }
     }
-    
-    
 
+    /**
+     * Generates the Test Cases for evaluating the results returned by the
+     * {@link BrowserAPI#getFolderContent(BrowserQuery)} method.
+     *
+     * @return The {@link Tuple3} object with the expected Test Cases, including (1) their name, (2) filtering criteria,
+     * and (2) expected results.
+     */
     public static List<Tuple3<String,BrowserQuery, Set<String>>> browserApiTestCases() {
-    
-        List<Tuple3<String,BrowserQuery, Set<String>>> testCases = new ArrayList<>();
-        
-
-        
-        // All in a folder in the default language
-        testCases.add( Tuple.of(
-                        "all content, 1 langauge, no archived",
-                        
-                            BrowserQuery.builder()
-                            .showDotAssets(true)
-                            .showLinks(true)
-                            .withHostOrFolderId(testFolder.getInode())
-                            .showFolders(true)
-                            .showPages(true)
-                            .showFiles(true)
-                            .withLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
-                            .build()
-                                        ,
-                            ImmutableSet.of(
-                                testFileAsset.getName(),
-                                testFileAsset2.getName(),
-                                testSubFolder.getName(),
-                                testlink.getName(),
-                                testDotAsset.getTitle(),
-                                testPage.getPageUrl()
-                            ))
-
-        );
-        
-        
-        testCases.add( Tuple.of(
-                        "only files, 1 langauge, no archived",
-                        
-                        BrowserQuery.builder()
-                        .showDotAssets(true)
-                        .showFiles(true)
-                        .withHostOrFolderId(testFolder.getInode())
-                        .withLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
-                        .build(),
-                        
-                        ImmutableSet.of(
-                            testFileAsset.getName(),
-                            testFileAsset2.getName(),
-                            testDotAsset.getTitle()
-                        ))
-        
-        );
-        
+        final List<Tuple3<String,BrowserQuery, Set<String>>> testCases = new ArrayList<>();
+        // All Test Cases will use the same base folder and the default language
         testCases.add(Tuple.of(
-                        "only files, all langauges, no archived",
-                        
-                        BrowserQuery.builder()
+                "Show all contents, 1 language, non-archived",
+                BrowserQuery.builder()
                         .showDotAssets(true)
-                        .showFiles(true)
+                        .showLinks(true)
                         .withHostOrFolderId(testFolder.getInode())
-                        .build(),
-                        
-                        ImmutableSet.of(
-                            testFileAsset.getName(),
-                            testFileAsset2.getName(),
-                            testFileAsset2MultiLingual.getName(),
-                            testDotAsset.getTitle()
-                        ))
-        
+                        .showFolders(true)
+                        .showPages(true)
+                        .showFiles(true)
+                        .withLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId()).build(),
+                ImmutableSet.of(
+                        testFileAsset.getName(),
+                        testFileAsset2.getName(),
+                        testSubFolder.getName(),
+                        testlink.getName(),
+                        testDotAsset.getTitle(),
+                        testPage.getPageUrl()))
         );
 
         testCases.add(Tuple.of(
-                "only files, all langauges, no archived, no dotassets",
+                "Show files only, 1 language, non-archived",
+                BrowserQuery.builder()
+                        .showDotAssets(true)
+                        .showFiles(true)
+                        .withHostOrFolderId(testFolder.getInode())
+                        .withLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId()).build(),
+                ImmutableSet.of(
+                        testFileAsset.getName(),
+                        testFileAsset2.getName(),
+                        testDotAsset.getTitle()))
+        );
+        
+        testCases.add(Tuple.of(
+                "Show files only, all languages, non-archived",
+                BrowserQuery.builder()
+                        .showDotAssets(true)
+                        .showFiles(true)
+                        .withHostOrFolderId(testFolder.getInode()).build(),
+                ImmutableSet.of(
+                        testFileAsset.getName(),
+                        testFileAsset2.getName(),
+                        testFileAsset2MultiLingual.getName(),
+                        testDotAsset.getTitle()))
+        );
 
+        testCases.add(Tuple.of(
+                "Show files only, all languages, non-archived, no dotAssets",
                 BrowserQuery.builder()
                         .showDotAssets(false)
                         .showFiles(true)
                         .showPages(false)
-                        .withHostOrFolderId(testFolder.getInode())
-                        .build(),
-
+                        .withHostOrFolderId(testFolder.getInode()).build(),
                 ImmutableSet.of(
                         testFileAsset.getName(),
                         testFileAsset2.getName(),
-                        testFileAsset2MultiLingual.getName()
-                ))
-
+                        testFileAsset2MultiLingual.getName()))
         );
         
         testCases.add(Tuple.of(
-                        "show archived files, all langauges, no dotAssets",
-                        
-                        BrowserQuery.builder()
+                "Show archived files, all languages, no dotAssets",
+                BrowserQuery.builder()
                         .showFiles(true)
                         .showArchived(true)
-                        .withHostOrFolderId(testFolder.getInode())
-                        .build(),
-                        
-                        ImmutableSet.of(
-                            testFileAsset.getName(),
-                            testFileAsset2.getName(),
-                            testFileAsset3Archived.getName(),
-                            testFileAsset2MultiLingual.getName()
-                        ))
-        
+                        .withHostOrFolderId(testFolder.getInode()).build(),
+                ImmutableSet.of(
+                        testFileAsset.getName(),
+                        testFileAsset2.getName(),
+                        testFileAsset3Archived.getName(),
+                        testFileAsset2MultiLingual.getName()))
         );
         
-        
-        
         testCases.add(Tuple.of(
-                        "show pages",
-                        
-                        BrowserQuery.builder()
+                "Show HTML Pages",
+                BrowserQuery.builder()
                         .showPages(true)
-                        .withHostOrFolderId(testFolder.getInode())
-                        .build(),
-                        
-                        ImmutableSet.of(
-                            testPage.getPageUrl()
-            
-                        ))
-        
+                        .withHostOrFolderId(testFolder.getInode()).build(),
+                ImmutableSet.of(
+                        testPage.getPageUrl()))
         );
         
-        
         testCases.add(Tuple.of(
-                        "show links",
-                        
-                        BrowserQuery.builder()
+                "Show Links",
+                BrowserQuery.builder()
                         .showLinks(true)
                         .showContent(false)
+                        .withHostOrFolderId(testFolder.getInode()).build(),
+                ImmutableSet.of(
+                        testlink.getName()))
+        );
+
+        // When requesting content in the folder for non the default language,
+        //should return the content in the language requested + the content in the
+        //default language
+        testCases.add( Tuple.of(
+                "Request Content No default lang, should return content also in default lang",
+
+                BrowserQuery.builder()
                         .withHostOrFolderId(testFolder.getInode())
-                        .build(),
-                        
-                        ImmutableSet.of(
-                            testlink.getName()
-            
-                        ))
-        
+                        .showWorking(true)
+                        .showArchived(false)
+                        .showFolders(true)
+                        .showPages(true)
+                        .showFiles(true)
+                        .showLinks(true)
+                        .showDefaultLangItems(true)
+                        .showDotAssets(true)
+                        .withLanguageId(testLanguage.getId())
+                        .build()
+                ,
+                ImmutableSet.of(
+                        testFileAsset.getName(),
+                        testFileAsset2.getName(),
+                        testFileAsset2MultiLingual.getName(),
+                        testSubFolder.getName(),
+                        testlink.getName(),
+                        testDotAsset.getTitle(),
+                        testPage.getPageUrl()
+                ))
         );
         
-        
-        
         return testCases;
-        
     }
 
     /**
@@ -563,62 +610,40 @@ public class BrowserAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: browserAPI.getFolderContent
-     * Given scenario: One page in DEFAULT variant and one page in a second variant living under the same folder
-     * Expected result: calling the method for the mentioned folder should return only the page in the DEFAULT variant
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getAssetNameColumn(String)}</li>
+     *     <li><b>Given Scenario:</b> Check that the asset name value is queried against the {@code json_as_content}
+     *     column.</li>
+     *     <li><b>Expected Result:</b> The query must containe the expected SQL code for both PostgreSQL and MSSQL
+     *     databases.</li>
+     * </ul>
      */
     @Test
-    public void test_getFolderContent_pageWithTwoVariants()
-            throws DotDataException, DotSecurityException {
-        final User user = APILocator.systemUser();
+    public void getAssetNameColumn_providedBaseQuery_shouldGenerateCorrectSQLForDB() {
 
-        final Host site = new SiteDataGen().nextPersisted();
-        final Folder folder = new FolderDataGen().site(site).nextPersisted();
-        final Template template_A = new TemplateDataGen().host(site).nextPersisted();
-
-        final Variant secondVariant = new VariantDataGen().nextPersisted();
-
-        final HTMLPageAsset pageInDefaultVariant = new HTMLPageDataGen(site, template_A).folder(folder)
-                                                           .nextPersisted();
-
-        final HTMLPageAsset pageInSecondVariant = (HTMLPageAsset) new HTMLPageDataGen(site, template_A)
-                                                                          .folder(folder)
-                                                                          .variant(secondVariant)
-                                                                          .nextPersisted();
-
-        final BrowserQuery browserQuery = BrowserQuery.builder()
-                                                  .showDotAssets(Boolean.FALSE)
-                                                  .showLinks(Boolean.TRUE)
-                                                  .withHostOrFolderId(folder.getIdentifier())
-                                                  .showFiles(true)
-                                                  .showPages(true)
-                                                  .showFolders(false)
-                                                  .showArchived(false)
-                                                  .showWorking(Boolean.TRUE)
-                                                  .sortByDesc(false)
-                                                  .withUser(user).build();
-
-        final Map<String, Object> results = browserAPI.getFolderContent(browserQuery);
-        assertEquals(1, ((int) results.get("total")));
-        assertEquals(pageInDefaultVariant.getIdentifier(),
-                ((Contentlet.ContentletHashMap)((List) results.get("list")).get(0)).get("identifier"));
-
-    }
-
-    @Test
-    public void getAssetNameColumn_providedBaseQuery_shouldGenerateCorrectSQLForDB() throws DotDataException, DotSecurityException {
-
-        final String sql = browserAPIImpl.getAssetNameColumn("LOWER(%s) LIKE ? ");
+        final String sql = BrowserAPIImpl.getAssetNameColumn("LOWER(%s) LIKE ? ");
 
         assertNotNull(sql);
         if (DbConnectionFactory.isPostgres()) {
-            assertTrue(sql.contains("-> 'fields' -> 'asset' -> 'metadata' ->> 'name'"));
+            assertTrue(sql.contains("-> 'fields' -> 'fileName' ->> 'value'" ));
         }
         else{
-            assertTrue(sql.contains("$.fields.asset.metadata.name"));
+            assertTrue(sql.contains("$.fields.fileName.value"));
         }
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery)} and
+     *     {@link BrowserAPIImpl#getFolderContent(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Searching for a DotAsset content must return a valid result and expected result
+     *     .</li>
+     *     <li><b>Expected Result:</b> The {@code company_logo.png} DotAsset must be returned by the API.</li>
+     * </ul>
+     *
+     * @throws DotDataException     An error occurred when retrieving the result from the API.
+     * @throws DotSecurityException An error occurred when retrieving the result from the API.
+     */
     @Test
     public void getFolderContent_searchDotAssetWithFilter_shouldReturnNotNull() throws DotDataException, DotSecurityException {
         final String filterText = "company_logo.png";
@@ -633,7 +658,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .withFilter(filterText)
                 .showMimeTypes(mimeTypes)
                 .showImages(mimeTypes.contains(mimeTypes.get(0)))
-                .showExtensions(null)
+                .showExtensions(List.of())
                 .showWorking(true)
                 .showArchived(false)
                 .showFolders(false)
@@ -647,11 +672,61 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .showDotAssets(true)
                 .build();
 
-        final List<Contentlet> contentletList = browserAPI.getContentUnderParentFromDB(browserQuery);
-        final Map<String, Object> result = browserAPI.getFolderContent(browserQuery);
+        final List<Contentlet> contentletList = this.browserAPI.getContentUnderParentFromDB(browserQuery);
+        final Map<String, Object> result = this.browserAPI.getFolderContent(browserQuery);
 
         assertNotNull(contentletList);
         assertNotNull(result);
+    }
+
+
+    /**
+     * Generally speaking in most cases when a file is uploaded title and file name are the same.
+     * But this is not always the case. Since we can upload a file via workflows and the title is not required.
+     * Or it can take any value.
+     * Given scenario: A folder with two files named very similar. Title is different from file name.
+     * Expected result: We query using the exact file name The file asset should be returned by the API.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void getFolderContent_searchAssetWithNoTitleUsingFileName_Expect_Results()
+            throws DotDataException, DotSecurityException, IOException {
+
+        final Folder folder = new FolderDataGen().nextPersisted();
+
+        final File file1 = FileUtil.createTemporaryFile("lol", ".txt", "lol");
+        final File file2 = FileUtil.createTemporaryFile("lol", ".txt", "lol");
+
+        final String title = "testFileAsset1";
+        final Contentlet contentlet1 = new FileAssetDataGen(folder, file1).title(title).languageId(1).nextPersisted();
+        final Contentlet contentlet2 = new FileAssetDataGen(folder, file2).title(title).languageId(1).nextPersisted();
+        //Title is different from file name to test the filter
+
+        final FileAsset fileAsset1 = APILocator.getFileAssetAPI().fromContentlet(contentlet1);
+
+        final User user = APILocator.systemUser();
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withUser(user)
+                .maxResults(1)
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFileName(fileAsset1.getFileName())
+                .showWorking(true)
+                .showArchived(false)
+                .showFolders(false)
+                .showFiles(true)
+                .showContent(true)
+                .withLanguageId(1)
+                .showDotAssets(false)
+                .build();
+
+        final List<Contentlet> contentletList = this.browserAPI.getContentUnderParentFromDB(browserQuery);
+        assertFalse(contentletList.isEmpty());
+        assertEquals(1, contentletList.size());
+        assertEquals(contentletList.get(0).getInode(),contentlet1.getInode());
+
     }
 
 }

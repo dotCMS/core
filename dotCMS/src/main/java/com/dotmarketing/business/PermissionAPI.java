@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.exception.DotDataException;
@@ -81,33 +82,33 @@ public interface PermissionAPI {
 		put("CONTENTLETS", Contentlet.class.getCanonicalName());
 		put("CATEGORY", Category.class.getCanonicalName());
 		put("RULES", Rule.class.getCanonicalName());
-   }};
+	}};
 
-   public enum PermissionableType {
-	   HTMLPAGES(IHTMLPage.class.getCanonicalName()),
-	   CONTAINERS(Container.class.getCanonicalName()),
-	   FOLDERS(Folder.class.getCanonicalName()),
-	   LINKS(Link.class.getCanonicalName()),
-	   TEMPLATES(Template.class.getCanonicalName()),
-	   TEMPLATE_LAYOUTS(TemplateLayout.class.getCanonicalName()),
-	   STRUCTURES(Structure.class.getCanonicalName()),
-	   CONTENTLETS(Contentlet.class.getCanonicalName()),
-	   CATEGORY(Category.class.getCanonicalName()),
-	   RULES(Rule.class.getCanonicalName());
+	public enum PermissionableType {
+		HTMLPAGES(IHTMLPage.class.getCanonicalName()),
+		CONTAINERS(Container.class.getCanonicalName()),
+		FOLDERS(Folder.class.getCanonicalName()),
+		LINKS(Link.class.getCanonicalName()),
+		TEMPLATES(Template.class.getCanonicalName()),
+		TEMPLATE_LAYOUTS(TemplateLayout.class.getCanonicalName()),
+		STRUCTURES(Structure.class.getCanonicalName()),
+		CONTENTLETS(Contentlet.class.getCanonicalName()),
+		CATEGORY(Category.class.getCanonicalName()),
+		RULES(Rule.class.getCanonicalName());
 
-	   
-	   
-	   private final String canonicalName;
 
-	   PermissionableType(String canonicalName) {
-		   this.canonicalName = canonicalName;
-	   }
 
-	   public String getCanonicalName() {
-		   return canonicalName;
-	   }
+		private final String canonicalName;
 
-   }
+		PermissionableType(String canonicalName) {
+			this.canonicalName = canonicalName;
+		}
+
+		public String getCanonicalName() {
+			return canonicalName;
+		}
+
+	}
 
 
 
@@ -147,11 +148,34 @@ public interface PermissionAPI {
 
 	/**
 	 * Return true if the user have over the permissionable the specified
-	 * permission This method is meant to be used by frontend call because
-	 * assumes that frontend roles should respected
+	 * permission. This method is meant to be used by frontend call because
+	 * assumes that frontend roles should be respected. When the contentlet is
+	 * detected to be new then permissions associated to the contentlet's content
+	 * type are evaluated.
 	 *
-	 * @param o permissionable
-	 * @param permissionId
+	 * @param permissionable permissionable
+	 * @param permissionType
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param contentlet
+	 * @return boolean
+	 * @version 1.8
+	 * @throws DotDataExceptionq
+	 * @since 1.0
+	 */
+	boolean doesUserHavePermission(Permissionable permissionable,
+								   int permissionType,
+								   User user,
+								   boolean respectFrontendRoles,
+								   Contentlet contentlet) throws DotDataException;
+
+	/**
+	 * Return true if the user have over the permissionable the specified
+	 * permission. This method is meant to be used by frontend call because
+	 * assumes that frontend roles should be respected.
+	 *
+	 * @param permissionable permissionable
+	 * @param permissionType
 	 * @param user
 	 * @return boolean
 	 * @version 1.8
@@ -161,11 +185,41 @@ public interface PermissionAPI {
 	boolean doesUserHavePermission(Permissionable permissionable, int permissionType, User user) throws DotDataException;
 
 	/**
+	 * Return true if the user have over the content type specified
+	 * permission. This method is meant to be used by frontend call because
+	 * assumes that frontend roles should be respected.
+	 *
+	 * @param permissionable permissionable
+	 * @param permissionType
+	 * @param user
+	 * @return boolean
+	 * @version 1.8
+	 * @throws DotDataException
+	 * @since 1.0
+	 */
+	boolean doesUserHavePermission(ContentType permissionable, int permissionType, User user) throws DotDataException;
+
+	/**
+	 * Return true if the user have over the content type specified
+	 * permission.
+	 *
+	 * @param permissionable permissionable
+	 * @param permissionType
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return boolean
+	 * @version 1.8
+	 * @throws DotDataException
+	 * @since 1.0
+	 */
+	boolean doesUserHavePermission(ContentType permissionable, int permissionType, User user, boolean respectFrontendRoles) throws DotDataException;
+
+	/**
 	 * Return true if the user have over the permissionable the specified
 	 * permission
 	 *
-	 * @param o permissionable
-	 * @param permissionId
+	 * @param permissionable permissionable
+	 * @param permissionType
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return boolean
@@ -215,7 +269,7 @@ public interface PermissionAPI {
 	/**
 	 * Retrieves the list of permissions associated to the given permissionable, either searching from
 	 * individual permissions directly associated or permissions inheriting from a parent
- 	 * This method returns permissions in the old format
+	 * This method returns permissions in the old format
 	 * and not the compressed bit permissions format.
 	 *
 	 * @param permissionable
@@ -229,7 +283,7 @@ public interface PermissionAPI {
 	/**
 	 * Retrieves the list of permissions associated to the given permissionable, either searching from
 	 * individual permissions directly associated or permissions inheriting from a parent
- 	 * If bitPermissions is set true
+	 * If bitPermissions is set true
 	 * this methods returns the permissions in the new bit compressed format so multiple permissions for the same role
 	 * will be returned in one permission entry. E.G. read and write permissions for role X will be returned in a single
 	 * permission object having role = X permission = read | write. @see com.dotmarketing.beans.Permission.matchesPermissionType to
@@ -282,13 +336,13 @@ public interface PermissionAPI {
 	 */
 	List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions, boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException;
 
-    /**
-     * For new Permissionables adds its permissions to cache.
-     *
-     * @param permissionable
-     * @throws DotDataException
-     */
-    void addPermissionsToCache ( Permissionable permissionable ) throws DotDataException;
+	/**
+	 * For new Permissionables adds its permissions to cache.
+	 *
+	 * @param permissionable
+	 * @throws DotDataException
+	 */
+	void addPermissionsToCache ( Permissionable permissionable ) throws DotDataException;
 
 	/**
 	 * Retrieves the list of permission that could be inherited from the given parent permissionable,
@@ -583,6 +637,28 @@ public interface PermissionAPI {
 	List<Permission> getPermissionsByRole(Role role, boolean onlyFoldersAndHosts, boolean bitPermissions) throws DotDataException;
 
 	/**
+	 * Filters the given list of permissionables that meet the required permission mask using the contentlet's content
+	 * type to evaluate its permisisions when contentlet is new.
+	 *
+	 * @param <P> The type of permissionable given to the method
+	 * @param permissionables
+	 * @param requiredPermission
+	 * @param respectFrontendRoles
+	 * @param user
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @since 1.6
+	 * @version 1.8
+	 */
+	<P extends Permissionable> List<P> filterCollection(List<P> permissionables,
+														int requiredPermission,
+														boolean respectFrontendRoles,
+														User user,
+														Contentlet contentlet)
+		throws DotDataException, DotSecurityException;
+
+	/**
 	 * Filters the given list of permissionables that meet the required permission mask
 	 * @param <P> The type of permissionable given to the method
 	 * @param permissionables
@@ -626,28 +702,28 @@ public interface PermissionAPI {
 	void removePermissionsByRole(String roleId);
 
 	/**
-     * Saves a collection of permissions for a given permissionable.
-     * This method generates system events
-     * 
-     * @param permissions A collection of permissions
-     * @param permissionable the object where the permissions will be applied 
-     * @param user  current user
-     * @param respectFrontendRoles indicates if should be respected front end roles
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    void save(Collection<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
-    /**
-	 * Saves an individual permission of a given permissionable. 
-	 * If you need to save multiple permission for a permissionable use the 
+	 * Saves a collection of permissions for a given permissionable.
+	 * This method generates system events
+	 *
+	 * @param permissions A collection of permissions
+	 * @param permissionable the object where the permissions will be applied
+	 * @param user  current user
+	 * @param respectFrontendRoles indicates if should be respected front end roles
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	void save(Collection<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Saves an individual permission of a given permissionable.
+	 * If you need to save multiple permission for a permissionable use the
 	 * save(Collection<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles)
 	 * method. This method generates system events
-	 * 
+	 *
 	 * @param permission permission to apply
-     * @param permissionable The object where the permissions will be applied 
-     * @param user current user
-     * @param respectFrontendRoles indicates if should be respected front end roles
+	 * @param permissionable The object where the permissions will be applied
+	 * @param user current user
+	 * @param respectFrontendRoles indicates if should be respected front end roles
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
@@ -657,16 +733,16 @@ public interface PermissionAPI {
 	 *
 	 * Assigns a set of permissions to a given asset, any permissions already assigned to the asset are either updated or removed to match the provided list
 	 * This method generates system events
-	 * 
+	 *
 	 * @param permission A list of permissions to apply
 	 * @param permissionable The object where the permsiions will be applied
 	 * @param user current user
-     * @param respectFrontendRoles indicates if should be respected front end roles
+	 * @param respectFrontendRoles indicates if should be respected front end roles
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 * @deprecated Use save(permission) instead.
 	 */
-    @Deprecated
+	@Deprecated
 	void assignPermissions(List<Permission> permission, Permissionable permissionable, User user, boolean respectFrontendRoles)
 		throws DotDataException, DotSecurityException;
 
@@ -679,13 +755,13 @@ public interface PermissionAPI {
 	 */
 	void clearCache();
 
-    
-    /**
-     * This method is to clear a specific permissionable object from Cache given a Permissionable Id
-     * @since 4.0
-     * @param permissionable
-     */
-    void removePermissionableFromCache(String permissionableId);
+
+	/**
+	 * This method is to clear a specific permissionable object from Cache given a Permissionable Id
+	 * @since 4.0
+	 * @param permissionable
+	 */
+	void removePermissionableFromCache(String permissionableId);
 
 
 	/**
@@ -763,7 +839,7 @@ public interface PermissionAPI {
 	 */
 	@Deprecated
 	default boolean doesUserHaveInheriablePermissions(Permissionable parent, String type, int requiredPermissions, User user) throws DotDataException{
-	    return false;
+		return false;
 	}
 
 
@@ -820,59 +896,59 @@ public interface PermissionAPI {
 	 */
 	boolean doesUserHavePermissions(PermissionableType permType, int permissionType, User user) throws DotDataException;
 
-    /**
-     * @Deprecated: use permissionIndividually(Permissionable parent, Permissionable permissionable, User user) instead.
-     */
-    @Deprecated
-    void permissionIndividually(Permissionable parent, Permissionable permissionable, User user, boolean respectFrontendRoles)
-            throws DotDataException, DotSecurityException;
-
-    /**
-     * This method should be called when we want to break permission inheritance. It will find
-     * parent permissions and apply all those permissions to the permissionable.
-     */
-    void permissionIndividually(Permissionable parent, Permissionable permissionable, User user)
-            throws DotDataException, DotSecurityException;
-
-    /**
-     * This method should be called when we want to break permission inheritance. It will find
-     * parent permissions and apply all those permissions to the permissionable. It will check that
-     * those permission not belong to a child role already (in that case we already inherit it.)
-     */
-    void permissionIndividuallyByRole(Permissionable parent, Permissionable permissionable,
-            User user, Role role) throws DotDataException, DotSecurityException;
+	/**
+	 * @Deprecated: use permissionIndividually(Permissionable parent, Permissionable permissionable, User user) instead.
+	 */
+	@Deprecated
+	void permissionIndividually(Permissionable parent, Permissionable permissionable, User user, boolean respectFrontendRoles)
+		throws DotDataException, DotSecurityException;
 
 	/**
-     * Finds the permissionable instance from where <code>permissionable</code> is inheriting its permissions.
-     * It is usefull before call permissionIndividually as it requires both the permissionable and the parent
-     * from where it inherits its permissions
-     *
-     * http://jira.dotmarketing.net/browse/DOTCMS-6316
-     *
-     * @param permissionable
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    Permissionable findParentPermissionable(Permissionable permissionable) throws DotDataException, DotSecurityException;
+	 * This method should be called when we want to break permission inheritance. It will find
+	 * parent permissions and apply all those permissions to the permissionable.
+	 */
+	void permissionIndividually(Permissionable parent, Permissionable permissionable, User user)
+		throws DotDataException, DotSecurityException;
 
-    /**
-     * Returns wherever a permissionable is inheriting its permissions or
-     * have individual permissions
-     *
-     * @param permissionable
-     * @return true - is inheriting permissions / false - have individual permissions
-     * @throws DotDataException
-     */
-    boolean isInheritingPermissions(Permissionable permissionable) throws DotDataException;
+	/**
+	 * This method should be called when we want to break permission inheritance. It will find
+	 * parent permissions and apply all those permissions to the permissionable. It will check that
+	 * those permission not belong to a child role already (in that case we already inherit it.)
+	 */
+	void permissionIndividuallyByRole(Permissionable parent, Permissionable permissionable,
+									  User user, Role role) throws DotDataException, DotSecurityException;
 
-    /**
-     * Checks permissions and if user does not have the proper permissions, will throw a DotSecurityException
-     * @param permissionable
-     * @param level
-     * @param user
-     * @throws DotSecurityException
-     */
+	/**
+	 * Finds the permissionable instance from where <code>permissionable</code> is inheriting its permissions.
+	 * It is usefull before call permissionIndividually as it requires both the permissionable and the parent
+	 * from where it inherits its permissions
+	 *
+	 * http://jira.dotmarketing.net/browse/DOTCMS-6316
+	 *
+	 * @param permissionable
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	Permissionable findParentPermissionable(Permissionable permissionable) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Returns wherever a permissionable is inheriting its permissions or
+	 * have individual permissions
+	 *
+	 * @param permissionable
+	 * @return true - is inheriting permissions / false - have individual permissions
+	 * @throws DotDataException
+	 */
+	boolean isInheritingPermissions(Permissionable permissionable) throws DotDataException;
+
+	/**
+	 * Checks permissions and if user does not have the proper permissions, will throw a DotSecurityException
+	 * @param permissionable
+	 * @param level
+	 * @param user
+	 * @throws DotSecurityException
+	 */
 	void checkPermission(Permissionable permissionable, PermissionLevel level, User user) throws DotSecurityException;
 
 

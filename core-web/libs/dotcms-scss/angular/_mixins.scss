@@ -1,0 +1,112 @@
+@use "variables" as *;
+
+@mixin md-icon {
+    -webkit-font-feature-settings: "liga";
+    -webkit-font-smoothing: antialiased;
+    direction: ltr;
+    display: inline-block;
+    font-family: "Material Icons", $font-default;
+    font-size: $md-icon-size-normal;
+    font-style: normal;
+    font-weight: normal;
+    letter-spacing: normal;
+    line-height: 1;
+    text-transform: none;
+    white-space: nowrap;
+    word-wrap: normal;
+}
+
+@mixin dot-icon_inverted {
+    color: $white;
+}
+
+@mixin box_shadow($level) {
+    @if $level == 1 {
+        box-shadow: 0 1px 3px $color-palette-black-op-10, 0 1px 2px $color-palette-black-op-20;
+    } @else if $level == 2 {
+        box-shadow: 0 3px 6px $color-palette-black-op-10, 0 3px 6px $color-palette-black-op-20;
+    } @else if $level == 3 {
+        box-shadow: 0 10px 20px $color-palette-black-op-20, 0 6px 6px $color-palette-black-op-20;
+    } @else if $level == 4 {
+        box-shadow: 0 14px 28px $color-palette-black-op-20, 0 10px 10px $color-palette-black-op-20;
+    } @else if $level == 5 {
+        box-shadow: 0 19px 38px $color-palette-black-op-30, 0 15px 12px $color-palette-black-op-20;
+    }
+}
+
+@mixin css-triangle($triangle-size, $triangle-color, $triangle-direction) {
+    content: "";
+    display: block;
+    width: 0;
+    height: 0;
+    border: inset $triangle-size;
+
+    @if ($triangle-direction == down) {
+        border-color: $triangle-color transparent transparent;
+        border-top-style: solid;
+        border-bottom-width: 0;
+    }
+    @if ($triangle-direction == up) {
+        border-color: transparent transparent $triangle-color;
+        border-bottom-style: solid;
+        border-top-width: 0;
+    }
+    @if ($triangle-direction == right) {
+        border-color: transparent transparent transparent $triangle-color;
+        border-left-style: solid;
+        border-right-width: 0;
+    }
+    @if ($triangle-direction == left) {
+        border-color: transparent $triangle-color transparent transparent;
+        border-right-style: solid;
+        border-left-width: 0;
+    }
+}
+
+@mixin naked-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@mixin login-container {
+    max-width: 360px;
+    width: 80%;
+}
+
+@mixin dot-field-helper-on-input {
+    position: absolute;
+    top: $spacing-4;
+    right: 0;
+    z-index: 1;
+}
+
+@mixin form-field-secondary {
+    border: 1px solid $color-palette-gray-500;
+    border-radius: $border-radius-xs;
+    box-shadow: none;
+}
+
+@mixin truncate-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@mixin paginator-bottom-absolute {
+    bottom: 0;
+    padding-bottom: $spacing-3;
+    position: absolute;
+    width: 100%;
+}
+
+@mixin visually-hidden {
+    // hide visually, but not for screen readers
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}

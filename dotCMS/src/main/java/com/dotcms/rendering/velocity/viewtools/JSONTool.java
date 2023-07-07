@@ -33,7 +33,7 @@ public class JSONTool extends ImportSupport implements ViewTool {
    * @return
    */
   public Object fetch(String url) {
-    return fetch(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000), new HashMap<String, String>());
+    return fetch(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000), new HashMap<>());
   }
 
   /**
@@ -89,7 +89,7 @@ public class JSONTool extends ImportSupport implements ViewTool {
    * @return
    */
   public Object fetch(String url, int timeout) {
-    return get(url, timeout, new HashMap<String, String>());
+    return get(url, timeout, new HashMap<>());
   }
 
   public Object fetch(String url, int timeout, Map<String, String> headers) {

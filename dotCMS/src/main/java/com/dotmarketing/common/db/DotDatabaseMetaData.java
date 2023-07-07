@@ -10,10 +10,21 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Encapsulates database metada operations operations.
@@ -598,6 +609,22 @@ public class DotDatabaseMetaData {
     }
 
     /**
+     * Returns the list of Indices for a given database table.
+     *
+     * @param conn              The current database {@link Connection} object, retrievable via the
+     *                          {@link DbConnectionFactory#getConnection()}.
+     * @param schema            The schema name for the database. If not necessary, it can be {@code null}.
+     * @param table             The table name.
+     * @param uniqueIndicesOnly Indicates if only unique indices should be returned.
+     * @return A {@link ResultSet} object containing the list of indices for the given table.
+     * @throws SQLException If an error occurs while retrieving the indices.
+     */
+    public ResultSet getIndices(final Connection conn, final String schema, final String table, final boolean uniqueIndicesOnly) throws SQLException {
+        final DatabaseMetaData dbMetadata = conn.getMetaData();
+        return dbMetadata.getIndexInfo(conn.getCatalog(), schema, table, uniqueIndicesOnly, false);
+    }
+
+    /**
      * Indicates if a column exists on a given table
      * @param tableName
      * @param columnName
@@ -754,6 +781,38 @@ public class DotDatabaseMetaData {
         } catch (DotDataException e) {
             return Optional.empty();
         }
+    }
+
+    /**
+     * Get the length of a modified column in a specified table.
+     *
+     * @param tableName
+     *            - The name of the table to be queried.
+     * @param columnName
+     *            - The name of the column that wants to be queried.
+     * @return Map<String, String>
+     *            - the length of the field and if is nullable
+     *
+     * @throws SQLException
+     *             An error occurred when executing the SQL query.
+     */
+    public Map<String, String> getModifiedColumnLength ( final String tableName, final String columnName) throws SQLException, DotDataException {
+        final DotConnect dotConnect = new DotConnect();
+
+        //the same query works for both supported sql versions
+        if(DbConnectionFactory.isPostgres() || DbConnectionFactory.isMsSql() ) {
+            return getColPropertiesQuery(dotConnect, tableName, columnName);
+        }
+
+        throw new DotDataException("Unknown database type.");
+    } // getModifiedColumnLength.
+
+    private Map<String, String> getColPropertiesQuery(DotConnect dotConnect, String tableName, String columnName) throws DotDataException {
+        final String query = "select character_maximum_length as field_length, is_nullable as nullable_value " +
+                "from information_schema.columns " +
+                "where table_name = '"+tableName+"' and column_name='"+columnName+"'";
+        dotConnect.setSQL(query);
+        return (Map<String, String>)dotConnect.loadResults().get(0);
     }
 
 } // E:O:F:DotDatabaseMetaData.

@@ -59,7 +59,7 @@ public class SystemRootResourceImpl implements FolderResource, LockingCollection
 	 * @see com.bradmcevoy.http.CollectionResource#getChildren()
 	 */
 	public List<? extends Resource> getChildren() {
-		List<Resource> result = new ArrayList<Resource>();
+		List<Resource> result = new ArrayList<>();
 		LanguageFolderResourceImpl lfr = new LanguageFolderResourceImpl("");
 		result.add(lfr);
 		return result;
@@ -162,7 +162,7 @@ public class SystemRootResourceImpl implements FolderResource, LockingCollection
 	 * @see com.bradmcevoy.http.GetableResource#getMaxAgeSeconds()
 	 */
 	public Long getMaxAgeSeconds() {
-		return new Long(60);
+		return Long.valueOf(60);
 	}
 
 	/* (non-Javadoc)

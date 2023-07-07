@@ -4,10 +4,9 @@ import { By } from '@angular/platform-browser';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCopyLinkComponent } from './dot-copy-link.component';
@@ -62,7 +61,7 @@ describe('DotCopyLinkComponent', () => {
         });
 
         it('should show label', () => {
-            expect(button.nativeElement.textContent).toBe('Label content_copy');
+            expect(button.nativeElement.textContent.trim()).toBe('Label');
         });
 
         it('should show copy icon', () => {

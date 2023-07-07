@@ -2,7 +2,9 @@ package com.dotcms.cli.common;
 
 public enum InputOutputFormat {
 
-    JSON("json"), YAML("yml"), YML("yml");
+    JSON("json"),
+    YAML("yml"),
+    YML("yml");
 
     String extension;
 

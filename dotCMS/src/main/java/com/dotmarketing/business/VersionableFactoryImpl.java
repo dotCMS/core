@@ -6,6 +6,7 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.VersionInfo;
@@ -208,7 +209,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
             final Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
             if(clazz.equals(Inode.class)) {
 
-                return new ArrayList<Versionable>(1);
+                return new ArrayList<>(1);
             }
             if(clazz.equals(Template.class)){
                 final List<Versionable> templateAllVersions = new ArrayList<>();
@@ -244,7 +245,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 						getContentletVersionInfo(identifier,
 								APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-				if(!info.isPresent()) {
+				if(info.isEmpty()) {
 					throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
 							+ identifier + ". Lang: " + APILocator.getLanguageAPI()
 							.getDefaultLanguage().getId());
@@ -285,7 +286,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
             }
             if(vi ==null || !UtilMethods.isSet(vi.getIdentifier())) {
             	try {
-                    vi = (VersionInfo) clazz.newInstance();
+                    vi = (VersionInfo) clazz.getDeclaredConstructor().newInstance();
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -485,6 +486,21 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		return findContentletVersionInfos(identifier, variantName, -1);
 	}
 
+	public List<ContentletVersionInfo> findAllByVariant(Variant variant)
+			throws DotDataException {
+
+		final DotConnect dotConnect = new DotConnect()
+				.setSQL("SELECT * FROM contentlet_version_info WHERE variant_id = ?")
+				.addParam(variant.name());
+
+		final List<ContentletVersionInfo> versionInfos = TransformerLocator
+				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
+
+		return versionInfos == null || versionInfos.isEmpty()
+				? Collections.emptyList()
+				: versionInfos;
+	}
+
     @Override
     protected void saveContentletVersionInfo(ContentletVersionInfo cvInfo, boolean updateVersionTS) throws DotDataException, DotStateException {
 		boolean isNew = true;
@@ -566,7 +582,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         Class<?> clazz=UtilMethods.getVersionInfoType(identifier.getAssetType());
         VersionInfo ver;
         try {
-            ver = (VersionInfo)clazz.newInstance();
+            ver = (VersionInfo)clazz.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             throw new DotStateException("this shouln't happend");
         }

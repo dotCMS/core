@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.directive;
 
+import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
+import com.dotmarketing.business.web.WebAPILocator;
 import java.io.File;
 import java.io.Writer;
 import java.util.Optional;
@@ -86,12 +88,12 @@ public class DotParse extends DotDirective {
         try {
             Optional<Tuple2<Identifier, String>> optIdAndField = resolveDotAsset(params, templatePath);
 
-            if (!optIdAndField.isPresent()) {
+            if (optIdAndField.isEmpty()) {
                 optIdAndField = resolveFileAsset(params, templatePath);
             }
 
 
-            if (!optIdAndField.isPresent()) {
+            if (optIdAndField.isEmpty()) {
                 throwNotResourceNotFoundException(params, templatePath);
             }
 
@@ -106,10 +108,18 @@ public class DotParse extends DotDirective {
                 throwNotResourceNotFoundException(params, templatePath);
             }
 
-            Optional<ContentletVersionInfo> contentletVersionInfo =
-                            APILocator.getVersionableAPI().getContentletVersionInfo(idAndField._1.getId(), languageId);
+            final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
 
-            if (!contentletVersionInfo.isPresent()
+            Optional<ContentletVersionInfo> contentletVersionInfo =
+                    APILocator.getVersionableAPI().getContentletVersionInfo(idAndField._1.getId(),
+                            languageId, currentVariantId);
+
+            if (contentletVersionInfo.isEmpty()) {
+                contentletVersionInfo = APILocator.getVersionableAPI()
+                        .getContentletVersionInfo(idAndField._1.getId(), languageId);
+            }
+
+            if (contentletVersionInfo.isEmpty()
                     || UtilMethods.isNotSet(contentletVersionInfo.get().getIdentifier())
                             || contentletVersionInfo.get().isDeleted()) {
 
@@ -120,7 +130,7 @@ public class DotParse extends DotDirective {
                 }
             }
 
-            if (!contentletVersionInfo.isPresent()
+            if (contentletVersionInfo.isEmpty()
                     || UtilMethods.isNotSet(contentletVersionInfo.get().getIdentifier())) {
                 throwNotResourceNotFoundException(params, templatePath);
             }
@@ -202,7 +212,7 @@ public class DotParse extends DotDirective {
         final String fieldVar = tokens.hasMoreTokens() ? tokens.nextToken() : DotAssetContentType.ASSET_FIELD_VAR;
         final Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(inodeOrIdentifier);
 
-        if (!shortOpt.isPresent()) {
+        if (shortOpt.isEmpty()) {
             return Optional.empty();
         }
 
@@ -213,7 +223,7 @@ public class DotParse extends DotDirective {
                         : Optional.ofNullable(
                                         APILocator.getContentletAPI().find(shorty.longId, params.user, Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", params.mode.respectAnonPerms)));
 
-        if (!conOpt.isPresent()) {
+        if (conOpt.isEmpty()) {
             return Optional.empty();
         }
 

@@ -31,6 +31,7 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
+import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -48,6 +49,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotActionBulkResult, DotContentState, DotTemplate } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -55,7 +57,6 @@ import {
     mockSites
 } from '@dotcms/utils-testing';
 import { ButtonModel } from '@models/action-header';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotTemplateListComponent } from './dot-template-list.component';
 
@@ -325,6 +326,7 @@ describe('DotTemplateListComponent', () => {
                 DotListingDataTableModule,
                 CommonModule,
                 DotMessagePipeModule,
+                DotRelativeDatePipe,
                 SharedModule,
                 CheckboxModule,
                 MenuModule,

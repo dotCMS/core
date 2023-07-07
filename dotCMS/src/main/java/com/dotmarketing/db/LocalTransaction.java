@@ -53,10 +53,7 @@ public class LocalTransaction {
         // creates a new one
         final Connection newTransactionConnection = DbConnectionFactory.getDataSource()
                 .getConnection();
-        if (DbConnectionFactory.MSSQL.equals(DbConnectionFactory.getDBType())) {
-            newTransactionConnection.setTransactionIsolation(
-                    ISQLServerConnection.TRANSACTION_SNAPSHOT);
-        }
+
         // overrides the current thread
         DbConnectionFactory.setConnection(newTransactionConnection);
         final Session newSession = HibernateUtil.createNewSession(newTransactionConnection);

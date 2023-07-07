@@ -1,0 +1,43 @@
+@use "variables" as *;
+
+h2,
+h3 {
+    margin: $spacing-0;
+}
+
+h2 {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    text-transform: uppercase;
+    margin-bottom: $spacing-3;
+}
+
+h3 {
+    font-weight: $font-weight-regular-bold;
+    font-size: $font-size-md;
+}
+
+.detail__title {
+    color: $black;
+    font-size: $font-size-md;
+    font-weight: $font-weight-bold;
+    margin: $spacing-0;
+}
+
+:host ::ng-deep {
+    dot-icon {
+        color: $color-palette-gray-500;
+
+        &.isDone {
+            color: $color-accessible-text-green;
+        }
+    }
+
+    p-card .p-card-footer .p-button-link {
+        padding: $spacing-0;
+    }
+
+    button.p-button-rounded.p-button-icon-only {
+        color: $color-palette-primary-500;
+    }
+}

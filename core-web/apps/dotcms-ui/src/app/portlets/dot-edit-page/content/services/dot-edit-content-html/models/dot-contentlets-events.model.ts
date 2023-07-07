@@ -12,6 +12,8 @@ export type DotContentletEventAddContentType = DotContentletEvent<DotAddContentT
 
 export type DotContentletEventRelocate = DotContentletEvent<DotRelocatePayload>;
 
+export type DotContentletEventReorder = DotContentletEvent<DotPageContainer>;
+
 export type DotContentletEventSelect = DotContentletEvent<DotPageContent>;
 
 export type DotContentletEventSave = DotContentletEvent<DotPageContent>;
@@ -41,6 +43,13 @@ export interface DotInlineEditContent {
     element: HTMLElement;
     isNotDirty: boolean;
     eventType: string;
+}
+
+export interface DotShowCopyModal {
+    container: HTMLElement;
+    contentlet: HTMLElement;
+    selector?: string;
+    initEdit: (element: HTMLElement) => void;
 }
 
 export interface DotContentletContainer {

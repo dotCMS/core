@@ -233,7 +233,7 @@ describe('DotPaletteStore', () => {
                 lang: '1',
                 filter: '',
                 offset: '0',
-                query: '+contentType: product'
+                query: '+contentType: product +deleted: false'
             });
             expect(data.contentlets).toEqual([
                 contentletProductDataMock

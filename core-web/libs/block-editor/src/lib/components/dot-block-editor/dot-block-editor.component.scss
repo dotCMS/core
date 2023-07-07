@@ -1,11 +1,9 @@
 @use "variables" as *;
 
-@import "apps/dotcms-block-editor/src/fonts";
-@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap");
-@import url("https://fonts.googleapis.com/icon?family=Material+Icons");
+@import "libs/block-editor/src/fonts";
 
 :host ::ng-deep {
-    @import "libs/dot-primeng-theme-styles/src/scss/styles";
+    @import "libs/dotcms-scss/angular/styles";
     @import "node_modules/primeng/resources/primeng.min";
     @import "node_modules/primeicons/primeicons";
 }
@@ -18,17 +16,17 @@
 
     .editor-wrapper {
         display: block;
-        border-radius: $border-radius-md;
+        border-radius: $border-radius-sm;
         height: 500px;
         overflow: hidden;
         position: relative;
         resize: vertical;
-        outline: $gray-light solid 1px;
+        outline: $color-palette-gray-500 solid 1px;
     }
 
     // If a child is focused, set this style to the parent
     &:focus-within {
-        outline-color: $brand-primary;
+        outline-color: $color-palette-primary;
     }
 
     tiptap-editor ::ng-deep {
@@ -54,10 +52,10 @@
 
                 &:before {
                     align-items: center;
-                    background: $gray-bg;
+                    background: $color-palette-gray-200;
                     border-radius: 3px;
-                    border: 1px solid $gray-light;
-                    color: $gray;
+                    border: 1px solid $color-palette-gray-500;
+                    color: $color-palette-gray-700;
                     content: "The image URL " attr(src)
                         " seems to be broken, please double check the URL.";
                     display: flex;
@@ -96,30 +94,26 @@
 
             h1 {
                 font-size: 2.43 * $dot-editor-size;
-                line-height: 2.5758 * $dot-editor-size;
-                padding-top: 0.43 * $dot-editor-size;
-                margin-bottom: 0.86 * $dot-editor-size;
             }
 
             h2 {
                 font-size: 1.93 * $dot-editor-size;
-                line-height: 2.57 * $dot-editor-size;
-                padding-top: 0.65 * $dot-editor-size;
-                margin-bottom: 0.65 * $dot-editor-size;
             }
 
             h3 {
                 font-size: 1.57 * $dot-editor-size;
-                line-height: 2.575 * $dot-editor-size;
-                padding-top: 2.575 * $dot-editor-size;
-                margin-bottom: 0.5 * $dot-editor-size;
             }
 
             h4 {
                 font-size: 1.29 * $dot-editor-size;
-                line-height: 2.58 * $dot-editor-size;
-                padding-top: 0.86 * $dot-editor-size;
-                margin-bottom: 0.43 * $dot-editor-size;
+            }
+
+            h1,
+            h2,
+            h3,
+            h4 {
+                margin: 3 * $dot-editor-size 0 1.38 * $dot-editor-size;
+                line-height: 1.3;
             }
 
             p {
@@ -129,9 +123,15 @@
                 margin-bottom: $dot-editor-size;
             }
 
+            p.is-empty {
+                padding-top: 0.286 * $dot-editor-size;
+                margin: 0;
+                margin-bottom: 5px;
+            }
+
             blockquote {
                 margin: $dot-editor-size;
-                border-left: 3px solid rgba($black, 0.1);
+                border-left: 3px solid $color-palette-black-op-10;
                 padding-left: $dot-editor-size;
             }
 
@@ -152,11 +152,24 @@
 
             // Placeholder styling
             .is-empty::before {
-                color: $gray-light;
+                color: $color-palette-gray-500;
                 content: attr(data-placeholder);
                 float: left;
                 height: 0;
                 pointer-events: none;
+            }
+
+            .add-button {
+                all: unset;
+                cursor: pointer;
+                border: solid 1px #eee;
+                width: 2 * $dot-editor-size;
+                height: 2 * $dot-editor-size;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #666;
+                background: #ffffff;
             }
 
             table {
@@ -168,7 +181,7 @@
 
                 td,
                 th {
-                    border: 2px solid $gray-light;
+                    border: 2px solid $color-palette-gray-500;
                     box-sizing: border-box;
                     min-width: $spacing-3;
                     padding: 3px 20px 3px 5px;
@@ -186,13 +199,13 @@
                 }
 
                 th {
-                    background-color: $gray-bg;
+                    background-color: $color-palette-gray-200;
                     font-weight: 700;
                     text-align: left;
                 }
 
                 .selectedCell {
-                    background-color: $gray-lighter;
+                    background-color: $color-palette-gray-300;
                 }
 
                 .selectedCell:after {
@@ -256,8 +269,25 @@
             }
         }
 
-        .node-container {
+        .video-container {
             margin-bottom: $spacing-3;
+            aspect-ratio: 16/9;
+            height: 300px;
+
+            video {
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        .image-container {
+            margin-bottom: $spacing-3;
+
+            img {
+                width: auto;
+                max-height: 300px;
+                max-width: 50%;
+            }
         }
     }
 

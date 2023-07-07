@@ -1,8 +1,10 @@
 package com.dotcms.experiments.business.result;
 
-import com.dotcms.analytics.metrics.Metric;
+import com.dotcms.analytics.bayesian.model.BayesianResult;
 
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.Goal;
+import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.util.DotPreconditions;
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,15 +22,18 @@ import java.util.stream.Collectors;
  *     <li>How many Sessions the {@link com.dotcms.experiments.model.Goals} was success</li>
  *     <li>How many times the {@link com.dotcms.experiments.model.Goals} was success no matter
  *     if it was success several times in the sae session</li>
+ *     <li>Bayesian results when available {@link BayesianResult}</li>
  * </ul>
  *
  */
 public class ExperimentResults {
-    private TotalSession sessions;
 
-    private Map<String, GoalResults> goals;
+    private final TotalSession sessions;
+    private final Map<String, GoalResults> goals;
+    private BayesianResult bayesianResult;
 
-    private ExperimentResults(final TotalSession sessions, final Map<String, GoalResults> goalResults) {
+    private ExperimentResults(final TotalSession sessions,
+                              final Map<String, GoalResults> goalResults) {
         this.sessions = sessions;
         this.goals = goalResults;
     }
@@ -46,25 +51,33 @@ public class ExperimentResults {
     /**
      * Return the result split by {@link com.dotcms.variant.model.Variant}.
      *
-     *
      * @return
      */
     public Map<String, GoalResults> getGoals() {
         return goals;
     }
 
+    public BayesianResult getBayesianResult() {
+        return bayesianResult;
+    }
+
+    public void setBayesianResult(BayesianResult bayesianResult) {
+        this.bayesianResult = bayesianResult;
+    }
+
     public static class Builder {
 
-        private TotalSessionBuilder totalSessionsBuilder;
-        private Map<String, GoalResultsBuilder> goals = new HashMap<>();
-        private Collection<ExperimentVariant> variants;
+        private final TotalSessionBuilder totalSessionsBuilder;
+        private final Map<String, GoalResultsBuilder> goals = new HashMap<>();
+        private final Collection<ExperimentVariant> variants;
+        private TrafficProportion trafficProportion;
 
         public Builder(final Collection<ExperimentVariant> variants){
             this.variants = variants;
             totalSessionsBuilder = new TotalSessionBuilder(variants);
         }
 
-        public Builder addPrimaryGoal(final Metric goal) {
+        public Builder addPrimaryGoal(final Goal goal) {
             this.goals.put("primary", new GoalResultsBuilder(goal, variants));
             return this;
         }
@@ -74,20 +87,17 @@ public class ExperimentResults {
 
             final Map<String, GoalResults> goalResultMap = goals.entrySet().stream()
                     .collect(Collectors.toMap(Entry::getKey,
-                            entry -> entry.getValue().build(totalSessions)));
+                            entry -> entry.getValue().build(totalSessions, trafficProportion)));
 
             return new ExperimentResults(totalSessions, goalResultMap);
         }
 
-        public Builder success(final Metric goal, final String lookBackWindow, final Event event) {
-            final GoalResultsBuilder goalResultsBuilder = this.goals.values().stream()
+        public GoalResultsBuilder goal(final Goal goal) {
+            return this.goals.values().stream()
                     .filter(builder -> builder.goal.name().equals(goal.name()))
                     .limit(1)
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Goal does not exists"));
-
-            goalResultsBuilder.success(lookBackWindow, event);
-            return this;
         }
 
         public void addSession(final BrowserSession browserSession) {
@@ -95,9 +105,13 @@ public class ExperimentResults {
             totalSessionsBuilder.count(variantName);
         }
 
-        private class TotalSessionBuilder {
-            private Map<String, Long> totalSessions = new HashMap<>();
+        public void trafficProportion(final TrafficProportion trafficProportion) {
+            this.trafficProportion = trafficProportion;
+        }
 
+        private static class TotalSessionBuilder {
+
+            private final Map<String, Long> totalSessions = new HashMap<>();
             private final List<String> variantsName;
 
             public TotalSessionBuilder(Collection<ExperimentVariant> variantsName) {
@@ -129,14 +143,14 @@ public class ExperimentResults {
             }
         }
 
-
     }
 
     public static class TotalSession {
-        private long total;
-        private Map<String, Long> variants;
 
-        public TotalSession(long total, Map<String, Long> variants) {
+        private final long total;
+        private final Map<String, Long> variants;
+
+        public TotalSession(final long total, final Map<String, Long> variants) {
             this.total = total;
             this.variants = variants;
         }
@@ -148,5 +162,7 @@ public class ExperimentResults {
         public Map<String, Long> getVariants() {
             return variants;
         }
+
     }
+
 }

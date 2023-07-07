@@ -22,13 +22,14 @@ class UtilsTest {
     @Test
     void Test_Next_FileName() throws IOException {
         final String fileName = String.format("my-file%d.something", System.currentTimeMillis());
-        final Path path = Path.of(".", fileName);
+        final Path path = Path.of(fileName);
         Assertions.assertFalse(Files.exists(path));
         Path next0 = Utils.nextFileName(path);
         Assertions.assertEquals(path.toString(), next0.toString());
         Files.writeString(path, RandomStringUtils.random(10));
         Assertions.assertTrue(Files.exists(path));
-        List<Path> files = new ArrayList<>(10);
+        List<Path> files = new ArrayList<>(11);
+        files.add(path);
         try {
             for (int i = 1; i <= 10; i++) {
                 //after this point the file exists.

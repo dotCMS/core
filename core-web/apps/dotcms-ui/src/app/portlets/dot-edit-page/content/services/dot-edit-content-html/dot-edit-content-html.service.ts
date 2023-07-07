@@ -3,24 +3,29 @@ import { fromEvent, Observable, of, Subject, Subscription } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ElementRef, Injectable, NgZone } from '@angular/core';
 
-import { filter, map, take } from 'rxjs/operators';
+import { catchError, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { MODEL_VAR_NAME } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/iframe-edit-mode.js';
 import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 import {
     DotAlertConfirmService,
+    DotCopyContentService,
+    DotEditPageService,
     DotLicenseService,
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
+    DotTreeNode,
     DotIframeEditEvent,
     DotPage,
     DotPageContainer,
-    DotPageRenderState
+    DotPageContainerPersonalized,
+    DotPageRenderState,
+    DotPersona
 } from '@dotcms/dotcms-models';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
 
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
@@ -30,20 +35,31 @@ import {
     DotContentletEvent,
     DotContentletEventDragAndDropDotAsset,
     DotContentletEventRelocate,
+    DotContentletEventReorder,
     DotContentletEventSave,
     DotContentletEventSelect,
     DotInlineEditContent,
+    DotShowCopyModal,
     DotRelocatePayload
 } from './models/dot-contentlets-events.model';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
+import { DotCopyContentModalService } from '../dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
+
 export enum DotContentletAction {
     EDIT,
     ADD
+}
+
+export enum DotContentletMenuAction {
+    add = 'ADD',
+    code = 'CODE',
+    edit = 'EDIT',
+    remove = 'REMOVE'
 }
 
 export const CONTENTLET_PLACEHOLDER_SELECTOR = '#contentletPlaceholder';
@@ -53,9 +69,10 @@ export class DotEditContentHtmlService {
     contentletEvents$: Subject<
         | DotContentletEventDragAndDropDotAsset
         | DotContentletEventRelocate
+        | DotContentletEventReorder
         | DotContentletEventSelect
         | DotContentletEventSave
-        | DotContentletEvent<DotInlineEditContent>
+        | DotContentletEvent<DotInlineEditContent | DotShowCopyModal>
     > = new Subject();
     currentContainer: DotPageContainer;
     currentContentlet: DotPageContent;
@@ -67,16 +84,28 @@ export class DotEditContentHtmlService {
     mutationConfig = { attributes: false, childList: true, characterData: false };
     datasetMissing: string[];
     private currentPage: DotPage;
+    private currentPersona: DotPersona;
 
     private inlineCurrentContent: { [key: string]: string } = {};
     private currentAction: DotContentletAction;
+    private currentMenuAction: DotContentletMenuAction;
     private docClickSubscription: Subscription;
     private updateContentletInode = false;
     private remoteRendered: boolean;
+    private askToCopy = true;
 
     private readonly docClickHandlers;
 
+    get pagePersonalization() {
+        if (!this.currentPersona) {
+            return `dot:default`;
+        }
+
+        return `dot:${this.currentPersona.contentType}:${this.currentPersona.keyTag}`;
+    }
+
     constructor(
+        private dotEditPageService: DotEditPageService,
         private dotContainerContentletService: DotContainerContentletService,
         private dotDragDropAPIHtmlService: DotDragDropAPIHtmlService,
         private dotEditContentToolbarHtmlService: DotEditContentToolbarHtmlService,
@@ -87,7 +116,10 @@ export class DotEditContentHtmlService {
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
         private ngZone: NgZone,
-        private dotLicenseService: DotLicenseService
+        private dotLicenseService: DotLicenseService,
+        private dotCopyContentModalService: DotCopyContentModalService,
+        private dotCopyContentService: DotCopyContentService,
+        private dotLoadingIndicatorService: DotLoadingIndicatorService
     ) {
         this.contentletEvents$.subscribe(
             (
@@ -118,6 +150,15 @@ export class DotEditContentHtmlService {
     }
 
     /**
+     * Set the current Persona
+     *
+     * @param DotPersona persona
+     */
+    setCurrentPersona(persona: DotPersona) {
+        this.currentPersona = persona;
+    }
+
+    /**
      * Load code into iframe
      *
      * @param string editPageHTML
@@ -133,7 +174,6 @@ export class DotEditContentHtmlService {
             const iframeElement = this.getEditPageIframe();
 
             iframeElement.addEventListener('load', () => {
-                iframeElement.contentWindow[MODEL_VAR_NAME] = this.pageModel$;
                 iframeElement.contentWindow['contentletEvents'] = this.contentletEvents$;
 
                 this.bindGlobalEvents();
@@ -178,6 +218,8 @@ export class DotEditContentHtmlService {
 
         contenletEl.remove();
 
+        this.savePage(this.getContentModel()).subscribe();
+
         this.pageModel$.next({
             model: this.getContentModel(),
             type: PageModelChangeEventType.REMOVE_CONTENT
@@ -203,23 +245,19 @@ export class DotEditContentHtmlService {
                     `[data-dot-object="contentlet"][data-dot-identifier="${contentlet.identifier}"]`
                 )
             );
+
             currentContentlets.forEach((currentContentlet: HTMLElement) => {
                 contentlet.type = currentContentlet.dataset.dotType;
                 const containerEl = <HTMLElement>currentContentlet.parentNode;
 
-                const container: DotPageContainer = {
-                    identifier: containerEl.dataset.dotIdentifier,
-                    uuid: containerEl.dataset.dotUuid
-                };
+                const container: DotPageContainer = this.getDotPageContainer(containerEl);
 
                 this.dotContainerContentletService
                     .getContentletToContainer(container, contentlet, this.currentPage)
                     .pipe(take(1))
-                    .subscribe((contentletHtml: string) => {
-                        const contentletEl: HTMLElement =
-                            this.generateNewContentlet(contentletHtml);
-                        containerEl.replaceChild(contentletEl, currentContentlet);
-                    });
+                    .subscribe((contentletHtml: string) =>
+                        this.replaceHTMLContentlet(contentletHtml, currentContentlet)
+                    );
             });
         }
     }
@@ -258,25 +296,37 @@ export class DotEditContentHtmlService {
             this.showContentAlreadyAddedError();
             this.removeContentletPlaceholder();
         } else {
-            let contentletPlaceholder = doc.querySelector(CONTENTLET_PLACEHOLDER_SELECTOR);
+            let contentletPlaceholder = <HTMLElement>(
+                doc.querySelector(CONTENTLET_PLACEHOLDER_SELECTOR)
+            );
             if (!contentletPlaceholder) {
                 contentletPlaceholder = this.getContentletPlaceholder();
                 containerEl.appendChild(contentletPlaceholder);
             }
 
-            this.dotContainerContentletService
-                .getContentletToContainer(this.currentContainer, contentlet, this.currentPage)
-                .pipe(take(1))
+            const contentletHTML$ = this.dotContainerContentletService.getContentletToContainer(
+                this.currentContainer,
+                contentlet,
+                this.currentPage
+            );
+
+            this.savePage(this.getContentModel(contentlet.identifier))
+                .pipe(
+                    switchMap(() => contentletHTML$),
+                    take(1)
+                )
                 .subscribe((contentletHtml: string) => {
-                    const contentletEl: HTMLElement = this.generateNewContentlet(contentletHtml);
-                    containerEl.replaceChild(contentletEl, contentletPlaceholder);
-                    // Update the model with the recently added contentlet
-                    this.pageModel$.next({
-                        model: this.getContentModel(),
-                        type: PageModelChangeEventType.ADD_CONTENT
-                    });
-                    this.currentAction = DotContentletAction.EDIT;
-                    this.updateContainerToolbar(containerEl.dataset.dotIdentifier);
+                    if (contentletHtml) {
+                        this.replaceHTMLContentlet(contentletHtml, contentletPlaceholder);
+                        // Update the model with the recently added contentlet
+                        this.pageModel$.next({
+                            model: this.getContentModel(),
+                            type: PageModelChangeEventType.ADD_CONTENT
+                        });
+
+                        this.currentAction = DotContentletAction.EDIT;
+                        this.updateContainerToolbar(containerEl.dataset.dotIdentifier);
+                    }
                 });
         }
     }
@@ -288,7 +338,7 @@ export class DotEditContentHtmlService {
      * @param booblean isDroppedAsset
      * @memberof DotEditContentHtmlService
      */
-    renderAddedForm(formId: string, isDroppedForm = false): Observable<DotPageContainer[]> {
+    renderAddedForm(formId: string, isDroppedForm = false): void {
         const doc = this.getEditPageDocument();
 
         if (isDroppedForm) {
@@ -306,8 +356,6 @@ export class DotEditContentHtmlService {
         if (this.isFormExistInContainer(formId, containerEl)) {
             this.showContentAlreadyAddedError();
             this.removeContentletPlaceholder();
-
-            return of(null);
         } else {
             let contentletPlaceholder = doc.querySelector(CONTENTLET_PLACEHOLDER_SELECTOR);
 
@@ -316,20 +364,30 @@ export class DotEditContentHtmlService {
                 containerEl.appendChild(contentletPlaceholder);
             }
 
-            return this.dotContainerContentletService
+            this.dotContainerContentletService
                 .getFormToContainer(this.currentContainer, formId)
                 .pipe(
-                    map(({ content }: { content: { [key: string]: string } }) => {
+                    tap(({ content }: { content: { [key: string]: string } }) => {
                         const { identifier, inode } = content;
+                        const formContentlet = this.renderFormContentlet(identifier, inode);
+                        containerEl.replaceChild(formContentlet, contentletPlaceholder);
+                    }),
+                    switchMap(() => this.savePage(this.getContentModel()))
+                )
+                .subscribe(() => {
+                    const model = this.getContentModel();
+                    if (model) {
+                        // Update the model with the recently added contentlet
+                        this.pageModel$.next({
+                            model: model,
+                            type: PageModelChangeEventType.ADD_CONTENT
+                        });
 
-                        containerEl.replaceChild(
-                            this.renderFormContentlet(identifier, inode),
-                            contentletPlaceholder
-                        );
-
-                        return this.getContentModel();
-                    })
-                );
+                        this.iframeActions$.next({
+                            name: 'save'
+                        });
+                    }
+                });
         }
     }
 
@@ -350,8 +408,14 @@ export class DotEditContentHtmlService {
      * @returns *
      * @memberof DotEditContentHtmlService
      */
-    getContentModel(): DotPageContainer[] {
-        return this.getEditPageIframe().contentWindow['getDotNgModel']();
+    getContentModel(addedContentId: string = ''): DotPageContainer[] {
+        const { uuid, identifier } = this.currentContainer || {};
+
+        return this.getEditPageIframe().contentWindow['getDotNgModel']({
+            uuid,
+            identifier,
+            addedContentId
+        });
     }
 
     private setMaterialIcons(): void {
@@ -411,8 +475,9 @@ export class DotEditContentHtmlService {
         this.docClickSubscription = fromEvent(doc, 'click').subscribe(($event: MouseEvent) => {
             const target = <HTMLElement>$event.target;
             const method = this.docClickHandlers[target.dataset.dotObject];
+
             if (method) {
-                method(target);
+                this.ngZone.run(() => method(target));
             }
 
             if (!target.classList.contains('dotedit-menu__button')) {
@@ -544,10 +609,7 @@ export class DotEditContentHtmlService {
                     editBlockEditorNodes.forEach((node) => {
                         node.classList.add('dotcms__inline-edit-field');
                         node.addEventListener('click', (event) => {
-                            const customEvent = new CustomEvent('ng-event', {
-                                detail: { name: 'edit-block-editor', data: event.target }
-                            });
-                            window.top.document.dispatchEvent(customEvent);
+                            this.ngZone.run(() => this.onEditBlockEditor(event));
                         });
                     });
                 });
@@ -609,13 +671,35 @@ export class DotEditContentHtmlService {
 
     private buttonClickHandler(target: HTMLElement, type: string) {
         this.updateContentletInode = this.shouldUpdateContentletInode(target);
+        this.currentMenuAction = DotContentletMenuAction[type];
 
         const container = <HTMLElement>target.closest('[data-dot-object="container"]');
-        this.iframeActions$.next({
+        const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
+        const isInMultiplePages = this.isContentInMultiplePages(contentlet);
+
+        const eventData = {
             name: type,
             dataset: target.dataset,
             container: container ? container.dataset : null
-        });
+        };
+
+        // If we are editing a contentlet that is in multiple pages
+        // we need to show the copy modal and then update the contentlet if needed
+        if (type === 'edit' && isInMultiplePages) {
+            this.showCopyModal(contentlet, container).subscribe(({ dataset }) => {
+                const dotInode = dataset.dotInode;
+                this.iframeActions$.next({
+                    ...eventData,
+                    dataset: {
+                        dotInode
+                    }
+                });
+            });
+
+            return;
+        }
+
+        this.iframeActions$.next(eventData);
     }
 
     private closeContainersToolBarMenu(activeElement?: Node): void {
@@ -663,6 +747,8 @@ export class DotEditContentHtmlService {
     }
 
     private handleTinyMCEOnBlurEvent(content: DotInlineEditContent) {
+        // TODO: Remove it from here and add it to the TinyMCE component
+        this.askToCopy = true;
         // If editor is dirty then we continue making the request
         if (!content.isNotDirty) {
             // Add the loading indicator to the field
@@ -706,6 +792,12 @@ export class DotEditContentHtmlService {
         const contentletEventsMap = {
             // When an user create or edit a contentlet from the jsp
             save: (contentlet: DotPageContent) => {
+                /*
+                 * The Save event is triggered when the user edit a contentlet or edit the vtl code from the jsp.
+                 * When the user edit the vtl code from the jsp the data sent is the vtl code information.
+                 */
+                const contentletEdited = this.isEditAction() ? contentlet : this.currentContentlet;
+
                 if (this.currentAction === DotContentletAction.ADD) {
                     this.renderAddedContentlet(contentlet);
                 } else {
@@ -715,17 +807,28 @@ export class DotEditContentHtmlService {
                     // because: https://github.com/dotCMS/core/issues/21818
 
                     setTimeout(() => {
-                        this.renderEditedContentlet(this.currentContentlet);
+                        this.renderEditedContentlet(contentletEdited || this.currentContentlet);
                     }, 1800);
                 }
             },
-            inlineEdit: (contentlet: DotInlineEditContent) => {
-                if (contentlet.eventType === 'focus') {
-                    this.handleTinyMCEOnFocusEvent(contentlet);
+            showCopyModal: (data: DotShowCopyModal) => {
+                const { contentlet, container, initEdit, selector } = data;
+                this.showCopyModal(contentlet, container).subscribe((contentlet) => {
+                    const element = (
+                        selector ? contentlet.querySelector(selector) : contentlet
+                    ) as HTMLElement;
+                    initEdit(element);
+                });
+            },
+            inlineEdit: (data: DotInlineEditContent) => {
+                const { eventType: type } = data;
+
+                if (type === 'focus') {
+                    this.handleTinyMCEOnFocusEvent(data);
                 }
 
-                if (contentlet.eventType === 'blur') {
-                    this.handleTinyMCEOnBlurEvent(contentlet);
+                if (type === 'blur') {
+                    this.handleTinyMCEOnBlurEvent(data);
                 }
             },
             // When a user select a content from the search jsp
@@ -735,11 +838,22 @@ export class DotEditContentHtmlService {
                     name: 'select'
                 });
             },
-            // When a user drag and drop a contentlet in the iframe
+            // When a user drag and drop a contentlet in the anohter container in the iframe
             relocate: (relocateInfo: DotRelocatePayload) => {
                 if (!this.remoteRendered) {
                     this.renderRelocatedContentlet(relocateInfo);
                 }
+            },
+            // When a user drag and drop a contentlet in the same container in the iframe
+            reorder: (model: DotPageContainer[]) => {
+                this.savePage(model)
+                    .pipe(take(1))
+                    .subscribe(() => {
+                        this.pageModel$.next({
+                            type: PageModelChangeEventType.MOVE_CONTENT,
+                            model
+                        });
+                    });
             },
             'deleted-contenlet': () => {
                 this.removeCurrentContentlet();
@@ -757,19 +871,7 @@ export class DotEditContentHtmlService {
                 this.renderAddedContentlet(dotAssetData.contentlet, true);
             },
             'add-form': (formId: string) => {
-                this.renderAddedForm(formId, true)
-                    .pipe(take(1))
-                    .subscribe((model: DotPageContainer[]) => {
-                        if (model) {
-                            this.pageModel$.next({
-                                model: model,
-                                type: PageModelChangeEventType.ADD_CONTENT
-                            });
-                            this.iframeActions$.next({
-                                name: 'save'
-                            });
-                        }
-                    });
+                this.renderAddedForm(formId, true);
             },
             'handle-http-error': (err: HttpErrorResponse) => {
                 this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
@@ -812,7 +914,6 @@ export class DotEditContentHtmlService {
     private loadCodeIntoIframe(pageState: DotPageRenderState): void {
         const doc = this.getEditPageDocument();
         const html = this.updateHtml(pageState);
-
         doc.open();
         doc.write(html);
         doc.close();
@@ -825,6 +926,7 @@ export class DotEditContentHtmlService {
         );
 
         const doc = this.getEditPageDocument();
+
         doc.documentElement.id = timeStampId;
         doc.head.appendChild(style);
     }
@@ -868,10 +970,10 @@ export class DotEditContentHtmlService {
                 relocateInfo.contentlet,
                 this.currentPage
             )
-            .subscribe((contentletHtml: string) => {
-                const newContentletEl: HTMLElement = this.generateNewContentlet(contentletHtml);
-                container.replaceChild(newContentletEl, contenletEl);
-            });
+            .pipe(take(1))
+            .subscribe((contentletHtml: string) =>
+                this.replaceHTMLContentlet(contentletHtml, contenletEl)
+            );
     }
 
     private getLoadingIndicator(): HTMLElement {
@@ -883,5 +985,203 @@ export class DotEditContentHtmlService {
         `;
 
         return <HTMLElement>div.children[0];
+    }
+
+    /**
+     * Get DotPageContainer from the container element
+     *
+     * @private
+     * @param {HTMLElement} container
+     * @return {*}  {DotPageContainer}
+     * @memberof DotEditContentHtmlService
+     */
+    private getDotPageContainer(container: HTMLElement): DotPageContainer {
+        const { dotIdentifier, dotUuid } = container.dataset;
+
+        return {
+            identifier: dotIdentifier,
+            uuid: dotUuid
+        };
+    }
+
+    /**
+     * Replace the contentlet with the new contentlet html
+     *
+     * @private
+     * @param {string} html
+     * @param {HTMLElement} contentlet
+     * @return {*}  {HTMLElement}
+     * @memberof DotEditContentHtmlService
+     */
+    private replaceHTMLContentlet(html: string, contentlet: HTMLElement): HTMLElement {
+        const contentletEl: HTMLElement = this.generateNewContentlet(html);
+        contentlet.replaceWith(contentletEl);
+
+        return contentletEl;
+    }
+
+    private getTreeNodeData(contentlet: HTMLElement, container: HTMLElement): DotTreeNode {
+        try {
+            /* Get Copy content Data from the contentlet and Container*/
+            const { dotIdentifier: contentId, dotVariant: variantId } = contentlet.dataset;
+            const { dotUuid: relationType, dotIdentifier: containerId } = container.dataset;
+
+            return {
+                pageId: this.currentPage.identifier,
+                treeOrder: this.getTreeOrder(contentlet).toString(),
+                containerId,
+                contentId,
+                relationType,
+                variantId,
+                personalization: this.pagePersonalization
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    private getTreeOrder(element: HTMLElement): number {
+        return Array.from(element.parentElement.children).indexOf(element);
+    }
+
+    private isContentInMultiplePages(contentlet: HTMLElement): boolean {
+        return Number(contentlet?.dataset?.dotOnNumberOfPages || 0) > 1;
+    }
+
+    private isEditAction() {
+        return this.currentMenuAction === DotContentletMenuAction.edit;
+    }
+
+    private savePage(model: DotPageContainer[]) {
+        this.dotGlobalMessageService.loading(
+            this.dotMessageService.get('dot.common.message.saving')
+        );
+
+        return this.dotEditPageService
+            .save(this.currentPage.identifier, this.getPersonalizedModel(model) || model)
+            .pipe(
+                take(1),
+                tap(() => {
+                    this.dotGlobalMessageService.success();
+                }),
+                catchError((error: HttpErrorResponse) => {
+                    this.pageModel$.next({
+                        model: this.getContentModel(),
+                        type: PageModelChangeEventType.SAVE_ERROR
+                    });
+
+                    return this.dotHttpErrorManagerService.handle(error);
+                })
+            );
+    }
+
+    private getPersonalizedModel(model: DotPageContainer[]): DotPageContainerPersonalized[] {
+        if (this.currentPersona && this.currentPersona.personalized) {
+            return model.map((container: DotPageContainer) => {
+                return {
+                    ...container,
+                    personaTag: this.currentPersona.keyTag
+                };
+            });
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the content model from the iframe
+     *
+     * @private
+     * @param {*} contentlet
+     * @param {*} container
+     * @return {*}  {Observable<HTMLElement>}
+     * @memberof DotEditContentHtmlService
+     */
+    private showCopyModal(
+        contentlet: HTMLElement,
+        container: HTMLElement
+    ): Observable<HTMLElement> {
+        return this.dotCopyContentModalService.open().pipe(
+            switchMap(({ shouldCopy }) => {
+                // If shouldCopy is true, we need to copy the contentlet
+                // otherwise we just return the contentlet
+                return shouldCopy ? this.copyContent(contentlet, container) : of(contentlet);
+            })
+        );
+    }
+
+    /**
+     * Copy content
+     *
+     * @param {DotCopyContent} content
+     * @param {*} inode
+     * @return {*}  {Observable<ModelCopyContentResponse>}
+     * @memberof DotCopyContentModalService
+     */
+    private copyContent(contentlet: HTMLElement, container: HTMLElement): Observable<HTMLElement> {
+        const content = this.getTreeNodeData(contentlet, container);
+        const dotPageContainer = this.getDotPageContainer(container);
+
+        return this.dotCopyContentService.copyInPage(content).pipe(
+            tap(() => this.dotLoadingIndicatorService.show()),
+            switchMap((dotContentlet) => {
+                // After copy the contentlet, we need to get the new contentletHTML
+                return this.dotContainerContentletService.getContentletToContainer(
+                    dotPageContainer,
+                    dotContentlet,
+                    this.currentPage
+                );
+            }),
+            // After replace the contentlet, we need to update the tree
+            map((html: string) => this.replaceHTMLContentlet(html, contentlet)),
+            catchError((error: HttpErrorResponse) => {
+                throw this.dotHttpErrorManagerService.handle(error);
+            }),
+            finalize(() => this.dotLoadingIndicatorService.hide())
+        );
+    }
+
+    /**
+     * Dispatch event to notify that a block editor was clicked
+     *
+     * @private
+     * @param {Event} event
+     * @memberof DotEditContentHtmlService
+     */
+    private onEditBlockEditor(event: Event): void {
+        const target = event.target as HTMLElement;
+        const contentlet = target.closest('[data-dot-object="contentlet"]') as HTMLElement;
+        const container = target.closest('[data-dot-object="container"]') as HTMLElement;
+        const isInMultiplePages = this.isContentInMultiplePages(contentlet);
+
+        if (isInMultiplePages) {
+            this.showCopyModal(contentlet, container).subscribe((contentlet) => {
+                const editor = contentlet.querySelector(
+                    '[data-block-editor-content]'
+                ) as HTMLElement;
+                editor.classList.add('dotcms__inline-edit-field');
+                // Add click event to the new block editor in Page
+                editor.addEventListener('click', this.onEditBlockEditor.bind(this));
+                this.dispatchEditorEvent(editor);
+            });
+
+            return;
+        }
+
+        this.dispatchEditorEvent(target);
+    }
+
+    /**
+     * Dispatch event to notify that a block editor was clicked
+     *
+     * @private
+     * @param {*} target
+     * @memberof DotEditContentHtmlService
+     */
+    private dispatchEditorEvent(target: HTMLElement) {
+        const customEvent = new CustomEvent('ng-event', {
+            detail: { name: 'edit-block-editor', data: target }
+        });
+        window.top.document.dispatchEvent(customEvent);
     }
 }

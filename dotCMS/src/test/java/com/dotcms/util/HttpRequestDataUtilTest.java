@@ -3,10 +3,8 @@ package com.dotcms.util;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Optional;
-import java.util.Vector;
+import java.util.*;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -41,7 +39,7 @@ public class HttpRequestDataUtilTest {
     public void test_getParamCaseInsensitive(final ParamTestCase testCase) {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameterNames()).thenReturn(
-                Collections.enumeration(Collections.singletonList(testCase.providedParam)));
+                Collections.enumeration(List.of(testCase.providedParam)));
 
         when(request.getParameter(testCase.providedParam)).thenReturn("60");
 
@@ -56,7 +54,7 @@ public class HttpRequestDataUtilTest {
     public void test_getHeaderCaseInsensitive(final ParamTestCase testCase) {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeaderNames()).thenReturn(
-                Collections.enumeration(Collections.singletonList(testCase.providedParam)));
+                Collections.enumeration(List.of(testCase.providedParam)));
 
         when(request.getHeader(testCase.providedParam)).thenReturn("60");
 

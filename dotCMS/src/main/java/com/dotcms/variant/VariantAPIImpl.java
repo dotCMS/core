@@ -1,23 +1,43 @@
 package com.dotcms.variant;
 
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.validation.Preconditions;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.Lists;
+import com.liferay.portal.model.User;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+
 
 /**
  * API of {@link Variant}
  */
 public class VariantAPIImpl implements VariantAPI {
     private final VariantFactory variantFactory;
+    private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+
 
     public VariantAPIImpl(){
         variantFactory = FactoryLocator.getVariantFactory();
@@ -125,5 +145,87 @@ public class VariantAPIImpl implements VariantAPI {
     @CloseDBIfOpened
     public List<Variant> getVariants() throws DotDataException {
         return variantFactory.getVariants();
+    }
+
+    @WrapInTransaction
+    @Override
+    public void promote(final Variant variant, final User user) throws DotDataException {
+
+        DotPreconditions.checkArgument(!variant.name().equals(DEFAULT_VARIANT.name()),
+                "DEFAULT variant can not be promoted");
+
+        final Variant variantFromDatabase = APILocator.getVariantAPI().get(variant.name())
+                .orElseThrow(() -> new DoesNotExistException(
+                        String.format("Variant `%s` does not exists", variant.name())));
+
+
+        Logger.debug(this, () -> "Promoting Variant: " + variantFromDatabase);
+
+        DotPreconditions.checkArgument(!variantFromDatabase.archived(), "An archived Variant can not be promoted");
+
+        APILocator.getVersionableAPI().findAllByVariant(variantFromDatabase).stream()
+                .forEach(contentletVersionInfo -> promoteToDefault(user, contentletVersionInfo));
+
+        final List<MultiTree> variantMultiTrees = multiTreeAPI.getMultiTrees(variant);
+        variantMultiTrees.stream().map(MultiTree::getHtmlPage)
+                .forEach(pageId -> deleteMultiTree(VariantAPI.DEFAULT_VARIANT, pageId));
+
+        final Map<String, List<MultiTree>> multiTreeByPageId = sortByPageId(variantMultiTrees);
+
+        for (Entry<String, List<MultiTree>> entry : multiTreeByPageId.entrySet()) {
+            multiTreeAPI.copyMultiTree(entry.getKey(), entry.getValue(), VariantAPI.DEFAULT_VARIANT.name());
+
+
+        }
+    }
+
+    @NotNull
+    private static Map<String, List<MultiTree>> sortByPageId(final List<MultiTree> variantMultiTrees) {
+        final Map<String, List<MultiTree>> multiTreeByPageId = new HashMap<>();
+
+        for (final MultiTree multiTree : variantMultiTrees) {
+            final List<MultiTree> multiTrees = multiTreeByPageId.get(multiTree.getHtmlPage());
+
+            if (multiTrees == null) {
+                multiTreeByPageId.put(multiTree.getHtmlPage(), Lists.newArrayList(multiTree));
+            } else {
+                multiTrees.add(multiTree);
+            }
+        }
+        return multiTreeByPageId;
+    }
+
+    private void deleteMultiTree(Variant variant, String pageId) {
+        try {
+            multiTreeAPI.deleteMultiTree(pageId, variant.name());
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void promoteToDefault(final User user, final ContentletVersionInfo contentletVersionInfo) {
+        try {
+            if (UtilMethods.isSet(contentletVersionInfo.getLiveInode())) {
+                final Contentlet liveContentlet = APILocator.getContentletAPI()
+                        .find(contentletVersionInfo.getLiveInode(), user, false);
+
+                final Contentlet contentletOnVariant = APILocator.getContentletAPI()
+                        .copyContentToVariant(liveContentlet, VariantAPI.DEFAULT_VARIANT.name(), user);
+
+                APILocator.getContentletAPI().publish(contentletOnVariant, user, false);
+            }
+
+            if (!contentletVersionInfo.getWorkingInode().equals(contentletVersionInfo.getLiveInode())) {
+
+                final Contentlet workingContentlet = APILocator.getContentletAPI()
+                        .find(contentletVersionInfo.getWorkingInode(), user, false);
+
+                APILocator.getContentletAPI()
+                        .copyContentToVariant(workingContentlet, VariantAPI.DEFAULT_VARIANT.name(), user);
+            }
+
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 }

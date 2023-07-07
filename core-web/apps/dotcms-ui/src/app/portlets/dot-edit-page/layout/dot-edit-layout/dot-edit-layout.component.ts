@@ -20,9 +20,10 @@ import { ResponseView } from '@dotcms/dotcms-js';
 import {
     DotContainer,
     DotContainerMap,
-    DotLayout,
     DotPageRender,
-    DotPageRenderState
+    DotPageRenderState,
+    DotTemplateDesigner,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 
 @Component({
@@ -34,10 +35,13 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     pageState: DotPageRender | DotPageRenderState;
     apiLink: string;
 
-    updateTemplate = new Subject<DotLayout>();
+    updateTemplate = new Subject<DotTemplateDesigner>();
     destroy$: Subject<boolean> = new Subject<boolean>();
+    featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
 
     @HostBinding('style.minWidth') width = '100%';
+
+    private lastLayout: DotTemplateDesigner;
 
     constructor(
         private route: ActivatedRoute,
@@ -67,6 +71,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
 
         this.saveTemplateDebounce();
         this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
+        this.subscribeOnChangeBeforeLeaveHandler();
     }
 
     ngOnDestroy() {
@@ -95,7 +100,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
      * @param {DotTemplate} value
      * @memberof DotEditLayoutComponent
      */
-    onSave(value: DotLayout): void {
+    onSave(value: DotTemplateDesigner): void {
         this.dotGlobalMessageService.loading(
             this.dotMessageService.get('dot.common.message.saving')
         );
@@ -117,9 +122,10 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
      * @param {DotLayout} value
      * @memberof DotEditLayoutComponent
      */
-    nextUpdateTemplate(value: DotLayout) {
+    nextUpdateTemplate(value: DotTemplateDesigner) {
         this.canRouteBeDesativated(false);
         this.updateTemplate.next(value);
+        this.lastLayout = value;
     }
 
     /**
@@ -141,7 +147,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
                 // More information: https://stackoverflow.com/questions/58974320/how-is-it-possible-to-stop-a-debounced-rxjs-observable
                 debounceTime(10000),
                 takeUntil(this.destroy$),
-                switchMap((layout: DotLayout) => {
+                switchMap((layout: DotTemplateDesigner) => {
                     this.dotGlobalMessageService.loading(
                         this.dotMessageService.get('dot.common.message.saving')
                     );
@@ -212,5 +218,21 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             },
             {}
         );
+    }
+
+    /**
+     * Handle save changes before leave
+     *
+     * @private
+     * @memberof DotEditLayoutComponent
+     */
+    private subscribeOnChangeBeforeLeaveHandler(): void {
+        this.dotEditLayoutService.closeEditLayout$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((res) => {
+                if (res) {
+                    this.onSave(this.lastLayout);
+                }
+            });
     }
 }

@@ -1,35 +1,65 @@
-<div class="field__properties">
-    <div class="field__name-wrapper">
-        <dot-icon name="{{ fieldService.getIcon(field.clazz) }}"></dot-icon>
-        <div class="field__name-inner">
-            <span class="field__name">{{ field.name }}</span>
-            <ng-container *ngIf="field.variable">
-                <span class="field__variable">
-                    <dot-copy-link [copy]="field.variable" [label]="'(' + field.variable + ')'">
-                    </dot-copy-link>
-                </span>
-            </ng-container>
+<dot-icon class="field-drag" name="drag_indicator"></dot-icon>
+
+<dot-icon class="field-icon" name="{{ icon }}"></dot-icon>
+<div class="field-properties">
+    <div class="field-properties__info-container">
+        <span class="info-container__name"> {{ field.name }}</span>
+        <p-button
+            id="info-container__delete"
+            *ngIf="!field.fixed"
+            (click)="removeItem($event)"
+            styleClass="p-button-text p-button-sm p-button-danger p-button-rounded"
+            icon="pi pi-trash"
+        >
+        </p-button>
+    </div>
+    <div class="field-properties__actions-container">
+        <dot-copy-link
+            *ngIf="field.variable"
+            [label]="field.variable"
+            [copy]="field.variable"
+        ></dot-copy-link>
+
+        <div *ngIf="isSmall; else attributes">
+            <p-button
+                *ngIf="true"
+                [class.open]="open"
+                (click)="openAttr($event)"
+                data-testid="field-info-button"
+                styleClass="p-button-text p-button-sm  p-button-rounded"
+                icon="pi pi-info-circle"
+            >
+            </p-button>
         </div>
     </div>
-    <div class="field__attribute" innerHTML="{{ fieldAttributes }}" *ngIf="fieldAttributes"></div>
 </div>
 
-<div class="field__actions">
-    <dot-icon-button-tooltip
-        tiny
-        *ngIf="!field.fixed"
-        class="field__actions-delete"
-        icon="delete"
-        [tooltipText]="'contenttypes.action.delete' | dm"
-        (click)="removeItem($event)"
-    >
-    </dot-icon-button-tooltip>
-    <dot-icon-button-tooltip
-        tiny
-        class="field__actions-edit"
-        icon="edit"
-        [tooltipText]="'contenttypes.action.edit' | dm"
-        (click)="this.onClick($event)"
-    >
-    </dot-icon-button-tooltip>
-</div>
+<p-overlayPanel
+    #op
+    (onShow)="setOpen(true)"
+    (onHide)="setOpen(false)"
+    appendTo="body"
+    styleClass="contentType__overlayPanel"
+>
+    <div class="field-properties__overlay-attributes-container">
+        <p class="overlay-attributes-container__field-name">{{ fieldTypeLabel }}</p>
+        <p
+            class="overlay-attributes-container__attributes-text"
+            *ngIf="fieldAttributesString.length"
+        >
+            {{ fieldAttributesString }}
+        </p>
+    </div>
+</p-overlayPanel>
+
+<ng-template #attributes>
+    <div class="field-properties__attributes-container">
+        <p class="attributes-container__field-name">{{ fieldTypeLabel }}</p>
+        <p
+            class="attributes-container__attribute"
+            *ngFor="let field of fieldAttributesArray; let index = index"
+        >
+            {{ field }}
+        </p>
+    </div>
+</ng-template>

@@ -33,7 +33,7 @@
     (onLazyLoad)="loadDataPaginationEvent($event)"
     (onRowSelect)="handleRowCheck()"
     (onRowUnselect)="handleRowCheck()"
-    loadingIcon="fa fa-circle-o-notch fa-spin"
+    loadingIcon="pi pi-spin pi-spinner"
 >
     <ng-template let-columns pTemplate="header">
         <tr *ngIf="items?.length" data-testClass="testHeadTableRow">
@@ -55,6 +55,7 @@
             [attr.data-testRowId]="rowData.identifier"
             [pContextMenuRow]="rowData"
             [pSelectableRow]="rowData"
+            [attr.data-testId]="rowData?.variable ? 'row-' + rowData.variable : null"
             (click)="handleRowClick(rowData)"
             (keyup.enter)="handleRowClick(rowData)"
             data-testClass="testTableRow"
@@ -101,23 +102,30 @@
 </ng-template>
 
 <ng-template #defaultRowTemplate let-rowData="rowData">
-    <td *ngFor="let col of columns" [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }">
+    <td
+        *ngFor="let col of columns"
+        [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
+        [attr.data-testId]="col.fieldName"
+    >
         <div class="listing-datatable__column-icon" *ngIf="col.icon">
             <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
             <span>{{ col.textContent || rowData[col.fieldName] }}</span>
         </div>
-        <span *ngIf="!col.icon && col.fieldName !== 'nEntries'">
+        <span *ngIf="!col.icon && col.fieldName !== 'nEntries' && col.format !== 'date'">
             {{ rowData[col.fieldName] }}
         </span>
+        <span *ngIf="!col.icon && col.fieldName !== 'nEntries' && col.format === 'date'">
+            {{ rowData[col.fieldName] | dotRelativeDate : true }}
+        </span>
         <a
-            *ngIf="col.fieldName === 'nEntries'"
+            *ngIf="col.fieldName === 'nEntries' && !rowData?.system"
             [queryParams]="rowData.variable === 'Host' ? {} : { filter: rowData.variable }"
             [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
             (click)="$event.stopPropagation()"
         >
             {{
                 col.textContent
-                    ? (col.textContent | dotStringFormat: [rowData[col.fieldName]])
+                    ? (col.textContent | dotStringFormat : [rowData[col.fieldName]])
                     : rowData[col.fieldName]
             }}
         </a>

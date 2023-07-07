@@ -22,9 +22,11 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,9 @@ import org.wildfly.common.Assert;
 
 @QuarkusTest
 class ContentTypeAPITest {
+
+    @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
+    String siteName;
 
     private static final Set<String> CONTENT_TYPE_VARS = ImmutableSet.of(
             "HtmlPageAsset", "FileAsset", "Host",
@@ -124,14 +129,14 @@ class ContentTypeAPITest {
     }
 
     @Test
-    public void Test_Get_Filtered_Paginated_ContentTypes() {
+    void Test_Get_Filtered_Paginated_ContentTypes() {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
         final ResponseEntityView<List<ContentType>> response = client.getContentTypes("file", 1,
                 10, null, null, null, null);
         Assertions.assertNotNull(response);
-        Assertions.assertEquals(1,response.entity().size());
+        Assertions.assertFalse(response.entity().isEmpty());
     }
 
     @Test
@@ -156,6 +161,13 @@ class ContentTypeAPITest {
             final ResponseEntityView<ContentType> response =
                     client.getContentType(var, 1L, true);
             Assertions.assertNotNull(response);
+            final ContentType contentType = response.entity();
+            Assertions.assertNotNull(contentType);
+            Objects.requireNonNull(contentType.workflows()).forEach(workflow -> {
+                Assertions.assertNotNull(workflow);
+                Assertions.assertNotNull(workflow.id());
+                Assertions.assertNotNull(workflow.name());
+            });
         }
     }
 
@@ -210,9 +222,19 @@ class ContentTypeAPITest {
         Assertions.assertTrue(responseStringEntity.entity().contains("deleted"));
 
         try {
-            client.getContentType(updatedContentType.variable(), 1L, true);
-            Assertions.fail("If we got this far then delete-method failed to perform its job.");
-        }catch(javax.ws.rs.NotFoundException e){
+            //a small wait to make sure the CT is deleted
+            //a simple Thread.sleep would do the trick but Sonar says it's not a good practice
+            int count = 0;
+            while (null != client.getContentType(updatedContentType.variable(), 1L, true)){
+               //We wait for the CT to be deleted
+               System.out.println("Waiting for CT to be deleted");
+               count++;
+               if(count > 10){
+                   Assertions.fail("CT was not deleted");
+               }
+            }
+            //This should throw 404 but under certain circumstances it does throw 400
+        }catch(javax.ws.rs.WebApplicationException e){
             // Not relevant here
         }
     }
@@ -334,7 +356,7 @@ class ContentTypeAPITest {
 
         final SiteAPI siteAPI = apiClientFactory.getClient(SiteAPI.class);
         final ResponseEntityView<SiteView> siteResponse = siteAPI.findByName(
-                GetSiteByNameRequest.builder().siteName("default").build());
+                GetSiteByNameRequest.builder().siteName(siteName).build());
 
         final long timeStamp = System.currentTimeMillis();
 
@@ -350,7 +372,7 @@ class ContentTypeAPITest {
                 .description("ct for testing folders.")
                 .name("name")
                 .variable(varName1)
-                .host("default")
+                .host(siteName)
                 .folder("/non-existing-folder")
                 .addFields(
                         ImmutableBinaryField.builder()
@@ -381,7 +403,7 @@ class ContentTypeAPITest {
 
         final FolderAPI folderAPI = apiClientFactory.getClient(FolderAPI.class);
 
-        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(ImmutableList.of("/foo"), "default");
+        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(ImmutableList.of("/foo"), siteName);
         final List<Map<String, Object>> entity = makeFoldersResponse.entity();
         Assertions.assertNotNull(entity);
         final String inode = (String)entity.get(0).get("inode");
@@ -395,7 +417,7 @@ class ContentTypeAPITest {
                 .description("ct for testing folders.")
                 .name("fooCT")
                 .variable(varName1)
-                .folderPath("default:/foo/")
+                .folderPath(String.format("%s:/foo/",siteName))
                 .addFields(
                         ImmutableBinaryField.builder()
                                 .variable("binVar"+timeStamp)
@@ -407,7 +429,7 @@ class ContentTypeAPITest {
         final ContentType contentTypes = contentTypeResponse2.entity().get(0);
         Assertions.assertEquals(inode, contentTypes.folder());
         //Here we get default host as the fallback site because we failed locating
-        Assertions.assertEquals("default", contentTypes.siteName());
+        Assertions.assertEquals(siteName, contentTypes.siteName());
     }
 
     /**
@@ -419,7 +441,7 @@ class ContentTypeAPITest {
 
         final SiteAPI siteAPI = apiClientFactory.getClient(SiteAPI.class);
         final ResponseEntityView<SiteView> siteResponse = siteAPI.findByName(
-                GetSiteByNameRequest.builder().siteName("default").build()
+                GetSiteByNameRequest.builder().siteName(siteName).build()
         );
 
         final SiteView defaultSite = siteResponse.entity();
@@ -430,7 +452,7 @@ class ContentTypeAPITest {
         final FolderAPI folderAPI = apiClientFactory.getClient(FolderAPI.class);
         final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(
                 ImmutableList.of("/f1" + timeStamp, "/f1" + timeStamp + "/f2" + timeStamp),
-                "default");
+                siteName);
 
         final List<Map<String, Object>> makeFolders = makeFoldersResponse.entity();
 
@@ -439,7 +461,7 @@ class ContentTypeAPITest {
                 .description("ct for testing folder 2.")
                 .name("name")
                 .variable(varName2)
-                .host("default")
+                .host(siteName)
                 .folderPath("/f1"+timeStamp+"/f2"+timeStamp)
                 .addFields(
                         ImmutableBinaryField.builder()

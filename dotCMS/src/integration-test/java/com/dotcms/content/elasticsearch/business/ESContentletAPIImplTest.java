@@ -22,6 +22,7 @@ import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -34,6 +35,7 @@ import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -43,15 +45,15 @@ import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
-import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -69,9 +71,10 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -80,6 +83,7 @@ import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -89,6 +93,7 @@ import java.util.List;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -105,6 +110,7 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -1762,7 +1768,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguageAndVariant(String)} (String)}
+     * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguageAnyVariant(String)} (String)}
      * When: The contentlet had just one version not in the DEFAULT variant
      * Should: return the {@link Contentlet} anyway
      *
@@ -1784,7 +1790,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .nextPersisted();
 
         final Contentlet contentletByIdentifierAnyLanguage = APILocator.getContentletAPI()
-                .findContentletByIdentifierAnyLanguageAndVariant(contentlet.getIdentifier());
+                .findContentletByIdentifierAnyLanguageAnyVariant(contentlet.getIdentifier());
 
         assertNotNull(contentletByIdentifierAnyLanguage);
         assertEquals(contentlet.getIdentifier(), contentletByIdentifierAnyLanguage.getIdentifier());
@@ -1990,4 +1996,552 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         return APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
     }
+
+
+    private Contentlet createNewLangVersionAndPublish(final Language language,
+            final Contentlet contentlet) throws DotDataException, DotSecurityException {
+        final Contentlet newLangVersion = createNewLangVersion(language, contentlet);
+        return ContentletDataGen.publish(newLangVersion);
+    }
+
+    /**
+     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * When: The contentlet had several versions in different {@link Language} into the
+     * DEFAULT {@link Variant} and a specific {@link Variant}.
+     * Should: return all the versions for the DEFAULT {@link Variant} and the specific {@link Variant}
+     */
+    @Test
+    public void findAllVersionsByVariant() throws DotDataException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language_1 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Language language_2 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Language language_3 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentletLanguage1DefaultVariant = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersisted();
+
+        Contentlet contentlet1Checkout = ContentletDataGen.checkout(contentletLanguage1DefaultVariant);
+        contentlet1Checkout.setLanguageId(language_2.getId());
+        final Contentlet contentletLanguage2DefaultVariant = ContentletDataGen.checkin(contentlet1Checkout);
+
+        contentlet1Checkout = ContentletDataGen.checkout(contentletLanguage1DefaultVariant);
+        contentlet1Checkout.setLanguageId(language_3.getId());
+        final Contentlet contentletLanguage3DefaultVariant = ContentletDataGen.checkin(contentlet1Checkout);
+
+        final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1DefaultVariant,
+                variant, map());
+
+        final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2DefaultVariant,
+                variant, map());
+
+        final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3DefaultVariant,
+                variant, map());
+
+        final Identifier identifier = APILocator.getIdentifierAPI()
+                .find(contentletLanguage1DefaultVariant.getIdentifier());
+
+        final List<Contentlet> contentlets = APILocator.getContentletAPI()
+                .findAllVersions(identifier, VariantAPI.DEFAULT_VARIANT, APILocator.systemUser(), false);
+
+        assertNotNull(contentlets);
+        assertEquals(3, contentlets.size());
+
+        assertTrue(contentlets.stream().anyMatch(contentlet -> contentlet.getIdentifier()
+                .equals(contentletLanguage1DefaultVariant.getIdentifier())));
+        assertTrue(contentlets.stream().anyMatch(contentlet -> contentlet.getIdentifier()
+                .equals(contentletLanguage2DefaultVariant.getIdentifier())));
+        assertTrue(contentlets.stream().anyMatch(contentlet -> contentlet.getIdentifier()
+                .equals(contentletLanguage3DefaultVariant.getIdentifier())));
+    }
+
+    /**
+     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * When: The contentlet had several versions in different {@link Language} and {@link Variant}
+     * Also they have  old versions
+     * Should: return all the versions even the old ones into the DEFAULT {@link Variant}
+     */
+    @Test
+    public void findAllVersionsWithOldVersionsByVariant() throws DotDataException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final Language language_1 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Language language_2 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Language language_3 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentletLanguage1Live = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        final Map<String, Contentlet> newlyWorkingAndLiveVersionLang1 = createNewlyWorkingAndLiveVersion(
+                contentletLanguage1Live);
+
+        final Contentlet contentletLanguage2Live = createNewLangVersion(language_2, contentletLanguage1Live);
+        final Map<String, Contentlet> newlyWorkingAndLiveVersionLang2 = createNewlyWorkingAndLiveVersion(
+                contentletLanguage2Live);
+
+        final Contentlet contentletLanguage3Live = createNewLangVersion(language_3, contentletLanguage1Live);
+        final Map<String, Contentlet> newlyWorkingAndLiveVersionLang3 = createNewlyWorkingAndLiveVersion(
+                contentletLanguage3Live);
+
+        final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1Live,
+                variant, map());
+
+        createNewlyWorkingAndLiveVersion(contentletLang1SpecificVariant);
+
+        final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2Live,
+                variant, map());
+
+        createNewlyWorkingAndLiveVersion(contentletLang2SpecificVariant);
+
+        final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3Live,
+                variant, map());
+
+        createNewlyWorkingAndLiveVersion(contentletLang3SpecificVariant);
+
+        final Identifier identifier = APILocator.getIdentifierAPI()
+                .find(contentletLanguage1Live.getIdentifier());
+
+        final List<Contentlet> contentlets = APILocator.getContentletAPI()
+                .findAllVersions(identifier, VariantAPI.DEFAULT_VARIANT, APILocator.systemUser(), false);
+
+        assertNotNull(contentlets);
+        assertEquals(9, contentlets.size());
+
+        final List<String> expectedInodes = list(
+                contentletLanguage1Live,
+                newlyWorkingAndLiveVersionLang1.get("WORKING"),
+                newlyWorkingAndLiveVersionLang1.get("LIVE"),
+                contentletLanguage2Live,
+                newlyWorkingAndLiveVersionLang2.get("WORKING"),
+                newlyWorkingAndLiveVersionLang2.get("LIVE"),
+                contentletLanguage3Live,
+                newlyWorkingAndLiveVersionLang3.get("WORKING"),
+                newlyWorkingAndLiveVersionLang3.get("LIVE")
+        ).stream().map(Contentlet::getInode).collect(Collectors.toList());
+
+        expectedInodes.forEach(inode -> assertTrue(contentlets.stream()
+                .anyMatch(contentlet -> contentlet.getInode().equals(inode))));
+    }
+
+    /**
+     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * When: The contentlet had several versions in different {@link Language} but with a limit User,
+     * and try to get all the versions using another user.
+     * Should: throw a {@link DotSecurityException}
+     */
+    @Test
+    public void findAllVersionsByVariantWithNoAllowUser()
+            throws DotDataException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language_1 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Language language_2 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Language language_3 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+
+        final User user_1 = new UserDataGen().nextPersisted();
+        final User user_2 = new UserDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentletLanguage1DefaultVariant = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .user(user_1)
+                .nextPersisted();
+
+        Contentlet contentlet1Checkout = ContentletDataGen.checkout(contentletLanguage1DefaultVariant);
+        contentlet1Checkout.setLanguageId(language_2.getId());
+        final Contentlet contentletLanguage2DefaultVariant = ContentletDataGen.checkin(contentlet1Checkout);
+
+        contentlet1Checkout = ContentletDataGen.checkout(contentletLanguage1DefaultVariant);
+        contentlet1Checkout.setLanguageId(language_3.getId());
+        final Contentlet contentletLanguage3DefaultVariant = ContentletDataGen.checkin(contentlet1Checkout);
+
+        final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1DefaultVariant,
+                variant, map());
+
+        final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2DefaultVariant,
+                variant, map());
+
+        final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3DefaultVariant,
+                variant, map());
+
+        final Identifier identifier = APILocator.getIdentifierAPI()
+                .find(contentletLanguage1DefaultVariant.getIdentifier());
+
+        try {
+            final List<Contentlet> contentlets = APILocator.getContentletAPI()
+                    .findAllVersions(identifier, VariantAPI.DEFAULT_VARIANT, user_2, false);
+
+            throw new AssertionError("Should throw a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //Expected
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * When: find for a contentlet that does not exist
+     * Should: return a empty list
+     */
+    @Test
+    public void findAllVersionsByVariantWithNoContentlet()
+            throws DotDataException, DotSecurityException {
+        final Identifier identifier = new Identifier();
+        identifier.setId("fakeId");
+
+        final List<Contentlet> contentlets = APILocator.getContentletAPI()
+                .findAllVersions(identifier, VariantAPI.DEFAULT_VARIANT, APILocator.systemUser(), false);
+
+        assertNotNull(contentlets);
+        assertTrue(contentlets.isEmpty());
+    }
+
+    private static Map<String, Contentlet> createNewlyWorkingAndLiveVersion(final Contentlet contentletLanguage1Live) {
+        Contentlet contentlet1Checkout = ContentletDataGen.checkout(contentletLanguage1Live);
+        final Contentlet contentletWorking = ContentletDataGen.checkin(contentlet1Checkout);
+
+        final Contentlet newlyContentleLive = ContentletDataGen.publish(contentletWorking);
+        contentlet1Checkout = ContentletDataGen.checkout(newlyContentleLive);
+        final Contentlet contentletWorking2 = ContentletDataGen.checkin(contentlet1Checkout);
+
+        return map("LIVE", newlyContentleLive, "WORKING", contentletWorking2);
+    }
+
+    private static Contentlet createNewLangVersion(final Language language,
+            final Contentlet contentlet) throws DotDataException, DotSecurityException {
+        Contentlet contentlet1Checkout = ContentletDataGen.checkout(contentlet);
+        contentlet1Checkout.setLanguageId(language.getId());
+        return ContentletDataGen.checkin(contentlet1Checkout);
+    }
+
+    /**
+     * Testing the method {@link ContentletAPI#findLiveOrWorkingVersions(Set, User, boolean)}
+     * This version of the method takes a collection of identifiers and returns all the versions of the contentlets
+     * Given scenario: The contentlet had several versions in different {@link Language} `
+     * Expected result: The method should return all the versions of the contentlets
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void TestFindLiveOrWorkingVersions() throws DotDataException, DotSecurityException {
+
+        final Language language_1 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Language language_2 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Language language_3 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentletLanguage1Live = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        Contentlet contentlet1Checkout = ContentletDataGen.checkout(contentletLanguage1Live);
+        final Contentlet contentletLanguage1Working = ContentletDataGen.checkin(contentlet1Checkout);
+
+        final Contentlet contentletLanguage2Live = createNewLangVersionAndPublish(language_2, contentletLanguage1Live);
+
+        final Contentlet contentlet2Checkout = ContentletDataGen.checkout(contentletLanguage2Live);
+        final Contentlet contentletLanguage2Working = ContentletDataGen.checkin(contentlet2Checkout);
+
+        final Contentlet contentletLanguage3Live = createNewLangVersionAndPublish(language_3, contentletLanguage1Live);
+        final Contentlet contentlet3Checkout = ContentletDataGen.checkout(contentletLanguage3Live);
+        final Contentlet contentletLanguage3Working = ContentletDataGen.checkin(contentlet3Checkout);
+
+        final Contentlet contentletLanguage1Live2 = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        final Contentlet contentletLanguage1Live3 = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        final Contentlet contentletLanguage1Live4 = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        final List<Contentlet> contentlets = List.of(contentletLanguage1Live,
+                contentletLanguage1Working, contentletLanguage2Live, contentletLanguage2Working,
+                contentletLanguage3Live, contentletLanguage3Working, contentletLanguage1Live2,
+                contentletLanguage1Live3,
+                contentletLanguage1Live4);
+
+        final Set<String> identifiers = contentlets.stream().map(Contentlet::getIdentifier)
+                .collect(Collectors.toSet());
+
+        final ContentletAPI contentletAPI1 = APILocator.getContentletAPI();
+        final List<Contentlet> allVersions = contentletAPI1.findLiveOrWorkingVersions(identifiers, APILocator.systemUser(), false);
+
+        Assert.assertEquals(9, allVersions.size());
+
+        for (Contentlet c:contentlets) {
+            Assert.assertTrue(c.isLive() || c.isWorking() );
+            Assert.assertTrue(allVersions.stream().anyMatch(contentlet -> contentlet.getIdentifier().equals(c.getIdentifier())));
+            Assert.assertTrue(allVersions.stream().anyMatch(contentlet -> contentlet.getInode().equals(c.getInode())));
+        }
+        //Random dude with no permissions
+        final User randomUser = new UserDataGen().nextPersisted();
+        Assert.assertTrue(contentletAPI1.findLiveOrWorkingVersions(identifiers, randomUser, false).isEmpty());
+    }
+
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#copyContentToVariant(Contentlet, String, User)}
+     * When:
+     * - Create a {@link Contentlet} in the DEFAULT Variant.
+     * - Create a new {@link Variant}.
+     * - Create a new Version of the newly created {@link Contentlet} into the newly {@link Variant}
+     * - Save a new version os the {@link Contentlet} in the specific {@link Variant} version.
+     * Should: Create  a copy from the specific {@link Variant} {@link Contentlet} Version to the DEFAULT {@link Variant}
+     */
+    @Test
+    public void saveContentToSpecificVariant() throws DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .dataType(DataTypes.TEXT)
+                .indexed(true)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen().field(titleField).nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .setProperty("title", "Default Version")
+                .nextPersisted();
+
+        ContentletDataGen.createNewVersion(contentlet, variant, map("title", "Variant Version"));
+
+        APILocator.getContentletAPI().copyContentToVariant(contentlet, variant.name(),
+                APILocator.systemUser());
+
+        final Contentlet contentletByIdentifierSpecificVariant = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                        language.getId(), variant.name(), APILocator.systemUser(), false);
+
+        assertNotNull(contentletByIdentifierSpecificVariant);
+
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierSpecificVariant.getIdentifier());
+        assertEquals(contentlet.getLanguageId(), contentletByIdentifierSpecificVariant.getLanguageId());
+        assertEquals(variant.name(), contentletByIdentifierSpecificVariant.getVariantId());
+        assertEquals("Default Version", contentletByIdentifierSpecificVariant.getStringProperty("title"));
+
+        final Contentlet contentletByIdentifierDefaultVariant = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                        language.getId(), VariantAPI.DEFAULT_VARIANT.name(),
+                        APILocator.systemUser(), false);
+
+        assertNotNull(contentletByIdentifierDefaultVariant);
+
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierDefaultVariant.getIdentifier());
+        assertEquals(contentlet.getLanguageId(), contentletByIdentifierDefaultVariant.getLanguageId());
+        assertEquals(contentlet.getVariantId(), contentletByIdentifierDefaultVariant.getVariantId());
+        assertEquals("Default Version", contentletByIdentifierSpecificVariant.getStringProperty("title"));
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#copyContentToVariant(Contentlet, String, User)}
+     * When:
+     * - Creata a {@link Variant} let call it variant_1
+     * - Create a {@link Contentlet} with a version in variant_1, but not any version in DEFAULT Variant.
+     * - Create another {@link Variant}, let call it variant_2.
+     * - Save a new version os the {@link Contentlet} in variant_2.
+     * Should: Create  a copy from the variant_1 {@link Contentlet} Version to the DEFAULT {@link Variant}
+     */
+    @Test
+    public void saveContentToAnotherVariant() throws DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Variant variant_1 = new VariantDataGen().nextPersisted();
+        final Variant variant_2 = new VariantDataGen().nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .dataType(DataTypes.TEXT)
+                .indexed(true)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen().field(titleField).nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .setProperty("title", "Variant 1 Version")
+                .variant(variant_1)
+                .nextPersisted();
+        APILocator.getContentletAPI().copyContentToVariant(contentlet, variant_2.name(),
+                APILocator.systemUser());
+
+        final Contentlet contentletByIdentifierVariant1 = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                        language.getId(), variant_1.name(), APILocator.systemUser(), false);
+
+        assertNotNull(contentletByIdentifierVariant1);
+
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierVariant1.getIdentifier());
+        assertEquals(contentlet.getLanguageId(), contentletByIdentifierVariant1.getLanguageId());
+        assertEquals(variant_1.name(), contentletByIdentifierVariant1.getVariantId());
+        assertEquals("Variant 1 Version", contentletByIdentifierVariant1.getStringProperty("title"));
+
+        final Contentlet contentletByIdentifierDefaultVariant = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                        language.getId(), VariantAPI.DEFAULT_VARIANT.name(),
+                        APILocator.systemUser(), false);
+
+        assertNull(contentletByIdentifierDefaultVariant);
+
+        final Contentlet contentletByIdentifierVariant2 = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                        language.getId(), variant_2.name(), APILocator.systemUser(), false);
+
+        assertNotNull(contentletByIdentifierVariant2);
+
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierVariant2.getIdentifier());
+        assertEquals(contentlet.getLanguageId(), contentletByIdentifierVariant2.getLanguageId());
+        assertEquals(variant_2.name(), contentletByIdentifierVariant2.getVariantId());
+        assertEquals("Variant 1 Version", contentletByIdentifierVariant2.getStringProperty("title"));
+    }
+
+    @Test
+    public void test_getUrlMapForContentlet_with_bad_detail_page() throws Exception{
+
+        ContentType type =  new ContentTypeDataGen()
+                .detailPage("bad detail page")
+                .nextPersisted();
+
+        Contentlet content = new ContentletDataGen(type.id()).nextPersisted();
+
+        assertNotNull(content);
+        assertNotNull(content.getIdentifier());
+        assertEquals(content.getContentTypeId(), type.id());
+
+        assertNull(APILocator.getContentletAPI().getUrlMapForContentlet(content,user,false));
+
+    }
+
+
+
+
+    @Test
+    public void test_getUrlMapForContentlet_with_detail_page_but_no_pattern() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_A = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = createHtmlPageAsset(VariantAPI.DEFAULT_VARIANT,
+                APILocator.getLanguageAPI().getDefaultLanguage(), host, template_A);
+
+        Identifier id = APILocator.getIdentifierAPI().find(htmlPageAsset.getIdentifier());
+        ContentType type = new ContentTypeDataGen().detailPage(htmlPageAsset.getIdentifier()).nextPersisted();
+
+        Contentlet content = new ContentletDataGen(type.id()).nextPersisted();
+        assertNotNull(content);
+        assertNotNull(content.getIdentifier());
+        assertEquals(content.getContentTypeId(), type.id());
+
+        assertEquals(id.getPath() + "?id=" + content.getInode(), contentletAPI.getUrlMapForContentlet(content, user, false));
+
+    }
+
+    @Test
+    public void test_getUrlMapForContentlet_with_detail_page_and_pattern() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_A = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = createHtmlPageAsset(VariantAPI.DEFAULT_VARIANT,
+                APILocator.getLanguageAPI().getDefaultLanguage(), host, template_A);
+
+        List<Field> fields = List.of(
+                new FieldDataGen().name("title").velocityVarName("title").next(),
+                new FieldDataGen().name("urlMap1").velocityVarName("urlMap1").next(),
+                new FieldDataGen().name("urlMap2").velocityVarName("urlMap2").next());
+
+
+        ContentType type = new ContentTypeDataGen()
+                .detailPage(htmlPageAsset.getIdentifier())
+                .urlMapPattern("/testing/{urlMap1}/{urlMap2}")
+                .fields(fields)
+                .nextPersisted();
+
+
+
+
+
+
+        Contentlet content = new ContentletDataGen(type.id())
+                .setProperty("title", "title")
+                .setProperty("urlMap1", "urlMapValue1")
+                .setProperty("urlMap2", "urlMapValue2")
+                .nextPersisted();
+
+
+        assertNotNull(content);
+        assertNotNull(content.getIdentifier());
+        assertEquals(content.getContentTypeId(), type.id());
+
+        assertEquals("/testing/urlMapValue1/urlMapValue2",contentletAPI.getUrlMapForContentlet(content, user, false));
+    }
+
+    /***
+     * Method to test:
+     * When: Save a {@link Contentlet}
+     * Should: Save the Variant name inside a new column and not inside the Json Field
+     *
+     * @throws DotDataException
+     * @throws JsonProcessingException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void variantIdOutsideJsonFIeld() throws DotDataException, JsonProcessingException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+        final ArrayList<Map<String, Object>> results = new DotConnect().setSQL(
+                        "SELECT contentlet_as_json, variant_id FROM contentlet where inode = ?")
+                .addParam(contentlet.getInode())
+                .loadResults();
+
+        assertEquals(1, results.size());
+
+        final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.createDefaultMapper();
+        final Map<String, Object> map = defaultObjectMapper.readValue(
+                (String) results.get(0).get("contentlet_as_json"), Map.class);
+
+        assertEquals(contentlet.getInode(), map.get("inode"));
+
+        assertNull(map.get("variantId"));
+
+        assertEquals(variant.name(), results.get(0).get("variant_id"));
+
+        final List<Contentlet> contentletsFromDataBase = APILocator.getContentletAPIImpl()
+                .findContentlets(list(contentlet.getInode()));
+
+        assertEquals(1, contentletsFromDataBase.size());
+        assertEquals(variant.name(), contentletsFromDataBase.get(0).getVariantId());
+
+    }
+
 }

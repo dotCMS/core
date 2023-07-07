@@ -1,32 +1,27 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteStop.NAME,
-     description = "@|bold,green Stop Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
+     header = "@|bold,blue Use this command to stop a site.|@",
+          description = {
+                 " Once a site is stopped it is no longer available for use. ",
+                 " See @|bold,cyan site:start|@ command. ",
+                 "" // This is needed to add a new line after the description.
+          }
 )
 public class SiteStop extends AbstractSiteCommand implements Callable<Integer> {
 
     static final String NAME = "stop";
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
-    @Inject
-    RestClientFactory clientFactory;
-
-    @CommandLine.Parameters(index = "0", arity = "1", description = "Site name Or Id.")
+    @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name Or Id.")
     String siteNameOrId;
 
     @Override

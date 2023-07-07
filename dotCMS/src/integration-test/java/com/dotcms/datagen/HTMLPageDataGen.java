@@ -81,6 +81,12 @@ public class HTMLPageDataGen extends ContentletDataGen {
         pageAssetAPI = APILocator.getHTMLPageAssetAPI();
     }
 
+    @Override
+    public HTMLPageDataGen host(final Host host) {
+        super.host(host);
+        return this;
+    }
+
     @SuppressWarnings("unused")
     public HTMLPageDataGen cacheTTL(long cacheTTL) {
         this.cacheTTL = cacheTTL;

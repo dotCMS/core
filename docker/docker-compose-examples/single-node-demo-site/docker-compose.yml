@@ -34,7 +34,7 @@ services:
       - opensearch-net
 
   dotcms:
-    image: dotcms/dotcms:22.09
+    image: dotcms/dotcms:latest
     environment:
         CMS_JAVA_OPTS: '-Xmx1g '
         LANG: 'C.UTF-8'

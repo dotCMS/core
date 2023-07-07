@@ -1,0 +1,29 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <p-card>
+        <ng-template pTemplate="title">
+            <h2 data-testId="targeting-card-name">
+                {{ 'experiments.configure.targeting.name' | dm }}
+            </h2>
+        </ng-template>
+
+        <ng-template pTemplate="footer">
+            <div
+                class="inline-block"
+                [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
+                [tooltipDisabled]="vm.isExperimentADraft"
+                data-testId="tooltip-on-disabled"
+                tooltipPosition="bottom"
+            >
+                <button
+                    class="p-button-sm p-button-link"
+                    [disabled]="!vm.isExperimentADraft"
+                    (click)="setupTargeting()"
+                    data-testId="targeting-add-button"
+                    label="{{ 'experiments.configure.targeting.add' | dm }}"
+                    pButton
+                    styleClass="p-button-sm p-button-link"
+                ></button>
+            </div>
+        </ng-template>
+    </p-card>
+</ng-container>

@@ -1,6 +1,6 @@
 <form class="wrapper" [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
     <div class="form-control">
-        <label for="url">Insert {{ type }} URL</label>
+        <label dotFieldRequired for="url">Insert {{ type }} URL</label>
         <input
             id="url"
             #input
@@ -12,9 +12,11 @@
         />
     </div>
     <div class="footer">
-        <span class="error-message" [class.hide]="!form.controls['url'].invalid || form.pristine"
-            >Enter a valid url</span
-        >
-        <button [disabled]="form.invalid" type="submit" pButton>Insert</button>
+        <span
+            class="error-message"
+            [innerHTML]="error || 'Enter a valid url'"
+            [class.hide]="!isInvalid || form.pristine"
+        ></span>
+        <button [disabled]="form.invalid || disableAction" type="submit" pButton>Insert</button>
     </div>
 </form>

@@ -1,4 +1,5 @@
 import { Subject, from } from 'rxjs';
+import { assert, object, string, array, optional } from 'superstruct';
 
 import {
     Component,
@@ -13,18 +14,22 @@ import {
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import { AnyExtension, Content, Editor } from '@tiptap/core';
+import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
+import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { RemoteCustomExtentions, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
+import {
+    RemoteCustomExtensions,
+    EDITOR_MARKETING_KEYS,
+    IMPORT_RESULTS
+} from '@dotcms/dotcms-models';
 
 import {
     ActionsMenu,
@@ -39,23 +44,20 @@ import {
     DragHandler,
     DotFloatingButton,
     BubbleAssetFormExtension,
-    ImageUpload,
     FreezeScroll,
-    FREEZE_SCROLL_KEY
+    FREEZE_SCROLL_KEY,
+    AssetUploader,
+    DotComands
 } from '../../extensions';
+import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import {
     formatHTML,
     removeInvalidNodes,
     SetDocAttrStep,
-    DotMarketingConfigService
+    DotMarketingConfigService,
+    RestoreDefaultDOMAttrs
 } from '../../shared';
-
-function toTitleCase(str) {
-    return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
-        return txt.charAt(0).toUpperCase() + txt.slice(1);
-    });
-}
 
 @Component({
     selector: 'dot-block-editor',
@@ -68,8 +70,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() customStyles: string;
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
-    @Input() customBlocks: string;
+    @Input() customBlocks = '';
     @Input() content: Content = '';
+    @Input() contentletIdentifier: string;
     @Input() set showVideoThumbnail(value) {
         this.dotMarketingConfigService.setProperty(
             EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
@@ -92,7 +95,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
         this.setEditorJSONContent(content);
     }
-    @Output() valueChange = new EventEmitter<string>();
+    @Output() valueChange = new EventEmitter<JSONContent>();
 
     editor: Editor;
     subject = new Subject();
@@ -132,8 +135,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         private dotMarketingConfigService: DotMarketingConfigService
     ) {}
 
-    async loadCustomBlocks(urls: string[]) {
-        return Promise.all(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
+    async loadCustomBlocks(urls: string[]): Promise<PromiseSettledResult<AnyExtension>[]> {
+        return Promise.allSettled(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
     }
 
     ngOnInit() {
@@ -154,10 +157,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                     .pipe(takeUntil(this.destroy$), debounceTime(250))
                     .subscribe(() => this.updateChartCount());
 
-                this.editor.on('update', ({ editor }) => {
-                    this.valueChange.emit(JSON.stringify(editor.getJSON()));
-                });
-
                 this.editor.on('transaction', ({ editor }) => {
                     this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
                 });
@@ -169,17 +168,66 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
+    onChange(value: JSONContent) {
+        this.valueChange.emit(value);
+    }
+
     private updateChartCount(): void {
-        const tr = this.editor.state.tr
-            .step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
-            .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
-            .step(new SetDocAttrStep('readingTime', this.readingTime));
+        const tr = this.editor.state.tr.setMeta('addToHistory', false);
+
+        if (this.characterCount.characters() != 0) {
+            tr.step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
+                .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
+                .step(new SetDocAttrStep('readingTime', this.readingTime));
+        } else {
+            // If the content is empty, we need to remove the attributes
+            tr.step(new RestoreDefaultDOMAttrs());
+        }
+
         this.editor.view.dispatch(tr);
     }
 
-    private getParsedCustomBlocks(): RemoteCustomExtentions {
+    /**
+     * assert call throws a detailed error
+     * @param data
+     * @throws if the schema is not valid to use
+     *
+     */
+    private isValidSchema(data: RemoteCustomExtensions): void {
+        const RemoteExtensionsSchema = object({
+            extensions: array(
+                object({
+                    url: string(),
+                    actions: optional(
+                        array(
+                            object({
+                                command: string(),
+                                menuLabel: string(),
+                                icon: string()
+                            })
+                        )
+                    )
+                })
+            )
+        });
+
+        assert(data, RemoteExtensionsSchema);
+    }
+
+    private getParsedCustomBlocks(): RemoteCustomExtensions {
+        const emptyExtentions = {
+            extensions: []
+        };
+
+        if (!this.customBlocks?.length) {
+            return emptyExtentions;
+        }
+
         try {
-            return JSON.parse(this.customBlocks);
+            const data = JSON.parse(this.customBlocks);
+            this.isValidSchema(data);
+
+            return data;
         } catch (e) {
             console.warn('JSON parse fails, please check the JSON format.', e);
 
@@ -187,6 +235,22 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 extensions: []
             };
         }
+    }
+
+    private parsedCustomModules(
+        prevModule,
+        module: PromiseFulfilledResult<AnyExtension> | PromiseRejectedResult
+    ) {
+        if (module.status === IMPORT_RESULTS.REJECTED) {
+            console.warn('Failed to load the module', module.reason);
+        }
+
+        return module.status === IMPORT_RESULTS.FULFILLED
+            ? {
+                  ...prevModule,
+                  ...module?.value
+              }
+            : { ...prevModule };
     }
 
     /**
@@ -197,22 +261,18 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      * @memberof DotBlockEditorComponent
      */
     private async getCustomRemoteExtensions(): Promise<AnyExtension[]> {
-        const data: RemoteCustomExtentions = this.getParsedCustomBlocks();
-
-        const extensionUrls = data.extensions.map((extension) => extension.url);
+        const data: RemoteCustomExtensions = this.getParsedCustomBlocks();
+        const extensionUrls = data?.extensions?.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
         const blockNames = [];
 
         data.extensions.forEach((extension) => {
-            blockNames.push(...extension.actions.map((item) => item.name));
+            blockNames.push(...(extension.actions?.map((item) => item.name) || []));
         });
 
-        const moduleObj = customModules.reduce(
-            (prevModule, module) => ({ ...prevModule, ...module }),
-            {}
-        );
+        const moduleObj = customModules.reduce(this.parsedCustomModules, {});
 
-        return blockNames.map((block) => moduleObj[block]);
+        return Object.values(moduleObj);
     }
 
     private getEditorNodes(): AnyExtension[] {
@@ -298,12 +358,20 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotConfigExtension({
                 lang: this.lang,
                 allowedContentTypes: this.allowedContentTypes,
-                allowedBlocks: this._allowedBlocks
+                allowedBlocks: this._allowedBlocks,
+                contentletIdentifier: this.contentletIdentifier
             }),
-            Placeholder.configure({ placeholder: this.placeholder }),
+            DotComands,
+            DotPlaceholder.configure({ placeholder: 'Type "/" for commands' }),
+            Youtube.configure({
+                height: 300,
+                width: 400,
+                interfaceLanguage: 'us',
+                nocookie: true,
+                modestBranding: true
+            }),
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
-            ImageUpload(this.injector, this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
@@ -313,7 +381,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableHeaderExtension(),
             TableRow,
             FreezeScroll,
-            CharacterCount
+            CharacterCount,
+            AssetUploader(this.injector, this.viewContainerRef)
         ];
     }
 
@@ -331,22 +400,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
             Link.configure({ autolink: false, openOnClick: false })
         ];
-    }
-
-    /**
-     * Placeholder function
-     *
-     * @private
-     * @param {*} { node }
-     * @return {*}
-     * @memberof DotBlockEditorComponent
-     */
-    private placeholder({ node }) {
-        if (node.type.name === 'heading') {
-            return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
-        }
-
-        return 'Type "/" for commmands';
     }
 
     private setEditorJSONContent(content: Content) {

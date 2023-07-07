@@ -2,8 +2,8 @@ package com.dotcms.auth.providers.saml.v1;
 
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.company.CompanyAPI;
-import com.dotcms.filters.interceptor.saml.AutoLoginResult;
 import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
+import com.dotcms.rest.api.v1.user.UserHelper;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
 import com.dotcms.saml.DotSamlException;
@@ -46,6 +46,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.RandomUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -67,7 +68,9 @@ import static com.dotmarketing.util.UtilMethods.isSet;
  */
 public class SAMLHelper {
 
-    private static final String DO_HASH_KEY = "hash.userid";
+    protected static final String DO_HASH_KEY = "hash.userid";
+    // when on, look for an user by id, if the email is repeated on the system just fakes coming email to avoid the email constraint
+    protected static final String ALLOW_USERS_DIFF_ID_REPEATED_EMAIL_KEY = "allowusers.diffid.repeatedemail";
 
     private final HostWebAPI hostWebAPI;
     private final UserAPI    userAPI;
@@ -76,6 +79,14 @@ public class SAMLHelper {
     private final SamlAuthenticationService  samlAuthenticationService;
     private static SamlConfigurationService  thirdPartySamlConfigurationService;
 
+    private static EmailGenStrategy emailGenStrategy = SAMLHelper::prefixRandomEmail;
+
+    private static String prefixRandomEmail(final String email) {
+
+        final int randomNumber = RandomUtils.nextInt();
+        return randomNumber + email;
+    }
+
     public SAMLHelper(final SamlAuthenticationService samlAuthenticationService, final CompanyAPI companyAPI) {
 
         this.userAPI      = APILocator.getUserAPI();
@@ -83,6 +94,13 @@ public class SAMLHelper {
         this.hostWebAPI   = WebAPILocator.getHostWebAPI();
         this.companyAPI   = companyAPI;
         this.samlAuthenticationService = samlAuthenticationService;
+    }
+
+    @VisibleForTesting
+    protected static void setEmailGenStrategy(final EmailGenStrategy emailGenStrategy) {
+        if (null != emailGenStrategy) {
+            SAMLHelper.emailGenStrategy = emailGenStrategy;
+        }
     }
 
     @VisibleForTesting
@@ -182,31 +200,15 @@ public class SAMLHelper {
         return user;
     }
 
+    protected User resolveUser(final User systemUser, final Attributes attributes,  final String nameId,
+                               final IdentityProviderConfiguration identityProviderConfiguration) {
 
-
-    // Gets the attributes from the Assertion, based on the attributes
-    // see if the user exists return it from the dotCMS records, if does not
-    // exist then, tries to create it.
-    // the existing or created user, will be updated the roles if they present
-    // on the assertion.
-    protected User resolveUser(final Attributes attributes,
-                             final IdentityProviderConfiguration identityProviderConfiguration) {
-
-        if (null == attributes || !UtilMethods.isSet(attributes.getNameID())) {
-
-            Logger.error(this, "Failed to resolve user because Attributes or NameID are null");
-            throw new DotSamlException("Failed to resolve user because Attributes or NameID are null");
-        }
-
-        User user       = null;
-        User systemUser = null;
-        final String nameId = Try.of(()->this.samlAuthenticationService.getValue(attributes.getNameID())).getOrNull();
+        User user = null;
 
         try {
 
             Logger.debug(this, ()-> "Validating user - " + attributes);
 
-            systemUser             = this.userAPI.getSystemUser();
             final Company company  = companyAPI.getDefaultCompany();
             final String  authType = company.getAuthType();
             final boolean doHash   = identityProviderConfiguration.containsOptionalProperty(DO_HASH_KEY)?
@@ -233,6 +235,54 @@ public class SAMLHelper {
             user = null;
         }
 
+        return user;
+    }
+
+    protected User resolveUserById(final User systemUser, final Attributes attributes, final String nameId,
+                                   final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        try {
+
+            Logger.debug(this, ()-> "Looking for an user per id - " + nameId);
+
+            final boolean doHash   = identityProviderConfiguration.containsOptionalProperty(DO_HASH_KEY)?
+                    BooleanUtils.toBoolean(identityProviderConfiguration.getOptionalProperty(DO_HASH_KEY).toString()):true;
+            return  this.loadUserById(nameId, systemUser, doHash);
+        } catch (Exception e) {
+
+            Logger.error(this, String.format("An error occurred when resolving user with ID '%s': %s", nameId, e
+                    .getMessage()), e);
+            return null;
+        }
+    }
+
+    private boolean allowUsersDiffIdWithRepeatedEmailOn (final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        return identityProviderConfiguration.containsOptionalProperty(ALLOW_USERS_DIFF_ID_REPEATED_EMAIL_KEY)?
+                BooleanUtils.toBoolean(identityProviderConfiguration.getOptionalProperty(ALLOW_USERS_DIFF_ID_REPEATED_EMAIL_KEY).toString()):false;
+    }
+
+    // Gets the attributes from the Assertion, based on the attributes
+    // see if the user exists return it from the dotCMS records, if does not
+    // exist then, tries to create it.
+    // the existing or created user, will be updated the roles if they present
+    // on the assertion.
+    protected User resolveUser(final Attributes attributes,
+                             final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        if (null == attributes || !UtilMethods.isSet(attributes.getNameID())) {
+
+            Logger.error(this, "Failed to resolve user because Attributes or NameID are null");
+            throw new DotSamlException("Failed to resolve user because Attributes or NameID are null");
+        }
+
+        final boolean allowUsersDiffIdWithRepeatedEmailOn = allowUsersDiffIdWithRepeatedEmailOn(identityProviderConfiguration);
+        final User systemUser = APILocator.systemUser();
+        final String nameId   = Try.of(()->this.samlAuthenticationService.getValue(attributes.getNameID())).getOrNull();
+        User user             =  allowUsersDiffIdWithRepeatedEmailOn?
+                                resolveUserById(systemUser, attributes, nameId, identityProviderConfiguration):
+                                resolveUser(systemUser, attributes, nameId, identityProviderConfiguration);
+
         // check if the client wants synchronization
         final SamlConfigurationService samlConfigurationService = this.getSamlConfigurationService();
         final boolean createUserWhenDoesNotExists =
@@ -242,8 +292,12 @@ public class SAMLHelper {
         if (createUserWhenDoesNotExists) {
 
             user = null == user?
-                    this.createNewUser(systemUser,    attributes, identityProviderConfiguration):  // if user does not exists, create a new one.
-                    this.updateUser(user, systemUser, attributes, identityProviderConfiguration); // update it, since exists
+                    this.createNewUser(systemUser,
+                            allowUsersDiffIdWithRepeatedEmailOn? checkRepeatedEmail(attributes):attributes,
+                            identityProviderConfiguration):  // if user does not exist, create a new one.
+                    this.updateUser(user, systemUser,
+                            allowUsersDiffIdWithRepeatedEmailOn? keepCurrentEmail(attributes, user):attributes,
+                            identityProviderConfiguration); // update it, since exists
 
             if (user.isActive()) {
 
@@ -256,6 +310,44 @@ public class SAMLHelper {
         }
 
         return user;
+    }
+
+    protected Attributes checkRepeatedEmail (final Attributes attributes) {
+
+        final String email = this.samlAuthenticationService.getValue(attributes.getEmail());
+        final boolean emailExist = Try.of(()->null != this.userAPI.loadByUserByEmail(email,
+                APILocator.systemUser(), false)).getOrElse(false);
+        if (emailExist) {
+
+            return
+                    new Attributes.Builder()
+                            .nameID(attributes.getNameID())
+                            .firstName(attributes.getFirstName())
+                            .lastName(attributes.getLastName())
+                            .addRoles(attributes.isAddRoles())
+                            .roles(attributes.getRoles())
+                            .sessionIndex(attributes.getSessionIndex())
+                            .email(this.makeEmailUnique(email)).build();
+        }
+
+        return attributes;
+    }
+
+    protected Attributes keepCurrentEmail(Attributes attributes, User user) {
+
+        return
+                new Attributes.Builder()
+                        .nameID(attributes.getNameID())
+                        .firstName(attributes.getFirstName())
+                        .lastName(attributes.getLastName())
+                        .addRoles(attributes.isAddRoles())
+                        .roles(attributes.getRoles())
+                        .sessionIndex(attributes.getSessionIndex())
+                        .email(user.getEmailAddress()).build();
+    }
+
+    private String makeEmailUnique(final String email) {
+        return emailGenStrategy.apply(email);
     }
 
     protected User updateUser(final User user, final User systemUser,
@@ -348,7 +440,7 @@ public class SAMLHelper {
         this.addRolesFromIDP(user, attributesBean, identityProviderConfiguration, buildRolesStrategy);
 
         // Add SAML User role
-        this.addRole(user, DotSamlConstants.DOTCMS_SAML_USER_ROLE, true, true);
+        UserHelper.getInstance().addRole(user, DotSamlConstants.DOTCMS_SAML_USER_ROLE, true, true);
         Logger.debug(this, ()->"Default SAML User role has been assigned");
 
         // the only strategy that does not include the saml user role is the "idp"
@@ -362,7 +454,7 @@ public class SAMLHelper {
 
                 for (final String roleExtra : rolesExtra){
 
-                    this.addRole(user, roleExtra, false, false);
+                    UserHelper.getInstance().addRole(user, roleExtra, false, false);
                     Logger.debug(this, () -> "Optional user role: " +
                             this.getSamlConfigurationService().getConfigAsString(identityProviderConfiguration,
                                     SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE) + " has been assigned");
@@ -494,66 +586,9 @@ public class SAMLHelper {
                 roleObject.replaceFirst(removeRolePrefix, StringUtils.EMPTY):
                 roleObject;
 
-        addRole(user, roleKey, false, false);
+        UserHelper.getInstance().addRole(user, roleKey, false, false);
     }
 
-    private void addRole(final User user, final String roleKey, final boolean createRole, final boolean isSystem)
-            throws DotDataException {
-
-        Role role = this.roleAPI.loadRoleByKey(roleKey);
-
-        // create the role, in case it does not exist
-        if (role == null && createRole) {
-            Logger.info(this, "Role with key '" + roleKey + "' was not found. Creating it...");
-            role = createNewRole(roleKey, isSystem);
-        }
-
-        if (null != role) {
-            if (!this.roleAPI.doesUserHaveRole(user, role)) {
-                this.roleAPI.addRoleToUser(role, user);
-                Logger.debug(this, "Role named '" + role.getName() + "' has been added to user: " + user.getEmailAddress());
-            } else {
-                Logger.debug(this,
-                        "User '" + user.getEmailAddress() + "' already has the role '" + role + "'. Skipping assignment...");
-            }
-        } else {
-            Logger.debug(this, "Role named '" + roleKey + "' does NOT exists in dotCMS. Ignoring it...");
-        }
-    }
-
-    private Role createNewRole(String roleKey, boolean isSystem) throws DotDataException {
-        Role role = new Role();
-        role.setName(roleKey);
-        role.setRoleKey(roleKey);
-        role.setEditUsers(true);
-        role.setEditPermissions(false);
-        role.setEditLayouts(false);
-        role.setDescription("");
-        role.setId(UUIDGenerator.generateUuid());
-
-        // Setting SYSTEM role as a parent
-        role.setSystem(isSystem);
-        Role parentRole = roleAPI.loadRoleByKey(Role.SYSTEM);
-        role.setParent(parentRole.getId());
-
-        String date = DateUtil.getCurrentDate();
-
-        ActivityLogger.logInfo(ActivityLogger.class, getClass() + " - Adding Role",
-                "Date: " + date + "; " + "Role:" + roleKey);
-        AdminLogger.log(AdminLogger.class, getClass() + " - Adding Role", "Date: " + date + "; " + "Role:" + roleKey);
-
-        try {
-            role = roleAPI.save(role, role.getId());
-        } catch (DotDataException | DotStateException e) {
-            ActivityLogger.logInfo(ActivityLogger.class, getClass() + " - Error adding Role",
-                    "Date: " + date + ";  " + "Role:" + roleKey);
-            AdminLogger.log(AdminLogger.class, getClass() + " - Error adding Role",
-                    "Date: " + date + ";  " + "Role:" + roleKey);
-            throw e;
-        }
-
-        return role;
-    }
 
     private String toString(final String... rolePatterns) {
         return null == rolePatterns ? DotSamlConstants.NULL : Arrays.asList(rolePatterns).toString();

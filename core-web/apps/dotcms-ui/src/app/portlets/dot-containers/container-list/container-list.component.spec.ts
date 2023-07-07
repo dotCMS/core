@@ -20,7 +20,9 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -38,8 +40,8 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -262,7 +264,7 @@ describe('ContainerListComponent', () => {
                 DotcmsEventsService,
                 DotEventsSocket,
                 DotcmsConfigService,
-                DotMessageDisplayService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 DialogService,
                 DotSiteBrowserService,
                 DotContainersService,
@@ -279,6 +281,7 @@ describe('ContainerListComponent', () => {
                 DotActionButtonModule,
                 DotActionMenuButtonModule,
                 DotAddToBundleModule,
+                DotRelativeDatePipe,
                 HttpClientTestingModule,
                 DynamicDialogModule,
                 BrowserAnimationsModule

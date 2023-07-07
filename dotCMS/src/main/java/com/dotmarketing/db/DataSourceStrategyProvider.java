@@ -91,7 +91,7 @@ public class DataSourceStrategyProvider {
                 }
             } else {
                 DotDataSourceStrategy customStrategy = ((Class<DotDataSourceStrategy>) Class
-                        .forName(providerClassName)).newInstance();
+                        .forName(providerClassName)).getDeclaredConstructor().newInstance();
                 defaultDataSource = customStrategy.apply();
 
                 Logger.info(DataSourceStrategyProvider.class,

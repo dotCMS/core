@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.exception.DotDataException;
@@ -8,6 +9,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.google.common.collect.Table;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -152,6 +154,8 @@ public interface MultiTreeAPI {
      * @throws DotDataException
      */
     void deleteMultiTreeByChild(String contentIdentifier) throws DotDataException;
+
+    void deleteMultiTree(final String pageId, final String variant)throws DotDataException;
 
     /**
      * Gets them all
@@ -407,16 +411,6 @@ public interface MultiTreeAPI {
     }
 
     /**
-     * Copy all the {@link MultiTree} from a page;s variant to another page's variant
-     * @param pageId String page id
-     * @param baseVariant Name of the variant that will be using to get the {@link MultiTree} and them apply a new variant over a copy of the {@link MultiTree} on the page.
-     * @param newVariant Name of the variant that  is the new variant for the set of {@link MultiTree}
-     * @return List MultiTree
-     */
-    List<MultiTree> copyVariantForPage (String pageId, String baseVariant, String newVariant) throws DotDataException;
-
-
-    /**
      * Deletes the personalization for the page
      * @param pageId {@link String} page id
      * @param personalization {@link String} personalization
@@ -470,6 +464,18 @@ public interface MultiTreeAPI {
                                         ) throws DotDataException;
 
     /**
+     * Copy a collection of {@link MultiTree} but to a different {@link Variant}.
+     *
+     * @param pageId {@link String} Page's identifier
+     * @param multiTrees {@link List} of {@link MultiTree} to copy
+     * @param variantName {@link String} name of the variant to copy to
+     * @throws DotDataException
+     */
+    void copyMultiTree(final String pageId, final List<MultiTree> multiTrees,
+            String variantName)
+            throws DotDataException;
+
+    /**
      * Updates the current personalization to a new personalization
      *
      * @param currentPersonalization {@link String}  current existing personalization
@@ -490,4 +496,24 @@ public interface MultiTreeAPI {
      */
     int getAllContentletReferencesCount(final String contentletId) throws DotDataException;
 
+    /**
+     * Update the UUID of a set of MultiTree to a new UUID value
+     *
+     * @param pagesId Set of page's id to be updated
+     * @param containerId Container's id to be updated
+     * @param oldValue old UUID value to be updated
+     * @param newValue new value to set
+     *
+     * @throws DotDataException
+     */
+    void updateMultiTrees(final Collection<String> pagesId, final String containerId,
+            final String oldValue, final String newValue) throws DotDataException;
+
+    /**
+     * Return all the {@link MultiTree} for a {@link Variant}
+     *
+     * @param variant
+     * @return
+     */
+    List<MultiTree> getMultiTrees(final Variant variant) throws DotDataException;
 }

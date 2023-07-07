@@ -534,7 +534,7 @@ public class TexenTask
                     // into the context as an Integer.
                     try
                     {
-                        c.put(property, new Integer(value));
+                        c.put(property, Integer.valueOf(value));
                     }
                     catch (NumberFormatException nfe)
                     {

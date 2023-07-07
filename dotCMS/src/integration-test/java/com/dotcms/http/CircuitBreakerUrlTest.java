@@ -4,6 +4,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import java.io.IOException;
@@ -119,7 +120,7 @@ public class CircuitBreakerUrlTest {
             CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
             assert (breaker.isClosed());
 
-            Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", true);
+            IPUtils.disabledIpPrivateSubnet(true);
 
             for (int i = 0; i < 10; i++) {
                 try {
@@ -132,7 +133,8 @@ public class CircuitBreakerUrlTest {
 
             assert (breaker.isOpen());
         }finally {
-            Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false);
+            IPUtils.disabledIpPrivateSubnet(false);
+
         }
     }
 
@@ -205,7 +207,8 @@ public class CircuitBreakerUrlTest {
      */
     @Test
     public void testRecovery() throws  InterruptedException, IOException {
-        Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", true);
+
+        IPUtils.disabledIpPrivateSubnet(true);
 
         try {
             final NullOutputStream nos = new NullOutputStream();
@@ -265,7 +268,7 @@ public class CircuitBreakerUrlTest {
 
             assert (breaker.isClosed());
         }finally {
-            Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false);
+            IPUtils.disabledIpPrivateSubnet(false);
         }
     }
 

@@ -7,7 +7,7 @@
 
 .dot-secondary-toolbar__main {
     background-color: $white;
-    border-bottom: solid 1px $gray-lighter;
+    border-bottom: solid 1px $color-palette-gray-300;
     display: flex;
     padding: 0 $spacing-4 0 $spacing-4;
     height: $dot-secondary-toolbar-main-height;
@@ -18,7 +18,7 @@
     padding: 0 87px 0 $spacing-4;
     flex-wrap: wrap;
     background-color: $white;
-    border-bottom: solid 1px $gray-lighter;
+    border-bottom: solid 1px $color-palette-gray-300;
 }
 
 ::ng-deep {
@@ -46,44 +46,43 @@
     }
 
     .toolbar__sep {
-        border-left: solid 1px $gray-bg;
+        border-left: solid 1px $color-palette-gray-200;
         margin: 0 $spacing-3 0 $spacing-2;
         display: block;
         height: 40px;
     }
 
     .dot-secondary-toolbar__main.edit-page-variant-mode {
-        background-color: $brand-primary;
+        background-color: $color-palette-primary;
 
         dot-icon-button {
             button.dot-icon-button {
                 background-color: $white;
-
-                i {
-                    color: $brand-primary;
-                }
             }
         }
 
         .main-toolbar-right {
             h2 {
                 margin: 0;
-                font-size: $font-size-large;
+                font-size: $font-size-lg;
             }
         }
 
         h2 {
             color: $white;
-            font-size: $font-size-xx-large;
+            font-size: $font-size-xxl;
             font-weight: normal;
         }
 
-        button {
-            color: $white;
+        .p-button {
+            &.p-button-text {
+                &:hover .pi {
+                    color: $color-palette-primary;
+                }
 
-            &:hover {
-                color: $brand-primary;
-                background-color: $white;
+                .pi {
+                    color: $white;
+                }
             }
         }
 

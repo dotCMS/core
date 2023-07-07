@@ -1,25 +1,54 @@
 package com.dotcms.variant;
 
+import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.MultiTreeDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.PersonalizedContentlet;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -364,4 +393,905 @@ public class VariantAPITest {
     public void testDeleteDefaultVariant_shouldFail() throws DotDataException {
         APILocator.getVariantAPI().delete(VariantAPI.DEFAULT_VARIANT.name());
     }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}}
+     * When:
+     * - You create a {@link Variant}
+     * - Create two {@link Contentlet} and create a version in the newly {@link Variant} also create
+     * version to the DEFAULT Variant, not publish any of this versions.
+     * - Promote the {@link Variant}
+     *
+     * Should:
+     * - Copy the specific version of the {@link Contentlet} and turn it into the WORKING DEFAULT Variant
+     */
+    @Test
+    public void promoteWorkingVersion() throws DotDataException, DotSecurityException {
+
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "contentlet1")
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "contentlet2")
+                .nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        ContentletDataGen.createNewVersion(contentlet1, variant, map(
+                titleField.variable(), "contentlet1_variant"
+        ));
+        ContentletDataGen.createNewVersion(contentlet2, variant, map(
+                titleField.variable(), "contentlet2_variant"
+        ));
+
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, "contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "contentlet2_variant",
+                titleField);
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When:
+     * - You create a {@link Variant}
+     * - Create two {@link Contentlet} and create a version into the newly {@link Variant} also
+     * create version to the DEFAULT Variant, Save and publish them.
+     * - Make any change to the {@link Contentlet} and just save.
+     * - Promote the {@link Variant}
+     *
+     * Should:
+     * - Copy both version of the specific Variant  and turn it into the WORKING/LIVE DEFAULT Variant
+     */
+    @Test
+    public void promoteWorkingLiveVersion() throws DotDataException, DotSecurityException {
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet1")
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet2")
+                .nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final Contentlet contentlet1Variant = ContentletDataGen.createNewVersion(contentlet1,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet1_variant"
+                ));
+        final Contentlet contentlet2Variant = ContentletDataGen.createNewVersion(contentlet2,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet2_variant"
+                ));
+
+        APILocator.getContentletAPI().publish(contentlet1, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2, APILocator.systemUser(), false);
+
+        APILocator.getContentletAPI().publish(contentlet1Variant, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2Variant, APILocator.systemUser(), false);
+
+        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
+        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
+        ContentletDataGen.update(contentlet1Variant, map("title", "WORKING contentlet1_variant"));
+        ContentletDataGen.update(contentlet2Variant, map("title", "WORKING contentlet2_variant"));
+
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, false, variant, "WORKING contentlet1_variant", titleField);
+        checkVersion(contentlet1, true, variant, "LIVE contentlet1_variant", titleField);
+
+
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet2_variant",
+                titleField);
+        checkVersion(contentlet2, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet2_variant",
+                titleField);
+
+        checkVersion(contentlet2, true, variant, "LIVE contentlet2_variant", titleField);
+        checkVersion(contentlet2, false, variant, "WORKING contentlet2_variant", titleField);
+    }
+
+    private static void checkVersion(final Contentlet contentlet, final boolean live,
+            final Variant defaultVariant, final String value, final Field titleField)
+            throws DotDataException, DotSecurityException {
+
+        checkVersion(contentlet, live, defaultVariant, APILocator.getLanguageAPI().getDefaultLanguage(),
+                value, titleField);
+    }
+    private static void checkVersion(Contentlet contentlet, boolean live, Variant defaultVariant,
+            final Language language, final String  value, Field titleField)
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet contentlet1DefaultVariantFromDataBase = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(),
+                        live, language.getId(),
+                        defaultVariant.name(), APILocator.systemUser(),
+                        false);
+
+        assertEquals(value, contentlet1DefaultVariantFromDataBase
+                .getStringProperty(titleField.variable()));
+    }
+
+    private static void checkNull(final Contentlet contentlet, final boolean live, final Variant defaultVariant)
+            throws DotDataException, DotSecurityException {
+        checkNull(contentlet, live, defaultVariant, APILocator.getLanguageAPI().getDefaultLanguage());
+    }
+
+    private static void checkNull(final Contentlet contentlet, final boolean live,
+            final Variant defaultVariant, final Language language) throws DotDataException, DotSecurityException {
+        final Contentlet contentlet1DefaultVariantFromDataBase = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(),
+                        live, language.getId(),
+                        defaultVariant.name(), APILocator.systemUser(),
+                        false);
+
+        assertNull(contentlet1DefaultVariantFromDataBase);
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When:
+     * - You create a {@link Variant}
+     * - Create two {@link Contentlet} and create versions of them into the newly {@link Variant}
+     * also create version to the DEFAULT Variant.
+     * - Publish the version for the newly created {@link Variant}.
+     * - Promote the {@link Variant}
+     *
+     * Should:
+     * - Copy both version of the specific Variant  and turn it into the WORKING/LIVE DEFAULT Variant
+     */
+    @Test
+    public void promoteWithOutLiveDefaultVersion() throws DotDataException, DotSecurityException {
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "WORKING contentlet1")
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "WORKING contentlet2")
+                .nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final Contentlet contentlet1Variant = ContentletDataGen.createNewVersion(contentlet1,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet1_variant"
+                ));
+        final Contentlet contentlet2Variant = ContentletDataGen.createNewVersion(contentlet2,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet2_variant"
+                ));
+
+        APILocator.getContentletAPI().publish(contentlet1Variant, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2Variant, APILocator.systemUser(), false);
+
+        ContentletDataGen.update(contentlet1Variant, map("title", "WORKING contentlet1_variant"));
+        ContentletDataGen.update(contentlet2Variant, map("title", "WORKING contentlet2_variant"));
+
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, false, variant, "WORKING contentlet1_variant", titleField);
+        checkVersion(contentlet1, true, variant, "LIVE contentlet1_variant", titleField);
+
+
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet2_variant",
+                titleField);
+        checkVersion(contentlet2, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet2_variant",
+                titleField);
+
+        checkVersion(contentlet2, true, variant, "LIVE contentlet2_variant", titleField);
+        checkVersion(contentlet2, false, variant, "WORKING contentlet2_variant", titleField);
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When:
+     * - You create two {@link Variant}s
+     * - Create two {@link Contentlet} and create version in both {@link Variant}s also create version to the DEFAULT Variant.
+     * - Publish all of them.
+     * - Promote one of the {@link Variant}'s
+     *
+     * Should:
+     * - Copy both version of the specific Variant that was promoted and turn it into the WORKING/LIVE DEFAULT Variant
+     */
+    @Test
+    public void promoteWithTwoVersion() throws DotDataException, DotSecurityException {
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet1")
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet2")
+                .nextPersisted();
+
+        final Variant variant_1 = new VariantDataGen().nextPersisted();
+        final Variant variant_2 = new VariantDataGen().nextPersisted();
+
+        final Contentlet contentlet1Variant1 = ContentletDataGen.createNewVersion(contentlet1,
+                variant_1, map(
+                        titleField.variable(), "LIVE contentlet1_variant_1"
+                ));
+        final Contentlet contentlet2Variant1 = ContentletDataGen.createNewVersion(contentlet2,
+                variant_1, map(
+                        titleField.variable(), "LIVE contentlet2_variant_1"
+                ));
+
+
+        final Contentlet contentlet1Variant2 = ContentletDataGen.createNewVersion(contentlet1,
+                variant_2, map(
+                        titleField.variable(), "LIVE contentlet1_variant_2"
+                ));
+        final Contentlet contentlet2Variant2 = ContentletDataGen.createNewVersion(contentlet2,
+                variant_2, map(
+                        titleField.variable(), "LIVE contentlet2_variant_2"
+                ));
+
+        APILocator.getContentletAPI().publish(contentlet1, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2, APILocator.systemUser(), false);
+
+        APILocator.getContentletAPI().publish(contentlet1Variant1, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2Variant1, APILocator.systemUser(), false);
+
+        APILocator.getContentletAPI().publish(contentlet1Variant2, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2Variant2, APILocator.systemUser(), false);
+
+        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
+        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
+        ContentletDataGen.update(contentlet1Variant1, map("title", "WORKING contentlet1_variant_1"));
+        ContentletDataGen.update(contentlet2Variant1, map("title", "WORKING contentlet2_variant_1"));
+        ContentletDataGen.update(contentlet1Variant2, map("title", "WORKING contentlet1_variant_2"));
+        ContentletDataGen.update(contentlet2Variant2, map("title", "WORKING contentlet2_variant_2"));
+
+        APILocator.getVariantAPI().promote(variant_1, APILocator.systemUser());
+
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet1_variant_1",
+                titleField);
+
+        checkVersion(contentlet1, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet1_variant_1",
+                titleField);
+
+        checkVersion(contentlet1, false, variant_1, "WORKING contentlet1_variant_1", titleField);
+        checkVersion(contentlet1, true, variant_1, "LIVE contentlet1_variant_1", titleField);
+
+        checkVersion(contentlet1, false, variant_2, "WORKING contentlet1_variant_2", titleField);
+        checkVersion(contentlet1, true, variant_2, "LIVE contentlet1_variant_2", titleField);
+
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet2_variant_1",
+                titleField);
+        checkVersion(contentlet2, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet2_variant_1",
+                titleField);
+
+        checkVersion(contentlet2, true, variant_1, "LIVE contentlet2_variant_1", titleField);
+        checkVersion(contentlet2, false, variant_1, "WORKING contentlet2_variant_1", titleField);
+
+
+        checkVersion(contentlet2, true, variant_2, "LIVE contentlet2_variant_2", titleField);
+        checkVersion(contentlet2, false, variant_2, "WORKING contentlet2_variant_2", titleField);
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When:
+     * - You create one {@link Variant}s
+     * - Create two {@link Contentlet} and create a new version into the  {@link Variant}, no create any version to the DEFAULT Variant.
+     * - Publish.
+     * - Promote the {@link Variant}'s
+     *
+     * Should:
+     * - Copy both version (WORKING and LIVE) of the specific Variant that was promoted and turn it into the WORKING/LIVE DEFAULT Variant
+     */
+    @Test
+    public void promoteWithoutDefaultVersion() throws DotDataException, DotSecurityException {
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet1_variant")
+                .variant(variant)
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet2_variant")
+                .variant(variant)
+                .nextPersisted();
+
+        APILocator.getContentletAPI().publish(contentlet1, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2, APILocator.systemUser(), false);
+
+        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1_variant"));
+        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2_variant"));
+
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, false, variant, "WORKING contentlet1_variant", titleField);
+        checkVersion(contentlet1, true, variant, "LIVE contentlet1_variant", titleField);
+
+
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet2_variant",
+                titleField);
+        checkVersion(contentlet2, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet2_variant",
+                titleField);
+
+        checkVersion(contentlet2, true, variant, "LIVE contentlet2_variant", titleField);
+        checkVersion(contentlet2, false, variant, "WORKING contentlet2_variant", titleField);
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When:
+     * - You create one {@link Variant}s
+     * - Create two {@link Contentlet} just for DEFAULT Variant.
+     * - Publish.
+     * - Promote the {@link Variant}'s
+     *
+     * Should: do nothing
+     */
+    @Test
+    public void promoteWithoutVariantVersion() throws DotDataException, DotSecurityException {
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet1")
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet2")
+                .nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        APILocator.getContentletAPI().publish(contentlet1, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2, APILocator.systemUser(), false);
+
+        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
+        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
+
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet1",
+                titleField);
+
+        checkVersion(contentlet1, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet1",
+                titleField);
+
+        checkNull(contentlet1, false, variant);
+        checkNull(contentlet1, true, variant);
+
+
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet2",
+                titleField);
+        checkVersion(contentlet2, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet2",
+                titleField);
+
+        checkNull(contentlet2, true, variant);
+        checkNull(contentlet2, false, variant);
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When:
+     * - You create one {@link Variant}s.
+     * - Create one {@link Contentlet} with a version on this newly variant.
+     * - Archived the Variant.
+     * - Promote the {@link Variant}'s
+     *
+     * Should: thorw a Exception
+     */
+    @Test
+    public void promoteArchivedVariant() throws DotDataException, DotSecurityException {
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "DEFAULT contentlet1")
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "DEFAULT contentlet2")
+                .nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+
+        ContentletDataGen.createNewVersion(contentlet1,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet1_variant_2"
+                ));
+        ContentletDataGen.createNewVersion(contentlet2,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet2_variant_2"
+                ));
+
+        APILocator.getVariantAPI().archive(variant.name());
+
+        try {
+            APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+            fail("Should throw a Exception");
+        } catch (IllegalArgumentException e) {
+            //Expected
+        }
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When: You try to promote a Variant that does not exist
+     * Should: throw a Exception
+     */
+    @Test
+    public void promoteNonExistingVariant() throws DotDataException {
+
+        final Variant doesNotExistsVariant = new VariantDataGen().next();
+        try {
+            APILocator.getVariantAPI().promote(doesNotExistsVariant, APILocator.systemUser());
+            fail("Should throw a Exception");
+        } catch (DoesNotExistException e) {
+            //Expected
+        }
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When: You try to promote the DEFAULT Variant.
+     * Should: throw a Exception
+     */
+    @Test
+    public void promoteDefaultVariant() throws DotDataException {
+        try {
+            APILocator.getVariantAPI().promote(VariantAPI.DEFAULT_VARIANT, APILocator.systemUser());
+            fail("Should throw a Exception");
+        } catch (IllegalArgumentException e) {
+            //Expected
+        }
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When: You try to promote a Variant that is already promoted.
+     * Should: not fail
+     */
+    @Test
+    public void promoteAlreadyPromoteVariant() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}}
+     * When:
+     * - Create a {@link Variant}
+     * - Create 3 {@link com.dotmarketing.portlets.languagesmanager.model.Language}s: language_1, language_2 and language_3
+     * - Create two {@link Contentlet} and create for each of them versions in:
+     *   - DEFAULT Variant and language_1.
+     *   - DEFAULT Variant and language_2.
+     *   - Newly created Variant and language_1.
+     *   - Newly created Variant and language_3.
+     *
+     * - Promote the newly created {@link Variant}
+     *
+     * Should:
+     * - Copy the version of the language_1 to the language_3 to the DEFAULT Variant and keep the
+     * DEFAULT Variant and language_2 as it is.
+     */
+    @Test
+    public void promoteContentletWithSeveralLanguages() throws DotDataException, DotSecurityException {
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final Language language_1 = new LanguageDataGen().nextPersisted();
+        final Language language_2 = new LanguageDataGen().nextPersisted();
+        final Language language_3 = new LanguageDataGen().nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "contentlet1 Language_1")
+                .languageId(language_1.getId())
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "contentlet2 Language_1")
+                .languageId(language_1.getId())
+                .nextPersisted();
+
+        ContentletDataGen.createNewVersion(contentlet1, VariantAPI.DEFAULT_VARIANT, language_2,
+                map(titleField.variable(), "contentlet1 Language_2"));
+
+        ContentletDataGen.createNewVersion(contentlet1, variant, language_1,
+                map(titleField.variable(), "contentlet1_variant Language_1"));
+
+        ContentletDataGen.createNewVersion(contentlet1, variant, language_3,
+                map(titleField.variable(), "contentlet1_variant Language_3"));
+
+
+        ContentletDataGen.createNewVersion(contentlet2, VariantAPI.DEFAULT_VARIANT, language_2,
+                map(titleField.variable(), "contentlet2 Language_2"));
+
+        ContentletDataGen.createNewVersion(contentlet2, variant, language_1,
+                map(titleField.variable(), "contentlet2_variant Language_1"
+                ));
+
+        ContentletDataGen.createNewVersion(contentlet2, variant, language_3,
+                map(titleField.variable(), "contentlet2_variant Language_3"
+        ));
+
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, language_1, "contentlet1_variant Language_1",
+                titleField);
+
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, language_2, "contentlet1 Language_2",
+                titleField);
+
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, language_3, "contentlet1_variant Language_3",
+                titleField);
+
+
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, language_1, "contentlet2_variant Language_1",
+                titleField);
+
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, language_2, "contentlet2 Language_2",
+                titleField);
+
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, language_3, "contentlet2_variant Language_3",
+                titleField);
+
+        checkVersion(contentlet1, false, variant, language_1, "contentlet1_variant Language_1",
+                titleField);
+
+        checkNull(contentlet1, false, variant, language_2);
+
+        checkVersion(contentlet1, false, variant, language_3, "contentlet1_variant Language_3",
+                titleField);
+
+
+        checkVersion(contentlet2, false, variant, language_1, "contentlet2_variant Language_1",
+                titleField);
+
+        checkNull(contentlet2, false, variant, language_2);
+
+        checkVersion(contentlet2, false, variant, language_3, "contentlet2_variant Language_3",
+                titleField);
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When:
+     * - Create a {@link Variant}.
+     * - Create a {@link ContentType} with a {@link TextField} called title.
+     * - Create two {@link Contentlet} and create version for DEFAULT and the newly created Variant.
+     * - Publish them and later Create a new Working Version for each of them.
+     * - Create a Page and Create a version of the page for the newly created Variant.
+     * - Add the {@link Contentlet} 1 to the page into the DEFAULT Variant.
+     * - Add the {@link Contentlet} 2 to the page into the newly created Variant.
+     * - Promote the newly created {@link Variant}
+     * Should: Copy the two Contetlet and the page to the DEFAULT Variant, Also should override the {@link com.dotmarketing.beans.MultiTree}
+     * from the Variant to Default.
+     */
+    @Test
+    public void promotePage() throws DotDataException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet1")
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet2")
+                .nextPersisted();
+
+        final Contentlet contentlet1Variant = ContentletDataGen.createNewVersion(contentlet1,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet1_variant"
+                ));
+        final Contentlet contentlet2Variant = ContentletDataGen.createNewVersion(contentlet2,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet2_variant"
+                ));
+
+        APILocator.getContentletAPI().publish(contentlet1, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2, APILocator.systemUser(), false);
+
+        APILocator.getContentletAPI().publish(contentlet1Variant, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2Variant, APILocator.systemUser(), false);
+
+        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
+        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
+        ContentletDataGen.update(contentlet1Variant, map("title", "WORKING contentlet1_variant"));
+        ContentletDataGen.update(contentlet2Variant, map("title", "WORKING contentlet2_variant"));
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container.getIdentifier()).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+        ContentletDataGen.createNewVersion(htmlPageAsset, variant, map());
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet2)
+                .setVariant(variant)
+                .nextPersisted();
+
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, false, variant, "WORKING contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, true, variant, "LIVE contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet2_variant",
+                titleField);
+
+        checkVersion(contentlet2, false, variant, "WORKING contentlet2_variant",
+                titleField);
+
+        checkVersion(contentlet2, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet2_variant",
+                titleField);
+
+        checkVersion(contentlet2, true, variant, "LIVE contentlet2_variant",
+                titleField);
+
+        final List<MultiTree> multiTreesByDefault = APILocator.getMultiTreeAPI()
+                .getMultiTreesByVariant(htmlPageAsset.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name());
+
+        assertEquals(1, multiTreesByDefault.size());
+        multiTreesByDefault.stream().map(multiTree -> multiTree.getContentlet())
+                .forEach(contentletIdentifier ->
+                    assertTrue(contentletIdentifier.equals(contentlet2.getIdentifier()))
+                );
+
+        final List<MultiTree> multiTreesByVariant = APILocator.getMultiTreeAPI()
+                .getMultiTreesByVariant(htmlPageAsset.getIdentifier(), variant.name());
+
+        assertEquals(1, multiTreesByVariant.size());
+        multiTreesByVariant.stream().map(multiTree -> multiTree.getContentlet())
+                .forEach(contentletIdentifier ->
+                        assertTrue(contentletIdentifier.equals(contentlet2Variant.getIdentifier()))
+                );
+
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When:
+     * - Create a {@link Variant}.
+     * - Create a {@link ContentType} with a {@link TextField} called title.
+     * - Create two {@link Contentlet} and create version for DEFAULT and the newly created Variant.
+     * - Publish them and later Create a new Working Version for each of them.
+     * - Create a Page but NOT Create a version of the page for the newly created Variant.
+     * - Add the {@link Contentlet} 1 to the page into the DEFAULT Variant.
+     * - Add the {@link Contentlet} 2 to the page into the newly created Variant.
+     * - Promote the newly created {@link Variant}
+     * Should: Copy the two Contetlet Also should override the {@link com.dotmarketing.beans.MultiTree}
+     * from the Variant to Default.
+     */
+    @Test
+    public void pageWithNoVersion() throws DotDataException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet1")
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet2")
+                .nextPersisted();
+
+        final Contentlet contentlet1Variant = ContentletDataGen.createNewVersion(contentlet1,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet1_variant"
+                ));
+        final Contentlet contentlet2Variant = ContentletDataGen.createNewVersion(contentlet2,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet2_variant"
+                ));
+
+        APILocator.getContentletAPI().publish(contentlet1, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2, APILocator.systemUser(), false);
+
+        APILocator.getContentletAPI().publish(contentlet1Variant, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2Variant, APILocator.systemUser(), false);
+
+        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
+        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
+        ContentletDataGen.update(contentlet1Variant, map("title", "WORKING contentlet1_variant"));
+        ContentletDataGen.update(contentlet2Variant, map("title", "WORKING contentlet2_variant"));
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container.getIdentifier()).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet2)
+                .setVariant(variant)
+                .nextPersisted();
+
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, false, variant, "WORKING contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, true, variant, "LIVE contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet2_variant",
+                titleField);
+
+        checkVersion(contentlet2, false, variant, "WORKING contentlet2_variant",
+                titleField);
+
+        checkVersion(contentlet2, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet2_variant",
+                titleField);
+
+        checkVersion(contentlet2, true, variant, "LIVE contentlet2_variant",
+                titleField);
+
+        final List<MultiTree> multiTreesByDefault = APILocator.getMultiTreeAPI()
+                .getMultiTreesByVariant(htmlPageAsset.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name());
+
+        assertEquals(1, multiTreesByDefault.size());
+        multiTreesByDefault.stream().map(multiTree -> multiTree.getContentlet())
+                .forEach(contentletIdentifier ->
+                        assertTrue(contentletIdentifier.equals(contentlet2.getIdentifier()))
+                );
+
+        final List<MultiTree> multiTreesByVariant = APILocator.getMultiTreeAPI()
+                .getMultiTreesByVariant(htmlPageAsset.getIdentifier(), variant.name());
+
+        assertEquals(1, multiTreesByVariant.size());
+        multiTreesByVariant.stream().map(multiTree -> multiTree.getContentlet())
+                .forEach(contentletIdentifier ->
+                        assertTrue(contentletIdentifier.equals(contentlet2Variant.getIdentifier()))
+                );
+
+        final Optional<Table<String, String, Set<PersonalizedContentlet>>> pageMultiTrees = CacheLocator.getMultiTreeCache()
+                .getPageMultiTrees(htmlPageAsset.getIdentifier(), variant.name(), false);
+
+        assertTrue(pageMultiTrees.isEmpty());
+    }
 }
+

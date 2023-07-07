@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -916,7 +917,22 @@ public interface ContentletAPIPostHook {
 	 * @param returnValue - value returned by primary API Method
 	 */
 	public default void findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
-	
+
+	public default void findAllVersions(final Identifier identifier, final Variant variant,
+			final User user, boolean respectFrontendRoles){
+
+	}
+
+	/**
+	 * Retrieves all versions for a contentlet identifier
+	 * @param identifiers
+	 * @param user
+	 * @param respectFrontendRoles
+	 */
+	public default void findLiveOrWorkingVersions(Set<String> identifiers, User user, boolean respectFrontendRoles){
+
+	}
+
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user
 	 * @param identifier
@@ -1661,6 +1677,10 @@ public interface ContentletAPIPostHook {
 	default void move(final Contentlet contentlet, User user, Host host, Folder folder, boolean respectFrontendRoles) {}
 
 	default void getAllContentByVariants(User user, boolean respectFrontendRoles, String[] variantNames) {
+
+	}
+
+    default void saveContentOnVariant(Contentlet contentlet, String variantName, User user){
 
 	}
 }

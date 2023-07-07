@@ -35,14 +35,16 @@
                     }
                 ],
                 "styles": [
-                    "libs/dot-primeng-theme-styles/src/scss/styles.scss",
+                    "libs/dotcms-scss/angular/styles.scss",
+                    "node_modules/primeicons/primeicons.css",
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css"
+                    "node_modules/primeng/resources/primeng.min.css",
+                    "node_modules/gridstack/dist/gridstack.min.css"
                 ],
                 "scripts": [],
                 "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                    "includePaths": ["libs/dotcms-scss/angular"]
                 },
                 "vendorChunk": true,
                 "extractLicenses": false,
@@ -119,10 +121,10 @@
                 "tsConfig": "apps/dotcms-ui/tsconfig.spec.json",
                 "karmaConfig": "apps/dotcms-ui/karma.conf.js",
                 "polyfills": "apps/dotcms-ui/src/polyfills.ts",
-                "styles": ["libs/dot-primeng-theme-styles/src/scss/styles.scss"],
+                "styles": ["libs/dotcms-scss/angular/styles.scss"],
                 "scripts": [],
                 "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                    "includePaths": ["libs/dotcms-scss/angular"]
                 }
             },
             "configurations": {
@@ -150,7 +152,6 @@
             "executor": "@storybook/angular:build-storybook",
             "outputs": ["{options.outputPath}"],
             "options": {
-                "deleteOutputPath": false,
                 "outputDir": "dist-docs",
                 "configDir": "apps/dotcms-ui/.storybook",
                 "browserTarget": "dotcms-ui:build",

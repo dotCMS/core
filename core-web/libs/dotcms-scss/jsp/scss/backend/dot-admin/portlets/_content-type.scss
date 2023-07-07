@@ -1,0 +1,45 @@
+.content-type {
+    &__cell-actions {
+        @extend #cell-actions;
+    }
+
+    &__edit-field-form {
+        width: 550px;
+    }
+
+    &__fields-list {
+        width: 100%;
+    }
+
+    &__fields-list-cell {
+        flex: 1;
+        padding: $spacing-1;
+        white-space: nowrap;
+    }
+
+    &__fields-list-header,
+    &__fields-list-row {
+        border-bottom: 1px solid $color-palette-gray-400;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    &__fields-list-header {
+        background: $color-palette-gray-200;
+        font-weight: bold;
+        width: 100%;
+    }
+
+    &__fields-list-row {
+        transition: background-color $field-animation-speed;
+
+        &:hover {
+            background-color: $color-palette-primary-op-10;
+        }
+    }
+}
+.content-type__url-pattern-help {
+    margin-left: $spacing-1 * 2;
+    vertical-align: -1px;
+    cursor: pointer;
+}

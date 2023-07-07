@@ -1,12 +1,11 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
-import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
-
-import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.experiments.business.ConfigExperimentUtil;
+import com.dotcms.experiments.business.web.ExperimentWebAPI;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -25,6 +24,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
@@ -41,33 +41,16 @@ import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
-
-import java.io.IOException;
-
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Context;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Implementation class for the {@link HTMLPageAssetRenderedAPI}.
@@ -77,6 +60,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
+    public static final String HTML_HEAD = "<head>";
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
     private final LanguageAPI languageAPI;
@@ -84,6 +68,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     private final UserAPI userAPI;
     private final URLMapAPIImpl urlMapAPIImpl;
     private final LanguageWebAPI languageWebAPI;
+    private final ExperimentWebAPI experimentWebAPI;
 
     public HTMLPageAssetRenderedAPIImpl(){
         this(
@@ -115,6 +100,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         this.htmlPageAssetAPI = htmlPageAssetAPI;
         this.urlMapAPIImpl = urlMapAPIImpl;
         this.languageWebAPI = languageWebAPI;
+
+        this.experimentWebAPI = WebAPILocator.getExperimentWebAPI();
     }
 
     @Override
@@ -300,28 +287,20 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setLive(htmlPageUrl.hasLive())
                 .getPageHTML(context.getPageMode());
 
-        if (context.getPageMode() == PageMode.LIVE) {
-            return APILocator.getExperimentsAPI().isAnyExperimentRunning() ?
-                    injectExperimentJSCode(pageHTML, host, request) : injectNoExperimentCode(pageHTML);
+        if (context.getPageMode() == PageMode.LIVE && ConfigExperimentUtil.INSTANCE.isExperimentAutoJsInjection()) {
+            return experimentWebAPI.getCode(host, request)
+                    .map(jsCodeToBeInjected -> injectJSCode(pageHTML, jsCodeToBeInjected))
+                    .orElse(pageHTML);
         } else {
             return pageHTML;
         }
     }
 
-    private String injectExperimentJSCode(final String pageHTML, final Host host, final HttpServletRequest request) {
-        return injectJSCode(pageHTML, getExperimentJSCode(host, request));
-    }
-
-    private String injectNoExperimentCode(final String pageHTML) {
-        return injectJSCode(pageHTML, getNotExperimentJSCode());
-    }
-
-
     private String injectJSCode(final String pageHTML, final String JsCode) {
 
-        if (StringUtils.containsIgnoreCase(pageHTML, "<head>")) {
-            return StringUtils.replaceIgnoreCase(pageHTML, "<head>",
-                    "<head>" + JsCode);
+        if (StringUtils.containsIgnoreCase(pageHTML, HTML_HEAD)) {
+            final int indexOf = pageHTML.toLowerCase().indexOf(HTML_HEAD);
+            return pageHTML.substring(0, indexOf + HTML_HEAD.length()) + JsCode + pageHTML.substring(indexOf + 6);
         } else {
             return JsCode + "\n" + pageHTML;
         }
@@ -346,11 +325,11 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         Optional<HTMLPageUrl> htmlPageUrlOptional = findPageByContext(host, context);
 
-        if (!htmlPageUrlOptional.isPresent()) {
+        if (htmlPageUrlOptional.isEmpty()) {
             htmlPageUrlOptional = findByURLMap(context, host, request);
         }
 
-        if(!htmlPageUrlOptional.isPresent()){
+        if(htmlPageUrlOptional.isEmpty()){
             throw new HTMLPageAssetNotFoundException(context.getPageUri());
         }
 
@@ -489,8 +468,15 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final Language language = request != null ? this.getCurrentLanguage(request) : this.languageAPI.getDefaultLanguage();
 
-        return this.htmlPageAssetAPI.findByIdLanguageFallback(id, language.getId(), mode.showLive, userAPI.getSystemUser(),
-                mode.respectAnonPerms);
+        final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
+                .getRenderContext(language.getId(), id, mode, userAPI.getSystemUser());
+
+        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(id, renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey())
+                .orElseThrow();
+
+        final String inode = mode.showLive ? contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
+        return this.htmlPageAssetAPI.findPage(inode, userAPI.getSystemUser(), false);
     }
 
     private Language getCurrentLanguage(final HttpServletRequest request) {
@@ -610,42 +596,4 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return new PageLivePreviewVersionBean(renderLive, renderWorking);
     }
 
-    private String getNotExperimentJSCode() {
-        return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>";
-    }
-
-    private String getExperimentJSCode(final Host host, final HttpServletRequest request) {
-
-        try {
-            final String analyticsKey = getAnalyticsKey(host);
-            final String jsJitsuCode =  getFileContentFromResourceContext("experiment/html/experiment_head.html")
-                    .replaceAll("\\$\\{jitsu_key}", analyticsKey)
-                    .replaceAll("\\$\\{site}", getLocalServerName(request));
-
-            final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiments().stream()
-                    .map(experiment -> "'" + experiment.id().get() + "'")
-                    .collect(Collectors.joining(","));
-
-            final String shouldBeInExperimentCalled =  getFileContentFromResourceContext("experiment/js/init_script.js")
-                    .replaceAll("\\$\\{running_experiments_list}", runningExperimentsId);
-
-            return jsJitsuCode + "\n<SCRIPT>" + shouldBeInExperimentCalled + "</SCRIPT>";
-        } catch (IOException | DotDataException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Nullable
-    private static String getAnalyticsKey(Host host) {
-        try {
-            final AnalyticsApp analyticsApp = AnalyticsHelper.get().appFromHost(host);
-            return analyticsApp.getAnalyticsProperties().analyticsKey();
-        } catch (IllegalStateException e) {
-            return StringPool.BLANK;
-        }
-    }
-
-    private String getLocalServerName(HttpServletRequest request) {
-        return request.getLocalName() + ":" + request.getLocalPort();
-    }
 }

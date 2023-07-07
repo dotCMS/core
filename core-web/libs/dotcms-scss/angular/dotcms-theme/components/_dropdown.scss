@@ -1,0 +1,161 @@
+@use "variables" as *;
+
+.p-dropdown {
+    background: $white;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
+        background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
+    border-radius: $field-border-radius;
+    border: 1px solid $color-palette-gray-500;
+    padding: $spacing-2;
+    margin-left: 0;
+}
+
+.p-dropdown.p-dropdown-open {
+    background: $color-palette-primary-200;
+}
+
+.p-dropdown:not(.p-disabled):hover {
+    background: $color-palette-primary-200;
+    border-color: $input-border-color-hover;
+}
+
+.p-dropdown:not(.p-disabled).p-focus {
+    outline: 0 none;
+    outline-offset: 0;
+    box-shadow: none;
+    border: none;
+}
+
+.p-dropdown.p-dropdown-clearable .p-dropdown-label {
+    padding-right: $spacing-6;
+}
+
+.p-dropdown .p-dropdown-label {
+    background: transparent;
+    border: 0 none;
+    padding: 0;
+    padding-right: $spacing-2;
+}
+
+.p-dropdown .p-dropdown-label.p-placeholder {
+    color: $black;
+}
+
+.p-dropdown .p-dropdown-label:enabled:focus {
+    outline: 0 none;
+    box-shadow: none;
+}
+
+.p-dropdown .p-dropdown-trigger {
+    background: transparent;
+    color: $black;
+    width: 2.357rem;
+    border-top-right-radius: $border-radius-xs;
+    border-bottom-right-radius: $border-radius-xs;
+}
+
+.p-dropdown .p-dropdown-clear-icon {
+    color: $black;
+    right: 2.357rem;
+}
+
+.p-dropdown-panel {
+    background: $white;
+    color: $black;
+    border: 0 none;
+    border-radius: $border-radius-xs;
+    box-shadow: 0 5px 5px -3px $color-palette-black-op-20, 0 8px 10px 1px $color-palette-black-op-10,
+        0 3px 14px 2px $color-palette-black-op-10;
+}
+
+.p-dropdown-panel .p-dropdown-header {
+    padding: $spacing-2;
+    border-bottom: 1px solid $color-palette-black-op-10;
+    color: $black;
+    background: $white;
+    margin: 0;
+    border-top-right-radius: $border-radius-xs;
+    border-top-left-radius: $border-radius-xs;
+}
+
+.p-dropdown-panel .p-dropdown-header .p-dropdown-filter {
+    padding-right: $spacing-7;
+}
+
+.p-dropdown-panel .p-dropdown-header .p-dropdown-filter-icon {
+    right: $spacing-2;
+    color: $black;
+}
+
+.p-dropdown-panel .p-dropdown-items {
+    padding: 0;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+    margin: 0;
+    padding: $spacing-2 $spacing-2;
+    border: 0 none;
+    color: $black;
+    background: transparent;
+    transition: none;
+    border-radius: 0;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
+    background: $bg-highlight;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):not(.p-disabled):hover {
+    color: $text-color-hover;
+    background: $bg-hover;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-empty-message {
+    padding: $spacing-2 $spacing-2;
+    color: $black;
+    background: transparent;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item-group {
+    margin: 0;
+    padding: $spacing-2;
+    color: $black;
+    background: $white;
+    font-weight: 400;
+}
+
+.p-dropdown-panel.p-error,
+.p-dropdown-panel.p-invalid {
+    border-color: $error;
+}
+
+p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
+    border-color: $error;
+}
+
+.p-dropdown .p-inputtext,
+.p-dropdown .p-dropdown-trigger {
+    background: initial;
+}
+
+.p-dropdown-item .p-ink {
+    background-color: rgba(63, 81, 181, 0.16);
+}
+
+.p-dropdown-sm .p-dropdown-label.p-inputtext {
+    font-size: $font-size-sm;
+    padding: 0 0 0 $spacing-2;
+    max-width: 10rem;
+
+    &.p-dropdown-label-empty {
+        padding: 0;
+        width: 0;
+    }
+}
+
+.p-dropdown-trigger-icon {
+    color: $color-palette-primary;
+}
+.p-dropdown .p-dropdown-trigger {
+    width: auto;
+}

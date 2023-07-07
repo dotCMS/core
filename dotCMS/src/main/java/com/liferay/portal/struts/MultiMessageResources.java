@@ -137,63 +137,72 @@ public class MultiMessageResources extends PropertyMessageResources {
 				url = _servletContext.getResource("/WEB-INF/" + name);
 
 			if (url != null) {
-				InputStream is = url.openStream();
-
-				BufferedReader buffy = new BufferedReader( new InputStreamReader(is));
-				String line = null;
-
+				try (InputStream is = url.openStream();
+						BufferedReader buffy = new BufferedReader(new InputStreamReader(is));
+				) {
+					String line = null;
 
 					while ((line = buffy.readLine()) != null) {
-					if(UtilMethods.isSet(line)
-							&& line.indexOf("=") > -1
-							&& ! line.startsWith("#")){
-						String[] arr = line.split("=", 2);
-						if(arr.length > 1){
-							String key = arr[0].trim();
-							String val = arr[1].trim();
-							if(val.indexOf("\\u") >-1){
+						if (UtilMethods.isSet(line)
+								&& line.indexOf("=") > -1
+								&& !line.startsWith("#")) {
+							String[] arr = line.split("=", 2);
+							if (arr.length > 1) {
+								String key = arr[0].trim();
+								String val = arr[1].trim();
+								if (val.indexOf("\\u") > -1) {
 
-								if(val.indexOf("\\u") >-1){
+									if (val.indexOf("\\u") > -1) {
 
-									StringBuffer buffer = new StringBuffer( val.length() );
-									boolean precedingBackslash = false;
-									for (int i = 0; i < val.length(); i++) {
-							            char c = val.charAt(i);
-							            if (precedingBackslash) {
-							            	switch (c) {
-							            	case 'f': c = '\f'; break;
-							            	case 'n': c = '\n'; break;
-							            	case 'r': c = '\r'; break;
-							            	case 't': c = '\t'; break;
-							            	case 'u':
-							            		String hex = val.substring( i + 1, i + 5 );
-							            		c = (char) Integer.parseInt(hex, 16 );
-							            		i += 4;
-							            	}
-							            	precedingBackslash = false;
-							            } else {
-							            	precedingBackslash = (c == '\\');
-							            }
-							            if (!precedingBackslash) {
-							                buffer.append(c);
-							            }
-							        }
-									val= buffer.toString();}
+										StringBuffer buffer = new StringBuffer(val.length());
+										boolean precedingBackslash = false;
+										for (int i = 0; i < val.length(); i++) {
+											char c = val.charAt(i);
+											if (precedingBackslash) {
+												switch (c) {
+													case 'f':
+														c = '\f';
+														break;
+													case 'n':
+														c = '\n';
+														break;
+													case 'r':
+														c = '\r';
+														break;
+													case 't':
+														c = '\t';
+														break;
+													case 'u':
+														String hex = val.substring(i + 1, i + 5);
+														c = (char) Integer.parseInt(hex, 16);
+														i += 4;
+												}
+												precedingBackslash = false;
+											} else {
+												precedingBackslash = (c == '\\');
+											}
+											if (!precedingBackslash) {
+												buffer.append(c);
+											}
+										}
+										val = buffer.toString();
+									}
 
 
+								}
+								if (props.containsKey(key)) {
+									Logger.warn(this.getClass(),
+											String.format(
+													"Duplicate resource property definition (key=was ==> is now): %s=%s ==> %s",
+													key, props.get(key), val));
+								}
+								props.put(key, val);
 							}
-                            if(props.containsKey(key)){
-                                Logger.warn(this.getClass(),
-                                            String.format("Duplicate resource property definition (key=was ==> is now): %s=%s ==> %s",key, props.get(key), val));
-                            }
-							props.put(key, val);
+
 						}
 
 					}
-
-			    }
-				buffy.close();
-				is.close();
+				}
 			}
 		}
 		catch (Exception e) {

@@ -11,9 +11,7 @@ import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 import { Level } from '@tiptap/extension-heading';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
 
-import { RemoteCustomExtentions } from '@dotcms/dotcms-models';
-
-import { ActionButtonComponent } from './action-button.component';
+import { RemoteCustomExtensions } from '@dotcms/dotcms-models';
 
 import {
     SuggestionPopperModifiers,
@@ -95,7 +93,7 @@ function execCommand({
     editor: Editor;
     range: Range;
     props: SuggestionsCommandProps;
-    customBlocks: RemoteCustomExtentions;
+    customBlocks: RemoteCustomExtensions;
 }) {
     const { type, payload } = props;
     const whatToDo = {
@@ -195,17 +193,19 @@ function mapCustomActions(actions): Array<DotMenuItem> {
         icon: action.icon,
         label: action.menuLabel,
         commandKey: action.command,
-        id: action.name
+        id: `${action.command}-id`
     }));
 }
 
 function getCustomActions(customBlocks): Array<DotMenuItem> {
-    return customBlocks.extensions.map((extension) => mapCustomActions(extension.actions)).flat();
+    return customBlocks.extensions
+        .map((extension) => mapCustomActions(extension.actions || []))
+        .flat();
 }
 
 export const ActionsMenu = (
     viewContainerRef: ViewContainerRef,
-    customBlocks: RemoteCustomExtentions
+    customBlocks: RemoteCustomExtensions
 ) => {
     let myTippy;
     let suggestionsComponent: ComponentRef<SuggestionsComponent>;
@@ -242,11 +242,16 @@ export const ActionsMenu = (
             findParentNode(editor.view.state.selection.$from, [NodeTypes.TABLE_CELL])?.type.name ===
             NodeTypes.TABLE_CELL;
 
-        shouldShow = !isTableCell;
+        const isCodeBlock =
+            findParentNode(editor.view.state.selection.$from, [NodeTypes.CODE_BLOCK])?.type.name ===
+            NodeTypes.CODE_BLOCK;
+
+        shouldShow = !isTableCell && !isCodeBlock;
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
-        const { allowedBlocks, allowedContentTypes, lang } = editor.storage.dotConfig;
+        const { allowedBlocks, allowedContentTypes, lang, contentletIdentifier } =
+            editor.storage.dotConfig;
         const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
         const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
 
@@ -256,6 +261,8 @@ export const ActionsMenu = (
         suggestionsComponent.instance.items = items;
         suggestionsComponent.instance.currentLanguage = lang;
         suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
+        suggestionsComponent.instance.contentletIdentifier = contentletIdentifier;
+
         suggestionsComponent.instance.onSelectContentlet = (props) => {
             clearFilter({ type: ItemsType.CONTENT, editor, range, suggestionKey, ItemsType });
             onSelection({ editor, range, props });
@@ -272,7 +279,7 @@ export const ActionsMenu = (
 
     function getItems({ allowedBlocks = [], editor, range }): DotMenuItem[] {
         const items = allowedBlocks.length
-            ? suggestionOptions.filter((item) => this.allowedBlocks.includes(item.id))
+            ? suggestionOptions.filter((item) => allowedBlocks.includes(item.id))
             : suggestionOptions;
 
         const customItems = [...items, ...getCustomActions(customBlocks)];
@@ -420,13 +427,10 @@ export const ActionsMenu = (
         },
 
         addProseMirrorPlugins() {
-            const button = viewContainerRef.createComponent(ActionButtonComponent);
-
             return [
                 FloatingActionsPlugin({
                     command: execCommand,
                     editor: this.editor,
-                    element: button.location.nativeElement,
                     render: () => {
                         return {
                             onStart,

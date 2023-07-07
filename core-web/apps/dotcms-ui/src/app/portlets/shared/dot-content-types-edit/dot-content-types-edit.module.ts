@@ -18,7 +18,6 @@ import { TabViewModule } from 'primeng/tabview';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotMenuModule } from '@components/_common/dot-menu/dot-menu.module';
@@ -31,6 +30,7 @@ import { IFrameModule } from '@components/_common/iframe';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
@@ -41,7 +41,7 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
 import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import {
     ContentTypeFieldsAddRowModule,
@@ -154,7 +154,11 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotRelationshipTreeModule,
         DotPortletBoxModule,
         DotMdIconSelectorModule,
-        DotAddToMenuModule
+        DotAddToMenuModule,
+        DotFieldRequiredDirective,
+        DotCopyButtonModule,
+
+        OverlayPanelModule
     ],
     providers: [
         DotContentTypesInfoService,

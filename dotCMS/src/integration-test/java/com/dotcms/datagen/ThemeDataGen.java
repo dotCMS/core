@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.io.Files;
 import com.liferay.util.FileUtil;
+import io.vavr.Lazy;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -18,12 +19,22 @@ import java.net.URISyntaxException;
  */
 public class ThemeDataGen extends AbstractDataGen<Contentlet> {
 
+    private Lazy<File> DEFAULT_TEMPLATE_FILE = Lazy.of(() -> getDefaultTemplateFile());
+
     private final long currentTime = System.currentTimeMillis();
 
     private String name = "testTheme" + currentTime;
     private Folder applicationFolder;
     private Folder themesFolder;
     private Host site;
+
+    private File templateFile;
+
+
+    public ThemeDataGen templateFile(final File templateFile) {
+        this.templateFile = templateFile;
+        return this;
+    }
 
     public ThemeDataGen name(final String name) {
         this.name = name;
@@ -93,6 +104,7 @@ public class ThemeDataGen extends AbstractDataGen<Contentlet> {
                     .nextPersisted();
 
             return new FileAssetDataGen(themeFolder, getTemplateFile())
+                    .host(host)
                     .setProperty(FileAssetAPI.TITLE_FIELD, "template.vtl")
                     .setProperty(FileAssetAPI.FILE_NAME_FIELD, "template.vtl").next();
 
@@ -101,15 +113,12 @@ public class ThemeDataGen extends AbstractDataGen<Contentlet> {
         }
     }
 
-    private File getTemplateFile() throws URISyntaxException, IOException {
+    private File getTemplateFile() throws IOException {
 
-        final String testImagePath = "com/dotmarketing/portlets/contentlet/business/theme/template.vtl";
-
-        final File originalTestImage = new File(
-                ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
+        final File innerTemplateFile = UtilMethods.isSet(templateFile) ? templateFile : DEFAULT_TEMPLATE_FILE.get();
         final File testTemplateVtl = new File(Files.createTempDir(),
                 "template" + System.currentTimeMillis() + ".vtl");
-        FileUtil.copyFile(originalTestImage, testTemplateVtl);
+        FileUtil.copyFile(innerTemplateFile, testTemplateVtl);
 
         return testTemplateVtl;
     }
@@ -132,6 +141,17 @@ public class ThemeDataGen extends AbstractDataGen<Contentlet> {
     @Override
     public Contentlet nextPersisted() {
         return persist(next());
+    }
+
+    public static File getDefaultTemplateFile() {
+        final String testImagePath = "com/dotmarketing/portlets/contentlet/business/theme/template.vtl";
+
+        try {
+            return new File(
+                    ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

@@ -17,17 +17,29 @@ import java.util.Map;
  */
 public class VariantResults {
 
+    private final float weight;
+    ;
     private String variantName;
+    private String variantDescription;
     private long multiBySession;
     private UniqueBySessionResume uniqueBySession;
     private Map<String, ResultResumeItem> details;
+    private long totalPageViews;
 
-    public VariantResults(final String variantName, final long multiBySession,
-            final UniqueBySessionResume uniqueBySession, final Map<String, ResultResumeItem> details) {
+    public VariantResults(final String variantName, final String description, final long multiBySession,
+            final UniqueBySessionResume uniqueBySession, final Map<String, ResultResumeItem> details,
+            final long totalPageViews, float weight) {
         this.variantName = variantName;
         this.multiBySession = multiBySession;
         this.uniqueBySession = uniqueBySession;
         this.details = details;
+        this.variantDescription = description;
+        this.totalPageViews = totalPageViews;
+        this.weight = weight;
+    }
+
+    public String getVariantDescription() {
+        return variantDescription;
     }
 
     public String getVariantName() {
@@ -46,28 +58,34 @@ public class VariantResults {
         return details;
     }
 
+    public long getTotalPageViews() {
+        return totalPageViews;
+    }
+
+    public float weight() {
+        return weight;
+    }
+
+    public float getWeight() {
+        return weight;
+    }
+
     public static class UniqueBySessionResume {
 
         private final long count;
-        private final float totalPercentage;
-        private final float variantPercentage;
+        private final float conversionRate;
 
         public UniqueBySessionResume(final int count, final long totalVariantSession, long totalSessions) {
             this.count = count;
-            this.totalPercentage = totalSessions > 0 ? (float) (count * 100) / totalSessions : 0;
-            this.variantPercentage = totalVariantSession > 0 ? (float) (count * 100) / totalVariantSession : 0;
+            this.conversionRate = totalVariantSession > 0 ? (float) (count * 100) / totalVariantSession : 0;
         }
 
         public long getCount() {
             return count;
         }
 
-        public float getTotalPercentage() {
-            return totalPercentage;
-        }
-
-        public float getVariantPercentage() {
-            return variantPercentage;
+        public float getConversionRate() {
+            return conversionRate;
         }
     }
 

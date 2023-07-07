@@ -2,11 +2,9 @@
 
 :host {
     display: block;
-    margin-bottom: $spacing-3;
-    padding: 0 $spacing-3 $spacing-3;
+    margin-bottom: $spacing-1;
     position: relative;
     transition: box-shadow $basic-speed;
-    background: $white;
 
     &:last-child {
         margin-bottom: 0;
@@ -15,8 +13,9 @@
 
 .row-columns {
     display: flex;
-    background: $gray-bg;
+    background: $white;
     padding: $spacing-1;
+    border-radius: $border-radius-xl;
 }
 
 .row-columns__item {
@@ -30,18 +29,20 @@
     width: 0;
 
     &:after {
-        border: dashed 1px $gray;
+        background: $white;
+        border: dashed 1px $color-palette-gray-600;
         bottom: 0;
-        color: $gray;
+        color: $color-palette-gray-600;
         content: var(--empty-message);
         display: flex;
         flex-direction: column;
         flex-grow: 1;
-        font-size: $font-size-small;
+        font-size: $font-size-xs;
         justify-content: center;
         min-height: $content-type-field-height;
         pointer-events: none;
         text-align: center;
+        border-radius: $border-radius-md;
     }
 
     &::ng-deep {
@@ -61,7 +62,7 @@
     }
 
     &.empty {
-        background: $gray-bg;
+        background: $color-palette-gray-200;
         min-height: $content-type-field-height * 2;
 
         dot-content-type-field-dragabble-item {
@@ -78,14 +79,6 @@
         &:after {
             display: none;
         }
-
-        dot-content-type-field-dragabble-item:last-child {
-            margin-bottom: 0;
-        }
-    }
-
-    dot-content-type-field-dragabble-item {
-        margin-bottom: $spacing-1;
     }
 }
 
@@ -99,7 +92,6 @@
 .row-header__drag {
     cursor: move;
     display: block;
-    height: $spacing-3;
     width: 100%;
 }
 

@@ -19,13 +19,13 @@
 .container-selector__list-item {
     display: flex;
     align-items: center;
-    border: 1px solid $gray-lighter;
+    border: 1px solid $color-palette-gray-300;
     color: $black;
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
     overflow: hidden;
     padding: 0;
     margin: $spacing-1;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
 
     dot-icon-button {
         margin-right: $spacing-1;

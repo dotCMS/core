@@ -1,7 +1,8 @@
+@import "../../../../dotcms-scss/shared/colors";
 
 :host {
-    background-color: var(--color-white);
-    border-radius: var(--border-radius);;
+    background-color: $white;
+    border-radius: var(--border-radius);
     box-shadow: var(--md-shadow-1);
     display: block;
 }

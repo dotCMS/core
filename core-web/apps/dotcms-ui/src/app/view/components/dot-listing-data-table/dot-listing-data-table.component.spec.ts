@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import formatDistanceStrict from 'date-fns/formatDistanceStrict';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -19,20 +20,19 @@ import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-butto
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotStringFormatPipe } from '@pipes/dot-string-format/dot-string-format.pipe';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 import { ActionHeaderComponent } from './action-header/action-header.component';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 
+import { DotRelativeDatePipe } from '../../pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 import { DotActionMenuButtonComponent } from '../_common/dot-action-menu-button/dot-action-menu-button.component';
-import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
 
 @Component({
@@ -105,6 +105,14 @@ describe('DotListingDataTableComponent', () => {
     let enabledItems;
     let disabledItems;
     let coreWebService: CoreWebService;
+    const favoritePagesItem = {
+        field1: 'item7-value1',
+        field2: 'item7-value2',
+        field3: 'item7-value3',
+        nEntries: 'item1-value4',
+        variable: 'dotFavoritePage',
+        system: true
+    };
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -131,6 +139,7 @@ describe('DotListingDataTableComponent', () => {
                 MenuModule,
                 DotMenuModule,
                 DotIconModule,
+                DotRelativeDatePipe,
                 UiDotIconButtonModule,
                 HttpClientTestingModule,
                 DotPipesModule,
@@ -312,7 +321,6 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('renderer with format date column', fakeAsync(() => {
-        const dotStringFormatPipe = new DotStringFormatPipe();
         const itemsWithFormat = items.map((item) => {
             item.field3 = 1496178801000;
 
@@ -345,12 +353,13 @@ describe('DotListingDataTableComponent', () => {
                 cells.forEach((_cell, cellIndex) => {
                     if (cellIndex < 4) {
                         const textContent = cells[cellIndex].textContent;
-                        const itemContent = comp.columns[cellIndex].textContent
-                            ? dotStringFormatPipe.transform(
-                                  hostComponent.columns[cellIndex].textContent,
-                                  [item[comp.columns[cellIndex].fieldName]]
-                              )
-                            : item[comp.columns[cellIndex].fieldName];
+                        const itemContent =
+                            comp.columns[cellIndex].format === 'date'
+                                ? formatDistanceStrict(
+                                      item[comp.columns[cellIndex].fieldName],
+                                      new Date()
+                                  )
+                                : item[comp.columns[cellIndex].fieldName];
                         expect(textContent).toContain(itemContent);
                     }
                 });
@@ -434,7 +443,7 @@ describe('DotListingDataTableComponent', () => {
         expect(comp.loading).toEqual(false);
     }));
 
-    it('should load first page of resutls and set pagination to 1', fakeAsync(() => {
+    it('should load first page of results and set pagination to 1', fakeAsync(() => {
         setRequestSpy(items);
         hostFixture.detectChanges();
         tick(1);
@@ -560,6 +569,16 @@ describe('DotListingDataTableComponent', () => {
         hostFixture.detectChanges();
         const noResults = de.query(By.css('[data-testid="listing-datatable__empty"]'));
         expect(noResults.nativeElement.innerText).toEqual('No Results Found');
+    }));
+
+    it('should hide entries for system content types', fakeAsync(() => {
+        setRequestSpy([...items, favoritePagesItem]);
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        const row = de.query(By.css('[data-testId="row-dotFavoritePage"]'));
+        const entriesColumn = row.query(By.css('[data-testId="nEntries"]'));
+        expect(entriesColumn.nativeElement.textContent).toBeFalsy();
     }));
 
     function setRequestSpy(response: any): void {
