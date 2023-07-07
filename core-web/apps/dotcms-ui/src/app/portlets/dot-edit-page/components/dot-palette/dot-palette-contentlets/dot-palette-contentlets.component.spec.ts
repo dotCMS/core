@@ -146,7 +146,7 @@ describe('DotPaletteContentletsComponent', () => {
         );
         expect(de.componentInstance.items.length).toBe(1);
         expect(contentletImg.nativeElement.src).toContain(
-            `/dA/${contentletProductDataMock.inode}/titleImage/500w/20q`
+            `/dA/${contentletProductDataMock.inode}/titleImage/500w/50q`
         );
     });
 

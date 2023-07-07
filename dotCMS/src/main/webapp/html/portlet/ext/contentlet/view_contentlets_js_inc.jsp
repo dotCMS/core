@@ -2076,6 +2076,27 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                     holderDiv.appendChild(cardThumbnail);
                     cell.appendChild(holderDiv);
+                    live = cellData["live"] == "true"?true:false;
+                    working = cellData["working"] == "true"?true:false;
+                    deleted = cellData["deleted"] == "true"?true:false;
+                    locked = cellData["locked"] == "true"?true:false;
+                    liveSt = live?"1":"0";
+                    workingSt = working?"1":"0";
+                    permissions = cellData["permissions"];
+                    read = userHasReadPermission (cellData, userId)?"1":"0";
+                    write = userHasWritePermission (cellData, userId)?"1":"0";
+                    publish = userHasPublishPermission (cellData, userId)?"1":"0";
+                    contentStructureType = cellData["contentStructureType"];
+                    structure_id = cellData["structureInode"];
+                    hasLiveVersion = cellData["hasLiveVersion"];
+
+                    cell.onclick=function(){
+                        editContentlet(cellData.inode,'<%= user.getUserId() %>','<%= referer %>', liveSt , workingSt , write );
+                    };
+
+
+
+
 
 
 
@@ -2139,20 +2160,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                     var cell = row.insertCell (row.cells.length);
                     cell.innerHTML = '<span class=\"dijitIcon actionIcon content-search__action-item\" id=\"touchAction' + i + '\"></span>';
-
-                    live = cellData["live"] == "true"?true:false;
-                    working = cellData["working"] == "true"?true:false;
-                    deleted = cellData["deleted"] == "true"?true:false;
-                    locked = cellData["locked"] == "true"?true:false;
-                    liveSt = live?"1":"0";
-                    workingSt = working?"1":"0";
-                    permissions = cellData["permissions"];
-                    read = userHasReadPermission (cellData, userId)?"1":"0";
-                    write = userHasWritePermission (cellData, userId)?"1":"0";
-                    publish = userHasPublishPermission (cellData, userId)?"1":"0";
-                    contentStructureType = cellData["contentStructureType"];
-                    structure_id = cellData["structureInode"];
-                    hasLiveVersion = cellData["hasLiveVersion"];
 
                     contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(cellData.identifier,cellData.inode,cellData.languageId);
 
