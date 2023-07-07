@@ -27,7 +27,7 @@ export const orderVariants = (arrayToOrder: Array<string>): Array<string> => {
 };
 
 export const getParsedChartData = (data: Record<string, DotResultDate>): number[] => {
-    return Object.values(data).map((day) => day.multiBySession);
+    return Object.values(data).map((day) => day.uniqueBySession);
 };
 
 export const getPropertyColors = (index: number): LineChartColorsProperties => {
@@ -104,5 +104,3 @@ export const getProbabilityToBeBest = (probability: number, noDataLabel: string)
 export const isPromotedVariant = (experiment: DotExperiment, variantName: string): boolean => {
     return !!experiment.trafficProportion.variants.find(({ id }) => id === variantName)?.promoted;
 };
-
-/*End summary functions */
