@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { ExperimentsConfigProperties } from '@dotcms/dotcms-models';
 import { DotExperimentsConfigResolver } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotEnterpriseLicenseResolver } from '@portlets/shared/resolvers/dot-enterprise-license-resolver.service';
 
 import { DotExperimentsShellComponent } from './dot-experiments-shell/dot-experiments-shell.component';
 
@@ -9,6 +10,9 @@ export const DotExperimentsPortletRoutes: Routes = [
     {
         path: ':pageId',
         component: DotExperimentsShellComponent,
+        resolve: {
+            isEnterprise: DotEnterpriseLicenseResolver
+        },
 
         children: [
             {

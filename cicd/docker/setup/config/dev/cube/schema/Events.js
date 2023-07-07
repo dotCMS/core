@@ -197,6 +197,11 @@ cube(`Events`, {
       sql: `language`,
       type: `string`
     },
+
+    original_url: {
+      sql: `original_url`,
+      type: `string`
+    },
   },
 
   dataSource: `default`

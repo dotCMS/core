@@ -21,7 +21,7 @@ import {
     DotCMSContentlet,
     DotDevice,
     DotExperiment,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageRenderOptions,
     DotPageRenderParameters,
     DotPageRenderState,
@@ -389,7 +389,7 @@ export class DotPageStateService {
     }
 
     private getRunningExperiment(pageId: string): Observable<DotExperiment> {
-        return this.dotExperimentsService.getByStatus(pageId, DotExperimentStatusList.RUNNING).pipe(
+        return this.dotExperimentsService.getByStatus(pageId, DotExperimentStatus.RUNNING).pipe(
             take(1),
             catchError((error: HttpErrorResponse) => {
                 error.error.message = this.dotMessageService.get('experiments.error.fetching.data');

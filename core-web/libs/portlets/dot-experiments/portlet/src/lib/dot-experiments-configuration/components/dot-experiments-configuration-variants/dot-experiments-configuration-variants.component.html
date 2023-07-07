@@ -124,6 +124,7 @@
                     [isLoading]="vm.status && vm.status.status === statusList.SAVING"
                     [maxCharacterLength]="maxInputTitleLength"
                     [required]="true"
+                    [showErrorMsg]="false"
                     [text]="variant.name"
                     (textChanged)="editVariantName($event, variant, vm.experimentId)"
                 />

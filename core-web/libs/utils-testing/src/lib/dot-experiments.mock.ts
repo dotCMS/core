@@ -8,7 +8,7 @@ import {
     DEFAULT_VARIANT_NAME,
     DotExperiment,
     DotExperimentResults,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     ExperimentLineChartDatasetDefaultProperties,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
@@ -52,7 +52,7 @@ const ExperimentMocks: Array<DotExperiment> = [
         id: '111',
         identifier: '1111-1111-1111-1111',
         pageId: '456',
-        status: DotExperimentStatusList.DRAFT,
+        status: DotExperimentStatus.DRAFT,
         archived: false,
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
@@ -71,7 +71,7 @@ const ExperimentMocks: Array<DotExperiment> = [
         id: '222',
         identifier: '2222-2222-2222-2222',
         pageId: '456',
-        status: DotExperimentStatusList.DRAFT,
+        status: DotExperimentStatus.DRAFT,
         archived: false,
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
@@ -93,7 +93,7 @@ const ExperimentMocks: Array<DotExperiment> = [
         id: '333',
         identifier: '3333-3333-3333-3333',
         pageId: '456',
-        status: DotExperimentStatusList.DRAFT,
+        status: DotExperimentStatus.DRAFT,
         archived: false,
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
@@ -115,7 +115,7 @@ const ExperimentMocks: Array<DotExperiment> = [
         id: '444',
         identifier: '3333-3333-3333-3333',
         pageId: '456',
-        status: DotExperimentStatusList.DRAFT,
+        status: DotExperimentStatus.DRAFT,
         archived: false,
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
@@ -137,7 +137,7 @@ const ExperimentMocks: Array<DotExperiment> = [
         id: '555',
         identifier: '555-5555-5555-5555',
         pageId: '456',
-        status: DotExperimentStatusList.RUNNING,
+        status: DotExperimentStatus.RUNNING,
         archived: false,
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
@@ -412,11 +412,11 @@ export const DotExperimentsListStoreMock = {
         },
         experiments: [],
         filterStatus: [
-            DotExperimentStatusList.DRAFT,
-            DotExperimentStatusList.ENDED,
-            DotExperimentStatusList.RUNNING,
-            DotExperimentStatusList.SCHEDULED,
-            DotExperimentStatusList.ARCHIVED
+            DotExperimentStatus.DRAFT,
+            DotExperimentStatus.ENDED,
+            DotExperimentStatus.RUNNING,
+            DotExperimentStatus.SCHEDULED,
+            DotExperimentStatus.ARCHIVED
         ],
         status: ComponentStatus.INIT,
         sidebar: {
@@ -502,6 +502,14 @@ export class ActivatedRouteMock {
     }
 }
 
+export const PARENT_RESOLVERS_ACTIVE_ROUTE_DATA = {
+    snapshot: {
+        data: {
+            isEnterprise: true
+        }
+    }
+};
+
 export const ACTIVE_ROUTE_MOCK_CONFIG = {
     snapshot: {
         data: {
@@ -510,7 +518,8 @@ export const ACTIVE_ROUTE_MOCK_CONFIG = {
                 EXPERIMENTS_MAX_DURATION: PROP_NOT_FOUND
             }
         }
-    }
+    },
+    parent: { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA }
 };
 
 export class ActivatedRouteListStoreMock {
@@ -535,5 +544,9 @@ export class ActivatedRouteListStoreMock {
                 }
             }
         };
+    }
+
+    get parent() {
+        return { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA };
     }
 }

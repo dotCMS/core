@@ -4,7 +4,7 @@ import { Skeleton } from 'primeng/skeleton';
 import { Tag, TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperimentStatusList } from '@dotcms/dotcms-models';
+import { DotExperimentStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsUiHeaderComponent } from './dot-experiments-ui-header.component';
@@ -53,9 +53,9 @@ describe('ExperimentsHeaderComponent', () => {
     });
 
     it('should rendered the status Input', () => {
-        const expectedStatus: DotExperimentStatusList = DotExperimentStatusList.RUNNING;
+        const expectedStatus: DotExperimentStatus = DotExperimentStatus.RUNNING;
         spectator.setInput({
-            status: DotExperimentStatusList.RUNNING
+            status: DotExperimentStatus.RUNNING
         });
 
         expect(spectator.query(Tag)).toExist();
