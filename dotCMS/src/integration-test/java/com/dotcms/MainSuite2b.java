@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.bayesian.BayesianAPIImplIT;
+import com.dotcms.business.SystemTableFactoryTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
@@ -307,7 +308,8 @@ import org.junit.runners.Suite.SuiteClasses;
         CMSUrlUtilTest.class,
         AssetPathResolverImplIntegrationTest.class,
         WebAssetHelperIntegrationTest.class,
-        Task230522AddHashIndicesToWorkflowTablesTest.class
+        Task230522AddHashIndicesToWorkflowTablesTest.class,
+        SystemTableFactoryTest.class
 })
 
 public class MainSuite2b {
