@@ -12,7 +12,6 @@
         .pi {
             color: $white;
             font-size: $font-size-lg;
-            line-height: 140%;
         }
     }
 
@@ -24,13 +23,11 @@
         border: none;
         color: $white;
         font-size: $font-size-md;
-        line-height: 140%;
         text-transform: capitalize;
 
         .p-button-label {
             color: inherit;
             font-size: inherit;
-            line-height: 140%;
             text-transform: capitalize;
         }
 
@@ -38,7 +35,6 @@
         .pi {
             color: inherit;
             font-size: $font-size-lg;
-            line-height: 140%;
         }
     }
 
@@ -51,7 +47,6 @@
             .pi {
                 color: $white;
                 font-size: $font-size-xl;
-                line-height: 140%;
             }
         }
 
@@ -63,7 +58,6 @@
             .p-button-label {
                 color: $white;
                 font-size: inherit;
-                line-height: 140%;
                 text-transform: capitalize;
             }
 
@@ -71,7 +65,6 @@
             .pi {
                 color: $white;
                 font-size: $font-size-xl;
-                line-height: 140%;
             }
         }
     }
