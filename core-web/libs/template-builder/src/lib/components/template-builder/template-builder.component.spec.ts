@@ -90,6 +90,12 @@ describe('TemplateBuilderComponent', () => {
         store = spectator.inject(DotTemplateBuilderStore);
         dialog = spectator.inject(DialogService);
         openDialogMock = jest.spyOn(dialog, 'open');
+        spectator.detectChanges();
+    });
+    it('should not trigger a template change when store is initialized', () => {
+        // Store init is called on init
+        const changeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+        expect(changeMock).not.toHaveBeenCalled();
     });
 
     it('should have a Add Row Button', () => {

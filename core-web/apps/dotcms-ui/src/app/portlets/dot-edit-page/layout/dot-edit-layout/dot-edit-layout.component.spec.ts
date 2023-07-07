@@ -266,6 +266,34 @@ describe('DotEditLayoutComponent', () => {
                 expect(component.pageState).toEqual(new DotPageRender(mockDotRenderedPage()));
             }));
 
+            it('should save the layout instantly when closeEditLayout is true', () => {
+                const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
+                spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
+
+                layoutDesignerDe.triggerEventHandler('updateTemplate', {
+                    themeId: '123',
+                    layout: fakeLayout,
+                    title: null
+                });
+
+                dotEditLayoutService.changeCloseEditLayoutState(true);
+
+                expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('Saving');
+                expect(dotGlobalMessageService.success).toHaveBeenCalledWith('Saved');
+                expect(dotGlobalMessageService.error).not.toHaveBeenCalled();
+
+                expect(dotPageLayoutService.save).toHaveBeenCalledWith('123', {
+                    themeId: '123',
+                    layout: fakeLayout,
+                    title: null
+                });
+                expect(dotTemplateContainersCacheService.set).toHaveBeenCalledWith({
+                    '/default/': processedContainers[0].container,
+                    '/banner/': processedContainers[1].container
+                });
+                expect(component.pageState).toEqual(new DotPageRender(mockDotRenderedPage()));
+            });
+
             it('should not save the layout when observable is destroy', fakeAsync(() => {
                 const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
                 spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));

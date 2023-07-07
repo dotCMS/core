@@ -39,7 +39,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     constructor() {
         super({
             items: [],
-            layoutProperties: { header: true, footer: true, sidebar: {} },
+            layoutProperties: undefined,
             resizingRowID: '',
             containerMap: {}
         });
