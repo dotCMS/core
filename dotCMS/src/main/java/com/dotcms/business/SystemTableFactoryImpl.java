@@ -2,6 +2,7 @@ package com.dotcms.business;
 
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDuplicateDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -31,7 +32,7 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
         if(UtilMethods.isSet(key)) {
 
             Object value = this.systemCache.get(key);
-            if(value == null) {
+            if(Objects.nonNull(value)) {
 
                 final List<Map<String, Object>> result = new DotConnect()
                         .setSQL(" SELECT * FROM system_table WHERE key = ? ")
@@ -40,12 +41,12 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
 
                 value = result.isEmpty() ? null : result.get(0).get("value");
 
-                if(value != null) {
+                if(Objects.nonNull(value)) {
                     this.systemCache.put(key, value);
                 }
-
-                return Optional.ofNullable(value.toString());
             }
+
+            return Optional.ofNullable(toString(value));
         }
 
         return Optional.empty();
@@ -65,7 +66,7 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
             final Object key = recordMap.get("key");
             final Object value = recordMap.get("value");
             if (Objects.nonNull(key) && Objects.nonNull(value)) {
-                records.put(key.toString(), value.toString());
+                records.put(key.toString(), toString(value.toString()));
                 this.systemCache.put(key.toString(), value);
             }
         }
@@ -84,7 +85,7 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
             });
 
             new DotConnect()
-                    .setSQL("INSERT INTO system_table (key, value) VALUES (?,?")
+                    .setSQL("INSERT INTO system_table (key, value) VALUES (?,?)")
                     .addParam(key)
                     .addParam(value)
                     .loadResult();
@@ -109,7 +110,7 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
                             .addParam(value)
                             .addParam(key)
                             .loadResult()).getOrElseThrow(e-> new DotRuntimeException(e)); },
-                    ()-> {throw new DotDuplicateDataException("The key " + key + " does not exist");});
+                    ()-> {throw new DoesNotExistException("The key " + key + " does not exist");});
 
             this.systemCache.remove(key);
         } else {
@@ -143,5 +144,10 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
     protected void clearCache() {
 
         this.systemCache.clearCache();
+    }
+
+    private String toString(final Object value) {
+
+        return Objects.nonNull(value)  ? value.toString() : null;
     }
 } // E:O:F:SystemTableFactoryImpl

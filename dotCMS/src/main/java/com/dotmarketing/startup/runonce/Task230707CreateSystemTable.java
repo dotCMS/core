@@ -25,8 +25,8 @@ public class Task230707CreateSystemTable implements StartupTask {
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
         Try.of(()->new DotConnect().executeStatement("CREATE TABLE system_table ("
-                + "key varchar(255) primary key,"
-                + "value varchar(255) not null"
+                + "key varchar(511) primary key,"
+                + "value text not null"
                 + ")")).getOrElseThrow(e-> new DotDataException(e.getMessage(), e));
     }
 
