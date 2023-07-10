@@ -7,7 +7,7 @@ import java.util.Set;
  * its contents. The traversal is performed using a ForkJoinPool, which allows for parallel
  * execution of the traversal tasks.
  */
-public interface FolderTraversalService {
+public interface RemoteFolderTraversalService {
 
     /**
      * Traverses the file system directory at the specified path and builds a hierarchical tree

@@ -299,8 +299,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
             // 1.1) Insert dummy temp row on IDENTIFIER table
 
-            dc.executeStatement("insert into identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) values ('TEMP_IDENTIFIER', '/', 'DUMMY_ASSET_NAME', '"
-                    + hostForDummyFolder + "', " + "'folder', NULL, NULL) ");
+            dc.executeStatement("insert into identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date, create_date, owner) values ('TEMP_IDENTIFIER', '/', 'DUMMY_ASSET_NAME', '"
+                    + hostForDummyFolder + "', " + "'folder', NULL, NULL, NULL, NULL) ");
 
             // 1.2) Insert dummy temp row on FOLDER table
 
@@ -365,6 +365,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             String assetType = (String) oldIdentifierRow.get("asset_type");
             Date syspublishDate = (Date) oldIdentifierRow.get("syspublish_date");
             Date sysexpireDate = (Date) oldIdentifierRow.get("sysexpire_date");
+            final Date createDate = (Date) oldIdentifierRow.get("create_date");
+            final String oldOwner = (String) oldIdentifierRow.get("owner");
 
             // now we can safely delete the old folder row. It will also
             // delete the old Identifier
@@ -379,7 +381,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             dc.executeStatement("delete from inode where inode = '" + oldFolderInode + "'");
 
             // 4.1) insert real new IDENTIFIER row
-            dc.setSQL("insert into identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) values (?, ?, ?, ?, ?, ?, ?) ");
+            dc.setSQL("insert into identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date, create_date, owner) values (?, ?, ?, ?, ?, ?, ?, ?, ?) ");
             dc.addParam(newFolderIdentifier);
             dc.addParam(parentPath);
             dc.addParam(assetName);
@@ -387,6 +389,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             dc.addParam(assetType);
             dc.addParam(syspublishDate);
             dc.addParam(sysexpireDate);
+            dc.addParam(createDate);
+            dc.addParam(oldOwner);
             dc.loadResult();
 
             // 4.2) insert real new FOLDER row

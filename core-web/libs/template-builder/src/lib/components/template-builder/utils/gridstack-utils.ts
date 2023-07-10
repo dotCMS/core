@@ -2,7 +2,12 @@ import { v4 as uuid } from 'uuid';
 
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 
-import { DotGridStackNode, DotGridStackWidget, TemplateBuilderBoxSize } from '../models/models';
+import {
+    DotGridStackNode,
+    DotGridStackWidget,
+    SYSTEM_CONTAINER_IDENTIFIER,
+    TemplateBuilderBoxSize
+} from '../models/models';
 
 /**
  * @description This function parses the oldNode and newNode to a DotGridStackWidget array
@@ -63,7 +68,11 @@ export function createDotGridStackWidgetFromNode(node: DotGridStackNode): DotGri
         parentId: node.grid?.parentGridItem?.id as string,
         w: node.w,
         styleClass: node.styleClass,
-        containers: node.containers ?? [],
+        containers: node.containers ?? [
+            {
+                identifier: SYSTEM_CONTAINER_IDENTIFIER
+            }
+        ],
         y: node.y
     } as DotGridStackWidget;
 }
