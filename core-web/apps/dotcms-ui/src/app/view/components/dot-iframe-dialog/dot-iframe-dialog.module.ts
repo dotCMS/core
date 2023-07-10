@@ -7,7 +7,7 @@ import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 import { IFrameModule } from '../_common/iframe';
 
 @NgModule({
-    imports: [CommonModule, DotDialogModule, IFrameModule],
+    imports: [DotDialogModule, IFrameModule],
     declarations: [DotIframeDialogComponent],
     exports: [DotIframeDialogComponent]
 })
