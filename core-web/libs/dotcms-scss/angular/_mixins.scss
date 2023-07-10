@@ -76,8 +76,8 @@
 
 @mixin dot-field-helper-on-input {
     position: absolute;
-    top: $spacing-4;
-    right: 0;
+    top: 2rem;
+    right: 0.25rem;
     z-index: 1;
 }
 
