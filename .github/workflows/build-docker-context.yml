@@ -1,4 +1,4 @@
-name: Build Docker image
+name: Build by Context
 on:
   workflow_dispatch:
     inputs:
@@ -49,12 +49,9 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: Build and push
-        uses: docker/build-push-action@v3.2.0
+        uses: docker/build-push-action@4
         with:
           context: ./docker/${{ github.event.inputs.context }}
           push: ${{ github.event.inputs.push }}
           tags: ${{ github.event.inputs.tags }}
           platforms: ${{ env.PLATFORMS }}
-          build-args: |
-            BUILD_FROM=COMMIT
-            BUILD_ID=${{ env.BUILD_ID }}
