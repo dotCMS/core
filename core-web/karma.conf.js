@@ -12,12 +12,13 @@ module.exports = () => {
             require('karma-jasmine'),
             require('karma-chrome-launcher'),
             require('karma-coverage'),
+            require('karma-spec-reporter'),
             require('karma-junit-reporter'),
-            require('karma-summary-reporter'),
             require('@angular-devkit/build-angular/plugins/karma')
         ],
         client: {
-            clearContext: false // leave Jasmine Spec Runner output visible in browser
+            clearContext: false, // leave Jasmine Spec Runner output visible in browser
+            captureConsole: false
         },
         coverageReporter: {
             dir: '../../target/core-web-reports',
@@ -25,7 +26,7 @@ module.exports = () => {
             file: 'TEST-dotcms-ui.lcov',
             reporters: [{ type: 'lcovonly' }]
         },
-        reporters: ['junit', 'summary'],
+        reporters: ['junit', 'spec'],
         port: 9876,
         colors: true,
         logLevel: constants.LOG_INFO,
@@ -54,6 +55,10 @@ module.exports = () => {
             browserList: 'always',
             // Use custom symbols to indicate success and failure
             symbols: { success: 'o', failure: 'x' }
+        },
+        specReporter: {
+            suppressPassed: true,
+            suppressSkipped: true
         },
         singleRun: true,
         browserDisconnectTimeout: 20000
