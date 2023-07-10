@@ -143,6 +143,7 @@ import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableB
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
 import com.dotmarketing.startup.runonce.Task230522AddHashIndicesToWorkflowTablesTest;
+import com.dotmarketing.startup.runonce.Task230707CreateSystemTableTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
@@ -309,7 +310,8 @@ import org.junit.runners.Suite.SuiteClasses;
         AssetPathResolverImplIntegrationTest.class,
         WebAssetHelperIntegrationTest.class,
         Task230522AddHashIndicesToWorkflowTablesTest.class,
-        SystemTableFactoryTest.class
+        SystemTableFactoryTest.class,
+        Task230707CreateSystemTableTest.class,
 })
 
 public class MainSuite2b {
