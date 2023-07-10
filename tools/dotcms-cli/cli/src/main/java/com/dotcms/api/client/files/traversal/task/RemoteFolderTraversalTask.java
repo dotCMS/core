@@ -1,5 +1,8 @@
-package com.dotcms.api.traversal;
+package com.dotcms.api.client.files.traversal.task;
 
+import com.dotcms.api.client.files.traversal.data.Retriever;
+import com.dotcms.api.traversal.Filter;
+import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.model.asset.FolderView;
 
 import java.util.LinkedList;
@@ -31,7 +34,7 @@ public class RemoteFolderTraversalTask extends RecursiveTask<TreeNode> {
      * @param root      Whether this task is for the root folder.
      * @param depth     The maximum depth to traverse the directory tree.
      */
-    RemoteFolderTraversalTask(
+    public RemoteFolderTraversalTask(
             Retriever retriever,
             Filter filter,
             final String siteName,
@@ -221,7 +224,7 @@ public class RemoteFolderTraversalTask extends RecursiveTask<TreeNode> {
                                 final Boolean explicitGlobInclude,
                                 final Boolean explicitGlobExclude) {
 
-        var foundFolder = this.retriever.retrieveFolderContents(
+        var foundFolder = this.retriever.retrieveFolderInformation(
                 siteName,
                 folderPath,
                 level,

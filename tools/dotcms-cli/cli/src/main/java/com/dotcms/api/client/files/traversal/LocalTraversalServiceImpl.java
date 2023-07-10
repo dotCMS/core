@@ -1,7 +1,13 @@
 package com.dotcms.api.client.files.traversal;
 
+import com.dotcms.api.client.files.traversal.data.Downloader;
+import com.dotcms.api.client.files.traversal.data.Retriever;
+import com.dotcms.api.client.files.traversal.task.FileSystemTreeBuilderTask;
+import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTask;
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.common.AssetsUtils;
 import io.quarkus.arc.DefaultBean;
 import org.jboss.logging.Logger;
 
@@ -10,6 +16,7 @@ import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.concurrent.ForkJoinPool;
 
 import static com.dotcms.common.AssetsUtils.ParseLocalPath;
@@ -21,13 +28,16 @@ import static com.dotcms.common.AssetsUtils.ParseLocalPath;
  */
 @DefaultBean
 @Dependent
-public class LocalFolderTraversalServiceImpl implements LocalFolderTraversalService {
+public class LocalTraversalServiceImpl implements LocalTraversalService {
 
     @Inject
     Logger logger;
 
     @Inject
     protected Retriever retriever;
+
+    @Inject
+    protected Downloader downloader;
 
     /**
      * Traverses the file system directory at the specified path and builds a hierarchical tree
@@ -41,7 +51,7 @@ public class LocalFolderTraversalServiceImpl implements LocalFolderTraversalServ
      */
     @ActivateRequestContext
     @Override
-    public TreeNode traverse(OutputOptionMixin output, final String workspacePath, final String source) {
+    public TreeNode traverseLocalFolder(OutputOptionMixin output, final String workspacePath, final String source) {
 
         logger.debug(String.format("Traversing file system folder: %s - in workspace: %s", source, workspacePath));
 
@@ -69,6 +79,41 @@ public class LocalFolderTraversalServiceImpl implements LocalFolderTraversalServ
         );
 
         return forkJoinPool.invoke(task);
+    }
+
+    /**
+     * Builds the file system tree from the specified root node. The tree is built using a ForkJoinPool, which allows
+     * for parallel execution of the traversal tasks.
+     *
+     * @param rootNode             the root node of the file tree
+     * @param destination          the destination path to save the pulled files
+     * @param isLive               true if processing live tree, false for working tree
+     * @param language             the language to process
+     * @param overwrite            true to overwrite existing files, false otherwise
+     * @param generateEmptyFolders true to generate empty folders, false otherwise
+     * @param progressBar          the progress bar for tracking the pull progress
+     */
+    public void buildFileSystemTree(final TreeNode rootNode, final String destination, final boolean isLive,
+                                    final String language, final boolean overwrite, final boolean generateEmptyFolders,
+                                    ConsoleProgressBar progressBar) {
+
+        // Filter the tree by status and language
+        TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, language, generateEmptyFolders, false);
+
+        var rootPath = Paths.get(destination, AssetsUtils.StatusToString(isLive), language, rootNode.folder().host());
+
+        // ---
+        var forkJoinPool = ForkJoinPool.commonPool();
+        var task = new FileSystemTreeBuilderTask(
+                logger,
+                downloader,
+                filteredRoot,
+                rootPath.toString(),
+                overwrite,
+                generateEmptyFolders,
+                language,
+                progressBar);
+        forkJoinPool.invoke(task);
     }
 
 }

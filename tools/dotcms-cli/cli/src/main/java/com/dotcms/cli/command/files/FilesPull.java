@@ -2,7 +2,7 @@ package com.dotcms.cli.command.files;
 
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.files.PullService;
-import com.dotcms.api.traversal.RemoteFolderTraversalService;
+import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.common.LocationUtils;
@@ -76,7 +76,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     String includeAssetPatternsOption;
 
     @Inject
-    RemoteFolderTraversalService folderTraversalService;
+    RemoteTraversalService remoteTraversalService;
 
     @Inject
     PullService pullAssetsService;
@@ -96,7 +96,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 CompletableFuture<TreeNode> folderTraversalFuture = CompletableFuture.supplyAsync(
                         () -> {
                             // Service to handle the traversal of the folder
-                            return folderTraversalService.traverse(
+                            return remoteTraversalService.traverseRemoteFolder(
                                     source,
                                     recursive ? null : 0,
                                     includeFolderPatterns,

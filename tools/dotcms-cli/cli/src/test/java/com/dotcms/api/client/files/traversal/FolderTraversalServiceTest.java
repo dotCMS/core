@@ -1,4 +1,4 @@
-package com.dotcms.api.traversal;
+package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.FolderAPI;
@@ -40,7 +40,7 @@ public class FolderTraversalServiceTest {
     ServiceManager serviceManager;
 
     @Inject
-    RemoteFolderTraversalService folderTraversalService;
+    RemoteTraversalService remoteTraversalService;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -63,7 +63,7 @@ public class FolderTraversalServiceTest {
 
         try {
 
-            folderTraversalService.traverse(
+            remoteTraversalService.traverseRemoteFolder(
                     folderPath,
                     0,
                     parsePatternOption(null),
@@ -86,7 +86,7 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = folderTraversalService.traverse(
+        var treeNode = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
                 parsePatternOption(null),
@@ -131,7 +131,7 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = folderTraversalService.traverse(
+        var treeNode = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 0,
                 parsePatternOption(null),
@@ -161,7 +161,7 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = folderTraversalService.traverse(
+        var treeNode = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
                 parsePatternOption("**/subFolder1-1/**"),
@@ -227,7 +227,7 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = folderTraversalService.traverse(
+        var treeNode = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
                 parsePatternOption("**/subFolder1-1"),
@@ -297,7 +297,7 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = folderTraversalService.traverse(
+        var treeNode = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
                 parsePatternOption("**/folder1,**/folder3"),
@@ -340,7 +340,7 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = folderTraversalService.traverse(
+        var treeNode = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
                 parsePatternOption(null),
@@ -406,7 +406,7 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = folderTraversalService.traverse(
+        var treeNode = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
                 parsePatternOption(null),
@@ -476,7 +476,7 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = folderTraversalService.traverse(
+        var treeNode = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
                 parsePatternOption(null),

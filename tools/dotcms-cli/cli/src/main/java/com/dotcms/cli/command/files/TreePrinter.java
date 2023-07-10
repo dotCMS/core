@@ -6,7 +6,6 @@ import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -55,86 +54,6 @@ public class TreePrinter {
     }
 
     private TreePrinter() {
-    }
-
-    /**
-     * Prints {@link TreeNode} structures to the provided {@link StringBuilder}.
-     * The tree structure is formatted focusing on the push data contained on each asset and folder.
-     *
-     * @param sb               the {@link StringBuilder} to append the tree structure to.
-     * @param treesNodeData    A list of pairs, where each pair represents a folder's local path structure
-     *                         and its corresponding tree node
-     * @param showEmptyFolders A boolean indicating whether to include empty folders in the tree. If
-     *                         set to true, all folders will be included. If set to false, only
-     *                         folders containing assets or having children with assets will be
-     *                         included.
-     */
-    public void formatForPush(StringBuilder sb,
-                              List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> treesNodeData,
-                              final boolean showEmptyFolders) {
-
-        // Let's try to print these tree with some order
-        treesNodeData.sort((o1, o2) -> {
-            var left = o1.getLeft();
-            var right = o2.getLeft();
-            return left.filePath().compareTo(right.filePath());
-        });
-
-        var count = 0;
-
-        for (var treeNodeData : treesNodeData) {
-
-            sb.append(count++ == 0 ? "\r" : "\n").
-                    append(String.format(" Site: [%s] - Status [%s] - Language [%s] --- Folder [%s]\n",
-                            treeNodeData.getLeft().site(),
-                            treeNodeData.getLeft().status(),
-                            treeNodeData.getLeft().language(),
-                            treeNodeData.getLeft().filePath()));
-
-            var localPathStructure = treeNodeData.getLeft();
-            var treeNode = treeNodeData.getRight();
-
-            var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
-
-            if (treeNodePushInfo.hasChanges()) {
-
-                var assetsToPushCount = treeNodePushInfo.assetsToPushCount();
-                if (assetsToPushCount > 0) {
-                    sb.append(String.format(" Push Data: " +
-                                    "@|bold,green [%s]|@ Assets to push: (%s New - %s Modified) " +
-                                    "- @|bold,green [%s]|@ Assets to delete " +
-                                    "- @|bold,green [%s]|@ Folders to push " +
-                                    "- @|bold,green [%s]|@ Folders to delete\n\n",
-                            treeNodePushInfo.assetsToPushCount(),
-                            treeNodePushInfo.assetsNewCount(),
-                            treeNodePushInfo.assetsModifiedCount(),
-                            treeNodePushInfo.assetsToDeleteCount(),
-                            treeNodePushInfo.foldersToPushCount(),
-                            treeNodePushInfo.foldersToDeleteCount()));
-                } else {
-                    sb.append(String.format(" Push Data: " +
-                                    "@|bold,green [%s]|@ Assets to push " +
-                                    "- @|bold,green [%s]|@ Assets to delete " +
-                                    "- @|bold,green [%s]|@ Folders to push " +
-                                    "- @|bold,green [%s]|@ Folders to delete\n\n",
-                            treeNodePushInfo.assetsToPushCount(),
-                            treeNodePushInfo.assetsToDeleteCount(),
-                            treeNodePushInfo.foldersToPushCount(),
-                            treeNodePushInfo.foldersToDeleteCount()));
-                }
-
-                formatByStatus(
-                        sb,
-                        AssetsUtils.StatusToBoolean(localPathStructure.status()),
-                        List.of(localPathStructure.language()),
-                        treeNode,
-                        showEmptyFolders,
-                        true);
-            } else {
-                sb.append(" No changes to push\n\n");
-            }
-
-        }
     }
 
     /**
@@ -191,8 +110,8 @@ public class TreePrinter {
      *                         containing assets or having children with assets will be included.
      * @param forPushChanges   A boolean indicating whether the formatting is for push changes or not.
      */
-    private void formatByStatus(StringBuilder sb, boolean isLive, List<String> sortedLanguages,
-                                TreeNode rootNode, final boolean showEmptyFolders, final boolean forPushChanges) {
+    public void formatByStatus(StringBuilder sb, boolean isLive, List<String> sortedLanguages,
+                               TreeNode rootNode, final boolean showEmptyFolders, final boolean forPushChanges) {
 
         if (sortedLanguages.isEmpty()) {
             return;

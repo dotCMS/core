@@ -1,5 +1,12 @@
-package com.dotcms.api.traversal;
+package com.dotcms.api.client.files.traversal;
 
+import com.dotcms.api.client.files.traversal.data.Pusher;
+import com.dotcms.api.client.files.traversal.data.Retriever;
+import com.dotcms.api.client.files.traversal.task.PushTreeNodeTask;
+import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTask;
+import com.dotcms.api.traversal.Filter;
+import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.FolderView;
 import io.quarkus.arc.DefaultBean;
@@ -19,13 +26,16 @@ import java.util.concurrent.ForkJoinPool;
  */
 @DefaultBean
 @Dependent
-public class RemoteFolderTraversalServiceImpl implements RemoteFolderTraversalService {
+public class RemoteTraversalServiceImpl implements RemoteTraversalService {
 
     @Inject
     Logger logger;
 
     @Inject
     protected Retriever retriever;
+
+    @Inject
+    protected Pusher pusher;
 
     /**
      * Traverses the dotCMS remote location at the specified remote path and builds a hierarchical tree
@@ -42,7 +52,7 @@ public class RemoteFolderTraversalServiceImpl implements RemoteFolderTraversalSe
      */
     @ActivateRequestContext
     @Override
-    public TreeNode traverse(
+    public TreeNode traverseRemoteFolder(
             final String path,
             final Integer depth,
             final Set<String> includeFolderPatterns,
@@ -86,6 +96,21 @@ public class RemoteFolderTraversalServiceImpl implements RemoteFolderTraversalSe
         );
 
         return forkJoinPool.invoke(task);
+    }
+
+    public void pushTreeNode(final String workspace, final AssetsUtils.LocalPathStructure localPathStructure,
+                             final TreeNode treeNode, ConsoleProgressBar progressBar) {
+
+        // ---
+        var forkJoinPool = ForkJoinPool.commonPool();
+        var task = new PushTreeNodeTask(
+                workspace,
+                localPathStructure,
+                treeNode,
+                logger,
+                pusher,
+                progressBar);
+        forkJoinPool.invoke(task);
     }
 
     /**

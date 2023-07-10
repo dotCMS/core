@@ -1,6 +1,6 @@
 package com.dotcms.api.client.files;
 
-import com.dotcms.api.client.files.traversal.LocalFolderTraversalService;
+import com.dotcms.api.client.files.traversal.LocalTraversalService;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
@@ -25,7 +25,7 @@ public class PushServiceImpl implements PushService {
     Logger logger;
 
     @Inject
-    LocalFolderTraversalService traversalService;
+    LocalTraversalService traversalService;
 
     /**
      * Traverses the local folders and retrieves the hierarchical tree representation of their contents with the push
@@ -42,6 +42,7 @@ public class PushServiceImpl implements PushService {
     @Override
     public List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(OutputOptionMixin output, String source) {
 
+        // TODO: Remove this hardcoded path
         var workspacePath = "/Users/jonathan/Downloads/CLI";
 
         var workspaceFile = new File(workspacePath);
@@ -57,7 +58,7 @@ public class PushServiceImpl implements PushService {
         for (var root : roots) {
 
             final var localPathStructure = ParseLocalPath(workspaceFile, new File(root));
-            var treeNode = traversalService.traverse(output, workspacePath, root);
+            var treeNode = traversalService.traverseLocalFolder(output, workspacePath, root);
 
             traversalResult.add(
                     Pair.of(localPathStructure, treeNode)
@@ -65,6 +66,15 @@ public class PushServiceImpl implements PushService {
         }
 
         return traversalResult;
+    }
+
+    @ActivateRequestContext
+    @Override
+    public void processTreeNodes(OutputOptionMixin output, List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> treeNodes) {
+
+        // TODO: Remove this hardcoded path
+        var workspacePath = "/Users/jonathan/Downloads/CLI";
+
     }
 
     /**

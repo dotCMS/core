@@ -2,13 +2,11 @@ package com.dotcms.api.client.files;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.files.traversal.Downloader;
-import com.dotcms.api.client.files.traversal.FileSystemTreeBuilderTask;
+import com.dotcms.api.client.files.traversal.LocalTraversalService;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodeInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.FilesUtils;
-import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.language.Language;
 import org.jboss.logging.Logger;
 
@@ -21,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ForkJoinPool;
 
 import static com.dotcms.common.LocationUtils.LOCATION_FILES;
 
@@ -31,7 +28,7 @@ public class PullBase {
     protected Logger logger;
 
     @Inject
-    protected Downloader downloader;
+    LocalTraversalService traversalService;
 
     @Inject
     protected RestClientFactory clientFactory;
@@ -89,7 +86,7 @@ public class PullBase {
      * Processes the file tree for a specific status and language.
      *
      * @param isLive               true if processing live tree, false for working tree
-     * @param sortedLanguages      the sorted list of languages
+     * @param languages            the list of languages
      * @param rootNode             the root node of the file tree
      * @param destination          the destination path to save the pulled files
      * @param overwrite            true to overwrite existing files, false otherwise
@@ -97,36 +94,19 @@ public class PullBase {
      * @param progressBar          the progress bar for tracking the pull progress
      */
     @ActivateRequestContext
-    protected void processTreeByStatus(boolean isLive, List<String> sortedLanguages, TreeNode rootNode,
+    protected void processTreeByStatus(boolean isLive, List<String> languages, TreeNode rootNode,
                                        final String destination, final boolean overwrite,
                                        final boolean generateEmptyFolders, final ConsoleProgressBar progressBar) {
 
-        if (sortedLanguages.isEmpty()) {
+        if (languages.isEmpty()) {
             return;
         }
 
-        for (String lang : sortedLanguages) {
-
-            // Filter the tree by status and language
-            TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, lang, generateEmptyFolders, false);
-
-            var rootPath = Paths.get(destination, AssetsUtils.StatusToString(isLive), lang, rootNode.folder().host());
-
-            // ---
-            var forkJoinPool = ForkJoinPool.commonPool();
-            var task = new FileSystemTreeBuilderTask(
-                    logger,
-                    downloader,
-                    filteredRoot,
-                    rootPath.toString(),
-                    overwrite,
-                    generateEmptyFolders,
-                    lang,
-                    progressBar);
-            forkJoinPool.invoke(task);
+        for (String lang : languages) {
+            traversalService.buildFileSystemTree(rootNode, destination, isLive, lang, overwrite,
+                    generateEmptyFolders, progressBar);
         }
     }
-
 
     /**
      * Checks the base structure of the destination path and creates the necessary directories.

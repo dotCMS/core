@@ -1,4 +1,8 @@
-package com.dotcms.api.traversal;
+package com.dotcms.api.client.files.traversal;
+
+import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.common.ConsoleProgressBar;
+import com.dotcms.common.AssetsUtils;
 
 import java.util.Set;
 
@@ -7,7 +11,7 @@ import java.util.Set;
  * its contents. The traversal is performed using a ForkJoinPool, which allows for parallel
  * execution of the traversal tasks.
  */
-public interface RemoteFolderTraversalService {
+public interface RemoteTraversalService {
 
     /**
      * Traverses the dotCMS remote location at the specified remote path and builds a hierarchical tree
@@ -22,7 +26,7 @@ public interface RemoteFolderTraversalService {
      * @param excludeAssetPatterns  The glob patterns for assets to exclude from the traversal.
      * @return A TreeNode representing the directory tree rooted at the specified path.
      */
-    TreeNode traverse(
+    TreeNode traverseRemoteFolder(
             final String path,
             final Integer depth,
             final Set<String> includeFolderPatterns,
@@ -30,5 +34,8 @@ public interface RemoteFolderTraversalService {
             final Set<String> excludeFolderPatterns,
             final Set<String> excludeAssetPatterns
     );
+
+    void pushTreeNode(String workspace, AssetsUtils.LocalPathStructure localPathStructure, TreeNode treeNode,
+                      ConsoleProgressBar progressBar);
 
 }

@@ -1,5 +1,6 @@
-package com.dotcms.api.client.files.traversal;
+package com.dotcms.api.client.files.traversal.task;
 
+import com.dotcms.api.client.files.traversal.data.Downloader;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.model.asset.AssetRequest;

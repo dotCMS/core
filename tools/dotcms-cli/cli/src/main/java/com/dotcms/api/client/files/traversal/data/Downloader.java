@@ -2,7 +2,7 @@
  * This is a class responsible for handling the downloading of assets
  * from a given path through the AssetAPI.
  */
-package com.dotcms.api.client.files.traversal;
+package com.dotcms.api.client.files.traversal.data;
 
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.RestClientFactory;

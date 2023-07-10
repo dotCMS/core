@@ -1,5 +1,6 @@
-package com.dotcms.api.client.files.traversal;
+package com.dotcms.api.client.files.traversal.task;
 
+import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.AssetVersionsView;
@@ -47,7 +48,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
      * @param sourcePath    the source path to traverse
      * @param workspacePath the workspace path
      */
-    LocalFolderTraversalTask(
+    public LocalFolderTraversalTask(
             final Logger logger,
             final Retriever retriever,
             final boolean siteExists,

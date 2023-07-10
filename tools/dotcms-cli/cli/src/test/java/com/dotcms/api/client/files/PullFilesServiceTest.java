@@ -5,7 +5,7 @@ import com.dotcms.api.FolderAPI;
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
-import com.dotcms.api.traversal.RemoteFolderTraversalService;
+import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
@@ -44,7 +44,7 @@ public class PullFilesServiceTest {
     ServiceManager serviceManager;
 
     @Inject
-    RemoteFolderTraversalService folderTraversalService;
+    RemoteTraversalService remoteTraversalService;
 
     @Inject
     PullService pullAssetsService;
@@ -76,7 +76,7 @@ public class PullFilesServiceTest {
 
             final var folderPath = String.format("//%s", testSiteName);
 
-            var treeNode = folderTraversalService.traverse(
+            var treeNode = remoteTraversalService.traverseRemoteFolder(
                     folderPath,
                     null,
                     parsePatternOption(null),
