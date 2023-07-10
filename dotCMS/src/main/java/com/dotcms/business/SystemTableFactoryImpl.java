@@ -32,7 +32,7 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
         if(UtilMethods.isSet(key)) {
 
             Object value = this.systemCache.get(key);
-            if(Objects.nonNull(value)) {
+            if(Objects.isNull(value)) {
 
                 final List<Map<String, Object>> result = new DotConnect()
                         .setSQL(" SELECT * FROM system_table WHERE key = ? ")
@@ -106,7 +106,7 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
             valueOpt.ifPresentOrElse(
                     s -> {
                         Try.run(()->new DotConnect()
-                            .setSQL("UPDATE system_table value=? WHERE key=?")
+                            .setSQL("UPDATE system_table SET value=? WHERE key=?")
                             .addParam(value)
                             .addParam(key)
                             .loadResult()).getOrElseThrow(e-> new DotRuntimeException(e)); },

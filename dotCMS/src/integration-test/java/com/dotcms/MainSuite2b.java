@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.bayesian.BayesianAPIImplIT;
+import com.dotcms.business.SystemAPITest;
 import com.dotcms.business.SystemTableFactoryTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
@@ -312,6 +313,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230522AddHashIndicesToWorkflowTablesTest.class,
         SystemTableFactoryTest.class,
         Task230707CreateSystemTableTest.class,
+        SystemAPITest.class
 })
 
 public class MainSuite2b {
