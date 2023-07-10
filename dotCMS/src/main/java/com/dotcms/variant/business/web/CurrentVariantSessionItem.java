@@ -1,6 +1,8 @@
 
 package com.dotcms.variant.business.web;
 
+import com.dotmarketing.util.Config;
+import io.vavr.Lazy;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Objects;
@@ -11,7 +13,9 @@ import java.util.Objects;
  */
 public class CurrentVariantSessionItem implements Serializable {
 
-    private final int SECONDS_EXPIRE_TIME  = 10;
+    private final Lazy<Integer> SECONDS_EXPIRE_TIME  = Lazy.of(() ->
+            Config.getIntProperty("CURRENT_VARIANT_SECONDS_EXPIRE_TIME", 10));
+
 
     private final Instant addedDate;
     private final String variantName;
@@ -26,7 +30,7 @@ public class CurrentVariantSessionItem implements Serializable {
      * @return
      */
     public boolean isExpired() {
-        return Instant.now().isAfter(addedDate.plusSeconds(SECONDS_EXPIRE_TIME));
+        return Instant.now().isAfter(addedDate.plusSeconds(SECONDS_EXPIRE_TIME.get()));
     }
 
     /**
@@ -35,6 +39,11 @@ public class CurrentVariantSessionItem implements Serializable {
      */
     public String getVariantName() {
         return variantName;
+    }
+
+    @Override
+    public String toString() {
+        return  variantName;
     }
 
     @Override
