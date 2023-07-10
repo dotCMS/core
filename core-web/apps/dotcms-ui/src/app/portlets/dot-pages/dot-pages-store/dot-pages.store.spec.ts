@@ -684,6 +684,20 @@ describe('DotPageStore', () => {
         });
     });
 
+    it('should call deleteFavoritePage as much times as we need', () => {
+        const testInode = '12345';
+
+        spyOn(dotWorkflowActionsFireService, 'deleteContentlet').and.returnValue(of(testInode));
+
+        dotPageStore.deleteFavoritePage(testInode);
+        dotPageStore.deleteFavoritePage(testInode);
+        dotPageStore.deleteFavoritePage(testInode);
+        dotPageStore.deleteFavoritePage(testInode);
+        dotPageStore.deleteFavoritePage(testInode);
+
+        expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledTimes(5);
+    });
+
     it('should handle error when a Workflow Action Request fails', (done) => {
         const actions = [mockPublishAction];
         const page = dotcmsContentletMock;

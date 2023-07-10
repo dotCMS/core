@@ -341,12 +341,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly deleteFavoritePage = this.effect((data$: Observable<string>) => {
         return data$.pipe(
             switchMap((inode: string) =>
-                this.dotWorkflowActionsFireService.deleteContentlet({
-                    inode
-                })
+                this.dotWorkflowActionsFireService
+                    .deleteContentlet({
+                        inode
+                    })
+                    .pipe(take(1))
             ),
             switchMap(() => {
                 return this.getFavoritePagesData({ limit: FAVORITE_PAGE_LIMIT }).pipe(
+                    take(1),
                     tapResponse(
                         (items) => {
                             const favoritePages = this.getNewFavoritePages(items);
@@ -356,7 +359,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     )
                 );
             }),
-            take(1),
             catchError((error: HttpErrorResponse) => this.httpErrorManagerService.handle(error))
         );
     });
