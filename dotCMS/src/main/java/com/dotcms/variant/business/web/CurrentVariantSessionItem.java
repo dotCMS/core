@@ -1,6 +1,7 @@
 
 package com.dotcms.variant.business.web;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -8,12 +9,12 @@ import java.util.Objects;
  * Represents a session item for the current variant.
  * This is a Flash Session Item that will be available for 10 seconds.
  */
-public class CurrentVariantSessionItem {
+public class CurrentVariantSessionItem implements Serializable {
 
     private final int SECONDS_EXPIRE_TIME  = 10;
 
-    private Instant addedDate;
-    private String variantName;
+    private final Instant addedDate;
+    private final String variantName;
 
     public CurrentVariantSessionItem(final String variantName) {
         this.addedDate = Instant.now();
