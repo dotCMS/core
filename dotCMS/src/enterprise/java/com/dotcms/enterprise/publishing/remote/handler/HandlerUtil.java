@@ -145,8 +145,9 @@ public class HandlerUtil {
 
         //Remove the current records
         DotConnect dc = new DotConnect();
-        dc.setSQL( "delete from multi_tree where parent1=?" );
+        dc.setSQL( "delete from multi_tree where parent1=? and variant_id=?" );
         dc.addParam( pageIdentifier );
+        dc.addParam( (String) wrapperMultiTree.get(0).get("variantId") );
         dc.loadResult();
         HibernateUtil.getSession().clear();
 
@@ -158,6 +159,7 @@ public class HandlerUtil {
             multiTree.setParent2( (String) multiTreeData.get( "parent2" ) );
             multiTree.setRelationType( (String) multiTreeData.get( "relation_type" ) );
             multiTree.setTreeOrder( Integer.parseInt( multiTreeData.get( "tree_order" ).toString() ) );
+            multiTree.setVariantId( (String) multiTreeData.get( "variantId" ) );
             if(multiTreeData.containsKey("personalization")) {
               multiTree.setPersonalization((String) multiTreeData.get( "personalization" ) );
             }

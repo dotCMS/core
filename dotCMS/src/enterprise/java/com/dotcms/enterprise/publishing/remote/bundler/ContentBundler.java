@@ -372,7 +372,7 @@ public class ContentBundler implements IBundler {
 
 		//Populate wrapper
 		Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI()
-				.getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
+				.getContentletVersionInfo(con.getIdentifier(), con.getLanguageId(), con.getVariantId());
 
 		if(info.isEmpty()) {
 			throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
