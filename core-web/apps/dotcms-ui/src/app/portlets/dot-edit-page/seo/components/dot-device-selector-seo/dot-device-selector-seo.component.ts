@@ -20,7 +20,7 @@ import { PanelModule } from 'primeng/panel';
 import { filter, mergeMap, map, take, toArray } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
-import { DotDevice } from '@dotcms/dotcms-models';
+import { DotDevice, DotDeviceIcon } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -56,7 +56,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         { label: 'Twitter', icon: 'pi pi-twitter' },
         { label: 'LinkedIn', icon: 'pi pi-linkedin' }
     ];
-    defaultOptions: DotDevice[] = [
+    defaultOptions: DotDeviceIcon[] = [
         {
             name: 'Mobile Portrait',
             icon: 'pi pi-mobile',
@@ -146,9 +146,6 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
                 },
                 () => {
                     this.placeholder = 'No devices';
-                },
-                () => {
-                    this.cd.detectChanges();
                 }
             );
     }
