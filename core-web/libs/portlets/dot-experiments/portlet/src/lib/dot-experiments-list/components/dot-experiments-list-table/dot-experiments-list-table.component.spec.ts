@@ -1,46 +1,62 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
-import { RouterTestingModule } from '@angular/router/testing';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
-import { ButtonDirective } from 'primeng/button';
-import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
-import { Table, TableModule } from 'primeng/table';
-import { ToastModule } from 'primeng/toast';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
+import { ConfirmPopup } from 'primeng/confirmpopup';
+import { Menu, MenuItemContent } from 'primeng/menu';
+import { Table } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperimentStatusList, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotExperimentStatus, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
 import {
     DotFormatDateServiceMock,
     getExperimentMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 
 import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
 
 import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 
-const DRAFT_EXPERIMENT_MOCK = getExperimentMock(0);
+const MOCK_MENU_ITEMS: MenuItem[] = [
+    // Delete Action
+    {
+        id: 'dot-experiments-delete',
+        label: 'experiments.action.delete',
+        visible: true,
+        automationId: 'experiment-row-action-menu-delete'
+    },
+    // Delete Action
+    {
+        id: 'dot-experiments-go-to-configuration',
+        label: 'experiments.action.configuration',
+        visible: true,
+        automationId: 'experiment-row-action-menu-got-to-configuration'
+    },
+    // Archive Action
+    {
+        id: 'dot-experiments-archive',
+        label: 'experiments.action.archive',
+        visible: true,
+        automationId: 'experiment-row-action-menu-archive'
+    }
+];
+
+const DRAFT_EXPERIMENT_MOCK = {
+    ...getExperimentMock(0),
+    actionsItemsMenu: [...MOCK_MENU_ITEMS]
+};
 const ARCHIVE_EXPERIMENT_MOCK = {
     ...getExperimentMock(1),
-    status: DotExperimentStatusList.ARCHIVED
+    status: DotExperimentStatus.ARCHIVED,
+    actionsItemsMenu: [...MOCK_MENU_ITEMS]
 };
-const RUNNING_EXPERIMENT_MOCK = {
+const EXPERIMENT_MOCK = {
     ...getExperimentMock(1),
-    status: DotExperimentStatusList.RUNNING
-};
-const ENDED_EXPERIMENT_MOCK = {
-    ...getExperimentMock(2),
-    status: DotExperimentStatusList.ENDED
-};
-
-const SCHEDULED_EXPERIMENT_MOCK = {
-    ...getExperimentMock(1),
-    status: DotExperimentStatusList.SCHEDULED
+    status: DotExperimentStatus.RUNNING,
+    actionsItemsMenu: [...MOCK_MENU_ITEMS]
 };
 
 @Pipe({ name: 'date' })
@@ -61,18 +77,8 @@ const messageServiceMock = new MockDotMessageService({
 describe('DotExperimentsListTableComponent', () => {
     let spectator: Spectator<DotExperimentsListTableComponent>;
     let dotExperimentsEmpty: DotExperimentsEmptyExperimentsComponent | null;
-    let confirmPopupComponent: ConfirmPopup | null;
 
     const createComponent = createComponentFactory({
-        imports: [
-            TableModule,
-            DotIconModule,
-            ConfirmPopupModule,
-            ToastModule,
-            DotMessagePipeModule,
-            RouterTestingModule,
-            DotRelativeDatePipe
-        ],
         component: DotExperimentsListTableComponent,
         componentMocks: [ConfirmPopup],
         declarations: [MockDatePipe],
@@ -90,13 +96,11 @@ describe('DotExperimentsListTableComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        spectator.setInput('experimentsCount', 2);
     });
 
     describe('Input experiments', () => {
         it('should show empty component with no experiments found', () => {
             spectator.setInput('experimentGroupedByStatus', []);
-            spectator.setInput('experimentsCount', 0);
             dotExperimentsEmpty = spectator.query(DotExperimentsEmptyExperimentsComponent);
 
             expect(dotExperimentsEmpty).toExist();
@@ -106,8 +110,8 @@ describe('DotExperimentsListTableComponent', () => {
             const INSTANCES_OF_NGPRIME_TABLE = 2;
 
             const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
-                { status: DotExperimentStatusList.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] },
-                { status: DotExperimentStatusList.ARCHIVED, experiments: [ARCHIVE_EXPERIMENT_MOCK] }
+                { status: DotExperimentStatus.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] },
+                { status: DotExperimentStatus.ARCHIVED, experiments: [ARCHIVE_EXPERIMENT_MOCK] }
             ];
 
             spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
@@ -116,14 +120,13 @@ describe('DotExperimentsListTableComponent', () => {
 
             expect(pTables).toExist();
             expect(pTables.length).toBe(INSTANCES_OF_NGPRIME_TABLE);
-            expect(spectator.component.experimentsCount).toBe(INSTANCES_OF_NGPRIME_TABLE);
         });
 
         it('should has experiment with columns correctly rendered', () => {
             const COLUMNS_QTY_BY_ROW = 4;
 
             const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
-                { status: DotExperimentStatusList.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] }
+                { status: DotExperimentStatus.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] }
             ];
 
             spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
@@ -141,132 +144,24 @@ describe('DotExperimentsListTableComponent', () => {
         });
 
         describe('Actions icons', () => {
-            it('should has DELETE icon when experiment is DRAFT', () => {
+            it('should has the MenuItems rendered as action of the row', () => {
                 const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
-                    { status: DotExperimentStatusList.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] }
+                    { status: DotExperimentStatus.RUNNING, experiments: [EXPERIMENT_MOCK] }
                 ];
+
+                const MENU_ITEMS_QTY = EXPERIMENT_MOCK.actionsItemsMenu.length;
 
                 spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
-                expect(spectator.query(byTestId('experiment-row-delete-button'))).toExist();
-                expect(spectator.query(ButtonDirective).icon).toBe('pi pi-trash');
+                expect(spectator.query(Menu)).toExist();
+
+                const actionMenuButton = spectator.query(byTestId('experiment-row__action-button'));
+                expect(actionMenuButton).toExist();
+
+                spectator.click(actionMenuButton);
+                expect(spectator.queryAll(MenuItemContent)).toExist();
+                expect(spectator.queryAll(MenuItemContent).length).toBe(MENU_ITEMS_QTY);
             });
-
-            it('should the row has DELETE icon when experiment is SCHEDULED', () => {
-                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
-                    {
-                        status: DotExperimentStatusList.SCHEDULED,
-                        experiments: [SCHEDULED_EXPERIMENT_MOCK]
-                    }
-                ];
-
-                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
-
-                expect(spectator.query(byTestId('experiment-row-delete-button'))).toExist();
-                expect(spectator.query(ButtonDirective).icon).toBe('pi pi-trash');
-            });
-            it('should the row  has ARCHIVE icon when is ENDED', () => {
-                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
-                    {
-                        status: DotExperimentStatusList.ENDED,
-                        experiments: [ENDED_EXPERIMENT_MOCK]
-                    }
-                ];
-
-                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
-
-                expect(spectator.query(byTestId('experiment-row-archive-button'))).toExist();
-                expect(spectator.query(byTestId('experiment-row-configuration-button'))).toExist();
-            });
-
-            it('should the row not has any icon in action column', () => {
-                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
-                    {
-                        status: DotExperimentStatusList.ENDED,
-                        experiments: [ARCHIVE_EXPERIMENT_MOCK]
-                    }
-                ];
-
-                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
-
-                expect(spectator.query(byTestId('experiment-row-archive-button'))).not.toExist();
-                expect(
-                    spectator.query(byTestId('experiment-row-configuration-button'))
-                ).not.toExist();
-                expect(spectator.query(byTestId('experiment-row-delete-button'))).not.toExist();
-            });
-
-            it('should the row  has Configuration icon when is RUNNING', () => {
-                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
-                    {
-                        status: DotExperimentStatusList.RUNNING,
-                        experiments: [RUNNING_EXPERIMENT_MOCK]
-                    }
-                ];
-
-                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
-
-                expect(spectator.query(byTestId('experiment-row-configuration-button'))).toExist();
-                expect(spectator.query(ButtonDirective).icon).toBe('pi pi-cog');
-            });
-
-            it('should the row  has Configuration icon when is RUNNING', () => {
-                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
-                    {
-                        status: DotExperimentStatusList.ENDED,
-                        experiments: [RUNNING_EXPERIMENT_MOCK]
-                    }
-                ];
-
-                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
-
-                expect(spectator.query(byTestId('experiment-row-configuration-button'))).toExist();
-                expect(spectator.query(ButtonDirective).icon).toBe('pi pi-cog');
-            });
-        });
-    });
-
-    describe('Output deleteItem', () => {
-        it('should emit the $event on click', () => {
-            const itemToDelete = DRAFT_EXPERIMENT_MOCK;
-            const event = new MouseEvent('click');
-            let output;
-
-            spectator.output('deleteItem').subscribe((result) => (output = result));
-            spectator.component.delete(event, itemToDelete);
-
-            confirmPopupComponent = spectator.query(ConfirmPopup);
-            confirmPopupComponent.accept();
-
-            expect(output).toEqual(itemToDelete);
-        });
-    });
-
-    describe('Output archiveItem', () => {
-        it('should emit the $event on click', () => {
-            const itemToArchive = ENDED_EXPERIMENT_MOCK;
-            const event = new MouseEvent('click');
-            let output;
-
-            spectator.output('archiveItem').subscribe((result) => (output = result));
-            spectator.component.archive(event, itemToArchive);
-
-            confirmPopupComponent = spectator.query(ConfirmPopup);
-            confirmPopupComponent.accept();
-
-            expect(output).toEqual(itemToArchive);
-        });
-    });
-
-    describe('Output viewReports', () => {
-        it('should emit the $event on click', () => {
-            const itemToView = RUNNING_EXPERIMENT_MOCK;
-            let output;
-
-            spectator.output('goToReport').subscribe((result) => (output = result));
-            spectator.component.viewReports(itemToView);
-
-            expect(output).toEqual(itemToView);
         });
     });
 });

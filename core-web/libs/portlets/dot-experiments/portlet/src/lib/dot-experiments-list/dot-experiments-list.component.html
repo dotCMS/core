@@ -26,14 +26,15 @@
 
             <dot-experiments-list-table
                 [experimentGroupedByStatus]="vm.experimentsFiltered"
-                [experimentsCount]="vm.experiments.length"
-                (archiveItem)="archiveExperimentAction($event)"
-                (deleteItem)="deleteExperimentAction($event)"
-                (goToConfiguration)="gotToConfigurationAction($event)"
                 (goToContainer)="goToContainerAction($event)"
             />
         </ng-container>
     </div>
+    <dot-add-to-bundle
+        *ngIf="vm.addToBundleContentId"
+        [assetIdentifier]="vm.addToBundleContentId"
+        (cancel)="vm.addToBundleContentId = null"
+    />
 </ng-container>
 
 <ng-template #noExperiments>
@@ -47,3 +48,4 @@
 </ng-template>
 
 <ng-template dotDynamic></ng-template>
+<p-confirmDialog [style]="{ width: '30vw' }" key="positionDialog"></p-confirmDialog>

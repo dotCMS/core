@@ -9,7 +9,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Calendar } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
@@ -58,7 +58,8 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
-            }
+            },
+            mockProvider(ConfirmationService)
         ]
     });
 
