@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -17,7 +18,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
 
-import { filter, mergeMap, map, take, toArray } from 'rxjs/operators';
+import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice, DotDeviceIcon } from '@dotcms/dotcms-models';
@@ -49,7 +50,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Output() selected = new EventEmitter<DotDevice>();
     @HostBinding('class.disabled') disabled: boolean;
 
-    options: DotDevice[] = [];
+    options$: Observable<DotDevice[]>;
     placeholder = '';
     socialMediaTiles = [
         { label: 'Facebook', icon: 'pi pi-facebook' },
@@ -114,7 +115,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.loadOptions();
+        this.options$ = this.loadOptions();
     }
 
     /**
@@ -125,36 +126,12 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         this.selected.emit(device);
     }
 
-    private loadOptions(): void {
-        this.dotDevicesService
-            .get()
-            .pipe(
-                take(1),
-                mergeMap((devices: DotDevice[]) => devices),
-                filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
-                toArray(),
-                map((devices: DotDevice[]) =>
-                    this.setOptions(
-                        this.dotMessageService.get('editpage.viewas.default.device'),
-                        devices
-                    )
-                )
-            )
-            .subscribe((devices: DotDevice[]) => {
-                this.options = devices;
-            });
-    }
-
-    private setOptions(message: string, devices: DotDevice[]): DotDevice[] {
-        return [
-            {
-                name: message,
-                cssHeight: '',
-                cssWidth: '',
-                inode: '0',
-                identifier: ''
-            },
-            ...devices
-        ];
+    private loadOptions(): Observable<DotDevice[]> {
+        return this.dotDevicesService.get().pipe(
+            take(1),
+            mergeMap((devices: DotDevice[]) => devices),
+            filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
+            toArray()
+        );
     }
 }

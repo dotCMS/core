@@ -27,7 +27,7 @@
                 <ul class="device-list">
                     <li
                         class="device-list__item"
-                        *ngFor="let option of options"
+                        *ngFor="let option of options$ | async"
                         (click)="change(option); op.toggle($event)"
                     >
                         <div class="device-list__item__content">
