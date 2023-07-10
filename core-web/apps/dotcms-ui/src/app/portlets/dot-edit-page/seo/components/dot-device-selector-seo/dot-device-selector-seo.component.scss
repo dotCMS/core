@@ -2,7 +2,7 @@
 @import "dotcms-theme/utils/theme-variables";
 @import "dotcms-theme/utils/extends";
 
-.dotDeviceSelector__panel {
+.dot-device-selector__panel {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -10,7 +10,7 @@
     border: 1px solid $color-palette-gray-300;
 }
 
-.dotDeviceSelector__header {
+.dot-device-selector__header {
     display: flex;
     height: 2.5rem;
     padding: $spacing-1 $spacing-3;
@@ -21,20 +21,20 @@
     background: $color-palette-gray-200;
 }
 
-.dotDeviceSelector__header-title {
+.dot-device-selector__header-title {
     font-size: 1.25rem;
     font-style: normal;
     font-weight: 500;
     line-height: 140%;
 }
 
-.dotDeviceSelector__column {
+.dot-device-selector__column {
     gap: 1rem;
     display: flex;
     flex-direction: column;
 }
 
-.dotDeviceSelector__content {
+.dot-device-selector__content {
     display: flex;
     .device-list {
         width: 100%;
@@ -73,7 +73,7 @@
     }
 }
 
-.dotDeviceSelector__link--container {
+.dot-device-selector__link--container {
     display: flex;
     cursor: pointer;
     flex-grow: 3;
@@ -87,7 +87,7 @@
 }
 
 ::ng-deep {
-    .p-overlaypanel.dotDeviceSelector__overlayPanel {
+    .p-overlaypanel.dot-device-selector__overlayPanel {
         .p-overlaypanel-content {
             display: flex;
             gap: 1rem;
@@ -108,7 +108,7 @@
         color: $color-palette-gray-300;
     }
 
-    .dotDeviceSelector__link--container {
+    .dot-device-selector__link--container {
         .pi.pi-external-link {
             color: $color-palette-primary;
         }
