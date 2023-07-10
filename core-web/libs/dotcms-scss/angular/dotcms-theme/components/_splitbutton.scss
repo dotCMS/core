@@ -271,8 +271,16 @@
             color: inherit;
         }
 
-        &.p-button-text {
-            background-color: $white;
+        &:active,
+        &:hover {
+            background-color: $color-palette-gray-200;
+            color: $color-palette-gray-500;
+
+            .p-button-label,
+            .p-button-icon,
+            .pi {
+                color: inherit;
+            }
         }
     }
 
