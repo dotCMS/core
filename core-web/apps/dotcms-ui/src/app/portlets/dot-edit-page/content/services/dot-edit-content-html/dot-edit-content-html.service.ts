@@ -93,6 +93,9 @@ export class DotEditContentHtmlService {
     private updateContentletInode = false;
     private remoteRendered: boolean;
 
+    private currentContainerHTML: HTMLElement;
+    private currentContentletHTML: HTMLElement;
+
     private readonly docClickHandlers;
 
     get pagePersonalization() {
@@ -672,30 +675,31 @@ export class DotEditContentHtmlService {
         this.updateContentletInode = this.shouldUpdateContentletInode(target);
         this.currentMenuAction = DotContentletMenuAction[type];
 
-        const { dotMacroType, dotOnNumberOfPages } = target.dataset;
-
+        const { dotMacroType, dotOnNumberOfPages = '0', dotIdentifier, dotInode } = target.dataset;
         const isEditContentMacro = dotMacroType === 'edit-contentet-macro';
-        const container: HTMLElement = target.closest('[data-dot-object="container"]');
-        const contentlet: HTMLElement = target.closest('[data-dot-object="contentlet"]');
+
+        this.currentContainerHTML = target.closest('[data-dot-object="container"]');
+        this.currentContentletHTML = target.closest('[data-dot-object="contentlet"]');
+
         const isInMultiplePages = isEditContentMacro
-            ? +dotOnNumberOfPages >= 1
-            : this.isContentInMultiplePages(contentlet);
+            ? Number(dotOnNumberOfPages)
+            : this.isContentInMultiplePages();
 
         const eventData = {
             name: type,
             dataset: target.dataset,
-            container: container ? container.dataset : null
+            container: this.currentContainerHTML?.dataset || null
         };
 
         // If we are editing a contentlet that is in multiple pages
         // we need to show the copy modal and then update the contentlet if needed
         if (type === 'edit' && isInMultiplePages) {
-            this.showCopyModal(contentlet, container).subscribe(({ dataset }) => {
-                const dotInode = dataset.dotInode;
+            this.showCopyModal(dotIdentifier).subscribe(({ dataset }) => {
+                const inode = dotInode || dataset.dotInode;
                 this.iframeActions$.next({
                     ...eventData,
                     dataset: {
-                        dotInode
+                        dotInode: inode
                     }
                 });
             });
@@ -815,7 +819,11 @@ export class DotEditContentHtmlService {
             },
             showCopyModal: (data: DotShowCopyModal) => {
                 const { contentlet, container, initEdit, selector } = data;
-                this.showCopyModal(contentlet, container).subscribe((contentlet) => {
+
+                this.currentContentletHTML = contentlet;
+                this.currentContainerHTML = container;
+
+                this.showCopyModal().subscribe((contentlet) => {
                     const element = selector ? contentlet.querySelector(selector) : contentlet;
                     initEdit(element as HTMLElement);
                 });
@@ -1044,8 +1052,10 @@ export class DotEditContentHtmlService {
         return Array.from(element.parentElement.children).indexOf(element);
     }
 
-    private isContentInMultiplePages(contentlet: HTMLElement): boolean {
-        return Number(contentlet?.dataset?.dotOnNumberOfPages || 0) > 1;
+    private isContentInMultiplePages(contentlet?: HTMLElement): boolean {
+        const element = contentlet || this.currentContentletHTML;
+
+        return Number(element?.dataset?.dotOnNumberOfPages || 0) > 1;
     }
 
     private isEditAction() {
@@ -1074,7 +1084,6 @@ export class DotEditContentHtmlService {
                 })
             );
     }
-
     private getPersonalizedModel(model: DotPageContainer[]): DotPageContainerPersonalized[] {
         if (this.currentPersona?.personalized) {
             return model.map((container: DotPageContainer) => {
@@ -1097,15 +1106,14 @@ export class DotEditContentHtmlService {
      * @return {*}  {Observable<HTMLElement>}
      * @memberof DotEditContentHtmlService
      */
-    private showCopyModal(
-        contentlet: HTMLElement,
-        container: HTMLElement
-    ): Observable<HTMLElement> {
+    private showCopyModal(dotIdentifier?: string): Observable<HTMLElement> {
         return this.dotCopyContentModalService.open().pipe(
             switchMap(({ shouldCopy }) => {
                 // If shouldCopy is true, we need to copy the contentlet
                 // otherwise we just return the contentlet
-                return shouldCopy ? this.copyContent(contentlet, container) : of(contentlet);
+                return shouldCopy
+                    ? this.copyContent(dotIdentifier)
+                    : of(this.currentContentletHTML);
             })
         );
     }
@@ -1118,11 +1126,19 @@ export class DotEditContentHtmlService {
      * @return {*}  {Observable<ModelCopyContentResponse>}
      * @memberof DotCopyContentModalService
      */
-    private copyContent(contentlet: HTMLElement, container: HTMLElement): Observable<HTMLElement> {
-        const content = this.getTreeNodeData(contentlet, container);
+    private copyContent(dotIdentifier?: string): Observable<HTMLElement> {
+        const contentlet = this.currentContentletHTML;
+        const container = this.currentContainerHTML;
+
+        const dotTreeNode = this.getTreeNodeData(contentlet, container);
         const dotPageContainer = this.getDotPageContainer(container);
 
-        return this.dotCopyContentService.copyInPage(content).pipe(
+        // If we receive a dotIdentifier, we need to update the contentId
+        if (dotIdentifier) {
+            dotTreeNode.contentId = dotIdentifier;
+        }
+
+        return this.dotCopyContentService.copyInPage(dotTreeNode).pipe(
             tap(() => this.dotLoadingIndicatorService.show()),
             switchMap((dotContentlet) => {
                 // After copy the contentlet, we need to get the new contentletHTML
@@ -1150,12 +1166,14 @@ export class DotEditContentHtmlService {
      */
     private onEditBlockEditor(event: Event): void {
         const target = event.target as HTMLElement;
-        const contentlet = target.closest('[data-dot-object="contentlet"]') as HTMLElement;
-        const container = target.closest('[data-dot-object="container"]') as HTMLElement;
-        const isInMultiplePages = this.isContentInMultiplePages(contentlet);
+
+        this.currentContentletHTML = target.closest('[data-dot-object="contentlet"]');
+        this.currentContainerHTML = target.closest('[data-dot-object="container"]') as HTMLElement;
+
+        const isInMultiplePages = this.isContentInMultiplePages();
 
         if (isInMultiplePages) {
-            this.showCopyModal(contentlet, container).subscribe((contentlet) => {
+            this.showCopyModal().subscribe((contentlet) => {
                 const editor = contentlet.querySelector(
                     '[data-block-editor-content]'
                 ) as HTMLElement;
