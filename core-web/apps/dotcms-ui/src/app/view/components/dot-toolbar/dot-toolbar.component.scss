@@ -35,14 +35,14 @@ dot-toolbar-notifications {
 }
 
 .toolbar__button-wrapper {
-    $toolbar-width: 4.375rem;
+    $toolbar-button-width: 4.375rem;
     align-items: center;
     background-color: $brand-background;
     display: flex;
     height: $toolbar-height;
     justify-content: center;
-    width: $toolbar-width;
-    min-width: $toolbar-width;
+    width: $toolbar-button-width;
+    min-width: $toolbar-button-width;
 }
 
 .toolbar__dot-wrapper {
