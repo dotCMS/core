@@ -291,12 +291,15 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Experiment experimentStarted = APILocator.getExperimentsAPI()
                 .startScheduled(experiment.id().get(), APILocator.systemUser());
 
-        try {
-            final Experiment experimentToRestart = Experiment.builder().from(experimentStarted)
-                    .status(Status.SCHEDULED)
-                    .scheduling(Optional.empty())
-                    .build();
+        final Experiment experimentToRestart = Experiment.builder().from(experimentStarted)
+                .status(Status.SCHEDULED)
+                .scheduling(Scheduling.builder()
+                        .startDate(Instant.now())
+                        .endDate(Instant.now().plus(2, ChronoUnit.DAYS))
+                        .build())
+                .build();
 
+        try {
             FactoryLocator.getExperimentsFactory().save(experimentToRestart);
 
             APILocator.getExperimentsAPI()
@@ -316,7 +319,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             assertTrue(experimentAfterReStart.runningIds().get(0).id() != experimentAfterReStart.runningIds().get(1).id());
         } finally {
-            APILocator.getExperimentsAPI().end(experimentStarted.id().get(), APILocator.systemUser());
+            APILocator.getExperimentsAPI().end(experimentToRestart.id().get(), APILocator.systemUser());
         }
     }
 
