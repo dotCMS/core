@@ -41,6 +41,8 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
 
     @HostBinding('style.minWidth') width = '100%';
 
+    private lastLayout: DotTemplateDesigner;
+
     constructor(
         private route: ActivatedRoute,
         private dotRouterService: DotRouterService,
@@ -69,6 +71,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
 
         this.saveTemplateDebounce();
         this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
+        this.subscribeOnChangeBeforeLeaveHandler();
     }
 
     ngOnDestroy() {
@@ -122,6 +125,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     nextUpdateTemplate(value: DotTemplateDesigner) {
         this.canRouteBeDesativated(false);
         this.updateTemplate.next(value);
+        this.lastLayout = value;
     }
 
     /**
@@ -214,5 +218,21 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             },
             {}
         );
+    }
+
+    /**
+     * Handle save changes before leave
+     *
+     * @private
+     * @memberof DotEditLayoutComponent
+     */
+    private subscribeOnChangeBeforeLeaveHandler(): void {
+        this.dotEditLayoutService.closeEditLayout$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((res) => {
+                if (res) {
+                    this.onSave(this.lastLayout);
+                }
+            });
     }
 }

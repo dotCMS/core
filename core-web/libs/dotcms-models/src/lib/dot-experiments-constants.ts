@@ -167,6 +167,21 @@ export const daysOfTheWeek = [
     'Saturday'
 ];
 
+export const MonthsOfTheYear = [
+    'months.january.short',
+    'months.february.short',
+    'months.march.short',
+    'months.april.short',
+    'months.may.short',
+    'months.june.short',
+    'months.july.short',
+    'months.august.short',
+    'months.september.short',
+    'months.october.short',
+    'months.november.short',
+    'months.december.short'
+];
+
 export type SummaryLegend = { icon: string; legend: string };
 
 export const enum BayesianStatusResponse {
@@ -210,7 +225,7 @@ export const ReportSummaryLegendByBayesianStatus: Record<BayesianLegendStatus, S
     }
 };
 
-type DotExperimentListAction = 'delete' | 'configuration' | 'archive';
+type DotExperimentListAction = 'delete' | 'configuration' | 'archive' | 'addToBundle';
 export const AllowedActionsByExperimentStatus: Record<
     DotExperimentListAction,
     Array<DotExperimentStatus>
@@ -221,7 +236,14 @@ export const AllowedActionsByExperimentStatus: Record<
         DotExperimentStatus.ENDED,
         DotExperimentStatus.ARCHIVED
     ],
-    ['archive']: [DotExperimentStatus.ENDED]
+    ['archive']: [DotExperimentStatus.ENDED],
+    ['addToBundle']: [
+        DotExperimentStatus.DRAFT,
+        DotExperimentStatus.RUNNING,
+        DotExperimentStatus.ENDED,
+        DotExperimentStatus.ARCHIVED,
+        DotExperimentStatus.SCHEDULED
+    ]
 };
 
 export const CONFIGURATION_CONFIRM_DIALOG_KEY = 'confirmDialog';

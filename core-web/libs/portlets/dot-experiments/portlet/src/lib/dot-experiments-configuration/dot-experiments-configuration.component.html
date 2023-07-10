@@ -42,9 +42,14 @@
             <dot-experiments-configuration-scheduling />
         </ng-container>
     </div>
+    <dot-add-to-bundle
+        *ngIf="vm.addToBundleContentId"
+        [assetIdentifier]="vm.addToBundleContentId"
+        (cancel)="vm.addToBundleContentId = null"
+    />
 </ng-container>
 <ng-template #loadingTpl>
     <dot-experiments-configuration-skeleton />
 </ng-template>
 
-<p-confirmDialog [key]="confirmDialogKey"></p-confirmDialog>
+<p-confirmDialog [key]="confirmDialogKey" />
