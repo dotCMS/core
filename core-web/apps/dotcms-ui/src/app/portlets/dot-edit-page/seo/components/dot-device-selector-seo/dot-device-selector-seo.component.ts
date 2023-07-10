@@ -58,7 +58,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     ];
     defaultOptions: DotDeviceIcon[] = [
         {
-            name: 'Mobile Portrait',
+            name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
             icon: 'pi pi-mobile',
             cssHeight: '390',
             cssWidth: '844',
@@ -66,7 +66,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             identifier: ''
         },
         {
-            name: 'Mobile Landscape',
+            name: this.dotMessageService.get('editpage.device.selector.mobile.landscape'),
             icon: 'pi pi-mobile',
             cssHeight: '844',
             cssWidth: '390',
@@ -74,7 +74,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             identifier: ''
         },
         {
-            name: 'HD Monitor',
+            name: this.dotMessageService.get('editpage.device.selector.hd.monitor'),
             icon: 'pi pi-desktop',
             cssHeight: '1920',
             cssWidth: '1080',
@@ -82,7 +82,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             identifier: ''
         },
         {
-            name: '4K Monitor',
+            name: this.dotMessageService.get('editpage.device.selector.4k.monitor'),
             icon: 'pi pi-desktop',
             cssHeight: '3840',
             cssWidth: '2160',
@@ -90,7 +90,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             identifier: ''
         },
         {
-            name: 'Table Portrait',
+            name: this.dotMessageService.get('editpage.device.selector.tablet.portrait'),
             icon: 'pi pi-tablet',
             cssHeight: '820',
             cssWidth: '1180',
@@ -98,7 +98,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             identifier: ''
         },
         {
-            name: 'Table Landscape',
+            name: this.dotMessageService.get('editpage.device.selector.tablet.landscape'),
             icon: 'pi pi-tablet',
             cssHeight: '1180',
             cssWidth: '820',
@@ -140,14 +140,9 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
                     )
                 )
             )
-            .subscribe(
-                (devices: DotDevice[]) => {
-                    this.options = devices;
-                },
-                () => {
-                    this.placeholder = 'No devices';
-                }
-            );
+            .subscribe((devices: DotDevice[]) => {
+                this.options = devices;
+            });
     }
 
     private setOptions(message: string, devices: DotDevice[]): DotDevice[] {

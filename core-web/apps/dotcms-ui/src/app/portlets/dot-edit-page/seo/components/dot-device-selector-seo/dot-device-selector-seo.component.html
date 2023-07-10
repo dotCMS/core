@@ -14,7 +14,7 @@
                         *ngFor="let option of defaultOptions"
                         (click)="change(option)"
                     >
-                        <i [class]="option.icon" style="font-size: 1rem"></i>
+                        <i [class]="option.icon"></i>
                         <div class="device-list__item__content">
                             <span class="device-list__item__name">{{ option.name }}</span>
                             <span class="device-list__item__dimensions">
@@ -23,7 +23,7 @@
                         </div>
                     </li>
                 </ul>
-                <p-divider layout="vertical"></p-divider>
+                <p-divider styleClass="dot-device-selector__divider" layout="vertical"></p-divider>
                 <ul class="device-list">
                     <li
                         class="device-list__item"
@@ -45,7 +45,7 @@
         <div class="dot-device-selector__panel">
             <div class="dot-device-selector__header">
                 <h3 class="dot-device-selector__header-title">
-                    {{ 'editpage.device.selector.media.tiles' | dm }}
+                    {{ 'editpage.device.selector.media.tile' | dm }}
                 </h3>
             </div>
             <div class="dot-device-selector__content">
@@ -54,7 +54,7 @@
                         class="device-list__item device-list__item-media"
                         *ngFor="let tile of socialMediaTiles"
                     >
-                        <i [class]="tile.icon" style="font-size: 1rem"></i>
+                        <i [class]="tile.icon"></i>
                         {{ tile.label }}
                     </li>
                 </ul>
@@ -70,7 +70,7 @@
             <div class="dot-device-selector__content">
                 <ul class="device-list">
                     <li class="device-list__item device-list__item-media">
-                        <i class="pi pi-google" style="font-size: 1rem"></i>
+                        <i class="pi pi-google"></i>
                         Google
                     </li>
                 </ul>
@@ -78,7 +78,7 @@
         </div>
         <div class="dot-device-selector__link--container">
             <a class="dot-device-selector__link"> {{ 'editpage.device.selector.new.tab' | dm }} </a>
-            <i class="pi pi-external-link" style="font-size: 1rem"></i>
+            <i class="pi pi-external-link"></i>
         </div>
     </div>
 </p-overlayPanel>

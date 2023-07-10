@@ -22,7 +22,7 @@
 }
 
 .dot-device-selector__header-title {
-    font-size: 1.25rem;
+    font-size: $font-size-lg;
     font-style: normal;
     font-weight: 500;
     line-height: 140%;
@@ -103,7 +103,7 @@
         margin-top: 5px;
     }
 
-    .p-divider.p-component.p-divider-vertical {
+    .dot-device-selector__divider {
         margin: 0;
         color: $color-palette-gray-300;
     }
