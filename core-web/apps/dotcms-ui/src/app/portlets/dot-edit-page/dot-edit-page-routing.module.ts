@@ -22,7 +22,7 @@ const dotEditPage: Routes = [
             featuredFlagToCheck: FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
         },
 
-        runGuardsAndResolvers: 'always',
+        // runGuardsAndResolvers: 'always',
         children: [
             {
                 path: '',
