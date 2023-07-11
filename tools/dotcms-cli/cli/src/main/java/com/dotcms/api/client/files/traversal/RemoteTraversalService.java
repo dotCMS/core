@@ -35,6 +35,17 @@ public interface RemoteTraversalService {
             final Set<String> excludeAssetPatterns
     );
 
+    /**
+     * Pushes the contents of the specified tree node to the remote server. The push operation is performed
+     * asynchronously using a ForkJoinPool, and the progress is tracked and displayed using the provided
+     * console progress bar.
+     *
+     * @param workspace          the local workspace path
+     * @param localPathStructure the local path structure of the folder being pushed
+     * @param treeNode           the tree node representing the folder and its contents with all the push
+     *                           information for each file and folder
+     * @param progressBar        the console progress bar to track and display the push progress
+     */
     void pushTreeNode(String workspace, AssetsUtils.LocalPathStructure localPathStructure, TreeNode treeNode,
                       ConsoleProgressBar progressBar);
 

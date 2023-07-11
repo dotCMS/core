@@ -1,6 +1,7 @@
 package com.dotcms.api.client.files;
 
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -22,6 +23,18 @@ public interface PushService {
      */
     List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(OutputOptionMixin output, String source);
 
-    void processTreeNodes(OutputOptionMixin output, List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> treeNodes);
+    /**
+     * Processes the tree nodes by pushing their contents to the remote server. It initiates the push operation
+     * asynchronously, displays a progress bar, and waits for the completion of the push process.
+     *
+     * @param output             the output option mixin
+     * @param localPathStructure the local path structure of the folder being pushed
+     * @param treeNode           the tree node representing the folder and its contents with all the push information
+     *                           for each file and folder
+     * @param treeNodePushInfo   the push information summary associated with the tree node
+     * @throws RuntimeException if an error occurs during the push process
+     */
+    void processTreeNodes(OutputOptionMixin output, AssetsUtils.LocalPathStructure localPathStructure,
+                          TreeNode treeNode, TreeNodePushInfo treeNodePushInfo);
 
 }

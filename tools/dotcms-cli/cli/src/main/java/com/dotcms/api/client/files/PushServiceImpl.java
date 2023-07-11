@@ -1,7 +1,10 @@
 package com.dotcms.api.client.files;
 
 import com.dotcms.api.client.files.traversal.LocalTraversalService;
+import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.api.traversal.TreeNodePushInfo;
+import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
 import io.quarkus.arc.DefaultBean;
@@ -14,6 +17,8 @@ import javax.inject.Inject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static com.dotcms.common.AssetsUtils.ParseLocalPath;
 
@@ -25,7 +30,10 @@ public class PushServiceImpl implements PushService {
     Logger logger;
 
     @Inject
-    LocalTraversalService traversalService;
+    LocalTraversalService localTraversalService;
+
+    @Inject
+    RemoteTraversalService remoteTraversalService;
 
     /**
      * Traverses the local folders and retrieves the hierarchical tree representation of their contents with the push
@@ -40,7 +48,8 @@ public class PushServiceImpl implements PushService {
      */
     @ActivateRequestContext
     @Override
-    public List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(OutputOptionMixin output, String source) {
+    public List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(
+            OutputOptionMixin output, String source) {
 
         // TODO: Remove this hardcoded path
         var workspacePath = "/Users/jonathan/Downloads/CLI";
@@ -58,7 +67,7 @@ public class PushServiceImpl implements PushService {
         for (var root : roots) {
 
             final var localPathStructure = ParseLocalPath(workspaceFile, new File(root));
-            var treeNode = traversalService.traverseLocalFolder(output, workspacePath, root);
+            var treeNode = localTraversalService.traverseLocalFolder(output, workspacePath, root);
 
             traversalResult.add(
                     Pair.of(localPathStructure, treeNode)
@@ -68,12 +77,59 @@ public class PushServiceImpl implements PushService {
         return traversalResult;
     }
 
+    /**
+     * Processes the tree nodes by pushing their contents to the remote server. It initiates the push operation
+     * asynchronously, displays a progress bar, and waits for the completion of the push process.
+     *
+     * @param output             the output option mixin
+     * @param localPathStructure the local path structure of the folder being pushed
+     * @param treeNode           the tree node representing the folder and its contents with all the push information
+     *                           for each file and folder
+     * @param treeNodePushInfo   the push information summary associated with the tree node
+     * @throws RuntimeException if an error occurs during the push process
+     */
     @ActivateRequestContext
     @Override
-    public void processTreeNodes(OutputOptionMixin output, List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> treeNodes) {
+    public void processTreeNodes(OutputOptionMixin output, final AssetsUtils.LocalPathStructure localPathStructure,
+                                 final TreeNode treeNode, final TreeNodePushInfo treeNodePushInfo) {
 
         // TODO: Remove this hardcoded path
         var workspacePath = "/Users/jonathan/Downloads/CLI";
+
+        // ConsoleProgressBar instance to handle the push progress bar
+        ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
+        // Calculating the total number of steps
+        progressBar.setTotalSteps(
+                treeNodePushInfo.assetsToPushCount() +
+                        treeNodePushInfo.assetsToDeleteCount() +
+                        treeNodePushInfo.foldersToPushCount() +
+                        treeNodePushInfo.foldersToDeleteCount()
+        );
+
+        CompletableFuture<Void> pushTreeFuture = CompletableFuture.supplyAsync(
+                () -> {
+                    remoteTraversalService.pushTreeNode(
+                            workspacePath, localPathStructure, treeNode, progressBar
+                    );
+                    return null;
+                });
+        progressBar.setFuture(pushTreeFuture);
+
+        CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+                progressBar
+        );
+
+        // Waits for the completion of both the file push tree process and console progress bar animation tasks.
+        // This line blocks the current thread until both CompletableFuture instances
+        // (pushTreeFuture and animationFuture) have completed.
+        CompletableFuture.allOf(pushTreeFuture, animationFuture).join();
+        try {
+            pushTreeFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            var errorMessage = String.format("Error occurred while pushing contents: [%s].", e.getMessage());
+            logger.debug(errorMessage, e);
+            throw new RuntimeException(errorMessage, e);
+        }
 
     }
 

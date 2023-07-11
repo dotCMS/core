@@ -142,7 +142,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
 
             // ---
             // Checking if we need to remove folders
-            checkFoldersToRemove(parentFolderViewBuilder, files, remoteFolder);
+            checkFoldersToRemove(live, lang, parentFolderViewBuilder, files, remoteFolder);
 
             // ---
             // Checking if we need to remove files
@@ -290,12 +290,14 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
     /**
      * Checks if folders need to be removed from the remote server.
      *
+     * @param live                    the live status
+     * @param lang                    the language
      * @param parentFolderViewBuilder the parent folder view builder
      * @param files                   the files to check
      * @param remoteFolder            the remote folder
      */
-    private void checkFoldersToRemove(FolderView.Builder parentFolderViewBuilder, File[] files,
-                                      FolderView remoteFolder) {
+    private void checkFoldersToRemove(boolean live, String lang, FolderView.Builder parentFolderViewBuilder,
+                                      File[] files, FolderView remoteFolder) {
 
         if (remoteFolder != null) {
             if (remoteFolder.subFolders() != null) {
@@ -316,6 +318,18 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
                     }
 
                     if (remove) {
+
+                        // Folder exist on remote server, but not locally, so we need to remove it and also the assets
+                        // inside it, this is important because depending on the status (live/working), a delete of a
+                        // folder can be an unpublish of the assets inside it or a delete of the folder itself, we need
+                        // to have all the assets inside the folder to be able to handle all the cases.
+                        var remoteSubFolder = retrieveFolder(subFolder.host(), subFolder.path());
+                        if (remoteSubFolder != null) {
+                            var parentFolderAssetVersionsViewBuilder = AssetVersionsView.builder();
+                            checkAssetsToRemove(live, lang, parentFolderAssetVersionsViewBuilder, null, remoteSubFolder);
+                            subFolder = subFolder.withAssets(parentFolderAssetVersionsViewBuilder.build());
+                        }
+
                         // Folder exist on remote server, but not locally, so we need to remove it
                         logger.debug(String.format("Marking folder [%s] for delete.", subFolder.path()));
                         subFolder = subFolder.withMarkForDelete(true);
@@ -363,6 +377,17 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
      * @return The FolderView representing the retrieved folder data, or null if it doesn't exist
      */
     private FolderView retrieveFolder(AssetsUtils.LocalPathStructure localPathStructure) {
+        return retrieveFolder(localPathStructure.site(), localPathStructure.folderPath());
+    }
+
+    /**
+     * Retrieves a folder information from the remote server.
+     *
+     * @param site       the remote site
+     * @param folderPath the remote folder path
+     * @return The FolderView representing the retrieved folder data, or null if it doesn't exist
+     */
+    private FolderView retrieveFolder(final String site, final String folderPath) {
 
         if (!this.siteExists) {
             // Site doesn't exist on remote server
@@ -372,10 +397,10 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
         FolderView remoteFolder = null;
 
         try {
-            remoteFolder = this.retriever.retrieveFolderInformation(localPathStructure.site(), localPathStructure.folderPath());
+            remoteFolder = this.retriever.retrieveFolderInformation(site, folderPath);
         } catch (NotFoundException e) {
             // Folder doesn't exist on remote server
-            logger.debug(String.format("Local folder [%s] doesn't exist on remote server.", localPathStructure.folderPath()));
+            logger.debug(String.format("Local folder [%s] doesn't exist on remote server.", folderPath));
         }
 
         return remoteFolder;

@@ -24,17 +24,21 @@ import java.util.List;
  */
 public class TreePrinter {
 
-    final String statusRegularFormat = "@|bold %s|@";
-    final String languageRegularFormat = "@|bold \uD83C\uDF10 %s|@";
-    final String folderRegularFormat = "\uD83D\uDCC2 %s";
-    final String folderDeleteFormat = "@|bold,red \uD83D\uDCC2 %s \u2716|@";
-    final String folderPushFormat = "@|bold,green \uD83D\uDCC2 %s \u2795|@";
-    final String siteRegularFormat = "@|bold %s|@";
-    final String sitePushFormat = "@|bold,green %s \u2795|@";
-    final String assetRegularFormat = "%s";
-    final String assetPushNewFormat = "@|bold,green %s \u2795|@";
-    final String assetPushModifiedFormat = "@|bold,cyan %s \u270E|@";
-    final String assetDeleteFormat = "@|bold,red %s \u2716|@";
+    public static final String COLOR_NEW = "green";
+    public static final String COLOR_MODIFIED = "cyan";
+    public static final String COLOR_DELETED = "red";
+
+    final String STATUS_REGULAR_FORMAT = "@|bold %s|@";
+    final String LANGUAGE_REGULAR_FORMAT = "@|bold \uD83C\uDF10 %s|@";
+    final String FOLDER_REGULAR_FORMAT = "\uD83D\uDCC2 %s";
+    final String FOLDER_DELETE_FORMAT = "@|bold," + COLOR_DELETED + " \uD83D\uDCC2 %s \u2716|@";
+    final String FOLDER_PUSH_FORMAT = "@|bold," + COLOR_NEW + " \uD83D\uDCC2 %s \u2795|@";
+    final String SITE_REGULAR_FORMAT = "@|bold %s|@";
+    final String SITE_PUSH_FORMAT = "@|bold," + COLOR_NEW + " %s \u2795|@";
+    final String ASSET_REGULAR_FORMAT = "%s";
+    final String ASSET_PUSH_NEW_FORMAT = "@|bold," + COLOR_NEW + " %s \u2795|@";
+    final String ASSET_PUSH_MODIFIED_FORMAT = "@|bold," + COLOR_MODIFIED + " %s \u270E|@";
+    final String ASSET_DELETE_FORMAT = "@|bold," + COLOR_DELETED + " %s \u2716|@";
 
     /**
      * The {@code TreePrinterHolder} class is used to implement the singleton pattern for the
@@ -111,7 +115,7 @@ public class TreePrinter {
      * @param forPushChanges   A boolean indicating whether the formatting is for push changes or not.
      */
     public void formatByStatus(StringBuilder sb, boolean isLive, List<String> sortedLanguages,
-                               TreeNode rootNode, final boolean showEmptyFolders, final boolean forPushChanges) {
+                               final TreeNode rootNode, final boolean showEmptyFolders, final boolean forPushChanges) {
 
         if (sortedLanguages.isEmpty()) {
             return;
@@ -128,7 +132,7 @@ public class TreePrinter {
         }
 
         var status = AssetsUtils.StatusToString(isLive);
-        sb.append("\r ").append(String.format(statusRegularFormat, status)).append('\n');
+        sb.append("\r ").append(String.format(STATUS_REGULAR_FORMAT, status)).append('\n');
 
         Iterator<String> langIterator = sortedLanguages.iterator();
         while (langIterator.hasNext()) {
@@ -140,12 +144,12 @@ public class TreePrinter {
             boolean isLastLang = !langIterator.hasNext();
             sb.append("     ").
                     append((isLastLang ? "└── " : "├── ")).
-                    append(String.format(languageRegularFormat, lang)).append('\n');
+                    append(String.format(LANGUAGE_REGULAR_FORMAT, lang)).append('\n');
 
-            var siteFormat = siteRegularFormat;
+            var siteFormat = SITE_REGULAR_FORMAT;
             if (rootNode.folder().markForPush().isPresent()) {
                 if (rootNode.folder().markForPush().get()) {
-                    siteFormat = sitePushFormat;
+                    siteFormat = SITE_PUSH_FORMAT;
                 }
             }
 
@@ -205,14 +209,14 @@ public class TreePrinter {
     private void format(StringBuilder sb, String prefix, final TreeNode node,
             final String indent, boolean isLastSibling, boolean includeAssets) {
 
-        var folderFormat = folderRegularFormat;
+        var folderFormat = FOLDER_REGULAR_FORMAT;
         if (node.folder().markForDelete().isPresent()) {
             if (node.folder().markForDelete().get()) {
-                folderFormat = folderDeleteFormat;
+                folderFormat = FOLDER_DELETE_FORMAT;
             }
         } else if (node.folder().markForPush().isPresent()) {
             if (node.folder().markForPush().get()) {
-                folderFormat = folderPushFormat;
+                folderFormat = FOLDER_PUSH_FORMAT;
             }
         }
 
@@ -238,22 +242,22 @@ public class TreePrinter {
 
                 // Calculate the asset format to use
                 AssetView asset = node.assets().get(i);
-                var assetFormat = assetRegularFormat;
+                var assetFormat = ASSET_REGULAR_FORMAT;
 
                 if (asset.markForDelete().isPresent()) {
                     if (asset.markForDelete().get()) {
-                        assetFormat = assetDeleteFormat;
+                        assetFormat = ASSET_DELETE_FORMAT;
                     }
                 }
 
                 if (asset.markForPush().isPresent()) {
                     if (asset.markForPush().get()) {
 
-                        assetFormat = assetPushModifiedFormat;
+                        assetFormat = ASSET_PUSH_MODIFIED_FORMAT;
 
                         if (asset.pushTypeNew().isPresent()) {
                             if (asset.pushTypeNew().get()) {
-                                assetFormat = assetPushNewFormat;
+                                assetFormat = ASSET_PUSH_NEW_FORMAT;
                             }
                         }
                     }

@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
+import static com.dotcms.cli.command.files.TreePrinter.*;
+
 @ActivateRequestContext
 @CommandLine.Command(
         name = FilesPush.NAME,
@@ -66,9 +68,6 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                 return CommandLine.ExitCode.SOFTWARE;
             }
 
-            // Display the result
-            StringBuilder sb = new StringBuilder();
-
             // Let's try to print these tree with some order
             result.sort((o1, o2) -> {
                 var left = o1.getLeft();
@@ -80,12 +79,15 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
             for (var treeNodeData : result) {
 
-                sb.append(count++ == 0 ? "\r" : "\n").
-                        append(String.format(" Site: [%s] - Status [%s] - Language [%s] --- Folder [%s]\n",
+                StringBuilder sb = new StringBuilder();
+
+                sb.append(count++ == 0 ? "\r\n" : "\n\n").
+                        append(" ------\n").
+                        append(String.format(" @|bold Folder [%s]|@ --- Site: [%s] - Status [%s] - Language [%s] \n",
+                                treeNodeData.getLeft().filePath(),
                                 treeNodeData.getLeft().site(),
                                 treeNodeData.getLeft().status(),
-                                treeNodeData.getLeft().language(),
-                                treeNodeData.getLeft().filePath()));
+                                treeNodeData.getLeft().language()));
 
                 var localPathStructure = treeNodeData.getLeft();
                 var treeNode = treeNodeData.getRight();
@@ -97,10 +99,12 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     var assetsToPushCount = treeNodePushInfo.assetsToPushCount();
                     if (assetsToPushCount > 0) {
                         sb.append(String.format(" Push Data: " +
-                                        "@|bold,green [%s]|@ Assets to push: (%s New - %s Modified) " +
-                                        "- @|bold,green [%s]|@ Assets to delete " +
-                                        "- @|bold,green [%s]|@ Folders to push " +
-                                        "- @|bold,green [%s]|@ Folders to delete\n\n",
+                                        "@|bold [%s]|@ Assets to push: " +
+                                        "(@|bold," + COLOR_NEW + " %s|@ New " +
+                                        "- @|bold," + COLOR_MODIFIED + " %s|@ Modified) " +
+                                        "- @|bold," + COLOR_DELETED + " [%s]|@ Assets to delete " +
+                                        "- @|bold," + COLOR_NEW + " [%s]|@ Folders to push " +
+                                        "- @|bold," + COLOR_DELETED + " [%s]|@ Folders to delete\n\n",
                                 treeNodePushInfo.assetsToPushCount(),
                                 treeNodePushInfo.assetsNewCount(),
                                 treeNodePushInfo.assetsModifiedCount(),
@@ -109,10 +113,10 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                                 treeNodePushInfo.foldersToDeleteCount()));
                     } else {
                         sb.append(String.format(" Push Data: " +
-                                        "@|bold,green [%s]|@ Assets to push " +
-                                        "- @|bold,green [%s]|@ Assets to delete " +
-                                        "- @|bold,green [%s]|@ Folders to push " +
-                                        "- @|bold,green [%s]|@ Folders to delete\n\n",
+                                        "@|bold," + COLOR_NEW + " [%s]|@ Assets to push " +
+                                        "- @|bold," + COLOR_DELETED + " [%s]|@ Assets to delete " +
+                                        "- @|bold," + COLOR_NEW + " [%s]|@ Folders to push " +
+                                        "- @|bold," + COLOR_DELETED + " [%s]|@ Folders to delete\n\n",
                                 treeNodePushInfo.assetsToPushCount(),
                                 treeNodePushInfo.assetsToDeleteCount(),
                                 treeNodePushInfo.foldersToPushCount(),
@@ -126,13 +130,17 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                             treeNode,
                             false,
                             true);
+                    output.info(sb.toString());
+
+                    // ---
+                    // Pushing the tree
+                    pushService.processTreeNodes(output, localPathStructure, treeNode, treeNodePushInfo);
+
                 } else {
                     sb.append(" No changes to push\n\n");
+                    output.info(sb.toString());
                 }
-
             }
-
-            output.info(sb.toString());
 
         } catch (Exception e) {
             return handleFolderTraversalExceptions(source, e);
