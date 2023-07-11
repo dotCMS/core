@@ -118,7 +118,7 @@ public class HostFactoryImplTest extends IntegrationTestBase {
         }
 
         // test the method search at class HostFactoryImpl where the filter is "test.com" and should return it first in list
-        final Optional<List<Host>> hostsList =  hostFactory.search(baseName, SITE_IS_LIVE_OR_STOPPED.toString(),false ,limit, offset, APILocator.systemUser(), false);
+        final Optional<List<Host>> hostsList =  hostFactory.search(baseName, SITE_IS_LIVE_OR_STOPPED,false ,limit, offset, APILocator.systemUser(), false);
 
         //validations
         assertTrue( "Test site is not contained in list", hostsList.get().contains(testSite));
