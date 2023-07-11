@@ -404,7 +404,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 
         final Identifier identifier = APILocator.getIdentifierAPI().find( identifierId );
         final Optional<ContentletVersionInfo> contentletVersionInfo =
-                this.versionableFactory.getContentletVersionInfo( identifierId, lang );
+                this.versionableFactory.getContentletVersionInfo( identifierId, lang, contentlet.getVariantId() );
 
         if ( contentletVersionInfo.isEmpty() ) {
             throw new DotStateException( "No version info. Call setLive first" );
@@ -757,6 +757,12 @@ public class VersionableAPIImpl implements VersionableAPI {
 	    versionableFactory.deleteContentletVersionInfo(identifier, lang);
 	}
 
+    @WrapInTransaction
+    @Override
+    public void deleteContentletVersionInfo(final String identifier, final long lang, final String variantId) throws DotDataException {
+        versionableFactory.deleteContentletVersionInfo(identifier, lang, variantId);
+    }
+
 	@CloseDBIfOpened
     @Override
 	public boolean hasLiveVersion(final Versionable versionable) throws DotDataException, DotStateException {
@@ -764,7 +770,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 		if(versionable instanceof Contentlet) {
 
 			final Optional<ContentletVersionInfo> contentletVersionInfo = this.getContentletVersionInfo
-                    (versionable.getVersionId(), ((Contentlet) versionable).getLanguageId());
+                    (versionable.getVersionId(), ((Contentlet) versionable).getLanguageId(), ((Contentlet) versionable).getVariantId());
 
 			return contentletVersionInfo.isPresent()
                     && UtilMethods.isSet(contentletVersionInfo.get().getLiveInode());
