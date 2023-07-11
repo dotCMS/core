@@ -210,6 +210,7 @@ import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
+import com.dotmarketing.startup.runonce.Task230522AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
@@ -661,7 +662,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderIntegrityCheckerTest.class,
         ContentPageIntegrityCheckerTest.class,
         AssetPathResolverImplIntegrationTest.class,
-        WebAssetHelperIntegrationTest.class
+        WebAssetHelperIntegrationTest.class,
+        Task230522AddHashIndicesToWorkflowTablesTest.class
 })
 
 public class MainSuite {

@@ -29,6 +29,8 @@ export interface DotExperimentsState {
     filterStatus: Array<string>;
     status: ComponentStatus;
     sidebar: SidebarStatus;
+    hasEnterpriseLicense: boolean;
+    addToBundleContentId: string;
 }
 
 const initialState: DotExperimentsState = {
@@ -44,7 +46,9 @@ const initialState: DotExperimentsState = {
     sidebar: {
         status: ComponentStatus.IDLE,
         isOpen: false
-    }
+    },
+    hasEnterpriseLicense: false,
+    addToBundleContentId: null
 };
 
 // Vm Interfaces
@@ -56,6 +60,7 @@ export interface VmListExperiments {
     sidebar: SidebarStatus;
     pageId: string;
     pageTitle: string;
+    addToBundleContentId: string;
 }
 
 export interface VmCreateExperiments {
@@ -83,10 +88,13 @@ export class DotExperimentsListStore
             state.sidebar.status === ComponentStatus.INIT
     );
     readonly getExperimentsWithActions$: Observable<DotExperimentsWithActions[]> = this.select(
-        ({ experiments }) => {
+        ({ experiments, hasEnterpriseLicense }) => {
             return experiments.map((experiment) => ({
                 ...experiment,
-                actionsItemsMenu: this.getActionMenuItemsByExperiment(experiment)
+                actionsItemsMenu: this.getActionMenuItemsByExperiment(
+                    experiment,
+                    hasEnterpriseLicense
+                )
             }));
         }
     );
@@ -186,6 +194,11 @@ export class DotExperimentsListStore
             status: ComponentStatus.IDLE,
             isOpen: false
         }
+    }));
+
+    readonly showAddToBundle = this.updater((state, addToBundleContentId: string) => ({
+        ...state,
+        addToBundleContentId
     }));
 
     readonly loadExperiments = this.effect((pageId$: Observable<string>) => {
@@ -313,7 +326,7 @@ export class DotExperimentsListStore
         this.dotExperimentsStore.getPageTitle$,
         this.getExperimentsWithActions$,
         (
-            { experiments, filterStatus, sidebar },
+            { experiments, filterStatus, sidebar, addToBundleContentId },
             isLoading,
             experimentsFiltered,
             pageId,
@@ -325,7 +338,8 @@ export class DotExperimentsListStore
             isLoading,
             experimentsFiltered,
             pageId,
-            pageTitle
+            pageTitle,
+            addToBundleContentId
         })
     );
 
@@ -350,8 +364,10 @@ export class DotExperimentsListStore
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
         private readonly confirmationService: ConfirmationService
     ) {
+        const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
         super({
-            ...initialState
+            ...initialState,
+            hasEnterpriseLicense
         });
     }
 
@@ -360,7 +376,10 @@ export class DotExperimentsListStore
         this.loadExperiments(pageId);
     }
 
-    private getActionMenuItemsByExperiment(experiment: DotExperiment): MenuItem[] {
+    private getActionMenuItemsByExperiment(
+        experiment: DotExperiment,
+        hasEnterpriseLicense: boolean
+    ): MenuItem[] {
         return [
             // Delete Action
             {
@@ -407,6 +426,14 @@ export class DotExperimentsListStore
                 label: this.dotMessageService.get('experiments.action.archive'),
                 visible: AllowedActionsByExperimentStatus['archive'].includes(experiment.status),
                 command: () => this.archiveExperiment(experiment)
+            },
+
+            // Add To Bundle Action
+            {
+                id: 'dot-experiments-add-to-bundle',
+                label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
+                visible: hasEnterpriseLicense,
+                command: () => this.showAddToBundle(experiment.identifier)
             }
         ];
     }

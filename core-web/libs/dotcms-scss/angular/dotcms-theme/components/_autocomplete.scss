@@ -15,10 +15,16 @@
 
 .p-autocomplete.p-autocomplete-multiple .p-autocomplete-multiple-container {
     padding: 0.375rem $spacing-2;
+    max-height: 13rem; // 208px
+    overflow: auto; // Make it scrollable
 }
 
 .p-autocomplete.p-autocomplete-multiple .p-autocomplete-multiple-container:not(.p-disabled):hover {
     border-color: $black;
+}
+
+.p-autocomplete.p-autocomplete-multiple .p-autocomplete-multiple-container:not(.p-disabled):hover {
+    border-color: $color-palette-primary;
 }
 
 .p-autocomplete.p-autocomplete-multiple
@@ -49,7 +55,7 @@
 .p-autocomplete.p-autocomplete-multiple .p-autocomplete-multiple-container .p-autocomplete-token {
     padding: 0.375rem $spacing-2;
     margin-right: $spacing-1;
-    background: rgba(63, 81, 181, 0.12);
+    background: $color-palette-primary-200;
     color: $color-palette-primary;
     border-radius: $field-border-radius;
 }

@@ -38,7 +38,7 @@ describe('AddToBundleService', () => {
         httpMock = injector.get(HttpTestingController);
     });
 
-    it('should get bundle list', () => {
+    it('should get bundle list', (done) => {
         jest.spyOn(dotCurrentUserService, 'getCurrentUser').mockReturnValue(
             of(<DotCurrentUser>{
                 userId: '1234'
@@ -65,6 +65,7 @@ describe('AddToBundleService', () => {
 
         addToBundleService.getBundles().subscribe((items: any) => {
             expect(items).toBe(mockResponse.items);
+            done();
         });
 
         const req = httpMock.expectOne('api/bundle/getunsendbundles/userid/1234');
@@ -72,7 +73,7 @@ describe('AddToBundleService', () => {
         req.flush(mockResponse);
     });
 
-    it('should do a post request and add to bundle', () => {
+    it('should do a post request and add to bundle', (done) => {
         const mockResponse = {
             errorMessages: [],
             total: 1,
@@ -92,6 +93,7 @@ describe('AddToBundleService', () => {
             .addToBundle(assetIdentifier, mockBundleData)
             .subscribe((action: DotAjaxActionResponseView) => {
                 expect(action).toEqual(mockResponse);
+                done();
             });
 
         const req = httpMock.expectOne((_req) => true);

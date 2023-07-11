@@ -11,5 +11,12 @@ export default {
         '^.+\\.[tj]s$': 'ts-jest'
     },
     moduleFileExtensions: ['ts', 'js', 'html'],
-    coverageDirectory: '../../coverage/libs/dotcms'
+    coverageDirectory: '../../target/core-web-reports/',
+    coverageReporters: [['lcovonly', { file: 'TEST-dotcms.lcov' }]],
+    reporters: [
+        [
+            'jest-junit',
+            { outputDirectory: 'target/core-web-reports', outputName: 'TEST-dotcms.xml' }
+        ]
+    ]
 };
