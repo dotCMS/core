@@ -109,9 +109,12 @@
     </div>
 
     <div class="field">
-        <small class="p-field-hint" id="field-dates-hint" *ngIf="!dateVarOptions.length">{{
-            'contenttypes.form.message.no.date.fields.defined' | dm
-        }}</small>
+        <small
+            class="p-field-hint field__date-hint"
+            id="field-dates-hint"
+            *ngIf="!dateVarOptions.length"
+            >{{ 'contenttypes.form.message.no.date.fields.defined' | dm }}</small
+        >
     </div>
 
     <div class="field" *ngIf="form.get('detailPage')">
