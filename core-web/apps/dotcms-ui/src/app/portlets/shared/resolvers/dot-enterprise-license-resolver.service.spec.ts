@@ -18,7 +18,7 @@ describe('DotEnterpriseLicenseResolver', () => {
         dotLicenseService = spectator.inject(DotLicenseService);
     });
 
-    it('should get a list of environments', () => {
+    it('should call dotLicenseService', () => {
         spectator.service.resolve().subscribe();
         expect(dotLicenseService.isEnterprise).toHaveBeenCalled();
     });
