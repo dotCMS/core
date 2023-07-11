@@ -887,12 +887,15 @@ public class PageResource {
     }
 
     /**
-     * Copy the contentlet sent over the CopyContentletForm
-     * The contentlet should be part of the multitree on the page sent in the form, also the content should exists to be copied.
-     * @param request {@link HttpServletRequest}
-     * @param response {@link HttpServletResponse}
-     * @param copyContentletForm {@link CopyContentletForm}
-     * @return Contentlet Map
+     * Copies the specified Contentlet. Such a Contentlet must exist for it to be copied. It can either be part of a
+     * Multi-Tree entry in the page sent in the form, or it can be just a Contentlet referenced via URL Map.
+     *
+     * @param request            The current instance of the {@link HttpServletRequest} object.
+     * @param response           The current instance of the {@link HttpServletResponse} object.
+     * @param copyContentletForm The {@link CopyContentletForm} object containing all the required information for the
+     *                           specified Contentlet to be copied.
+     *
+     * @return The copied Contentlet in the form of a data Map.
      */
     @PUT
     @JSONP
@@ -912,13 +915,12 @@ public class PageResource {
 
             throw new BadRequestException("Form is required");
         }
-
-        final InitDataObject initData = webResource.init(request, response,true);
+        final InitDataObject initData = new WebResource.InitBuilder(webResource).requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final PageMode pageMode       = PageMode.get(request);
         final User user               = initData.getUser();
         final Language language       = WebAPILocator.getLanguageWebAPI().getLanguage(request); // todo: not sure if this should be received on the form.
         final Contentlet copiedContentlet = this.pageResourceHelper.copyContentlet(copyContentletForm, user, pageMode, language);
-        final Map<String, Object> entity = (Map<String, Object>)new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+        final Map<String, Object> entity = new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
                 .toMaps().stream().findFirst().orElse(Collections.emptyMap());
         return new ResponseEntityView<>(entity);
     }

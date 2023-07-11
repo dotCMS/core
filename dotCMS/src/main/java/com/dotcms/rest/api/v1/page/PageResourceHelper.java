@@ -8,7 +8,6 @@ import com.dotcms.mock.request.LanguageIdParameterDecorator;
 import com.dotcms.mock.request.ParameterDecorator;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
-import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
@@ -466,58 +465,89 @@ public class PageResourceHelper implements Serializable {
         }
     }
 
-
+    /**
+     * Creates a copy of the specified Contentlet. This is particularly useful during Edit Mode, in which Users can
+     * choose whether they want to edit the "global" Contentlet reference -- i.e., the same Contentlet being used in one
+     * or more pages -- or create an exact copy of it, and edit it instead.
+     *
+     * @param copyContentletForm The {@link CopyContentletForm} object with the information of the Contentlet being
+     *                           copied.
+     * @param user               The {@link User} performing the action.
+     * @param pageMode           The {@link PageMode} representing the currently selected Page Mode.
+     * @param language           The {@link Language} in which the Contentlet is being copied.
+     *
+     * @return The copied {@link Contentlet} object.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have permission to perform this action.
+     */
     @WrapInTransaction
     protected Contentlet copyContentlet(final CopyContentletForm copyContentletForm, final User user,
                                       final PageMode pageMode, final Language language)
             throws DotDataException, DotSecurityException {
 
         final Tuple2<Contentlet, Contentlet> tuple2 = this.copyContent(copyContentletForm, user, pageMode, language.getId());
-
         final Contentlet copiedContentlet   = tuple2._1();
         final Contentlet originalContentlet = tuple2._2();
         final String htmlPage   = copyContentletForm.getPageId();
-        String container        = copyContentletForm.getContainerId();
+        String containerId      = copyContentletForm.getContainerId();
         final String contentId  = copyContentletForm.getContentId();
         final String instanceId = copyContentletForm.getRelationType();
         final String variant    = copyContentletForm.getVariantId();
         final int treeOrder     = copyContentletForm.getTreeOrder();
         final String personalization = copyContentletForm.getPersonalization();
+        if (!this.isURLMappedContent(originalContentlet, user, false)) {
+            if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
 
-        if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(container)) {
-
-            final Container containerObject = APILocator.getContainerAPI().getLiveContainerByFolderPath(container, user, pageMode.respectAnonPerms,
-                    ()-> Try.of(()->APILocator.getHostAPI().findDefaultHost(user, pageMode.respectAnonPerms)).getOrNull());
-            if (null != containerObject) {
-                container =containerObject.getIdentifier();
+                final Container containerObject = APILocator.getContainerAPI().getLiveContainerByFolderPath(containerId, user, pageMode.respectAnonPerms,
+                        () -> Try.of(() -> this.hostAPI.findDefaultHost(user, pageMode.respectAnonPerms)).getOrNull());
+                if (null != containerObject) {
+                    containerId = containerObject.getIdentifier();
+                }
             }
+
+            Logger.debug(this, () -> "Deleting current contentlet multi tree: " + copyContentletForm);
+            final MultiTree currentMultitree = this.multiTreeAPI.getMultiTree(htmlPage, containerId, contentId, instanceId,
+                    null == personalization ? MultiTree.DOT_PERSONALIZATION_DEFAULT : personalization, null == variant ? VariantAPI.DEFAULT_VARIANT.name() : variant);
+
+            if (null == currentMultitree) {
+
+                throw new DoesNotExistException(
+                        "Cannot copy the specified Contentlet because the Multi-Tree record was not found: " + copyContentletForm);
+            }
+
+            this.multiTreeAPI.deleteMultiTree(currentMultitree);
+
+            final MultiTree newMultitree = new MultiTree(htmlPage, containerId, copiedContentlet.getIdentifier(),
+                    instanceId, treeOrder, null == personalization ? MultiTree.DOT_PERSONALIZATION_DEFAULT : personalization,
+                    null == variant ? VariantAPI.DEFAULT_VARIANT.name() : variant);
+            Logger.debug(this, () -> "Saving current contentlet multi tree: " + currentMultitree);
+            this.multiTreeAPI.saveMultiTree(newMultitree);
         }
-
-        Logger.debug(this, ()-> "Deleting current contentlet multi tree: " + copyContentletForm);
-        final MultiTree currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, instanceId,
-                null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
-
-        if (null == currentMultitree) {
-
-            throw new DoesNotExistException(
-                    "Can not copied the contentlet in the page, because the record is not part of the page, multitree: " + copyContentletForm);
-        }
-
-        APILocator.getMultiTreeAPI().deleteMultiTree(currentMultitree);
-
-        final MultiTree newMultitree = new MultiTree(htmlPage, container, copiedContentlet.getIdentifier(),
-                instanceId, treeOrder, null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization,
-                null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
-        Logger.debug(this, ()-> "Saving current contentlet multi tree: " + currentMultitree);
-        APILocator.getMultiTreeAPI().saveMultiTree(newMultitree);
-
         if (null != originalContentlet) {
-            HibernateUtil.addCommitListener(()->
+            HibernateUtil.addCommitListener(() ->
                     new ContentletLoader().invalidate(originalContentlet, PageMode.EDIT_MODE));
         }
-
-
         return copiedContentlet;
+    }
+
+    /**
+     * Determines whether the specified Contentlet is being referenced via URL Mapping or not.
+     *
+     * @param contentlet           The {@link Contentlet} being checked.
+     * @param user                 The {@link User} performing the action.
+     * @param respectFrontendRoles If front-end Roles must be taken into account when performing this check, set this to
+     *                             {@code true}.
+     *
+     * @return If the specified Contentlet is being referenced via URL Mapping, returns {@code true}.
+     */
+    private boolean isURLMappedContent(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) {
+        try {
+            return UtilMethods.isSet(this.contentletAPI.getUrlMapForContentlet(contentlet, user, respectFrontendRoles));
+        } catch (final DotSecurityException | DotDataException e) {
+            Logger.debug(this, String.format("Failed to check URL Mapping for Contentlet '%s': %s", contentlet.getIdentifier(), e.getMessage()), e);
+            return false;
+        }
     }
 
     /**
