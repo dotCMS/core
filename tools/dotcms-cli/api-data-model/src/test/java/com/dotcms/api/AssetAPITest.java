@@ -1,7 +1,7 @@
 package com.dotcms.api;
 
 
-//import com.dotcms.ContainerResource;
+import com.dotcms.ContainerResource;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 @QuarkusTest
-//@QuarkusTestResource(ContainerResource.class)
+@QuarkusTestResource(ContainerResource.class)
 class AssetAPITest {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
