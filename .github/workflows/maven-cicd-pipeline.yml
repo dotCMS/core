@@ -53,12 +53,12 @@ jobs:
       - name: Create file
         shell: bash
         run: |
-          echo -n ${{ github.event.number }} > pull-request-number
+          echo -n ${{ github.event.number }} > pr.txt
       - name: Upload pull request number
         uses: actions/upload-artifact@v3
         with:
-          name: pull-request-number-${{ github.event.number }}
-          path: pull-request-number
+          name: pull-request-number
+          path: pr.txt
   build-jdk11:
     name: "Initial JDK 11 Build"
     runs-on: ubuntu-latest
