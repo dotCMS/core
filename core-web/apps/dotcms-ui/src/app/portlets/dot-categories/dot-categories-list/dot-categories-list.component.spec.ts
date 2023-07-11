@@ -91,6 +91,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 DotMenuModule,
                 HttpClientTestingModule,
                 DotPipesModule,
+                DotMessagePipe,
                 BreadcrumbModule,
                 DotPortletBaseModule,
                 ButtonModule,
@@ -100,7 +101,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 InplaceModule,
                 InputNumberModule,
                 DotActionMenuButtonModule,
-                DotMessagePipe,
+
                 CheckboxModule,
                 DotEmptyStateModule
             ],

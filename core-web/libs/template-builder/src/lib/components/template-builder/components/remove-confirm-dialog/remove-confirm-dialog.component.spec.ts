@@ -18,7 +18,6 @@ describe('RemoveConfirmDialogComponent', () => {
         imports: [DotMessagePipe],
         providers: [
             ConfirmationService,
-            DotMessagePipe,
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK

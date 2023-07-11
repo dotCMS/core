@@ -6,6 +6,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { RegexCheckPropertyComponent } from './index';
@@ -29,7 +30,7 @@ describe('RegexCheckPropertyComponent', () => {
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
             declarations: [RegexCheckPropertyComponent],
-            imports: [NoopAnimationsModule],
+            imports: [NoopAnimationsModule, DotMessagePipe],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 

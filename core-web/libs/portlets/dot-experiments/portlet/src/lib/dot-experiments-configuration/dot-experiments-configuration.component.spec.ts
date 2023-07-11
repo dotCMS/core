@@ -22,11 +22,10 @@ import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/d
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
 import {
-    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA,
     getExperimentMock,
-    MockDotMessageService
+    MockDotMessageService,
+    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -118,8 +117,7 @@ describe('DotExperimentsConfigurationComponent', () => {
             mockProvider(Router),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(Title),
-            mockProvider(DotSessionStorageService),
-            DotMessagePipe
+            mockProvider(DotSessionStorageService)
         ]
     });
 

@@ -12,13 +12,14 @@ import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive'
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotApps } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
 
 @Component({
-    template: `<dot-apps-configuration-header [app]="app"></dot-apps-configuration-header>`
+    template: ` <dot-apps-configuration-header [app]="app"></dot-apps-configuration-header>`
 })
 class TestHostComponent {
     app: DotApps;
@@ -56,6 +57,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
                 CommonModule,
                 DotCopyLinkModule,
                 DotPipesModule,
+                DotMessagePipe,
                 DotAvatarDirective,
                 AvatarModule
             ],
