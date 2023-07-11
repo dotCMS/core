@@ -76,7 +76,7 @@ import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-exp
 
 import { DotEditPageToolbarSeoComponent } from './dot-edit-page-toolbar-seo.component';
 
-import { DotEditPageInfoSeoModule } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.module';
+import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.component';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -166,7 +166,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 ToolbarModule,
                 DotEditPageViewAsControllerModule,
                 DotEditPageStateControllerSeoComponent,
-                DotEditPageInfoSeoModule,
+                DotEditPageInfoSeoComponent,
                 DotEditPageWorkflowsActionsModule,
                 DotPipesModule,
                 DotWizardModule,

@@ -42,7 +42,7 @@ import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/conte
 import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 
 import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-device-selector-seo.component';
-import { DotEditPageInfoSeoModule } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.module';
+import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.component';
 import { DotEditPageStateControllerSeoComponent } from '../dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
 
 @Component({
@@ -70,7 +70,7 @@ import { DotEditPageStateControllerSeoComponent } from '../dot-edit-page-state-c
         DotEditPageNavDirective,
         RouterLink,
         TagModule,
-        DotEditPageInfoSeoModule,
+        DotEditPageInfoSeoComponent,
         DotDeviceSelectorSeoComponent,
         DotEditPageStateControllerSeoComponent
     ]

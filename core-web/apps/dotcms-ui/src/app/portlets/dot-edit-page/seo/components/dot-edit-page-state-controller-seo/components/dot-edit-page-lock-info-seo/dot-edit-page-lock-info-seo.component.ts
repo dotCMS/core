@@ -1,6 +1,9 @@
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 
 import { DotPageRenderState } from '@dotcms/dotcms-models';
+import { InputSwitchModule } from 'primeng/inputswitch';
 
 /**
  * Basic page information for edit mode
@@ -13,7 +16,8 @@ import { DotPageRenderState } from '@dotcms/dotcms-models';
     selector: 'dot-edit-page-lock-info-seo',
     templateUrl: './dot-edit-page-lock-info-seo.component.html',
     styleUrls: ['./dot-edit-page-lock-info-seo.component.scss'],
-    standalone: true
+    standalone: true,
+    imports: [CommonModule, InputSwitchModule, DotPipesModule]
 })
 export class DotEditPageLockInfoSeoComponent {
     @ViewChild('lockedPageMessage') lockedPageMessage: ElementRef;

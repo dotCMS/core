@@ -21,8 +21,7 @@ describe('DotEditPageLockInfoSeoComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [DotPipesModule],
-            declarations: [DotEditPageLockInfoSeoComponent],
+            imports: [DotEditPageLockInfoSeoComponent, DotPipesModule],
             providers: [
                 {
                     provide: DotMessageService,
