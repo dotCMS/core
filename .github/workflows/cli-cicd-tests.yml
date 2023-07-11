@@ -16,7 +16,7 @@ jobs:
       - name: Checkout core
         uses: actions/checkout@v3
       - name: Run tests
-        working-directory: ./tools/dotcms-cli/api-data-model/
+        working-directory: ./tools/dotcms-cli/
         run: |
           pwd
           ls -la
