@@ -45,20 +45,6 @@ concurrency:
 env:
   JVM_TEST_MAVEN_OPTS: "-e -B"
 jobs:
-  attach-pr-number:
-    runs-on: ubuntu-latest
-    name: Attach pull request number
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Create file
-        shell: bash
-        run: |
-          echo -n ${{ github.event.number }} > pull-request-number
-      - name: Upload pull request number
-        uses: actions/upload-artifact@v3
-        with:
-          name: pull-request-number-${{ github.event.number }}
-          path: pull-request-number
   build-jdk11:
     name: "Initial JDK 11 Build"
     runs-on: ubuntu-latest
@@ -106,11 +92,11 @@ jobs:
         shell: bash
         run: rm -r ~/.m2/repository/com/dotcms
 
-      - name: Upload build reports (if build failed)
+      - name: Upload build reports
         uses: actions/upload-artifact@v3
-        if: ${{ failure() || cancelled() }}
+        if: ${{ always() }}
         with:
-          name: "init-build-reports-Initial JDK 11 Build" #Should not be picked up for JunitReports
+          name: "build-reports-Initial JDK 11 Build" #Should not be picked up for JunitReports
           path: |
             target/build-report.json
             LICENSE
@@ -163,11 +149,11 @@ jobs:
         with:
           name: test-reports-linux-jvm${{matrix.java.name}}
           path: 'test-reports.tgz'
-      - name: core-maven-unit-tests (if build failed)
+      - name: core-maven-unit-tests
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: "build-reports-JVM Tests - JDK ${{matrix.java.name}}"
+          name: "build-reports-test-JVM Tests - JDK ${{matrix.java.name}}"
           path: |
             **/target/*-reports/TEST-*.xml
             target/build-report.json
@@ -222,7 +208,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: "build-reports-Frontend unit tests"
+          name: "build-reports-test-Frontend unit tests"
           path: |
             **/target/*-reports/**/TEST-*.xml
             target/build-report.json
@@ -230,7 +216,7 @@ jobs:
           retention-days: 2
 
   linux-integration-tests:
-    name: JVM Integration Tests - JDK ${{matrix.java.name}} ${{matrix.suites.name}}
+    name: JVM IT Tests - JDK ${{matrix.java.name}} ${{matrix.suites.name}}
     runs-on: ubuntu-latest
     # Skip master in forks
     if: "github.repository == 'dotCMS/core' || !endsWith(github.ref, '/master')"
@@ -276,7 +262,7 @@ jobs:
         shell: bash
         run: sudo apt-get clean
 
-      - name: Set up Integration Tests ${{ matrix.java.name }} ${{ matrix.suites.name }}
+      - name: Set up IT Tests ${{ matrix.java.name }} ${{ matrix.suites.name }}
         uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java.java-version }}
@@ -308,9 +294,104 @@ jobs:
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: "build-reports-IT Tests - JDK ${{matrix.java.name}} - ${{matrix.suites.name}}"
+          name: "build-reports-test-IT Tests - JDK ${{matrix.java.name}} - ${{matrix.suites.name}}"
           path: |
             **/target/*-reports/TEST-*.xml
             target/build-report.json
             LICENSE
           retention-days: 2
+  prepare-report-data:
+    name: Prepare Report Data
+    runs-on: ubuntu-latest
+    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests ]
+    if: always()
+    steps:
+      - name: Download build reports
+        uses: actions/download-artifact@v3
+        with:
+          path: /tmp/build-step-reports
+
+      - name: Prepare workflow data
+        run: |
+          AGGREGATE_STATUS="SUCCESS"
+          FIRST_FAIL_STEP=""
+          FIRST_FAIL_MODULE=""
+          
+          # Check if the workflow was cancelled
+          if [[ "${{ github.event_name }}" == "workflow_run" && "${{ github.event.workflow_run.conclusion }}" == "cancelled" ]]; then
+            AGGREGATE_STATUS="CANCELLED"
+          fi
+          
+          echo '{' > workflow-data.json
+          
+          echo '"branch": "'${{ github.head_ref }}'",' >> workflow-data.json
+          echo '"run_id": "'${{ github.run_id }}'",' >> workflow-data.json
+          echo '"trigger_event_name": "'$GITHUB_EVENT_NAME'",' >> workflow-data.json
+          echo '"source_repository": "'$GITHUB_REPOSITORY'",' >> workflow-data.json
+
+          echo '"merge_sha": "'${{ github.sha }}'",' >> workflow-data.js
+          
+          echo '"base_sha": "'${{ github.event.pull_request.base.sha }}'",' >> workflow-data.js
+          echo '"base_branch": "'${{ github.event.pull_request.base.sha }}'",' >> workflow-data.js
+          echo '"base_author": "'${{ github.event.pull_request.base.user.login }}'",' >> workflow-data.js
+          
+          echo '"head_author": "'${{ github.event.pull_request.head.user.login }}'",' >> workflow-data.json
+          echo '"head_name": "'${{ github.event.pull_request.head.ref }}'",' >> workflow-data.json
+          echo '"head_sha": "'${{ github.event.pull_request.head.sha }}'",' >> workflow-data.json
+          
+          echo '"pr_id": "'${{ github.event.pull_request.id }}'",' >> workflow-data.js
+          echo '"pr_number": "'${{ github.event.pull_request.number }}'",' >> workflow-data.js
+          echo '"pr_title": "'${{ github.event.pull_request.title }}'",' >> workflow-data.js
+          echo '"pr_author": "'${{ github.event.pull_request.user.login }}'",' >> workflow-data.js
+          echo '"pr_merge_state": "'${{ github.event.pull_request.mergeable_state }}'",' >> workflow-data.js
+          
+          
+          echo '"build_reports": [' >> workflow-data.json
+          total_reports=$(find /tmp/build-step-reports/build-reports-*/target -name build-report.json 2>/dev/null | wc -l)
+          
+          report_index=0
+          if [ "$total_reports" -eq "0" ]; then
+            echo "No build report files found."
+          else
+            for build_report in "/tmp/build-step-reports/build-reports-"*/target/build-report.json; do
+              ((report_index=report_index+1))
+              step_name=$(basename "$(dirname "$(dirname "$build_report")")" | sed 's/build-reports-//')
+              cat "$build_report" | jq ".step_name = \"$step_name\"" >> workflow-data.json
+              # If the aggregate status is still SUCCESS, check if this module failed
+              if [[ "$AGGREGATE_STATUS" == "SUCCESS" ]]; then
+                # Loop over each projectReport
+                length=$(jq '.projectReports | length' "$build_report")
+                for (( i=0; i<$length; i++ )); do
+                status=$(jq -r ".projectReports[$i].status" "$build_report")
+                if [[ "$status" != "SUCCESS" ]]; then
+                  AGGREGATE_STATUS="FAILURE"
+                  FIRST_FAIL_STEP="$step_name"
+                  FIRST_FAIL_MODULE="$(jq -r ".projectReports[$i].name" "$build_report")"
+                  FIRST_FAIL_ERROR="$(jq -r ".projectReports[$i].error" "$build_report")"
+                fi
+                done
+              fi
+              
+              # If not the last file, append a comma
+              if (( report_index != total_reports )); then
+                echo ',' >> workflow-data.json
+              fi
+            done
+          fi
+      
+          echo '],' >> workflow-data.json
+          echo '"aggregate_status": "'$AGGREGATE_STATUS'"' >> workflow-data.json
+          if [[ "$AGGREGATE_STATUS" != "SUCCESS" ]]; then
+            echo ',' >> workflow-data.json
+            echo '"first_fail_step": "'$FIRST_FAIL_STEP'",' >> workflow-data.json
+            echo '"first_fail_module": "'$FIRST_FAIL_MODULE'",' >> workflow-data.json
+            echo '"first_fail_error": "'$FIRST_FAIL_ERROR'"' >> workflow-data.json
+          fi
+          echo '}' >> workflow-data.json
+
+      - name: Upload workflow data
+        uses: actions/upload-artifact@v3
+        with:
+          name: workflow-data
+          path: ./workflow-data.json
+
