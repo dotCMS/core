@@ -30,7 +30,7 @@ export const MAX_INPUT_TITLE_LENGTH = 50;
 export const MAX_INPUT_DESCRIPTIVE_LENGTH = 255;
 
 // Keep the order of this enum is important to respect the order of the experiment listing.
-export enum DotExperimentStatusList {
+export enum DotExperimentStatus {
     RUNNING = 'RUNNING',
     SCHEDULED = 'SCHEDULED',
     DRAFT = 'DRAFT',
@@ -41,23 +41,23 @@ export enum DotExperimentStatusList {
 export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
         label: 'draft',
-        value: DotExperimentStatusList.DRAFT
+        value: DotExperimentStatus.DRAFT
     },
     {
         label: 'running',
-        value: DotExperimentStatusList.RUNNING
+        value: DotExperimentStatus.RUNNING
     },
     {
         label: 'ended',
-        value: DotExperimentStatusList.ENDED
+        value: DotExperimentStatus.ENDED
     },
     {
         label: 'archived',
-        value: DotExperimentStatusList.ARCHIVED
+        value: DotExperimentStatus.ARCHIVED
     },
     {
         label: 'scheduled',
-        value: DotExperimentStatusList.SCHEDULED
+        value: DotExperimentStatus.SCHEDULED
     }
 ];
 
@@ -167,6 +167,21 @@ export const daysOfTheWeek = [
     'Saturday'
 ];
 
+export const MonthsOfTheYear = [
+    'months.january.short',
+    'months.february.short',
+    'months.march.short',
+    'months.april.short',
+    'months.may.short',
+    'months.june.short',
+    'months.july.short',
+    'months.august.short',
+    'months.september.short',
+    'months.october.short',
+    'months.november.short',
+    'months.december.short'
+];
+
 export type SummaryLegend = { icon: string; legend: string };
 
 export const enum BayesianStatusResponse {
@@ -209,3 +224,26 @@ export const ReportSummaryLegendByBayesianStatus: Record<BayesianLegendStatus, S
         legend: 'experiments.summary.suggested-winner.no-enough-sessions'
     }
 };
+
+type DotExperimentListAction = 'delete' | 'configuration' | 'archive' | 'addToBundle';
+export const AllowedActionsByExperimentStatus: Record<
+    DotExperimentListAction,
+    Array<DotExperimentStatus>
+> = {
+    ['delete']: [DotExperimentStatus.DRAFT, DotExperimentStatus.SCHEDULED],
+    ['configuration']: [
+        DotExperimentStatus.RUNNING,
+        DotExperimentStatus.ENDED,
+        DotExperimentStatus.ARCHIVED
+    ],
+    ['archive']: [DotExperimentStatus.ENDED],
+    ['addToBundle']: [
+        DotExperimentStatus.DRAFT,
+        DotExperimentStatus.RUNNING,
+        DotExperimentStatus.ENDED,
+        DotExperimentStatus.ARCHIVED,
+        DotExperimentStatus.SCHEDULED
+    ]
+};
+
+export const CONFIGURATION_CONFIRM_DIALOG_KEY = 'confirmDialog';

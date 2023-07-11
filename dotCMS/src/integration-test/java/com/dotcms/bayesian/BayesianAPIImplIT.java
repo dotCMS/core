@@ -1,11 +1,12 @@
-package com.dotcms.analytics.bayesian;
+package com.dotcms.bayesian;
 
-import com.dotcms.analytics.bayesian.model.ABTestingType;
-import com.dotcms.analytics.bayesian.model.BayesianInput;
-import com.dotcms.analytics.bayesian.model.BayesianPriors;
-import com.dotcms.analytics.bayesian.model.BayesianResult;
-import com.dotcms.analytics.bayesian.model.VariantBayesianInput;
-import org.junit.Before;
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.analytics.bayesian.BayesianAPI;
+import com.dotcms.analytics.bayesian.model.*;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -19,25 +20,27 @@ import static org.junit.Assert.*;
  *
  * @author vico
  */
-public class BayesianAPIImplTest {
+public class BayesianAPIImplIT extends IntegrationTestBase {
 
-    private BayesianAPI bayesianAPI;
+    private static BayesianAPI bayesianAPI;
 
-    @Before
-    public void setup() {
-        bayesianAPI = new BayesianAPIImpl();
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        IntegrationTestInitService.getInstance().init();
+        bayesianAPI = APILocator.getBayesianAPI();
+        Config.setProperty("INCLUDE_BETA_DISTRIBUTION_SAMPLES", true);
     }
 
     /**
      * Given Bayesian input parameters with these values:
      *
      * <pre>
-     *     priorAlpha: 2.0
-     *     priorBeta: 2.0
-     *     controlSuccesses: 150
-     *     controlFailures: 50
-     *     testSuccesses: 200
-     *     testFailures: 50
+     *     priorAlpha: 1.0
+     *     priorBeta: 1.0
+     *     controlSuccesses: 100
+     *     controlFailures: 900
+     *     testSuccesses: 130
+     *     testFailures: 870
      * </pre>
      *
      * Expect that the probability B beats A is at least 0.89.
@@ -46,23 +49,25 @@ public class BayesianAPIImplTest {
     public void test_doBayesian_AB() {
         final BayesianInput input = BayesianInput.builder()
             .type(ABTestingType.AB)
-            .control(VariantBayesianInput.builder().variant("control").successes(100).failures(900).build())
-            .addVariantPairs(VariantBayesianInput.builder().variant("test").successes(130).failures(870).build())
-            .priors(List.of(BayesianPriors.builder().alpha(1.0).beta(1.0).build()))
+            .control(VariantInput.builder().variant("control").successes(100).failures(900).isControl(true).build())
+            .addVariantPairs(VariantInput.builder().variant("test").successes(130).failures(870).isControl(false).build())
+            .priors(List.of(BayesianAPI.DEFAULT_PRIORS))
             .build();
         final BayesianResult result = bayesianAPI.doBayesian(input);
         assertNotNull(result);
         assertEquals(0.02, result.results().get(0).probability(), 0.01);
         assertEquals(0.10, result.results().get(0).conversionRate(), 0.00);
+        assertEquals(0.89, result.results().get(0).expectedLoss(), 0.01);
         assertNull(result.results().get(0).medianGrowth());
         assertEquals(0.98, result.results().get(1).probability(), 0.01);
         assertEquals(0.13, result.results().get(1).conversionRate(), 0.00);
+        assertEquals(0.89, result.results().get(1).expectedLoss(), 0.01);
         assertEquals(0.23, result.results().get(1).medianGrowth(), 0.01);
         assertEquals("test", result.suggestedWinner());
         assertEquals(1000, result.differenceData().controlData().length);
         assertEquals(1000, result.differenceData().testData().length);
         assertEquals(1000, result.differenceData().differences().length);
-        assertEquals(0.03, result.differenceData().relativeDifference(), 0.01);
+        assertEquals(0.03, result.differenceData().relativeDifference(), 0.001);
         assertEquals(11, result.quantiles().size());
         assertEquals(2, result.distributionPdfs().samples().size());
         assertEquals(1000, result.distributionPdfs().samples().get("control").size());
@@ -79,8 +84,8 @@ public class BayesianAPIImplTest {
     public void test_calculateABTesting_invalidPriorAlpha() {
         final BayesianInput input = BayesianInput.builder()
             .type(ABTestingType.AB)
-            .control(VariantBayesianInput.builder().variant("control").successes(5).failures(3).build())
-            .addVariantPairs(VariantBayesianInput.builder().variant("test").successes(5).failures(3).build())
+            .control(VariantInput.builder().variant("control").successes(5).failures(3).isControl(true).build())
+            .addVariantPairs(VariantInput.builder().variant("test").successes(5).failures(3).isControl(false).build())
             .priors(List.of(BayesianPriors.builder().alpha(0.0).beta(10.0).build()))
             .build();
         bayesianAPI.doBayesian(input);
@@ -94,8 +99,8 @@ public class BayesianAPIImplTest {
     public void test_calculateABTesting_invalidPriorBeta() {
         final BayesianInput input = BayesianInput.builder()
             .type(ABTestingType.AB)
-            .control(VariantBayesianInput.builder().variant("control").successes(5).failures(3).build())
-            .addVariantPairs(VariantBayesianInput.builder().variant("test").successes(5).failures(3).build())
+            .control(VariantInput.builder().variant("control").successes(5).failures(3).isControl(true).build())
+            .addVariantPairs(VariantInput.builder().variant("test").successes(5).failures(3).isControl(false).build())
             .priors(List.of(BayesianPriors.builder().alpha(10.0).beta(0.0).build()))
             .build();
         bayesianAPI.doBayesian(input);
@@ -109,8 +114,8 @@ public class BayesianAPIImplTest {
     public void test_calculateABTesting_invalidControlSuccesses() {
         final BayesianInput input = BayesianInput.builder()
             .type(ABTestingType.AB)
-            .control(VariantBayesianInput.builder().variant("control").successes(-1).failures(3).build())
-            .addVariantPairs(VariantBayesianInput.builder().variant("test").successes(5).failures(3).build())
+            .control(VariantInput.builder().variant("control").successes(-1).failures(3).isControl(true).build())
+            .addVariantPairs(VariantInput.builder().variant("test").successes(5).failures(3).isControl(false).build())
             .priors(List.of(BayesianPriors.builder().alpha(10.0).beta(10.0).build()))
             .build();
         bayesianAPI.doBayesian(input);
@@ -124,8 +129,8 @@ public class BayesianAPIImplTest {
     public void test_calculateABTesting_invalidControlFailures() {
         final BayesianInput input = BayesianInput.builder()
             .type(ABTestingType.AB)
-            .control(VariantBayesianInput.builder().variant("control").successes(5).failures(-1).build())
-            .addVariantPairs(VariantBayesianInput.builder().variant("test").successes(5).failures(3).build())
+            .control(VariantInput.builder().variant("control").successes(5).failures(-1).isControl(true).build())
+            .addVariantPairs(VariantInput.builder().variant("test").successes(5).failures(3).isControl(false).build())
             .priors(List.of(BayesianPriors.builder().alpha(10.0).beta(10.0).build()))
             .build();
         bayesianAPI.doBayesian(input);
@@ -139,8 +144,8 @@ public class BayesianAPIImplTest {
     public void test_calculateABTesting_invalidTestSuccesses() {
         final BayesianInput input = BayesianInput.builder()
             .type(ABTestingType.AB)
-            .control(VariantBayesianInput.builder().variant("control").successes(5).failures(3).build())
-            .addVariantPairs(VariantBayesianInput.builder().variant("test").successes(-1).failures(3).build())
+            .control(VariantInput.builder().variant("control").successes(5).failures(3).isControl(true).build())
+            .addVariantPairs(VariantInput.builder().variant("test").successes(-1).failures(3).isControl(false).build())
             .priors(List.of(BayesianPriors.builder().alpha(10.0).beta(10.0).build()))
             .build();
         bayesianAPI.doBayesian(input);
@@ -154,8 +159,8 @@ public class BayesianAPIImplTest {
     public void test_calculateABTesting_invalidTestFailures() {
         final BayesianInput input = BayesianInput.builder()
             .type(ABTestingType.AB)
-            .control(VariantBayesianInput.builder().variant("control").successes(5).failures(3).build())
-            .addVariantPairs(VariantBayesianInput.builder().variant("test").successes(5).failures(-1).build())
+            .control(VariantInput.builder().variant("control").successes(5).failures(3).isControl(true).build())
+            .addVariantPairs(VariantInput.builder().variant("test").successes(5).failures(-1).isControl(false).build())
             .priors(List.of(BayesianPriors.builder().alpha(10.0).beta(10.0).build()))
             .build();
         bayesianAPI.doBayesian(input);
@@ -165,34 +170,46 @@ public class BayesianAPIImplTest {
      * Given Bayesian input parameters with these values:
      *
      * <pre>
-     *     priorAlpha: 10
-     *     priorBeta: 10
-     *     controlSuccesses: 5
-     *     controlFailures: 3
-     *     testBSuccesses: 6
-     *     testBFailures: 2
-     *     testCSuccesses: 7
-     *     testCFailures: 1
+     *     controlSuccesses: 124
+     *     controlFailures: 1802
+     *     testBSuccesses: 109
+     *     testBFailures: 1430
+     *     testCSuccesses: 104
+     *     testCFailures: 1773
      * </pre>
      *
-     * Expect that the probability B beats A is at least 0.69.
+     * Expect that the probability B beats A and C is at least 0.76.
      */
     @Test
-    public void test_calculateABCTesting() {
+    public void test_doBayesian_ABC() {
         final BayesianInput input = BayesianInput.builder()
             .type(ABTestingType.ABC)
-            .control(VariantBayesianInput.builder().variant("control").successes(5).failures(3).build())
+            .control(VariantInput.builder().variant("control").successes(124).failures(1802).isControl(true).build())
             .addVariantPairs(
-                VariantBayesianInput.builder().variant("testB").successes(6).failures(2).build(),
-                VariantBayesianInput.builder().variant("testC").successes(7).failures(1).build())
+                VariantInput.builder().variant("testB").successes(109).failures(1430).isControl(false).build(),
+                VariantInput.builder().variant("testC").successes(104).failures(1773).isControl(false).build())
             .priors(List.of(BayesianAPI.DEFAULT_PRIORS, BayesianAPI.DEFAULT_PRIORS, BayesianAPI.DEFAULT_PRIORS))
             .build();
         final BayesianResult result = bayesianAPI.doBayesian(input);
         assertNotNull(result);
-        assertEquals(0.08, result.results().get(0).probability(), 0.01);
-        assertEquals(0.25, result.results().get(1).probability(), 0.01);
-        assertEquals(0.65, result.results().get(2).probability(), 0.01);
-        assertEquals("testC", result.suggestedWinner());
+        assertEquals(0.21, result.results().get(0).probability(), 0.01);
+        assertEquals(0.06, result.results().get(0).conversionRate(), 0.01);
+        assertEquals(0.93, result.results().get(0).expectedLoss(), 0.01);
+        assertNull(result.results().get(0).medianGrowth());
+        assertNull(result.results().get(0).risk());
+        assertEquals(0.76, result.results().get(1).probability(), 0.01);
+        assertEquals(0.07, result.results().get(1).conversionRate(), 0.01);
+        assertEquals(0.96, result.results().get(1).expectedLoss(), 0.01);
+        assertEquals(0.09, result.results().get(1).medianGrowth(), 0.01);
+        assertEquals(0.015, result.results().get(2).probability(), 0.001);
+        assertEquals(0.05, result.results().get(2).conversionRate(), 0.01);
+        assertEquals(0.72, result.results().get(2).expectedLoss(), 0.01);
+        assertEquals(-0.16, result.results().get(2).medianGrowth(), 0.01);
+        assertEquals("testB", result.suggestedWinner());
+        assertEquals(3, result.distributionPdfs().samples().size());
+        assertEquals(1000, result.distributionPdfs().samples().get("control").size());
+        assertEquals(1000, result.distributionPdfs().samples().get("testB").size());
+        assertEquals(1000, result.distributionPdfs().samples().get("testC").size());
     }
 
 }

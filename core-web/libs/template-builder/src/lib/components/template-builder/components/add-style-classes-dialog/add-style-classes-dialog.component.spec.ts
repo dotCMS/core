@@ -1,4 +1,3 @@
-import { expect } from '@jest/globals';
 import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
@@ -18,6 +17,7 @@ import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.compo
 import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
 
 import {
+    CLASS_NAME_MOCK,
     DOT_MESSAGE_SERVICE_TB_MOCK,
     MOCK_SELECTED_STYLE_CLASSES,
     MOCK_STYLE_CLASSES_FILE,
@@ -87,7 +87,7 @@ describe('AddStyleClassesDialogComponent', () => {
 
     it('should trigger filterClasses when focusing on the input', () => {
         const filterMock = jest.spyOn(store, 'filterClasses');
-        const query = 'custom-class';
+        const query = CLASS_NAME_MOCK;
 
         input.value = query;
 
@@ -132,5 +132,16 @@ describe('AddStyleClassesDialogComponent', () => {
         spectator.detectChanges();
 
         expect(closeMock).toHaveBeenCalled();
+    });
+
+    it('should trigger addClass when enter is pressed', () => {
+        const addClassMock = jest.spyOn(store, 'addClass');
+
+        spectator.typeInElement(CLASS_NAME_MOCK, input);
+        spectator.keyboard.pressEnter(input);
+
+        spectator.detectChanges();
+
+        expect(addClassMock).toHaveBeenCalledWith({ cssClass: CLASS_NAME_MOCK });
     });
 });

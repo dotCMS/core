@@ -15,13 +15,14 @@ import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotESContentService,
-    DotPageRenderService
+    DotPageRenderService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotDevice,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageMode,
     DotPageRenderState,
     DotPersona
@@ -71,6 +72,7 @@ describe('DotPageStateService', () => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
+                DotSessionStorageService,
                 DotContentletLockerService,
                 DotHttpErrorManagerService,
                 DotPageRenderService,
@@ -190,7 +192,7 @@ describe('DotPageStateService', () => {
 
             expect(dotExperimentsService.getByStatus).toHaveBeenCalledWith(
                 '123',
-                DotExperimentStatusList.RUNNING
+                DotExperimentStatus.RUNNING
             );
 
             service.state$.subscribe((state: DotPageRenderState) => {

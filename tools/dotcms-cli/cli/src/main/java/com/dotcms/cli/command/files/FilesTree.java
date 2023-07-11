@@ -1,17 +1,18 @@
 package com.dotcms.cli.command.files;
 
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.traversal.FolderTraversalService;
+import com.dotcms.api.traversal.RemoteFolderTraversalService;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.model.language.Language;
+import picocli.CommandLine;
+import picocli.CommandLine.Parameters;
+
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import picocli.CommandLine;
-import picocli.CommandLine.Parameters;
 
 /**
  * Command to display a hierarchical tree view of the files and subdirectories within the specified
@@ -78,7 +79,7 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
     String includeAssetPatternsOption;
 
     @Inject
-    FolderTraversalService folderTraversalService;
+    RemoteFolderTraversalService folderTraversalService;
 
     @Override
     public Integer call() throws Exception {
@@ -105,9 +106,8 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
 
             // ConsoleLoadingAnimation instance to handle the waiting "animation"
             ConsoleLoadingAnimation consoleLoadingAnimation = new ConsoleLoadingAnimation(
-                    folderTraversalFuture,
-                    ConsoleLoadingAnimation.ANIMATION_CHARS_SIMPLE,
-                    250
+                    output,
+                    folderTraversalFuture
             );
 
             CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(

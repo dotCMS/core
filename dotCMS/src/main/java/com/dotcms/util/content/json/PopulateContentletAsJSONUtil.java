@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.Ints;
 import io.vavr.Tuple;
@@ -28,7 +29,11 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -275,8 +280,8 @@ public class PopulateContentletAsJSONUtil {
         final MutableInt totalInsertAffected = new MutableInt(0);
 
         var foundData = false;
-
-        Logger.info(this, "Finding records with missing Contentlet as JSON");
+        final var type = UtilMethods.isSet(assetSubtype) ? assetSubtype : "[ any ]";
+        Logger.info(this, "Finding records with missing Contentlet as JSON of sub-type '" + type + "'");
 
         final Connection conn = DbConnectionFactory.getConnection();
 
@@ -334,7 +339,7 @@ public class PopulateContentletAsJSONUtil {
                 }
 
             } while (hasRows);
-
+            Logger.info(this, "-- Batch rows to populate temporary table. Inserted: " + totalInsertAffected.intValue() + " rows");
             // Close the cursor
             stmt.execute(CLOSE_CURSOR);
 
@@ -359,7 +364,7 @@ public class PopulateContentletAsJSONUtil {
         final Collection<Params> paramsUpdate = new ArrayList<>();
         final MutableInt totalUpdateAffected = new MutableInt(0);
 
-        Logger.info(this, "Updating records with missing Contentlet as JSON");
+        Logger.info(this, "Updating records with missing Contentlet as JSON of any sub-type");
 
         final Connection conn = DbConnectionFactory.getConnection();
 
@@ -405,7 +410,7 @@ public class PopulateContentletAsJSONUtil {
                 }
 
             } while (hasRows);
-
+            Logger.info(this, "-- Batch rows to populate temporary table. Updated: " + totalUpdateAffected.intValue() + " rows");
             // Close the cursor
             stmt.execute(CLOSE_CURSOR_FOR_TEMPORAL_TABLE);
         }
@@ -547,7 +552,6 @@ public class PopulateContentletAsJSONUtil {
                             paramsUpdate));
 
             final int rowsAffected = batchResult.stream().reduce(0, Integer::sum);
-            Logger.info(this, "-- Batch rows to populate contentlet_as_json column, updated: " + rowsAffected + " rows");
             totalUpdateAffected.add(rowsAffected);
         } catch (DotDataException e) {
             Logger.error(this, "Couldn't update these rows: " + paramsUpdate);
@@ -569,7 +573,6 @@ public class PopulateContentletAsJSONUtil {
                             paramsInsert));
 
             final int rowsAffected = batchResult.stream().reduce(0, Integer::sum);
-            Logger.info(this, "-- Batch rows to populate temporal table, inserted: " + rowsAffected + " rows");
             totalInsertAffected.add(rowsAffected);
         } catch (DotDataException e) {
             Logger.error(this, "Couldn't insert these rows: " + paramsInsert);
