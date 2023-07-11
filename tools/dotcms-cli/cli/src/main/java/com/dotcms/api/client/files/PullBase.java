@@ -8,19 +8,21 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodeInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.FilesUtils;
+import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.Workspace;
 import com.dotcms.model.language.Language;
-import org.jboss.logging.Logger;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import org.jboss.logging.Logger;
 
 public class PullBase {
 
@@ -32,6 +34,9 @@ public class PullBase {
 
     @Inject
     protected RestClientFactory clientFactory;
+
+    @Inject
+    protected WorkspaceManager workspaceManager;
 
     /**
      * Processes the file tree by retrieving languages, checking the base structure,
@@ -134,7 +139,11 @@ public class PullBase {
      */
     protected String checkBaseStructure(final String destination) throws IOException {
 
-        // For the pull of files, everything will be stored in a folder called "files"
+        final Path path = Paths.get(destination);
+        final Workspace workspace = workspaceManager.resolve(path);
+        return workspace.files().toString();
+
+        /*// For the pull of files, everything will be stored in a folder called "files"
         var filesFolder = Paths.get(destination, "files");
 
         // Create the folder if it does not exist
@@ -142,7 +151,7 @@ public class PullBase {
             Files.createDirectories(filesFolder);
         }
 
-        return filesFolder.toString();
+        return filesFolder.toString();*/
     }
 
     /**

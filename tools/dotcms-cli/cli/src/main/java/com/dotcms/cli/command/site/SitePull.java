@@ -1,18 +1,18 @@
 package com.dotcms.cli.command.site;
 
-import static com.dotcms.cli.common.Utils.nextFileName;
-
 import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
+import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.Workspace;
 import com.dotcms.model.site.SiteView;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -38,14 +38,14 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOption;
 
+    @Inject
+    WorkspaceManager workspaceManager;
+
     @CommandLine.Mixin(name = "shorten")
     ShortOutputOptionMixin shortOutputOption;
 
     @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name or Id.")
     String siteNameOrId;
-
-    @CommandLine.Option(names = {"-to", "--saveTo"}, order = 5, description = "Save to.")
-    File saveAs;
 
     @Override
     public Integer call() {
@@ -67,21 +67,14 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
             if (shortOutputOption.isShortOutput()) {
                 final String shortFormat = shortFormat(siteView);
                 output.info(shortFormat);
-                if (null != saveAs) {
-                    Files.writeString(saveAs.toPath(), shortFormat);
-                }
             } else {
                 ObjectMapper objectMapper = formatOption.objectMapper();
                 final String asString = objectMapper.writeValueAsString(siteView);
                 output.info(asString);
-                Path path;
-                if (null != saveAs) {
-                    path = saveAs.toPath();
-                } else {
-                    final String fileName = String.format( "%s.%s", siteView.hostName(), formatOption.getInputOutputFormat().getExtension());
-                    final Path next = Path.of(fileName);
-                    path = nextFileName(next);
-                }
+
+                final Workspace workspace = workspaceManager.resolve();
+                final String fileName = String.format( "%s.%s", siteView.hostName(), formatOption.getInputOutputFormat().getExtension());
+                final Path path = Path.of(workspace.sites().toString(), fileName);
                 Files.writeString(path, asString);
                 output.info(String.format("Output has been written to file [%s].",path));
             }

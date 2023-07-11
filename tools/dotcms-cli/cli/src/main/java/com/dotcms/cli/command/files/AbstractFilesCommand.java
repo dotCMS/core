@@ -30,6 +30,8 @@ public abstract class AbstractFilesCommand {
      */
     protected int handleFolderTraversalExceptions(String folderPath, Throwable throwable) {
 
+        throwable.printStackTrace();
+
         if (throwable instanceof CompletionException) {
 
             Throwable cause = throwable.getCause();
