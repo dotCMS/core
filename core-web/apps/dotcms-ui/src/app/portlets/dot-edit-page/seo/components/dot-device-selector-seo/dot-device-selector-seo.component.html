@@ -3,7 +3,7 @@
     data-testId="p-overlaypanel-selector"
     styleClass="dot-device-selector__overlayPanel"
 >
-    <div class="dot-device-selector__column" data-testId="device-selector">
+    <div class="dot-device-selector__column" data-testId="dot-devices-selector">
         <div class="dot-device-selector__panel">
             <div class="dot-device-selector__header">
                 <h3 class="dot-device-selector__header-title">
@@ -11,7 +11,7 @@
                 </h3>
                 <p-button icon="pi pi-plus" styleClass="p-button-rounded p-button-text"></p-button>
             </div>
-            <div class="dot-device-selector__grid dot-device-selector__content">
+            <div class="dot-device-selector__grid">
                 <ul class="device-list">
                     <li class="device-list-item" *ngFor="let option of defaultOptions">
                         <button class="device-list__button" (click)="change(option)">
@@ -29,7 +29,6 @@
                     <li
                         class="device-list-item"
                         *ngFor="let option of options$ | async"
-                        data-testId="device-selector-option"
                         data-testId="device-selector-option"
                     >
                         <button

@@ -21,8 +21,8 @@ import { PanelModule } from 'primeng/panel';
 import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
-import { DotDevice, DotDeviceIcon } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotDevice, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @Component({
@@ -31,7 +31,6 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         CommonModule,
         DropdownModule,
         FormsModule,
-        DotIconModule,
         DotPipesModule,
         ButtonModule,
         OverlayPanelModule,
@@ -56,7 +55,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         { label: 'Twitter', icon: 'pi pi-twitter' },
         { label: 'LinkedIn', icon: 'pi pi-linkedin' }
     ];
-    defaultOptions: DotDeviceIcon[] = [
+    defaultOptions: DotDeviceListItem[] = [
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
             icon: 'pi pi-mobile',
@@ -113,11 +112,11 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.options$ = this.loadOptions();
+        this.options$ = this.getOptions();
     }
 
     /**
-     * Track changes in the select
+     * Emit selected changes
      * @param DotDevice device
      */
     change(device: DotDevice) {
@@ -129,7 +128,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
      *
      * @returns Observable<DotDevice[]>
      */
-    public loadOptions(): Observable<DotDevice[]> {
+    public getOptions(): Observable<DotDevice[]> {
         return this.dotDevicesService.get().pipe(
             take(1),
             mergeMap((devices: DotDevice[]) => devices),

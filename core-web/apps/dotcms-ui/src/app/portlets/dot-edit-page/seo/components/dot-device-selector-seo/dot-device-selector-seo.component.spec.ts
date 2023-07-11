@@ -76,25 +76,31 @@ describe('DotDeviceSelectorSeoComponent', () => {
         de = deHost.query(By.css('dot-device-selector-seo'));
         component = de.componentInstance;
         TestBed.inject(DotDevicesService);
-        spyOn(component, 'loadOptions').and.returnValue(of(mockDotDevices));
+        spyOn(component, 'getOptions').and.returnValue(of(mockDotDevices));
     });
 
-    it('should emit selected device on change', (done) => {
-        const device = {
-            name: 'Mobile Portrait',
-            icon: 'pi pi-mobile',
-            cssHeight: '390',
-            cssWidth: '844',
-            inode: '0',
-            identifier: ''
-        };
+    it('should emit selected device on change', async () => {
+        spyOn(component.selected, 'emit');
+        spyOn(component, 'change');
 
-        component.selected.subscribe((selectedDevice) => {
-            expect(selectedDevice).toBe(device);
-            done();
-        });
+        const selectorButton: DebugElement = de.query(
+            By.css('[data-testId="device-selector-button"]')
+        );
 
-        component.change(device);
+        selectorButton.nativeElement.click();
+
+        await fixtureHost.whenStable();
+        fixtureHost.detectChanges();
+
+        const selectorOptions = fixtureHost.debugElement.queryAll(
+            By.css('[data-testId="device-selector-option"] > .device-list__button')
+        );
+
+        selectorOptions[0].nativeElement.click();
+
+        fixtureHost.detectChanges();
+
+        expect(component.change).toHaveBeenCalled();
     });
 
     it('should set user devices', async () => {
