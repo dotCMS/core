@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: dorny/test-reporter@v1
         with:
-          artifact: /build-reports-(.*)/        # artifact name
+          artifact: /^build-reports-(.*)/        # artifact name
           name: 'MVN Test Report $1'               # Name of the check run which will be created
           path: '**/target/**/TEST-*.xml'                     # Path to test results (inside artifact .zip)
           reporter: java-junit            # Format of test results
