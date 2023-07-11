@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, Input, ViewChild } from '@angular/core';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 
-import { DotPageRenderState } from '@dotcms/dotcms-models';
 import { InputSwitchModule } from 'primeng/inputswitch';
+
+import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
+import { DotPageRenderState } from '@dotcms/dotcms-models';
 
 /**
  * Basic page information for edit mode
