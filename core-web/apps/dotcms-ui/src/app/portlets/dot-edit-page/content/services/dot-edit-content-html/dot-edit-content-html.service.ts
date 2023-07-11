@@ -1045,6 +1045,7 @@ export class DotEditContentHtmlService {
     }
 
     private isContentInMultiplePages(contentlet: HTMLElement): boolean {
+        // todo consider endpoint for knowing usages of contentlet (counting headless)
         return Number(contentlet?.dataset?.dotOnNumberOfPages || 0) > 1;
     }
 
