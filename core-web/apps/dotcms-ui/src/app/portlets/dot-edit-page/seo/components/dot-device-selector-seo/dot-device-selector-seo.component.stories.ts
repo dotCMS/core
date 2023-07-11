@@ -35,7 +35,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 export default {
-    title: 'DotDeviceSelectorSeoComponent',
+    title: 'Device Selector SEO',
     component: DotDeviceSelectorSeoComponent,
     decorators: [
         moduleMetadata({

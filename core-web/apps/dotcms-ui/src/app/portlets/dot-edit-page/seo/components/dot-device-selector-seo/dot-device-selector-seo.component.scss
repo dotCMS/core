@@ -40,6 +40,7 @@
 .dot-device-selector__grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    width: 31.49rem;
 }
 
 .dot-device-selector__content {
@@ -49,7 +50,6 @@
         .device-list-item {
             display: flex;
             list-style: none;
-            width: 15.75rem;
             height: 3.625rem;
             padding: $spacing-1 $spacing-3 $spacing-1 $spacing-3;
             gap: 0.5rem;
@@ -74,7 +74,6 @@
         }
 
         .device-list-item.device-list-item-media {
-            width: 15.75rem;
             height: 2.5rem;
         }
     }
@@ -87,7 +86,6 @@
     align-items: flex-end;
     justify-content: flex-end;
     gap: 1rem;
-
     a {
         text-decoration: underline;
     }
@@ -98,12 +96,6 @@
         .p-overlaypanel-content {
             display: flex;
             gap: 1rem;
-        }
-
-        .device-list-item {
-            .pi {
-                color: $color-palette-gray-600;
-            }
         }
 
         border-radius: 0.75rem;
