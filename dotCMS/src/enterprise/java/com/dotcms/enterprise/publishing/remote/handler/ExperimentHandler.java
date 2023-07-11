@@ -94,15 +94,9 @@ import java.util.stream.Collectors;
 
 /**
  * This handler class is part of the Push Publishing mechanism that deals with Experiments-related information inside a
- * bundle and saves it in the receiving instance. This class will read and process only the {@link ContentType} data
+ * bundle and saves it in the receiving instance. This class will read and process only the {@link Experiment} data
  * files.
- * <p>
- * In dotCMS, content is defined by “Content Types“. When building a site in dotCMS, CMS Administrators design Content
- * Types that fit their specific use case or content needs. The easiest way to think about a Content Type is as a
- * content database that you get to design, manage, permission, query and finally display.
  *
- * @author Anibal Gomez
- * @since Dec 20, 2016
  */
 public class ExperimentHandler implements IHandler {
 
