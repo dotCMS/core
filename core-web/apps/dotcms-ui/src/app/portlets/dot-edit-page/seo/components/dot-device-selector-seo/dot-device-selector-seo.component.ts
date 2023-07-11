@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     EventEmitter,
     HostBinding,
@@ -51,7 +51,6 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @HostBinding('class.disabled') disabled: boolean;
 
     options$: Observable<DotDevice[]>;
-    placeholder = '';
     socialMediaTiles = [
         { label: 'Facebook', icon: 'pi pi-facebook' },
         { label: 'Twitter', icon: 'pi pi-twitter' },
@@ -110,8 +109,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     constructor(
         private dotDevicesService: DotDevicesService,
-        private dotMessageService: DotMessageService,
-        private readonly cd: ChangeDetectorRef
+        private dotMessageService: DotMessageService
     ) {}
 
     ngOnInit() {
@@ -126,7 +124,12 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         this.selected.emit(device);
     }
 
-    private loadOptions(): Observable<DotDevice[]> {
+    /**
+     * Load the options for the select
+     *
+     * @returns Observable<DotDevice[]>
+     */
+    public loadOptions(): Observable<DotDevice[]> {
         return this.dotDevicesService.get().pipe(
             take(1),
             mergeMap((devices: DotDevice[]) => devices),
