@@ -165,7 +165,7 @@ jobs:
           path: 'test-reports.tgz'
       - name: core-maven-unit-tests (if build failed)
         uses: actions/upload-artifact@v3
-        if: ${{ failure() || cancelled() }}
+        if: always()
         with:
           name: "build-reports-JVM Tests - JDK ${{matrix.java.name}}"
           path: |
@@ -220,7 +220,7 @@ jobs:
           path: 'test-reports.tgz'
       - name: frontend-unit-tests
         uses: actions/upload-artifact@v3
-        if: ${{ failure() || cancelled() }}
+        if: always()
         with:
           name: "build-reports-Frontend unit tests"
           path: |
@@ -306,7 +306,7 @@ jobs:
           path: 'test-reports.tgz'
       - name: failsafe-it-tests  # Uploads will be merged with same name
         uses: actions/upload-artifact@v3
-        if: ${{ failure() || cancelled() }}
+        if: always()
         with:
           name: "build-reports-IT Tests - JDK ${{matrix.java.name}} - ${{matrix.suites.name}}"
           path: |
