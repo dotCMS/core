@@ -99,11 +99,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [
-                TestHostComponent,
-                DotEditPageStateControllerSeoComponent,
-                DotEditPageLockInfoSeoComponent
-            ],
+            declarations: [TestHostComponent],
             providers: [
                 {
                     provide: DotMessageService,
@@ -119,7 +115,14 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 },
                 DotAlertConfirmService
             ],
-            imports: [InputSwitchModule, SelectButtonModule, TooltipModule, DotPipesModule]
+            imports: [
+                InputSwitchModule,
+                SelectButtonModule,
+                TooltipModule,
+                DotPipesModule,
+                DotEditPageStateControllerSeoComponent,
+                DotEditPageLockInfoSeoComponent
+            ]
         });
     }));
 

@@ -1,6 +1,7 @@
 @use "variables" as *;
 @import "dotcms-theme/utils/theme-variables";
 @import "dotcms-theme/utils/extends";
+@import "mixins";
 
 .dot-device-selector__panel {
     display: flex;
@@ -34,12 +35,16 @@
     flex-direction: column;
 }
 
+.device-list__button {
+    @include unbuttonize;
+}
+
 .dot-device-selector__content {
     display: flex;
     .device-list {
         width: 100%;
         padding: 0;
-        .device-list__item {
+        .device-list-item {
             display: flex;
             list-style: none;
             width: 15.75rem;
@@ -48,16 +53,16 @@
             gap: 0.5rem;
             cursor: pointer;
 
-            .device-list__item__content {
+            .device-list-item__content {
                 display: flex;
                 flex-direction: column;
             }
 
-            .device-list__item__dimensions {
+            .device-list-item__dimensions {
                 color: $color-palette-gray-600;
             }
 
-            .device-list__item__name {
+            .device-list-item__name {
                 line-height: 1;
             }
 
@@ -66,7 +71,7 @@
             }
         }
 
-        .device-list__item.device-list__item-media {
+        .device-list-item.device-list-item-media {
             width: 15.75rem;
             height: 2.5rem;
         }
@@ -93,7 +98,7 @@
             gap: 1rem;
         }
 
-        .device-list__item {
+        .device-list-item {
             .pi {
                 color: $color-palette-gray-600;
             }
