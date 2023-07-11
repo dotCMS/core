@@ -14,7 +14,7 @@ import { take } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { ComponentStatus, RangeOfDateAndTime, StepStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 
@@ -28,7 +28,7 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         ReactiveFormsModule,
 
         DotFieldValidationMessageModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotSidebarHeaderComponent,
         DotSidebarDirective,
         //PrimeNg

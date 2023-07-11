@@ -25,7 +25,7 @@ import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/do
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -100,7 +100,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 InplaceModule,
                 InputNumberModule,
                 DotActionMenuButtonModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 CheckboxModule,
                 DotEmptyStateModule
             ],

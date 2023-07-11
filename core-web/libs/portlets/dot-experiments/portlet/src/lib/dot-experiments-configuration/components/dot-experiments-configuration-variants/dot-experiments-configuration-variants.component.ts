@@ -30,12 +30,7 @@ import {
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import {
-    DotIconModule,
-    DotMessagePipe,
-    DotMessagePipeModule,
-    UiDotIconButtonModule
-} from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsInlineEditTextComponent } from '../../../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
@@ -48,7 +43,7 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
     standalone: true,
     imports: [
         CommonModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotIconModule,
         UiDotIconButtonModule,
         UiDotIconButtonTooltipModule,

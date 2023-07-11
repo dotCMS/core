@@ -18,7 +18,7 @@ import {
     ExperimentsStatusList,
     SidebarStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsCreateComponent } from './components/dot-experiments-create/dot-experiments-create.component';
@@ -42,7 +42,7 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         DotExperimentsListTableComponent,
         DotExperimentsUiHeaderComponent,
         DotDynamicDirective,
-        DotMessagePipeModule,
+        DotMessagePipe,
         ButtonModule,
         ConfirmDialogModule,
         DotAddToBundleModule

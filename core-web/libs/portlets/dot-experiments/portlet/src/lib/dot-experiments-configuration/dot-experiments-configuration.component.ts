@@ -18,7 +18,7 @@ import {
     DotExperiment,
     DotExperimentStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from './components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -39,7 +39,7 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
     imports: [
         AsyncPipe,
         NgIf,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotExperimentsUiHeaderComponent,
         DotExperimentsExperimentSummaryComponent,
         DotExperimentsConfigurationVariantsComponent,

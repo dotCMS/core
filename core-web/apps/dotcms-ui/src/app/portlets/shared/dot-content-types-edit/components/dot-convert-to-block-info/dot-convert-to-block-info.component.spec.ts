@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotConvertToBlockInfoComponent } from './dot-convert-to-block-info.component';
@@ -22,7 +22,7 @@ describe('DotConvertToBlockInfoComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotConvertToBlockInfoComponent],
-            imports: [DotMessagePipeModule],
+            imports: [DotMessagePipe],
             providers: [
                 {
                     provide: DotMessageService,

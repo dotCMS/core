@@ -24,7 +24,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { MAX_INPUT_DESCRIPTIVE_LENGTH } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 type InplaceInputSize = 'small' | 'large';
 const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; input: string }> = {
@@ -45,7 +45,7 @@ const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; inp
     imports: [
         NgIf,
         ReactiveFormsModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotAutofocusModule,
         DotFieldValidationMessageModule,
         InplaceModule,

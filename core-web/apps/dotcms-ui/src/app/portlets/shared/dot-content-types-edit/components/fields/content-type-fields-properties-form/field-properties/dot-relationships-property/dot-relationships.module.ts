@@ -7,6 +7,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotCardinalitySelectorComponent } from './dot-cardinality-selector/dot-cardinality-selector.component';
@@ -31,7 +32,9 @@ import { DotRelationshipService } from './services/dot-relationship.service';
         FormsModule,
         RadioButtonModule,
         SearchableDropDownModule,
-        DotPipesModule
+        DotPipesModule,
+        DotMessagePipe,
+        DotFieldRequiredDirective
     ],
     providers: [DotRelationshipService, DotEditContentTypeCacheService]
 })
