@@ -201,7 +201,7 @@
         "karma-jasmine": "5.1.0",
         "karma-jasmine-html-reporter": "2.0.0",
         "karma-junit-reporter": "^2.0.1",
-        "karma-summary-reporter": "^3.1.1",
+        "karma-spec-reporter": "^0.0.36",
         "mock-socket": "^9.0.3",
         "mockdate": "^3.0.5",
         "monaco-editor": "^0.33.0",

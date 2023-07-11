@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 .p-dialog {
-    border-radius: $border-radius-xs;
+    border-radius: $border-radius-md;
     box-shadow: 0 11px 15px -7px $color-palette-black-op-20,
         0 24px 38px 3px $color-palette-black-op-10, 0 9px 46px 8px $color-palette-black-op-10;
     border: 0 none;
@@ -13,13 +13,13 @@
     background: $white;
     color: $black;
     padding: $spacing-6;
-    border-top-right-radius: $border-radius-xs;
-    border-top-left-radius: $border-radius-xs;
+    border-top-right-radius: $border-radius-md;
+    border-top-left-radius: $border-radius-md;
 }
 
 .p-dialog .p-dialog-header .p-dialog-title {
     font-size: $font-size-xl;
-    font-size: 1.7rem;
+    font-size: 1.5rem;
 }
 
 .p-dialog .p-dialog-header .p-dialog-header-icon {
@@ -84,4 +84,10 @@
 .p-dialog-mask.p-component-overlay {
     background-color: $color-palette-black-op-80;
     backdrop-filter: blur(5px);
+}
+
+.p-dialog-header .p-dialog-header-icons .p-dialog-header-close {
+    background-color: $color-palette-gray-200;
+    color: $color-palette-primary-500;
+    border-radius: 0;
 }
