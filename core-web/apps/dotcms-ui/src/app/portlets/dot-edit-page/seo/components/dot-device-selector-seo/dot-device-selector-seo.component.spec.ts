@@ -80,9 +80,6 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should emit selected device on change', async () => {
-        spyOn(component.selected, 'emit');
-        spyOn(component, 'change');
-
         const selectorButton: DebugElement = de.query(
             By.css('[data-testId="device-selector-button"]')
         );
@@ -91,7 +88,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
 
         await fixtureHost.whenStable();
         fixtureHost.detectChanges();
-
+        spyOn(component.selected, 'emit');
         const selectorOptions = fixtureHost.debugElement.queryAll(
             By.css('[data-testId="device-selector-option"] > .device-list__button')
         );
@@ -100,7 +97,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
 
         fixtureHost.detectChanges();
 
-        expect(component.change).toHaveBeenCalled();
+        expect(component.selected.emit).toHaveBeenCalled();
     });
 
     it('should set user devices', async () => {
@@ -117,6 +114,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
         );
         expect(options.length).toBe(mockDotDevices.length);
     });
+
     it('should open the overlayPanel', () => {
         const selectorButton: DebugElement = de.query(
             By.css('[data-testId="device-selector-button"]')
