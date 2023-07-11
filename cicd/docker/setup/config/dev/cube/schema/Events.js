@@ -54,7 +54,7 @@ cube(`Events`, {
     },
 
     runningId: {
-      sql: `runningId`,
+      sql: `runningid`,
       type: `string`
     },
 
