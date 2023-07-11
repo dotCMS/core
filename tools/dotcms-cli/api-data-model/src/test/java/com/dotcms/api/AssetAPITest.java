@@ -1,6 +1,7 @@
 package com.dotcms.api;
 
-//import com.dotcms.DockerComposeResource;
+
+//import com.dotcms.ContainerResource;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
@@ -14,61 +15,18 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.DockerComposeContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
-import java.io.File;
 import java.io.IOException;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-
-//@Testcontainers
 @QuarkusTest
+//@QuarkusTestResource(ContainerResource.class)
 class AssetAPITest {
-
-    private static final int POSTGRES_SERVICE_PORT = 5432;
-    private static final int ELASTICSEARCH_SERVICE_PORT = 9200;
-    private static final int DOTCMS_SERVICE_PORT = 8080;
-    private static final int STARTUP_TIMEOUT = 120;
-    private static final boolean LOCAL_COMPOSE = false;
-
-    private static DockerComposeContainer<?> composeContainer;
-//
-//    @Container
-//    private static final DockerComposeContainer<?> COMPOSE_CONTAINER =
-//            new DockerComposeContainer(new File("src/test/resources/docker-compose.yaml"))
-//                    .withExposedService("postgres", POSTGRES_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)))
-//                    .withExposedService("elasticsearch", ELASTICSEARCH_SERVICE_PORT, Wait.forHttp("/").forPort(ELASTICSEARCH_SERVICE_PORT).forStatusCode(200))
-//                    .withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)))
-//                    .withLocalCompose(LOCAL_COMPOSE); // need to be false to run on macOS
-//
-//    static {
-//        COMPOSE_CONTAINER.start();
-//    }
-//
-//    @BeforeAll
-//    public static void beforeAll() {
-//        System.out.println("beforeAll");
-//
-//        System.out.println("Postgres address: " + COMPOSE_CONTAINER.getServiceHost("postgres", POSTGRES_SERVICE_PORT));
-//        System.out.println("Postgres port: " + COMPOSE_CONTAINER.getServicePort("postgres", POSTGRES_SERVICE_PORT));
-//
-//        System.out.println("Elasticsearch address: " + COMPOSE_CONTAINER.getServiceHost("elasticsearch", ELASTICSEARCH_SERVICE_PORT));
-//        System.out.println("Elasticsearch port: " + COMPOSE_CONTAINER.getServicePort("elasticsearch", ELASTICSEARCH_SERVICE_PORT));
-//
-//        System.out.println("DotCMS address: " + COMPOSE_CONTAINER.getServiceHost("dotcms", DOTCMS_SERVICE_PORT));
-//        System.out.println("DotCMS port: " + COMPOSE_CONTAINER.getServicePort("dotcms", DOTCMS_SERVICE_PORT));
-//
-//    }
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;
@@ -82,18 +40,6 @@ class AssetAPITest {
     @Inject
     ServiceManager serviceManager;
 
-    @BeforeAll
-    public static void beforeAll() {
-        System.out.println("beforeAll");
-
-        composeContainer =
-                new DockerComposeContainer(new File("src/test/resources/docker-compose.yaml"))
-                        .withExposedService("postgres", POSTGRES_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)))
-                        .withExposedService("elasticsearch", ELASTICSEARCH_SERVICE_PORT, Wait.forHttp("/").forPort(ELASTICSEARCH_SERVICE_PORT).forStatusCode(200))
-                        .withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)))
-                        .withLocalCompose(LOCAL_COMPOSE); // need to be false to run on macOS
-        composeContainer.start();
-    }
 
     @BeforeEach
     public void setupTest() throws IOException {
