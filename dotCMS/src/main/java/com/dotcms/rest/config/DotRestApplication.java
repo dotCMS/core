@@ -68,6 +68,7 @@ import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionResourc
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueResource;
 import com.dotcms.rest.api.v1.system.AppContextInitResource;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
+import com.dotcms.rest.api.v1.system.SystemTableResource;
 import com.dotcms.rest.api.v1.system.UpgradeTaskResource;
 import com.dotcms.rest.api.v1.system.cache.CacheResource;
 import com.dotcms.rest.api.v1.system.i18n.I18NResource;
@@ -109,6 +110,7 @@ import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
+import com.dotmarketing.portlets.templates.model.SystemTemplate;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.google.common.collect.ImmutableSet;
@@ -251,6 +253,7 @@ public class DotRestApplication extends Application {
 			.add(TailLogResource.class)
 			.add(VariantResource.class)
 			.add(WebAssetResource.class)
+			.add(SystemTableResource.class)
 			.build();
 
 	private static final Set<Class<?>> PROVIDER_CLASSES = ImmutableSet.<Class<?>>builder()
