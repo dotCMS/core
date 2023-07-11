@@ -43,7 +43,7 @@ import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-p
 
 import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-device-selector-seo.component';
 import { DotEditPageInfoSeoModule } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.module';
-import { DotEditPageStateControllerSeoModule } from '../dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.module';
+import { DotEditPageStateControllerSeoComponent } from '../dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
 
 @Component({
     standalone: true,
@@ -72,7 +72,7 @@ import { DotEditPageStateControllerSeoModule } from '../dot-edit-page-state-cont
         TagModule,
         DotEditPageInfoSeoModule,
         DotDeviceSelectorSeoComponent,
-        DotEditPageStateControllerSeoModule
+        DotEditPageStateControllerSeoComponent
     ]
 })
 export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDestroy {

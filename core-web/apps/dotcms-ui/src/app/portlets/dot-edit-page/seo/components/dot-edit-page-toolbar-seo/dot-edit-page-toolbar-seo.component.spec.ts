@@ -71,7 +71,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
-import { DotEditPageStateControllerSeoModule } from '@portlets/dot-edit-page/seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.module';
+import { DotEditPageStateControllerSeoComponent } from '@portlets/dot-edit-page/seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 
 import { DotEditPageToolbarSeoComponent } from './dot-edit-page-toolbar-seo.component';
@@ -165,7 +165,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 FormsModule,
                 ToolbarModule,
                 DotEditPageViewAsControllerModule,
-                DotEditPageStateControllerSeoModule,
+                DotEditPageStateControllerSeoComponent,
                 DotEditPageInfoSeoModule,
                 DotEditPageWorkflowsActionsModule,
                 DotPipesModule,

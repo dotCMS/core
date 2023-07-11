@@ -36,7 +36,7 @@ import {
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
-import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info-seo.component';
+import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock-info-seo/dot-edit-page-lock-info-seo.component';
 import { DotEditPageStateControllerSeoComponent } from './dot-edit-page-state-controller-seo.component';
 
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';

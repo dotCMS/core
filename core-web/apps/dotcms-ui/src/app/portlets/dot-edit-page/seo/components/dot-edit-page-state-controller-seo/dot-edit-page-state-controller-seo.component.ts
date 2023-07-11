@@ -1,5 +1,6 @@
 import { from, Observable, of } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -9,8 +10,13 @@ import {
     SimpleChanges,
     ViewChild
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { InputSwitchModule } from 'primeng/inputswitch';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { switchMap, take } from 'rxjs/operators';
 
@@ -27,8 +33,12 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotEditPageLockInfoComponent } from '@portlets/dot-edit-page/content/components/dot-edit-page-state-controller/components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
+
+import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock-info-seo/dot-edit-page-lock-info-seo.component';
+
+import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-device-selector-seo.component';
 
 enum DotConfirmationType {
     LOCK,
@@ -38,10 +48,22 @@ enum DotConfirmationType {
 @Component({
     selector: 'dot-edit-page-state-controller-seo',
     templateUrl: './dot-edit-page-state-controller-seo.component.html',
-    styleUrls: ['./dot-edit-page-state-controller-seo.component.scss']
+    styleUrls: ['./dot-edit-page-state-controller-seo.component.scss'],
+    standalone: true,
+    imports: [
+        CommonModule,
+        FormsModule,
+        InputSwitchModule,
+        SelectButtonModule,
+        DotPipesModule,
+        TooltipModule,
+        ButtonModule,
+        DotDeviceSelectorSeoComponent,
+        DotEditPageLockInfoSeoComponent
+    ]
 })
 export class DotEditPageStateControllerSeoComponent implements OnChanges {
-    @ViewChild('pageLockInfo', { static: true }) pageLockInfo: DotEditPageLockInfoComponent;
+    @ViewChild('pageLockInfo', { static: true }) pageLockInfo: DotEditPageLockInfoSeoComponent;
 
     @Input() pageState: DotPageRenderState;
     @Output() modeChange = new EventEmitter<DotPageMode>();

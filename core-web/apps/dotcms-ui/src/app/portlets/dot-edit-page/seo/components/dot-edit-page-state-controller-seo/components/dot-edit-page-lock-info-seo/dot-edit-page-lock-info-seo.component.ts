@@ -12,7 +12,8 @@ import { DotPageRenderState } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-edit-page-lock-info-seo',
     templateUrl: './dot-edit-page-lock-info-seo.component.html',
-    styleUrls: ['./dot-edit-page-lock-info-seo.component.scss']
+    styleUrls: ['./dot-edit-page-lock-info-seo.component.scss'],
+    standalone: true
 })
 export class DotEditPageLockInfoSeoComponent {
     @ViewChild('lockedPageMessage') lockedPageMessage: ElementRef;
