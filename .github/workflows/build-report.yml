@@ -1,0 +1,29 @@
+name: CICD Reports
+run-name: Reports - ${{ github.event.workflow_run.name }}
+on:
+  workflow_run:
+    workflows: ['Maven CICD Pipeline']
+    types: [completed]
+
+permissions:
+  checks: write
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Test Report
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          name: 'build-reports-.*'
+          name_is_regexp: true
+          workflow: ${{ github.event.workflow.id }}
+          run_id: ${{ github.event.workflow_run.id }}
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v3
+        with:
+          check_name: 'Maven Test Report'
+          token: ${{secrets.GITHUB_TOKEN}}
+          detailed_summary: true
+          commit: ${{github.event.workflow_run.head_sha}}
+          report_paths: '**/target/*-reports/**/TEST-*.xml'
