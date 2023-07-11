@@ -306,16 +306,16 @@ function initDragAndDrop () {
         if (!isDraggedContentSet()) {
             return false;
         }
-
-        const isWidget = (draggedContent.baseType.toLocaleLowerCase() === 'widget');
-
+ 
         const variable = draggedContent.variable?.toLocaleLowerCase();
         const contentType = draggedContent.contentType?.toLocaleLowerCase();
         const baseType = draggedContent.baseType?.toLocaleLowerCase();
 
-        const dotAssetIncludedContent = dotAcceptTypes.includes(variable || contentType || baseType);
+        const isWidget = baseType === 'widget';
 
-        return isWidget || dotAssetIncludedContent;
+        const dotAssetIncludesContent = dotAcceptTypes.includes(variable || contentType || baseType);
+
+        return isWidget || dotAssetIncludesContent;
     }
 
     function setPlaceholderContentlet() {
@@ -538,16 +538,6 @@ function initDragAndDrop () {
 
     /**
      * @description
-     * Clean draggedContent from window object
-     * 
-     * @returns {void}
-     */
-    function cleanDraggedContent() {
-        isDraggedContentSet() && delete window.draggedContent;
-    }
-
-    /**
-     * @description
      * Check if draggedContent is set
      * 
      * @returns {Boolean}
@@ -555,6 +545,16 @@ function initDragAndDrop () {
     function isDraggedContentSet() {
         // draggedContent is set by dotContentletEditorService.draggedContentType$ [dot-edit-content.component.ts#L585-L593]
         return window.hasOwnProperty('draggedContent');
+    }
+
+    /**
+     * @description
+     * Clean draggedContent from window object
+     * 
+     * @returns {void}
+     */
+    function cleanDraggedContent() {
+        isDraggedContentSet() && delete window.draggedContent;
     }
 
     disableDraggableHtmlElements();
