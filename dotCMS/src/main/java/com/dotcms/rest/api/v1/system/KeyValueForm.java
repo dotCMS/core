@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Encapsulates a key value pair
- * @author jsanca 
+ * @author jsanca
  */
 public class KeyValueForm extends Validated {
 

@@ -2,13 +2,16 @@ package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.business.SystemTable;
 import com.dotcms.rest.ResponseEntityStringView;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.util.WhiteBlackList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableSet;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,10 +28,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * This Jersey end-point provides access to the system table.
@@ -41,8 +43,37 @@ import java.util.Set;
 public class SystemTableResource implements Serializable {
 
 	private final SystemTable systemTable = APILocator.getSystemAPI().getSystemTable();
-	private final Set<String> blackListedKeys = new HashSet<>(
-			Arrays.asList(Config.getStringArrayProperty("SYSTEM_TABLE_BLACKLISTED_KEYS", new String[]{"SYSTEM_TABLE_BLACKLISTED_KEYS"})));
+	private final WhiteBlackList whiteBlackList = new WhiteBlackList.Builder()
+							.addWhitePatterns(Config.getStringArrayProperty("SYSTEM_TABLE_WHITELISTED_KEYS",
+									new String[]{"^DOT_.*"}))
+							.addBlackPatterns(Config.getStringArrayProperty("SYSTEM_TABLE_BLACKLISTED_KEYS",
+									new String[]{"SYSTEM_TABLE_BLACKLISTED_KEYS","SYSTEM_TABLE_WHITELISTED_KEYS"})).build();
+
+	/**
+	 * Returns all entries in the system table.
+	 * @param request
+	 * @param response
+	 * @param key
+	 * @return
+	 * @throws IOException
+	 */
+	@GET
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final ResponseEntityView<Map<String,String>> getAll(@Context final HttpServletRequest request,
+															   @Context final HttpServletResponse response)
+			throws IllegalAccessException {
+
+		this.init(request, response);
+		final Map<String, String> allEntries = this.systemTable.findAll();
+		final Map<String, String> filteredEntries = allEntries.entrySet().stream()
+				.filter(entry -> this.whiteBlackList.isAllowed(entry.getKey()))
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+		Logger.debug(this, ()-> "Getting all system table values");
+		return new ResponseEntityView<Map<String, String>>(filteredEntries);
+	}
 
 	/**
 	 * Find a value in the system table by key, 404 if not found
@@ -84,11 +115,11 @@ public class SystemTableResource implements Serializable {
 				.init();
 	}
 
-	private void checkBlackList(final String key) throws IllegalAccessException {
+	private void checkBlackList(final String key) throws IllegalArgumentException {
 
-		if (this.blackListedKeys.contains(key)) {
+		if (!this.whiteBlackList.isAllowed(key)) {
 			Logger.debug(this, ()-> "Key is blacklisted: " + key);
-			throw new IllegalAccessException("Key not allowed: " + key);
+			throw new IllegalArgumentException("Key not allowed: " + key);
 		}
 	}
 
@@ -129,6 +160,7 @@ public class SystemTableResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public ResponseEntityStringView update(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
@@ -161,6 +193,7 @@ public class SystemTableResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public ResponseEntityStringView delete(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
