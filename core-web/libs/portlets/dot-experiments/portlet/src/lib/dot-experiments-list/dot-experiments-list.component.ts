@@ -49,7 +49,7 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
     ],
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],
-    providers: [DotMessagePipe, provideComponentStore(DotExperimentsListStore)],
+    providers: [provideComponentStore(DotExperimentsListStore)],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListComponent {
@@ -62,7 +62,6 @@ export class DotExperimentsListComponent {
 
     constructor(
         private readonly dotExperimentsListStore: DotExperimentsListStore,
-        private readonly dotMessagePipe: DotMessagePipe,
         private readonly router: Router
     ) {}
 

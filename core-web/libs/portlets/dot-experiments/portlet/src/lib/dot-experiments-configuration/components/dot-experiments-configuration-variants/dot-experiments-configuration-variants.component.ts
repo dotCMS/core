@@ -17,7 +17,7 @@ import { tap } from 'rxjs/operators';
 
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
-import { DotSessionStorageService } from '@dotcms/data-access';
+import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DEFAULT_VARIANT_NAME,
@@ -87,8 +87,8 @@ export class DotExperimentsConfigurationVariantsComponent {
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
         private readonly confirmationService: ConfirmationService,
-        private readonly dotMessagePipe: DotMessagePipe,
         private readonly dotSessionStorageService: DotSessionStorageService,
+        private readonly dotMessageService: DotMessageService,
         private readonly router: Router,
         private readonly route: ActivatedRoute
     ) {}
@@ -138,10 +138,10 @@ export class DotExperimentsConfigurationVariantsComponent {
     deleteVariant(event: { $event: MouseEvent; variant: Variant }, experimentId: string) {
         this.confirmationService.confirm({
             target: event.$event.target,
-            message: this.dotMessagePipe.transform('experiments.configure.variant.delete.confirm'),
+            message: this.dotMessageService.get('experiments.configure.variant.delete.confirm'),
             icon: 'pi pi-exclamation-triangle',
-            acceptLabel: this.dotMessagePipe.transform('delete'),
-            rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
+            acceptLabel: this.dotMessageService.get('delete'),
+            rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
             accept: () => {
                 this.dotExperimentsConfigurationStore.deleteVariant({
                     experimentId,
