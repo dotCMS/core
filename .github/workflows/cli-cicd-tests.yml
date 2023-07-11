@@ -18,6 +18,8 @@ jobs:
       - name: Run tests
         working-directory: ./tools/dotcms-cli/api-data-model/
         run: |
+          pwd
+          ls -la
           ./mvnw test
 #      - name: Run cli tests
 #        working-directory: ./tools/dotcms-cli
