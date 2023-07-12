@@ -1,10 +1,11 @@
 {
 	"info": {
-		"_postman_id": "f48d187e-2932-4338-827f-353aaa39fc01",
+		"_postman_id": "e7d6d683-f049-4c68-8712-0f2c8513bda8",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "5403727",
+		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-e7d6d683-f049-4c68-8712-0f2c8513bda8?action=share&creator=5403727&source=collection_link"
 	},
 	"item": [
 		{
@@ -1975,6 +1976,495 @@
 			"description": "Verifies that the Metadata section in the JSON response in a File Asset is added."
 		},
 		{
+			"name": "Auto-Save",
+			"item": [
+				{
+					"name": "Create Test Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test Content Type creation HTTP Status must be successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var contentType = pm.response.json().entity[0];",
+									"pm.collectionVariables.set(\"contentTypeName\", contentType.name);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"defaultType\":false,\n   \"fixed\":false,\n   \"system\":false,\n   \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n   \"description\":\"\",\n   \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n   \"folder\":\"SYSTEM_FOLDER\",\n   \"name\":\"TestSimpleCT\",\n   \"fields\": [{\n       \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n\t\t\"dataType\": \"TEXT\",\n\t\t\"fieldVariables\": [],\n\t\t\"fixed\": false,\n\t\t\"iDate\": 1676321050367,\n\t\t\"indexed\": true,\n\t\t\"listed\": false,\n\t\t\"modDate\": 1676321050367,\n\t\t\"name\": \"Title\",\n\t\t\"readOnly\": false,\n\t\t\"required\": true,\n\t\t\"searchable\": true,\n\t\t\"sortOrder\": 1,\n\t\t\"unique\": false\n    }\n   ],\n   \"systemActionMappings\":{\n      \"NEW\":\"\"\n   },\n   \"workflow\":[\n      \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n   ]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"description": "Create a test Content Type for this test with a single text field, using the System Workflow."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Contentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test Content creation HTTP Status must be successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Test contentlet was created successfully\", function () {",
+									"    var jsonData = pm.response.json().entity;",
+									"",
+									"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Content Type\");",
+									"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+									"});",
+									"",
+									"var entity = pm.response.json().entity;",
+									"var contentId = Object.keys(entity.results[0]);",
+									"pm.collectionVariables.set(\"contentInode\", entity.results[0][contentId].inode);",
+									"pm.collectionVariables.set(\"contentIdentifier\", entity.results[0][contentId].identifier);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set(\"originalTitle\", \"My Test Title\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{contentTypeName}}\",\n            \"languageId\": 1,\n            \"title\": \"{{originalTitle}}\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Create the original Contentlet."
+					},
+					"response": []
+				},
+				{
+					"name": "Create First Auto-Save",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"First Auto-Save HTTP Status must be successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"First Auto-Save was issued correctly\", function () {",
+									"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when issuing the first Auto-Save\");",
+									"    pm.expect(pm.response.json().entity.title).to.eql(pm.collectionVariables.get(\"firstAutoSaveTitle\"), \"First Auto-Save title is not the expected one.\")",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"contentInode\", pm.response.json().entity.inode);",
+									"pm.collectionVariables.set(\"contentIdentifier\", pm.response.json().entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set(\"firstAutoSaveTitle\", \"My Updated Test Title\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeName}}\",\n        \"title\": \"{{firstAutoSaveTitle}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_draft?language=1&inode={{contentInode}}&identifier={{contentIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_draft"
+							],
+							"query": [
+								{
+									"key": "language",
+									"value": "1"
+								},
+								{
+									"key": "inode",
+									"value": "{{contentInode}}"
+								},
+								{
+									"key": "identifier",
+									"value": "{{contentIdentifier}}"
+								}
+							]
+						},
+						"description": "Simulate an Auto-Save request when the User updates the value of the text field."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Second Auto-Save",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Second Auto-Save HTTP Status must be successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Second Auto-Save was issued correctly\", function () {",
+									"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when issuing the second Auto-Save\");",
+									"    pm.expect(pm.response.json().entity.title).to.eql(pm.collectionVariables.get(\"secondAutoSaveTitle\"), \"Second Auto-Save title is not the expected one.\")",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set(\"secondAutoSaveTitle\", \"My Second Updated Test Title\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeName}}\",\n        \"title\": \"{{secondAutoSaveTitle}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_draft?language=1&inode={{contentInode}}&identifier={{contentIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_draft"
+							],
+							"query": [
+								{
+									"key": "language",
+									"value": "1"
+								},
+								{
+									"key": "inode",
+									"value": "{{contentInode}}"
+								},
+								{
+									"key": "identifier",
+									"value": "{{contentIdentifier}}"
+								}
+							]
+						},
+						"description": "Simulate a second Auto-Save request when the User updates the value of the text field."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Third Auto-Save",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Third Auto-Save HTTP Status must be successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Third Auto-Save was issued correctly\", function () {",
+									"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when issuing the third Auto-Save\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set(\"thirdAutoSaveTitle\", \"My Third Updated Test Title\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeName}}\",\n        \"title\": \"{{thirdAutoSaveTitle}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_draft?language=1&inode={{contentInode}}&identifier={{contentIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_draft"
+							],
+							"query": [
+								{
+									"key": "language",
+									"value": "1"
+								},
+								{
+									"key": "inode",
+									"value": "{{contentInode}}"
+								},
+								{
+									"key": "identifier",
+									"value": "{{contentIdentifier}}"
+								}
+							]
+						},
+						"description": "Simulate a third Auto-Save request when the User updates the value of the text field."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Test Content Versions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Version retrieval HTTP Status must be successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"There must be only 2 Content versions\", function () {",
+									"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when checking the number of Content versions\");",
+									"    pm.expect(pm.response.json().entity.length).to.eql(2, \"There cannot be less or more than 2 versions for the test Content\");",
+									"});",
+									"",
+									"pm.test(\"Checking expected title values\", function () {",
+									"    var thirdTitle = pm.collectionVariables.get(\"thirdAutoSaveTitle\");",
+									"    var originalTitle = pm.collectionVariables.get(\"originalTitle\");",
+									"    pm.expect(pm.response.json().entity[0].title).to.eql(thirdTitle, \"Title for the third change is not correct.\");",
+									"    pm.expect(pm.response.json().entity[1].title).to.eql(originalTitle, \"Title for the original content is not correct.\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/versionables/{{contentIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"versionables",
+								"{{contentIdentifier}}"
+							]
+						},
+						"description": "Get all versions of the current Contentlet in order to make sure that:\n\n1. There are only 2 versions of the Contentlet: The original one, and the working Inode representing the Auto-Save.\n2. The first version indicates the latest title update, and the second version indicates the original title."
+					},
+					"response": []
+				}
+			],
+			"description": "The Auto-Save feature allows dotCMS to automatically save any changes made to a given Contentlet by the User after X amount of seconds have passed.\n\nThe new Endpoint method created for this: **`/api/v1/_draft`** , works like this:\n\n- If the User is working **on the live version of the current Contentlet** and make changes to it, the draft request will create a working version in order to auto-save any changes.\n- When a second change is made, the draft method will re-use the previously generated Inode and will overwrite it with the new changes.\n- Finally, any incoming changes will keep overwriting the previous working Inode. This way, dotCMS will overwrite one single working Inode instead of creating hundreds if not thousands of \"useless\" records for any change."
+		},
+		{
 			"name": "invalidateSession",
 			"event": [
 				{
@@ -2635,6 +3125,30 @@
 		},
 		{
 			"key": "fileName",
+			"value": ""
+		},
+		{
+			"key": "originalTitle",
+			"value": ""
+		},
+		{
+			"key": "contentInode",
+			"value": ""
+		},
+		{
+			"key": "contentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "firstAutoSaveTitle",
+			"value": ""
+		},
+		{
+			"key": "secondAutoSaveTitle",
+			"value": ""
+		},
+		{
+			"key": "thirdAutoSaveTitle",
 			"value": ""
 		}
 	]

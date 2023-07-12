@@ -1,0 +1,73 @@
+@use "variables" as *;
+@import "mixins";
+
+:host {
+    display: flex;
+    align-items: center;
+    height: 100%;
+
+    ::ng-deep {
+        .p-button-tabbed {
+            box-shadow: none;
+            height: 100%;
+            margin-right: $spacing-4;
+        }
+
+        .p-selectbutton {
+            height: 100%;
+            display: flex;
+
+            .p-button-label {
+                color: $black;
+            }
+        }
+    }
+}
+
+dot-edit-page-lock-info {
+    margin-left: $spacing-1;
+}
+
+p-inputSwitch {
+    ::ng-deep {
+        .p-inputswitch-slider:after {
+            @include md-icon;
+            color: $color-palette-primary;
+            content: "lock_open";
+            font-size: $font-size-default;
+            left: 4px;
+            position: absolute;
+            text-rendering: auto;
+            top: 0;
+            transition: transform $basic-speed ease-in, color $basic-speed ease-in;
+        }
+
+        .p-inputswitch-checked .p-inputswitch-slider:after {
+            color: $white;
+            content: "lock";
+            transform: translateX(1.5rem);
+        }
+
+        .p-state-disabled .p-inputswitch-slider:after {
+            color: $white;
+        }
+
+        .p-tooltip {
+            display: none !important;
+        }
+    }
+
+    &.warn ::ng-deep .p-inputswitch-slider:after {
+        color: $orange;
+    }
+}
+
+@media only screen and (max-width: $screen-device-container-max) {
+    p-inputSwitch ::ng-deep .p-tooltip {
+        display: inline-block !important;
+    }
+
+    dot-edit-page-lock-info {
+        display: none;
+    }
+}

@@ -1,0 +1,57 @@
+name: Build by Context
+on:
+  workflow_dispatch:
+    inputs:
+      context:
+        description: 'Dockerfile location in docker folder'
+        required: true
+      tags:
+        description: 'Docker image tags'
+        required: false
+        default: 'SNAPSHOT'
+      multi_arch:
+        description: 'Multi-arch flag, true: linux/amd64,linux/arm64 or false: linux/amd64'
+        required: false
+        default: 'false'
+      push:
+        description: 'Push flag'
+        required: false
+        default: 'true'
+jobs:
+  build_image:
+    name: Build docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v3
+      - name: Set Common Vars
+        run: |
+          PLATFORMS='linux/amd64'
+          [[ "${{ github.event.inputs.multi_arch }}" == 'true' ]] && PLATFORMS='linux/amd64,linux/arm64'
+
+          echo "PLATFORMS=${PLATFORMS}" >> $GITHUB_ENV
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2.1.0
+        with:
+          platforms: amd64,arm64
+        if: github.event.inputs.multi_arch == 'true'
+      - id: docker-setup-buildx
+        name: Docker Setup Buildx
+        uses: docker/setup-buildx-action@v2.2.1
+        with:
+          platforms: ${{ env.PLATFORMS }}
+          driver-opts: |
+            image=moby/buildkit:v0.10.6
+        if: github.event.inputs.multi_arch == 'true'
+      - name: Docker Hub login
+        uses: docker/login-action@v2.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: ./docker/${{ github.event.inputs.context }}
+          push: ${{ github.event.inputs.push }}
+          tags: ${{ github.event.inputs.tags }}
+          platforms: ${{ env.PLATFORMS }}

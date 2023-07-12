@@ -1,8 +1,5 @@
 <ng-container *ngIf="vm$ | async as vm">
     <div class="dialog__auto-complete-container field">
-        <label class="auto-complete-container__label" htmlFor="auto-complete-input">{{
-            'dot.template.builder.classes.dialog.autocomplete.label' | dm
-        }}</label>
         <div class="p-fluid">
             <p-autoComplete
                 [ngModel]="vm.selectedClasses"
@@ -14,6 +11,8 @@
                 (onSelect)="onSelect($event)"
                 (onUnselect)="onUnselect()"
                 (completeMethod)="filterClasses($event)"
+                (onKeyUp)="onKeyUp($event)"
+                dataKey="cssClass"
                 field="cssClass"
                 appendTo="body"
                 inputId="auto-complete-input"
