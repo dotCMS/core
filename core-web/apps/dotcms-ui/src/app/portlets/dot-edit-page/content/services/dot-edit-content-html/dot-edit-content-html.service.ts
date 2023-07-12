@@ -64,6 +64,8 @@ export enum DotContentletMenuAction {
 
 export const CONTENTLET_PLACEHOLDER_SELECTOR = '#contentletPlaceholder';
 
+export const MATERIAL_ICONS_PATH = '/dotAdmin/assets/material-icons.css';
+
 @Injectable()
 export class DotEditContentHtmlService {
     contentletEvents$: Subject<
@@ -420,9 +422,7 @@ export class DotEditContentHtmlService {
 
     private setMaterialIcons(): void {
         const doc = this.getEditPageDocument();
-        const link = this.dotDOMHtmlUtilService.createLinkElement(
-            'dotAdmin/assets/material-icons.css'
-        );
+        const link = this.dotDOMHtmlUtilService.createLinkElement(MATERIAL_ICONS_PATH);
         doc.head.appendChild(link);
     }
 
