@@ -110,7 +110,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: ${{ failure() || cancelled() }}
         with:
-          name: "build-reports-Initial JDK 11 Build"
+          name: "init-build-reports-Initial JDK 11 Build" #Should not be picked up for JunitReports
           path: |
             target/build-report.json
             LICENSE
