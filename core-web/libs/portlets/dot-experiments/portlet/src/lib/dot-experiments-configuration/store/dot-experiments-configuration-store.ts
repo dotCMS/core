@@ -11,6 +11,7 @@ import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     ComponentStatus,
     ConditionDefaultByTypeOfGoal,
@@ -27,6 +28,7 @@ import {
     Variant
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import {
@@ -41,6 +43,7 @@ export interface DotExperimentsConfigurationState {
     configProps: Record<string, string>;
     hasEnterpriseLicense: boolean;
     addToBundleContentId: string;
+    pushPublishEnvironments: DotEnvironment[];
 }
 
 const initialState: DotExperimentsConfigurationState = {
@@ -53,7 +56,8 @@ const initialState: DotExperimentsConfigurationState = {
     },
     configProps: null,
     hasEnterpriseLicense: false,
-    addToBundleContentId: null
+    addToBundleContentId: null,
+    pushPublishEnvironments: null
 };
 
 export interface ConfigurationViewModel {
@@ -111,8 +115,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     readonly getMenuItems$: Observable<MenuItem[]> = this.select(
         this.state$,
-        ({ experiment, hasEnterpriseLicense }) =>
-            this.getMenuItems(experiment, hasEnterpriseLicense)
+        ({ experiment, hasEnterpriseLicense, pushPublishEnvironments }) =>
+            this.getMenuItems(experiment, hasEnterpriseLicense, pushPublishEnvironments)
     );
 
     // Goals Step //
@@ -867,12 +871,13 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly messageService: MessageService,
         private readonly title: Title,
         private readonly route: ActivatedRoute,
-        private readonly confirmationService: ConfirmationService
+        private readonly confirmationService: ConfirmationService,
+        private readonly dotPushPublishDialogService: DotPushPublishDialogService
     ) {
         const configProps = route.snapshot.data['config'];
         const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
-
-        super({ ...initialState, hasEnterpriseLicense, configProps });
+        const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
+        super({ ...initialState, hasEnterpriseLicense, configProps, pushPublishEnvironments });
     }
 
     private updateTabTitle(experiment: DotExperiment) {
@@ -896,7 +901,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         return experiment?.trafficProportion.variants.length < 2 || !experiment?.goals;
     }
 
-    private getMenuItems(experiment: DotExperiment, hasEnterpriseLicense: boolean): MenuItem[] {
+    private getMenuItems(
+        experiment: DotExperiment,
+        hasEnterpriseLicense: boolean,
+        pushPublishEnvironments: DotEnvironment[]
+    ): MenuItem[] {
         return [
             // Start experiment
             {
@@ -948,7 +957,17 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                     });
                 }
             },
-            // Add To bundle experiment
+            // Push Publish
+            {
+                label: this.dotMessageService.get('contenttypes.content.push_publish'),
+                visible: hasEnterpriseLicense && !!pushPublishEnvironments.length,
+                command: () =>
+                    this.dotPushPublishDialogService.open({
+                        assetIdentifier: experiment.identifier,
+                        title: this.dotMessageService.get('contenttypes.content.push_publish')
+                    })
+            },
+            // Add To bundle
             {
                 label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
                 visible: hasEnterpriseLicense,
