@@ -2097,9 +2097,11 @@ alter table contentlet_version_info add constraint fk_contentlet_version_info_la
 alter table folder add constraint fk_folder_file_structure_type foreign key(default_file_type) references structure(inode);
 
 alter table workflowtask_files add constraint FK_workflow_id foreign key (workflowtask_id) references workflow_task(id);
-
+CREATE INDEX IF NOT EXISTS workflowtask_files_hash_idx ON workflowtask_files USING HASH(workflowtask_id);
 alter table workflow_comment add constraint workflowtask_id_comment_FK foreign key (workflowtask_id) references workflow_task(id);
+CREATE INDEX IF NOT EXISTS workflow_comment_hash_idx ON workflow_comment USING HASH(workflowtask_id);
 alter table workflow_history add constraint workflowtask_id_history_FK foreign key (workflowtask_id) references workflow_task(id);
+CREATE INDEX IF NOT EXISTS workflow_history_hash_idx ON workflow_history USING HASH(workflowtask_id);
 alter table workflow_task add constraint unique_workflow_task unique (webasset,language_id);
 
 alter table contentlet add constraint fk_contentlet_lang foreign key (language_id) references language(id);
@@ -2508,7 +2510,8 @@ create table experiment (
      created_by varchar(255) not null,
      last_modified_by varchar(255) not null,
      goals jsonb,
-     lookback_window integer not null
+     lookback_window integer not null,
+     running_ids jsonb
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);

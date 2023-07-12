@@ -12,7 +12,7 @@ import { DotContainersServiceMock } from '@dotcms/utils-testing';
 import { TemplateBuilderSidebarComponent } from './template-builder-sidebar.component';
 
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
-import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
+import { DOT_MESSAGE_SERVICE_TB_MOCK, GRIDSTACK_DATA_MOCK } from '../../utils/mocks';
 import { TemplateBuilderBoxComponent } from '../template-builder-box/template-builder-box.component';
 
 describe('TemplateBuilderSidebarComponent', () => {
@@ -48,7 +48,7 @@ describe('TemplateBuilderSidebarComponent', () => {
             {
                 hostProps: {
                     sidebarProperties: {
-                        postion: 'left',
+                        location: 'left',
                         width: 'medium',
                         containers: []
                     }
@@ -59,6 +59,21 @@ describe('TemplateBuilderSidebarComponent', () => {
         store = spectator.inject(DotTemplateBuilderStore);
 
         boxComponent = spectator.query(TemplateBuilderBoxComponent);
+
+        store.init({
+            items: GRIDSTACK_DATA_MOCK,
+            layoutProperties: {
+                header: true,
+                footer: true,
+                sidebar: {
+                    location: 'left',
+                    width: 'medium',
+                    containers: []
+                }
+            },
+            resizingRowID: '',
+            containerMap: {}
+        });
 
         spectator.detectChanges();
     });

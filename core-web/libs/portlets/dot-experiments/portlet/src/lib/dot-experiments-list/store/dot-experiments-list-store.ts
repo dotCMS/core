@@ -10,6 +10,7 @@ import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
@@ -20,6 +21,7 @@ import {
     SidebarStatus
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsStore } from '../../dot-experiments-shell/store/dot-experiments.store';
@@ -29,6 +31,9 @@ export interface DotExperimentsState {
     filterStatus: Array<string>;
     status: ComponentStatus;
     sidebar: SidebarStatus;
+    hasEnterpriseLicense: boolean;
+    addToBundleContentId: string;
+    pushPublishEnvironments: DotEnvironment[];
 }
 
 const initialState: DotExperimentsState = {
@@ -44,7 +49,10 @@ const initialState: DotExperimentsState = {
     sidebar: {
         status: ComponentStatus.IDLE,
         isOpen: false
-    }
+    },
+    hasEnterpriseLicense: false,
+    addToBundleContentId: null,
+    pushPublishEnvironments: null
 };
 
 // Vm Interfaces
@@ -56,6 +64,7 @@ export interface VmListExperiments {
     sidebar: SidebarStatus;
     pageId: string;
     pageTitle: string;
+    addToBundleContentId: string;
 }
 
 export interface VmCreateExperiments {
@@ -83,10 +92,14 @@ export class DotExperimentsListStore
             state.sidebar.status === ComponentStatus.INIT
     );
     readonly getExperimentsWithActions$: Observable<DotExperimentsWithActions[]> = this.select(
-        ({ experiments }) => {
+        ({ experiments, hasEnterpriseLicense, pushPublishEnvironments }) => {
             return experiments.map((experiment) => ({
                 ...experiment,
-                actionsItemsMenu: this.getActionMenuItemsByExperiment(experiment)
+                actionsItemsMenu: this.getActionMenuItemsByExperiment(
+                    experiment,
+                    hasEnterpriseLicense,
+                    pushPublishEnvironments
+                )
             }));
         }
     );
@@ -186,6 +199,11 @@ export class DotExperimentsListStore
             status: ComponentStatus.IDLE,
             isOpen: false
         }
+    }));
+
+    readonly showAddToBundle = this.updater((state, addToBundleContentId: string) => ({
+        ...state,
+        addToBundleContentId
     }));
 
     readonly loadExperiments = this.effect((pageId$: Observable<string>) => {
@@ -313,7 +331,7 @@ export class DotExperimentsListStore
         this.dotExperimentsStore.getPageTitle$,
         this.getExperimentsWithActions$,
         (
-            { experiments, filterStatus, sidebar },
+            { experiments, filterStatus, sidebar, addToBundleContentId },
             isLoading,
             experimentsFiltered,
             pageId,
@@ -325,7 +343,8 @@ export class DotExperimentsListStore
             isLoading,
             experimentsFiltered,
             pageId,
-            pageTitle
+            pageTitle,
+            addToBundleContentId
         })
     );
 
@@ -348,10 +367,15 @@ export class DotExperimentsListStore
         private readonly route: ActivatedRoute,
         private readonly router: Router,
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private readonly confirmationService: ConfirmationService
+        private readonly confirmationService: ConfirmationService,
+        private readonly dotPushPublishDialogService: DotPushPublishDialogService
     ) {
+        const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
+        const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
         super({
-            ...initialState
+            ...initialState,
+            hasEnterpriseLicense,
+            pushPublishEnvironments
         });
     }
 
@@ -360,7 +384,11 @@ export class DotExperimentsListStore
         this.loadExperiments(pageId);
     }
 
-    private getActionMenuItemsByExperiment(experiment: DotExperiment): MenuItem[] {
+    private getActionMenuItemsByExperiment(
+        experiment: DotExperiment,
+        hasEnterpriseLicense: boolean,
+        pushPublishEnvironments: DotEnvironment[]
+    ): MenuItem[] {
         return [
             // Delete Action
             {
@@ -407,6 +435,25 @@ export class DotExperimentsListStore
                 label: this.dotMessageService.get('experiments.action.archive'),
                 visible: AllowedActionsByExperimentStatus['archive'].includes(experiment.status),
                 command: () => this.archiveExperiment(experiment)
+            },
+
+            // Push Publish Action
+            {
+                label: this.dotMessageService.get('contenttypes.content.push_publish'),
+                visible: hasEnterpriseLicense && !!pushPublishEnvironments.length,
+                command: () =>
+                    this.dotPushPublishDialogService.open({
+                        assetIdentifier: experiment.identifier,
+                        title: this.dotMessageService.get('contenttypes.content.push_publish')
+                    })
+            },
+
+            // Add To Bundle Action
+            {
+                id: 'dot-experiments-add-to-bundle',
+                label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
+                visible: hasEnterpriseLicense,
+                command: () => this.showAddToBundle(experiment.identifier)
             }
         ];
     }
