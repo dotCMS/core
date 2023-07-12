@@ -199,7 +199,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         //Add to bundle
-        spectator.query(Menu).model[3].command();
+        spectator.query(Menu).model[4].command();
 
         spectator.detectComponentChanges();
 
