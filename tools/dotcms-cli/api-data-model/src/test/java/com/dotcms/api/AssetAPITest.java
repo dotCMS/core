@@ -1,7 +1,6 @@
 package com.dotcms.api;
 
 
-import com.dotcms.ContainerResource;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
@@ -10,7 +9,6 @@ import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.asset.SearchByPathRequest;
 import com.dotcms.model.config.ServiceBean;
 import com.google.common.collect.ImmutableList;
-import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -25,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 @QuarkusTest
-@QuarkusTestResource(ContainerResource.class)
 class AssetAPITest {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
