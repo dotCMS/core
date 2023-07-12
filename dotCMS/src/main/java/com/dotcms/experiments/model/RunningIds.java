@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+
 import java.util.Optional;
+
 
 /**
  * Represents a Set of Experiment's Running Ids, any time a Experiment is started a new Running Id is created
@@ -48,7 +50,6 @@ public class RunningIds {
     public Optional<RunningId> getCurrent() {
         return getAll().stream().filter(runningId -> runningId.endDate() == null).findFirst();
     }
-
     public static class RunningId {
 
         @JsonProperty()
