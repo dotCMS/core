@@ -2,49 +2,50 @@ package com.dotcms.publisher.pusher.wrapper;
 
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.portlets.rules.model.Rule;
 
 /**
- * This wrapper class will contain all the information that a {@link com.dotcms.experiments.model.Experiment}
+ * This wrapper class will contain all the information that a {@link com.dotcms.variant.model.Variant}
  * object requires for it to be pushed to another environment. This wrapper will
  * be added to the bundle file (usually in the form of an XML file) and will be
  * read by the handler class that will save this data in the destination server.
  */
-public class ExperimentWrapper {
+public class VariantWrapper {
 
-	private Experiment experiment;
+	private Variant variant;
 	private Operation operation = null;
 
-	public ExperimentWrapper() {
+	public VariantWrapper() {
 	}
 
 	/**
-	 * Builds a wrapper for the specified {@link Experiment} object.
+	 * Builds a wrapper for the specified {@link Variant} object.
 	 *
-	 * @param experiment
-	 *            - The experiment that will be pushed.
+	 * @param variant
+	 *            - The variant that will be pushed.
 	 */
-	public ExperimentWrapper(Experiment experiment) {
-		this.experiment = experiment;
+	public VariantWrapper(Variant variant) {
+		this.variant = variant;
 	}
 
 	/**
-	 * Returns the {@link Rule} object containing all its required data:
-	 * Condition Groups, Conditions, Actions, configuration parameters, etc.
+	 * Returns the {@link Variant} object
 	 * 
-	 * @return The {@link Rule} object.
+	 * @return The {@link Variant} object.
 	 */
-	public Experiment getExperiment() {
-		return this.experiment;
+	public Variant getVariant() {
+		return this.variant;
 	}
 
 	/**
-	 * Sets the {@link Experiment} object
-	 * @param experiment
-	 *            - The {@link Experiment} object.
+	 * Sets the {@link Variant} object.
+	 * 
+	 * @param variant
+	 *            - The {@link Variant} object.
 	 */
-	public void setExperiment(Experiment experiment) {
-		this.experiment = experiment;
+	public void setVariant(Variant variant) {
+		this.variant = variant;
 	}
 
 	/**
@@ -70,7 +71,7 @@ public class ExperimentWrapper {
 
 	@Override
 	public String toString() {
-		return "ExperimentWrapper [experiment=" + experiment + ", operation=" + operation + "]";
+		return "VariantWrapper [variant=" + variant + ", operation=" + operation + "]";
 	}
 
 }

@@ -215,7 +215,7 @@ public class ExperimentBundler implements IBundler {
 			uri += EXTENSION;
 		}
 		final User systemUser = APILocator.getUserAPI().getSystemUser();
-		Host host = null;
+		Host host;
 		final Contentlet pageAsContentlet = APILocator.getContentletAPI()
 				.findContentletByIdentifierAnyLanguage(experiment.pageId());
 		if (UtilMethods.isSet(pageAsContentlet)) {
