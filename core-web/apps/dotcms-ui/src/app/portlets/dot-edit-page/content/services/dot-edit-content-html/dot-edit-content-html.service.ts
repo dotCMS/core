@@ -64,7 +64,7 @@ export enum DotContentletMenuAction {
 
 export const CONTENTLET_PLACEHOLDER_SELECTOR = '#contentletPlaceholder';
 
-export const MATERIAL_ICONS_PATH = 'dotAdmin/assets/material-icons.css';
+export const MATERIAL_ICONS_PATH = '/dotAdmin/assets/material-icons.css';
 
 @Injectable()
 export class DotEditContentHtmlService {
