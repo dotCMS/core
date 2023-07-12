@@ -45,7 +45,7 @@ RUN bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
     /root/.sdkman/candidates/java/$JAVA_VERSION/bin/jlink \
     --verbose \
     --add-modules \
-        java.base,jdk.crypto.ec,jdk.jdwp.agent,jdk.management,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi,jdk.compiler,jdk.zipfs,jdk.naming.dns,jdk.localedata,java.xml \
+        java.base,jdk.crypto.ec,jdk.jdwp.agent,jdk.management,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi,jdk.compiler,jdk.zipfs,jdk.naming.dns,jdk.localedata,org.w3c.dom \
     --compress 2 \
     --no-header-files \
     --no-man-pages \
