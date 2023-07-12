@@ -24,7 +24,7 @@
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <junit-jupiter.version>5.9.3</junit-jupiter.version>
         <testcontainers.version>1.17.6</testcontainers.version>
-<!--        <docker-java.version>3.3.0</docker-java.version>-->
+        <docker-compose-plugin.version>1.0.0</docker-compose-plugin.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -80,43 +80,39 @@
             <artifactId>jackson-datatype-guava</artifactId>
             <version>2.13.3</version>
         </dependency>
+
 <!--        <dependency>-->
-<!--            <groupId>net.java.dev.jna</groupId>-->
-<!--            <artifactId>jna</artifactId>-->
-<!--            <version>5.7.0</version>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.junit.jupiter</groupId>-->
+<!--            <groupId>org.testcontainers</groupId>-->
 <!--            <artifactId>junit-jupiter</artifactId>-->
-<!--            <version>${junit-jupiter.version}</version>-->
+<!--            <version>${testcontainers.version}</version>-->
 <!--            <scope>test</scope>-->
 <!--        </dependency>-->
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${testcontainers.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-            <version>${testcontainers.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>${testcontainers.version}</version>
-            <scope>test</scope>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.testcontainers</groupId>-->
+<!--            <artifactId>testcontainers</artifactId>-->
+<!--            <version>${testcontainers.version}</version>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.testcontainers</groupId>-->
+<!--            <artifactId>postgresql</artifactId>-->
+<!--            <version>${testcontainers.version}</version>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
+
+<!--        <dependency>-->
+<!--            <groupId>org.testcontainers</groupId>-->
+<!--            <artifactId>elasticsearch</artifactId>-->
+<!--            <version>${testcontainers.version}</version>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
 
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>elasticsearch</artifactId>
-            <version>${testcontainers.version}</version>
-            <scope>test</scope>
+            <groupId>io.brachu</groupId>
+            <artifactId>docker-compose-maven-plugin</artifactId>
+            <version>${docker-compose-plugin.version}</version>
         </dependency>
+
 
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -209,6 +205,25 @@
                                         <maven.home>${maven.home}</maven.home>
                                     </systemPropertyVariables>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>io.brachu</groupId>
+                        <artifactId>docker-compose-maven-plugin</artifactId>
+                        <version>${docker-compose-plugin.version}</version>
+                        <configuration>
+                            <projectName>${project.artifactId}</projectName>
+<!--                            <file>${project.basedir}/test/resources/docker-compose.yaml</file>-->
+                            <wait>2</wait>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>up</goal>
+                                    <goal>down</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>
