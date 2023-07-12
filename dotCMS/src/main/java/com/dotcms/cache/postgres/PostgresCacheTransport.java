@@ -136,23 +136,26 @@ public final class PostgresCacheTransport implements CacheTransport {
                     Try.run(() -> Thread.sleep(30000));
                 }
             }
-
+            Logger.info(PostgresCacheTransport.class, "Running Listener Loop");
             while (isInitialized.get()) {
                 try {
 
                     try (Statement stmt = connect().createStatement()) {
                         stmt.executeQuery("SELECT 1");
                     }
-
+ 
                     org.postgresql.PGNotification[] notifications = pgConnection.getNotifications();
+                    Logger.info(PostgresCacheTransport.class, "Running Listener Notifications:" + notifications);
+                    
                     if (notifications != null) {
                         for (int i = 0; i < notifications.length; i++) {
                             String note = notifications[i].getName();
+                            Logger.info(getClass(), "got:" + note);
                             if (null == note || note.startsWith(serverId.get() + ":") || note.indexOf(":") < 0) {
                                 continue;
                             }
                             receive(note.split(":", 2)[1]);
-                            Logger.info(getClass(), "got:" + note);
+                           
 
                         }
                     }
