@@ -24,7 +24,7 @@ class SystemTableImpl implements SystemTable {
 
     @Override
     @CloseDBIfOpened
-    public Optional<String> find(final String key) {
+    public Optional<String> get(final String key) {
 
         Logger.debug(this, ()-> "Finding the key: " + key);
         return Try.of(()->this.systemTableFactory.find(key))
@@ -33,7 +33,7 @@ class SystemTableImpl implements SystemTable {
 
     @Override
     @CloseDBIfOpened
-    public Map<String, String> findAll() {
+    public Map<String, String> all() {
 
         Logger.debug(this, ()-> "Returning all table contents");
         return Try.of(()->this.systemTableFactory.findAll())
@@ -42,19 +42,10 @@ class SystemTableImpl implements SystemTable {
 
     @Override
     @WrapInTransaction
-    public void save(final String key, final String value) {
+    public void set(final String key, final String value) {
 
-        Logger.debug(this, ()-> "Saving the key: " + key + " value: " + value);
-        Try.run(()-> this.systemTableFactory.save(key, value))
-                .getOrElseThrow((e)-> new DotRuntimeException(e.getMessage(), e));
-    }
-
-    @Override
-    @WrapInTransaction
-    public void update(final String key, final String value) {
-
-        Logger.debug(this, ()-> "Updating the key: " + key + " value: " + value);
-        Try.run(()-> this.systemTableFactory.update(key, value))
+        Logger.debug(this, ()-> "Saving or Updating the key: " + key + " value: " + value);
+        Try.run(()-> this.systemTableFactory.saveOrUpdate(key, value))
                 .getOrElseThrow((e)-> new DotRuntimeException(e.getMessage(), e));
     }
 

@@ -22,6 +22,8 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
 
     private final SystemCache systemCache;
 
+    private final static String VALUE_404 = "DOT_SYSTEM_TABLE_404";
+
     public SystemTableFactoryImpl () {
 
         this.systemCache = CacheLocator.getSystemCache();
@@ -29,9 +31,10 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
     @Override
     protected Optional<String> find(final String key) throws DotDataException {
 
+        Object value = null;
         if(UtilMethods.isSet(key)) {
 
-            Object value = this.systemCache.get(key);
+            value = this.systemCache.get(key);
             if(Objects.isNull(value)) {
 
                 final List<Map<String, Object>> result = new DotConnect()
@@ -43,13 +46,16 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
 
                 if(Objects.nonNull(value)) {
                     this.systemCache.put(key, value);
+                } else {
+                    this.systemCache.put(key, VALUE_404);
+                    value = VALUE_404;
                 }
             }
-
-            return Optional.ofNullable(toString(value));
         }
 
-        return Optional.empty();
+        return  Objects.isNull(value) || VALUE_404.equals(value)?
+                Optional.empty():
+                Optional.ofNullable(toString(value));
     }
 
     @Override
@@ -75,42 +81,19 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
     }
 
     @Override
-    protected void save(final String key, final String value) throws DotDataException {
+    protected void saveOrUpdate(final String key, final String value) throws DotDataException {
 
         if (Objects.nonNull(key) && Objects.nonNull(value)) {
 
             final Optional<String> valueOpt = find(key);
-            valueOpt.ifPresent(s -> {
-                throw new DotDuplicateDataException("The key " + key + " already exists");
-            });
 
             new DotConnect()
-                    .setSQL("INSERT INTO system_table (key, value) VALUES (?,?)")
-                    .addParam(key)
+                    .setSQL(valueOpt.isPresent()?
+                            "UPDATE system_table SET value=? WHERE key=?":
+                            "INSERT INTO system_table (value, key) VALUES (?,?)")
                     .addParam(value)
+                    .addParam(key)
                     .loadResult();
-
-            this.systemCache.remove(key);
-        } else {
-
-            throw new DotDataException("The key and value should not be null");
-        }
-    }
-
-    @Override
-    protected void update(final String key, final String value) throws DotDataException {
-
-        if (Objects.nonNull(key) && Objects.nonNull(value)) {
-
-            final Optional<String> valueOpt = find(key);
-            valueOpt.ifPresentOrElse(
-                    s -> {
-                        Try.run(()->new DotConnect()
-                            .setSQL("UPDATE system_table SET value=? WHERE key=?")
-                            .addParam(value)
-                            .addParam(key)
-                            .loadResult()).getOrElseThrow(e-> new DotRuntimeException(e)); },
-                    ()-> {throw new DoesNotExistException("The key " + key + " does not exist");});
 
             this.systemCache.remove(key);
         } else {
@@ -131,7 +114,7 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
                                 .setSQL("DELETE FROM system_table WHERE key=?")
                                 .addParam(key)
                                 .loadResult()).getOrElseThrow(e-> new DotRuntimeException(e)); },
-                    ()-> {throw new DotDuplicateDataException("The key " + key + " does not exist");});
+                    ()-> {throw new DoesNotExistException("The key " + key + " does not exist");});
 
             this.systemCache.remove(key);
         } else {

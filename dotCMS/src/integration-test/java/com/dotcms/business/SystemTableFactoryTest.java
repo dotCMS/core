@@ -58,7 +58,7 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
 
             systemTableFactory.clearCache();
             // SAVE + FIND
-            LocalTransaction.wrap(()->systemTableFactory.save(key1, value1));
+            LocalTransaction.wrap(()->systemTableFactory.saveOrUpdate(key1, value1));
             final Optional<String> value1FromDB =  wrapOnReadOnlyConn(()->systemTableFactory.find(key1));
             Assert.assertTrue("Should return something",  value1FromDB.isPresent());
             Assert.assertEquals(
@@ -66,11 +66,11 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
                     value1, value1FromDB.get());
 
             // UPDATE + FIND
-            LocalTransaction.wrap(()->systemTableFactory.update(key1, value2));
+            LocalTransaction.wrap(()->systemTableFactory.saveOrUpdate(key1, value2));
             final Optional<String> value2FromDB =  wrapOnReadOnlyConn(()->systemTableFactory.find(key1));
             Assert.assertEquals(
                     "The value previous added should be the same of the value recovery from the db with the key: " + key1,
-                    value2, value2FromDB);
+                    value2, value2FromDB.get());
 
             // DELETE + FIND
             LocalTransaction.wrap(()->systemTableFactory.delete(key1));
@@ -86,7 +86,7 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
      * ExpectedResult: Should throw an exception b/c the key already exist
      * @throws Throwable
      */
-    @Test(expected = DotDuplicateDataException.class)
+    @Test()
     public void test_double_insert () throws Throwable {
 
         final String key1 = "key13";
@@ -98,39 +98,21 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
 
             systemTableFactory.clearCache();
             // SAVE + FIND
-            LocalTransaction.wrap(()->systemTableFactory.save(key1, value1));
+            LocalTransaction.wrap(()->systemTableFactory.saveOrUpdate(key1, value1));
             final Optional<String> value1FromDB =  wrapOnReadOnlyConn(()->systemTableFactory.find(key1));
             Assert.assertTrue("Should return something",  value1FromDB.isPresent());
             Assert.assertEquals(
                     "The value previous added should be the same of the value recovery from the db with the key: " + key1,
                     value1, value1FromDB.get());
 
-            // this should throw an exception since the key1 already exist.
-            LocalTransaction.wrap(()->systemTableFactory.save(key1, value1));
-            Assert.fail("The duplicate key should throw an exception");
-        }
-    }
+            // this should be an update
+            LocalTransaction.wrap(()->systemTableFactory.saveOrUpdate(key1, value1));
+            final Optional<String> value2FromDB =  wrapOnReadOnlyConn(()->systemTableFactory.find(key1));
+            Assert.assertTrue("Should return something",  value2FromDB.isPresent());
+            Assert.assertEquals(
+                    "The value previous added should be the same of the value recovery from the db with the key: " + key1,
+                    value1, value2FromDB.get());
 
-    /**
-     * Method to test: test update on non existing key constraint {@link SystemTableFactory#update(String, String)}
-     * Given Scenario: tries to update an non existing a key
-     * ExpectedResult: Should throw an exception b/c the key does not exist
-     * @throws Throwable
-     */
-    @Test(expected = DoesNotExistException.class)
-    public void test_update_non_existing_key () throws Throwable {
-
-        final String key1 = "key10";
-        final String value1 = "value1";
-
-        final SystemTableFactory systemTableFactory = FactoryLocator.getSystemTableFactory();
-
-        if (null != systemTableFactory) {
-
-            systemTableFactory.clearCache();
-            // SAVE + FIND
-            LocalTransaction.wrap(()->systemTableFactory.update(key1, value1));
-            Assert.fail("The duplicate key should throw an exception");
         }
     }
 
@@ -178,8 +160,8 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
             try {
                 systemTableFactory.clearCache();
                 // SAVE + FIND
-                LocalTransaction.wrap(() -> systemTableFactory.save(key1, value1));
-                LocalTransaction.wrap(() -> systemTableFactory.save(key2, value2));
+                LocalTransaction.wrap(() -> systemTableFactory.saveOrUpdate(key1, value1));
+                LocalTransaction.wrap(() -> systemTableFactory.saveOrUpdate(key2, value2));
                 final Map<String, String> value1FromDB = wrapOnReadOnlyConn(() -> systemTableFactory.findAll());
                 Assert.assertTrue("Should has key1", value1FromDB.containsKey(key1));
                 Assert.assertTrue("Should has key2", value1FromDB.containsKey(key2));

@@ -26,20 +26,12 @@ public abstract class SystemTableFactory  {
     protected abstract Map<String, String> findAll() throws DotDataException;
 
     /**
-     * Create a value in the system table
+     * Save or Update a value in the system table
      * @param key {@link String} key, should not exist
      * @param value {@link String} value
      * @throws DotDataException
      */
-    protected abstract void save(String key, String value) throws DotDataException;
-
-    /**
-     * Update a value in the system table
-     * @param key {@link String} key, should exist
-     *      * @param value {@link String} value
-     * @throws DotDataException
-     */
-    protected abstract void update(String key, String value) throws DotDataException;
+    protected abstract void saveOrUpdate(String key, String value) throws DotDataException;
 
     /**
      * Deletes a value from the system table

@@ -9,9 +9,9 @@ import com.dotcms.util.WhiteBlackList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDuplicateDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableSet;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -66,7 +66,7 @@ public class SystemTableResource implements Serializable {
 			throws IllegalAccessException {
 
 		this.init(request, response);
-		final Map<String, String> allEntries = this.systemTable.findAll();
+		final Map<String, String> allEntries = this.systemTable.all();
 		final Map<String, String> filteredEntries = allEntries.entrySet().stream()
 				.filter(entry -> this.whiteBlackList.isAllowed(entry.getKey()))
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -97,7 +97,7 @@ public class SystemTableResource implements Serializable {
 		this.checkBlackList(key);
 
 		Logger.debug(this, ()-> "Getting system table value for key: " + key);
-		final Optional<String> valueOpt = this.systemTable.find(key);
+		final Optional<String> valueOpt = this.systemTable.get(key);
 		if (valueOpt.isPresent()) {
 
 			return new ResponseEntityStringView(valueOpt.get());
@@ -143,8 +143,12 @@ public class SystemTableResource implements Serializable {
 		this.init(request, response);
 		this.checkBlackList(form.getKey());
 
+		if (this.systemTable.get(form.getKey()).isPresent()) {
+			throw new DotDuplicateDataException("Key already exist: " + form.getKey());
+		}
+
 		Logger.debug(this, ()-> "Saving system table value for key: " + form.getKey());
-		this.systemTable.save(form.getKey(), form.getValue());
+		this.systemTable.set(form.getKey(), form.getValue());
 		
 		return new ResponseEntityStringView(form.getKey() + " Saved");
 	}
@@ -169,14 +173,14 @@ public class SystemTableResource implements Serializable {
 		this.init(request, response);
 		this.checkBlackList(form.getKey());
 
-		final Optional<String> valueOpt = this.systemTable.find(form.getKey());
+		final Optional<String> valueOpt = this.systemTable.get(form.getKey());
 		if (!valueOpt.isPresent()) {
 
 			throw new DoesNotExistException("Key not found: " + form.getKey());
 		}
 
 		Logger.debug(this, ()-> "Updating system table value for key: " + form.getKey());
-		this.systemTable.update(form.getKey(), form.getValue());
+		this.systemTable.set(form.getKey(), form.getValue());
 
 		return new ResponseEntityStringView(form.getKey() + " Updated");
 	}
@@ -202,7 +206,7 @@ public class SystemTableResource implements Serializable {
 		this.init(request, response);
 		this.checkBlackList(key);
 
-		final Optional<String> valueOpt = this.systemTable.find(key);
+		final Optional<String> valueOpt = this.systemTable.get(key);
 		if (!valueOpt.isPresent()) {
 
 			throw new DoesNotExistException("Key not found: " + key);

@@ -46,23 +46,23 @@ public class SystemAPITest extends IntegrationTestBase  {
         if (null != systemTable) {
 
             // SAVE + FIND
-            LocalTransaction.wrap(()->systemTable.save(key1, value1));
-            final Optional<String> value1FromDB =  wrapOnReadOnlyConn(()->systemTable.find(key1));
+            LocalTransaction.wrap(()->systemTable.set(key1, value1));
+            final Optional<String> value1FromDB =  wrapOnReadOnlyConn(()->systemTable.get(key1));
             Assert.assertTrue("Should return something",  value1FromDB.isPresent());
             Assert.assertEquals(
                     "The value previous added should be the same of the value recovery from the db with the key: " + key1,
                     value1, value1FromDB.get());
 
             // UPDATE + FIND
-            LocalTransaction.wrap(()->systemTable.update(key1, value2));
-            final Optional<String> value2FromDB =  wrapOnReadOnlyConn(()->systemTable.find(key1));
+            LocalTransaction.wrap(()->systemTable.set(key1, value2));
+            final Optional<String> value2FromDB =  wrapOnReadOnlyConn(()->systemTable.get(key1));
             Assert.assertEquals(
                     "The value previous added should be the same of the value recovery from the db with the key: " + key1,
                     value2, value2FromDB.get());
 
             // DELETE + FIND
             LocalTransaction.wrap(()->systemTable.delete(key1));
-            final Optional<String> value3FromDB =  wrapOnReadOnlyConn(()->systemTable.find(key1));
+            final Optional<String> value3FromDB =  wrapOnReadOnlyConn(()->systemTable.get(key1));
             Assert.assertFalse("Should not return something",  value3FromDB.isPresent());
         }
     }
@@ -85,47 +85,20 @@ public class SystemAPITest extends IntegrationTestBase  {
         if (null != systemTable) {
 
             // SAVE + FIND
-            LocalTransaction.wrap(()->systemTable.save(key1, value1));
-            final Optional<String> value1FromDB =  wrapOnReadOnlyConn(()->systemTable.find(key1));
+            LocalTransaction.wrap(()->systemTable.set(key1, value1));
+            final Optional<String> value1FromDB =  wrapOnReadOnlyConn(()->systemTable.get(key1));
             Assert.assertTrue("Should return something",  value1FromDB.isPresent());
             Assert.assertEquals(
                     "The value previous added should be the same of the value recovery from the db with the key: " + key1,
                     value1, value1FromDB.get());
 
-            try {
-                // this should throw an exception since the key1 already exist.
-                LocalTransaction.wrap(() -> systemTable.save(key1, value1));
-                Assert.fail("The duplicate key should throw an exception");
-            } catch (Exception e) {
-                Assert.assertTrue("Should be DotDuplicateDataException", ExceptionUtil.causedBy(e, DotDuplicateDataException.class));
-            }
-        }
-    }
-
-    /**
-     * Method to test: test update on non existing key constraint {@link SystemTable#update(String, String)}
-     * Given Scenario: tries to update an non existing a key
-     * ExpectedResult: Should throw an exception b/c the key does not exist
-     * @throws Throwable
-     */
-    @Test()
-    public void test_update_non_existing_key () throws Throwable {
-
-        final String key1 = "akey10";
-        final String value1 = "value1";
-
-        final SystemTable systemTable = APILocator.getSystemAPI().getSystemTable();
-
-        if (null != systemTable) {
-
-            // SAVE + FIND
-            try {
-                LocalTransaction.wrap(() -> systemTable.update(key1, value1));
-                Assert.fail("The duplicate key should throw an exception");
-            } catch (Exception e) {
-
-                Assert.assertTrue("Should be DoesNotExistException", ExceptionUtil.causedBy(e, DoesNotExistException.class));
-            }
+            // this should throw an exception since the key1 already exist.
+            LocalTransaction.wrap(() -> systemTable.set(key1, value1));
+            final Optional<String> value2FromDB =  wrapOnReadOnlyConn(()->systemTable.get(key1));
+            Assert.assertTrue("Should return something",  value2FromDB.isPresent());
+            Assert.assertEquals(
+                    "The value previous added should be the same of the value recovery from the db with the key: " + key1,
+                    value1, value2FromDB.get());
         }
     }
 
@@ -149,14 +122,14 @@ public class SystemAPITest extends IntegrationTestBase  {
                 LocalTransaction.wrap(() -> systemTable.delete(key1));
                 Assert.fail("The non existing key should throw an exception on delete");
             } catch (Exception e) {
-                Assert.assertTrue("Should be DoesNotExistException", ExceptionUtil.causedBy(e, DotDuplicateDataException.class));
+                Assert.assertTrue("Should be DoesNotExistException", ExceptionUtil.causedBy(e, DoesNotExistException.class));
             }
         }
     }
 
 
     /**
-     * Method to test: test find all {@link SystemTable#findAll()}
+     * Method to test: test find all {@link SystemTable#all()}
      * Given Scenario: Creates a couple key/value
      * ExpectedResult: Should retrieve both keys
      * @throws Throwable
@@ -175,9 +148,9 @@ public class SystemAPITest extends IntegrationTestBase  {
 
             try {
                 // SAVE + FIND
-                LocalTransaction.wrap(() -> systemTable.save(key1, value1));
-                LocalTransaction.wrap(() -> systemTable.save(key2, value2));
-                final Map<String, String> value1FromDB = wrapOnReadOnlyConn(() -> systemTable.findAll());
+                LocalTransaction.wrap(() -> systemTable.set(key1, value1));
+                LocalTransaction.wrap(() -> systemTable.set(key2, value2));
+                final Map<String, String> value1FromDB = wrapOnReadOnlyConn(() -> systemTable.all());
                 Assert.assertTrue("Should has key1", value1FromDB.containsKey(key1));
                 Assert.assertTrue("Should has key2", value1FromDB.containsKey(key2));
                 Assert.assertEquals(

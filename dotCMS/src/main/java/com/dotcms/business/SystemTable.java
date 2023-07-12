@@ -16,30 +16,23 @@ public interface SystemTable {
      * @param key {@link String}
      * @throws DotDataException
      */
-    Optional<String> find(String key);
+    Optional<String> get(String key);
 
     /**
      * Retrieve all the values from the system table
      * @return
      * @throws DotDataException
      */
-    Map<String, String> findAll();
+    Map<String, String> all();
 
     /**
-     * Create a value in the system table
+     * Save or Update a value in the system table
      * @param key {@link String} key, should not exist
      * @param value {@link String} value
      * @throws DotDataException
      */
-    void save(String key, String value);
+    void set(String key, String value);
 
-    /**
-     * Update a value in the system table
-     * @param key {@link String} key, should exist
-     *      * @param value {@link String} value
-     * @throws DotDataException
-     */
-    void update(String key, String value);
 
     /**
      * Deletes a value from the system table
