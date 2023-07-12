@@ -53,9 +53,6 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
     public void setTransport(CacheTransport transport) {
 
-        if (getTransport() != null) {
-            getTransport().shutdown();
-        }
 
         this.cacheTransport = transport;
     }
@@ -374,13 +371,8 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
     }
 
     public void shutdownChannel() {
+        
 
-        if (getTransport() != null) {
-            getTransport().shutdown();
-            useTransportChannel = false;
-        } else {
-            throw new CacheTransportException("No Cache transport implementation is defined");
-        }
 
     }
 

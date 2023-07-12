@@ -350,8 +350,9 @@ public final class PostgresCacheTransport implements CacheTransport {
 
     @Override
     public void shutdown() throws CacheTransportException {
-        if (isInitialized.compareAndSet(true, false))
-            ;
+        if (isInitialized.compareAndSet(true, false))   ;
+        Logger.info(this, "CACHE TRANSPORT SHUTDOWN... Why? ");
+        Thread.dumpStack();
     }
 
 
