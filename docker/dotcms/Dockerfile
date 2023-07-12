@@ -40,7 +40,7 @@ RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat
 # Stage 2:  Construct our container using the minimal-java image
 #           and copying the prebuilt dotcms
 # ----------------------------------------------
-FROM dotcms/java-base:11.0.16-amzn as container-base
+FROM dotcms/java-base:11.0.16-amzn-25247 as container-base
 
 WORKDIR /srv
 
