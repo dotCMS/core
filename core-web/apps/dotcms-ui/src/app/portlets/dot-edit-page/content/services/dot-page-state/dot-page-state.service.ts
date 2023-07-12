@@ -13,6 +13,7 @@ import {
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import {
     DotContentletLockerService,
+    DotLicenseService,
     DotMessageService,
     DotPageRenderService
 } from '@dotcms/data-access';
@@ -49,7 +50,8 @@ export class DotPageStateService {
         private dotRouterService: DotRouterService,
         private loginService: LoginService,
         private dotFavoritePageService: DotFavoritePageService,
-        private dotExperimentsService: DotExperimentsService
+        private dotExperimentsService: DotExperimentsService,
+        private dotLicenseService: DotLicenseService
     ) {}
 
     get pagePersonalization() {
@@ -389,17 +391,31 @@ export class DotPageStateService {
     }
 
     private getRunningExperiment(pageId: string): Observable<DotExperiment> {
-        return this.dotExperimentsService.getByStatus(pageId, DotExperimentStatus.RUNNING).pipe(
-            take(1),
-            catchError((error: HttpErrorResponse) => {
-                error.error.message = this.dotMessageService.get('experiments.error.fetching.data');
+        return this.dotLicenseService.isEnterprise().pipe(
+            switchMap((isEnterprise: boolean) => {
+                if (!isEnterprise) {
+                    return of(null);
+                }
 
-                this.dotHttpErrorManagerService.handle(error, true);
+                return this.dotExperimentsService
+                    .getByStatus(pageId, DotExperimentStatus.RUNNING)
+                    .pipe(
+                        take(1),
+                        catchError((error: HttpErrorResponse) => {
+                            error.error.message = this.dotMessageService.get(
+                                'experiments.error.fetching.data'
+                            );
 
-                return of(null);
-            }),
-            switchMap((experiments: DotExperiment[]) => {
-                return of(experiments && experiments.length > 0 ? experiments[0] : null);
+                            this.dotHttpErrorManagerService.handle(error, true);
+
+                            return of(null);
+                        }),
+                        switchMap((experiments: DotExperiment[]) => {
+                            return of(
+                                experiments && experiments.length > 0 ? experiments[0] : null
+                            );
+                        })
+                    );
             })
         );
     }

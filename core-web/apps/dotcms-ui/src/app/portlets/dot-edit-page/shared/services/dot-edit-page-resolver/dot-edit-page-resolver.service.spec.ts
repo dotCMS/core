@@ -20,6 +20,7 @@ import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotESContentService,
+    DotLicenseService,
     DotPageRenderService,
     DotSessionStorageService
 } from '@dotcms/data-access';
@@ -35,6 +36,7 @@ import {
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
+import { DotLicenseServiceMock } from '@portlets/dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
 
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 
@@ -86,6 +88,10 @@ describe('DotEditPageResolver', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
+                },
+                {
+                    provide: DotLicenseService,
+                    useClass: DotLicenseServiceMock
                 }
             ]
         });
