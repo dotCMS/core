@@ -102,7 +102,7 @@ public final class PostgresCacheTransport implements CacheTransport {
                     isInitialized.set(true);
                     return internalConnection;
                 } catch (Exception e) {
-                    Logger.warnAndDebug(PostgresCacheTransport.class, "PGListener failed to connect:" + e.getMessage(), e);
+                    Logger.error(PostgresCacheTransport.class, "PGListener failed to connect:" + e.getMessage(), e);
                     throw new DotRuntimeException(e);
                 }
             }
@@ -253,6 +253,11 @@ public final class PostgresCacheTransport implements CacheTransport {
 
     @Override
     public void send(String message) throws CacheTransportException {
+        if(!isInitialized.get()) {
+            Logger.error(this.getClass(), "Postgres Cache Transport Not initiallized!");
+            return;
+        }
+        
         if(UtilMethods.isEmpty(message)) {
             return;
         }
