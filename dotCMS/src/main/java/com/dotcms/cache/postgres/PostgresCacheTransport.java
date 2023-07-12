@@ -150,7 +150,7 @@ public final class PostgresCacheTransport implements CacheTransport {
                     if (notifications != null) {
                         for (int i = 0; i < notifications.length; i++) {
                             String note = notifications[i].getParameter();
-                            Logger.info(getClass(), "got:" + note);
+                            Logger.debug(getClass(), "got:" + note);
                             if (null == note || note.startsWith(serverId.get() + ":") || note.indexOf(":") < 0) {
                                 continue;
                             }
