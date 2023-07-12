@@ -10,6 +10,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -18,7 +19,7 @@ import { DotAppsCardComponent } from './dot-apps-card.component';
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'markdown',
-    template: ` <ng-content></ng-content>`
+    template: `<ng-content></ng-content>`
 })
 class MockMarkdownComponent {}
 

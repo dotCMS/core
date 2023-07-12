@@ -19,7 +19,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
 
 @Component({
-    template: ` <dot-apps-configuration-header [app]="app"></dot-apps-configuration-header>`
+    template: `<dot-apps-configuration-header [app]="app"></dot-apps-configuration-header>`
 })
 class TestHostComponent {
     app: DotApps;
