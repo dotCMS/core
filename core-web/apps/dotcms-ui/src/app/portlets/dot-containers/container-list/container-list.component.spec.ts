@@ -40,7 +40,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotFormatDateService } from '@services/dot-format-date-service';
@@ -273,7 +273,7 @@ describe('ContainerListComponent', () => {
             imports: [
                 DotListingDataTableModule,
                 CommonModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 SharedModule,
                 CheckboxModule,
                 MenuModule,

@@ -21,7 +21,7 @@ import {
     DotSessionStorageService
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, HttpCode } from '@dotcms/dotcms-js';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     dotcmsContentletMock,
     MockDotMessageService,
@@ -110,12 +110,15 @@ describe('DotPagesFavoritePanelComponent', () => {
                 }
             });
         }
+
         setLocalStorageFavoritePanelCollapsedParams(_collapsed: boolean): void {
             /* */
         }
+
         setFavoritePages() {
             /* */
         }
+
         getFavoritePages() {
             /* */
         }
@@ -127,7 +130,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                 declarations: [DotPagesFavoritePanelComponent, MockDotIconComponent],
                 imports: [
                     BrowserAnimationsModule,
-                    DotMessagePipeModule,
+                    DotMessagePipe,
                     ButtonModule,
                     DotPagesCardModule,
                     PanelModule,
@@ -218,19 +221,22 @@ describe('DotPagesFavoritePanelComponent', () => {
                     }
                 });
             }
+
             getFavoritePages(_itemsPerPage: number): void {
                 /* */
             }
+
             setLocalStorageFavoritePanelCollapsedParams(_collapsed: boolean): void {
                 /* */
             }
         }
+
         beforeEach(() => {
             TestBed.configureTestingModule({
                 declarations: [DotPagesFavoritePanelComponent, MockDotIconComponent],
                 imports: [
                     BrowserAnimationsModule,
-                    DotMessagePipeModule,
+                    DotMessagePipe,
                     ButtonModule,
                     DotPagesCardModule,
                     PanelModule,

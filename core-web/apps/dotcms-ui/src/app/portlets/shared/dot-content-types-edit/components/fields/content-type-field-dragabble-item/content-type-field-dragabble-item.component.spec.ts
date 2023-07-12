@@ -12,7 +12,7 @@ import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.modul
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
@@ -40,7 +40,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
                 DotIconModule,
                 DotCopyLinkModule,
                 HttpClientTestingModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 OverlayPanelModule,
                 ButtonModule,
                 TooltipModule

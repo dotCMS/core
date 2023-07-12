@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -27,7 +27,7 @@ describe('DotUnlicensedPorletComponent', () => {
                     useValue: messageServiceMock
                 }
             ],
-            imports: [DotIconModule, DotPipesModule]
+            imports: [DotIconModule, DotPipesModule, DotMessagePipe]
         }).compileComponents();
     }));
 

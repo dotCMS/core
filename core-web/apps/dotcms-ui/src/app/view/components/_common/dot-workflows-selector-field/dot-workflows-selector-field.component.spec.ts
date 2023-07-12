@@ -8,6 +8,7 @@ import { MultiSelect } from 'primeng/multiselect';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, DotWorkflowService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     DotWorkflowServiceMock,
     MockDotMessageService,
@@ -37,9 +38,9 @@ class FakeFormComponent {
 
     constructor(private fb: UntypedFormBuilder) {
         /*
-            This should go in the ngOnInit but I don't want to detectChanges everytime for
-            this fake test component
-        */
+This should go in the ngOnInit but I don't want to detectChanges everytime for
+this fake test component
+*/
         this.form = this.fb.group({
             workflows: [{ value: mockWorkflows, disabled: false }]
         });
@@ -67,7 +68,7 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
                         useValue: messageServiceMock
                     }
                 ],
-                imports: [BrowserAnimationsModule]
+                imports: [DotMessagePipe, BrowserAnimationsModule]
             });
 
             fixture = DOTTestBed.createComponent(DotWorkflowsSelectorFieldComponent);
@@ -168,7 +169,7 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
                         useValue: messageServiceMock
                     }
                 ],
-                imports: []
+                imports: [DotMessagePipe]
             });
 
             fixtureHost = DOTTestBed.createComponent(FakeFormComponent);

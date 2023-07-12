@@ -15,6 +15,7 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
@@ -69,7 +70,8 @@ describe('DotCreatePersonaFormComponent', () => {
                 DotFieldValidationMessageModule,
                 DotAutofocusModule,
                 DotAutocompleteTagsModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                DotMessagePipe
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },

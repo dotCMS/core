@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotConvertWysiwygToBlockComponent } from './dot-convert-wysiwyg-to-block.component';
@@ -24,7 +24,7 @@ describe('DotConvertWysiwygToBlockComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotConvertWysiwygToBlockComponent],
-            imports: [DotMessagePipeModule],
+            imports: [DotMessagePipe],
             providers: [
                 {
                     provide: DotMessageService,

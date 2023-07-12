@@ -49,7 +49,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotActionBulkResult, DotContentState, DotTemplate } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -151,6 +151,7 @@ const templatesMock: DotTemplate[] = [
 const routeDataMock = {
     dotTemplateListResolverData: [true, true]
 };
+
 class ActivatedRouteMock {
     get data() {
         return of(routeDataMock);
@@ -325,7 +326,7 @@ describe('DotTemplateListComponent', () => {
             imports: [
                 DotListingDataTableModule,
                 CommonModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 DotRelativeDatePipe,
                 SharedModule,
                 CheckboxModule,

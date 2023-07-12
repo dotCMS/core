@@ -3,7 +3,9 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { DotMessageService } from '@dotcms/data-access';
 
 @Pipe({
-    name: 'dm'
+    name: 'dm',
+    standalone: true,
+    pure: true
 })
 export class DotMessagePipe implements PipeTransform {
     constructor(private dotMessageService: DotMessageService) {}

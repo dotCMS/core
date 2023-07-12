@@ -5,10 +5,17 @@ import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog
 import { DotCreatePersonaFormModule } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
-    imports: [CommonModule, DotCreatePersonaFormModule, DotDialogModule, DotPipesModule],
+    imports: [
+        CommonModule,
+        DotCreatePersonaFormModule,
+        DotDialogModule,
+        DotPipesModule,
+        DotMessagePipe
+    ],
     providers: [DotWorkflowActionsFireService],
     declarations: [DotAddPersonaDialogComponent],
     exports: [DotAddPersonaDialogComponent]

@@ -10,6 +10,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -38,7 +39,7 @@ describe('NamePropertyComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [NamePropertyComponent, TestFieldValidationMessageComponent],
-            imports: [DotCopyLinkModule, ReactiveFormsModule, DotPipesModule],
+            imports: [DotCopyLinkModule, ReactiveFormsModule, DotPipesModule, DotMessagePipe],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
 

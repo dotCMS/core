@@ -1,4 +1,4 @@
-import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
@@ -11,7 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
 import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
@@ -36,7 +36,7 @@ describe('AddStyleClassesDialogComponent', () => {
             AutoCompleteModule,
             FormsModule,
             ButtonModule,
-            DotMessagePipeModule,
+            DotMessagePipe,
             NgIf,
             AsyncPipe,
             HttpClientModule,
