@@ -35,12 +35,18 @@ dot-toolbar-notifications {
 }
 
 .toolbar__button-wrapper {
+    $toolbar-button-width: 4.375rem;
     align-items: center;
     background-color: $brand-background;
     display: flex;
     height: $toolbar-height;
     justify-content: center;
-    width: 70px;
+    width: $toolbar-button-width;
+    min-width: $toolbar-button-width;
+}
+
+.toolbar__dot-wrapper {
+    display: flex;
 }
 
 .toolbar__crumbtrail {
