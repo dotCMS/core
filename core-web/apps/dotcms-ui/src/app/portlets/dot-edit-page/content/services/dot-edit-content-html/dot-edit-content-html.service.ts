@@ -421,7 +421,7 @@ export class DotEditContentHtmlService {
     private setMaterialIcons(): void {
         const doc = this.getEditPageDocument();
         const link = this.dotDOMHtmlUtilService.createLinkElement(
-            'dotAdmin/assets/material-icons.css'
+            '/dotAdmin/assets/material-icons.css'
         );
         doc.head.appendChild(link);
     }
