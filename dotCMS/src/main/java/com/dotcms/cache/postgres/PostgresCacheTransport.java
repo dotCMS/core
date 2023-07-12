@@ -37,7 +37,7 @@ public final class PostgresCacheTransport implements CacheTransport {
     private final AtomicLong receivedBytes = new AtomicLong(0);
     private final AtomicLong sentMessages = new AtomicLong(0);
     private final AtomicLong sentBytes = new AtomicLong(0);
-    private final Lazy<String> topicName = Lazy.of(() -> "dotCMSCache_" + ClusterFactory.getClusterId().replaceAll("-", "_"));
+    private final Lazy<String> topicName = Lazy.of(() -> "dotCMSCache_" + ClusterFactory.getClusterId().replaceAll("-", "_").toLowerCase());
     private final Lazy<String> serverId = Lazy.of(() ->  APILocator.getShortyAPI().shortify(APILocator.getServerAPI().readServerId()));
     
     private static final int KILL_ON_FAILURES = Config.getIntProperty("PGLISTENER_KILL_ON_FAILURES", 1000);
