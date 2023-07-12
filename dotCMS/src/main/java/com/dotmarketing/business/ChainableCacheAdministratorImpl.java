@@ -3,28 +3,18 @@
  */
 package com.dotmarketing.business;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.cluster.ClusterUtils;
+import com.dotcms.cache.postgres.PostgresCacheTransport;
 import com.dotcms.cluster.bean.Server;
-import com.dotcms.cluster.bean.ServerPort;
-import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
-import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 
 /**
  * Cache administrator that uses the CacheProviders infrastructure (Cache chains)
@@ -35,10 +25,11 @@ import com.dotmarketing.util.WebKeys;
  */
 public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
-    CacheTransport cacheTransport;
-
+    final CacheTransport cacheTransport = new PostgresCacheTransport();
+    private final boolean useTransportChannel = true;
+    
     private CacheProviderAPI cacheProviderAPI;
-    private boolean useTransportChannel = false;
+
 
     public static final String TEST_MESSAGE = "HELLO CLUSTER!";
     public static final String TEST_MESSAGE_NODE = "TESTNODE";
@@ -54,21 +45,13 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
     public void setTransport(CacheTransport transport) {
 
 
-        this.cacheTransport = transport;
     }
 
     public ChainableCacheAdministratorImpl() {
-        this(null);
+        this(new PostgresCacheTransport());
     }
 
     public ChainableCacheAdministratorImpl(CacheTransport transport) {
-
-        if (transport != null) {
-            useTransportChannel = true;
-            this.cacheTransport = transport;
-        } else {
-            useTransportChannel = false;
-        }
 
         APILocator.getReindexQueueAPI();
     }
@@ -89,124 +72,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
     public void setCluster(Server localServer) throws Exception {
         Logger.info(this, "***\t Starting Cluster Setup");
 
-        ServerAPI serverAPI = APILocator.getServerAPI();
 
-        String cacheProtocol, bindAddr, bindPort, cacheTCPInitialHosts, mCastAddr, mCastPort, preferIPv4;
-
-        if (ClusterUtils.isTransportAutoWire()) {
-            Logger.info(this, "Using automatic port placement as AUTOWIRE_CLUSTER_TRANSPORT is ON");
-
-            String bindAddressFromProperty = Config.getStringProperty("CACHE_BINDADDRESS", null);
-
-            if (UtilMethods.isSet(bindAddressFromProperty)) {
-                try {
-                    InetAddress addr = InetAddress.getByName(bindAddressFromProperty);
-                    if (ClusterFactory.isValidIP(bindAddressFromProperty)) {
-                        bindAddressFromProperty = addr.getHostAddress();
-                    } else {
-                        Logger.info(ClusterFactory.class,
-                                "Address provided in CACHE_BINDADDRESS property is not " + "valid: " + bindAddressFromProperty);
-                        bindAddressFromProperty = null;
-                    }
-                } catch (UnknownHostException e) {
-                    Logger.info(ClusterFactory.class,
-                            "Address provided in CACHE_BINDADDRESS property is not " + " valid: " + bindAddressFromProperty);
-                    bindAddressFromProperty = null;
-                }
-            }
-
-            cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
-
-            bindAddr = bindAddressFromProperty != null ? bindAddressFromProperty : localServer.getIpAddress();
-
-            if (UtilMethods.isSet(localServer.getCachePort())) {
-                bindPort = Long.toString(localServer.getCachePort());
-            } else {
-                bindPort = ClusterFactory.getNextAvailablePort(localServer.getServerId(), ServerPort.CACHE_PORT);
-            }
-            localServer = Server.builder(localServer).withCachePort(Integer.parseInt(bindPort)).build();
-
-            List<Server> aliveServers = serverAPI.getAliveServers(Collections.singletonList(localServer.getServerId()));
-            aliveServers.add(localServer);
-
-            StringBuilder initialHosts = new StringBuilder();
-
-            int i = 0;
-            for (Server server : aliveServers) {
-                if (i > 0) {
-                    initialHosts.append(",");
-                }
-
-                if (UtilMethods.isSet(server.getHost()) && !server.getHost().equals("localhost")) {
-                    initialHosts.append(server.getHost()).append("[").append(server.getCachePort()).append("]");
-                } else {
-                    initialHosts.append(server.getIpAddress()).append("[").append(server.getCachePort()).append("]");
-                }
-                i++;
-            }
-
-            if (initialHosts.length() == 0) {
-                if (bindAddr.equals("localhost")) {
-                    initialHosts.append(localServer.getIpAddress()).append("[").append(bindPort).append("]");
-                } else {
-                    initialHosts.append(bindAddr).append("[").append(bindPort).append("]");
-                }
-            }
-
-            cacheTCPInitialHosts = Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", initialHosts.toString());
-
-            mCastAddr = Config.getStringProperty("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
-            mCastPort = Config.getStringProperty("CACHE_MULTICAST_PORT", "45588");
-            preferIPv4 = Config.getStringProperty("CACHE_FORCE_IPV4", "true");
-        } else {
-            Logger.info(this, "Using manual port placement as AUTOWIRE_CLUSTER_TRANSPORT is OFF");
-
-            cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
-            bindAddr = Config.getStringProperty("CACHE_BINDADDRESS", null);
-            bindPort = Config.getStringProperty("CACHE_BINDPORT", null);
-            cacheTCPInitialHosts = Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", "localhost[5701]");
-            mCastAddr = Config.getStringProperty("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
-            mCastPort = Config.getStringProperty("CACHE_MULTICAST_PORT", "45588");
-            preferIPv4 = Config.getStringProperty("CACHE_FORCE_IPV4", "true");
-        }
-
-        if (UtilMethods.isSet(bindAddr)) {
-            Logger.info(this, "***\t Using " + bindAddr + " as the bindaddress");
-
-            Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS, bindAddr);
-        } else {
-            Logger.info(this, "***\t bindaddress is not set");
-        }
-
-        if (UtilMethods.isSet(bindPort)) {
-            Logger.info(this, "***\t Using " + bindPort + " as the bindport");
-
-            Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_PORT, bindPort);
-        } else {
-            Logger.info(this, "***\t bindport is not set");
-        }
-
-        if (cacheProtocol.equals("tcp")) {
-            Logger.info(this, "***\t Setting up TCP initial hosts: " + cacheTCPInitialHosts);
-
-            Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_TCP_INITIAL_HOSTS, cacheTCPInitialHosts);
-        } else if (cacheProtocol.equals("udp")) {
-            Logger.info(this, "***\t Setting up UDP address and port: " + mCastAddr + ":" + mCastPort);
-
-            Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_UDP_MCAST_ADDRESS, mCastAddr);
-            Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_UDP_MCAST_PORT, mCastPort);
-        } else {
-            Logger.info(this, "Not Setting up any Properties as no protocal was found");
-        }
-
-        Logger.info(this, "***\t Prefer IPv4: " + (preferIPv4.equals("true") ? "enabled" : "disabled"));
-        System.setProperty("java.net.preferIPv4Stack", preferIPv4);
-
-        if (cacheTransport != null && (cacheTransport.shouldReinit() || !cacheTransport.isInitialized())) {
-            cacheTransport.init(localServer);
-            useTransportChannel = true;
-
-        }
     }
 
     /*
