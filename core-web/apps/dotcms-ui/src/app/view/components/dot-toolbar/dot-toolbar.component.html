@@ -1,27 +1,29 @@
 <p-toolbar>
     <div class="p-toolbar-group-left">
         <div class="toolbar__dot-wrapper">
-  <div class="toolbar__button-wrapper">
-            <p-button
-                [icon]="
-                    (dotNavigationService.collapsed$ | async) ? 'pi pi-bars' : 'pi pi-arrow-left'
-                "
-                (click)="handleMainButtonClick()"
-                styleClass="p-button-rounded p-button-text"
-            ></p-button>
-        </div>
-        <div
-            class="toolbar__logo-wrapper"
-            [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async"
-            [class.toolbar__logo-wrapper--whitelabel]="logo$ | async"
-        >
-            <span
-                class="toolbar__logo--whitelabel"
-                *ngIf="logo$ | async as logo; else toolbarLogo"
-                [ngStyle]="{ 'background-image': logo }"
-            ></span>
-            <ng-template #toolbarLogo><span class="toolbar__logo"></span></ng-template>
-            <span class="toolbar__logo-bg"></span>
+            <div class="toolbar__button-wrapper">
+                <p-button
+                    [icon]="
+                        (dotNavigationService.collapsed$ | async)
+                            ? 'pi pi-bars'
+                            : 'pi pi-arrow-left'
+                    "
+                    (click)="handleMainButtonClick()"
+                    styleClass="p-button-rounded p-button-text"
+                ></p-button>
+            </div>
+            <div
+                class="toolbar__logo-wrapper"
+                [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async"
+                [class.toolbar__logo-wrapper--whitelabel]="logo$ | async"
+            >
+                <span
+                    class="toolbar__logo--whitelabel"
+                    *ngIf="logo$ | async as logo; else toolbarLogo"
+                    [ngStyle]="{ 'background-image': logo }"
+                ></span>
+                <ng-template #toolbarLogo><span class="toolbar__logo"></span></ng-template>
+                <span class="toolbar__logo-bg"></span>
             </div>
         </div>
         <dot-crumbtrail class="toolbar__crumbtrail"></dot-crumbtrail>
