@@ -41,7 +41,7 @@ import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
 
-import { DotEditPageToolbarSeoModule } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.module';
+import { DotEditPageToolbarSeoComponent } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.component';
 const routes: Routes = [
     {
         component: DotEditContentComponent,
@@ -71,7 +71,7 @@ const routes: Routes = [
         DotOverlayMaskModule,
         DotPaletteModule,
         DotIconModule,
-        DotEditPageToolbarSeoModule,
+        DotEditPageToolbarSeoComponent,
         DotShowHideFeatureDirective
     ],
     exports: [DotEditContentComponent],
