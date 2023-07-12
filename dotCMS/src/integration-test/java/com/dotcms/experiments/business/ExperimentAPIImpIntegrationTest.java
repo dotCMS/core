@@ -580,7 +580,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
-        APILocator.getExperimentsAPI()
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
                 .start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
@@ -600,7 +600,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             final List<BrowserSession> browserSessions = experimentsAPIImpl.getEvents(
-                    experiment,
+                    experimentStarted,
                     APILocator.systemUser());
 
             mockHttpServer.validate();
@@ -706,14 +706,14 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
+        final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+        ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
+        final Experiment experimentStarted = ExperimentDataGen.start(experiment);
+
+        addCountQueryContext(experimentStarted, 0, mockhttpServer);
+
         try {
-
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-
-             addCountQueryContext(experiment, 0, mockhttpServer);
-
-            ExperimentDataGen.start(experiment);
 
             final String noDefaultVariantName = experiment.trafficProportion().variants().stream()
                     .map(experimentVariant -> experimentVariant.id())
@@ -740,7 +740,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final VariantResults controlResults = variants.get("DEFAULT");
             assertEquals(50f, controlResults.weight());
         } finally {
-            ExperimentDataGen.end(experiment);
+            ExperimentDataGen.end(experimentStarted);
             mockhttpServer.stop();
         }
     }
@@ -895,6 +895,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+
         int offset = 0;
         for (int i = 0; i < 9; i++) {
             final List<Map<String, String>> page = new ArrayList<>(
@@ -902,17 +907,12 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             final Map<String, List<Map<String, String>>> pageCubeJsQueryResult =  map("data", page);
 
-            final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment, 1000, offset);
+            final String cubeJSQueryExpected = getExpectedPageReachQuery(experimentStarted, 1000, offset);
 
             addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(pageCubeJsQueryResult));
 
             offset += 1000;
         }
-
-        APILocator.getExperimentsAPI()
-                .start(experiment.getIdentifier(), APILocator.systemUser());
-
-        IPUtils.disabledIpPrivateSubnet(true);
 
         final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
         final List<Map<String, Object>> totalPageViewsResponseExpected = list(
@@ -1028,6 +1028,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+
         int offset = 0;
         for (int i = 0; i < 5; i++) {
             final int totalItems = i ==4 ? 500 : 1000;
@@ -1036,17 +1041,12 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             final Map<String, List<Map<String, String>>> pageCubeJsQueryResult =  map("data", page);
 
-            final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment, 1000, offset);
+            final String cubeJSQueryExpected = getExpectedPageReachQuery(experimentStarted, 1000, offset);
 
             addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(pageCubeJsQueryResult));
 
             offset += 1000;
         }
-
-        APILocator.getExperimentsAPI()
-                .start(experiment.getIdentifier(), APILocator.systemUser());
-
-        IPUtils.disabledIpPrivateSubnet(true);
 
         final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
         final List<Map<String, Object>> totalPageViewsResponseExpected = list(
@@ -3268,7 +3268,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         data.addAll(createPageViewEvents(15, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageB));
         final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
 
-        APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
@@ -3295,10 +3296,10 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
 
-            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+            APILocator.getExperimentsAPI().end(experimentStarted.getIdentifier(), APILocator.systemUser());
 
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
-                    experiment,
+                    experimentStarted,
                     APILocator.systemUser());
             assertEquals(120, experimentResults.getSessions().getTotal());
 

@@ -75,7 +75,8 @@ public enum ExperimentResultsQueryFactory {
 
     private static CubeJSQuery createRootQuery(final Experiment experiment) {
 
-        DotPreconditions.isTrue(experiment.status() == Status.RUNNING, "Experiment must be running");
+        DotPreconditions.isTrue(experiment.status() == Status.RUNNING || experiment.status() == Status.ENDED,
+                "Experiment must be running or Ended");
 
         final String runningId = experiment.runningIds().getCurrent().orElseThrow().id();
 
