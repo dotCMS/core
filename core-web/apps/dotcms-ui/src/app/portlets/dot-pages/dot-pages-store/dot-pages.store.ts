@@ -145,8 +145,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
             if (languages?.length) {
                 languages.forEach((language) => {
+                    const countryCode = language.countryCode.length
+                        ? ` (${language.countryCode})`
+                        : '';
+
                     languageOptions.push({
-                        label: `${language.language} (${language.countryCode})`,
+                        label: `${language.language}${countryCode}`,
                         value: language.id
                     });
                 });
@@ -169,7 +173,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             const langLabels = {};
             if (languages?.length) {
                 languages.forEach((language) => {
-                    langLabels[language.id] = `${language.languageCode}-${language.countryCode}`;
+                    const countryCode = language.countryCode.length
+                        ? `-${language.countryCode}`
+                        : '';
+
+                    langLabels[language.id] = `${language.languageCode}${countryCode}`;
                 });
             }
 
