@@ -100,12 +100,14 @@ public final class PostgresCacheTransport implements CacheTransport {
                     Statement statment = internalConnection.createStatement();
                     statment.execute("LISTEN " + topicName.get());
                     isInitialized.set(true);
+                    Logger.info(PostgresCacheTransport.class, "PGListener connected and PostgresCacheTransport inited" );
                     return internalConnection;
                 } catch (Exception e) {
                     Logger.error(PostgresCacheTransport.class, "PGListener failed to connect:" + e.getMessage(), e);
                     throw new DotRuntimeException(e);
                 }
             }
+            
         }
         
         private void closeConnection() {
@@ -181,7 +183,7 @@ public final class PostgresCacheTransport implements CacheTransport {
 
     @Override
     public boolean shouldReinit() {
-        return false;
+        return ! isInitialized.get();
     }
 
     public void receive(String msg) {

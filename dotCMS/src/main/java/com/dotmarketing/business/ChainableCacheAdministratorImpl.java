@@ -208,8 +208,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
         if (cacheTransport != null && (cacheTransport.shouldReinit() || !cacheTransport.isInitialized())) {
             cacheTransport.init(localServer);
             useTransportChannel = true;
-        } else {
-            throw new CacheTransportException("No Cache transport implementation is defined");
+
         }
     }
 
