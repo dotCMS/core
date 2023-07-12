@@ -14,7 +14,6 @@ import org.postgresql.PGConnection;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseManager;
-import com.dotcms.repackage.com.zaxxer.hikari.pool.HikariProxyConnection;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -41,15 +40,15 @@ public final class PostgresCacheTransport implements CacheTransport {
     private final Lazy<String> topicName = Lazy.of(() -> "dotCMSCache_" + ClusterFactory.getClusterId());
     private final Lazy<String> serverId = Lazy.of(() ->  APILocator.getShortyAPI().shortify(APILocator.getServerAPI().readServerId()));
     
-    private final int KILL_ON_FAILURES = Config.getIntProperty("PGLISTENER_KILL_ON_FAILURES", 1000);
-    private final int SLEEP_BETWEEN_RUNS = Config.getIntProperty("PGLISTENER_SLEEP_BETWEEN_RUNS", 500);
+    private static final int KILL_ON_FAILURES = Config.getIntProperty("PGLISTENER_KILL_ON_FAILURES", 1000);
+    private static final int SLEEP_BETWEEN_RUNS = Config.getIntProperty("PGLISTENER_SLEEP_BETWEEN_RUNS", 500);
     
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
     private static final String PG_NOTIFY_SQL = "SELECT pg_notify(?,?)";
 
     private final Cache<Integer, Boolean> recentEvents = Caffeine.newBuilder()
                     .initialCapacity(10000)
-                    .expireAfterWrite(Config.getIntProperty("PUBSUB_QUEUE_DEDUPE_TTL_MILLIS", 1500), TimeUnit.MILLISECONDS)
+                    .expireAfterWrite(Config.getIntProperty("PGLISTENER_QUEUE_DEDUPE_TTL_MILLIS", 1500), TimeUnit.MILLISECONDS)
                     .maximumSize(50000).build();
     private final Lazy<DataSource> data = Lazy.of(() -> new PGDatasource().datasource());
 
@@ -60,17 +59,17 @@ public final class PostgresCacheTransport implements CacheTransport {
         
         
         if (!LicenseManager.getInstance().isEnterprise()) {
-            Logger.info(getClass(), "No Enterprise License : No PostgresCacheTransport");
+            Logger.info(getClass(), "No Enterprise License = No PostgresCacheTransport");
             return;
         }
         Logger.info(getClass(), "Starting PostgresCacheTransport");
-        restartListener();
+        startListener();
     }
 
     
     
-    private synchronized void restartListener() {
-        if (listener != null) {
+    private synchronized void startListener() {
+        if (listener != null && listener.connectionAlive()) {
             return;
         }
         listener = new PGListener();
@@ -83,47 +82,62 @@ public final class PostgresCacheTransport implements CacheTransport {
     class PGListener extends Thread {
 
 
-        HikariProxyConnection conn = null;
-
-        private void connect() {
-            CloseUtils.closeQuietly(conn);
-            conn = null;
-            Logger.info(getClass(), "Starting PGListener on " + topicName.get());
-            try {
-                conn = (HikariProxyConnection) data.get().getConnection();
-                
-                
-                
-                
-                Statement statment = conn.createStatement();
-                statment.execute("LISTEN " + topicName.get());
-                isInitialized.set(true);
-            } catch (Exception e) {
-                
-                throw new DotRuntimeException(e);
+        private java.sql.Connection internalConnection = null;
+        private long failures = 0;
+        
+        private java.sql.Connection connect() {
+            if(connectionAlive()) {
+                return internalConnection;
+            }
+            synchronized (PGListener.class) {
+                if(connectionAlive()) {
+                    return internalConnection;
+                }
+                Logger.info(getClass(), "Starting PGListener on " + topicName.get());
+                try {
+                    closeConnection();
+                    internalConnection = data.get().getConnection();
+                    Statement statment = internalConnection.createStatement();
+                    statment.execute("LISTEN " + topicName.get());
+                    isInitialized.set(true);
+                    return internalConnection;
+                } catch (Exception e) {
+                    Logger.warnAndDebug(PostgresCacheTransport.class, "PGListener failed to connect:" + e.getMessage(), e);
+                    throw new DotRuntimeException(e);
+                }
             }
         }
-
-
-        private long failures = 0;
-
+        
+        private void closeConnection() {
+            CloseUtils.closeQuietly(internalConnection);
+            internalConnection = null;
+        }
 
         
+        boolean connectionAlive() {
+           return internalConnection !=null &&  Try.of(()->!internalConnection.isClosed()).getOrElse(false);
+        }
+        
+
+
 
         @Override
         public void run() {
-            connect() ;
+            // fire up the connection.
+            while(!isInitialized.get()) {
+                Try.run(this::connect);
+                if(!isInitialized.get()) {
+                    Try.run(()->Thread.sleep(30000));
+                }
+            }
+
             while (isInitialized.get()) {
                 try {
-                    if(conn==null || conn.isClosed()) {
-                        connect();
-                    }
-                    try (Statement stmt = conn.createStatement()) {
+
+                    try (Statement stmt = connect().createStatement()) {
                         stmt.executeQuery("SELECT 1");
                     }
-                    PGConnection pgConn = conn.unwrap(PGConnection.class) ;
-  
-                    
+                    PGConnection pgConn = connect().unwrap(PGConnection.class) ;
                     
                     org.postgresql.PGNotification[] notifications = pgConn.getNotifications();
                     if (notifications == null || notifications.length==0) {
@@ -139,24 +153,22 @@ public final class PostgresCacheTransport implements CacheTransport {
                         Logger.info(getClass(), "got:" + note);
                         
                     }
-
+                    failures=0;
                     Try.run(() -> Thread.sleep(SLEEP_BETWEEN_RUNS));
 
 
                 } catch (Throwable e) {
                     Logger.warn(PostgresCacheTransport.class, e.getMessage());
                     Try.run(() -> Thread.sleep(SLEEP_BETWEEN_RUNS));
-                   
+                    closeConnection();
                     if (++failures > KILL_ON_FAILURES) {
-                        CloseUtils.closeQuietly(conn);
-                        conn = null;
+
                         Logger.fatal(PostgresCacheTransport.class, "PGListener failled " + KILL_ON_FAILURES + " times.  Dieing", e);
                         throw new DotRuntimeException(e);
                     }
-                    connect();
                 }
             }
-            CloseUtils.closeQuietly(conn);
+            closeConnection();
         }
     }
 
@@ -197,19 +209,14 @@ public final class PostgresCacheTransport implements CacheTransport {
             // Gets the last part of the message that has the Server ID.
             String serverID = msg.substring(msg.lastIndexOf(ChainableCacheAdministratorImpl.VALIDATE_SEPARATOR) + 1);
 
-            synchronized (this.getClass()) {
-                // Creates or updates the Map inside the Map.
-                Map<String, Boolean> localMap = cacheStatus.get(dateInMillis);
+            // Creates or updates the Map inside the Map.
+            Map<String, Boolean> localMap = cacheStatus.getOrDefault(dateInMillis, new HashMap<>());
 
-                if (localMap == null) {
-                    localMap = new HashMap<String, Boolean>();
-                }
+            localMap.put(serverID, Boolean.TRUE);
 
-                localMap.put(serverID, Boolean.TRUE);
+            // Add the Info with the Date in Millis and the Map with Server Info.
+            cacheStatus.put(dateInMillis, localMap);
 
-                // Add the Info with the Date in Millis and the Map with Server Info.
-                cacheStatus.put(dateInMillis, localMap);
-            }
 
             Logger.debug(this, ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE + " SERVER_ID: " + serverID
                             + " DATE_MILLIS: " + dateInMillis);
@@ -268,7 +275,7 @@ public final class PostgresCacheTransport implements CacheTransport {
         }
         
 
-        restartListener();
+        startListener();
             
             
         
@@ -322,7 +329,7 @@ public final class PostgresCacheTransport implements CacheTransport {
 
 
         // Returns the Map with all the info stored by receive() method.
-        Map<String, Boolean> mapToReturn = new HashMap<String, Boolean>();
+        Map<String, Boolean> mapToReturn = new HashMap<>();
 
         if (cacheStatus.get(dateInMillis) != null) {
             mapToReturn = cacheStatus.get(dateInMillis);
@@ -361,7 +368,7 @@ public final class PostgresCacheTransport implements CacheTransport {
 
             @Override
             public boolean isOpen() {
-                return listener.conn != null;
+                return listener.connectionAlive();
             }
 
             @Override
