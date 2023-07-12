@@ -1,6 +1,7 @@
 <p-toolbar>
     <div class="p-toolbar-group-left">
-        <div class="toolbar__button-wrapper">
+        <div class="toolbar__dot-wrapper">
+  <div class="toolbar__button-wrapper">
             <p-button
                 [icon]="
                     (dotNavigationService.collapsed$ | async) ? 'pi pi-bars' : 'pi pi-arrow-left'
@@ -21,6 +22,7 @@
             ></span>
             <ng-template #toolbarLogo><span class="toolbar__logo"></span></ng-template>
             <span class="toolbar__logo-bg"></span>
+            </div>
         </div>
         <dot-crumbtrail class="toolbar__crumbtrail"></dot-crumbtrail>
     </div>
