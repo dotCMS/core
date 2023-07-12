@@ -38,7 +38,7 @@ public final class PostgresCacheTransport implements CacheTransport {
     private final AtomicLong sentMessages = new AtomicLong(0);
     private final AtomicLong sentBytes = new AtomicLong(0);
     private final Lazy<String> topicName =
-                    Lazy.of(() -> ("dotCMSCache_" + ClusterFactory.getClusterId().replaceAll("-", "_")).toLowerCase());
+                    Lazy.of(() -> ("dotcache_" + ClusterFactory.getClusterId().replaceAll("-", "_")).toLowerCase());
     private final Lazy<String> serverId =
                     Lazy.of(() -> APILocator.getShortyAPI().shortify(APILocator.getServerAPI().readServerId()));
 
@@ -69,7 +69,7 @@ public final class PostgresCacheTransport implements CacheTransport {
 
 
     private synchronized void startListener() {
-        if (listener != null && listener.connectionAlive()) {
+        if (isInitialized.get()) {
             return;
         }
         listener = new PGListener();

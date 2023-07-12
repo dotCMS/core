@@ -48,11 +48,11 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
     }
 
     public ChainableCacheAdministratorImpl() {
-        this(new PostgresCacheTransport());
+        this(cacheTransport);
     }
 
     public ChainableCacheAdministratorImpl(CacheTransport transport) {
-
+       
         APILocator.getReindexQueueAPI();
     }
 
@@ -62,6 +62,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
             // Initializing all the Cache providers
             cacheProviderAPI = APILocator.getCacheProviderAPI();
             cacheProviderAPI.init();
+            cacheTransport.init(APILocator.getServerAPI().getCurrentServer());
         } catch (Exception e) {
             throw new DotRuntimeException("Error initializing Cache providers", e);
         }
