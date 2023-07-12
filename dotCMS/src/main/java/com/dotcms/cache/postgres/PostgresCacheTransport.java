@@ -145,12 +145,12 @@ public final class PostgresCacheTransport implements CacheTransport {
                     }
  
                     org.postgresql.PGNotification[] notifications = pgConnection.getNotifications();
-                    Logger.info(PostgresCacheTransport.class, "Running Listener Notifications:" + notifications);
+                    Logger.debug(PostgresCacheTransport.class, "Running Listener Notifications:" + notifications);
                     
                     if (notifications != null) {
                         for (int i = 0; i < notifications.length; i++) {
                             String note = notifications[i].getName();
-                            Logger.info(getClass(), "got:" + note);
+                            Logger.debug(getClass(), "got:" + note);
                             if (null == note || note.startsWith(serverId.get() + ":") || note.indexOf(":") < 0) {
                                 continue;
                             }

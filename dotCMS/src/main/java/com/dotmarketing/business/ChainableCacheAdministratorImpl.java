@@ -25,8 +25,8 @@ import com.dotmarketing.util.Logger;
  */
 public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
-    final CacheTransport cacheTransport = new PostgresCacheTransport();
-    private final boolean useTransportChannel = true;
+    private static final CacheTransport cacheTransport = new PostgresCacheTransport();
+    private static final boolean useTransportChannel = true;
     
     private CacheProviderAPI cacheProviderAPI;
 
