@@ -33,7 +33,7 @@ import {
     DotVariantData,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotFavoritePageModule } from '@portlets/dot-edit-page/components/dot-favorite-page/dot-favorite-page.module';
 import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
@@ -70,7 +70,8 @@ import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-a
         TagModule,
         DotEditPageInfoSeoComponent,
         DotDeviceSelectorSeoComponent,
-        DotEditPageStateControllerSeoComponent
+        DotEditPageStateControllerSeoComponent,
+        DotMessagePipe
     ]
 })
 export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDestroy {

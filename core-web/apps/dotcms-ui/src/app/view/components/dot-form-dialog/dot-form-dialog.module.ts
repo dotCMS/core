@@ -4,13 +4,13 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { FocusTrapModule } from 'primeng/focustrap';
 
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotFormDialogComponent } from './dot-form-dialog.component';
 
 @NgModule({
     declarations: [DotFormDialogComponent],
     exports: [DotFormDialogComponent],
-    imports: [CommonModule, ButtonModule, FocusTrapModule, DotMessagePipeModule]
+    imports: [CommonModule, ButtonModule, FocusTrapModule, DotMessagePipe]
 })
 export class DotFormDialogModule {}

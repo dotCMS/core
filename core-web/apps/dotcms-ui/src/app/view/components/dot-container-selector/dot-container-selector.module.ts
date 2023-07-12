@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
-import { UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
@@ -20,7 +20,8 @@ import { SearchableDropDownModule } from '../_common/searchable-dropdown/searcha
         ButtonModule,
         SearchableDropDownModule,
         DotPipesModule,
-        UiDotIconButtonModule
+        UiDotIconButtonModule,
+        DotMessagePipe
     ]
 })
 export class DotContainerSelectorModule {}

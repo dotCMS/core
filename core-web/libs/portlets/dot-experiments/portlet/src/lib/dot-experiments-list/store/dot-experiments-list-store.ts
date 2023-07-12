@@ -10,6 +10,7 @@ import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
@@ -20,6 +21,7 @@ import {
     SidebarStatus
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsStore } from '../../dot-experiments-shell/store/dot-experiments.store';
@@ -31,6 +33,7 @@ export interface DotExperimentsState {
     sidebar: SidebarStatus;
     hasEnterpriseLicense: boolean;
     addToBundleContentId: string;
+    pushPublishEnvironments: DotEnvironment[];
 }
 
 const initialState: DotExperimentsState = {
@@ -48,7 +51,8 @@ const initialState: DotExperimentsState = {
         isOpen: false
     },
     hasEnterpriseLicense: false,
-    addToBundleContentId: null
+    addToBundleContentId: null,
+    pushPublishEnvironments: null
 };
 
 // Vm Interfaces
@@ -88,12 +92,13 @@ export class DotExperimentsListStore
             state.sidebar.status === ComponentStatus.INIT
     );
     readonly getExperimentsWithActions$: Observable<DotExperimentsWithActions[]> = this.select(
-        ({ experiments, hasEnterpriseLicense }) => {
+        ({ experiments, hasEnterpriseLicense, pushPublishEnvironments }) => {
             return experiments.map((experiment) => ({
                 ...experiment,
                 actionsItemsMenu: this.getActionMenuItemsByExperiment(
                     experiment,
-                    hasEnterpriseLicense
+                    hasEnterpriseLicense,
+                    pushPublishEnvironments
                 )
             }));
         }
@@ -362,12 +367,15 @@ export class DotExperimentsListStore
         private readonly route: ActivatedRoute,
         private readonly router: Router,
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private readonly confirmationService: ConfirmationService
+        private readonly confirmationService: ConfirmationService,
+        private readonly dotPushPublishDialogService: DotPushPublishDialogService
     ) {
         const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
+        const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
         super({
             ...initialState,
-            hasEnterpriseLicense
+            hasEnterpriseLicense,
+            pushPublishEnvironments
         });
     }
 
@@ -378,7 +386,8 @@ export class DotExperimentsListStore
 
     private getActionMenuItemsByExperiment(
         experiment: DotExperiment,
-        hasEnterpriseLicense: boolean
+        hasEnterpriseLicense: boolean,
+        pushPublishEnvironments: DotEnvironment[]
     ): MenuItem[] {
         return [
             // Delete Action
@@ -426,6 +435,17 @@ export class DotExperimentsListStore
                 label: this.dotMessageService.get('experiments.action.archive'),
                 visible: AllowedActionsByExperimentStatus['archive'].includes(experiment.status),
                 command: () => this.archiveExperiment(experiment)
+            },
+
+            // Push Publish Action
+            {
+                label: this.dotMessageService.get('contenttypes.content.push_publish'),
+                visible: hasEnterpriseLicense && !!pushPublishEnvironments.length,
+                command: () =>
+                    this.dotPushPublishDialogService.open({
+                        assetIdentifier: experiment.identifier,
+                        title: this.dotMessageService.get('contenttypes.content.push_publish')
+                    })
             },
 
             // Add To Bundle Action

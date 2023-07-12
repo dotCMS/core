@@ -54,7 +54,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotTemplateThumbnailFieldComponent, TestHostComponent, DotMessagePipe],
+            declarations: [DotTemplateThumbnailFieldComponent, TestHostComponent],
             providers: [
                 {
                     provide: DotTempFileUploadService,
@@ -79,7 +79,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                     useValue: messageServiceMock
                 }
             ],
-            imports: [FormsModule, ReactiveFormsModule],
+            imports: [FormsModule, ReactiveFormsModule, DotMessagePipe],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
     });

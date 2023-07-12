@@ -18,7 +18,6 @@ import {
     DotExperiment,
     DotExperimentStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from './components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -39,7 +38,6 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
     imports: [
         AsyncPipe,
         NgIf,
-        DotMessagePipeModule,
         DotExperimentsUiHeaderComponent,
         DotExperimentsExperimentSummaryComponent,
         DotExperimentsConfigurationVariantsComponent,
@@ -48,19 +46,18 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
         DotExperimentsConfigurationSchedulingComponent,
         DotExperimentsConfigurationSkeletonComponent,
         DotExperimentsInlineEditTextComponent,
+        DotAddToBundleModule,
         CardModule,
         ButtonModule,
-
         InplaceModule,
         InputTextModule,
         MenuModule,
-        ConfirmDialogModule,
-        DotAddToBundleModule
+        ConfirmDialogModule
     ],
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
     styleUrls: ['./dot-experiments-configuration.component.scss'],
-    providers: [DotExperimentsConfigurationStore, DotMessagePipe],
+    providers: [DotExperimentsConfigurationStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationComponent implements OnInit {

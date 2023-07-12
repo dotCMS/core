@@ -54,6 +54,7 @@ import {
     DotPageRenderState,
     ESContent
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -169,6 +170,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 DotEditPageInfoSeoComponent,
                 DotEditPageWorkflowsActionsModule,
                 DotPipesModule,
+                DotMessagePipe,
                 DotWizardModule,
                 TooltipModule,
                 TagModule,

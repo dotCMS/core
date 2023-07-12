@@ -6,6 +6,7 @@ import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-butto
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsTabComponent } from '.';
@@ -50,7 +51,7 @@ describe('ContentTypeFieldsTabComponent', () => {
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypeFieldsTabComponent, DotTestHostComponent],
-            imports: [UiDotIconButtonTooltipModule],
+            imports: [UiDotIconButtonTooltipModule, DotMessagePipe],
             providers: [
                 DotAlertConfirmService,
                 {

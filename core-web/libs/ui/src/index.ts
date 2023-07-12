@@ -5,7 +5,6 @@ export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.module';
 export * from './lib/dot-spinner/dot-spinner.component';
 export * from './lib/dot-field-required/dot-field-required.directive';
-export * from './lib/dot-message/dot-message-pipe.module';
 export * from './lib/dot-message/dot-message.pipe';
 export * from './lib/dot-site-selector/dot-site-selector.directive';
 export * from './lib/dot-icon-button/dot-icon-button.module';

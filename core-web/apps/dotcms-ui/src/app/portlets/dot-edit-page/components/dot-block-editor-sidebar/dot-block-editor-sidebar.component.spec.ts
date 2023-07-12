@@ -19,7 +19,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
 import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 
@@ -98,7 +98,7 @@ describe('DotBlockEditorSidebarComponent', () => {
                 HttpClientTestingModule,
                 BrowserAnimationsModule,
                 SidebarModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 ButtonModule
             ],
             providers: [

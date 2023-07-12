@@ -40,7 +40,7 @@ import {
     DotCMSContentTypeLayoutRow,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipeModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,
@@ -127,6 +127,7 @@ class TestDotLoadingIndicatorComponent {
     @Input()
     fullscreen: boolean;
 }
+
 @Injectable()
 class TestFieldDragDropService {
     _fieldDropFromSource: Subject<any> = new Subject();
@@ -213,7 +214,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 DotFieldValidationMessageModule,
                 ReactiveFormsModule,
                 HttpClientTestingModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 TabViewModule
             ],
             providers: [
@@ -495,7 +496,7 @@ describe('Load fields and drag and drop', () => {
                 ContentTypeFieldsAddRowModule,
                 DotDialogModule,
                 HttpClientTestingModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 TabViewModule
             ],
             providers: [

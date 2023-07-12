@@ -7,12 +7,12 @@ import {
     RangeOfDateAndTime,
     SummaryLegend
 } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-experiments-experiment-summary',
     standalone: true,
-    imports: [CommonModule, DotMessagePipeModule],
+    imports: [CommonModule, DotMessagePipe],
     templateUrl: './dot-experiments-experiment-summary.component.html',
     styleUrls: ['./dot-experiments-experiment-summary.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
