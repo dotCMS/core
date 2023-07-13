@@ -168,7 +168,6 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
     describe('community license', () => {
         beforeEach(() => {
             spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
-            // spyOn(component.changeViewAs, 'emit');
 
             componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
@@ -225,11 +224,6 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             personaSelector.selected.emit(mockDotPersona);
 
             expect(component.changePersonaHandler).toHaveBeenCalledWith(mockDotPersona);
-            // expect(component.changeViewAs.emit).toHaveBeenCalledWith({
-            //     language: mockDotLanguage,
-            //     persona: mockDotPersona,
-            //     mode: 'PREVIEW'
-            // });
         });
 
         it('should have Language selector', () => {
@@ -251,10 +245,6 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             languageSelector.selected.emit(testlanguage);
 
             expect(component.changeLanguageHandler).toHaveBeenCalledWith(testlanguage);
-            // expect(component.changeViewAs.emit).toHaveBeenCalledWith({
-            //     language: testlanguage,
-            //     mode: 'PREVIEW'
-            // });
         });
     });
 });
