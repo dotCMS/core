@@ -22,6 +22,7 @@ import com.dotcms.rendering.velocity.viewtools.XsltToolTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
+import com.dotmarketing.portlets.contentlet.business.HostFactoryImplTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
@@ -94,6 +95,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         FolderIntegrityCheckerTest.class,
+        HostFactoryImplTest.class,
 })
 
 public class MainSuite1a {
