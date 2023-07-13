@@ -239,7 +239,7 @@ describe('DotEditLayoutComponent', () => {
                 expect(component.pageState).toEqual(new DotPageRender(mockDotRenderedPage()));
             });
 
-            it('should save the layout after 10000', fakeAsync(() => {
+            it('should save the layout after 5000', fakeAsync(() => {
                 const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
                 spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
 
@@ -249,7 +249,7 @@ describe('DotEditLayoutComponent', () => {
                     title: null
                 });
 
-                tick(10000);
+                tick(5000);
                 expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('Saving');
                 expect(dotGlobalMessageService.success).toHaveBeenCalledWith('Saved');
                 expect(dotGlobalMessageService.error).not.toHaveBeenCalled();
@@ -307,7 +307,7 @@ describe('DotEditLayoutComponent', () => {
                 // Destroy the observable
                 component.destroy$.next(true);
                 component.destroy$.complete();
-                tick(10000);
+                tick(5000);
 
                 expect(dotPageLayoutService.save).not.toHaveBeenCalled();
             }));
