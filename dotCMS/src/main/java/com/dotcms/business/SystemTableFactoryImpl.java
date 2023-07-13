@@ -106,15 +106,10 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
 
         if (Objects.nonNull(key)) {
 
-            final Optional<String> valueOpt = find(key);
-            valueOpt.ifPresentOrElse(
-                    s -> {
-                        Try.run(()->new DotConnect()
-                                .setSQL("DELETE FROM system_table WHERE key=?")
-                                .addParam(key)
-                                .loadResult()).getOrElseThrow(e-> new DotRuntimeException(e)); },
-                    ()-> {throw new DoesNotExistException("The key " + key + " does not exist");});
-
+            new DotConnect()
+                .setSQL("DELETE FROM system_table WHERE key=?")
+                .addParam(key)
+                .loadResult();
             this.systemCache.remove(key);
         } else {
 

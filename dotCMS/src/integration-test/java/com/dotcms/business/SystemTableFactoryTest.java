@@ -116,28 +116,6 @@ public class SystemTableFactoryTest extends IntegrationTestBase  {
         }
     }
 
-    /**
-     * Method to test: test delete on non-existing key constraint {@link SystemTableFactory#delete(String)}
-     * Given Scenario: tries to delete an non-existing a key
-     * ExpectedResult: Should throw an exception b/c the key does not exist
-     * @throws Throwable
-     */
-    @Test(expected = DoesNotExistException.class)
-    public void test_delete_non_existing_key () throws Throwable {
-
-        final String key1 = "key10";
-
-        final SystemTableFactory systemTableFactory = FactoryLocator.getSystemTableFactory();
-
-        if (null != systemTableFactory) {
-
-            systemTableFactory.clearCache();
-            // SAVE + FIND
-            LocalTransaction.wrap(()->systemTableFactory.delete(key1));
-            Assert.fail("The non existing key should throw an exception on delete");
-        }
-    }
-
 
     /**
      * Method to test: test find all {@link SystemTableFactory#findAll()}
