@@ -12,7 +12,7 @@ import {
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar.component';
@@ -28,6 +28,7 @@ import { DotLayoutPropertiesItemModule } from '../dot-layout-properties-item/dot
 })
 class TestHostComponent {
     group: UntypedFormGroup;
+
     constructor() {
         this.group = new UntypedFormGroup({
             sidebar: new UntypedFormControl({
@@ -55,7 +56,7 @@ describe('DotLayoutSidebarComponent', () => {
             declarations: [DotLayoutSidebarComponent, TestHostComponent],
             imports: [
                 DotLayoutPropertiesItemModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 FormsModule,
                 ReactiveFormsModule,
                 CommonModule

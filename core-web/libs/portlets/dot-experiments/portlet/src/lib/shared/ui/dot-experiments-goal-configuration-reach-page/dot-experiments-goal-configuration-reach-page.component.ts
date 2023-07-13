@@ -12,7 +12,7 @@ import {
     GoalsConditionsOperatorsListByType,
     GoalsConditionsParametersListByType
 } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
@@ -32,6 +32,7 @@ import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-opti
         DotFieldValidationMessageModule,
         DotPipesModule,
         DropdownModule,
+        DotMessagePipe,
         InputTextModule,
         PaginatorModule,
         ReactiveFormsModule

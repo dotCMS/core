@@ -5,6 +5,7 @@ import { InputSwitchModule } from 'primeng/inputswitch';
 
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 /**
  * Basic page information for edit mode
@@ -18,7 +19,7 @@ import { DotPageRenderState } from '@dotcms/dotcms-models';
     templateUrl: './dot-edit-page-lock-info-seo.component.html',
     styleUrls: ['./dot-edit-page-lock-info-seo.component.scss'],
     standalone: true,
-    imports: [CommonModule, InputSwitchModule, DotPipesModule]
+    imports: [CommonModule, InputSwitchModule, DotPipesModule, DotMessagePipe]
 })
 export class DotEditPageLockInfoSeoComponent {
     @ViewChild('lockedPageMessage') lockedPageMessage: ElementRef;
@@ -27,14 +28,14 @@ export class DotEditPageLockInfoSeoComponent {
 
     private _state: DotPageRenderState;
 
+    get pageState(): DotPageRenderState {
+        return this._state;
+    }
+
     @Input()
     set pageState(value: DotPageRenderState) {
         this._state = value;
         this.show = value.state.lockedByAnotherUser && value.page.canEdit;
-    }
-
-    get pageState(): DotPageRenderState {
-        return this._state;
     }
 
     /**

@@ -22,7 +22,7 @@ import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice, DotDeviceListItem } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @Component({
@@ -36,7 +36,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         OverlayPanelModule,
         PanelModule,
         DividerModule,
-        DotMessagePipeModule
+        DotMessagePipe
     ],
     providers: [DotDevicesService],
     selector: 'dot-device-selector-seo',

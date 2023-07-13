@@ -19,6 +19,7 @@ import {
     DotAppsImportConfiguration,
     DotAppsSites
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -28,6 +29,7 @@ export class DotAppsServiceMock {
     exportConfiguration(_configuration: DotAppsExportConfiguration): Promise<string> {
         return Promise.resolve('');
     }
+
     importConfiguration(_configuration: DotAppsImportConfiguration): Observable<string> {
         return of('');
     }
@@ -49,6 +51,7 @@ class HostTestComponent {
     @Input() action?: string;
     @Input() app?: DotApps;
     @Input() site?: DotAppsSites;
+
     resolveHandler(_$event) {
         return;
     }
@@ -81,6 +84,7 @@ describe('DotAppsImportExportDialogComponent', () => {
                 CommonModule,
                 ReactiveFormsModule,
                 DotPipesModule,
+                DotMessagePipe,
                 HttpClientTestingModule
             ],
             providers: [

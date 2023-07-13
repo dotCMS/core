@@ -6,7 +6,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @Component({
@@ -23,7 +23,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         DotPipesModule,
         // PrimeNG
         SkeletonModule,
-        TagModule
+        TagModule,
+        DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

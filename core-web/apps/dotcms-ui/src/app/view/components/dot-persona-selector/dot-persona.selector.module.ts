@@ -12,7 +12,7 @@ import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/do
 import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
 import { DotPersonalizeService, DotPersonasService, PaginatorService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
@@ -31,7 +31,8 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
         ButtonModule,
         TooltipModule,
         SharedModule,
-        DotAddPersonaDialogModule
+        DotAddPersonaDialogModule,
+        DotMessagePipe
     ],
     providers: [PaginatorService, DotPersonasService, DotPersonalizeService, IframeOverlayService]
 })

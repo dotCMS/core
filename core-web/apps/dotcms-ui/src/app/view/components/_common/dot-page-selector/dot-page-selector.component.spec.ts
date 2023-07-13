@@ -25,6 +25,7 @@ import {
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
@@ -85,6 +86,7 @@ class MockDotPageSelectorService {
         return observableOf(expectedSitesMap);
     }
 }
+
 @Component({
     selector: 'dot-fake-form',
     template: `
@@ -99,9 +101,9 @@ class FakeFormComponent {
 
     constructor(private fb: UntypedFormBuilder) {
         /*
-            This should go in the ngOnInit but I don't want to detectChanges everytime for
-            this fake test component
-        */
+        This should go in the ngOnInit but I don't want to detectChanges everytime for
+        this fake test component
+    */
         this.form = this.fb.group({
             page: [{ value: 'c12fe7e6-d338-49d5-973b-2d974d57015b', disabled: false }]
         });
@@ -155,6 +157,7 @@ describe('DotPageSelectorComponent', () => {
                 DotDirectivesModule,
                 DotFieldHelperModule,
                 DotPipesModule,
+                DotMessagePipe,
                 AutoCompleteModule,
                 FormsModule,
                 CommonModule,

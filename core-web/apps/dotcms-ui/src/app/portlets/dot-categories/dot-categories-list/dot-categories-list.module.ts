@@ -15,7 +15,7 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoriesListRoutingModule } from './dot-categories-list-routing.module';
 import { DotCategoriesListComponent } from './dot-categories-list.component';
@@ -34,7 +34,7 @@ import { DotCategoriesListComponent } from './dot-categories-list.component';
         InplaceModule,
         InputNumberModule,
         DotActionMenuButtonModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         CheckboxModule,
         BreadcrumbModule,
         DotEmptyStateModule
