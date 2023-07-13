@@ -5,6 +5,11 @@
         max-height: 88vh;
         overflow-y: auto !important;
     }
+
+    #searchForm {
+        width: 90vw;
+        height: 90vw;
+    }
 </style>
 <form
     dojoAttachPoint="search_form"
