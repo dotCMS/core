@@ -3,9 +3,9 @@ package com.dotcms.experiments.model;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 import com.dotcms.experiments.business.ConfigExperimentUtil;
+import com.dotcms.experiments.model.RunningIds.RunningId;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotcms.util.TimeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionSummary;
@@ -17,11 +17,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import org.immutables.value.Value;
+
 
 /**
  * Immutable implementation of an Experiment.
@@ -158,6 +159,12 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
                 .id(this.id().orElse(null))
                 .title(this.name())
                 .build();
+    }
+
+
+    @Value.Default
+    default RunningIds runningIds() {
+        return new RunningIds();
     }
 
     enum Status {

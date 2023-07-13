@@ -50,8 +50,8 @@ describe('DotDeviceSelectorComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotDeviceSelectorComponent, DotMessagePipe],
-            imports: [BrowserAnimationsModule, DotIconModule],
+            declarations: [TestHostComponent, DotDeviceSelectorComponent],
+            imports: [BrowserAnimationsModule, DotIconModule, DotMessagePipe],
             providers: [
                 {
                     provide: DotDevicesService,

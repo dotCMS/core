@@ -47,6 +47,8 @@ import com.dotcms.experiments.model.Experiment.Builder;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
+import com.dotcms.experiments.model.RunningIds;
+import com.dotcms.experiments.model.RunningIds.RunningId;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
@@ -495,10 +497,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Scheduling scheduling = startNowScheduling(persistedExperiment);
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
             validateNoConflictsWithScheduledExperiments(experimentToSave, user);
-            toReturn = save(experimentToSave, user);
-            publishExperimentPage(toReturn, user);
-            publishContentOnExperimentVariants(user, toReturn);
-            cacheRunningExperiments();
+            toReturn = innerStart(experimentToSave, user);
         } else {
             Scheduling scheduling = persistedExperiment.scheduling().get();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
@@ -579,12 +578,40 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(persistedExperiment.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
                 DotStateException.class);
 
-        Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
+        return innerStart(persistedExperiment, user);
+    }
+
+    private Experiment innerStart(final Experiment persistedExperiment, final User user)
+            throws DotSecurityException, DotDataException {
+
+        final Experiment experimentToSave = Experiment.builder().from(persistedExperiment)
+                .runningIds(getRunningIds(persistedExperiment))
+                .status(RUNNING)
+                .build();
+
+        Experiment running = save(experimentToSave, user);
         cacheRunningExperiments();
         publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
 
         return running;
+    }
+
+    private RunningIds getRunningIds(final Experiment persistedExperiment) {
+        final RunningIds runningIds = persistedExperiment.runningIds();
+
+        final Optional<RunningId> currentRunningId = runningIds.getAll().stream()
+                .filter((id) -> id.endDate() == null)
+                .limit(1)
+                .findFirst();
+
+        if (currentRunningId.isPresent()) {
+            currentRunningId.get().setEndDate(Instant.now());
+        }
+
+        runningIds.add(RunningIds.RunningId.create());
+
+        return runningIds;
     }
 
 

@@ -6,7 +6,7 @@ import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus, ExperimentsStatusList } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
@@ -21,7 +21,7 @@ describe('DotExperimentsStatusFilterComponent', () => {
     let spectator: Spectator<DotExperimentsStatusFilterComponent>;
 
     const createComponent = createComponentFactory({
-        imports: [MultiSelectModule, FormsModule, DotMessagePipeModule, DotDropdownDirective],
+        imports: [MultiSelectModule, FormsModule, DotMessagePipe, DotDropdownDirective],
         component: DotExperimentsStatusFilterComponent,
         providers: [
             {

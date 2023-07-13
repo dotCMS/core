@@ -301,10 +301,21 @@ function initDragAndDrop () {
             return false;
         }
 
-        // draggedContent is set by dotContentletEditorService.draggedContentType$
         const dotAcceptTypes = container.dataset.dotAcceptTypes.toLocaleLowerCase();
-        return (window.hasOwnProperty('draggedContent') && (draggedContent.baseType.toLocaleLowerCase() === 'widget') ||
-                dotAcceptTypes.includes(draggedContent.variable?.toLocaleLowerCase() || draggedContent.contentType?.toLocaleLowerCase() || draggedContent.baseType?.toLocaleLowerCase()))
+
+        if (!isDraggedContentSet()) {
+            return false;
+        }
+ 
+        const variable = draggedContent.variable?.toLocaleLowerCase();
+        const contentType = draggedContent.contentType?.toLocaleLowerCase();
+        const baseType = draggedContent.baseType?.toLocaleLowerCase();
+
+        const isWidget = baseType === 'widget';
+
+        const dotAssetIncludesContent = dotAcceptTypes.includes(variable || contentType || baseType);
+
+        return isWidget || dotAssetIncludesContent;
     }
 
     function setPlaceholderContentlet() {
@@ -392,7 +403,6 @@ function initDragAndDrop () {
                     insertAfterElement(contentletPlaceholder, contentlet);
                 }
             }
-
         } else if (
                 container &&
                 !container.querySelectorAll('[data-dot-object="contentlet"]').length &&
@@ -402,6 +412,7 @@ function initDragAndDrop () {
             if (isContentletPlaceholderInDOM()) {
                 removeElementById('contentletPlaceholder');
             }
+
             container.appendChild(setPlaceholderContentlet());
         }
     }
@@ -437,33 +448,21 @@ function initDragAndDrop () {
     }
 
     function dropEvent(event) {
-
         event.preventDefault();
         event.stopPropagation();
         const container = event.target.closest('[data-dot-object="container"]');
+        const files = event.dataTransfer?.files;
+
         if (container && !container.classList.contains('no') && isContentletPlaceholderInDOM()) {
-            setLoadingIndicator();
-            if (event.dataTransfer.files[0]) { // trying to upload an image
-                uploadFile(event.dataTransfer.files[0]).then((dotCMSTempFile) => {
-                    dotAssetCreate({
-                        file: dotCMSTempFile,
-                        url: '/api/v1/workflow/actions/default/fire/PUBLISH',
-                        folder: ''
-                    }).then((response) => {
-                        window.contentletEvents.next({
-                            name: 'add-uploaded-dotAsset',
-                            data: {
-                                contentlet: response
-                            }
-                        });
-                    }).catch(e => {
-                        handleHttpErrors(e);
-                    })
-                }).catch(e => {
-                    handleHttpErrors(e);
-                })
-            } else { // Adding specific Content Type / Contentlet
-                if (draggedContent.contentType) { // Contentlet
+        
+            if (files?.length) { // trying to upload an image
+                setLoadingIndicator();
+                loadImageToDotcms(files[0]);
+            } 
+            
+            if(isDraggedContentSet()) {
+                // Adding specific Content Type / Contentlet
+                if (draggedContent?.contentType) { // Contentlet
                     if (draggedContent.contentType === 'FORM') {
                         sendCreateFormEvent(draggedContent.id)
                     } else {
@@ -480,12 +479,17 @@ function initDragAndDrop () {
                 }
             }
         }
+
         if (container) {
-            setTimeout(()=>{
+            setTimeout(()=> {
                 container.classList.remove('no');
             }, 0);
         }
 
+        // We need to clean the dragged content after the drop event
+        // That way, if the user tries to drag & drop a invalid content
+        // It won't use an old dragged content reference
+        cleanDraggedContent();
     }
 
     function removeEvents(e) {
@@ -502,6 +506,55 @@ function initDragAndDrop () {
         for (var i = 0; i < containerAnchorsList.length; i++) {
             containerAnchorsList[i].setAttribute("draggable", "false")
         };
+    }
+
+    /**
+     * @description
+     * Uploads an image to dotCMS and returns a promise with the temp file
+     * 
+     * @param {File} file
+     * @returns {Promise}
+     */
+    function loadImageToDotcms(file) {
+        uploadFile(file).then((dotCMSTempFile) => {
+            dotAssetCreate({
+                file: dotCMSTempFile,
+                url: '/api/v1/workflow/actions/default/fire/PUBLISH',
+                folder: ''
+            }).then((response) => {
+                window.contentletEvents.next({
+                    name: 'add-uploaded-dotAsset',
+                    data: {
+                        contentlet: response
+                    }
+                });
+            }).catch(e => {
+                handleHttpErrors(e);
+            })
+        }).catch(e => {
+            handleHttpErrors(e);
+        })
+    }
+
+    /**
+     * @description
+     * Check if draggedContent is set
+     * 
+     * @returns {Boolean}
+     */
+    function isDraggedContentSet() {
+        // draggedContent is set by dotContentletEditorService.draggedContentType$ [dot-edit-content.component.ts#L585-L593]
+        return window.hasOwnProperty('draggedContent');
+    }
+
+    /**
+     * @description
+     * Clean draggedContent from window object
+     * 
+     * @returns {void}
+     */
+    function cleanDraggedContent() {
+        isDraggedContentSet() && delete window.draggedContent;
     }
 
     disableDraggableHtmlElements();

@@ -13,6 +13,7 @@ import { IframeOverlayService } from '@components/_common/iframe/service/iframe-
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { INotification } from '@shared/models/notifications';
@@ -99,7 +100,7 @@ describe('DotToolbarNotificationsComponent', () => {
                 MockDotNotificationsListComponent,
                 MockDotIconButtonComponent
             ],
-            imports: [DotPipesModule, ButtonModule],
+            imports: [DotPipesModule, DotMessagePipe, ButtonModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: IframeOverlayService, useClass: MockIframeOverlayService },

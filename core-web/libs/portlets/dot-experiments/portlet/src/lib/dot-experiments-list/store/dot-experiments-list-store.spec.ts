@@ -11,6 +11,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
+import { take } from 'rxjs/operators';
+
 import { DotMessageService } from '@dotcms/data-access';
 import {
     AllowedActionsByExperimentStatus,
@@ -48,6 +50,13 @@ const EXPERIMENT_MOCK = getExperimentMock(0);
 const EXPERIMENT_MOCK_1 = getExperimentMock(1);
 const EXPERIMENT_MOCK_2 = getExperimentMock(2);
 const EXPERIMENT_MOCK_ALL = getExperimentAllMocks();
+
+const MENU_ITEMS_QTY = 5;
+const MENU_ITEMS_DELETE_INDEX = 0;
+const MENU_ITEMS_CONFIGURATION_INDEX = 1;
+const MENU_ITEMS_ARCHIVE_INDEX = 2;
+const MENU_ITEMS_PUSH_PUBLISH_INDEX = 3;
+const MENU_ITEMS_ADD_T0_BUNDLE_INDEX = 4;
 
 describe('DotExperimentsListStore', () => {
     let spectator: SpectatorService<DotExperimentsListStore>;
@@ -182,11 +191,6 @@ describe('DotExperimentsListStore', () => {
             { ...EXPERIMENT_MOCK, status: DotExperimentStatus.ENDED },
             { ...EXPERIMENT_MOCK, status: DotExperimentStatus.SCHEDULED }
         ];
-        const MENU_ITEMS_QTY = 4;
-        const MENU_ITEMS_DELETE_INDEX = 0;
-        const MENU_ITEMS_CONFIGURATION_INDEX = 1;
-        const MENU_ITEMS_ARCHIVE_INDEX = 2;
-        const MENU_ITEMS_ADD_T0_BUNDLE_INDEX = 3;
 
         store.setExperiments([...EXPERIMENTS_MOCK]);
 
@@ -207,6 +211,9 @@ describe('DotExperimentsListStore', () => {
                         experiments[0].actionsItemsMenu[MENU_ITEMS_ARCHIVE_INDEX].visible
                     ).toEqual(AllowedActionsByExperimentStatus['archive'].includes(status));
                     expect(
+                        experiments[0].actionsItemsMenu[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible
+                    ).toEqual(AllowedActionsByExperimentStatus['pushPublish'].includes(status));
+                    expect(
                         experiments[0].actionsItemsMenu[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible
                     ).toEqual(AllowedActionsByExperimentStatus['addToBundle'].includes(status));
                 });
@@ -214,6 +221,39 @@ describe('DotExperimentsListStore', () => {
                 done();
             }
         );
+    });
+
+    it('should not show Push Publish is there is no environments', (done) => {
+        spectator.service.patchState({ pushPublishEnvironments: [] });
+
+        store.setExperiments([...EXPERIMENT_MOCK_ALL]);
+
+        store.getExperimentsWithActions$.pipe(take(1)).subscribe((experiments) => {
+            // Push Publish
+            expect(experiments[0].actionsItemsMenu[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible).toEqual(
+                false
+            );
+            done();
+        });
+    });
+
+    it('should not show Push Publish and Add to Bundle is there  no EnterpriseLicense', (done) => {
+        spectator.service.patchState({ hasEnterpriseLicense: false });
+
+        store.setExperiments([...EXPERIMENT_MOCK_ALL]);
+
+        store.getExperimentsWithActions$.pipe(take(1)).subscribe((experiments) => {
+            // Push Publish
+            expect(experiments[0].actionsItemsMenu[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible).toEqual(
+                false
+            );
+
+            //Add to Bundle
+            expect(experiments[0].actionsItemsMenu[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(
+                false
+            );
+            done();
+        });
     });
 
     describe('Effects', () => {

@@ -141,7 +141,7 @@ import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExper
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
-import com.dotmarketing.startup.runonce.Task230522AddHashIndicesToWorkflowTablesTest;
+import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
@@ -307,7 +307,7 @@ import org.junit.runners.Suite.SuiteClasses;
         CMSUrlUtilTest.class,
         AssetPathResolverImplIntegrationTest.class,
         WebAssetHelperIntegrationTest.class,
-        Task230522AddHashIndicesToWorkflowTablesTest.class
+        Task230701AddHashIndicesToWorkflowTablesTest.class
 })
 
 public class MainSuite2b {

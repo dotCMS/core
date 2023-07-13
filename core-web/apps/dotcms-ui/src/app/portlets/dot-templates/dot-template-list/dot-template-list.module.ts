@@ -17,7 +17,7 @@ import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotSiteBrowserService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotTemplateListResolver } from '@portlets/dot-templates/dot-template-list/dot-template-list-resolver.service';
 import { DotBinaryOptionSelectorComponent } from '@portlets/shared/dot-binary-option-selector/dot-binary-option-selector.component';
 
@@ -28,7 +28,7 @@ import { DotTemplateListComponent } from './dot-template-list.component';
     imports: [
         CommonModule,
         DotListingDataTableModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotRelativeDatePipe,
         SharedModule,
         CheckboxModule,

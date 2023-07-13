@@ -127,13 +127,14 @@ describe('DotTemplateCreateEditComponent', () => {
         await TestBed.configureTestingModule({
             declarations: [
                 DotApiLinkMockComponent,
-                DotMessagePipe,
+
                 DotPortletBaseMockComponent,
                 DotPortletToolbarMockComponent,
                 DotTemplateBuilderMockComponent,
                 DotTemplateCreateEditComponent
             ],
             imports: [
+                DotMessagePipe,
                 FormsModule,
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
@@ -158,11 +159,11 @@ describe('DotTemplateCreateEditComponent', () => {
                     useValue: messageServiceMock
                 },
                 /*
-                    DotTempFileUploadService, DotWorkflowActionsFireService and DotCrudService:
-                    This three are from DotTemplateThumbnailFieldComponent and because
-                    I had to import DotTemplatePropsModule so I can click the real dialog that
-                    gets append to the body.
-                */
+            DotTempFileUploadService, DotWorkflowActionsFireService and DotCrudService:
+            This three are from DotTemplateThumbnailFieldComponent and because
+            I had to import DotTemplatePropsModule so I can click the real dialog that
+            gets append to the body.
+        */
                 {
                     provide: DotTempFileUploadService,
                     useValue: {
@@ -200,11 +201,11 @@ describe('DotTemplateCreateEditComponent', () => {
                     }
                 },
                 /*
-                    PaginatorService, SiteService and DotThemesService:
-                    This three are from DotThemeSelectorDropdownComponent and because
-                    I had to import DotTemplatePropsModule so I can click the real dialog that
-                    gets append to the body.
-                */
+            PaginatorService, SiteService and DotThemesService:
+            This three are from DotThemeSelectorDropdownComponent and because
+            I had to import DotTemplatePropsModule so I can click the real dialog that
+            gets append to the body.
+        */
                 {
                     provide: PaginatorService,
                     useValue: {
