@@ -4,7 +4,7 @@ import { NgModule } from '@angular/core';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCopyLinkModule } from '@dotcms/app/view/components/dot-copy-link/dot-copy-link.module';
-import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
@@ -16,7 +16,8 @@ import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item
         DotCopyLinkModule,
         DotIconModule,
         TooltipModule,
-        DotPipesModule
+        DotPipesModule,
+        DotMessagePipe
     ],
     declarations: [DotAppsConfigurationItemComponent],
     exports: [DotAppsConfigurationItemComponent]

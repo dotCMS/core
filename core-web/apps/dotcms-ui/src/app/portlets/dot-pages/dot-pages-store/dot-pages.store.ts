@@ -145,8 +145,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
             if (languages?.length) {
                 languages.forEach((language) => {
+                    const countryCode = language.countryCode.length
+                        ? ` (${language.countryCode})`
+                        : '';
+
                     languageOptions.push({
-                        label: `${language.language} (${language.countryCode})`,
+                        label: `${language.language}${countryCode}`,
                         value: language.id
                     });
                 });
@@ -169,7 +173,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             const langLabels = {};
             if (languages?.length) {
                 languages.forEach((language) => {
-                    langLabels[language.id] = `${language.languageCode}-${language.countryCode}`;
+                    const countryCode = language.countryCode.length
+                        ? `-${language.countryCode}`
+                        : '';
+
+                    langLabels[language.id] = `${language.languageCode}${countryCode}`;
                 });
             }
 
@@ -341,12 +349,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly deleteFavoritePage = this.effect((data$: Observable<string>) => {
         return data$.pipe(
             switchMap((inode: string) =>
-                this.dotWorkflowActionsFireService.deleteContentlet({
-                    inode
-                })
+                this.dotWorkflowActionsFireService
+                    .deleteContentlet({
+                        inode
+                    })
+                    .pipe(take(1))
             ),
             switchMap(() => {
                 return this.getFavoritePagesData({ limit: FAVORITE_PAGE_LIMIT }).pipe(
+                    take(1),
                     tapResponse(
                         (items) => {
                             const favoritePages = this.getNewFavoritePages(items);
@@ -356,7 +367,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     )
                 );
             }),
-            take(1),
             catchError((error: HttpErrorResponse) => this.httpErrorManagerService.handle(error))
         );
     });

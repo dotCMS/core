@@ -1,5 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -9,9 +10,20 @@ import {
     OnInit,
     Output
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DialogService } from 'primeng/dynamicdialog';
+import { TagModule } from 'primeng/tag';
+import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
+import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.module';
 import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -21,11 +33,48 @@ import {
     DotVariantData,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotFavoritePageModule } from '@portlets/dot-edit-page/components/dot-favorite-page/dot-favorite-page.module';
+import { DotEditPageStateControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
+import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
+import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
+import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
+
+import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-device-selector-seo.component';
+import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.component';
+import { DotEditPageStateControllerSeoComponent } from '../dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
 
 @Component({
+    standalone: true,
     selector: 'dot-edit-page-toolbar-seo',
     templateUrl: './dot-edit-page-toolbar-seo.component.html',
-    styleUrls: ['./dot-edit-page-toolbar-seo.component.scss']
+    styleUrls: ['./dot-edit-page-toolbar-seo.component.scss'],
+    providers: [DialogService, DotPropertiesService],
+    imports: [
+        ButtonModule,
+        CommonModule,
+        CheckboxModule,
+        DotEditPageWorkflowsActionsModule,
+        DotEditPageViewAsControllerModule,
+        DotEditPageStateControllerModule,
+        DotSecondaryToolbarModule,
+        FormsModule,
+        ToolbarModule,
+        TooltipModule,
+        DotPipesModule,
+        DotGlobalMessageModule,
+        DotFavoritePageModule,
+        UiDotIconButtonModule,
+        DotIconModule,
+        DotEditPageNavDirective,
+        RouterLink,
+        TagModule,
+        DotEditPageInfoSeoComponent,
+        DotDeviceSelectorSeoComponent,
+        DotEditPageStateControllerSeoComponent,
+        DotMessagePipe
+    ]
 })
 export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDestroy {
     @Input() pageState: DotPageRenderState;

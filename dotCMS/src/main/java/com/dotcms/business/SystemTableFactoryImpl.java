@@ -85,14 +85,13 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
 
         if (Objects.nonNull(key) && Objects.nonNull(value)) {
 
-            final Optional<String> valueOpt = find(key);
-
             new DotConnect()
-                    .setSQL(valueOpt.isPresent()?
-                            "UPDATE system_table SET value=? WHERE key=?":
-                            "INSERT INTO system_table (value, key) VALUES (?,?)")
+                    .setSQL( //upsert
+                            "INSERT INTO system_table (value, key) values(?,?)" +
+                                    "ON CONFLICT(key) DO UPDATE SET value = ?")
                     .addParam(value)
                     .addParam(key)
+                    .addParam(value)
                     .loadResult();
 
             this.systemCache.remove(key);

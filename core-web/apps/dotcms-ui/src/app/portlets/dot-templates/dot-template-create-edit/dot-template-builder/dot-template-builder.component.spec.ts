@@ -23,7 +23,7 @@ import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotEventsService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
@@ -158,7 +158,7 @@ describe('DotTemplateBuilderComponent', () => {
                 DotGlobalMessageComponent
             ],
             imports: [
-                DotMessagePipeModule,
+                DotMessagePipe,
                 DotPortletBoxModule,
                 DotShowHideFeatureDirective,
                 ButtonModule,

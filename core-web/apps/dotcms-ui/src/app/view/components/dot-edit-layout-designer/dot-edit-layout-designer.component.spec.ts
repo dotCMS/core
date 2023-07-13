@@ -93,7 +93,6 @@ describe('DotEditLayoutDesignerComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [
-                DotMessagePipe,
                 DotEditLayoutDesignerComponent,
                 AdditionalOptionsMockComponent,
                 DotLayoutPropertiesMockComponent,
@@ -101,6 +100,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                 DotLayoutDesignerMockComponent
             ],
             imports: [
+                DotMessagePipe,
                 DotActionButtonModule,
                 DotEditPageInfoModule,
                 DotSecondaryToolbarModule,

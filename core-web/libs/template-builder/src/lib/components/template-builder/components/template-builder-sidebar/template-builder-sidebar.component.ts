@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotContainer, DotContainerMap, DotLayoutSideBar } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
 import { TemplateBuilderBoxComponent } from '../template-builder-box/template-builder-box.component';
@@ -12,7 +12,7 @@ import { TemplateBuilderBoxComponent } from '../template-builder-box/template-bu
 @Component({
     selector: 'dotcms-template-builder-sidebar',
     standalone: true,
-    imports: [DropdownModule, FormsModule, TemplateBuilderBoxComponent, DotMessagePipeModule],
+    imports: [DropdownModule, FormsModule, TemplateBuilderBoxComponent, DotMessagePipe],
     templateUrl: './template-builder-sidebar.component.html',
     styleUrls: ['./template-builder-sidebar.component.scss']
 })
@@ -23,6 +23,9 @@ export class TemplateBuilderSidebarComponent {
     };
 
     @Input() containerMap: DotContainerMap;
+    readonly widthOptions = ['Small', 'Medium', 'Large'];
+
+    constructor(private store: DotTemplateBuilderStore) {}
 
     get width() {
         return (this.sidebarProperties.width ?? 'medium').replace(/^\w/g, (l) => l.toUpperCase());
@@ -31,10 +34,6 @@ export class TemplateBuilderSidebarComponent {
     get containers() {
         return this.sidebarProperties.containers;
     }
-
-    readonly widthOptions = ['Small', 'Medium', 'Large'];
-
-    constructor(private store: DotTemplateBuilderStore) {}
 
     /**
      * @description Change the sidebar width

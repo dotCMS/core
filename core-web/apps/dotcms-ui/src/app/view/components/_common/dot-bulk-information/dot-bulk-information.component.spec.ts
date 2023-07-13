@@ -13,7 +13,7 @@ import {
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotActionBulkResult } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotBulkInformationComponent } from './dot-bulk-information.component';
@@ -66,12 +66,7 @@ describe('DotBulkInformationComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotBulkInformationComponent, TestDynamicDialogComponent],
-            imports: [
-                CommonModule,
-                DynamicDialogModule,
-                DotMessagePipeModule,
-                BrowserAnimationsModule
-            ],
+            imports: [CommonModule, DynamicDialogModule, DotMessagePipe, BrowserAnimationsModule],
             providers: [
                 DynamicDialogRef,
                 DynamicDialogConfig,

@@ -18,7 +18,7 @@ import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotExperimentVariantDetail } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
@@ -55,7 +55,8 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         ButtonModule,
         TitleCasePipe,
         DotIconModule,
-        ConfirmPopupModule
+        ConfirmPopupModule,
+        DotMessagePipe
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],

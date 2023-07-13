@@ -9,7 +9,7 @@ import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotExperiment, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.pipe';
 
 import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
@@ -23,7 +23,7 @@ import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empt
         UpperCasePipe,
         NgForOf,
         // dotCMS
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotExperimentsEmptyExperimentsComponent,
         DotRelativeDatePipe,
         // PrimeNG

@@ -18,7 +18,6 @@ import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/d
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
 import {
     ActivatedRouteListStoreMock,
     DotExperimentsStoreMock,
@@ -71,7 +70,6 @@ describe('ExperimentsListComponent', () => {
             ConfirmationService,
             mockProvider(DotExperimentsStore, DotExperimentsStoreMock),
             mockProvider(Router),
-            mockProvider(DotMessagePipe),
             mockProvider(DotMessageService),
             mockProvider(DotFormatDateService),
             mockProvider(DotExperimentsService, {

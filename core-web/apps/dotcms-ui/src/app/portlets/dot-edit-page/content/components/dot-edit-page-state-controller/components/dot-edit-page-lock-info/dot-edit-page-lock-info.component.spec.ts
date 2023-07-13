@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -21,7 +22,7 @@ describe('DotEditPageLockInfoComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [DotPipesModule],
+            imports: [DotPipesModule, DotMessagePipe],
             declarations: [DotEditPageLockInfoComponent],
             providers: [
                 {
