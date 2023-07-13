@@ -16,3 +16,11 @@
 .dot-edit__experiments-results-tag {
     cursor: pointer;
 }
+
+:host {
+    @media only screen and (max-width: $screen-device-container-max) {
+        .lower-toolbar-right {
+            flex-flow: row;
+        }
+    }
+}
