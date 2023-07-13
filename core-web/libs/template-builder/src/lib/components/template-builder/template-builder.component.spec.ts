@@ -1,5 +1,5 @@
 import { expect, it } from '@jest/globals';
-import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
 import { GridItemHTMLElement } from 'gridstack';
 
 import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
@@ -12,7 +12,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { pluck, take } from 'rxjs/operators';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
@@ -40,7 +40,7 @@ describe('TemplateBuilderComponent', () => {
             NgFor,
             NgIf,
             AsyncPipe,
-            DotMessagePipeModule,
+            DotMessagePipe,
             DynamicDialogModule,
             NgStyle,
             NgClass,
@@ -66,10 +66,10 @@ describe('TemplateBuilderComponent', () => {
     });
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder [containerMap]="containerMap" [templateLayout]="templateLayout"></dotcms-template-builder>`,
+            `<dotcms-template-builder [containerMap]="containerMap" [layout]="layout" [themeId]="themeId" ></dotcms-template-builder>`,
             {
                 hostProps: {
-                    templateLayout: {
+                    layout: {
                         body: FULL_DATA_MOCK,
                         header: true,
                         footer: true,
@@ -77,8 +77,11 @@ describe('TemplateBuilderComponent', () => {
                             location: 'left',
                             width: 'small',
                             containers: []
-                        }
+                        },
+                        width: 'Mobile',
+                        title: 'Test Title'
                     },
+                    themeId: '123',
                     containerMap: CONTAINER_MAP_MOCK
                 }
             }
@@ -87,6 +90,12 @@ describe('TemplateBuilderComponent', () => {
         store = spectator.inject(DotTemplateBuilderStore);
         dialog = spectator.inject(DialogService);
         openDialogMock = jest.spyOn(dialog, 'open');
+        spectator.detectChanges();
+    });
+    it('should not trigger a template change when store is initialized', () => {
+        // Store init is called on init
+        const changeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+        expect(changeMock).not.toHaveBeenCalled();
     });
 
     it('should have a Add Row Button', () => {
@@ -109,14 +118,12 @@ describe('TemplateBuilderComponent', () => {
         expect(spectator.queryAll(byTestId('box')).length).toBe(totalBoxes);
     });
 
-    it('should trigger removeColumn on store when triggering removeColumn', () => {
+    it('should trigger removeColumn on store when triggering removeColumn', (done) => {
         const removeColMock = jest.spyOn(store, 'removeColumn');
 
         let widgetToDelete: DotGridStackWidget;
         let rowId: string;
         let elementToDelete: GridItemHTMLElement;
-
-        expect.assertions(1);
 
         store.state$.pipe(take(1)).subscribe(({ items }) => {
             widgetToDelete = items[0].subGridOpts.children[0];
@@ -126,16 +133,15 @@ describe('TemplateBuilderComponent', () => {
             spectator.component.removeColumn(widgetToDelete, elementToDelete, rowId);
 
             expect(removeColMock).toHaveBeenCalledWith({ ...widgetToDelete, parentId: rowId });
+            done();
         });
     });
 
-    it('should call addContainer from store when triggering addContainer', () => {
+    it('should call addContainer from store when triggering addContainer', (done) => {
         const addContainerMock = jest.spyOn(store, 'addContainer');
 
         let widgetToAddContainer: DotGridStackWidget;
         let rowId: string;
-
-        expect.assertions(1);
 
         store.state$.pipe(take(1)).subscribe(({ items }) => {
             widgetToAddContainer = items[0].subGridOpts.children[0];
@@ -144,16 +150,15 @@ describe('TemplateBuilderComponent', () => {
             spectator.component.addContainer(widgetToAddContainer, rowId, mockContainer);
 
             expect(addContainerMock).toHaveBeenCalled();
+            done();
         });
     });
 
-    it('should call deleteContainer from store when triggering deleteContainer', () => {
+    it('should call deleteContainer from store when triggering deleteContainer', (done) => {
         const deleteContainerMock = jest.spyOn(store, 'deleteContainer');
 
         let widgetToDeleteContainer: DotGridStackWidget;
         let rowId: string;
-
-        expect.assertions(1);
 
         store.state$.pipe(take(1)).subscribe(({ items }) => {
             widgetToDeleteContainer = items[0].subGridOpts.children[0];
@@ -162,6 +167,7 @@ describe('TemplateBuilderComponent', () => {
             spectator.component.deleteContainer(widgetToDeleteContainer, rowId, 0);
 
             expect(deleteContainerMock).toHaveBeenCalled();
+            done();
         });
     });
 
@@ -191,28 +197,41 @@ describe('TemplateBuilderComponent', () => {
 
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
-            const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');
+            const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+
+            spectator.detectChanges();
+
             store.init({
                 items: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
                 layoutProperties: {
                     header: true,
                     footer: true,
-                    sidebar: {}
+                    sidebar: {
+                        containers: [],
+                        location: 'left',
+                        width: 'small'
+                    }
                 },
                 resizingRowID: '',
                 containerMap: {}
             });
+
             store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {
-                // const body = parseFromGridStackToDotObject(items);
+                expect(true).toBeTruthy();
                 expect(layoutChangeMock).toHaveBeenCalledWith({
-                    body: FULL_DATA_MOCK,
-                    header: true,
-                    footer: true,
-                    sidebar: {
-                        location: 'left',
-                        width: 'small',
-                        containers: []
-                    }
+                    layout: {
+                        body: FULL_DATA_MOCK,
+                        header: true,
+                        footer: true,
+                        sidebar: {
+                            containers: [],
+                            location: 'left',
+                            width: 'small'
+                        },
+                        width: 'Mobile',
+                        title: 'Test Title'
+                    },
+                    themeId: '123'
                 });
                 done();
             });

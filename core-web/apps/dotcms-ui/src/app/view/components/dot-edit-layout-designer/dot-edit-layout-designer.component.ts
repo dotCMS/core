@@ -16,7 +16,7 @@ import {
     SimpleChanges,
     ViewChild
 } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { FormControl, FormGroup, UntypedFormBuilder } from '@angular/forms';
 
 import { take, takeUntil, tap } from 'rxjs/operators';
 
@@ -34,9 +34,15 @@ import {
     DotLayoutRow,
     DotLayoutSideBar,
     DotPageContainer,
-    DotTemplate,
+    DotTemplateDesigner,
     DotTheme
 } from '@dotcms/dotcms-models';
+
+type TemplateDesignerForm = {
+    title: FormControl<string | null>;
+    themeId: FormControl<string | null>;
+    layout: FormControl<DotLayout | null>;
+};
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -67,16 +73,16 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     disablePublish = true;
 
     @Output()
-    save: EventEmitter<DotTemplate> = new EventEmitter();
+    save: EventEmitter<DotTemplateDesigner> = new EventEmitter();
 
     @Output()
-    saveAndPublish: EventEmitter<Event> = new EventEmitter();
+    saveAndPublish: EventEmitter<DotTemplateDesigner> = new EventEmitter();
 
     @Output()
-    updateTemplate: EventEmitter<DotTemplate> = new EventEmitter();
+    updateTemplate: EventEmitter<DotTemplateDesigner> = new EventEmitter();
 
-    form: UntypedFormGroup;
-    initialFormValue: UntypedFormGroup;
+    form: FormGroup<TemplateDesignerForm>;
+    initialFormValue: DotTemplateDesigner;
     themeDialogVisibility = false;
 
     currentTheme: DotTheme;
@@ -98,7 +104,6 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
 
     ngOnInit(): void {
         this.setupLayout();
-        this.saveChangesBeforeLeave();
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -132,7 +137,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
      * @memberof DotEditLayoutDesignerComponent
      */
     onSave(): void {
-        this.save.emit(this.form.value);
+        this.save.emit(this.form.value as DotTemplateDesigner);
     }
 
     /**
@@ -143,7 +148,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
 
     onSaveAndPublish(): void {
         this.disablePublish = true;
-        this.saveAndPublish.emit(this.form.value);
+        this.saveAndPublish.emit(this.form.value as DotTemplateDesigner);
     }
 
     /**
@@ -241,7 +246,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.disablePublish = false;
             if (!_.isEqual(this.form.value, this.initialFormValue)) {
-                this.updateTemplate.emit(this.form.value);
+                this.updateTemplate.emit(this.form.value as DotTemplateDesigner);
             }
         });
         this.updateModel();
@@ -256,7 +261,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
                     this.currentTheme = theme;
                     this.cd.detectChanges();
                 });
-            this.initialFormValue = _.cloneDeep(this.form.value);
+            this.initialFormValue = structuredClone(this.form.value) as DotTemplateDesigner;
         }
     }
 
@@ -290,15 +295,5 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
                 this.currentTheme = err.status === 403 ? null : this.currentTheme;
             })
         );
-    }
-
-    private saveChangesBeforeLeave(): void {
-        this.dotEditLayoutService.closeEditLayout$
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((res) => {
-                if (res) {
-                    this.onSave();
-                }
-            });
     }
 }

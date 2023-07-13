@@ -1,7 +1,7 @@
-<div class="dot-experiment-list-table">
-    <ng-container *ngIf="experimentsCount; else noExperimentsTpl">
+<div class="dot-experiment-list-table gap-1">
+    <ng-container *ngIf="experimentGroupedByStatus.length; else noExperimentsFilteredTpl">
         <ng-container *ngFor="let group of experimentGroupedByStatus">
-            <p-table [value]="group.experiments" styleClass="experiment-list">
+            <p-table [rowHover]="true" [value]="group.experiments" styleClass="experiment-list">
                 <ng-template pTemplate="caption">
                     {{ group.status | lowercase | dm | uppercase }}
                 </ng-template>
@@ -10,7 +10,7 @@
                         <th>{{ 'experiments.list.name' | dm }}</th>
                         <th style="width: 20%">{{ 'experiments.list.created' | dm }}</th>
                         <th style="width: 20%">{{ 'experiments.list.modified' | dm }}</th>
-                        <th style="width: 5%"></th>
+                        <th style="width: 10%"></th>
                     </tr>
                 </ng-template>
                 <ng-template let-experiment pTemplate="body">
@@ -27,13 +27,21 @@
                         <td data-testId="experiment-row__modDate">
                             {{ experiment.modDate | dotRelativeDate : true }}
                         </td>
-                        <td data-testId="experiment-row__actions">
-                            <ng-container
-                                *ngTemplateOutlet="
-                                    actionButtonTpl;
-                                    context: { $implicit: experiment }
-                                "
-                            ></ng-container>
+                        <td class="text-right" data-testId="experiment-row__actions">
+                            <p-menu
+                                #menu
+                                [model]="experiment.actionsItemsMenu"
+                                [popup]="true"
+                                appendTo="body"
+                            ></p-menu>
+                            <button
+                                class="p-button-rounded p-button-text p-button-secondary"
+                                (click)="menu.toggle($event)"
+                                data-testId="experiment-row__action-button"
+                                icon="pi pi-ellipsis-v"
+                                pButton
+                                type="button"
+                            ></button>
                         </td>
                     </tr>
                 </ng-template>
@@ -42,57 +50,11 @@
     </ng-container>
 </div>
 
-<ng-template #actionButtonTpl let-experiment>
-    <ng-container
-        *ngIf="
-            experiment.status === experimentStatus.DRAFT ||
-            experiment.status === experimentStatus.SCHEDULED
-        "
-    >
-        <button
-            class="p-button-rounded p-button-text"
-            (click)="delete($event, experiment)"
-            data-testId="experiment-row-delete-button"
-            icon="pi pi-trash"
-            pButton
-            pTooltip="{{ 'experiments.action.delete' | dm }}"
-        ></button>
-    </ng-container>
-
-    <ng-container
-        *ngIf="
-            experiment.status === experimentStatus.RUNNING ||
-            experiment.status === experimentStatus.ENDED
-        "
-    >
-        <button
-            class="p-button-rounded p-button-text"
-            (click)="goToConfiguration.emit(experiment)"
-            data-testId="experiment-row-configuration-button"
-            icon="pi pi-cog"
-            pButton
-            pTooltip="{{ 'experiments.action.configuration' | dm }}"
-        ></button>
-    </ng-container>
-
-    <ng-container *ngIf="experiment.status === experimentStatus.ENDED">
-        <button
-            class="p-button-rounded p-button-text"
-            (click)="goToConfiguration.emit(experiment)"
-            data-testId="experiment-row-archive-button"
-            icon="pi pi-briefcase"
-            pButton
-            pTooltip="{{ 'experiments.action.archive' | dm }}"
-        ></button>
-    </ng-container>
-</ng-template>
-
-<ng-template #noExperimentsTpl>
+<ng-template #noExperimentsFilteredTpl>
     <dot-experiments-empty-experiments
         [showButton]="false"
         description="{{ 'experimentspage.not.experiments.found.filtered' | dm }}"
-    >
-    </dot-experiments-empty-experiments>
+    />
 </ng-template>
 
-<p-confirmPopup></p-confirmPopup>
+<p-confirmPopup />

@@ -1,0 +1,102 @@
+<dot-secondary-toolbar>
+    <!-- Header title and actions-->
+    <div class="main-toolbar-left flex align-items-center">
+        <ng-container *ngIf="variant; else defaultHeaderLeftTpl">
+            <a
+                class="flex align-items-center cursor-pointer"
+                [pTooltip]="'editpage.header.back.to.experiment' | dm"
+                (click)="backToExperiment.emit(true)"
+                data-testId="goto-experiment"
+                tooltipPosition="bottom"
+            >
+                <dot-icon name="arrow_back_ios" size="22"></dot-icon>
+            </a>
+
+            <dot-edit-page-info-seo
+                class="dot-variant-header flex gap-3"
+                [title]="variant.variant.title"
+                [url]="variant.variant.url"
+            ></dot-edit-page-info-seo>
+        </ng-container>
+    </div>
+
+    <div class="main-toolbar-right flex align-items-center gap-3">
+        <ng-container *ngIf="variant; else defaultHeaderRightTpl">
+            <dot-icon name="science" size="22"></dot-icon>
+            <h2>{{ variant.experimentName }}</h2>
+        </ng-container>
+    </div>
+
+    <!-- Tab actions and dropdowns -->
+    <div class="lower-toolbar-left w-7">
+        <dot-edit-page-state-controller-seo
+            [pageState]="pageState"
+            [variant]="variant"
+            (modeChange)="stateChange()"
+        ></dot-edit-page-state-controller-seo>
+
+        <p-checkbox
+            class="dot-edit__what-changed-button"
+            *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
+            [binary]="true"
+            [label]="'dot.common.whats.changed' | dm"
+            (onChange)="whatschange.emit($event.checked)"
+        ></p-checkbox>
+    </div>
+
+    <div class="lower-toolbar-right w-5">
+        <dot-edit-page-view-as-controller
+            class="flex w-full gap-2"
+            [pageState]="pageState"
+            [variant]="variant"
+        >
+        </dot-edit-page-view-as-controller>
+    </div>
+</dot-secondary-toolbar>
+
+<ng-template #defaultHeaderLeftTpl>
+    <dot-edit-page-info-seo
+        class="flex gap-2"
+        [apiLink]="apiLink"
+        [title]="pageState.page.title"
+        [url]="pageState.page.pageURI"
+    ></dot-edit-page-info-seo>
+
+    <dot-icon-button
+        class="flex gap-3"
+        *ngIf="showFavoritePageStar"
+        [icon]="pageState.favoritePage ? 'grade' : 'star_outline'"
+        [ngClass]="{
+            'dot-favorite-page-highlight': pageState.favoritePage
+        }"
+        [pTooltip]="'favoritePage.star.icon.tooltip' | dm"
+        (click)="favoritePage.emit(true)"
+        data-testId="addFavoritePageButton"
+        tooltipPosition="bottom"
+    ></dot-icon-button>
+</ng-template>
+
+<ng-template #defaultHeaderRightTpl>
+    <dot-global-message data-testId="globalMessage" right></dot-global-message>
+
+    <p-tag
+        class="sm p-tag-success dot-edit__experiments-results-tag"
+        *ngIf="runningExperiment"
+        [value]="'running' | dm | titlecase"
+        [routerLink]="[
+            '/edit-page/experiments/',
+            runningExperiment.pageId,
+            runningExperiment.id,
+            'reports'
+        ]"
+        role="button"
+        data-testId="runningExperimentTag"
+        queryParamsHandling="preserve"
+    >
+        <i class="material-icons">science</i>
+    </p-tag>
+    <dot-edit-page-workflows-actions
+        [page]="pageState.page"
+        (fired)="actionFired.emit($event)"
+    ></dot-edit-page-workflows-actions>
+</ng-template>

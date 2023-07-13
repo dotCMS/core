@@ -7,7 +7,7 @@ import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -33,6 +33,7 @@ describe('DotPagesCardComponent', () => {
                 DotPagesFavoritePageEmptySkeletonComponent,
                 TooltipModule,
                 DotPipesModule,
+                DotMessagePipe,
                 UiDotIconButtonModule
             ],
             declarations: [DotPagesCardComponent],

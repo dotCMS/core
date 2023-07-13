@@ -8,7 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { GoalsConditionsOperatorsListByType } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipeModule } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
 import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
@@ -23,7 +23,7 @@ import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-opti
         NgForOf,
         DotDropdownDirective,
         DotFieldValidationMessageModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DropdownModule,
         DotFieldRequiredDirective,
         DotAutofocusModule,

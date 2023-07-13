@@ -5,18 +5,19 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { ChartData } from 'chart.js';
 import { of } from 'rxjs';
 
+import { Component, Input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
+import { ConfirmPopup } from 'primeng/confirmpopup';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotExperimentVariantDetail
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
@@ -26,7 +27,6 @@ import {
     getExperimentResultsMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsReportsChartComponent } from './components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
@@ -37,7 +37,6 @@ import {
     VmReportExperiment
 } from './store/dot-experiments-reports-store';
 
-import { DotExperimentsDetailsTableComponent } from '../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
@@ -72,6 +71,24 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'xx'
 });
 
+// TODO: Use ng-mocks to mock the component automatically
+@Component({
+    standalone: true,
+    selector: 'dot-experiments-reports-chart',
+    template: 'chart - mocked component'
+})
+class MockDotExperimentsReportsChartComponent {
+    options;
+    @Input()
+    isEmpty = true;
+    @Input()
+    isLoading = true;
+    @Input()
+    config: { xAxisLabel: string; yAxisLabel: string; title: string };
+    @Input()
+    data: ChartData<'line'>;
+}
+
 describe('DotExperimentsReportsComponent', () => {
     let spectator: Spectator<DotExperimentsReportsComponent>;
     let router: SpyObject<Router>;
@@ -80,17 +97,16 @@ describe('DotExperimentsReportsComponent', () => {
     let confirmPopupComponent: ConfirmPopup;
 
     const createComponent = createComponentFactory({
-        imports: [
-            DotExperimentsUiHeaderComponent,
-            DotExperimentsReportsChartComponent,
-            DotExperimentsReportsSkeletonComponent,
-            DotExperimentsExperimentSummaryComponent,
-            DotExperimentsDetailsTableComponent,
-            DotDynamicDirective,
-            ConfirmPopupModule,
-            ButtonModule
-        ],
         component: DotExperimentsReportsComponent,
+        overrideComponents: [
+            [
+                DotExperimentsReportsComponent,
+                {
+                    remove: { imports: [DotExperimentsReportsChartComponent] },
+                    add: { imports: [MockDotExperimentsReportsChartComponent] }
+                }
+            ]
+        ],
         componentProviders: [DotExperimentsReportsStore],
         providers: [
             ConfirmationService,
@@ -113,14 +129,6 @@ describe('DotExperimentsReportsComponent', () => {
         spectator = createComponent({
             detectChanges: false
         });
-
-        window.ResizeObserver =
-            window.ResizeObserver ||
-            jest.fn().mockImplementation(() => ({
-                disconnect: jest.fn(),
-                observe: jest.fn(),
-                unobserve: jest.fn()
-            }));
 
         store = spectator.inject(DotExperimentsReportsStore, true);
 
@@ -150,8 +158,7 @@ describe('DotExperimentsReportsComponent', () => {
     it('should show DotExperimentsReportsChartComponent when no loading', () => {
         spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
         spectator.detectChanges();
-
-        expect(spectator.query(DotExperimentsReportsChartComponent)).toExist();
+        expect(spectator.query(MockDotExperimentsReportsChartComponent)).toExist();
     });
 
     it('should show the SummaryComponent', () => {
@@ -159,7 +166,7 @@ describe('DotExperimentsReportsComponent', () => {
             ...defaultVmMock,
             experiment: {
                 ...defaultVmMock.experiment,
-                status: DotExperimentStatusList.RUNNING
+                status: DotExperimentStatus.RUNNING
             },
             isLoading: false,
             showSummary: true
@@ -173,7 +180,7 @@ describe('DotExperimentsReportsComponent', () => {
             ...defaultVmMock,
             experiment: {
                 ...defaultVmMock.experiment,
-                status: DotExperimentStatusList.RUNNING
+                status: DotExperimentStatus.RUNNING
             },
             isLoading: false,
             showSummary: true

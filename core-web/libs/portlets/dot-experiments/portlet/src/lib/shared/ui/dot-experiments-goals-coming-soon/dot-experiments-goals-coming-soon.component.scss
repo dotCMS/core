@@ -31,7 +31,7 @@
             .p-card-header {
                 min-height: 5rem;
                 padding: 0;
-                background-color: $color-palette-secondary-200;
+                background-color: $color-palette-primary-100;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -39,7 +39,7 @@
 
                 i {
                     font-size: $font-size-xl;
-                    color: $color-palette-secondary-500;
+                    color: $color-palette-primary-500;
                 }
             }
 

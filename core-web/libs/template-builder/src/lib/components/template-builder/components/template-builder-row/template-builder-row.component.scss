@@ -31,6 +31,7 @@ dotcms-template-builder-background-columns {
     width: 2.625rem;
     flex-direction: column;
     gap: $spacing-1;
+    padding: $spacing-1 0;
     background-color: $color-palette-gray-200;
     border-left: 1px solid $color-palette-primary;
     border-radius: 0 $border-radius-md $border-radius-md 0;

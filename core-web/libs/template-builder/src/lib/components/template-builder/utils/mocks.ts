@@ -3,7 +3,39 @@ import { v4 as uuid } from 'uuid';
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { containersMapMock, MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotGridStackWidget, DotTemplateBuilderContainer } from '../models/models';
+import {
+    DotGridStackWidget,
+    DotTemplateBuilderContainer,
+    SYSTEM_CONTAINER_IDENTIFIER
+} from '../models/models';
+
+export const EMPTY_ROWS_VALUE = [
+    {
+        w: 12,
+        h: 1,
+        x: 0,
+        y: 0,
+        subGridOpts: {
+            children: [
+                {
+                    w: 3,
+                    h: 1,
+                    y: 0,
+                    x: 0,
+                    id: uuid(),
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: SYSTEM_CONTAINER_IDENTIFIER
+                        }
+                    ]
+                }
+            ]
+        },
+        id: uuid(),
+        styleClass: []
+    }
+];
 
 export const GRIDSTACK_DATA_MOCK: DotGridStackWidget[] = [
     { x: 0, y: 0, w: 12, id: uuid() },
@@ -247,6 +279,11 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.box.containers.error': 'Error loading containers',
     'dot.template.builder.classes.dialog.autocomplete.label': 'Class',
     'dot.template.builder.classes.dialog.header.label': 'Edit Classes',
+    'dot.template.builder.theme.dialog.header.label': 'Theme Selection',
+    'editpage.layout.theme.no.records.found': 'No records found',
+    'dot.common.cancel': 'Cancel',
+    'dot.common.apply': 'Apply',
+    'editpage.layout.theme.search': 'Search',
     'dot.template.builder.classes.dialog.update.button': 'Update',
     'dot.template.builder.sidebar.header.title': 'Sidebar'
 };
@@ -259,6 +296,15 @@ export const MOCK_SELECTED_STYLE_CLASSES = [
     'd-flex',
     'flex-column',
     'justify-content-center',
+    'align-items-center',
+    'justify-content-start',
+    'justify-content-end',
+    'justify-content-center',
+    'justify-content-between',
+    'justify-content-around',
+    'justify-content-evenly',
+    'align-items-start',
+    'align-items-end',
     'align-items-center'
 ];
 
@@ -364,3 +410,13 @@ export const mockTemplateBuilderContainer: DotTemplateBuilderContainer = {
     identifier: '1',
     uuid: '1'
 };
+
+export const SIDEBAR_MOCK = {
+    location: 'left',
+    width: 'small',
+    containers: []
+};
+
+export const STYLE_CLASS_MOCK = ['test', 'mock-class'];
+
+export const CLASS_NAME_MOCK = 'custom-class';

@@ -23,7 +23,7 @@ import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
@@ -139,6 +139,7 @@ describe('ContentTypesLayoutComponent', () => {
                 DotApiLinkModule,
                 DotCopyLinkModule,
                 DotPipesModule,
+                DotMessagePipe,
                 SplitButtonModule,
                 DotInlineEditModule,
                 HttpClientTestingModule,

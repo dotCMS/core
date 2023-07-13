@@ -8,6 +8,7 @@ import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-butto
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     dotcmsContentTypeFieldBasicMock,
     FieldUtil,
@@ -92,7 +93,7 @@ describe('ContentTypeFieldsRowComponent', () => {
                 TestContentTypeFieldDraggableItemComponent,
                 DotTestHostComponent
             ],
-            imports: [DragulaModule, UiDotIconButtonTooltipModule],
+            imports: [DragulaModule, UiDotIconButtonTooltipModule, DotMessagePipe],
             providers: [
                 FieldDragDropService,
                 DotAlertConfirmService,

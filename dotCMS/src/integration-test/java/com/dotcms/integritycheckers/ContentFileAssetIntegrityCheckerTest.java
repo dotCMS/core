@@ -11,6 +11,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -28,7 +29,9 @@ import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
+import java.util.List;
+import java.util.Map;
+import java.sql.Connection;
 /**
  * Simple test to validate the ContentFileAssetIntegrityChecker
  */
@@ -117,4 +120,51 @@ public class ContentFileAssetIntegrityCheckerTest extends IntegrationTestBase im
         Assert.assertTrue(validateFix(remoteIdentifier));
     }
 
+    /**
+     * Method to test: {@link ContentFileAssetIntegrityChecker#executeFix(String)}
+     * When: Tests that after conflicts are detected a fix is applied in favor of remote fileAsset.
+     * Should: Columns Asset_subtype, owner and create_date should be populated
+     * @throws Exception
+     */
+    @Test
+    public void test_execute_identifierColumnsNotNull() throws Exception {
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        final Folder folder = new FolderDataGen().name("testFolder"+UUID.randomUUID().toString()).site(host).nextPersisted();
+        final Contentlet contentlet = FileAssetDataGen.createFileAsset(folder, "text1FileAsset"+UUID.randomUUID().toString(), ".txt");
+        final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+        final ContentFileAssetIntegrityChecker integrityChecker = new ContentFileAssetIntegrityChecker();
+        final Tuple2<String, String> remoteIdentifierAndInode = introduceConflict(fileAsset ,endpointId.get());
+        final String remoteIdentifier = remoteIdentifierAndInode._1();
+        final String remoteWorkingInode = remoteIdentifierAndInode._2();
+
+        integrityChecker.executeFix(endpointId.get());
+
+        try {
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL("SELECT asset_subtype, owner, create_date FROM identifier WHERE id = ?");
+            dotConnect.addParam(remoteIdentifier);
+            final Connection connection = DbConnectionFactory.getConnection();
+            List<Map<String, Object>> results = dotConnect.loadObjectResults(connection);
+
+            final boolean assetSubtypeNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("asset_subtype") && result.get("asset_subtype") != null);
+
+            Assert.assertTrue("Asset_SubType is null", assetSubtypeNotNull);
+
+            final boolean createDateNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("create_date") && result.get("create_date") != null);
+
+            Assert.assertTrue("Create Date is null", createDateNotNull);
+
+            final boolean ownerNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("owner") && result.get("owner") != null);
+
+            Assert.assertTrue("Owner is null", ownerNotNull);
+
+        } catch (DotDataException e) {
+            Logger.error(this, e);
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
+    }
 }

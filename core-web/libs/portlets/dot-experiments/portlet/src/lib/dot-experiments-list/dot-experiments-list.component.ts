@@ -6,18 +6,19 @@ import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@an
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { RippleModule } from 'primeng/ripple';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 import { tap } from 'rxjs/operators';
 
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     ComponentStatus,
     DotExperiment,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     ExperimentsStatusList,
     SidebarStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsCreateComponent } from './components/dot-experiments-create/dot-experiments-create.component';
@@ -41,13 +42,14 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         DotExperimentsListTableComponent,
         DotExperimentsUiHeaderComponent,
         DotDynamicDirective,
-        DotMessagePipeModule,
+        DotMessagePipe,
         ButtonModule,
-        RippleModule
+        ConfirmDialogModule,
+        DotAddToBundleModule
     ],
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],
-    providers: [DotMessagePipe, provideComponentStore(DotExperimentsListStore)],
+    providers: [provideComponentStore(DotExperimentsListStore)],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListComponent {
@@ -60,7 +62,6 @@ export class DotExperimentsListComponent {
 
     constructor(
         private readonly dotExperimentsListStore: DotExperimentsListStore,
-        private readonly dotMessagePipe: DotMessagePipe,
         private readonly router: Router
     ) {}
 
@@ -81,16 +82,6 @@ export class DotExperimentsListComponent {
      */
     addExperiment(): void {
         this.dotExperimentsListStore.openSidebar();
-    }
-
-    /**
-     * Archive experiment
-     * @param {DotExperiment} experiment
-     * @returns void
-     * @memberof DotExperimentsListComponent
-     */
-    archiveExperimentAction(experiment: DotExperiment): void {
-        this.dotExperimentsListStore.archiveExperiment(experiment);
     }
 
     /**
@@ -120,8 +111,8 @@ export class DotExperimentsListComponent {
         const route = ['/edit-page/experiments/', experiment.pageId, experiment.id];
 
         if (
-            experiment.status === DotExperimentStatusList.RUNNING ||
-            experiment.status === DotExperimentStatusList.ENDED
+            experiment.status === DotExperimentStatus.RUNNING ||
+            experiment.status === DotExperimentStatus.ENDED
         ) {
             route.push('reports');
         } else {
@@ -136,34 +127,6 @@ export class DotExperimentsListComponent {
             },
             queryParamsHandling: 'merge'
         });
-    }
-
-    /**
-     * Delete experiment
-     * @param {DotExperiment} experiment
-     * @returns void
-     * @memberof DotExperimentsListComponent
-     */
-    deleteExperimentAction(experiment: DotExperiment): void {
-        this.dotExperimentsListStore.deleteExperiment(experiment);
-    }
-
-    /**
-     * Go to the experiment configuration container
-     * @param experiment
-     */
-    gotToConfigurationAction(experiment: DotExperiment) {
-        this.router.navigate(
-            ['/edit-page/experiments/', experiment.pageId, experiment.id, 'configuration'],
-            {
-                queryParams: {
-                    mode: null,
-                    variantName: null,
-                    experimentId: null
-                },
-                queryParamsHandling: 'merge'
-            }
-        );
     }
 
     private handleSidebar(status: SidebarStatus): void {

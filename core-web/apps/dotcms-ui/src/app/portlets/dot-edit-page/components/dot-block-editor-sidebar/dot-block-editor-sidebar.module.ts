@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { SidebarModule } from 'primeng/sidebar';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 
 @NgModule({
@@ -17,7 +17,7 @@ import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/componen
         BlockEditorModule,
         CommonModule,
         SidebarModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         ButtonModule
     ]
 })

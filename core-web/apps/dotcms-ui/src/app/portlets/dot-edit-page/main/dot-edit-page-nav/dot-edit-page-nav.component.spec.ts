@@ -11,7 +11,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
     getExperimentMock,
     MockDotMessageService,
@@ -89,7 +89,13 @@ describe('DotEditPageNavComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule, TooltipModule, DotIconModule, DotPipesModule],
+            imports: [
+                RouterTestingModule,
+                TooltipModule,
+                DotIconModule,
+                DotPipesModule,
+                DotMessagePipe
+            ],
             declarations: [DotEditPageNavComponent, TestHostComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },

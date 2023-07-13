@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "b6e331fa-9081-4790-87b8-04fb79dee76f",
+		"_postman_id": "2e61c1dd-34ab-42f1-a0bc-fac8dc68e780",
 		"name": "LanguageResource",
 		"description": "This collections is focused on the /v2/languages resource\nThis should cover Language CRUD Operations",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -165,6 +165,61 @@
 								"en-US"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get LanguageByLanguageTagDoesNotExist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () { pm.response.to.be.notFound });",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/mytag",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"mytag"
+							]
+						},
+						"description": "This test searches a language by its tag and the language should not exist. The expected response is a 404 error"
 					},
 					"response": []
 				},
@@ -545,6 +600,93 @@
 								"v2",
 								"languages",
 								"da-DK"
+							]
+						},
+						"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
+					},
+					"response": []
+				},
+				{
+					"name": "CreateLanguageByTagWithoutCountrySuccess",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									"",
+									"pm.test(\"languageCode returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+									"});",
+									"",
+									"pm.test(\"countryCode returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+									"});",
+									"",
+									"pm.test(\"language returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"language\");",
+									"});",
+									"",
+									"pm.test(\"country returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"country\");",
+									"});",
+									"",
+									"pm.test(\"Expected Language info returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.languageCode).to.eql(\"da\");",
+									"    pm.expect(jsonData.entity.countryCode).to.eql(\"\");",
+									"    pm.expect(jsonData.entity.language).to.eql(\"Danish\");",
+									"    pm.expect(jsonData.entity.country).to.eql(\"\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/da",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"da"
 							]
 						},
 						"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."

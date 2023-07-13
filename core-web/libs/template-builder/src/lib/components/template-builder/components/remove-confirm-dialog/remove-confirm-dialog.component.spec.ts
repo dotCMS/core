@@ -4,7 +4,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { RemoveConfirmDialogComponent } from './remove-confirm-dialog.component';
 
@@ -15,10 +15,9 @@ describe('RemoveConfirmDialogComponent', () => {
 
     const createComponent = createComponentFactory({
         component: RemoveConfirmDialogComponent,
-        imports: [DotMessagePipeModule],
+        imports: [DotMessagePipe],
         providers: [
             ConfirmationService,
-            DotMessagePipe,
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
@@ -52,6 +51,19 @@ describe('RemoveConfirmDialogComponent', () => {
         const confirmRejected = spectator.query('.p-confirm-popup-reject');
         spectator.click(confirmRejected);
 
+        expect(rejectEventSpy).toHaveBeenCalled();
+    });
+
+    it('should call reject function when esc is pressed', () => {
+        const rejectEventSpy = jest.spyOn(spectator.component.deleteRejected, 'emit');
+
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+        spectator.dispatchMouseEvent(deleteButton, 'onClick');
+
+        const confirmAccept = spectator.query('.p-confirm-popup-accept');
+        expect(confirmAccept).toBeTruthy();
+
+        spectator.component.onEscapePress();
         expect(rejectEventSpy).toHaveBeenCalled();
     });
 });

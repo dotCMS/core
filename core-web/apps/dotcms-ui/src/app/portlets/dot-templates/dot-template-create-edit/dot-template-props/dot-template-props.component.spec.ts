@@ -18,6 +18,7 @@ import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
+
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content>',
@@ -46,12 +47,15 @@ export class DotTemplateThumbnailFieldMockComponent implements ControlValueAcces
     propagateChange = (_: any) => {
         //
     };
+
     registerOnChange(fn: any): void {
         this.propagateChange = fn;
     }
+
     registerOnTouched(): void {
         //
     }
+
     writeValue(): void {
         // no-op
     }
@@ -72,12 +76,15 @@ export class DotThemeSelectorDropdownMockComponent implements ControlValueAccess
     propagateChange = (_: any) => {
         //
     };
+
     registerOnChange(fn: any): void {
         this.propagateChange = fn;
     }
+
     registerOnTouched(): void {
         //
     }
+
     writeValue(): void {
         //
     }
@@ -101,12 +108,13 @@ describe('DotTemplatePropsComponent', () => {
         await TestBed.configureTestingModule({
             declarations: [
                 DotTemplatePropsComponent,
-                DotMessagePipe,
+
                 DotFormDialogMockComponent,
                 DotTemplateThumbnailFieldMockComponent,
                 DotThemeSelectorDropdownMockComponent
             ],
             imports: [
+                DotMessagePipe,
                 FormsModule,
                 ReactiveFormsModule,
                 DotFieldValidationMessageModule,

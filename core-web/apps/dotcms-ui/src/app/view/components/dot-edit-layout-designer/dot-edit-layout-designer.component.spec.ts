@@ -25,7 +25,7 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotEventsService, DotMessageService, DotThemesService } from '@dotcms/data-access';
-import { DotTheme } from '@dotcms/dotcms-models';
+import { DotTemplateDesigner, DotTheme } from '@dotcms/dotcms-models';
 import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import {
     cleanUpDialog,
@@ -88,13 +88,11 @@ const messageServiceMock = new MockDotMessageService({
 let component: DotEditLayoutDesignerComponent;
 let fixture: ComponentFixture<DotEditLayoutDesignerComponent>;
 let dotThemesService: DotThemesService;
-let dotEditLayoutService: DotEditLayoutService;
 
 describe('DotEditLayoutDesignerComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [
-                DotMessagePipe,
                 DotEditLayoutDesignerComponent,
                 AdditionalOptionsMockComponent,
                 DotLayoutPropertiesMockComponent,
@@ -102,6 +100,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                 DotLayoutDesignerMockComponent
             ],
             imports: [
+                DotMessagePipe,
                 DotActionButtonModule,
                 DotEditPageInfoModule,
                 DotSecondaryToolbarModule,
@@ -158,7 +157,6 @@ describe('DotEditLayoutDesignerComponent', () => {
         fixture = TestBed.createComponent(DotEditLayoutDesignerComponent);
         component = fixture.componentInstance;
         dotThemesService = TestBed.inject(DotThemesService);
-        dotEditLayoutService = TestBed.inject(DotEditLayoutService);
     });
 
     describe('edit layout', () => {
@@ -217,14 +215,9 @@ describe('DotEditLayoutDesignerComponent', () => {
             const publishButton = fixture.debugElement.query(By.css('[data-testId="publishBtn"]'));
             publishButton.triggerEventHandler('click', null);
             fixture.detectChanges();
-            expect(component.saveAndPublish.emit).toHaveBeenCalledWith(component.form.value);
-        });
-
-        it('should save changes when closeEditLayout is true', () => {
-            spyOn(component.save, 'emit');
-            dotEditLayoutService.changeCloseEditLayoutState(true);
-            fixture.detectChanges();
-            expect(component.save.emit).toHaveBeenCalledTimes(1);
+            expect(component.saveAndPublish.emit).toHaveBeenCalledWith(
+                component.form.value as DotTemplateDesigner
+            );
         });
 
         it('should save changes when editing the form.', () => {

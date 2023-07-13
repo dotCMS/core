@@ -9,7 +9,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
@@ -52,6 +52,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
             mockProvider(MessageService),
             mockProvider(ActivatedRoute, ACTIVE_ROUTE_MOCK_CONFIG),
             mockProvider(DotHttpErrorManagerService),
+            mockProvider(ConfirmationService),
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock

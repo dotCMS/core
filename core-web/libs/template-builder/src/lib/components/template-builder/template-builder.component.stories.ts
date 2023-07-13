@@ -1,19 +1,29 @@
-import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 import { of } from 'rxjs';
 
-import { NgFor, NgIf, AsyncPipe, NgClass } from '@angular/common';
-import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { AsyncPipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
 import { DropdownModule } from 'primeng/dropdown';
-import { DynamicDialogModule, DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService, DotContainersService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
-import { DotContainersServiceMock } from '@dotcms/utils-testing';
+import {
+    DotContainersService,
+    DotEventsService,
+    DotMessageService,
+    PaginatorService
+} from '@dotcms/data-access';
+import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
+import {
+    CoreWebServiceMock,
+    DotContainersServiceMock,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
@@ -37,7 +47,7 @@ export default {
                 AsyncPipe,
                 NgClass,
                 TemplateBuilderComponentsModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 BrowserAnimationsModule,
                 DynamicDialogModule,
                 HttpClientModule,
@@ -62,8 +72,20 @@ export default {
                 {
                     provide: HttpClient,
                     useValue: {
-                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE)
+                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE),
+                        request: () => of({})
                     }
+                },
+                {
+                    provide: PaginatorService
+                },
+                {
+                    provide: SiteService,
+                    useValue: new SiteServiceMock()
+                },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: DotEventsService
                 }
             ]
         })
@@ -73,7 +95,11 @@ export default {
 const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponent) => ({
     props: args,
     template: `
-        <dotcms-template-builder [containerMap]="containerMap" [templateLayout]="templateLayout">
+        <dotcms-template-builder
+            [layout]="layout"
+            [themeId]="themeId"
+            [containerMap]="containerMap"
+        >
             <button
                 [label]="'Publish'"
                 toolbar-actions-right
@@ -87,7 +113,7 @@ const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponen
 export const Base = Template.bind({});
 
 Base.args = {
-    templateLayout: {
+    layout: {
         body: FULL_DATA_MOCK,
         header: true,
         footer: false,
@@ -97,5 +123,6 @@ Base.args = {
             containers: []
         }
     },
+    themeId: '123',
     containerMap: CONTAINER_MAP_MOCK
 };

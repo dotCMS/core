@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
@@ -16,14 +16,13 @@ describe('TemplateBuilderActionsComponent', () => {
     const createComponent = createComponentFactory({
         component: TemplateBuilderActionsComponent,
         providers: [
-            DotMessagePipe,
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
             },
             DotTemplateBuilderStore
         ],
-        imports: [HttpClientTestingModule]
+        imports: [HttpClientTestingModule, DotMessagePipe]
     });
 
     beforeEach(() => {
@@ -48,7 +47,7 @@ describe('TemplateBuilderActionsComponent', () => {
         const spy = jest.spyOn(spectator.component.selectTheme, 'emit');
         spectator.detectChanges();
         const btnSelectStyles = spectator.query(byTestId('btn-select-theme'));
-        spectator.dispatchMouseEvent(btnSelectStyles, 'onClick');
+        spectator.dispatchMouseEvent(btnSelectStyles, 'click');
 
         expect(spy).toHaveBeenCalled();
     });

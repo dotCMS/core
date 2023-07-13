@@ -26,7 +26,7 @@ import {
     DotcmsConfigService,
     SiteService
 } from '@dotcms/dotcms-js';
-import { DotMessagePipeModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
@@ -106,38 +106,48 @@ describe('DotPagesListingPanelComponent', () => {
                 languageLabels: { 1: 'En-en', 2: 'Es-es' }
             });
         }
+
         get languageOptions$() {
             return of([
                 { label: 'En-en', value: 1 },
                 { label: 'ES-es', value: 2 }
             ]);
         }
+
         get languageLabels$() {
             return of({ 1: 'En-en', 2: 'Es-es' });
         }
-        getPages(): void {
-            /* */
-        }
-        getPageTypes(): void {
-            /* */
-        }
-        setKeyword(): void {
-            /* */
-        }
-        setLanguageId(): void {
-            /* */
-        }
-        setArchived(): void {
-            /* */
-        }
-        setSessionStorageFilterParams(): void {
-            /* */
-        }
+
         get actionMenuDomId$() {
             return of('');
         }
+
         get pageTypes$() {
             return of([{ ...dotcmsContentTypeBasicMock }]);
+        }
+
+        getPages(): void {
+            /* */
+        }
+
+        getPageTypes(): void {
+            /* */
+        }
+
+        setKeyword(): void {
+            /* */
+        }
+
+        setLanguageId(): void {
+            /* */
+        }
+
+        setArchived(): void {
+            /* */
+        }
+
+        setSessionStorageFilterParams(): void {
+            /* */
         }
     }
 
@@ -151,7 +161,7 @@ describe('DotPagesListingPanelComponent', () => {
                     CheckboxModule,
                     DropdownModule,
                     DotAutofocusModule,
-                    DotMessagePipeModule,
+                    DotMessagePipe,
                     DotRelativeDatePipe,
                     InputTextModule,
                     SkeletonModule,
@@ -247,6 +257,21 @@ describe('DotPagesListingPanelComponent', () => {
             expect(store.setKeyword).toHaveBeenCalledWith('test');
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
+        });
+
+        it('should send event to filter keyword when cleaning', () => {
+            const elem = de.query(By.css('.dot-pages-listing-header__inputs input'));
+            elem.triggerEventHandler('input', { target: { value: 'test' } });
+
+            const elemClean = de.query(
+                By.css('[data-testid="dot-pages-listing-header__keyword-input-clear"]')
+            );
+
+            elemClean.triggerEventHandler('click', {});
+
+            expect(store.setKeyword).toHaveBeenCalledWith('');
+            expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(2);
         });
 
         it('should send event to filter language', () => {

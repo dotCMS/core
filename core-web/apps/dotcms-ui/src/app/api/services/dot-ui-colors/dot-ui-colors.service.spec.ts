@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { DEFAULT_COLORS, DotUiColorsService } from './dot-ui-colors.service';
 
-fdescribe('DotUiColorsService', () => {
+describe('DotUiColorsService', () => {
     let service: DotUiColorsService;
     let injector;
     let setPropertySpy;
@@ -144,7 +144,7 @@ fdescribe('DotUiColorsService', () => {
         expect(html.style.setProperty).not.toHaveBeenCalled();
     });
 
-    fit('should set manual picked colors', () => {
+    it('should set manual picked colors', () => {
         service.setColors(document.querySelector('html'), {
             primary: DEFAULT_COLORS.primary,
             secondary: DEFAULT_COLORS.secondary,

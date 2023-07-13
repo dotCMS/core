@@ -20,7 +20,7 @@ import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access
 import {
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageMode,
     ExperimentSteps
 } from '@dotcms/dotcms-models';
@@ -28,6 +28,7 @@ import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-acc
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
+    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA,
     getExperimentMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
@@ -35,6 +36,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 
+import { DotExperimentsInlineEditTextComponent } from '../../../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
 const messageServiceMock = new MockDotMessageService({
@@ -55,6 +57,9 @@ const ActivatedRouteMock = {
             experimentId: 'test'
         },
         data: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data
+    },
+    parent: {
+        ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
     }
 };
 
@@ -114,7 +119,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
     describe('should render', () => {
         it('a DEFAULT variant', () => {
-            expect(spectator.queryAll(byTestId('variant-name')).length).toBe(1);
+            expect(spectator.queryAll(byTestId('variant-name-original')).length).toBe(1);
             expect(spectator.query(byTestId('variants-card-header'))).toHaveClass(
                 'p-label-input-required'
             );
@@ -144,10 +149,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(spectator.query(byTestId('variant-title-step-done'))).toHaveClass('isDone');
             expect(spectator.queryAll(Card).length).toBe(4);
 
-            const variantsName = spectator.queryAll(byTestId('variant-name'));
-            expect(variantsName[0]).toContainText(variants[0].name);
-            expect(variantsName[1]).toContainText(variants[1].name);
-            expect(variantsName[2]).toContainText(variants[2].name);
+            expect(spectator.query(byTestId('variant-name-original'))).toContainText(
+                variants[0].name
+            );
+            expect(spectator.queryAll(DotExperimentsInlineEditTextComponent).length).toBe(2);
 
             expect(spectator.queryAll(DotCopyButtonComponent).length).toBe(3);
 
@@ -254,56 +259,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             });
         });
 
-        it('should edit output emit the new name', () => {
-            jest.spyOn(store, 'editVariant');
-
-            const newVariantName = 'new name';
-
-            spectator.query(Inplace).activate();
-
-            spectator.detectComponentChanges();
-
-            const viewButton = spectator.query(
-                byTestId('variant-save-name-btn')
-            ) as HTMLButtonElement;
-
-            const inplaceInput = spectator.query(byTestId('inplace-input')) as HTMLInputElement;
-            inplaceInput.value = newVariantName;
-            spectator.detectComponentChanges();
-
-            expect(viewButton.disabled).not.toBe(true);
-
-            spectator.click(viewButton);
-
-            spectator.detectComponentChanges();
-
-            expect(store.editVariant).toHaveBeenCalledWith({
-                data: { ...variants[1], name: newVariantName },
-                experimentId: EXPERIMENT_MOCK.id
-            });
-        });
-
-        it('should save when press enter', async () => {
-            jest.spyOn(store, 'editVariant');
-
-            spectator.query(Inplace).activate();
-
-            spectator.detectComponentChanges();
-
-            await spectator.fixture.whenStable();
-
-            const inplaceInput = spectator.query(byTestId('inplace-input')) as HTMLInputElement;
-            inplaceInput.value = 'new value';
-            spectator.detectComponentChanges();
-
-            spectator.dispatchKeyboardEvent(inplaceInput, 'keydown', 'Enter');
-
-            spectator.detectComponentChanges();
-
-            expect(store.editVariant).toHaveBeenCalledWith({
-                data: { ...variants[1], name: 'new value' },
-                experimentId: EXPERIMENT_MOCK.id
-            });
+        it('should has `DotExperimentsInlineEditTextComponent` component', () => {
+            expect(spectator.query(DotExperimentsInlineEditTextComponent)).not.toBeNull();
         });
 
         it('should confirm before delete a variant', () => {
@@ -336,7 +293,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
-                    ...{ status: DotExperimentStatusList.RUNNING }
+                    ...{ status: DotExperimentStatus.RUNNING }
                 })
             );
 
@@ -363,7 +320,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
-                    ...{ status: DotExperimentStatusList.RUNNING }
+                    ...{ status: DotExperimentStatus.RUNNING }
                 })
             );
 

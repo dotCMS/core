@@ -32,7 +32,7 @@ import {
     MAX_INPUT_DESCRIPTIVE_LENGTH,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import {
     DotSidebarDirective,
@@ -44,9 +44,7 @@ import { DotValidators } from '@shared/validators/dotValidators';
 import { DotExperimentsOptionsModule } from '../../../shared/ui/dot-experiment-options/dot-experiments-options.module';
 import { DotExperimentsGoalConfigurationReachPageComponent } from '../../../shared/ui/dot-experiments-goal-configuration-reach-page/dot-experiments-goal-configuration-reach-page.component';
 import { DotExperimentsGoalConfigurationUrlParameterComponentComponent } from '../../../shared/ui/dot-experiments-goal-configuration-url-parameter-component/dot-experiments-goal-configuration-url-parameter-component.component';
-import {
-    DotExperimentsGoalsComingSoonComponent
-} from "../../../shared/ui/dot-experiments-goals-coming-soon/dot-experiments-goals-coming-soon.component";
+import { DotExperimentsGoalsComingSoonComponent } from '../../../shared/ui/dot-experiments-goals-coming-soon/dot-experiments-goals-coming-soon.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
 @Component({
@@ -56,7 +54,7 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         CommonModule,
         ReactiveFormsModule,
 
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotFieldValidationMessageModule,
         DotSidebarHeaderComponent,
         DotSidebarDirective,

@@ -5,8 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperimentStatusList, ExperimentsStatusList } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotExperimentStatus, ExperimentsStatusList } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
@@ -21,7 +21,7 @@ describe('DotExperimentsStatusFilterComponent', () => {
     let spectator: Spectator<DotExperimentsStatusFilterComponent>;
 
     const createComponent = createComponentFactory({
-        imports: [MultiSelectModule, FormsModule, DotMessagePipeModule, DotDropdownDirective],
+        imports: [MultiSelectModule, FormsModule, DotMessagePipe, DotDropdownDirective],
         component: DotExperimentsStatusFilterComponent,
         providers: [
             {
@@ -42,7 +42,7 @@ describe('DotExperimentsStatusFilterComponent', () => {
     });
 
     it('should get a list of selected options', () => {
-        const selectedItems = [DotExperimentStatusList.DRAFT, DotExperimentStatusList.ENDED];
+        const selectedItems = [DotExperimentStatus.DRAFT, DotExperimentStatus.ENDED];
 
         spectator.setInput({
             options: selectOptions,

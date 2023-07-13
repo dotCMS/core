@@ -21,7 +21,7 @@ import {
     DotSessionStorageService
 } from '@dotcms/data-access';
 import { DotCMSResponse, HttpCode, ResponseView } from '@dotcms/dotcms-js';
-import { DotLayout, DotPageRender } from '@dotcms/dotcms-models';
+import { DotLayout, DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import {
     MockDotMessageService,
     mockDotRenderedPage,
@@ -38,10 +38,13 @@ import { DotEditLayoutComponent } from './dot-edit-layout.component';
 })
 export class MockTemplateBuilderComponent {
     @Input()
-    templateLayout: DotLayout;
+    layout: DotLayout;
+
+    @Input()
+    themeId: string;
 
     @Output()
-    layoutChange = new EventEmitter();
+    templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter();
 }
 
 @Component({
@@ -64,6 +67,8 @@ export class MockDotEditLayoutDesignerComponent {
     @Input()
     url: string;
 }
+
+const PAGE_STATE = new DotPageRender(mockDotRenderedPage());
 
 let fixture: ComponentFixture<DotEditLayoutComponent>;
 
@@ -142,7 +147,7 @@ describe('DotEditLayoutComponent', () => {
                         parent: {
                             parent: {
                                 data: of({
-                                    content: new DotPageRender(mockDotRenderedPage())
+                                    content: PAGE_STATE
                                 })
                             }
                         }
@@ -261,6 +266,34 @@ describe('DotEditLayoutComponent', () => {
                 expect(component.pageState).toEqual(new DotPageRender(mockDotRenderedPage()));
             }));
 
+            it('should save the layout instantly when closeEditLayout is true', () => {
+                const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
+                spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
+
+                layoutDesignerDe.triggerEventHandler('updateTemplate', {
+                    themeId: '123',
+                    layout: fakeLayout,
+                    title: null
+                });
+
+                dotEditLayoutService.changeCloseEditLayoutState(true);
+
+                expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('Saving');
+                expect(dotGlobalMessageService.success).toHaveBeenCalledWith('Saved');
+                expect(dotGlobalMessageService.error).not.toHaveBeenCalled();
+
+                expect(dotPageLayoutService.save).toHaveBeenCalledWith('123', {
+                    themeId: '123',
+                    layout: fakeLayout,
+                    title: null
+                });
+                expect(dotTemplateContainersCacheService.set).toHaveBeenCalledWith({
+                    '/default/': processedContainers[0].container,
+                    '/banner/': processedContainers[1].container
+                });
+                expect(component.pageState).toEqual(new DotPageRender(mockDotRenderedPage()));
+            });
+
             it('should not save the layout when observable is destroy', fakeAsync(() => {
                 const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
                 spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
@@ -329,16 +362,25 @@ describe('DotEditLayoutComponent', () => {
             expect(component).toBeTruthy();
         });
 
+        it('should set the themeId @Input correctly', () => {
+            const templateBuilder = fixture.debugElement.query(
+                By.css('[data-testId="new-template-builder"]')
+            );
+            expect(templateBuilder.componentInstance.themeId).toBe(PAGE_STATE.template.theme);
+        });
+
         it('should emit events from new-template-builder when the layout is changed', () => {
             const builder = fixture.debugElement.query(
                 By.css('[data-testId="new-template-builder"]')
             );
-            const layout = EMPTY_TEMPLATE_DESIGN.layout;
+            const template = {
+                layout: EMPTY_TEMPLATE_DESIGN.layout,
+                themeId: '123'
+            } as DotTemplateDesigner;
 
-            spyOn(component, 'onLayoutChange').and.callThrough();
-            spyOn(component.updateTemplate, 'next').and.callThrough();
+            spyOn(component.updateTemplate, 'next');
 
-            builder.triggerEventHandler('layoutChange', layout);
+            builder.triggerEventHandler('templateChange', template);
 
             expect(component.updateTemplate.next).toHaveBeenCalled();
         });

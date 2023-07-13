@@ -11,17 +11,40 @@
     ></dot-create-contentlet>
     <dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
     <dot-reorder-menu [url]="reorderMenuUrl" (shutdown)="onCloseReorderDialog()"></dot-reorder-menu>
-    <dot-edit-page-toolbar
-        class="dot-edit__toolbar"
-        [pageState]="pageState"
-        [variant]="variantData | async"
-        [runningExperiment]="pageState.state.runningExperiment"
-        (actionFired)="reload($event)"
-        (backToExperiment)="backToExperiment()"
-        (cancel)="onCancelToolbar()"
-        (favoritePage)="showFavoritePageDialog($event)"
-        (whatschange)="showWhatsChanged = $event"
-    ></dot-edit-page-toolbar>
+
+    <ng-template #enabledComponent>
+        <dot-edit-page-toolbar-seo
+            class="dot-edit__toolbar"
+            [pageState]="pageState"
+            [variant]="variantData | async"
+            [runningExperiment]="pageState.state.runningExperiment"
+            (actionFired)="reload($event)"
+            (backToExperiment)="backToExperiment()"
+            (cancel)="onCancelToolbar()"
+            (favoritePage)="showFavoritePageDialog($event)"
+            (whatschange)="showWhatsChanged = $event"
+        ></dot-edit-page-toolbar-seo>
+    </ng-template>
+
+    <ng-template #disabledComponent>
+        <dot-edit-page-toolbar
+            class="dot-edit__toolbar"
+            [pageState]="pageState"
+            [variant]="variantData | async"
+            [runningExperiment]="pageState.state.runningExperiment"
+            (actionFired)="reload($event)"
+            (backToExperiment)="backToExperiment()"
+            (cancel)="onCancelToolbar()"
+            (favoritePage)="showFavoritePageDialog($event)"
+            (whatschange)="showWhatsChanged = $event"
+        ></dot-edit-page-toolbar>
+    </ng-template>
+
+    <ng-container
+        *dotShowHideFeature="featureFlagSeo; alternate: disabledComponent"
+        [ngTemplateOutlet]="enabledComponent"
+    ></ng-container>
+
     <div class="dot-edit-content__wrapper">
         <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
 
