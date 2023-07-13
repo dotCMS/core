@@ -56,6 +56,18 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private boolean destroyActionlet;
 	private boolean moveActionlet;
 	private boolean moveActionletHasPath;
+
+	@JsonIgnore
+	private transient boolean hydrated=false;
+
+	public void setHydrated(boolean hydrated) {
+		this.hydrated = hydrated;
+	}
+
+	public boolean isHydrated() {
+		return hydrated;
+	}
+
 	private Set<WorkflowState> showOn = Collections.emptySet();
 
 	public WorkflowAction() {

@@ -137,4 +137,3 @@ abstract class WorkflowSQL {
 	static String INSERT_WORKFLOW_COMMENT = "INSERT INTO workflow_comment (id, creation_date, posted_by, wf_comment, workflowtask_id) values (?,?,?,?,?)";
 	static String UPDATE_WORKFLOW_COMMENT = "UPDATE workflow_comment SET creation_date=?, posted_by=?, wf_comment=?, workflowtask_id=? WHERE id=?";
 }
-

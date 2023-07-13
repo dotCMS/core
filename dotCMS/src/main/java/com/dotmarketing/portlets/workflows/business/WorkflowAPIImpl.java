@@ -1615,6 +1615,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     private void fillActionInfo(final WorkflowAction action,
                                 final List<WorkflowActionClass> actionClasses) {
 
+		if(action.isHydrated()){
+			return;
+		}
+
 	    boolean isSave        = false;
 	    boolean isPublish     = false;
 		boolean isUnPublish   = false;
@@ -1665,6 +1669,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         action.setPushPublishActionlet(isPushPublish);
         action.setMoveActionlet(isMove);
         action.setMoveActionletHashPath(isMoveHasPath);
+		action.setHydrated(true);
     }
 
 

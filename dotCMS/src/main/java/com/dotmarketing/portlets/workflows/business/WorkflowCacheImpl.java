@@ -9,18 +9,18 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 //This interface should have default package access
 public class WorkflowCacheImpl extends WorkflowCache {
 
-	private DotCacheAdministrator cache;
+	private final DotCacheAdministrator cache;
 	final static String FOUR_OH_FOUR_TASK = "404WorkflowTask";
 	public WorkflowCacheImpl() {
 		cache = CacheLocator.getCacheAdministrator();
@@ -63,6 +63,42 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		return scheme;
 	}
 
+	private static final String WORKFLOW_ACTION_CACHE_KEY="WORKFLOW_ACTION_CACHE_KEY";
+
+	private Map<String,WorkflowAction> getActionMap(){
+		Map<String,WorkflowAction> map = (Map<String,WorkflowAction>) cache.getNoThrow(WORKFLOW_ACTION_CACHE_KEY, ACTION_GROUP);
+		if(map == null){
+			synchronized (this) {
+				map = (Map<String,WorkflowAction>) cache.getNoThrow(WORKFLOW_ACTION_CACHE_KEY, ACTION_GROUP);
+				if(map == null ) {
+					map = new ConcurrentHashMap<>();
+					cache.put(WORKFLOW_ACTION_CACHE_KEY, map, ACTION_GROUP);
+				}
+			}
+		}
+
+		return map;
+
+	}
+
+	private void clearWorkflowActionCache(){
+		cache.remove(WORKFLOW_ACTION_CACHE_KEY, ACTION_GROUP);
+	}
+
+	@Override
+	protected Optional<WorkflowAction> getWorkflowAction(String actionId){
+
+		return Optional.ofNullable(getActionMap().get(actionId));
+
+	}
+
+	@Override
+	protected void addWorkflowAction(WorkflowAction action) {
+		if (action == null || action.getId() == null) {
+			return;
+		}
+		getActionMap().put(action.getId(), action);
+	}
 	
 	protected List<WorkflowScheme> getSchemesByStruct(String structId) {
 
@@ -91,16 +127,21 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	public void remove(WorkflowStep step) {
 		cache.remove(step.getId(), STEP_GROUP);
 		cache.remove(step.getId(), ACTION_GROUP);
+		clearWorkflowActionCache();
 	}
 	
 	protected void removeActions(WorkflowStep step) {
-		if(step != null)
+		if(step != null) {
 			cache.remove(step.getId(), ACTION_GROUP);
+			clearWorkflowActionCache();
+		}
 	}
 
 	protected void removeActions(final WorkflowScheme scheme) {
-		if(scheme != null)
+		if(scheme != null) {
 			cache.remove(scheme.getId(), ACTION_GROUP);
+			clearWorkflowActionCache();
+		}
 	}
 	
 	protected void remove(WorkflowTask task) {

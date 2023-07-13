@@ -13,10 +13,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.AlreadyExistException;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -58,7 +55,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import org.apache.commons.beanutils.BeanUtils;
 
 
 /**
@@ -91,18 +87,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         HibernateUtil.save(taskFile);
     }
 
-    /**
-     * @param obj
-     * @param map
-     * @return
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     */
-    private Object convert(Object obj, Map<String, Object> map)
-            throws IllegalAccessException, InvocationTargetException {
-        BeanUtils.copyProperties(obj, map);
-        return obj;
-    }
+
 
     /**
      * @param row
@@ -113,16 +98,22 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     private WorkflowAction convertAction(Map<String, Object> row)
             throws IllegalAccessException, InvocationTargetException {
         final WorkflowAction action = new WorkflowAction();
-        row.put("schemeId", row.get("scheme_id"));
-        row.put("condition", row.get("condition_to_progress"));
-        row.put("nextStep", row.get("next_step_id"));
-        row.put("nextAssign", row.get("next_assign"));
-        row.put("order", row.get("my_order"));
-        row.put("requiresCheckout", row.get("requires_checkout"));
-        row.put("showOn", WorkflowState.toSet(row.get("show_on")));
-        row.put("roleHierarchyForAssign", row.get("use_role_hierarchy_assign"));
-        BeanUtils.copyProperties(action, row);
+        action.setId((String) row.get("id"));
+        action.setStepId((String) row.get("step_id"));
+        action.setName((String) row.get("name"));
+        action.setCondition((String) row.get("condition_to_progress"));
+        action.setNextStep((String) row.get("next_step_id"));
+        action.setNextAssign((String) row.get("next_assign"));
+        action.setOrder((Integer) row.get("my_order"));
+        action.setAssignable((Boolean) row.get("assignable"));
+        action.setRequiresCheckout((Boolean) row.get("requires_checkout"));
+        action.setCommentable((Boolean) row.get("commentable"));
+        action.setIcon((String) row.get("icon"));
+        action.setShowOn(WorkflowState.toSet(row.get("show_on")));
+        action.setRoleHierarchyForAssign((boolean) row.get("use_role_hierarchy_assign"));
+        action.setSchemeId((String) row.get("scheme_id"));
         action.setPushPublishActionlet(ActionletUtil.hasPushPublishActionlet(action));
+
         return action;
     }
 
@@ -135,12 +126,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     private WorkflowActionClass convertActionClass(Map<String, Object> row)
             throws IllegalAccessException, InvocationTargetException {
         final WorkflowActionClass actionClass = new WorkflowActionClass();
+        actionClass.setOrder((Integer)row.get("my_order"));
 
-        row.put("clazz", row.get("clazz"));
-
-        row.put("order", row.get("my_order"));
-        row.put("actionId", row.get("action_id"));
-        BeanUtils.copyProperties(actionClass, row);
+        actionClass.setId((String)row.get("id"));
+        actionClass.setName((String)row.get("name"));
+        actionClass.setClazz((String)row.get("clazz"));
+        actionClass.setActionId((String) row.get("action_id"));
         return actionClass;
     }
 
@@ -153,8 +144,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     private WorkflowActionClassParameter convertActionClassParameter(Map<String, Object> row)
             throws IllegalAccessException, InvocationTargetException {
         final WorkflowActionClassParameter param = new WorkflowActionClassParameter();
-        row.put("actionClassId", row.get("workflow_action_class_id"));
-        BeanUtils.copyProperties(param, row);
+        param.setActionClassId((String)row.get("workflow_action_class_id"));
+        param.setId((String)row.get("id"));
+        param.setKey((String)row.get("key"));
+        param.setValue((String)row.get("value"));
         return param;
     }
 
@@ -213,7 +206,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         } else if (obj instanceof WorkflowTask) {
             return WorkflowTaskTransformer.transform(map);
         } else {
-            return this.convert(obj, map);
+           throw new DotRuntimeException("Unable to convert class" + clazz);
         }
     }
 
@@ -226,11 +219,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     private WorkflowScheme convertScheme(Map<String, Object> row)
             throws IllegalAccessException, InvocationTargetException {
         final WorkflowScheme scheme = new WorkflowScheme();
-        row.put("entryActionId", row.get("entry_action_id"));
-        row.put("defaultScheme", row.get("default_scheme"));
-        row.put("modDate", row.get("mod_date"));
-
-        BeanUtils.copyProperties(scheme, row);
+        scheme.setEntryActionId((String) row.get("entry_action_id"));
+        scheme.setId((String) row.get("id"));
+        scheme.setName((String) row.get("name"));
+        scheme.setDescription((String) row.get("description"));
+        scheme.setArchived((boolean) row.get("archived"));
+        scheme.setDefaultScheme((boolean) row.get("default_scheme"));
+        scheme.setModDate((Date) row.get("mod_date"));
+        scheme.setEntryActionId((String) row.get("entry_action_id"));
 
         return scheme;
     }
@@ -244,12 +240,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     private WorkflowStep convertStep(Map<String, Object> row)
             throws IllegalAccessException, InvocationTargetException {
         final WorkflowStep step = new WorkflowStep();
-        row.put("myOrder", row.get("my_order"));
-        row.put("schemeId", row.get("scheme_id"));
-        row.put("enableEscalation", row.get("escalation_enable"));
-        row.put("escalationAction", row.get("escalation_action"));
-        row.put("escalationTime", row.get("escalation_time"));
-        BeanUtils.copyProperties(step, row);
+        step.setId((String) row.get("id"));
+        step.setName((String) row.get("name"));
+        step.setResolved((boolean) row.get("resolved"));
+        step.setMyOrder((Integer) row.get("my_order"));
+        step.setSchemeId((String) row.get("scheme_id"));
+        step.setEnableEscalation((boolean) row.get("escalation_enable"));
+        step.setEscalationAction((String)row.get("escalation_action"));
+        step.setEscalationTime((Integer)row.get("escalation_time"));
+
 
         return step;
     }
@@ -258,15 +257,18 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             throws IllegalAccessException, InvocationTargetException {
 
         final WorkflowTask task = new WorkflowTask();
-        row.put("languageId", row.get("language_id"));
-        row.put("creationDate", row.get("creation_date"));
-        row.put("modDate", row.get("mod_date"));
-        row.put("dueDate", row.get("due_date"));
-        row.put("createdBy", row.get("created_by"));
-        row.put("assignedTo", row.get("assigned_to"));
-        row.put("belongsTo", row.get("belongs_to"));
-        BeanUtils.copyProperties(task, row);
-
+        task.setId((String) row.get("id"));
+        task.setLanguageId((Long)row.get("language_id"));
+        task.setCreationDate( (Date) row.get("creation_date"));
+        task.setModDate((Date) row.get("mod_date"));
+        task.setDueDate((Date) row.get("due_date"));
+        task.setCreatedBy((String) row.get("created_by"));
+        task.setAssignedTo((String)row.get("assigned_to"));
+        task.setBelongsTo((String) row.get("belongs_to"));
+        task.setStatus((String) row.get("status"));
+        task.setWebasset((String) row.get("webasset"));
+        task.setTitle((String) row.get("title"));
+        task.setDescription((String) row.get("description"));
         return task;
     }
 
@@ -278,12 +280,16 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
      */
     private WorkflowHistory convertHistory(Map<String, Object> row)
             throws IllegalAccessException, InvocationTargetException {
-        final WorkflowHistory scheme = new WorkflowHistory();
-        row.put("actionId", row.get("workflow_action_id"));
+        final WorkflowHistory history = new WorkflowHistory();
+        history.setId((String) row.get("id"));
+        history.setMadeBy((String)row.get("made_by"));
+        history.setCreationDate( (Date) row.get("creation_date"));
+        history.setWorkflowtaskId((String)row.get("workflowtask_id"));
+        history.setStepId((String)row.get("workflow_step_id"));
+        history.setActionId((String)row.get("workflow_action_id"));
+        history.setChangeDescription((String)row.get("change_desc"));
 
-        BeanUtils.copyProperties(scheme, row);
-
-        return scheme;
+        return history;
     }
 
     @Override
@@ -667,12 +673,21 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
     @Override
     public WorkflowAction findAction(String id) throws DotDataException {
+
+        Optional<WorkflowAction> action = cache.getWorkflowAction(id);
+        if(action.isPresent()){
+            return action.get();
+        }
+
         final DotConnect db = new DotConnect();
         db.setSQL(sql.SELECT_ACTION);
         db.addParam(id);
         try {
-            return (WorkflowAction) this.convertListToObjects(db.loadObjectResults(),
+            WorkflowAction dbWorkflowAction = (WorkflowAction) this.convertListToObjects(db.loadObjectResults(),
                     WorkflowAction.class).get(0);
+            cache.addWorkflowAction(dbWorkflowAction);
+
+            return dbWorkflowAction;
         } catch (IndexOutOfBoundsException ioob) {
             return null;
         }
@@ -681,17 +696,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     @Override
     public WorkflowAction findAction(final String actionId,
             final String stepId) throws DotDataException {
-
-        final DotConnect db = new DotConnect();
-        db.setSQL(sql.SELECT_ACTION_BY_STEP);
-        db.addParam(actionId).addParam(stepId);
-
-        try {
-            return (WorkflowAction) this.convertListToObjects(db.loadObjectResults(),
-                    WorkflowAction.class).get(0);
-        } catch (IndexOutOfBoundsException ioob) {
+        // we already have the actions cached on each step
+        WorkflowStep stepProxy = findStep(stepId);
+        if(!UtilMethods.isSet(()-> stepProxy.getId())){
             return null;
         }
+
+        return findActions(stepProxy).stream().filter(a->actionId.equals(a.getId())).findFirst().orElse(null);
+
     }
 
     @Override

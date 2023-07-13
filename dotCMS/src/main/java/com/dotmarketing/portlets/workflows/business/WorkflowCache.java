@@ -7,6 +7,7 @@ import com.dotmarketing.portlets.workflows.model.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 //This interface should have default package access
 public abstract class WorkflowCache implements Cachable {
@@ -44,6 +45,11 @@ public abstract class WorkflowCache implements Cachable {
 	abstract protected void removeActions(WorkflowStep step);
 	abstract protected void removeActions(WorkflowScheme scheme);
 	abstract protected void remove(WorkflowTask task) ;
+
+	protected abstract Optional<WorkflowAction> getWorkflowAction(String actionId);
+
+	protected abstract void addWorkflowAction(WorkflowAction action);
+
 	abstract protected List<WorkflowScheme> getSchemesByStruct(String key) ;
 	abstract protected List<WorkflowScheme> addForStructure(String struct, List<WorkflowScheme> scheme) ;
 	abstract protected void removeStructure(String struct);
