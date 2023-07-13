@@ -847,7 +847,7 @@ task createDistPrep(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
         //we need to copy the setenv.sh file
         copy {
             from "$rootDir/src/main/resources/container/tomcat9/bin"
-            into "$distLocation$distBinLocation"
+            into "$tomcatDistBase/bin"
             include 'setenv*'
         }
 
