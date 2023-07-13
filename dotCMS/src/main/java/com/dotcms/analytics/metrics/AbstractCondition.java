@@ -1,8 +1,13 @@
 package com.dotcms.analytics.metrics;
 
+import com.dotcms.experiments.business.result.Event;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Arrays;
+import java.util.Optional;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
 
 /**
  * Represents a condition for a {@link Metric}. A Metric can have zero to many Conditions.
@@ -22,6 +27,22 @@ public interface AbstractCondition {
     Operator operator();
     String value();
 
+    @JsonIgnore
+    default boolean isValid(final MetricType type, final Condition condition, final Event event){
+        final Parameter parameter = type.getParameter(condition.parameter()).orElseThrow();
+
+        final Object[] values = parameter.type().getParameterValueGetter()
+                .getValuesFromEvent(parameter, event);
+
+        final String[] filterAndTransformValues = parameter.type().getParameterValueGetter()
+                .filterAndTransform(values, condition);
+
+        final boolean conditionIsValid = Arrays.stream(filterAndTransformValues).anyMatch(value ->
+                condition.operator().getFunction().apply(value, condition.value())
+        );
+
+        return conditionIsValid;
+    }
     enum Operator {
         EQUALS((value1, value2) -> value1.equals(value2)),
         CONTAINS((value1, value2) -> value1.toString().contains(value2.toString())),
@@ -54,6 +75,25 @@ public interface AbstractCondition {
     @Value.Immutable
     interface AbstractParameter {
         String name();
+
+        @Default
+        default Type type() {
+            return Type.SIMPLE;
+        }
+
+        enum Type {
+            SIMPLE(new DefaultParameterValueGetter());
+
+            final ParameterValueGetter parameterValueGetter;
+            Type (ParameterValueGetter parameterValueGetter) {
+                this.parameterValueGetter = parameterValueGetter;
+            }
+
+            public <T> ParameterValueGetter<T> getParameterValueGetter() {
+                return parameterValueGetter;
+            }
+        }
+
     }
 
 }

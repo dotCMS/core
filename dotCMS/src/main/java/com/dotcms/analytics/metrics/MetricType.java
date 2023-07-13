@@ -4,6 +4,7 @@ package com.dotcms.analytics.metrics;
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -106,5 +107,13 @@ public enum MetricType {
         availableParameters.addAll(optionalParameters);
         availableParameters.addAll(anyRequiredParameters);
         return availableParameters;
+    }
+
+    @JsonIgnore
+    public Optional<Parameter> getParameter(final String parameterName) {
+        return availableParameters().stream()
+                .filter(parameter -> parameter.name().equals(parameterName))
+                .limit(1)
+                .findFirst();
     }
 }
