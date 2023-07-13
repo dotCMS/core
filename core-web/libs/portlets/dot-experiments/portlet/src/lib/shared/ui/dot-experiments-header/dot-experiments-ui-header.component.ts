@@ -5,8 +5,8 @@ import { RouterLink } from '@angular/router';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 
-import { DotExperimentStatusList } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @Component({
@@ -23,7 +23,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         DotPipesModule,
         // PrimeNG
         SkeletonModule,
-        TagModule
+        TagModule,
+        DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -35,7 +36,7 @@ export class DotExperimentsUiHeaderComponent {
     isLoading: boolean;
 
     @Input()
-    status: DotExperimentStatusList;
+    status: DotExperimentStatus;
 
     @Output()
     goBack = new EventEmitter<boolean>();

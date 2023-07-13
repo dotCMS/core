@@ -9,7 +9,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.component';
@@ -38,7 +38,8 @@ describe('ContentTypeFieldsAddRowComponent', () => {
                 BrowserAnimationsModule,
                 UiDotIconButtonModule,
                 SplitButtonModule,
-                RouterTestingModule
+                RouterTestingModule,
+                DotMessagePipe
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });

@@ -98,26 +98,13 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Update Working Template
+     * Format template item to be updated on store
      *
-     * @param DotTemplate template
+     * @param {DotTemplate} template
      * @memberof DotTemplateCreateEditComponent
      */
     updateWorkingTemplate(template: DotTemplate): void {
-        this.store.saveWorkingTemplate({
-            ...this.form.value,
-            ...this.formatTemplateItem(template)
-        });
-    }
-
-    /**
-     * Save template to store
-     *
-     * @param DotTemplate template
-     * @memberof DotTemplateCreateEditComponent
-     */
-    saveTemplate(template: DotTemplate): void {
-        this.store.saveTemplate({
+        this.store.updateWorkingTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
         });

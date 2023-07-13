@@ -21,7 +21,8 @@ import picocli.CommandLine;
         },
         subcommands = {
                 FilesTree.class,
-                FilesLs.class
+                FilesLs.class,
+                FilesPull.class
         }
 )
 public class FilesCommand implements Callable<Integer> {

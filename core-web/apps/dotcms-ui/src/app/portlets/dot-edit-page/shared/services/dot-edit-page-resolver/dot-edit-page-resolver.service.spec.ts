@@ -20,7 +20,9 @@ import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotESContentService,
-    DotPageRenderService
+    DotLicenseService,
+    DotPageRenderService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
@@ -34,6 +36,7 @@ import {
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
+import { DotLicenseServiceMock } from '@portlets/dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
 
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 
@@ -59,6 +62,7 @@ describe('DotEditPageResolver', () => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
+                DotSessionStorageService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotHttpErrorManagerService,
@@ -84,6 +88,10 @@ describe('DotEditPageResolver', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
+                },
+                {
+                    provide: DotLicenseService,
+                    useClass: DotLicenseServiceMock
                 }
             ]
         });

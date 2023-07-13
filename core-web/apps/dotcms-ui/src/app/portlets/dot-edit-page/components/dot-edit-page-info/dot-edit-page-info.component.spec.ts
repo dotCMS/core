@@ -5,7 +5,7 @@ import { By } from '@angular/platform-browser';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 
@@ -31,7 +31,7 @@ describe('DotEditPageInfoComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent, DotEditPageInfoComponent],
-            imports: [DotApiLinkModule, DotCopyButtonModule, DotMessagePipeModule],
+            imports: [DotApiLinkModule, DotCopyButtonModule, DotMessagePipe],
             providers: [
                 {
                     provide: DotMessageService,

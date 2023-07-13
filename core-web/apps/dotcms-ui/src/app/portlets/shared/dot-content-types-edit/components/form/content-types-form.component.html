@@ -108,8 +108,8 @@
         </div>
     </div>
 
-    <div class="field">
-        <small class="p-field-hint" id="field-dates-hint" *ngIf="!dateVarOptions.length">{{
+    <div class="field" *ngIf="!dateVarOptions.length">
+        <small class="p-field-hint field__date-hint" id="field-dates-hint">{{
             'contenttypes.form.message.no.date.fields.defined' | dm
         }}</small>
     </div>

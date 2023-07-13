@@ -13,7 +13,7 @@ import {
 import { ChartModule, UIChart } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { getDotExperimentLineChartJsOptions } from './chartjs/options/dotExperiments-chartjs.options';
 import { htmlLegendPlugin } from './chartjs/plugins/dotHtmlLegend-chartjs.plugin';
@@ -21,7 +21,7 @@ import { htmlLegendPlugin } from './chartjs/plugins/dotHtmlLegend-chartjs.plugin
 @Component({
     standalone: true,
     selector: 'dot-experiments-reports-chart',
-    imports: [ChartModule, NgIf, SkeletonModule, DotMessagePipeModule],
+    imports: [ChartModule, NgIf, SkeletonModule, DotMessagePipe],
     templateUrl: './dot-experiments-reports-chart.component.html',
     styleUrls: ['./dot-experiments-reports-chart.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

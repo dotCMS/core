@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
@@ -63,7 +63,8 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
-            mockProvider(MessageService)
+            mockProvider(MessageService),
+            mockProvider(ConfirmationService)
         ]
     });
 

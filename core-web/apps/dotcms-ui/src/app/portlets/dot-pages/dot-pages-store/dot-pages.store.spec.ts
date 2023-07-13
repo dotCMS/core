@@ -57,11 +57,11 @@ import {
     DotcmsEventsServiceMock,
     DotLanguagesServiceMock,
     LoginServiceMock,
-    mockDotLanguage,
     MockDotRouterService,
     mockResponseView,
     mockWorkflowsActions,
-    mockPublishAction
+    mockPublishAction,
+    mockLanguageArray
 } from '@dotcms/utils-testing';
 
 import {
@@ -175,7 +175,7 @@ describe('DotPageStore', () => {
             expect(data.favoritePages.showLoadMoreButton).toEqual(false);
             expect(data.favoritePages.total).toEqual(favoritePagesInitialTestData.length);
             expect(data.isEnterprise).toEqual(true);
-            expect(data.languages).toEqual([mockDotLanguage]);
+            expect(data.languages).toEqual(mockLanguageArray);
             expect(data.loggedUser.id).toEqual(CurrentUserDataMock.userId);
             expect(data.loggedUser.canRead).toEqual({ contentlets: true, htmlPages: true });
             expect(data.loggedUser.canWrite).toEqual({ contentlets: true, htmlPages: true });
@@ -214,14 +214,15 @@ describe('DotPageStore', () => {
         dotPageStore.languageOptions$.subscribe((data) => {
             expect(data).toEqual([
                 { label: 'All', value: null },
-                { label: 'English (US)', value: 1 }
+                { label: 'English (US)', value: 1 },
+                { label: 'Italian', value: 2 }
             ]);
         });
     });
 
     it('should get language Labels for row field', () => {
         dotPageStore.languageLabels$.subscribe((data) => {
-            expect(data).toEqual({ '1': 'en-US' });
+            expect(data).toEqual({ '1': 'en-US', '2': 'IT' });
         });
     });
 
@@ -682,6 +683,20 @@ describe('DotPageStore', () => {
         expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
             inode: testInode
         });
+    });
+
+    it('should call deleteFavoritePage as much times as we need', () => {
+        const testInode = '12345';
+
+        spyOn(dotWorkflowActionsFireService, 'deleteContentlet').and.returnValue(of(testInode));
+
+        dotPageStore.deleteFavoritePage(testInode);
+        dotPageStore.deleteFavoritePage(testInode);
+        dotPageStore.deleteFavoritePage(testInode);
+        dotPageStore.deleteFavoritePage(testInode);
+        dotPageStore.deleteFavoritePage(testInode);
+
+        expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledTimes(5);
     });
 
     it('should handle error when a Workflow Action Request fails', (done) => {
