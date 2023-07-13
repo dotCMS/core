@@ -25,7 +25,7 @@
     </div>
     <dotcms-template-builder-background-columns
         [ngStyle]="{
-            opacity: isResizing ? 1 : 0
+            opacity: isResizing || willBoxFit ? 1 : 0
         }"
     ></dotcms-template-builder-background-columns>
 </div>

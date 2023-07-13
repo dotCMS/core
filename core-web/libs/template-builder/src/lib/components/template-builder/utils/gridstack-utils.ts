@@ -195,3 +195,20 @@ export function getBoxVariantByWidth(width: number): TemplateBuilderBoxSize {
 
     return TemplateBuilderBoxSize.large;
 }
+
+/**
+ * @description This function returns if a box will fit in a row
+ *
+ * @export
+ * @param {DotGridStackWidget} row
+ * @return {*} boolean
+ */
+export function willBoxFitInRow(row: DotGridStackWidget): boolean {
+    const rowSpace = Array.from({ length: 12 }, () => '_'); // Array with 12 empty spaces
+
+    row.subGridOpts.children.forEach((col) => {
+        rowSpace.splice(col.x, col.w, ...Array.from({ length: col.w }, () => '#')); // Fill needed empty spaces with #
+    });
+
+    return /___/.test(rowSpace.join('')); // If there are 3 consecutive empty spaces then we can drop one more box
+}
