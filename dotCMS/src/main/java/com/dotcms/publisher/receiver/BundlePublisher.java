@@ -22,6 +22,7 @@ import com.dotcms.enterprise.publishing.remote.handler.RelationshipHandler;
 import com.dotcms.enterprise.publishing.remote.handler.RuleHandler;
 import com.dotcms.enterprise.publishing.remote.handler.TemplateHandler;
 import com.dotcms.enterprise.publishing.remote.handler.UserHandler;
+import com.dotcms.enterprise.publishing.remote.handler.VariantHandler;
 import com.dotcms.enterprise.publishing.remote.handler.WorkflowHandler;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.EndpointDetail;
@@ -126,8 +127,9 @@ public class BundlePublisher extends Publisher {
         handlers.add(new TemplateHandler(config));
         handlers.add(new LanguageHandler(config));
         handlers.add(new LanguageVariablesHandler(config));
-        handlers.add(new ExperimentHandler(config));
+        handlers.add(new VariantHandler(config));
         handlers.add(new ContentHandler(config));
+        handlers.add(new ExperimentHandler(config));
         handlers.add(new ContentWorkflowHandler(config));
         handlers.add(new OSGIHandler(config));
         handlers.add(new LinkHandler(config));

@@ -46,66 +46,41 @@
 package com.dotcms.enterprise.publishing.remote.handler;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.RelationshipFieldBuilder;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.ExperimentBundler;
-import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.enterprise.publishing.remote.bundler.VariantBundler;
 import com.dotcms.experiments.model.Experiment;
-import com.dotcms.publisher.pusher.wrapper.ContentTypeWrapper;
 import com.dotcms.publisher.pusher.wrapper.ExperimentWrapper;
+import com.dotcms.publisher.pusher.wrapper.VariantWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.workflow.helper.SystemActionMappingsHandlerMerger;
-import com.dotmarketing.beans.Host;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PushPublishLogger;
-import com.dotmarketing.util.PushPublishLogger.PushPublishAction;
-import com.dotmarketing.util.PushPublishLogger.PushPublishHandler;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * This handler class is part of the Push Publishing mechanism that deals with Experiments-related information inside a
- * bundle and saves it in the receiving instance. This class will read and process only the {@link Experiment} data
+ * bundle and saves it in the receiving instance. This class will read and process only the {@link com.dotcms.variant.model.Variant} data
  * files.
  *
  */
-public class ExperimentHandler implements IHandler {
+public class VariantHandler implements IHandler {
 
 	private final PublisherConfig config;
-	private final ExperimentsAPI experimentsAPI;
-	public ExperimentHandler(final PublisherConfig config) {
+	private final VariantAPI variantAPI;
+	public VariantHandler(final PublisherConfig config) {
 
 		this.config = config;
-		this.experimentsAPI = APILocator.getExperimentsAPI();
+		this.variantAPI = APILocator.getVariantAPI();
 	}
 
 	@Override
@@ -121,52 +96,54 @@ public class ExperimentHandler implements IHandler {
 	        throw new RuntimeException("need an enterprise pro license to run this");
         }
 
-		final Collection<File> experiments = FileUtil.listFilesRecursively
-				(bundleFolder, new ExperimentBundler().getFileFilter());
+		final Collection<File> variants = FileUtil.listFilesRecursively
+				(bundleFolder, new VariantBundler().getFileFilter());
 
-        handleExperiments(experiments);
+        handleVariants(variants);
 	}
 
-	private void handleExperiments(final Collection<File> experiments) throws DotPublishingException {
+	private void handleVariants(final Collection<File> variants) throws DotPublishingException {
 
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 
 	        throw new RuntimeException("need an enterprise pro license to run this");
         }
 		File workingOn = null;
-        Experiment experiment = null;
+        Variant variant = null;
 		try {
 	        //Handle folders
-	        for(final File experimentFile: experiments) {
-				workingOn = experimentFile;
-	        	if(experimentFile.isDirectory()) {
+	        for(final File variantFile: variants) {
+				workingOn = variantFile;
+	        	if(variantFile.isDirectory()) {
 
 	        		continue;
 				}
 
-	        	final ExperimentWrapper experimentWrapper = BundlerUtil
-						.jsonToObject(experimentFile, ExperimentWrapper.class);
+	        	final VariantWrapper variantWrapper = BundlerUtil
+						.jsonToObject(variantFile, VariantWrapper.class);
 
-				experiment = experimentWrapper.getExperiment();
+				variant = variantWrapper.getVariant();
 
-	        	Optional<Experiment> localExperiment = experimentsAPI.find(experiment.id()
-						.orElseThrow(), APILocator.systemUser());
+	        	Optional<Variant> localVariant = variantAPI.get(variant.name());
 
-	        	if(experimentWrapper.getOperation().equals(Operation.UNPUBLISH)) {
+	        	if(variantWrapper.getOperation().equals(Operation.UNPUBLISH)) {
 	        		// delete operation
-	        	    if(localExperiment.isPresent()) {
-						experimentsAPI.delete(localExperiment.orElseThrow().id().orElseThrow(),
-								APILocator.systemUser());
+	        	    if(localVariant.isPresent()) {
+						variantAPI.delete(localVariant.orElseThrow().name());
 					}
 	        	} else {
 	        		// save or update Experiment
-					experimentsAPI.save(experiment, APILocator.systemUser());
+					if(localVariant.isPresent()) {
+						variantAPI.update(variant);
+					} else {
+						variantAPI.save(variant);
+					}
 				}
 			}
     	} catch (final Exception e) {
-			final String errorMsg = String.format("An error occurred when processing Experiment in '%s' with Id '%s': %s",
-					workingOn, experiment.name(),
-							experiment.id().orElseThrow(), e.getMessage());
+			final String errorMsg = String.format("An error occurred when processing Variant in '%s' with name '%s': %s",
+					workingOn, variant.name(),
+							variant.name(), e.getMessage());
 			Logger.error(this.getClass(), errorMsg, e);
 			throw new DotPublishingException(errorMsg, e);
     	}

@@ -1,9 +1,7 @@
 package com.dotcms.publisher.pusher.wrapper;
 
-import com.dotcms.experiments.model.Experiment;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.variant.model.Variant;
-import com.dotmarketing.portlets.rules.model.Rule;
 
 /**
  * This wrapper class will contain all the information that a {@link com.dotcms.variant.model.Variant}
