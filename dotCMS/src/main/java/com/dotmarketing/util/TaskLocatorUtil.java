@@ -233,6 +233,7 @@ import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableB
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumn;
 import com.dotmarketing.startup.runonce.Task230320FixMissingContentletAsJSON;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByCol;
+import com.dotmarketing.startup.runonce.Task230522AddHashIndicesToWorkflowTables;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentlet;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentField;
 import com.google.common.collect.ImmutableList;
@@ -544,6 +545,7 @@ public class TaskLocatorUtil {
 		.add(Task230426AlterVarcharLengthOfLockedByCol.class)
 		.add(Task230523CreateVariantFieldInContentlet.class)
 		.add(Task230630CreateRunningIdsExperimentField.class)
+		.add(Task230522AddHashIndicesToWorkflowTables.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
