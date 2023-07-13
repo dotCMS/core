@@ -75,7 +75,8 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 retriever,
                 siteExists,
                 source,
-                workspacePath
+                workspacePath,
+                true
         );
 
         return forkJoinPool.invoke(task);
