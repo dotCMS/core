@@ -259,5 +259,18 @@ describe('TemplateBuilderBoxComponent', () => {
                 expect(spectator.component.dialogVisible).toBeFalsy();
             });
         });
+
+        it('should emit a delete request without needing confirmation when there are no containers', () => {
+            spectator.component.items = [];
+            const deleteMock = jest.spyOn(spectator.component.deleteColumn, 'emit');
+
+            const deleteButton = spectator.query(byTestId('btn-remove-item'));
+
+            spectator.dispatchFakeEvent(deleteButton, 'onClick');
+
+            spectator.detectChanges();
+
+            expect(deleteMock).toHaveBeenCalled();
+        });
     });
 });

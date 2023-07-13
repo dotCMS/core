@@ -24,6 +24,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 export class RemoveConfirmDialogComponent {
     @Output() deleteConfirmed: EventEmitter<void> = new EventEmitter();
     @Output() deleteRejected: EventEmitter<void> = new EventEmitter();
+    @Output() deleteRequested: EventEmitter<void> = new EventEmitter();
     private currentPopup: ConfirmationService;
 
     constructor(
@@ -41,6 +42,7 @@ export class RemoveConfirmDialogComponent {
     }
 
     openConfirmationDialog(event: Event): void {
+        this.deleteRequested.emit();
         this.currentPopup = this.confirmationService.confirm({
             closeOnEscape: true,
             target: event.target,

@@ -66,4 +66,13 @@ describe('RemoveConfirmDialogComponent', () => {
         spectator.component.onEscapePress();
         expect(rejectEventSpy).toHaveBeenCalled();
     });
+
+    it('should emit request when button is clicked', () => {
+        const requestEventSpy = jest.spyOn(spectator.component.deleteRequested, 'emit');
+
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+        spectator.dispatchMouseEvent(deleteButton, 'onClick');
+
+        expect(requestEventSpy).toHaveBeenCalled();
+    });
 });
