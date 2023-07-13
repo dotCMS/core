@@ -6,7 +6,7 @@
         overflow-y: auto !important;
     }
 
-    #searchForm {
+    .related-content-form {
         width: 90vw;
         height: 90vw;
     }
