@@ -1,4 +1,4 @@
-set "CATALINA_OPTS=%CATALINA_OPTS% --Dfile.encoding=UTF8"
+set "CATALINA_OPTS=%CATALINA_OPTS% -Dfile.encoding=UTF8"
 set "CATALINA_OPTS=%CATALINA_OPTS% --illegal-access=warn"
 set "CATALINA_OPTS=%CATALINA_OPTS% --add-opens=java.base/java.lang=ALL-UNNAMED"
 set "CATALINA_OPTS=%CATALINA_OPTS% --add-opens=java.base/java.io=ALL-UNNAMED"
