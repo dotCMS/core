@@ -6,9 +6,11 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmPopup } from 'primeng/confirmpopup';
+import { DialogModule } from 'primeng/dialog';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotContainersServiceMock, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
@@ -32,7 +34,9 @@ describe('TemplateBuilderBoxComponent', () => {
             ButtonModule,
             ScrollPanelModule,
             RemoveConfirmDialogComponent,
-            NoopAnimationsModule
+            NoopAnimationsModule,
+            DialogModule,
+            DotMessagePipe
         ],
         providers: [
             {
@@ -202,5 +206,58 @@ describe('TemplateBuilderBoxComponent', () => {
         });
 
         done();
+    });
+
+    describe('Dialog', () => {
+        it('should open dialog when click on edit button', () => {
+            spectator.setInput('width', 1);
+            spectator.detectComponentChanges();
+
+            const templateBuilderSmallBox = spectator.query(byTestId('template-builder-box-small'));
+            const plusButton = spectator.query(byTestId('btn-plus-small'));
+            expect(templateBuilderSmallBox).toExist();
+            expect(plusButton).toExist();
+
+            // Use dispatchFakeEvent() to simulate a click event
+            spectator.dispatchFakeEvent(plusButton, 'onClick');
+
+            // Use whenStable() to wait for asynchronous tasks to complete
+            spectator.fixture.whenStable().then(() => {
+                spectator.detectComponentChanges();
+
+                const dialog = spectator.query(byTestId('edit-box-dialog'));
+                const templateBuilderBox = dialog.querySelector(
+                    "[data-testId='template-builder-box']"
+                );
+
+                expect(templateBuilderBox).toExist();
+                expect(spectator.component.dialogVisible).toBeTruthy();
+            });
+        });
+
+        it('should not open dialog when the size is large', () => {
+            // Make sure the current tampalte-builder-box component is the small one
+            spectator.setInput('width', 5);
+            spectator.detectComponentChanges();
+
+            const plusButton = spectator.query(byTestId('btn-plus'));
+            expect(plusButton).toExist();
+
+            // Use dispatchFakeEvent() to simulate a click event
+            spectator.dispatchFakeEvent(plusButton, 'onClick');
+
+            // Use whenStable() to wait for asynchronous tasks to complete
+            spectator.fixture.whenStable().then(() => {
+                spectator.detectComponentChanges();
+
+                const dialog = spectator.query(byTestId('edit-box-dialog'));
+                const templateBuilderBox = dialog.querySelector(
+                    "[data-testId='template-builder-box']"
+                );
+
+                expect(templateBuilderBox).not.toExist();
+                expect(spectator.component.dialogVisible).toBeFalsy();
+            });
+        });
     });
 });

@@ -11,6 +11,7 @@ import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component'
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -43,7 +44,13 @@ describe('DotGenerateSecurePasswordComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotGenerateSecurePasswordComponent, TestHostComponent],
-            imports: [BrowserAnimationsModule, ButtonModule, DotDialogModule, DotPipesModule],
+            imports: [
+                BrowserAnimationsModule,
+                ButtonModule,
+                DotDialogModule,
+                DotPipesModule,
+                DotMessagePipe
+            ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotGenerateSecurePasswordService,

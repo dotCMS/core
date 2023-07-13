@@ -55,7 +55,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -90,9 +90,11 @@ export class DotLoopEditorComponent {
     writeValue() {
         //
     }
+
     registerOnChange() {
         //
     }
+
     registerOnTouched() {
         //
     }
@@ -134,9 +136,11 @@ export class DotTextareaContentMockComponent implements ControlValueAccessor {
     writeValue() {
         //
     }
+
     registerOnChange() {
         //
     }
+
     registerOnTouched() {
         //
     }
@@ -280,7 +284,7 @@ describe('DotContainerPropertiesComponent', () => {
             ],
             imports: [
                 CommonModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 SharedModule,
                 CheckboxModule,
                 InplaceModule,

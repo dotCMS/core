@@ -106,6 +106,15 @@ jobs:
         shell: bash
         run: rm -r ~/.m2/repository/com/dotcms
 
+      - name: Upload build reports (if build failed)
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() || cancelled() }}
+        with:
+          name: "init-build-reports-Initial JDK 11 Build" #Should not be picked up for JunitReports
+          path: |
+            target/build-report.json
+            LICENSE
+          retention-days: 2
   linux-jvm-tests:
     name: JVM Unit Tests - JDK ${{matrix.java.name}}
     runs-on: ubuntu-latest
@@ -144,24 +153,25 @@ jobs:
         run: tar -xzf maven-repo.tgz -C ~
       - name: Build
         run: eval ./mvnw $JVM_TEST_MAVEN_OPTS test -pl :dotcms-core ${{ matrix.java.maven_args}}
-      - name: Prepare reports archive #(if maven failed)
-        if: always() #failure()
+      - name: Prepare reports archive (if maven failed)
+        if: failure()
         shell: bash
         run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
       - name: Upload reports Archive (if maven failed)
         uses: actions/upload-artifact@v3
-        if: always() #failure()
+        if: failure()
         with:
           name: test-reports-linux-jvm${{matrix.java.name}}
           path: 'test-reports.tgz'
-      - name: core-maven-unit-tests #(if build failed)
+      - name: core-maven-unit-tests (if build failed)
         uses: actions/upload-artifact@v3
-        if: always() #${{ failure() || cancelled() }}
+        if: always()
         with:
-          name: "surefire-reports-JVM Tests - JDK ${{matrix.java.name}}"
+          name: "build-reports-JVM Tests - JDK ${{matrix.java.name}}"
           path: |
             **/target/*-reports/TEST-*.xml
             target/build-report.json
+            LICENSE
           retention-days: 2
 
   linux-frontend-tests:
@@ -198,24 +208,25 @@ jobs:
         run: tar -xzf maven-repo.tgz -C ~
       - name: Build
         run: eval ./mvnw $JVM_TEST_MAVEN_OPTS -pl :core-web test
-      - name: Prepare failure archive #(if maven failed)
-        if: always() #failure()
+      - name: Prepare failure archive (if maven failed)
+        if: failure()
         shell: bash
         run: find . -name 'surefire-reports' -type d | tar -czf test-reports.tgz -T -
-      - name: Upload failure Archive #(if maven failed)
+      - name: Upload failure Archive (if maven failed)
         uses: actions/upload-artifact@v3
-        if: always() #failure()
+        if: failure()
         with:
           name: test-reports-frontend
           path: 'test-reports.tgz'
       - name: frontend-unit-tests
         uses: actions/upload-artifact@v3
-        if: always() #${{ failure() || cancelled() }}
+        if: always()
         with:
-          name: "frontend unit tests"
+          name: "build-reports-Frontend unit tests"
           path: |
             **/target/*-reports/**/TEST-*.xml
             target/build-report.json
+            LICENSE
           retention-days: 2
 
   linux-integration-tests:
@@ -240,22 +251,22 @@ jobs:
         suites:
           - {
               name: "MainSuite 1a",
-              pathName: "mainsuite1",
+              pathName: "mainsuite1a",
               maven_args: '"-Dit.test=MainSuite1a" -Dit.test.forkcount=1'
           }
           - {
               name: "MainSuite 1b",
-              pathName: "mainsuite1",
+              pathName: "mainsuite1b",
               maven_args: '"-Dit.test=MainSuite1b" -Dit.test.forkcount=1'
           }
           - {
               name: "MainSuite 2a",
-              pathName: "mainsuite2",
+              pathName: "mainsuite2a",
               maven_args: '"-Dit.test=MainSuite2a" -Dit.test.forkcount=1'
           }
           - {
               name: "MainSuite 2b",
-              pathName: "mainsuite2",
+              pathName: "mainsuite2b",
               maven_args: '"-Dit.test=MainSuite2b" -Dit.test.forkcount=1'
           }
     steps:
@@ -283,43 +294,23 @@ jobs:
         env:
           DOT_DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
         run: eval ./mvnw $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-integration ${{ matrix.suites.maven_args}} ${{ matrix.java.maven_args}}
-      - name: Prepare reports archive #(if maven failed)
-        if: always() #failure()
+      - name: Prepare reports archive (if maven failed)
+        if: failure()
         shell: bash
         run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
-      - name: Upload failure Archive #(if maven failed)
+      - name: Upload failure Archive (if maven failed)
         uses: actions/upload-artifact@v3
-        if: always() #failure()
+        if: failure()
         with:
           name: test-reports-linux-jvm${{matrix.java.name}}-${{matrix.suites.pathName}}
           path: 'test-reports.tgz'
       - name: failsafe-it-tests  # Uploads will be merged with same name
         uses: actions/upload-artifact@v3
-        if: always() # #${{ failure() || cancelled() }}
+        if: always()
         with:
-          name: "failsafe- IT Tests - JDK ${{matrix.java.name}} - ${{matrix.suites.name}}"
+          name: "build-reports-IT Tests - JDK ${{matrix.java.name}} - ${{matrix.suites.name}}"
           path: |
             **/target/*-reports/TEST-*.xml
             target/build-report.json
+            LICENSE
           retention-days: 2
-
-  build-report:
-    runs-on: ubuntu-latest
-    name: Build report
-    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests ]
-    if: always()
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          path: build-reports-artifacts
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: 17
-      - name: Publish Test Report
-        if: always()
-        uses: mikepenz/action-junit-report@v3.7.7
-        with:
-          check_name: Java CI / Test Report
-          report_paths: '**/target/*-reports/TEST-*.xml'

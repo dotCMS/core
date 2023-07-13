@@ -15,6 +15,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     ComponentStatus,
     DEFAULT_VARIANT_NAME,
@@ -34,6 +35,7 @@ import {
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
+    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA,
     getExperimentMock,
     GoalsMock,
     MockDotMessageService
@@ -57,7 +59,22 @@ const ActivatedRouteMock = {
             pageId: EXPERIMENT_MOCK.pageId
         },
         data: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data
-    }
+    },
+    parent: { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA }
+};
+
+const EXPECTED_INITIAL_STATE: DotExperimentsConfigurationState = {
+    experiment: EXPERIMENT_MOCK,
+    status: ComponentStatus.IDLE,
+    stepStatusSidebar: {
+        status: ComponentStatus.IDLE,
+        isOpen: false,
+        experimentStep: null
+    },
+    configProps: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data.config,
+    hasEnterpriseLicense: ActivatedRouteMock.parent.snapshot.data.isEnterprise,
+    addToBundleContentId: null,
+    pushPublishEnvironments: ActivatedRouteMock.parent.snapshot.data.pushPublishEnvironments
 };
 
 const messageServiceMock = new MockDotMessageService({
@@ -70,7 +87,8 @@ const messageServiceMock = new MockDotMessageService({
     'dot.common.dialog.reject': 'Reject',
     'experiments.action.cancel.schedule-confirm':
         'Are you sure you want to cancel the scheduling of this experiment?',
-    'dot.common.dialog.accept': 'Accept'
+    'dot.common.dialog.accept': 'Accept',
+    'contenttypes.content.push_publish': 'Push Publish'
 });
 
 describe('DotExperimentsConfigurationStore', () => {
@@ -78,6 +96,7 @@ describe('DotExperimentsConfigurationStore', () => {
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
     let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
+    let dotPushPublishDialogService: SpyObject<DotPushPublishDialogService>;
 
     const createStoreService = createServiceFactory({
         service: DotExperimentsConfigurationStore,
@@ -95,7 +114,8 @@ describe('DotExperimentsConfigurationStore', () => {
                 useValue: messageServiceMock
             },
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(ConfirmationService)
+            mockProvider(ConfirmationService),
+            mockProvider(DotPushPublishDialogService)
         ]
     });
 
@@ -105,26 +125,16 @@ describe('DotExperimentsConfigurationStore', () => {
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
         dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
+        dotPushPublishDialogService = spectator.inject(DotPushPublishDialogService);
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
     });
 
     it('should set initial data', (done) => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
 
-        const expectedInitialState: DotExperimentsConfigurationState = {
-            experiment: EXPERIMENT_MOCK,
-            status: ComponentStatus.IDLE,
-            stepStatusSidebar: {
-                status: ComponentStatus.IDLE,
-                isOpen: false,
-                experimentStep: null
-            },
-            configProps: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data.config
-        };
-
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
         store.state$.subscribe((state) => {
-            expect(state).toEqual(expectedInitialState);
+            expect(state).toEqual(EXPECTED_INITIAL_STATE);
             done();
         });
     });
@@ -180,10 +190,15 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
         store.vm$.subscribe(({ menuItems }) => {
+            // Start Experiment
             expect(menuItems[0].visible).toEqual(true);
             expect(menuItems[0].disabled).toEqual(false);
+            // End Experiment
             expect(menuItems[1].visible).toEqual(false);
+            // Schedule Experiment
             expect(menuItems[2].visible).toEqual(false);
+            // Add to Bundle
+            expect(menuItems[3].visible).toEqual(true);
             done();
         });
     });
@@ -196,9 +211,14 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
         store.vm$.subscribe(({ menuItems }) => {
+            // Start Experiment
             expect(menuItems[0].visible).toEqual(false);
+            // End Experiment
             expect(menuItems[1].visible).toEqual(true);
+            // Schedule Experiment
             expect(menuItems[2].visible).toEqual(false);
+            // Add to Bundle
+            expect(menuItems[3].visible).toEqual(true);
             done();
         });
     });
@@ -211,22 +231,74 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
         store.vm$.subscribe(({ menuItems }) => {
+            // Start Experiment
             expect(menuItems[0].visible).toEqual(false);
+            // End Experiment
             expect(menuItems[1].visible).toEqual(false);
+            // Schedule Experiment
             expect(menuItems[2].visible).toEqual(true);
+            // Add to Bundle
+            expect(menuItems[3].visible).toEqual(true);
             done();
         });
     });
 
     it('should execute commands of menu items', (done) => {
+        jest.spyOn(store, 'showAddToBundle');
         dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
 
         spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
 
         store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
+            // Start Experiment
             menuItems[0].command();
             expect(dotExperimentsService.start).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
+
+            // Push Publish
+            menuItems[3].command();
+            expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
+                assetIdentifier: EXPERIMENT_MOCK.identifier,
+                title: 'Push Publish'
+            });
+
+            // Add to Bundle
+            menuItems[4].command();
+            expect(store.showAddToBundle).toHaveBeenCalledWith(EXPERIMENT_MOCK.identifier);
+
             // test the ones with confirm dialog in the DotExperimentsConfigurationComponent.
+            done();
+        });
+    });
+
+    it('should not show Push Publish is there is no environments', (done) => {
+        dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
+
+        spectator.service.patchState({ pushPublishEnvironments: [] });
+
+        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+
+        store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
+            // Push Publish
+            expect(menuItems[3].visible).toEqual(false);
+
+            done();
+        });
+    });
+
+    it('should not show Push Publish and Add to Bundle is there  no EnterpriseLicense', (done) => {
+        dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
+
+        spectator.service.patchState({ hasEnterpriseLicense: false });
+
+        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+
+        store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
+            // Push Publish
+            expect(menuItems[3].visible).toEqual(false);
+
+            //Add to Bundle
+            expect(menuItems[4].visible).toEqual(false);
+
             done();
         });
     });

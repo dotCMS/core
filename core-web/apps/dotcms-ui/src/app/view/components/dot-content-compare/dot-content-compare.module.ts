@@ -13,7 +13,7 @@ import { DotContentCompareComponent } from '@components/dot-content-compare/dot-
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotContentletService, DotVersionableService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
 
 import { DotContentCompareBlockEditorComponent } from './components/dot-content-compare-block-editor/dot-content-compare-block-editor.component';
@@ -21,6 +21,7 @@ import { DotContentCompareDialogComponent } from './components/dot-content-compa
 import { DotTransformVersionLabelPipe } from './pipes/dot-transform-version-label.pipe';
 
 import { DotPipesModule } from '../../pipes/dot-pipes.module';
+
 @NgModule({
     declarations: [
         DotContentCompareComponent,
@@ -38,7 +39,7 @@ import { DotPipesModule } from '../../pipes/dot-pipes.module';
         DropdownModule,
         SelectButtonModule,
         FormsModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotDiffPipeModule,
         ButtonModule,
         BlockEditorModule,

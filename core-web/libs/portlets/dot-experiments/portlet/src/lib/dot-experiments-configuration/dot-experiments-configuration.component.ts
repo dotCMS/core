@@ -11,13 +11,13 @@ import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from './components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -38,7 +38,6 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
     imports: [
         AsyncPipe,
         NgIf,
-        DotMessagePipeModule,
         DotExperimentsUiHeaderComponent,
         DotExperimentsExperimentSummaryComponent,
         DotExperimentsConfigurationVariantsComponent,
@@ -47,9 +46,9 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
         DotExperimentsConfigurationSchedulingComponent,
         DotExperimentsConfigurationSkeletonComponent,
         DotExperimentsInlineEditTextComponent,
+        DotAddToBundleModule,
         CardModule,
         ButtonModule,
-
         InplaceModule,
         InputTextModule,
         MenuModule,
@@ -58,7 +57,7 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
     styleUrls: ['./dot-experiments-configuration.component.scss'],
-    providers: [DotExperimentsConfigurationStore, DotMessagePipe],
+    providers: [DotExperimentsConfigurationStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationComponent implements OnInit {

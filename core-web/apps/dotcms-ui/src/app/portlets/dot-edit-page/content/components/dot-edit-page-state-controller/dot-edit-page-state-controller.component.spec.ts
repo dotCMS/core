@@ -25,6 +25,7 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     dotcmsContentletMock,
     DotPageStateServiceMock,
@@ -120,7 +121,13 @@ describe('DotEditPageStateControllerComponent', () => {
                 },
                 DotAlertConfirmService
             ],
-            imports: [InputSwitchModule, SelectButtonModule, TooltipModule, DotPipesModule]
+            imports: [
+                InputSwitchModule,
+                SelectButtonModule,
+                TooltipModule,
+                DotPipesModule,
+                DotMessagePipe
+            ]
         });
     }));
 

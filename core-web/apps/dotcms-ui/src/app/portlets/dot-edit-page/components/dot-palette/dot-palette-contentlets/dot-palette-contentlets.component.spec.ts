@@ -12,7 +12,7 @@ import { PaginatorModule } from 'primeng/paginator';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotIconModule, DotSpinnerModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
 import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -109,6 +109,7 @@ describe('DotPaletteContentletsComponent', () => {
             ],
             imports: [
                 DotPipesModule,
+                DotMessagePipe,
                 DotSpinnerModule,
                 DotIconModule,
                 DotFilterPipeModule,

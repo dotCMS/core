@@ -42,7 +42,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     ActivatedRouteMock,
     CoreWebServiceMock,
@@ -171,7 +171,7 @@ describe('DotAddVariableComponent', () => {
                 DataViewModule,
                 HttpClientTestingModule,
                 SharedModule,
-                DotMessagePipeModule
+                DotMessagePipe
             ],
             providers: [
                 {

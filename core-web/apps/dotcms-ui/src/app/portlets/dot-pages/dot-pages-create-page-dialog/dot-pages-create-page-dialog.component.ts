@@ -17,18 +17,12 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-pages-create-page-dialog',
     standalone: true,
-    imports: [
-        CommonModule,
-        DotAutofocusModule,
-        DotIconModule,
-        DotMessagePipeModule,
-        InputTextModule
-    ],
+    imports: [CommonModule, DotAutofocusModule, DotIconModule, DotMessagePipe, InputTextModule],
     providers: [
         DotESContentService,
         DotLanguagesService,
@@ -59,7 +53,7 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
      */
     goToCreatePage(variableName: string): void {
         this.ref.close();
-        this.dotRouterService.goToURL(`/pages/new/${variableName}`, { skipLocationChange: true });
+        this.dotRouterService.goToURL(`/pages/new/${variableName}`);
     }
 
     ngOnInit(): void {

@@ -8,7 +8,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCopyLinkModule } from '@dotcms/app/view/components/dot-copy-link/dot-copy-link.module';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -58,7 +58,8 @@ describe('DotAppsConfigurationItemComponent', () => {
                 DotIconModule,
                 TooltipModule,
                 HttpClientTestingModule,
-                DotPipesModule
+                DotPipesModule,
+                DotMessagePipe
             ],
             declarations: [DotAppsConfigurationItemComponent],
             providers: [

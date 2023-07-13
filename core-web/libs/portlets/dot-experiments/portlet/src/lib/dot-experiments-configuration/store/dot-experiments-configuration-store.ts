@@ -11,6 +11,7 @@ import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     ComponentStatus,
     ConditionDefaultByTypeOfGoal,
@@ -27,6 +28,7 @@ import {
     Variant
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import {
@@ -39,6 +41,9 @@ export interface DotExperimentsConfigurationState {
     status: ComponentStatus;
     stepStatusSidebar: StepStatus;
     configProps: Record<string, string>;
+    hasEnterpriseLicense: boolean;
+    addToBundleContentId: string;
+    pushPublishEnvironments: DotEnvironment[];
 }
 
 const initialState: DotExperimentsConfigurationState = {
@@ -49,7 +54,10 @@ const initialState: DotExperimentsConfigurationState = {
         isOpen: false,
         experimentStep: null
     },
-    configProps: null
+    configProps: null,
+    hasEnterpriseLicense: false,
+    addToBundleContentId: null,
+    pushPublishEnvironments: null
 };
 
 export interface ConfigurationViewModel {
@@ -63,6 +71,7 @@ export interface ConfigurationViewModel {
     isSaving: boolean;
     isDescriptionSaving: boolean;
     menuItems: MenuItem[];
+    addToBundleContentId: string;
 }
 
 @Injectable()
@@ -104,8 +113,10 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ({ stepStatusSidebar }) => checkIfExperimentDescriptionIsSaving(stepStatusSidebar)
     );
 
-    readonly getMenuItems$: Observable<MenuItem[]> = this.select(this.state$, ({ experiment }) =>
-        this.getMenuItems(experiment)
+    readonly getMenuItems$: Observable<MenuItem[]> = this.select(
+        this.state$,
+        ({ experiment, hasEnterpriseLicense, pushPublishEnvironments }) =>
+            this.getMenuItems(experiment, hasEnterpriseLicense, pushPublishEnvironments)
     );
 
     // Goals Step //
@@ -210,6 +221,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly setTrafficAllocation = this.updater((state, trafficAllocation: number) => ({
         ...state,
         experiment: { ...state.experiment, trafficAllocation }
+    }));
+
+    readonly showAddToBundle = this.updater((state, addToBundleContentId: string) => ({
+        ...state,
+        addToBundleContentId
     }));
 
     // Effects
@@ -723,7 +739,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.getIsDescriptionSaving$,
         this.getMenuItems$,
         (
-            { experiment, stepStatusSidebar },
+            { experiment, stepStatusSidebar, addToBundleContentId },
             isExperimentADraft,
             isLoading,
             disabledStartExperiment,
@@ -735,6 +751,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ) => ({
             experiment,
             stepStatusSidebar,
+            addToBundleContentId,
             isExperimentADraft,
             isLoading,
             disabledStartExperiment,
@@ -854,11 +871,13 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly messageService: MessageService,
         private readonly title: Title,
         private readonly route: ActivatedRoute,
-        private readonly confirmationService: ConfirmationService
+        private readonly confirmationService: ConfirmationService,
+        private readonly dotPushPublishDialogService: DotPushPublishDialogService
     ) {
         const configProps = route.snapshot.data['config'];
-
-        super({ ...initialState, configProps });
+        const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
+        const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
+        super({ ...initialState, hasEnterpriseLicense, configProps, pushPublishEnvironments });
     }
 
     private updateTabTitle(experiment: DotExperiment) {
@@ -882,14 +901,20 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         return experiment?.trafficProportion.variants.length < 2 || !experiment?.goals;
     }
 
-    private getMenuItems(experiment: DotExperiment): MenuItem[] {
+    private getMenuItems(
+        experiment: DotExperiment,
+        hasEnterpriseLicense: boolean,
+        pushPublishEnvironments: DotEnvironment[]
+    ): MenuItem[] {
         return [
+            // Start experiment
             {
                 label: this.setStartLabel(experiment),
                 visible: experiment?.status === DotExperimentStatus.DRAFT,
                 disabled: this.disableStartExperiment(experiment),
                 command: () => this.startExperiment(experiment)
             },
+            // End experiment
             {
                 label: this.dotMessageService.get('experiments.action.end-experiment'),
                 visible: experiment?.status === DotExperimentStatus.RUNNING,
@@ -910,6 +935,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                     });
                 }
             },
+            // Schedule experiment
             {
                 label: this.dotMessageService.get('experiments.configure.scheduling.cancel'),
                 visible: experiment?.status === DotExperimentStatus.SCHEDULED,
@@ -930,6 +956,22 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                         }
                     });
                 }
+            },
+            // Push Publish
+            {
+                label: this.dotMessageService.get('contenttypes.content.push_publish'),
+                visible: hasEnterpriseLicense && !!pushPublishEnvironments.length,
+                command: () =>
+                    this.dotPushPublishDialogService.open({
+                        assetIdentifier: experiment.identifier,
+                        title: this.dotMessageService.get('contenttypes.content.push_publish')
+                    })
+            },
+            // Add To bundle
+            {
+                label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
+                visible: hasEnterpriseLicense,
+                command: () => this.showAddToBundle(experiment.identifier)
             }
         ];
     }

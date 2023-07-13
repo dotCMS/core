@@ -16,6 +16,7 @@ import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.servi
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
@@ -88,6 +89,7 @@ const appData = {
 const routeDatamock = {
     data: appData
 };
+
 class ActivatedRouteMock {
     get data() {
         return {};
@@ -151,6 +153,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 DotCopyButtonModule,
                 DotAppsConfigurationHeaderModule,
                 DotPipesModule,
+                DotMessagePipe,
                 MarkdownModule.forRoot()
             ],
             declarations: [

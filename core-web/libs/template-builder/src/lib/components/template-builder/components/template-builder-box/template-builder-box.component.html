@@ -1,81 +1,97 @@
-<div
-    class="template-builder-box"
-    *ngIf="boxVariant !== templateBuilderSizes.small; else smallTemplate"
-    [ngClass]="{
-        'template-builder-box--medium': boxVariant === templateBuilderSizes.medium,
-        'template-builder-box--large': boxVariant === templateBuilderSizes.large
-    }"
-    data-testId="template-builder-box"
+<ng-container
+    [ngTemplateOutlet]="boxVariant !== templateBuilderSizes.small ? largeTemplate : smallTemplate"
+></ng-container>
+
+<!-- Move to Another place -->
+<p-dialog
+    [(visible)]="dialogVisible"
+    [header]="'dot.template.builder.edit.box' | dm"
+    [style]="{ width: '542px' }"
+    [draggable]="false"
+    [resizable]="false"
+    [blockScroll]="true"
+    [modal]="true"
+    data-testId="edit-box-dialog"
 >
-    <div class="template-builder-box__header-container">
-        <p-dropdown
-            *ngIf="actions.includes('add')"
-            [showClear]="false"
-            [filter]="true"
-            [placeholder]="this.dropdownLabel"
-            [formControl]="formControl"
-            [autoDisplayFirst]="false"
-            (onChange)="onContainerSelect($event)"
-            data-testId="btn-plus"
-            dotContainerOptions
-            appendTo="body"
-            dropdownIcon="pi pi-plus"
-            optionLabel="label"
-            styleClass="p-dropdown-sm"
-        >
-            <ng-template pTemplate="selectedItem">
-                {{ this.dropdownLabel }}
-            </ng-template>
-        </p-dropdown>
+    <ng-container [ngTemplateOutlet]="largeTemplate"></ng-container>
+</p-dialog>
 
-        <div>
-            <p-button
-                *ngIf="actions.includes('edit')"
-                (onClick)="editClasses.emit()"
-                data-testId="box-style-class-button"
-                icon="pi pi-palette"
-                styleClass="p-button-rounded p-button-text p-button-sm edit-classes-button"
-            ></p-button>
-
-            <dotcms-remove-confirm-dialog
-                *ngIf="actions.includes('delete')"
-                (deleteConfirmed)="deleteColumn.emit()"
-                (deleteRejected)="deleteColumnRejected.emit()"
+<!-- Large -->
+<ng-template #largeTemplate>
+    <div
+        class="template-builder-box"
+        [ngClass]="{
+            'template-builder-box--medium': boxVariant === templateBuilderSizes.medium,
+            'template-builder-box--large': boxVariant === templateBuilderSizes.large
+        }"
+        data-testId="template-builder-box"
+    >
+        <div class="template-builder-box__header-container">
+            <p-dropdown
+                *ngIf="actions.includes('add')"
+                [showClear]="false"
+                [filter]="true"
+                [placeholder]="dropdownLabel"
+                [formControl]="formControl"
+                [autoDisplayFirst]="false"
+                (onChange)="onContainerSelect($event)"
+                data-testId="btn-plus"
+                dotContainerOptions
+                appendTo="body"
+                dropdownIcon="pi pi-plus"
+                optionLabel="label"
+                styleClass="p-dropdown-sm"
             >
-            </dotcms-remove-confirm-dialog>
+                <ng-template pTemplate="selectedItem">
+                    {{ dropdownLabel }}
+                </ng-template>
+            </p-dropdown>
+
+            <div>
+                <p-button
+                    *ngIf="actions.includes('edit')"
+                    (onClick)="editClasses.emit()"
+                    data-testId="box-style-class-button"
+                    icon="pi pi-palette"
+                    styleClass="p-button-rounded p-button-text p-button-sm edit-classes-button"
+                ></p-button>
+
+                <dotcms-remove-confirm-dialog
+                    *ngIf="actions.includes('delete')"
+                    (deleteConfirmed)="deleteColumn.emit()"
+                    (deleteRejected)="deleteColumnRejected.emit()"
+                >
+                </dotcms-remove-confirm-dialog>
+            </div>
         </div>
+        <p-scrollPanel [style]="{ width: '100%', height: '10.9375rem' }">
+            <div class="template-builder-box__item" *ngFor="let item of items; let i = index">
+                <p data-testId="container-title">
+                    {{ (containerMap && containerMap[item.identifier]?.title) || item.identifier }}
+                </p>
+                <dotcms-remove-confirm-dialog
+                    (deleteConfirmed)="deleteContainer.emit(i)"
+                    data-testId="btn-trash-container"
+                >
+                </dotcms-remove-confirm-dialog>
+            </div>
+        </p-scrollPanel>
     </div>
-    <p-scrollPanel [style]="{ width: '100%', height: '10.9375rem' }">
-        <div class="template-builder-box__item" *ngFor="let item of items; let i = index">
-            <p data-testId="container-title">
-                {{ (containerMap && containerMap[item.identifier]?.title) || item.identifier }}
-            </p>
-            <dotcms-remove-confirm-dialog
-                (deleteConfirmed)="deleteContainer.emit(i)"
-                data-testId="btn-trash-container"
-            >
-            </dotcms-remove-confirm-dialog>
-        </div>
-    </p-scrollPanel>
-</div>
+</ng-template>
 
+<!-- Small -->
 <ng-template #smallTemplate>
     <div
         class="template-builder-box template-builder-box--small"
         data-testId="template-builder-box-small"
     >
-        <p-dropdown
+        <p-button
             *ngIf="actions.includes('add')"
-            [showClear]="false"
-            [filter]="true"
-            [formControl]="formControl"
-            (onChange)="onContainerSelect($event)"
-            dotContainerOptions
-            appendTo="body"
+            (onClick)="dialogVisible = true"
+            icon="pi pi-plus"
+            styleClass="p-button-rounded  p-button-text p-button-sm"
             data-testId="btn-plus-small"
-            dropdownIcon="pi pi-plus"
-            optionLabel="label"
-        ></p-dropdown>
+        ></p-button>
         <p-button
             *ngIf="actions.includes('edit')"
             (onClick)="editClasses.emit()"

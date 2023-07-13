@@ -1,5 +1,5 @@
 import { expect, it } from '@jest/globals';
-import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
 import { GridItemHTMLElement } from 'gridstack';
 
 import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
@@ -12,7 +12,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { pluck, take } from 'rxjs/operators';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
@@ -40,7 +40,7 @@ describe('TemplateBuilderComponent', () => {
             NgFor,
             NgIf,
             AsyncPipe,
-            DotMessagePipeModule,
+            DotMessagePipe,
             DynamicDialogModule,
             NgStyle,
             NgClass,
@@ -90,6 +90,12 @@ describe('TemplateBuilderComponent', () => {
         store = spectator.inject(DotTemplateBuilderStore);
         dialog = spectator.inject(DialogService);
         openDialogMock = jest.spyOn(dialog, 'open');
+        spectator.detectChanges();
+    });
+    it('should not trigger a template change when store is initialized', () => {
+        // Store init is called on init
+        const changeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+        expect(changeMock).not.toHaveBeenCalled();
     });
 
     it('should have a Add Row Button', () => {

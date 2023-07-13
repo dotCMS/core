@@ -17,6 +17,7 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { LoginService, SiteService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -56,7 +57,8 @@ describe('DotAddPersonaDialogComponent', () => {
                 DotDialogModule,
                 FileUploadModule,
                 SiteSelectorFieldModule,
-                DotCreatePersonaFormModule
+                DotCreatePersonaFormModule,
+                DotMessagePipe
             ],
             providers: [
                 DotWorkflowActionsFireService,

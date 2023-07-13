@@ -10,6 +10,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 import { tap } from 'rxjs/operators';
 
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     ComponentStatus,
     DotExperiment,
@@ -17,7 +18,7 @@ import {
     ExperimentsStatusList,
     SidebarStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsCreateComponent } from './components/dot-experiments-create/dot-experiments-create.component';
@@ -41,13 +42,14 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         DotExperimentsListTableComponent,
         DotExperimentsUiHeaderComponent,
         DotDynamicDirective,
-        DotMessagePipeModule,
+        DotMessagePipe,
         ButtonModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        DotAddToBundleModule
     ],
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],
-    providers: [DotMessagePipe, provideComponentStore(DotExperimentsListStore)],
+    providers: [provideComponentStore(DotExperimentsListStore)],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListComponent {
@@ -60,7 +62,6 @@ export class DotExperimentsListComponent {
 
     constructor(
         private readonly dotExperimentsListStore: DotExperimentsListStore,
-        private readonly dotMessagePipe: DotMessagePipe,
         private readonly router: Router
     ) {}
 

@@ -28,6 +28,7 @@ import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-acc
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
+    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA,
     getExperimentMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
@@ -56,6 +57,9 @@ const ActivatedRouteMock = {
             experimentId: 'test'
         },
         data: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data
+    },
+    parent: {
+        ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
     }
 };
 
