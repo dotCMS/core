@@ -27,6 +27,7 @@ import {
     DotPageRenderState,
     DotPersona
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     DotDevicesServiceMock,
     DotLanguagesServiceMock,
@@ -49,7 +50,7 @@ import { DotPageStateService } from '../../services/dot-page-state/dot-page-stat
 
 @Component({
     selector: 'dot-test-host',
-    template: `<dot-edit-page-view-as-controller
+    template: ` <dot-edit-page-view-as-controller
         [pageState]="pageState"
     ></dot-edit-page-view-as-controller>`
 })
@@ -125,7 +126,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
                 MockDotDeviceSelectorComponent,
                 MockDotLanguageSelectorComponent
             ],
-            imports: [BrowserAnimationsModule, TooltipModule, DotPipesModule],
+            imports: [BrowserAnimationsModule, TooltipModule, DotPipesModule, DotMessagePipe],
             providers: [
                 DotLicenseService,
                 {

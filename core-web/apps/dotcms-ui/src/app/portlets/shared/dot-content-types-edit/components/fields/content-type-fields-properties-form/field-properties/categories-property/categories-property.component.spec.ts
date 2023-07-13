@@ -8,6 +8,7 @@ import { By } from '@angular/platform-browser';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { CategoriesPropertyComponent } from './categories-property.component';
@@ -75,7 +76,7 @@ describe('CategoriesPropertyComponent', () => {
                 TestFieldValidationMessageComponent,
                 TestSearchableDropdownComponent
             ],
-            imports: [],
+            imports: [DotMessagePipe],
             providers: [
                 { provide: PaginatorService, useClass: TestPaginatorService },
                 { provide: DotMessageService, useValue: messageServiceMock }

@@ -15,7 +15,7 @@ import {
     RangeOfDateAndTime,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
@@ -27,7 +27,7 @@ import { DotExperimentsConfigurationSchedulingAddComponent } from '../dot-experi
     imports: [
         CommonModule,
         DotDynamicDirective,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotIconModule,
         // PrimeNg
         CardModule,

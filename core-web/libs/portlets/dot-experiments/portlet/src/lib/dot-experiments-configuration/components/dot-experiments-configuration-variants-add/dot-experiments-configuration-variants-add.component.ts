@@ -17,7 +17,7 @@ import {
     StepStatus,
     TrafficProportion
 } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 
@@ -31,7 +31,7 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         ReactiveFormsModule,
 
         DotSidebarHeaderComponent,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotFieldValidationMessageModule,
         DotSidebarDirective,
 

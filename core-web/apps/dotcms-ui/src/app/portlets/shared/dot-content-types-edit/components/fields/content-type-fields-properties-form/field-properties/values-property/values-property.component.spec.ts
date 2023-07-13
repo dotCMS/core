@@ -2,8 +2,8 @@ import { Component, DebugElement, forwardRef, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
     ControlValueAccessor,
-    NgControl,
     NG_VALUE_ACCESSOR,
+    NgControl,
     ReactiveFormsModule,
     UntypedFormControl,
     UntypedFormGroup
@@ -12,6 +12,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -44,12 +45,15 @@ export class DotTextareaContentMockComponent implements ControlValueAccessor {
     propagateChange = (_: unknown) => {
         //
     };
+
     registerOnChange(fn): void {
         this.propagateChange = fn;
     }
+
     registerOnTouched(): void {
         //
     }
+
     writeValue(): void {
         // no-op
     }
@@ -70,7 +74,7 @@ describe('ValuesPropertyComponent', () => {
                 ValuesPropertyComponent,
                 DotTextareaContentMockComponent
             ],
-            imports: [DotFieldHelperModule, ReactiveFormsModule, DotPipesModule],
+            imports: [DotFieldHelperModule, ReactiveFormsModule, DotPipesModule, DotMessagePipe],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
 

@@ -16,7 +16,7 @@ import { ButtonModule } from 'primeng/button';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotTemplateLayoutProperties } from '../../models/models';
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
@@ -25,7 +25,7 @@ import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-p
 @Component({
     selector: 'dotcms-template-builder-actions',
     standalone: true,
-    imports: [CommonModule, ButtonModule, NgFor, DotLayoutPropertiesModule, DotMessagePipeModule],
+    imports: [CommonModule, ButtonModule, NgFor, DotLayoutPropertiesModule, DotMessagePipe],
     templateUrl: './template-builder-actions.component.html',
     styleUrls: ['./template-builder-actions.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
