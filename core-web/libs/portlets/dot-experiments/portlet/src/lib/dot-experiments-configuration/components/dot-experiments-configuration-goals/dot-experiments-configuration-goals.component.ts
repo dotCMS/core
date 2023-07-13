@@ -21,7 +21,7 @@ import {
     GoalsLevels,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
@@ -37,7 +37,7 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experimen
     imports: [
         CommonModule,
 
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotDynamicDirective,
         DotIconModule,
 

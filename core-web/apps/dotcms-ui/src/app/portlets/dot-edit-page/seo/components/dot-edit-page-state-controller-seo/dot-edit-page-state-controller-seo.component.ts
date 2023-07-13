@@ -33,6 +33,7 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 
@@ -56,6 +57,7 @@ enum DotConfirmationType {
         InputSwitchModule,
         SelectButtonModule,
         DotPipesModule,
+        DotMessagePipe,
         TooltipModule,
         ButtonModule,
         DotDeviceSelectorSeoComponent,
@@ -168,6 +170,16 @@ we want to show the lock off so the new user can steal the lock
                 lock
             );
         }
+    }
+
+    /**
+     * Handle changes in Device Selector.
+     *
+     * @param DotDevice device
+     * @memberof DotEditPageViewAsControllerComponent
+     */
+    changeDeviceHandler(device: DotDevice): void {
+        this.dotPageStateService.setDevice(device);
     }
 
     private canTakeLock(pageState: DotPageRenderState): boolean {
@@ -310,15 +322,5 @@ we want to show the lock off so the new user can steal the lock
 
     private updatePageState(options: DotPageRenderOptions, lock: boolean = null) {
         this.dotPageStateService.setLock(options, lock);
-    }
-
-    /**
-     * Handle changes in Device Selector.
-     *
-     * @param DotDevice device
-     * @memberof DotEditPageViewAsControllerComponent
-     */
-    changeDeviceHandler(device: DotDevice): void {
-        this.dotPageStateService.setDevice(device);
     }
 }

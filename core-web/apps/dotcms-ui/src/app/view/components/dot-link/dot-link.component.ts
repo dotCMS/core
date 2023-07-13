@@ -3,12 +3,12 @@ import { Component, Input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-link',
     standalone: true,
-    imports: [ButtonModule, NgIf, DotMessagePipeModule],
+    imports: [ButtonModule, NgIf, DotMessagePipe],
     templateUrl: './dot-link.component.html',
     styleUrls: ['./dot-link.component.scss']
 })

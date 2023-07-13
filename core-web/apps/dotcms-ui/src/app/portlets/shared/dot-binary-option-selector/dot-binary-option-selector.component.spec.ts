@@ -5,12 +5,12 @@ import { By } from '@angular/platform-browser';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import {
-    DotBinaryOptionSelectorComponent,
-    BINARY_OPTION
+    BINARY_OPTION,
+    DotBinaryOptionSelectorComponent
 } from './dot-binary-option-selector.component';
 
 const messageServiceMock = new MockDotMessageService({
@@ -48,7 +48,7 @@ describe('DotBinaryOptionSelectorComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [DotBinaryOptionSelectorComponent, DotMessagePipeModule],
+            imports: [DotBinaryOptionSelectorComponent, DotMessagePipe],
             providers: [
                 {
                     provide: DotMessageService,

@@ -107,11 +107,11 @@ describe('DotAppsListComponent', () => {
                 DotAppsListComponent,
                 MockDotAppsCardComponent,
                 MockDotNotLicensedComponent,
-                DotMessagePipe,
+
                 MockDotAppsImportExportDialogComponent,
                 MockDotIconComponent
             ],
-            imports: [ButtonModule],
+            imports: [ButtonModule, DotMessagePipe],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {

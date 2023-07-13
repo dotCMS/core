@@ -10,6 +10,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     dotcmsContentTypeFieldBasicMock,
     FieldUtil,
@@ -94,7 +95,7 @@ describe('ContentTypeFieldsRowComponent', () => {
                 TestContentTypeFieldDraggableItemComponent,
                 DotTestHostComponent
             ],
-            imports: [DragulaModule, TooltipModule, ButtonModule],
+            imports: [DragulaModule, TooltipModule, ButtonModule, DotMessagePipe],
             providers: [
                 FieldDragDropService,
                 DotAlertConfirmService,

@@ -27,6 +27,7 @@ import {
 
 import { DotFavoritePageComponent } from './dot-favorite-page.component';
 import { DotFavoritePageActionState, DotFavoritePageStore } from './store/dot-favorite-page.store';
+
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content><ng-content select="[footerActions]"></ng-content>',
@@ -123,12 +124,13 @@ describe('DotFavoritePageComponent', () => {
         TestBed.configureTestingModule({
             declarations: [
                 DotFavoritePageComponent,
-                DotMessagePipe,
+
                 DotFormDialogMockComponent,
                 DotHtmlToImageMockComponent
             ],
             imports: [
                 ButtonModule,
+                DotMessagePipe,
                 FormsModule,
                 MultiSelectModule,
                 ReactiveFormsModule,

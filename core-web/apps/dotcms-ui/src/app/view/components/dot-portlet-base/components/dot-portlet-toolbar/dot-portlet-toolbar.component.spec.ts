@@ -7,7 +7,7 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
@@ -17,8 +17,8 @@ import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
     template: `
         <dot-portlet-toolbar>
             <div data-testId="leftExtraContent" left></div>
-            <div data-testId="rightExtraContent" right></div
-        ></dot-portlet-toolbar>
+            <div data-testId="rightExtraContent" right></div>
+        </dot-portlet-toolbar>
     `
 })
 class TestHostComponent {}
@@ -40,7 +40,7 @@ describe('DotPortletToolbarComponent', () => {
                 }
             ],
             declarations: [DotPortletToolbarComponent, TestHostComponent],
-            imports: [ToolbarModule, DotMessagePipeModule, ButtonModule, MenuModule]
+            imports: [ToolbarModule, DotMessagePipe, ButtonModule, MenuModule]
         }).compileComponents();
     });
 

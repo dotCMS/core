@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
@@ -13,6 +14,13 @@ import { SearchableDropDownModule } from '../_common/searchable-dropdown/searcha
 @NgModule({
     declarations: [DotContainerSelectorComponent],
     exports: [DotContainerSelectorComponent],
-    imports: [CommonModule, FormsModule, ButtonModule, SearchableDropDownModule, DotPipesModule]
+    imports: [
+        CommonModule,
+        FormsModule,
+        ButtonModule,
+        SearchableDropDownModule,
+        DotPipesModule,
+        DotMessagePipe
+    ]
 })
 export class DotContainerSelectorModule {}

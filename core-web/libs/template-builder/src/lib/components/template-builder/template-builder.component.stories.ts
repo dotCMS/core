@@ -1,27 +1,27 @@
-import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 import { of } from 'rxjs';
 
-import { NgFor, NgIf, AsyncPipe, NgClass } from '@angular/common';
-import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { AsyncPipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
 import { DropdownModule } from 'primeng/dropdown';
-import { DynamicDialogModule, DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import {
-    DotMessageService,
     DotContainersService,
     DotEventsService,
+    DotMessageService,
     PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
-    DotContainersServiceMock,
     CoreWebServiceMock,
+    DotContainersServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
@@ -47,7 +47,7 @@ export default {
                 AsyncPipe,
                 NgClass,
                 TemplateBuilderComponentsModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 BrowserAnimationsModule,
                 DynamicDialogModule,
                 HttpClientModule,

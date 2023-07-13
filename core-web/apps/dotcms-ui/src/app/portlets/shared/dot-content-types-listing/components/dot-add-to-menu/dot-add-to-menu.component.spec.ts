@@ -22,6 +22,7 @@ import {
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
@@ -98,6 +99,7 @@ describe('DotAddToMenuComponent', () => {
                 RadioButtonModule,
                 ReactiveFormsModule,
                 DotPipesModule,
+                DotMessagePipe,
                 HttpClientTestingModule,
                 DotFieldValidationMessageModule
             ],

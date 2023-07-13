@@ -15,13 +15,14 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 
 import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
+
 @Component({
     selector: 'dot-host-component',
     template: ` <dot-searchable-dropdown
@@ -108,7 +109,8 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                DotPipesModule
+                DotPipesModule,
+                DotMessagePipe
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
@@ -478,7 +480,8 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                DotPipesModule
+                DotPipesModule,
+                DotMessagePipe
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();

@@ -9,7 +9,7 @@ import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component'
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { COMPARE_CUSTOM_EVENT } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { cleanUpDialog, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentCompareDialogComponent } from './dot-content-compare-dialog.component';
@@ -35,7 +35,7 @@ describe('DotContentCompareDialogComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotContentCompareDialogComponent, TestDotContentCompareComponent],
-            imports: [DotDialogModule, DotMessagePipeModule],
+            imports: [DotDialogModule, DotMessagePipe],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotEventsService

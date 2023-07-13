@@ -24,6 +24,7 @@ import {
 import { NgGridModule } from '@dotcms/dot-layout-grid';
 import { DotAutofocusModule } from '@dotcms/dot-rules';
 import { DotLayoutBody } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
@@ -40,6 +41,7 @@ let fakeValue: DotLayoutBody;
 })
 class TestHostComponent {
     form: UntypedFormGroup;
+
     constructor() {
         this.createForm();
     }
@@ -120,7 +122,8 @@ describe('DotEditLayoutGridComponent', () => {
                 BrowserAnimationsModule,
                 DotAutofocusModule,
                 ButtonModule,
-                TooltipModule
+                TooltipModule,
+                DotMessagePipe
             ],
             providers: [
                 DotAlertConfirmService,

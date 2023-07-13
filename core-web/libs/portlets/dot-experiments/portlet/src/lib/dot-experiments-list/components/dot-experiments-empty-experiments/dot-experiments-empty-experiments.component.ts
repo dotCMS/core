@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 // TODO: make more generic
 @Component({
@@ -11,7 +11,7 @@ import { DotMessagePipeModule } from '@dotcms/ui';
     selector: 'dot-experiments-empty-experiments',
     templateUrl: './dot-experiments-empty-experiments.component.html',
     styleUrls: ['./dot-experiments-empty-experiments.component.scss'],
-    imports: [NgIf, ButtonModule, DotMessagePipeModule],
+    imports: [NgIf, ButtonModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsEmptyExperimentsComponent {

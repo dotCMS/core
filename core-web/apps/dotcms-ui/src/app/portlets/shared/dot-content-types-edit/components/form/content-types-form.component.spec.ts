@@ -38,7 +38,7 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeLayoutRow, DotCMSSystemActionType } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
@@ -177,7 +177,8 @@ describe('ContentTypesFormComponent', () => {
                 RouterTestingModule,
                 TabViewModule,
                 HttpClientTestingModule,
-                DotMdIconSelectorModule
+                DotMdIconSelectorModule,
+                DotMessagePipe
             ],
             providers: [
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },

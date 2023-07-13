@@ -9,7 +9,7 @@ import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsCardComponent } from './dot-apps-card.component';
@@ -24,7 +24,8 @@ import { DotAppsCardComponent } from './dot-apps-card.component';
         MarkdownModule.forChild(),
         TooltipModule,
         DotPipesModule,
-        DotAvatarDirective
+        DotAvatarDirective,
+        DotMessagePipe
     ],
     declarations: [DotAppsCardComponent],
     exports: [DotAppsCardComponent]

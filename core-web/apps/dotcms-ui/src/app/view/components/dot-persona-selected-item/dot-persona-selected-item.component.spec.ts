@@ -10,7 +10,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -24,7 +24,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 @Component({
-    template: `<dot-persona-selected-item [persona]="persona"></dot-persona-selected-item>`
+    template: ` <dot-persona-selected-item [persona]="persona"></dot-persona-selected-item>`
 })
 class TestHostComponent {
     persona = mockDotPersona;
@@ -55,7 +55,8 @@ describe('DotPersonaSelectedItemComponent', () => {
                 AvatarModule,
                 BadgeModule,
                 TooltipModule,
-                DotPipesModule
+                DotPipesModule,
+                DotMessagePipe
             ]
         }).compileComponents();
 

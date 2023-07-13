@@ -32,6 +32,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     LoginServiceMock,
@@ -92,6 +93,7 @@ describe('DotMyAccountComponent', () => {
                 CommonModule,
                 CheckboxModule,
                 DotPipesModule,
+                DotMessagePipe,
                 HttpClientTestingModule
             ],
             providers: [
