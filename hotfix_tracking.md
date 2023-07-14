@@ -71,3 +71,5 @@ This maintenance release includes the following code fixes:
 56. https://github.com/dotCMS/core/issues/23924 : Image editor Download button not working #23924
 57. https://github.com/dotCMS/core/issues/25212 : Unable to edit the template using the layout from edit mode #25212
 58. https://github.com/dotCMS/core/issues/25230 : Block Editor Search not working for special chars #25230
+
+**Release-23.01.5**
