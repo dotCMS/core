@@ -4,8 +4,8 @@ import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.asset.AssetRequest;
+import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FolderView;
-import com.dotcms.model.asset.SearchByPathRequest;
 import com.dotcms.model.config.ServiceBean;
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
@@ -58,7 +58,7 @@ class AssetAPITest {
 
         final AssetAPI assetAPI = clientFactory.getClient(AssetAPI.class);
 
-        var folderByPath = SearchByPathRequest.builder().
+        var folderByPath = ByPathRequest.builder().
                 assetPath(String.format("//%s/%s", siteName, "folderDoesNotExist")).build();
 
         try {
@@ -118,7 +118,7 @@ class AssetAPITest {
         Assertions.assertNotNull(makeFoldersResponse.entity());
 
         // Request the folder and check the data is correct
-        var folderByPath = SearchByPathRequest.builder().
+        var folderByPath = ByPathRequest.builder().
                 assetPath(String.format("//%s/%s", siteName, path1)).build();
         executeAndTest(folderByPath, true);
     }
@@ -150,7 +150,7 @@ class AssetAPITest {
         Assertions.assertNotNull(makeFoldersResponse.entity());
 
         // Request the folder and check the data is correct
-        var folderByPath = SearchByPathRequest.builder().
+        var folderByPath = ByPathRequest.builder().
                 assetPath(String.format("//%s/%s", siteName, randomFolderName1)).build();
         executeAndTest(folderByPath, true, randomFolderName2, randomFolderName3);
     }
@@ -179,12 +179,12 @@ class AssetAPITest {
         Assertions.assertNotNull(makeFoldersResponse.entity());
 
         // Request the folder and check the data is correct
-        var folderByPath = SearchByPathRequest.builder().
+        var folderByPath = ByPathRequest.builder().
                 assetPath(String.format("//%s/", siteName)).build();
         executeAndTest(folderByPath, false, randomFolderName1, randomFolderName2, randomFolderName3);
     }
 
-    void executeAndTest(SearchByPathRequest request, boolean exactMatch, String... folderNames) {
+    void executeAndTest(ByPathRequest request, boolean exactMatch, String... folderNames) {
 
         final AssetAPI assetAPI = clientFactory.getClient(AssetAPI.class);
 

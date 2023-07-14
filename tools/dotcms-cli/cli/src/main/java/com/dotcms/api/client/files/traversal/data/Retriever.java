@@ -3,8 +3,8 @@ package com.dotcms.api.client.files.traversal.data;
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.model.asset.AssetVersionsView;
+import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FolderView;
-import com.dotcms.model.asset.SearchByPathRequest;
 import com.google.common.collect.ImmutableList;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -42,7 +42,7 @@ public class Retriever {
         final var remoteFolderPath = BuildRemoteURL(siteName, folderPath);
 
         // Execute the REST call to retrieve folder contents
-        var response = assetAPI.folderByPath(SearchByPathRequest.builder().assetPath(remoteFolderPath).build());
+        var response = assetAPI.folderByPath(ByPathRequest.builder().assetPath(remoteFolderPath).build());
         return response.entity();
     }
 
@@ -62,7 +62,7 @@ public class Retriever {
         final var remoteAssetPath = BuildRemoteAssetURL(siteName, folderPath, assetName);
 
         // Execute the REST call to retrieve asset information
-        var response = assetAPI.assetByPath(SearchByPathRequest.builder().assetPath(remoteAssetPath).build());
+        var response = assetAPI.assetByPath(ByPathRequest.builder().assetPath(remoteAssetPath).build());
         return response.entity();
     }
 
@@ -100,7 +100,7 @@ public class Retriever {
 
         // Execute the REST call to retrieve folder contents
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
-        var response = assetAPI.folderByPath(SearchByPathRequest.builder().assetPath(remoteFolderPath).build());
+        var response = assetAPI.folderByPath(ByPathRequest.builder().assetPath(remoteFolderPath).build());
 
         var foundFolder = response.entity();
         foundFolder = foundFolder.withLevel(level);

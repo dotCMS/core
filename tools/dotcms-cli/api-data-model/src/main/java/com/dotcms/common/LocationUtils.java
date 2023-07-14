@@ -2,6 +2,8 @@ package com.dotcms.common;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class LocationUtils {
 
@@ -47,6 +49,24 @@ public class LocationUtils {
 
             return dotIndex <= lastSlashIndex || dotIndex >= uri.toString().length() - 1;
         }
+    }
+
+    /**
+     * Creates the local path for the given asset data.
+     *
+     * @param workspace  the workspace path
+     * @param status     the status
+     * @param language   the language
+     * @param siteName   the site name
+     * @param folderPath the folder path
+     * @param assetName  the asset name
+     * @return the local path
+     */
+    public static Path LocalPathFromAssetData(final String workspace, final String status, final String language,
+                                              final String siteName, String folderPath, final String assetName) {
+
+        return Paths.get(workspace, LOCATION_FILES, status.toLowerCase(), language.toLowerCase(),
+                siteName, folderPath, assetName);
     }
 
 }

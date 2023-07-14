@@ -7,7 +7,7 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.common.LocationUtils;
 import com.dotcms.model.asset.AssetVersionsView;
-import com.dotcms.model.asset.SearchByPathRequest;
+import com.dotcms.model.asset.ByPathRequest;
 import picocli.CommandLine;
 
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -183,7 +183,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
         // Execute the REST call to retrieve asset information
-        var response = assetAPI.assetByPath(SearchByPathRequest.builder().assetPath(source).build());
+        var response = assetAPI.assetByPath(ByPathRequest.builder().assetPath(source).build());
         return response.entity();
     }
 
