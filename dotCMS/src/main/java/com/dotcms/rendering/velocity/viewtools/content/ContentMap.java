@@ -46,16 +46,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.sql.Timestamp;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -400,6 +392,11 @@ public class ContentMap {
 			//ret could have been set by title
 			if(ret == null){
 				ret = conAPI.getFieldValue(content, f);
+			}
+
+			// if return value is date, convert to timestamp to be used in velocity
+			if (ret instanceof Date && !(ret instanceof Timestamp)) {
+				ret = new Timestamp(((Date) ret).getTime());
 			}
 
 			//handle Velocity Code
