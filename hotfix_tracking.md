@@ -75,3 +75,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.5**
 
 59. Fix defaultPath field variable
+60. https://github.com/dotCMS/core/issues/18123 : Add depth option to page API #18123

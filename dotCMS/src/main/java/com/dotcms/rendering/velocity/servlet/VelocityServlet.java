@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.servlet;
 import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.CloseDB;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -82,6 +83,7 @@ public class VelocityServlet extends HttpServlet {
         final String uri = CMSUrlUtil.getCurrentURI(request);
         final boolean comeFromSomeWhere = request.getHeader("referer") != null;
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
 
         final User user = (userApi.getLoggedInUser(request)!=null)
                         ? userApi.getLoggedInUser(request) 

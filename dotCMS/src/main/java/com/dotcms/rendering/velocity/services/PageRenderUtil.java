@@ -8,6 +8,7 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
@@ -309,6 +310,7 @@ public class PageRenderUtil implements Serializable {
 
                     this.widgetPreExecute(contentlet);
                     this.addAccrueTags(contentlet);
+                    this.addRelationships(contentlet);
 
                     if (personalizedContentlet.getPersonalization().equals(includeContentFor)) {
 
@@ -330,6 +332,10 @@ public class PageRenderUtil implements Serializable {
         }
 
         return raws;
+    }
+
+    private void addRelationships(final Contentlet contentlet) {
+        ContentUtils.addRelationships(contentlet,user,mode,languageId);
     }
 
     /**
