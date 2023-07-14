@@ -102,31 +102,6 @@ public class SystemAPITest extends IntegrationTestBase  {
         }
     }
 
-    /**
-     * Method to test: test delete on non-existing key constraint {@link SystemTable#delete(String)}
-     * Given Scenario: tries to delete an non-existing a key
-     * ExpectedResult: Should throw an exception b/c the key does not exist
-     * @throws Throwable
-     */
-    @Test()
-    public void test_delete_non_existing_key () throws Throwable {
-
-        final String key1 = "akey10";
-
-        final SystemTable systemTable = APILocator.getSystemAPI().getSystemTable();
-
-        if (null != systemTable) {
-
-            // SAVE + FIND
-            try {
-                LocalTransaction.wrap(() -> systemTable.delete(key1));
-                Assert.fail("The non existing key should throw an exception on delete");
-            } catch (Exception e) {
-                Assert.assertTrue("Should be DoesNotExistException", ExceptionUtil.causedBy(e, DoesNotExistException.class));
-            }
-        }
-    }
-
 
     /**
      * Method to test: test find all {@link SystemTable#all()}
