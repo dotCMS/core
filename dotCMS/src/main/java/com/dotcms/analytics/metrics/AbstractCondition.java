@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
-import java.util.Optional;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
@@ -27,18 +26,25 @@ public interface AbstractCondition {
     Operator operator();
     String value();
 
+    /**
+     * Return true is the Condition is meet on the {@link Event} using the {@link MetricType}.
+     * The {@link Parameter}  define how is the value taken from the {@link Event} and
+     * how are this values process before by evaluate by the Condition.
+     *
+     * @param parameter
+     * @param event
+     * @return
+     */
     @JsonIgnore
-    default boolean isValid(final MetricType type, final Condition condition, final Event event){
-        final Parameter parameter = type.getParameter(condition.parameter()).orElseThrow();
+    default boolean isValid(final Parameter parameter, final Event event){
 
-        final Object[] values = parameter.type().getParameterValueGetter()
-                .getValuesFromEvent(parameter, event);
+        final Object[] values = parameter.getValueGetter().getValuesFromEvent(parameter, event);
 
-        final String[] filterAndTransformValues = parameter.type().getParameterValueGetter()
-                .filterAndTransform(values, condition);
+        final String[] filterAndTransformValues = parameter.type().getTransformer()
+                .transform(values, this);
 
         final boolean conditionIsValid = Arrays.stream(filterAndTransformValues).anyMatch(value ->
-                condition.operator().getFunction().apply(value, condition.value())
+                operator().getFunction().apply(value, value())
         );
 
         return conditionIsValid;
@@ -81,16 +87,21 @@ public interface AbstractCondition {
             return Type.SIMPLE;
         }
 
-        enum Type {
-            SIMPLE(new DefaultParameterValueGetter());
+        @Default
+        default ParameterValueGetter getValueGetter() {
+            return new DefaultParameterValuesGetter();
+        }
 
-            final ParameterValueGetter parameterValueGetter;
-            Type (ParameterValueGetter parameterValueGetter) {
-                this.parameterValueGetter = parameterValueGetter;
+        enum Type {
+            SIMPLE(new DefaultParameterValuesTransformer());
+
+            final ParameterValuesTransformer parameterValuesTransformer;
+            Type (final ParameterValuesTransformer parameterValuesTransformer) {
+                this.parameterValuesTransformer = parameterValuesTransformer;
             }
 
-            public <T> ParameterValueGetter<T> getParameterValueGetter() {
-                return parameterValueGetter;
+            public <T> ParameterValuesTransformer<T> getTransformer() {
+                return parameterValuesTransformer;
             }
         }
 

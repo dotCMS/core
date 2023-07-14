@@ -41,7 +41,8 @@ public interface AbstractMetric extends Serializable {
         boolean isValid = true;
 
         for (final Condition condition : conditions()) {
-            isValid = isValid && condition.isValid(type(), condition, event);
+            final Parameter parameter = type().getParameter(condition.parameter()).orElseThrow();
+            isValid = isValid && condition.isValid(parameter, event);
 
             if (!isValid) {
                 break;
