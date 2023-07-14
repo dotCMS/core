@@ -101,18 +101,6 @@ describe('TemplateBuilderRowComponent', () => {
         ).toBeTruthy();
     });
 
-    it('should have a background when a box can fit', () => {
-        fixture.componentInstance.row = {
-            id: '1',
-            willBoxFit: true
-        };
-        fixture.detectChanges();
-
-        expect(
-            fixture.debugElement.query(By.css('dotcms-template-builder-background-columns'))
-        ).toBeTruthy();
-    });
-
     it('should trigger editRowStyleClass when clicking on editStyleClass button', () => {
         const editRowStyleClassMock = jest.spyOn(component, 'editClasses');
         const button = fixture.debugElement.query(

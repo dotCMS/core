@@ -125,7 +125,7 @@ describe('TemplateBuilderComponent', () => {
         let rowId: string;
         let elementToDelete: GridItemHTMLElement;
 
-        store.state$.pipe(take(1)).subscribe(({ items }) => {
+        store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
             widgetToDelete = items[0].subGridOpts.children[0];
             rowId = items[0].id as string;
             elementToDelete = document.createElement('div');
@@ -143,7 +143,7 @@ describe('TemplateBuilderComponent', () => {
         let widgetToAddContainer: DotGridStackWidget;
         let rowId: string;
 
-        store.state$.pipe(take(1)).subscribe(({ items }) => {
+        store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
             widgetToAddContainer = items[0].subGridOpts.children[0];
             rowId = items[0].id as string;
 
@@ -160,7 +160,7 @@ describe('TemplateBuilderComponent', () => {
         let widgetToDeleteContainer: DotGridStackWidget;
         let rowId: string;
 
-        store.state$.pipe(take(1)).subscribe(({ items }) => {
+        store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
             widgetToDeleteContainer = items[0].subGridOpts.children[0];
             rowId = items[0].id as string;
 
@@ -202,7 +202,7 @@ describe('TemplateBuilderComponent', () => {
             spectator.detectChanges();
 
             store.init({
-                items: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
+                rows: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
                 layoutProperties: {
                     header: true,
                     footer: true,

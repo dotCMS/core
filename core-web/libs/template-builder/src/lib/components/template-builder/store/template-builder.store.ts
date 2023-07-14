@@ -32,20 +32,20 @@ import {
  */
 @Injectable()
 export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderState> {
-    public items$ = this.select((state) => state.items);
+    public rows$ = this.select((state) => state.rows);
     public layoutProperties$ = this.select((state) => state.layoutProperties);
 
     public vm$ = this.select((state) => ({
         ...state,
-        items: state.items.map((item) => ({
-            ...item,
-            willBoxFit: willBoxFitInRow(item)
+        rows: state.rows.map((row) => ({
+            ...row,
+            willBoxFit: willBoxFitInRow(row)
         }))
     }));
 
     constructor() {
         super({
-            items: [],
+            rows: [],
             layoutProperties: undefined,
             resizingRowID: '',
             containerMap: {}
@@ -55,9 +55,9 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     // Init store
 
     readonly init = this.updater(
-        (state, { items, layoutProperties, containerMap }: DotTemplateBuilderState) => ({
+        (state, { rows, layoutProperties, containerMap }: DotTemplateBuilderState) => ({
             ...state,
-            items,
+            rows,
             layoutProperties,
             containerMap
         })
@@ -71,12 +71,12 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly addRow = this.updater((state, newRow: DotGridStackWidget) => {
-        const { items } = state;
+        const { rows } = state;
 
         return {
             ...state,
-            items: [
-                ...items,
+            rows: [
+                ...rows,
                 {
                     ...newRow,
                     h: 1,
@@ -112,8 +112,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly moveRow = this.updater((state, affectedRows: DotGridStackWidget[]) => {
-        const { items } = state;
-        const itemsCopy = structuredClone(items) as DotGridStackWidget[];
+        const { rows } = state;
+        const itemsCopy = structuredClone(rows) as DotGridStackWidget[];
 
         affectedRows.forEach(({ y, id }) => {
             const rowIndex = getIndexRowInItems(itemsCopy, id as string);
@@ -121,7 +121,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             if (rowIndex > -1) itemsCopy[rowIndex] = { ...itemsCopy[rowIndex], y };
         });
 
-        return { ...state, items: itemsCopy };
+        return { ...state, rows: itemsCopy };
     });
 
     /**
@@ -130,9 +130,9 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly removeRow = this.updater((state, rowID: string) => {
-        const { items } = state;
+        const { rows } = state;
 
-        return { ...state, items: items.filter((item: DotGridStackWidget) => item.id !== rowID) };
+        return { ...state, rows: rows.filter((item: DotGridStackWidget) => item.id !== rowID) };
     });
 
     /**
@@ -141,13 +141,13 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly updateRow = this.updater((state, updatedRow: DotGridStackWidget) => {
-        const { items } = state;
+        const { rows } = state;
 
-        const itemsCopy = structuredClone(items) as DotGridStackWidget[];
+        const itemsCopy = structuredClone(rows) as DotGridStackWidget[];
         const rowIndex = getIndexRowInItems(itemsCopy, updatedRow.id as string);
         if (rowIndex > -1) itemsCopy[rowIndex] = { ...itemsCopy[rowIndex], ...updatedRow };
 
-        return { ...state, items: itemsCopy };
+        return { ...state, rows: itemsCopy };
     });
 
     /**
@@ -168,12 +168,12 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly addColumn = this.updater((state, column: DotGridStackNode) => {
-        const { items } = state;
+        const { rows } = state;
         const newColumn = createDotGridStackWidgetFromNode(column);
 
         return {
             ...state,
-            items: items.map((row) => {
+            rows: rows.map((row) => {
                 if (row.id === newColumn.parentId) {
                     if (row.subGridOpts) row.subGridOpts.children.push(newColumn);
                     else row.subGridOpts = { children: [newColumn] };
@@ -190,14 +190,14 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly moveColumnInYAxis = this.updater((state, [oldNode, newNode]: DotGridStackNode[]) => {
-        const { items } = state;
+        const { rows } = state;
 
         const [columnToDelete, columnToAdd] = parseMovedNodeToWidget(oldNode, newNode);
 
-        const deleteColParentIndex = getIndexRowInItems(items, columnToDelete.parentId ?? '');
+        const deleteColParentIndex = getIndexRowInItems(rows, columnToDelete.parentId ?? '');
 
         // In theory, the children should exist because it had one before the removal, but this is a safety check
-        const parentRow = items[deleteColParentIndex] ?? {}; // Empty object so it doesn't break the template builder
+        const parentRow = rows[deleteColParentIndex] ?? {}; // Empty object so it doesn't break the template builder
         const parentRowChildren = parentRow.subGridOpts
             ? parentRow.subGridOpts.children
             : undefined;
@@ -210,7 +210,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         return {
             ...state,
-            items: items.map((row) => {
+            rows: rows.map((row) => {
                 if (row.id === columnToDelete.parentId) {
                     row.subGridOpts = {
                         ...row.subGridOpts,
@@ -235,12 +235,12 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      */
     readonly updateColumnGridStackData = this.updater(
         (state, affectedColumns: DotGridStackNode[]) => {
-            const { items } = state;
+            const { rows } = state;
             affectedColumns = createDotGridStackWidgets(affectedColumns);
 
             return {
                 ...state,
-                items: items.map((row) => {
+                rows: rows.map((row) => {
                     if (row.id != affectedColumns[0].parentId || !row.subGridOpts) {
                         return row;
                     }
@@ -260,11 +260,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
     readonly updateColumnStyleClasses = this.updater(
         (state, affectedColumn: DotGridStackWidget) => {
-            const { items } = state;
+            const { rows } = state;
 
             return {
                 ...state,
-                items: items.map((row) => {
+                rows: rows.map((row) => {
                     if (row.id != affectedColumn.parentId || !row.subGridOpts) {
                         return row;
                     }
@@ -288,11 +288,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly removeColumn = this.updater((state, columnToDelete: DotGridStackWidget) => {
-        const { items } = state;
+        const { rows } = state;
 
         return {
             ...state,
-            items: items.map((row) => {
+            rows: rows.map((row) => {
                 if (row.id === columnToDelete.parentId) {
                     if (row.subGridOpts) {
                         row.subGridOpts.children = removeColumnByID(
@@ -411,9 +411,9 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 container
             }: { affectedColumn: DotGridStackWidget; container: DotContainer }
         ) => {
-            const { items } = state;
+            const { rows } = state;
 
-            const updatedItems = items.map((row) => {
+            const updatedItems = rows.map((row) => {
                 if (row.id != affectedColumn.parentId) {
                     return row;
                 }
@@ -435,7 +435,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
             return {
                 ...state,
-                items: updatedItems,
+                rows: updatedItems,
                 containerMap: { ...state.containerMap, [container.identifier]: container }
             };
         }
@@ -454,9 +454,9 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 containerIndex
             }: { affectedColumn: DotGridStackWidget; containerIndex: number }
         ) => {
-            const { items } = state;
+            const { rows } = state;
 
-            const updatedItems = items.map((row) => {
+            const updatedItems = rows.map((row) => {
                 if (row.id != affectedColumn.parentId) {
                     return row;
                 }
@@ -471,7 +471,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 return { ...row, subGridOpts: { ...row.subGridOpts, children: updatedChildren } };
             });
 
-            return { ...state, items: updatedItems };
+            return { ...state, rows: updatedItems };
         }
     );
 

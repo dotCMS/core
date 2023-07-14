@@ -50,7 +50,7 @@
             <dotcms-template-builder-row
                 class="grid-stack-item"
                 #rowElement
-                *ngFor="let row of vm.items; trackBy: identify"
+                *ngFor="let row of vm.rows; trackBy: identify"
                 [attr.gs-id]="row.id"
                 [attr.gs-x]="row.x"
                 [attr.gs-y]="row.y"

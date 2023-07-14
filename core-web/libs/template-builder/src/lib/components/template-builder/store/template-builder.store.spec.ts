@@ -30,7 +30,7 @@ global.structuredClone = jest.fn((val) => {
 
 describe('DotTemplateBuilderStore', () => {
     let service: DotTemplateBuilderStore;
-    let items$: Observable<DotGridStackWidget[]>;
+    let rows$: Observable<DotGridStackWidget[]>;
     let layoutProperties$: Observable<DotTemplateLayoutProperties>;
     let containerMap$: Observable<DotContainerMap>;
     let initialState: DotGridStackWidget[];
@@ -51,13 +51,13 @@ describe('DotTemplateBuilderStore', () => {
             providers: [DotTemplateBuilderStore]
         });
         service = TestBed.inject(DotTemplateBuilderStore);
-        items$ = service.items$;
+        rows$ = service.rows$;
         layoutProperties$ = service.layoutProperties$;
         containerMap$ = service.vm$.pipe(pluck('containerMap'));
 
         // Reset the state because is manipulated by reference
         service.init({
-            items: GRIDSTACK_DATA_MOCK,
+            rows: GRIDSTACK_DATA_MOCK,
             layoutProperties: {
                 header: true,
                 footer: true,
@@ -68,7 +68,7 @@ describe('DotTemplateBuilderStore', () => {
         });
 
         // Get the initial state
-        items$.pipe(take(1)).subscribe((items) => {
+        rows$.pipe(take(1)).subscribe((items) => {
             initialState = structuredClone(items); // To lose the reference
         });
     });
@@ -80,7 +80,7 @@ describe('DotTemplateBuilderStore', () => {
 
     it('should initialize the state', (done) => {
         expect.assertions(1);
-        items$.subscribe((items) => {
+        rows$.subscribe((items) => {
             expect(items).toEqual(initialState);
             done();
         });
@@ -96,7 +96,7 @@ describe('DotTemplateBuilderStore', () => {
 
         service.addRow(mockRow);
 
-        items$.subscribe((items) => {
+        rows$.subscribe((items) => {
             expect(items.length).toBeGreaterThan(initialState.length);
             expect(items[3].subGridOpts.children[0].w).toBe(3);
             expect(items[3].subGridOpts.children[0].containers[0].identifier).toBe(
@@ -115,7 +115,7 @@ describe('DotTemplateBuilderStore', () => {
 
         service.moveRow(mockAffectedRows);
 
-        items$.subscribe((items) => {
+        rows$.subscribe((items) => {
             expect(items[0].y).toEqual(initialState[1].y);
             done();
         });
@@ -129,7 +129,7 @@ describe('DotTemplateBuilderStore', () => {
 
         service.removeRow(toDeleteID as string);
 
-        items$.subscribe((items) => {
+        rows$.subscribe((items) => {
             expect(items).not.toContainEqual(rowToDelete);
             done();
         });
@@ -144,7 +144,7 @@ describe('DotTemplateBuilderStore', () => {
         };
 
         service.updateRow(updatedRow);
-        items$.subscribe((items) => {
+        rows$.subscribe((items) => {
             expect(items[0]).toEqual(updatedRow);
             done();
         });
@@ -192,7 +192,7 @@ describe('DotTemplateBuilderStore', () => {
 
         service.addColumn({ ...newColumn, ...grid } as DotGridStackNode);
 
-        items$.subscribe((items) => {
+        rows$.subscribe((items) => {
             const row = items.find((item) => item.id === parentId);
             expect(row?.subGridOpts?.children).toContainEqual({
                 x: newColumn.x,
@@ -240,7 +240,7 @@ describe('DotTemplateBuilderStore', () => {
 
         service.moveColumnInYAxis([columnToDelete, columnToAdd] as DotGridStackNode[]);
 
-        items$.subscribe((items) => {
+        rows$.subscribe((items) => {
             const row = items.find((item) => item.id === newParent);
             const oldRow = items.find((item) => item.id === oldParent);
 
@@ -286,7 +286,7 @@ describe('DotTemplateBuilderStore', () => {
         ];
 
         service.setState({
-            items: GRIDSTACK_DATA_MOCK,
+            rows: GRIDSTACK_DATA_MOCK,
             layoutProperties: {
                 footer: false,
                 header: false,
@@ -306,7 +306,7 @@ describe('DotTemplateBuilderStore', () => {
 
         service.updateColumnGridStackData(affectedColumns);
 
-        items$.subscribe((items) => {
+        rows$.subscribe((items) => {
             const row = items.find((item) => item.id === parentId);
             expect(row.subGridOpts.children[0].w).toEqual(newWidth);
             done();
@@ -338,7 +338,7 @@ describe('DotTemplateBuilderStore', () => {
         ];
 
         service.setState({
-            items: GRIDSTACK_DATA_MOCK,
+            rows: GRIDSTACK_DATA_MOCK,
             layoutProperties: {
                 footer: false,
                 header: false,
@@ -359,7 +359,7 @@ describe('DotTemplateBuilderStore', () => {
 
         service.updateColumnStyleClasses(affectedColumn);
 
-        items$.subscribe((items) => {
+        rows$.subscribe((items) => {
             const row = items.find((item) => item.id === parentId);
             expect(row?.subGridOpts?.children.map((child) => child.styleClass)).toContainEqual(
                 STYLE_CLASS_MOCK
@@ -379,7 +379,7 @@ describe('DotTemplateBuilderStore', () => {
 
         service.removeColumn(columnToDelete);
 
-        items$.subscribe((items) => {
+        rows$.subscribe((items) => {
             const row = items.find((item) => item.id === parentRow.id);
 
             expect(row?.subGridOpts?.children).not.toContain(columnToDelete);
@@ -445,7 +445,7 @@ describe('DotTemplateBuilderStore', () => {
         expect.assertions(1);
         addContainer();
 
-        items$.subscribe((items) => {
+        rows$.subscribe((items) => {
             const row = items.find((item) => item.id === initialState[0].id);
             expect(row?.subGridOpts?.children[0]?.containers).toContainEqual({
                 identifier: mockContainer.identifier
@@ -477,7 +477,7 @@ describe('DotTemplateBuilderStore', () => {
             affectedColumn: columnToDeleteContainer,
             containerIndex: 0
         });
-        items$.subscribe((items) => {
+        rows$.subscribe((items) => {
             const row = items.find((item) => item.id === parentRow.id);
 
             expect(row?.subGridOpts?.children[0].containers).not.toContain(

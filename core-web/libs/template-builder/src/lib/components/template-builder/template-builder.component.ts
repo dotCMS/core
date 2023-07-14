@@ -97,7 +97,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         };
     }
 
-    public items$: Observable<DotLayoutBody>;
+    public rows$: Observable<DotLayoutBody>;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     public vm$: Observable<DotTemplateBuilderState> = this.store.vm$;
 
@@ -113,20 +113,20 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         private dialogService: DialogService,
         private dotMessage: DotMessageService
     ) {
-        this.items$ = this.store.items$.pipe(map((items) => parseFromGridStackToDotObject(items)));
+        this.rows$ = this.store.rows$.pipe(map((rows) => parseFromGridStackToDotObject(rows)));
 
-        combineLatest([this.items$, this.store.layoutProperties$])
+        combineLatest([this.rows$, this.store.layoutProperties$])
             .pipe(
                 startWith([]),
-                filter(([items, layoutProperties]) => !!items && !!layoutProperties),
+                filter(([rows, layoutProperties]) => !!rows && !!layoutProperties),
                 skip(1), // Skip the init of the store
-                tap(([items, layoutProperties]) => {
+                tap(([rows, layoutProperties]) => {
                     this.dotLayout = {
                         ...this.layout,
                         sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
                             ? layoutProperties.sidebar
                             : null,
-                        body: items,
+                        body: rows,
                         title: this.layout?.title ?? '',
                         width: this.layout?.width ?? ''
                     };
@@ -143,7 +143,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     ngOnInit(): void {
         this.store.init({
-            items: parseFromDotObjectToGridStack(this.layout.body),
+            rows: parseFromDotObjectToGridStack(this.layout.body),
             layoutProperties: this.layoutProperties,
             resizingRowID: '',
             containerMap: this.containerMap

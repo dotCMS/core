@@ -63,7 +63,7 @@ export interface DotGridStackNode extends GridStackNode {
  * @interface DotTemplateBuilderState
  */
 export interface DotTemplateBuilderState {
-    items: DotGridStackWidget[];
+    rows: DotGridStackWidget[];
     containerMap: DotContainerMap;
     layoutProperties: DotTemplateLayoutProperties;
     resizingRowID: string;

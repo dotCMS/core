@@ -115,7 +115,9 @@ export function removeColumnByID(row: DotGridStackWidget, columnID: string): Dot
 export function parseFromDotObjectToGridStack(
     body: DotLayoutBody | undefined
 ): DotGridStackWidget[] {
-    if (!body || !body.rows?.length) return EMPTY_ROWS_VALUE;
+    if (!body || !body.rows?.length) {
+        return EMPTY_ROWS_VALUE;
+    }
 
     return body.rows.map((row, i) => ({
         w: 12,
@@ -189,9 +191,13 @@ export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): D
  * @return {*}  {TemplateBuilderBoxSize}
  */
 export function getBoxVariantByWidth(width: number): TemplateBuilderBoxSize {
-    if (width <= 1) return TemplateBuilderBoxSize.small;
+    if (width <= 1) {
+        return TemplateBuilderBoxSize.small;
+    }
 
-    if (width <= 3) return TemplateBuilderBoxSize.medium;
+    if (width <= 3) {
+        return TemplateBuilderBoxSize.medium;
+    }
 
     return TemplateBuilderBoxSize.large;
 }
@@ -207,7 +213,9 @@ export function willBoxFitInRow(row: DotGridStackWidget): boolean {
     const emptyChar = '_';
     const boxChar = '#';
 
-    if (!row.subGridOpts) return false;
+    if (!row.subGridOpts) {
+        return false;
+    }
 
     const rowSpace = Array.from({ length: 12 }, () => emptyChar); // Array with 12 empty spaces
 
