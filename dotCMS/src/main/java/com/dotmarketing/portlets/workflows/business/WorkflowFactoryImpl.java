@@ -10,6 +10,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.cache.provider.caffine.CaffineCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -35,6 +36,8 @@ import com.dotmarketing.portlets.workflows.model.transform.WorkflowTaskTransform
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -53,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -1044,13 +1048,21 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         return exist;
     }
 
+    private final Cache<String,Object> shortLivedCache = Caffeine.newBuilder().expireAfterWrite(15, TimeUnit.SECONDS).build();
+
     @Override
     public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException {
+        List<WorkflowStep> steps = (List<WorkflowStep>) shortLivedCache.getIfPresent(scheme.getId()+"_steps");
+        if(steps!=null){
+            return steps;
+        }
         final DotConnect db = new DotConnect();
         db.setSQL(sql.SELECT_STEPS_BY_SCHEME);
         db.addParam(scheme.getId());
-        return this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class);
 
+        steps = this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class);
+        shortLivedCache.put(scheme.getId()+"_steps",steps);
+        return steps;
     }
 
     @Override
@@ -1990,6 +2002,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
             }
             cache.remove(scheme);
+            shortLivedCache.invalidateAll();
         } catch (final Exception e) {
             throw new DotDataException(e.getMessage(), e);
         }
@@ -2060,6 +2073,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
             cache.removeStructure(contentTypeInode);
             cache.clearStepsCache();
+            shortLivedCache.invalidateAll();
         } catch (final Exception e) {
 
             Logger.error(this.getClass(), e.getMessage(), e);
