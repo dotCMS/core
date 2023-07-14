@@ -1,11 +1,14 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import com.dotcms.api.APIProvider;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -40,10 +43,13 @@ public class WidgetViewStrategy extends WebAssetStrategy<Contentlet> {
 
         final String fieldValue = (String) map.get(WidgetContentType.WIDGET_CODE_FIELD_VAR);
 
-        final Object parsedValue = RenderFieldStrategy.parseAsJSON(null, null,
-                fieldValue, widget, WidgetContentType.WIDGET_CODE_FIELD_VAR);
 
-        map.put(WidgetContentType.WIDGET_CODE_JSON_FIELD_VAR, parsedValue);
+        if(fieldValue.contains("$dotJSON.put(")){
+            final Object parsedValue = RenderFieldStrategy.parseAsJSON(null, null,
+                    fieldValue, widget, WidgetContentType.WIDGET_CODE_FIELD_VAR);
+            map.put(WidgetContentType.WIDGET_CODE_JSON_FIELD_VAR, parsedValue);
+        }
+
 
         return map;
     }
