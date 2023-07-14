@@ -689,7 +689,7 @@ public class ExportStarterUtil {
                 contentCount,
                 0.01);
 
-        try(Connection conn = DbConnectionFactory.getConnection();
+        try(Connection conn = DbConnectionFactory.getDataSource().getConnection();
             PreparedStatement statement = conn.prepareStatement(SELECT_ALL_LIVE_WORKING_CONTENTLETS)){
             statement.setFetchSize(5000);
             try(ResultSet rs = statement.executeQuery()) {
