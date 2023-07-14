@@ -26,6 +26,8 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
+export const DEBOUNCE_TIME = 5000;
+
 @Component({
     selector: 'dot-edit-layout',
     templateUrl: './dot-edit-layout.component.html',
@@ -145,7 +147,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             .pipe(
                 // debounceTime should be before takeUntil to avoid calling the observable after unsubscribe.
                 // More information: https://stackoverflow.com/questions/58974320/how-is-it-possible-to-stop-a-debounced-rxjs-observable
-                debounceTime(5000),
+                debounceTime(DEBOUNCE_TIME),
                 takeUntil(this.destroy$),
                 switchMap((layout: DotTemplateDesigner) => {
                     this.dotGlobalMessageService.loading(
