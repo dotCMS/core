@@ -32,6 +32,25 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
             description = "local directory or file to push")
     String source;
 
+    @CommandLine.Option(names = {"-rf", "--removeFolders"}, defaultValue = "false",
+            description =
+                    "When this option is enabled, the push process allows the deletion of folders in the remote server. "
+                            + "By default, this option is disabled, and folders will not be removed on the remote server.")
+    boolean removeFolders;
+
+    @CommandLine.Option(names = {"-ra", "--removeAssets"}, defaultValue = "false",
+            description =
+                    "When this option is enabled, the push process allows the deletion of assets in the remote server. "
+                            + "By default, this option is disabled, and assets will not be removed on the remote server.")
+    boolean removeAssets;
+
+    @CommandLine.Option(names = {"--dry-run"}, defaultValue = "false",
+            description =
+                    "When this option is enabled, the push process displays information about the changes that would be made on " +
+                            "the remote server without actually pushing those changes. No modifications will be made to the remote server. "
+                            + "By default, this option is disabled, and the changes will be applied to the remote server.")
+    boolean dryRun;
+
     @Inject
     PushService pushService;
 
@@ -43,7 +62,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
             CompletableFuture<List<Pair<AssetsUtils.LocalPathStructure, TreeNode>>> folderTraversalFuture = CompletableFuture.supplyAsync(
                     () -> {
                         // Service to handle the traversal of the folder
-                        return pushService.traverseLocalFolders(output, source);
+                        return pushService.traverseLocalFolders(output, source, removeAssets, removeFolders,
+                                true);
                     });
 
             // ConsoleLoadingAnimation instance to handle the waiting "animation"
@@ -123,18 +143,22 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                                 treeNodePushInfo.foldersToDeleteCount()));
                     }
 
-                    TreePrinter.getInstance().formatByStatus(
-                            sb,
-                            AssetsUtils.StatusToBoolean(localPathStructure.status()),
-                            List.of(localPathStructure.language()),
-                            treeNode,
-                            false,
-                            true);
-                    output.info(sb.toString());
+                    if (dryRun) {
+                        TreePrinter.getInstance().formatByStatus(
+                                sb,
+                                AssetsUtils.StatusToBoolean(localPathStructure.status()),
+                                List.of(localPathStructure.language()),
+                                treeNode,
+                                false,
+                                true);
+                        output.info(sb.toString());
+                    }
 
                     // ---
                     // Pushing the tree
-                    pushService.processTreeNodes(output, localPathStructure, treeNode, treeNodePushInfo);
+                    if (!dryRun) {
+                        pushService.processTreeNodes(output, localPathStructure, treeNode, treeNodePushInfo);
+                    }
 
                 } else {
                     sb.append(" No changes to push\n\n");

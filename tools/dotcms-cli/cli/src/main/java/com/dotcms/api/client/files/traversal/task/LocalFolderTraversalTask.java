@@ -39,6 +39,8 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
     private final String sourcePath;
     private final String workspacePath;
     private final boolean ignoreEmptyFolders;
+    private final boolean removeAssets;
+    private final boolean removeFolders;
 
     /**
      * Constructs a new LocalFolderTraversalTask instance.
@@ -55,6 +57,8 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
             final boolean siteExists,
             final String sourcePath,
             final String workspacePath,
+            final boolean removeAssets,
+            final boolean removeFolders,
             final boolean ignoreEmptyFolders) {
 
         this.logger = logger;
@@ -62,6 +66,8 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
         this.siteExists = siteExists;
         this.sourcePath = sourcePath;
         this.workspacePath = workspacePath;
+        this.removeAssets = removeAssets;
+        this.removeFolders = removeFolders;
         this.ignoreEmptyFolders = ignoreEmptyFolders;
     }
 
@@ -99,6 +105,8 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
                                 this.siteExists,
                                 file.getAbsolutePath(),
                                 this.workspacePath,
+                                this.removeAssets,
+                                this.removeFolders,
                                 this.ignoreEmptyFolders
                         );
                         forks.add(subTask);
@@ -255,6 +263,30 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
     }
 
     /**
+     * Checks if folders need to be pushed to the remote server.
+     *
+     * @param parentFolderViewBuilder the parent folder view builder
+     * @param remoteFolder            the remote folder
+     * @param folderFiles             the internal files of the folder
+     */
+    private void checkFolderToPush(FolderView.Builder parentFolderViewBuilder, FolderView remoteFolder,
+                                   File[] folderFiles) {
+
+        if (remoteFolder == null) {
+
+            if (this.ignoreEmptyFolders) {
+                if (folderFiles != null && folderFiles.length > 0) {
+                    // Does  not exist on remote server, so we need to push it
+                    parentFolderViewBuilder.markForPush(true);
+                }
+            } else {
+                // Does  not exist on remote server, so we need to push it
+                parentFolderViewBuilder.markForPush(true);
+            }
+        }
+    }
+
+    /**
      * Checks if files need to be removed from the remote server.
      *
      * @param live                                 the live status
@@ -266,6 +298,11 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
     private void checkAssetsToRemove(boolean live, String lang,
                                      AssetVersionsView.Builder parentFolderAssetVersionsViewBuilder,
                                      File[] folderChildren, FolderView remoteFolder) {
+
+        // The option to remove assets is disabled
+        if (!this.removeAssets) {
+            return;
+        }
 
         if (remoteFolder != null) {
             if (remoteFolder.assets() != null) {
@@ -292,30 +329,6 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
     }
 
     /**
-     * Checks if folders need to be pushed to the remote server.
-     *
-     * @param parentFolderViewBuilder the parent folder view builder
-     * @param remoteFolder            the remote folder
-     * @param folderFiles             the internal files of the folder
-     */
-    private void checkFolderToPush(FolderView.Builder parentFolderViewBuilder, FolderView remoteFolder,
-                                   File[] folderFiles) {
-
-        if (remoteFolder == null) {
-
-            if (this.ignoreEmptyFolders) {
-                if (folderFiles != null && folderFiles.length > 0) {
-                    // Does  not exist on remote server, so we need to push it
-                    parentFolderViewBuilder.markForPush(true);
-                }
-            } else {
-                // Does  not exist on remote server, so we need to push it
-                parentFolderViewBuilder.markForPush(true);
-            }
-        }
-    }
-
-    /**
      * Checks if folders need to be removed from the remote server.
      *
      * @param live                    the live status
@@ -326,6 +339,11 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
      */
     private void checkFoldersToRemove(boolean live, String lang, FolderView.Builder parentFolderViewBuilder,
                                       File[] folderChildren, FolderView remoteFolder) {
+
+        // The option to remove folders is disabled
+        if (!this.removeFolders && !this.removeAssets) {
+            return;
+        }
 
         if (remoteFolder != null) {
             if (remoteFolder.subFolders() != null) {
@@ -381,7 +399,9 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
 
                                 // Folder exist on remote server, but not locally, so we need to remove it
                                 logger.debug(String.format("Marking folder [%s] for delete.", subFolder.path()));
-                                subFolder = subFolder.withMarkForDelete(true);
+                                if (this.removeFolders) {
+                                    subFolder = subFolder.withMarkForDelete(true);
+                                }
                                 parentFolderViewBuilder.addSubFolders(subFolder);
                             }
                         }

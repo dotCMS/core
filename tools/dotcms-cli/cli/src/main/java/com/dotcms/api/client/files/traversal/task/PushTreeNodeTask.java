@@ -26,9 +26,6 @@ public class PushTreeNodeTask extends RecursiveAction {
 
     private final TreeNode rootNode;
 
-    private final boolean deleteAssets;
-    private final boolean deleteFolders;
-
     private final ConsoleProgressBar progressBar;
 
     private final Logger logger;
@@ -40,8 +37,6 @@ public class PushTreeNodeTask extends RecursiveAction {
      * @param localPathStructure the local path structure of the folder being pushed
      * @param rootNode           the tree node representing the folder and its contents with all the push
      *                           information for each file and folder
-     * @param deleteAssets       indicates whether to delete assets
-     * @param deleteFolders      indicates whether to delete folders
      * @param logger             the logger for logging debug information
      * @param pusher             the pusher for pushing assets and folders
      * @param progressBar        the console progress bar to track and display the push progress
@@ -49,8 +44,6 @@ public class PushTreeNodeTask extends RecursiveAction {
     public PushTreeNodeTask(String workspacePath,
                             AssetsUtils.LocalPathStructure localPathStructure,
                             TreeNode rootNode,
-                            final boolean deleteAssets,
-                            final boolean deleteFolders,
                             final Logger logger,
                             final Pusher pusher,
                             final ConsoleProgressBar progressBar) {
@@ -58,8 +51,6 @@ public class PushTreeNodeTask extends RecursiveAction {
         this.workspacePath = workspacePath;
         this.localPathStructure = localPathStructure;
         this.rootNode = rootNode;
-        this.deleteAssets = deleteAssets;
-        this.deleteFolders = deleteFolders;
         this.pusher = pusher;
         this.logger = logger;
         this.progressBar = progressBar;
@@ -86,8 +77,6 @@ public class PushTreeNodeTask extends RecursiveAction {
                         this.workspacePath,
                         this.localPathStructure,
                         child,
-                        this.deleteAssets,
-                        this.deleteFolders,
                         this.logger,
                         this.pusher,
                         this.progressBar
@@ -114,10 +103,8 @@ public class PushTreeNodeTask extends RecursiveAction {
 
             if (folder.markForDelete().isPresent() && folder.markForDelete().get()) {// Delete
 
-                if (this.deleteFolders) { // Only if we allow to delete folders
-                    pusher.deleteFolder(folder.host(), folder.path());
-                    logger.debug(String.format("Folder [%s] deleted", folder.path()));
-                }
+                pusher.deleteFolder(folder.host(), folder.path());
+                logger.debug(String.format("Folder [%s] deleted", folder.path()));
 
                 // Folder processed, updating the progress bar
                 this.progressBar.incrementStep();
@@ -154,19 +141,16 @@ public class PushTreeNodeTask extends RecursiveAction {
 
             if (asset.markForDelete().isPresent() && asset.markForDelete().get()) {
 
-                if (this.deleteAssets) { // Only if we allow to delete assets
+                // Check if we already deleted the folder
+                if ((folder.markForDelete().isPresent() && folder.markForDelete().get())) {
 
-                    // Check if we already deleted the folder
-                    if (this.deleteFolders
-                            && (folder.markForDelete().isPresent() && folder.markForDelete().get())) {
-                        // Folder already deleted, we don't need to delete the asset
-                        logger.debug(String.format("Folder [%s] already deleted, ignoring deletion of [%s] asset",
-                                folder.path(), asset.name()));
-                    } else {
+                    // Folder already deleted, we don't need to delete the asset
+                    logger.debug(String.format("Folder [%s] already deleted, ignoring deletion of [%s] asset",
+                            folder.path(), asset.name()));
+                } else {
 
-                        pusher.archive(folder.host(), folder.path(), asset.name());
-                        logger.debug(String.format("Asset [%s] deleted", asset.name()));
-                    }
+                    pusher.archive(folder.host(), folder.path(), asset.name());
+                    logger.debug(String.format("Asset [%s] deleted", asset.name()));
                 }
 
                 // Asset processed, updating the progress bar

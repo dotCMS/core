@@ -16,12 +16,16 @@ public interface LocalTraversalService {
      * representation of its contents. The folders and contents are compared to the remote server in order to determine
      * if there are any differences between the local and remote file system.
      *
-     * @param output        the output option mixin
-     * @param workspacePath the workspace path
-     * @param source        local the source file or directory
+     * @param output             the output option mixin
+     * @param workspacePath      the workspace path
+     * @param source             local the source file or directory
+     * @param removeAssets       true to allow remove assets, false otherwise
+     * @param removeFolders      true to allow remove folders, false otherwise
+     * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
      * @return the root node of the hierarchical tree
      */
-    TreeNode traverseLocalFolder(OutputOptionMixin output, final String workspacePath, final String source);
+    TreeNode traverseLocalFolder(OutputOptionMixin output, final String workspacePath, final String source,
+                                 boolean removeAssets, boolean removeFolders, boolean ignoreEmptyFolders);
 
     /**
      * Builds the file system tree from the specified root node. The tree is built using a ForkJoinPool, which allows

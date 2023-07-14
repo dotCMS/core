@@ -15,13 +15,18 @@ public interface PushService {
      * related information for each file and folder.
      * Each folder is represented as a pair of its local path structure and the corresponding tree node.
      *
-     * @param output the output option mixin
-     * @param source the source path to traverse
+     * @param output             the output option mixin
+     * @param source             the source path to traverse
+     * @param removeAssets       true to allow remove assets, false otherwise
+     * @param removeFolders      true to allow remove folders, false otherwise
+     * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
      * @return a list of pairs, where each pair represents a folder's local path structure and its corresponding tree node
      * @throws IllegalArgumentException if the source path or workspace path does not exist, or if the source path is
      *                                  outside the workspace
      */
-    List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(OutputOptionMixin output, String source);
+    List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(
+            OutputOptionMixin output, String source, boolean removeAssets, boolean removeFolders,
+            boolean ignoreEmptyFolders);
 
     /**
      * Processes the tree nodes by pushing their contents to the remote server. It initiates the push operation

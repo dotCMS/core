@@ -24,7 +24,7 @@ import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 /**
  * Recursive task for building the file system tree.
  */
-public class FileSystemTreeBuilderTask extends RecursiveAction {
+public class LocalFoldersTreeBuilderTask extends RecursiveAction {
 
     private final TreeNode rootNode;
     private final String destination;
@@ -51,14 +51,14 @@ public class FileSystemTreeBuilderTask extends RecursiveAction {
      * @param language             the language of the assets
      * @param progressBar          the progress bar for tracking the pull progress
      */
-    public FileSystemTreeBuilderTask(final Logger logger,
-                                     final Downloader downloader,
-                                     final TreeNode rootNode,
-                                     final String destination,
-                                     final boolean overwrite,
-                                     final boolean generateEmptyFolders,
-                                     final String language,
-                                     final ConsoleProgressBar progressBar) {
+    public LocalFoldersTreeBuilderTask(final Logger logger,
+                                       final Downloader downloader,
+                                       final TreeNode rootNode,
+                                       final String destination,
+                                       final boolean overwrite,
+                                       final boolean generateEmptyFolders,
+                                       final String language,
+                                       final ConsoleProgressBar progressBar) {
         this.logger = logger;
         this.downloader = downloader;
         this.rootNode = rootNode;
@@ -83,9 +83,9 @@ public class FileSystemTreeBuilderTask extends RecursiveAction {
         // Recursively build the file system tree for the children nodes
         if (rootNode.children() != null && !rootNode.children().isEmpty()) {
 
-            List<FileSystemTreeBuilderTask> tasks = new ArrayList<>();
+            List<LocalFoldersTreeBuilderTask> tasks = new ArrayList<>();
             for (TreeNode child : rootNode.children()) {
-                var task = new FileSystemTreeBuilderTask(
+                var task = new LocalFoldersTreeBuilderTask(
                         logger,
                         downloader,
                         child,
@@ -99,7 +99,7 @@ public class FileSystemTreeBuilderTask extends RecursiveAction {
                 tasks.add(task);
             }
 
-            for (FileSystemTreeBuilderTask task : tasks) {
+            for (LocalFoldersTreeBuilderTask task : tasks) {
                 task.join();
             }
         }

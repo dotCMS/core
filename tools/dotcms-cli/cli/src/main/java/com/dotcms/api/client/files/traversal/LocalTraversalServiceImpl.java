@@ -2,8 +2,8 @@ package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.api.client.files.traversal.data.Downloader;
 import com.dotcms.api.client.files.traversal.data.Retriever;
-import com.dotcms.api.client.files.traversal.task.FileSystemTreeBuilderTask;
 import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTask;
+import com.dotcms.api.client.files.traversal.task.LocalFoldersTreeBuilderTask;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
@@ -44,14 +44,19 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
      * representation of its contents. The folders and contents are compared to the remote server in order to determine
      * if there are any differences between the local and remote file system.
      *
-     * @param output        the output option mixin
-     * @param workspacePath the workspace path
-     * @param source        local the source file or directory
+     * @param output             the output option mixin
+     * @param workspacePath      the workspace path
+     * @param source             local the source file or directory
+     * @param removeAssets       true to allow remove assets, false otherwise
+     * @param removeFolders      true to allow remove folders, false otherwise
+     * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
      * @return the root node of the hierarchical tree
      */
     @ActivateRequestContext
     @Override
-    public TreeNode traverseLocalFolder(OutputOptionMixin output, final String workspacePath, final String source) {
+    public TreeNode traverseLocalFolder(OutputOptionMixin output, final String workspacePath, final String source,
+                                        final boolean removeAssets, final boolean removeFolders,
+                                        final boolean ignoreEmptyFolders) {
 
         logger.debug(String.format("Traversing file system folder: %s - in workspace: %s", source, workspacePath));
 
@@ -76,7 +81,9 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 siteExists,
                 source,
                 workspacePath,
-                true
+                removeAssets,
+                removeFolders,
+                ignoreEmptyFolders
         );
 
         return forkJoinPool.invoke(task);
@@ -105,7 +112,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
 
         // ---
         var forkJoinPool = ForkJoinPool.commonPool();
-        var task = new FileSystemTreeBuilderTask(
+        var task = new LocalFoldersTreeBuilderTask(
                 logger,
                 downloader,
                 filteredRoot,
