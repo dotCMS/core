@@ -73,3 +73,5 @@ This maintenance release includes the following code fixes:
 58. https://github.com/dotCMS/core/issues/25230 : Block Editor Search not working for special chars #25230
 
 **Release-23.01.5**
+
+59. Fix defaultPath field variable
