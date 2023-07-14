@@ -1,13 +1,11 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import com.dotcms.api.APIProvider;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
-import io.vavr.control.Try;
 
 import java.util.Map;
 import java.util.Set;
