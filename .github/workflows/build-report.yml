@@ -36,7 +36,7 @@ jobs:
           then
             echo "::warn title=Artifact 'workflow-data' missing::Expected artifact 'workflow-data' does not exist for pull_request event."
           else
-            echo "json=$(cat workflow-data.json)" >> $GITHUB_OUTPUT  
+            echo "json=$(jq -c '.' workflow-data.json) >> $GITHUB_OUTPUT  # need to shrink to single line
             echo "has-json=true" >> $GITHUB_OUTPUT
           fi
 
