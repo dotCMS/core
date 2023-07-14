@@ -118,6 +118,8 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 workspace,
                 localPathStructure,
                 treeNode,
+                true,
+                true,
                 logger,
                 pusher,
                 progressBar);

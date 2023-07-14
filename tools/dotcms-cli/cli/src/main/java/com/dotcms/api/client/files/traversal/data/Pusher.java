@@ -98,17 +98,25 @@ public class Pusher {
      * Creates a new site in the remote server
      *
      * @param siteName the name of the site
+     * @param status   the current status to handle
      * @return the SiteView of the created site
      */
     @ActivateRequestContext
-    public SiteView pushSite(final String siteName) {
+    public SiteView pushSite(final String siteName, final String status) {
 
         final var siteAPI = this.clientFactory.getClient(SiteAPI.class);
 
+        var live = StatusToBoolean(status);
         var newSiteRequest = CreateUpdateSiteRequest.builder().siteName(siteName).build();
 
         // Execute the REST call to push the site
         var response = siteAPI.create(newSiteRequest);
+
+        // Publish the site if we are in the live folder
+        if (live) {
+            response = siteAPI.publish(response.entity().identifier());
+        }
+
         return response.entity();
     }
 
