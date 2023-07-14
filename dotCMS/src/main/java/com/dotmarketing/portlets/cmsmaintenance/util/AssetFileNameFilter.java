@@ -1,13 +1,14 @@
 package com.dotmarketing.portlets.cmsmaintenance.util;
 
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
+import com.google.common.hash.BloomFilter;
 import com.liferay.util.FileUtil;
+import io.vavr.Lazy;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -19,35 +20,36 @@ import java.util.Set;
  */
 public class AssetFileNameFilter implements FileFilter {
 
-    private static final Set<String> EXCLUDE_FOLDERS_LIST = Set
-            .of("license.zip", "license", "bundles", "tmp_upload",
-                    "timemachine", "integrity", "server", "dotGenerated");
+	public AssetFileNameFilter(BloomFilter<String> inodeFilter){
+		this.bloomFilter=inodeFilter;
+	}
+	public AssetFileNameFilter(){
+		this(null);
+	}
+
+	private final BloomFilter<String> bloomFilter;
+
+
+    private static final String[] EXCLUDE_FOLDERS_LIST = { "license", "bundles", "tmp_upload","messages",
+                    "timemachine", "integrity", "server", "dotGenerated", "monitor"};
+
+	private static final String[] EXCLUDE_FILE_LIST = {"license.zip", ".DS_Store", "license_pack.zip"};
+
+
+	private Lazy<String[]> excludeFolders = Lazy.of(()->{
+		return Config.getStringArrayProperty("ASSET_DOWNLOAD_EXCLUDE_FOLDERS", EXCLUDE_FOLDERS_LIST);
+	});
+
+	private Lazy<String[]> excludeFiles = Lazy.of(()->{
+		return Config.getStringArrayProperty("ASSET_DOWNLOAD_EXCLUDE_FILES", EXCLUDE_FILE_LIST);
+	});
+
 
 	private Set<String> excludedFolders;
 
-	/**
-	 * Allows you to add the name of a folder that must be excluded from the result of traversing the dotCMS
-	 * {@code /assets/}. This folder name will be added to the existing default list of excluded system folders.
-	 *
-	 * @param folderName The name of the folder that will be excluded.
-	 */
-	public void addExcludedFolder(final String folderName) {
-		this.getExcludedFolders().add(folderName);
-	}
 
-	/**
-	 * Returns the complete list of folders that will be excluded from the result of traversing the dotCMS
-	 * {@code /assets/} folder.
-	 *
-	 * @return The complete list of excluded folders.
-	 */
-	public Set<String> getExcludedFolders() {
-		if (UtilMethods.isNotSet(this.excludedFolders)) {
-			this.excludedFolders = new HashSet<>();
-			this.excludedFolders.addAll(EXCLUDE_FOLDERS_LIST);
-		}
-		return this.excludedFolders;
-	}
+	private final String root = ConfigUtils.getAbsoluteAssetsRootPath().endsWith("/") ? ConfigUtils.getAbsoluteAssetsRootPath().substring(0,ConfigUtils.getAbsoluteAssetsRootPath().lastIndexOf("/")) :ConfigUtils.getAbsoluteAssetsRootPath();
+
 
 	@Override
 	public boolean accept(final File dir) {
@@ -55,34 +57,28 @@ public class AssetFileNameFilter implements FileFilter {
 			return false;
 		}
 
-		if(dir.getAbsolutePath().contains("dotGenerated") ){
+		String pathName = dir.getAbsolutePath().replace(root, "");
+
+
+        if(dir.isDirectory() && Set.of(this.excludeFolders.get()).stream ().anyMatch(f->pathName.contains(f))){
 			return false;
 		}
-
-		final String name = dir.getName();
-		final String osName = System.getProperty("os.name");
-
-		String[] path;
-
-		if (osName.startsWith("Windows")) {
-			path = dir.getAbsolutePath().split("\\\\");
+		if(dir.isFile() && Set.of(this.excludeFiles.get()).stream().anyMatch(f->pathName.contains(f  ))){
+			return false;
 		}
-		else {
-			path = dir.getAbsolutePath().split(File.separator);
+		// if no bloomFilter, ok
+		if(bloomFilter==null){
+			return true;
 		}
 
-		String[] test = new String[0];
+		// if bloomFilter, make sure the inode is in the path
+		List<RegExMatch> matches = RegEX.find(pathName, "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}");
+		if(matches.isEmpty()){
+			return true;
+		}
+		return (bloomFilter.mightContain(matches.get(0).getMatch()));
 
-		String assetPath;
 
-        try {
-        	assetPath = Config.getStringProperty("ASSET_REAL_PATH", FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH")));
-        	test = new File(assetPath).getAbsolutePath().split(File.separator);
-        } catch (final Exception e) {
-        	Logger.debug(this.getClass(), e.getMessage());
-        }
-
-        return test.length + 1 != path.length || (name.charAt(0) != '.' && !this.getExcludedFolders().contains(name));
 	}
 
 }
