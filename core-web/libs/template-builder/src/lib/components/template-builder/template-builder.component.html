@@ -12,10 +12,11 @@
             data-testId="add-row"
         ></dotcms-add-widget>
         <dotcms-add-widget
+            #addBox
             [label]="'dot.template.builder.add.box' | dm"
+            [attr.gs-w]="boxWidth"
             [icon]="colIcon"
             data-widget-type="col"
-            gs-w="3"
             gs-h="1"
             data-testId="add-box"
         ></dotcms-add-widget>
@@ -58,6 +59,9 @@
                 [attr.gs-h]="row.h"
                 [row]="row"
                 [isResizing]="vm.resizingRowID === row.id"
+                [ngClass]="{
+                    'template-builder-row--wont-fit': isDraggingBox && !row.willBoxFit
+                }"
                 data-testId="row"
             >
                 <div class="grid-stack-item-content grid-stack">

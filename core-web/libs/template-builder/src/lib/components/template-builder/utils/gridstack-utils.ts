@@ -5,6 +5,7 @@ import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { EMPTY_ROWS_VALUE } from './mocks';
 
 import {
+    BOX_WIDTH,
     DotGridStackNode,
     DotGridStackWidget,
     SYSTEM_CONTAINER_IDENTIFIER,
@@ -212,6 +213,7 @@ export function getBoxVariantByWidth(width: number): TemplateBuilderBoxSize {
 export function willBoxFitInRow(row: DotGridStackWidget): boolean {
     const emptyChar = '_';
     const boxChar = '#';
+    const validSpaceRegex = new RegExp(emptyChar.repeat(BOX_WIDTH), 'g');
 
     if (!row.subGridOpts) {
         return false;
@@ -223,5 +225,5 @@ export function willBoxFitInRow(row: DotGridStackWidget): boolean {
         rowSpace.splice(x, w, ...boxChar.repeat(w).split('')); // Fill needed empty spaces with #
     });
 
-    return /___/.test(rowSpace.join('')); // If there are 3 consecutive empty spaces then we can drop one more box
+    return validSpaceRegex.test(rowSpace.join('')); // If there are 3 consecutive empty spaces then we can drop one more box
 }

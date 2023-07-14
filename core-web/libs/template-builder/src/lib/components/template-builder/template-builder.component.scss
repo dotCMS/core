@@ -79,3 +79,9 @@ p-divider {
     height: 100%;
     overflow-y: auto;
 }
+
+.template-builder-row--wont-fit {
+    cursor: no-drop;
+    opacity: 0.1;
+    transition: opacity 0.35s ease-in-out;
+}

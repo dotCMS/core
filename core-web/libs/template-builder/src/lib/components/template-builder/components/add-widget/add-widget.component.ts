@@ -1,5 +1,7 @@
+import { DDElementHost } from 'gridstack/dist/dd-element';
+
 import { NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, Input } from '@angular/core';
 
 @Component({
     selector: 'dotcms-add-widget',
@@ -14,4 +16,10 @@ export class AddWidgetComponent {
     @Input() icon = '';
 
     protected imageError = false;
+
+    constructor(private el: ElementRef) {}
+
+    get nativeElement(): DDElementHost {
+        return this.el.nativeElement;
+    }
 }

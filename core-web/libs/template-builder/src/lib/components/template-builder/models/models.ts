@@ -4,6 +4,8 @@ import { DotContainerMap, DotLayoutSideBar } from '@dotcms/dotcms-models';
 
 export const SYSTEM_CONTAINER_IDENTIFIER = 'SYSTEM_CONTAINER';
 
+export const BOX_WIDTH = 3; // THE Box initial width is 3 columns
+
 /**
  * @description This is the model for using custom data on the GridStackOptions
  *

@@ -11,6 +11,7 @@ import { Observable, Subject, combineLatest } from 'rxjs';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     ElementRef,
     EventEmitter,
@@ -19,6 +20,7 @@ import {
     OnInit,
     Output,
     QueryList,
+    ViewChild,
     ViewChildren
 } from '@angular/core';
 
@@ -38,9 +40,11 @@ import {
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
+import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { TemplateBuilderThemeSelectorComponent } from './components/template-builder-theme-selector/template-builder-theme-selector.component';
 import {
+    BOX_WIDTH,
     DotGridStackNode,
     DotGridStackWidget,
     DotTemplateBuilderState,
@@ -87,6 +91,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     })
     boxes!: QueryList<ElementRef<GridItemHTMLElement>>;
 
+    @ViewChild('addBox')
+    addBox: AddWidgetComponent;
+
     get layoutProperties(): DotTemplateLayoutProperties {
         return {
             header: this.layout.header,
@@ -103,15 +110,18 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
+    public readonly boxWidth = BOX_WIDTH;
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
     private dotLayout: DotLayout;
 
     grid!: GridStack;
+    isDraggingBox = false;
 
     constructor(
         private store: DotTemplateBuilderStore,
         private dialogService: DialogService,
-        private dotMessage: DotMessageService
+        private dotMessage: DotMessageService,
+        private cd: ChangeDetectorRef
     ) {
         this.rows$ = this.store.rows$.pipe(map((rows) => parseFromGridStackToDotObject(rows)));
 
@@ -158,6 +168,16 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         GridStack.setupDragIn('dotcms-add-widget', {
             appendTo: 'body',
             helper: 'clone'
+        });
+
+        this.addBox.nativeElement.ddElement.on('dragstart', () => {
+            this.isDraggingBox = true;
+            this.cd.detectChanges();
+        });
+
+        this.addBox.nativeElement.ddElement.on('dragstop', () => {
+            this.isDraggingBox = false;
+            this.cd.detectChanges();
         });
 
         // Adding subgrids on load
@@ -246,6 +266,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.grid.destroy(true);
         this.destroy$.next(true);
         this.destroy$.complete();
+
+        this.addBox.nativeElement.ddElement.off('dragstart');
+        this.addBox.nativeElement.ddElement.off('dragstop');
     }
 
     /**
