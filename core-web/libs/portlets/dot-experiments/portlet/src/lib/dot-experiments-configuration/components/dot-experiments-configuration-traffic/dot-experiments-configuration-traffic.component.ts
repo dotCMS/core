@@ -16,7 +16,7 @@ import {
     TrafficProportion,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
@@ -28,7 +28,7 @@ import { DotExperimentsConfigurationTrafficSplitAddComponent } from '../dot-expe
     standalone: true,
     imports: [
         CommonModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotDynamicDirective,
         // PrimeNg
         CardModule,

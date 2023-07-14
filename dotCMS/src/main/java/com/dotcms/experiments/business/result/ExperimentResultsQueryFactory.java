@@ -55,20 +55,20 @@ import java.util.Map;
  *
  * both part are merged using {@link CubeJSQuery.Builder#merge(CubeJSQuery, CubeJSQuery)} method.
  *
- * @see MetricExperimentResultQuery
+ * @see MetricExperimentResultsQuery
  */
 public enum ExperimentResultsQueryFactory {
 
     INSTANCE;
 
-    final static Lazy<Map<MetricType, MetricExperimentResultQuery>> experimentResultQueryHelpers =
+    final static Lazy<Map<MetricType, MetricExperimentResultsQuery>> experimentResultQueryHelpers =
             Lazy.of(() -> createHelpersMap());
 
 
-    private static Map<MetricType, MetricExperimentResultQuery> createHelpersMap() {
+    private static Map<MetricType, MetricExperimentResultsQuery> createHelpersMap() {
         return map(
-            MetricType.REACH_PAGE, new ReachPageExperimentResultQuery(),
-            MetricType.BOUNCE_RATE, new BounceRateExperimentResultQuery()
+            MetricType.REACH_PAGE, new ReachPageExperimentResultsQuery(),
+            MetricType.BOUNCE_RATE, new BounceRateExperimentResultsQuery()
         );
     }
 
@@ -111,7 +111,7 @@ public enum ExperimentResultsQueryFactory {
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
 
         final Goal primaryGoal = goals.primary();
-        final MetricExperimentResultQuery metricExperimentResultQuery = experimentResultQueryHelpers.get()
+        final MetricExperimentResultsQuery metricExperimentResultQuery = experimentResultQueryHelpers.get()
                 .get(primaryGoal.getMetric().type());
         return metricExperimentResultQuery.getCubeJSQuery(experiment);
     }

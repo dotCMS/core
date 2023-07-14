@@ -5,13 +5,13 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
 
 @NgModule({
     declarations: [DotPortletToolbarComponent],
-    imports: [CommonModule, ToolbarModule, ButtonModule, DotMessagePipeModule, MenuModule],
+    imports: [CommonModule, ToolbarModule, ButtonModule, DotMessagePipe, MenuModule],
     exports: [DotPortletToolbarComponent]
 })
 export class DotPortletToolbarModule {}

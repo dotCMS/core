@@ -5,7 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DotMessagePipeModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 
 import { DotLayoutPropertiesItemModule } from './dot-layout-properties-item/dot-layout-properties-item.module';
 import { DotLayoutPropertiesComponent } from './dot-layout-properties.component';
@@ -21,7 +21,7 @@ import { DotLayoutSidebarModule } from './dot-layout-property-sidebar/dot-layout
         ButtonModule,
         ReactiveFormsModule,
         UiDotIconButtonModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         FormsModule
     ],
     exports: [DotLayoutPropertiesComponent],

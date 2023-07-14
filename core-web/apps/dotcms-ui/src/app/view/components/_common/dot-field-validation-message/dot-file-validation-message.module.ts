@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotFieldValidationMessageComponent } from './dot-field-validation-message';
 
@@ -9,7 +9,7 @@ import { DotFieldValidationMessageComponent } from './dot-field-validation-messa
     bootstrap: [],
     declarations: [DotFieldValidationMessageComponent],
     exports: [DotFieldValidationMessageComponent],
-    imports: [CommonModule, DotMessagePipeModule],
+    imports: [CommonModule, DotMessagePipe],
     providers: []
 })
 export class DotFieldValidationMessageModule {}

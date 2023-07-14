@@ -28,29 +28,28 @@
     </div>
 
     <!-- Tab actions and dropdowns -->
-    <div class="lower-toolbar-left w-7">
-        <dot-edit-page-state-controller
+    <div class="lower-toolbar-left w-6">
+        <dot-edit-page-state-controller-seo
             [pageState]="pageState"
             [variant]="variant"
             (modeChange)="stateChange()"
-        ></dot-edit-page-state-controller>
+        ></dot-edit-page-state-controller-seo>
+    </div>
 
+    <div class="lower-toolbar-right w-6">
         <p-checkbox
-            class="dot-edit__what-changed-button"
+            class="flex w-7 dot-edit__what-changed-button"
             *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
             [binary]="true"
             [label]="'dot.common.whats.changed' | dm"
             (onChange)="whatschange.emit($event.checked)"
         ></p-checkbox>
-    </div>
-
-    <div class="lower-toolbar-right w-5">
-        <dot-edit-page-view-as-controller
-            class="flex w-full gap-2"
+        <dot-edit-page-view-as-controller-seo
+            class="flex w-5 gap-2"
             [pageState]="pageState"
             [variant]="variant"
         >
-        </dot-edit-page-view-as-controller>
+        </dot-edit-page-view-as-controller-seo>
     </div>
 </dot-secondary-toolbar>
 

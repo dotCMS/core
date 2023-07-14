@@ -13,7 +13,7 @@ import { ChipsModule } from 'primeng/chips';
 
 import { DotMessageService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -49,7 +49,8 @@ describe('DotAutocompleteTagsComponent', () => {
                 AutoCompleteModule,
                 FormsModule,
                 DotIconModule,
-                DotPipesModule
+                DotPipesModule,
+                DotMessagePipe
             ],
             providers: [
                 { provide: DotTagsService, useClass: DotTagsServiceMock },

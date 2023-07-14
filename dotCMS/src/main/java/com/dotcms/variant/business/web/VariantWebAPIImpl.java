@@ -19,6 +19,7 @@ import com.liferay.portal.model.User;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.exception.ResourceNotFoundException;
+import javax.servlet.http.HttpSession;
 
 /**
  * Default implementation for {@link VariantWebAPI}
@@ -37,7 +38,6 @@ public class VariantWebAPIImpl implements VariantWebAPI{
      *
      * @return
      */
-    @Override
     public String currentVariantId() {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
@@ -45,22 +45,66 @@ public class VariantWebAPIImpl implements VariantWebAPI{
             return VariantAPI.DEFAULT_VARIANT.name();
         }
 
-        final String requestParameter = request.getParameter(VariantAPI.VARIANT_KEY);
+        String currentVariantName = getCurrentVariantNameFromParameter(request)
+                .or(() -> getCurrentVariantNameFromAttribute(request))
+                .orElse(null);
 
-        if (UtilMethods.isSet(requestParameter)) {
+        if (!UtilMethods.isSet(currentVariantName)) {
+            currentVariantName = VariantAPI.DEFAULT_VARIANT.name();
+        } else {
             try {
                 final Optional<Variant> byName = APILocator.getVariantAPI()
-                        .get(requestParameter);
-                return byName.isPresent() ? byName.get().name() : VariantAPI.DEFAULT_VARIANT.name();
+                        .get(currentVariantName);
+                currentVariantName = byName.isPresent() ? byName.get().name() : VariantAPI.DEFAULT_VARIANT.name();
             } catch (DotDataException e) {
                 Logger.error(VariantWebAPIImpl.class,
                         String.format("It is not possible get variant y name %s: %s",
-                                requestParameter, e.getMessage()));
-                return VariantAPI.DEFAULT_VARIANT.name();
+                                currentVariantName, e.getMessage()));
+                currentVariantName = VariantAPI.DEFAULT_VARIANT.name();
             }
-        } else {
-            return VariantAPI.DEFAULT_VARIANT.name();
         }
+
+        setSessionAttribute(request, currentVariantName);
+        return currentVariantName;
+    }
+
+    private static void setSessionAttribute(final HttpServletRequest request,
+            final String currentVariantName) {
+
+        final HttpSession session = request.getSession(true);
+
+        if (!UtilMethods.isSet(session)) {
+            return;
+        }
+        
+        final Object attribute = session.getAttribute(VariantAPI.VARIANT_KEY);
+
+        if (mustOverwrite(attribute, currentVariantName)) {
+            final CurrentVariantSessionItem currentVariantSessionItem = new
+                    CurrentVariantSessionItem(currentVariantName);
+            session.setAttribute(VariantAPI.VARIANT_KEY, currentVariantSessionItem);
+        }
+    }
+
+    private static boolean mustOverwrite(final Object currentVariantSessionItemAsObject, final String currentVariantName) {
+
+        if (!UtilMethods.isSet(currentVariantSessionItemAsObject)) {
+            return true;
+        }
+
+        final CurrentVariantSessionItem currentVariantSessionItem = (CurrentVariantSessionItem) currentVariantSessionItemAsObject;
+        return currentVariantSessionItem instanceof CurrentVariantSessionItem &&
+                (!currentVariantSessionItem.getVariantName().equals(currentVariantName) || currentVariantSessionItem.isExpired());
+    }
+
+    private Optional<String> getCurrentVariantNameFromAttribute(
+            HttpServletRequest request) {
+        return Optional.ofNullable(request.getAttribute(VariantAPI.VARIANT_KEY))
+                .map(Object::toString);
+    }
+
+    private static Optional<String> getCurrentVariantNameFromParameter(final HttpServletRequest request) {
+        return Optional.ofNullable(request.getParameter(VariantAPI.VARIANT_KEY));
     }
 
     /**

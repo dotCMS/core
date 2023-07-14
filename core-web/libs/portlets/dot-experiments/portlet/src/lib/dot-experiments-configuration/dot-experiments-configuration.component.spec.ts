@@ -22,13 +22,9 @@ import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/d
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
-import {
-    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA,
-    getExperimentMock,
-    MockDotMessageService
-} from '@dotcms/utils-testing';
+import { getExperimentMock, PARENT_RESOLVERS_ACTIVE_ROUTE_DATA } from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from './components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -62,10 +58,6 @@ const ActivatedRouteMock = {
     },
     parent: { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA }
 };
-
-const messageServiceMock = new MockDotMessageService({
-    'experiments.configure.scheduling.name': 'Scheduling'
-});
 
 const defaultVmMock: ConfigurationViewModel = {
     experiment: EXPERIMENT_MOCK,
@@ -101,7 +93,7 @@ describe('DotExperimentsConfigurationComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationComponent,
         componentProviders: [DotExperimentsConfigurationStore],
-        imports: [MockModule(DotAddToBundleModule)],
+        imports: [MockModule(DotAddToBundleModule), DotMessagePipe],
 
         providers: [
             ConfirmationService,
@@ -109,17 +101,13 @@ describe('DotExperimentsConfigurationComponent', () => {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
             },
-            {
-                provide: DotMessageService,
-                useValue: messageServiceMock
-            },
+            mockProvider(DotMessageService),
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
             mockProvider(Router),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(Title),
-            mockProvider(DotSessionStorageService),
-            DotMessagePipe
+            mockProvider(DotSessionStorageService)
         ]
     });
 
@@ -199,7 +187,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         //Add to bundle
-        spectator.query(Menu).model[3].command();
+        spectator.query(Menu).model[4].command();
 
         spectator.detectComponentChanges();
 

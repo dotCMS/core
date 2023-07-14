@@ -1,0 +1,114 @@
+@use "variables" as *;
+@import "dotcms-theme/utils/theme-variables";
+@import "dotcms-theme/utils/extends";
+@import "mixins";
+
+.dot-device-selector__panel {
+    border-radius: $border-radius-md;
+    border: 1px solid $color-palette-gray-300;
+}
+
+.dot-device-selector__header {
+    display: flex;
+    height: $device-selector-header-height;
+    padding: $spacing-1 $spacing-3;
+    justify-content: space-between;
+    align-items: center;
+    background: $color-palette-gray-200;
+}
+
+.dot-device-selector__header-title {
+    font-size: $font-size-lg;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 140%;
+}
+
+.dot-device-selector__column {
+    gap: $spacing-3;
+    display: flex;
+    flex-direction: column;
+}
+
+.device-list__button {
+    all: unset;
+    display: flex;
+    flex-direction: row;
+    gap: $spacing-1;
+}
+
+.dot-device-selector__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: $device-selector-grid-width;
+}
+
+.device-list {
+    width: 100%;
+    padding: 0;
+}
+
+.device-list-item {
+    display: flex;
+    list-style: none;
+    height: $device-list-item-height;
+    padding: $spacing-1 $spacing-3 $spacing-1 $spacing-3;
+    gap: $spacing-1;
+    cursor: pointer;
+
+    &:hover {
+        background-color: $color-palette-gray-100;
+    }
+}
+
+.device-list-item__content {
+    display: flex;
+    flex-direction: column;
+}
+
+.device-list-item__dimensions {
+    color: $color-palette-gray-600;
+}
+
+.device-list-item__name {
+    line-height: 1;
+}
+
+.device-list-item.device-list-item-media {
+    height: $device-list-item-media-height;
+}
+
+.dot-device-selector__link--container {
+    display: flex;
+    cursor: pointer;
+    flex-grow: 3;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: $spacing-3;
+    a {
+        text-decoration: underline;
+    }
+}
+
+::ng-deep {
+    .p-overlaypanel.dot-device-selector__overlayPanel {
+        .p-overlaypanel-content {
+            display: flex;
+            gap: $spacing-3;
+        }
+
+        border-radius: 0.75rem;
+        margin-top: 5px;
+    }
+
+    .dot-device-selector__divider {
+        margin: 0;
+        color: $color-palette-gray-300;
+    }
+
+    .dot-device-selector__link--container {
+        .pi.pi-external-link {
+            color: $color-palette-primary;
+        }
+    }
+}

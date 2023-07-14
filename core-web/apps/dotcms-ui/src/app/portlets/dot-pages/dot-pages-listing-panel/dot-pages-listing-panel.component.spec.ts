@@ -26,7 +26,7 @@ import {
     DotcmsConfigService,
     SiteService
 } from '@dotcms/dotcms-js';
-import { DotMessagePipeModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
@@ -106,38 +106,48 @@ describe('DotPagesListingPanelComponent', () => {
                 languageLabels: { 1: 'En-en', 2: 'Es-es' }
             });
         }
+
         get languageOptions$() {
             return of([
                 { label: 'En-en', value: 1 },
                 { label: 'ES-es', value: 2 }
             ]);
         }
+
         get languageLabels$() {
             return of({ 1: 'En-en', 2: 'Es-es' });
         }
-        getPages(): void {
-            /* */
-        }
-        getPageTypes(): void {
-            /* */
-        }
-        setKeyword(): void {
-            /* */
-        }
-        setLanguageId(): void {
-            /* */
-        }
-        setArchived(): void {
-            /* */
-        }
-        setSessionStorageFilterParams(): void {
-            /* */
-        }
+
         get actionMenuDomId$() {
             return of('');
         }
+
         get pageTypes$() {
             return of([{ ...dotcmsContentTypeBasicMock }]);
+        }
+
+        getPages(): void {
+            /* */
+        }
+
+        getPageTypes(): void {
+            /* */
+        }
+
+        setKeyword(): void {
+            /* */
+        }
+
+        setLanguageId(): void {
+            /* */
+        }
+
+        setArchived(): void {
+            /* */
+        }
+
+        setSessionStorageFilterParams(): void {
+            /* */
         }
     }
 
@@ -151,7 +161,7 @@ describe('DotPagesListingPanelComponent', () => {
                     CheckboxModule,
                     DropdownModule,
                     DotAutofocusModule,
-                    DotMessagePipeModule,
+                    DotMessagePipe,
                     DotRelativeDatePipe,
                     InputTextModule,
                     SkeletonModule,

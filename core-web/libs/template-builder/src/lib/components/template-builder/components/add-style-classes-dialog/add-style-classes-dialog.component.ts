@@ -6,15 +6,16 @@ import {
     ChangeDetectionStrategy,
     Component,
     OnDestroy,
-    OnInit
+    OnInit,
+    ViewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { AutoCompleteModule } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
 
@@ -23,17 +24,17 @@ import { StyleClassModel } from '../../models/models';
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
-    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipeModule, NgIf, AsyncPipe],
+    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe, NgIf, AsyncPipe],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, OnDestroy {
-    private autoCompleteInput: HTMLInputElement;
-
-    private destroy$: Subject<void> = new Subject<void>();
-
     public vm$ = this.store.vm$;
+    @ViewChild(AutoComplete)
+    autoComplete: AutoComplete;
+    private autoCompleteInput: HTMLInputElement;
+    private destroy$: Subject<void> = new Subject<void>();
 
     constructor(
         private ref: DynamicDialogRef,
@@ -101,5 +102,17 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
      */
     onUnselect(): void {
         this.store.removeLastClass();
+    }
+
+    /**
+     * @description Used to listen for enter presses
+     *
+     * @param {KeyboardEvent} event
+     * @memberof AddStyleClassesDialogComponent
+     */
+    onKeyUp(event: KeyboardEvent): void {
+        if (event.key === 'Enter' && this.autoCompleteInput.value) {
+            this.autoComplete.selectItem({ cssClass: this.autoCompleteInput.value });
+        }
     }
 }

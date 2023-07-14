@@ -4,7 +4,7 @@ import { NgModule } from '@angular/core';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoriesCreateEditRoutingModule } from './dot-categories-create-edit-routing.module';
 import { DotCategoriesCreateEditComponent } from './dot-categories-create-edit.component';
@@ -17,7 +17,7 @@ import { DotCategoriesPermissionsModule } from '../dot-categories-permissions/do
     exports: [DotCategoriesCreateEditComponent],
     imports: [
         CommonModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         TabViewModule,
         DotCategoriesListingModule,
         DotCategoriesCreateEditRoutingModule,

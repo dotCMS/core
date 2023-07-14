@@ -11,6 +11,7 @@ import { PaginationEvent } from '@components/_common/searchable-dropdown/compone
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotEditContentTypeCacheService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
@@ -119,7 +120,7 @@ describe('DotEditRelationshipsComponent', () => {
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
             declarations: [DotEditRelationshipsComponent, MockSearchableDropdownComponent],
-            imports: [],
+            imports: [DotMessagePipe],
             providers: [
                 DotEditContentTypeCacheService,
                 { provide: DotMessageService, useValue: messageServiceMock },
