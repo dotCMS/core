@@ -92,6 +92,10 @@ public interface AbstractCondition {
             return new DefaultParameterValuesGetter();
         }
 
+        /**
+         * Type of the Parameter it set how its value is going to be handled before
+         * try to check the Condition
+         */
         enum Type {
             SIMPLE(new DefaultParameterValuesTransformer());
 
