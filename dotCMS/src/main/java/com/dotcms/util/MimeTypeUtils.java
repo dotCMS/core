@@ -19,6 +19,7 @@ import javax.activation.MimeType;
 public class MimeTypeUtils {
 
     public static final String ACCEPT_ALL = "*/*";
+    public static final String MIME_TYPE_APP_OCTET_STREAM = "application/octet-stream";
 
     // defect nothing default implementation
     private static MimeTypeDetector mimeTypeDetector = path -> null;

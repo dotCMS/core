@@ -65,7 +65,7 @@ class MetadataGeneratorImpl implements MetadataGenerator {
     public TreeMap<String, Serializable> standAloneMetadata(final File binary){
         final TreeMap<String, Serializable> metadataMap = new TreeMap<>(Comparator.naturalOrder());
         final String binaryName = binary.getName();
-        final String mimeType = Try.of(()->MimeTypeUtils.getMimeType(binary)).getOrElse(FileAsset.UNKNOWN_MIME_TYPE);
+        final String mimeType = Try.of(()->MimeTypeUtils.getMimeType(binary)).getOrElse(MimeTypeUtils.MIME_TYPE_APP_OCTET_STREAM);
         metadataMap.put(NAME_META_KEY.key(), binaryName);
         metadataMap.put(TITLE_META_KEY.key(), binaryName); //Title gets replaced by the loaded metadata. Otherwise iwe set a default
         final String relativePath = binary.getAbsolutePath()
