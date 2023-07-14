@@ -67,8 +67,9 @@ describe('RemoveConfirmDialogComponent', () => {
         expect(rejectEventSpy).toHaveBeenCalled();
     });
 
-    it('should emit request when button is clicked', () => {
-        const requestEventSpy = jest.spyOn(spectator.component.deleteRequested, 'emit');
+    it('should emit request when button is clicked if skipConfirmation is set to true', () => {
+        spectator.component.skipConfirmation = true;
+        const requestEventSpy = jest.spyOn(spectator.component.deleteConfirmed, 'emit');
 
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
         spectator.dispatchMouseEvent(deleteButton, 'onClick');

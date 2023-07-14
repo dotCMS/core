@@ -208,6 +208,20 @@ describe('TemplateBuilderBoxComponent', () => {
         done();
     });
 
+    it('should trigger deleteColumn when clicking on deleteColumn button and there are no containers', () => {
+        spectator.component.items = [];
+        spectator.detectComponentChanges();
+        const deleteMock = jest.spyOn(spectator.component.deleteColumn, 'emit');
+
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+
+        spectator.dispatchFakeEvent(deleteButton, 'onClick');
+
+        spectator.detectChanges();
+
+        expect(deleteMock).toHaveBeenCalled();
+    });
+
     describe('Dialog', () => {
         it('should open dialog when click on edit button', () => {
             spectator.setInput('width', 1);
@@ -258,19 +272,6 @@ describe('TemplateBuilderBoxComponent', () => {
                 expect(templateBuilderBox).not.toExist();
                 expect(spectator.component.dialogVisible).toBeFalsy();
             });
-        });
-
-        it('should emit a delete request without needing confirmation when there are no containers', () => {
-            spectator.component.items = [];
-            const deleteMock = jest.spyOn(spectator.component.deleteColumn, 'emit');
-
-            const deleteButton = spectator.query(byTestId('btn-remove-item'));
-
-            spectator.dispatchFakeEvent(deleteButton, 'onClick');
-
-            spectator.detectChanges();
-
-            expect(deleteMock).toHaveBeenCalled();
         });
     });
 });

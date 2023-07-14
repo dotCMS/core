@@ -91,8 +91,6 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     }
 
     requestColumnDelete() {
-        if (this.items.length === 0) {
-            this.deleteColumn.emit();
-        }
+        this.deleteColumn.emit();
     }
 }
