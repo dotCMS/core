@@ -19,7 +19,8 @@ import {
     getColumnByID,
     removeColumnByID,
     createDotGridStackWidgetFromNode,
-    parseMovedNodeToWidget
+    parseMovedNodeToWidget,
+    willBoxFitInRow
 } from '../utils/gridstack-utils';
 
 /**
@@ -34,7 +35,13 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     public items$ = this.select((state) => state.items);
     public layoutProperties$ = this.select((state) => state.layoutProperties);
 
-    public vm$ = this.select((state) => state);
+    public vm$ = this.select((state) => ({
+        ...state,
+        items: state.items.map((item) => ({
+            ...item,
+            willBoxFit: willBoxFitInRow(item)
+        }))
+    }));
 
     constructor() {
         super({

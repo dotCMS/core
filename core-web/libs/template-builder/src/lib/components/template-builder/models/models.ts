@@ -38,6 +38,7 @@ export interface DotGridStackWidget extends GridStackWidget {
     styleClass?: string[]; // We can join the classes in the parser, might be easier to work with
     subGridOpts?: DotGridStackOptions;
     parentId?: string;
+    willBoxFit?: boolean;
 }
 
 /**
@@ -52,6 +53,7 @@ export interface DotGridStackNode extends GridStackNode {
     styleClass?: string[]; // We can join the classes in the parser, might be easier to work with
     subGridOpts?: DotGridStackOptions;
     parentId?: string;
+    willBoxFit?: boolean;
 }
 
 /**

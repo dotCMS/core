@@ -1,7 +1,7 @@
 import { GridItemHTMLElement } from 'gridstack';
 
 import { NgIf, NgStyle } from '@angular/common';
-import { Component, ElementRef, Input, OnChanges } from '@angular/core';
+import { Component, ElementRef, Input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -12,7 +12,6 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotGridStackWidget } from '../../models/models';
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
-import { willBoxFitInRow } from '../../utils/gridstack-utils';
 import { AddStyleClassesDialogComponent } from '../add-style-classes-dialog/add-style-classes-dialog.component';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-background-columns/template-builder-background-columns.component';
@@ -30,12 +29,10 @@ import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-b
         NgStyle
     ]
 })
-export class TemplateBuilderRowComponent implements OnChanges {
+export class TemplateBuilderRowComponent {
     @Input() row: DotGridStackWidget;
 
     @Input() isResizing = false;
-
-    willBoxFit: boolean;
 
     constructor(
         private el: ElementRef,
@@ -43,10 +40,6 @@ export class TemplateBuilderRowComponent implements OnChanges {
         private dialogService: DialogService,
         private dotMessage: DotMessageService
     ) {}
-
-    ngOnChanges() {
-        this.willBoxFit = willBoxFitInRow(this.row);
-    }
 
     get nativeElement(): GridItemHTMLElement {
         return this.el.nativeElement;

@@ -51,8 +51,8 @@ describe('DotTemplateBuilderStore', () => {
             providers: [DotTemplateBuilderStore]
         });
         service = TestBed.inject(DotTemplateBuilderStore);
-        items$ = service.vm$.pipe(pluck('items'));
-        layoutProperties$ = service.vm$.pipe(pluck('layoutProperties'));
+        items$ = service.items$;
+        layoutProperties$ = service.layoutProperties$;
         containerMap$ = service.vm$.pipe(pluck('containerMap'));
 
         // Reset the state because is manipulated by reference

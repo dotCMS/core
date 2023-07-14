@@ -30,7 +30,8 @@ import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-b
 class HostComponent {
     isResizing = false;
     row = {
-        id: '1'
+        id: '1',
+        willBoxFit: false
     };
 }
 
@@ -93,6 +94,18 @@ describe('TemplateBuilderRowComponent', () => {
 
     it('should have a background when resizing', () => {
         fixture.componentInstance.isResizing = true;
+        fixture.detectChanges();
+
+        expect(
+            fixture.debugElement.query(By.css('dotcms-template-builder-background-columns'))
+        ).toBeTruthy();
+    });
+
+    it('should have a background when a box can fit', () => {
+        fixture.componentInstance.row = {
+            id: '1',
+            willBoxFit: true
+        };
         fixture.detectChanges();
 
         expect(
