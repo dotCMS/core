@@ -29,10 +29,10 @@ import com.dotcms.experiments.model.Experiment;
  *
  * This Query is merged with the static part create in {@link ExperimentResultsQueryFactory}
  *
- * @see ExperimentResultQueryFactory
- * @see MetricExperimentResultQuery
+ * @see ExperimentResultsQueryFactory
+ * @see MetricExperimentResultsQuery
  */
-public class ReachPageExperimentResultQuery implements  MetricExperimentResultQuery {
+public class ReachPageExperimentResultsQuery implements MetricExperimentResultsQuery {
 
     @Override
     public CubeJSQuery getCubeJSQuery(final Experiment experiment) {
