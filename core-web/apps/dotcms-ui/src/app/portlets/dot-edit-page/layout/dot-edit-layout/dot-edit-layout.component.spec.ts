@@ -239,7 +239,7 @@ describe('DotEditLayoutComponent', () => {
                 expect(component.pageState).toEqual(new DotPageRender(mockDotRenderedPage()));
             });
 
-            it('should save the layout after DEBOUNCE_TIME', fakeAsync(() => {
+            it(`should save the layout after ${DEBOUNCE_TIME}`, fakeAsync(() => {
                 const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
                 spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
 
