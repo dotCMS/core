@@ -15,6 +15,8 @@ import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.viewtools.XsltToolTest;
+import com.dotcms.storage.Chainable4040StorageCacheTest;
+import com.dotcms.storage.FileStorageAPITest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
@@ -88,7 +90,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceIssue15124Test.class,
         com.dotcms.rest.api.v1.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v1.contenttype.FieldVariableResourceTest.class,
-        com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.class
+        com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.class,
+        Chainable4040StorageCacheTest.class,
+        FileStorageAPITest.class
 
 })
 
