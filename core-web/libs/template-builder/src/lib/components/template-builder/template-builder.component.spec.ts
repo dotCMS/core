@@ -21,7 +21,12 @@ import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
-import { CONTAINER_MAP_MOCK, DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
+import {
+    CONTAINER_MAP_MOCK,
+    DOT_MESSAGE_SERVICE_TB_MOCK,
+    FULL_DATA_MOCK,
+    ROWS_MOCK
+} from './utils/mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -193,6 +198,19 @@ describe('TemplateBuilderComponent', () => {
         spectator.click(actionsButton);
 
         expect(spectator.query(byTestId('template-layout-properties-panel'))).toBeTruthy();
+    });
+
+    it('should have a row with class "template-builder-row--wont-fit" when a box wont fit in the row and the Add Box button is dragging', () => {
+        spectator.component.addBoxIsDragging = true;
+
+        store.setState((state) => ({
+            ...state,
+            rows: ROWS_MOCK
+        }));
+
+        spectator.detectChanges();
+
+        expect(spectator.queryAll('.template-builder-row--wont-fit').length).toBe(1);
     });
 
     describe('layoutChange', () => {

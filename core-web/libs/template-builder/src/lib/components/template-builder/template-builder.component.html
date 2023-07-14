@@ -60,8 +60,9 @@
                 [row]="row"
                 [isResizing]="vm.resizingRowID === row.id"
                 [ngClass]="{
-                    'template-builder-row--wont-fit': isDraggingBox && !row.willBoxFit
+                    'template-builder-row--wont-fit': addBoxIsDragging && !row.willBoxFit
                 }"
+                [attr.data-wont-fit]="'dot.template.builder.row.box.wont.fit' | dm"
                 data-testId="row"
             >
                 <div class="grid-stack-item-content grid-stack">

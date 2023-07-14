@@ -115,7 +115,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     private dotLayout: DotLayout;
 
     grid!: GridStack;
-    isDraggingBox = false;
+    addBoxIsDragging = false;
 
     constructor(
         private store: DotTemplateBuilderStore,
@@ -171,12 +171,12 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         });
 
         this.addBox.nativeElement.ddElement.on('dragstart', () => {
-            this.isDraggingBox = true;
+            this.addBoxIsDragging = true;
             this.cd.detectChanges();
         });
 
         this.addBox.nativeElement.ddElement.on('dragstop', () => {
-            this.isDraggingBox = false;
+            this.addBoxIsDragging = false;
             this.cd.detectChanges();
         });
 

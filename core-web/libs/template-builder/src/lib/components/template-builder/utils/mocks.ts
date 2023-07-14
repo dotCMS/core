@@ -285,7 +285,8 @@ export const MESSAGES_MOCK = {
     'dot.common.apply': 'Apply',
     'editpage.layout.theme.search': 'Search',
     'dot.template.builder.classes.dialog.update.button': 'Update',
-    'dot.template.builder.sidebar.header.title': 'Sidebar'
+    'dot.template.builder.sidebar.header.title': 'Sidebar',
+    'dot.template.builder.row.box.wont.fit': 'You need a space of 3 columns to drop a box'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
@@ -595,9 +596,14 @@ export const ROWS_MOCK = [
         styleClass: []
     },
     {
+        w: 12,
+        h: 1,
+        x: 0,
+        y: 4,
         subGridOpts: {
             children: []
-        }
+        },
+        id: '60c2f2e0-9017-4439-bf22-c2d30f514392'
     }
 ];
 

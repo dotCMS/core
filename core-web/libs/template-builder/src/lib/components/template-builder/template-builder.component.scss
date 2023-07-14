@@ -80,8 +80,37 @@ p-divider {
     overflow-y: auto;
 }
 
-.template-builder-row--wont-fit {
-    cursor: no-drop;
-    opacity: 0.1;
-    transition: opacity 0.35s ease-in-out;
+.grid-stack-item {
+    transition: all 0.3s ease-in-out;
+
+    &.template-builder-row--wont-fit {
+        cursor: no-drop;
+        filter: grayscale(100%);
+
+        &:before {
+            opacity: 0;
+            content: attr(data-wont-fit);
+            position: absolute;
+            top: 45%;
+            display: block;
+            width: 100%;
+            text-align: center;
+            font-size: $font-size-lg;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        &:hover:before {
+            opacity: 1;
+        }
+
+        ::ng-deep .row {
+            opacity: 0.1;
+        }
+    }
+}
+
+::ng-deep dotcms-template-builder-row {
+    .row {
+        transition: opacity 0.3s ease-in-out;
+    }
 }
