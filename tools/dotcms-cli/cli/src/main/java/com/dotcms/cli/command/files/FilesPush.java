@@ -62,8 +62,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
             CompletableFuture<List<Pair<AssetsUtils.LocalPathStructure, TreeNode>>> folderTraversalFuture = CompletableFuture.supplyAsync(
                     () -> {
                         // Service to handle the traversal of the folder
-                        return pushService.traverseLocalFolders(output, source, removeAssets, removeFolders,
-                                true);
+                        return pushService.traverseLocalFolders(output, workspacePath, source,
+                                removeAssets, removeFolders, true);
                     });
 
             // ConsoleLoadingAnimation instance to handle the waiting "animation"
@@ -157,7 +157,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     // ---
                     // Pushing the tree
                     if (!dryRun) {
-                        pushService.processTreeNodes(output, localPathStructure, treeNode, treeNodePushInfo);
+                        pushService.processTreeNodes(output, workspacePath, localPathStructure, treeNode,
+                                treeNodePushInfo);
                     }
 
                 } else {

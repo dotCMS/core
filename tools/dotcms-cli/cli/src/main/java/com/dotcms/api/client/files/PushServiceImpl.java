@@ -41,6 +41,7 @@ public class PushServiceImpl implements PushService {
      * Each folder is represented as a pair of its local path structure and the corresponding tree node.
      *
      * @param output             the output option mixin
+     * @param workspace          the workspace path
      * @param source             the source path to traverse
      * @param removeAssets       true to allow remove assets, false otherwise
      * @param removeFolders      true to allow remove folders, false otherwise
@@ -52,13 +53,10 @@ public class PushServiceImpl implements PushService {
     @ActivateRequestContext
     @Override
     public List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(
-            OutputOptionMixin output, final String source, final boolean removeAssets, final boolean removeFolders,
-            final boolean ignoreEmptyFolders) {
+            OutputOptionMixin output, final String workspace, final String source, final boolean removeAssets,
+            final boolean removeFolders, final boolean ignoreEmptyFolders) {
 
-        // TODO: Remove this hardcoded path
-        var workspacePath = "/Users/jonathan/Downloads/CLI";
-
-        var workspaceFile = new File(workspacePath);
+        var workspaceFile = new File(workspace);
         var sourceFile = new File(source);
 
         // Validating the source is a valid path
@@ -71,7 +69,7 @@ public class PushServiceImpl implements PushService {
         for (var root : roots) {
 
             final var localPathStructure = ParseLocalPath(workspaceFile, new File(root));
-            var treeNode = localTraversalService.traverseLocalFolder(output, workspacePath, root,
+            var treeNode = localTraversalService.traverseLocalFolder(output, workspace, root,
                     removeAssets, removeFolders, ignoreEmptyFolders);
 
             traversalResult.add(
@@ -87,6 +85,7 @@ public class PushServiceImpl implements PushService {
      * asynchronously, displays a progress bar, and waits for the completion of the push process.
      *
      * @param output             the output option mixin
+     * @param workspace          the workspace path
      * @param localPathStructure the local path structure of the folder being pushed
      * @param treeNode           the tree node representing the folder and its contents with all the push information
      *                           for each file and folder
@@ -95,11 +94,9 @@ public class PushServiceImpl implements PushService {
      */
     @ActivateRequestContext
     @Override
-    public void processTreeNodes(OutputOptionMixin output, final AssetsUtils.LocalPathStructure localPathStructure,
+    public void processTreeNodes(OutputOptionMixin output, final String workspace,
+                                 final AssetsUtils.LocalPathStructure localPathStructure,
                                  final TreeNode treeNode, final TreeNodePushInfo treeNodePushInfo) {
-
-        // TODO: Remove this hardcoded path
-        var workspacePath = "/Users/jonathan/Downloads/CLI";
 
         // ConsoleProgressBar instance to handle the push progress bar
         ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
@@ -114,7 +111,7 @@ public class PushServiceImpl implements PushService {
         CompletableFuture<Void> pushTreeFuture = CompletableFuture.supplyAsync(
                 () -> {
                     remoteTraversalService.pushTreeNode(
-                            workspacePath, localPathStructure, treeNode, progressBar
+                            workspace, localPathStructure, treeNode, progressBar
                     );
                     return null;
                 });

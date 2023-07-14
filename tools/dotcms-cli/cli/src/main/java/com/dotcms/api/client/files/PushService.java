@@ -17,6 +17,7 @@ public interface PushService {
      *
      * @param output             the output option mixin
      * @param source             the source path to traverse
+     * @param workspace          the workspace path
      * @param removeAssets       true to allow remove assets, false otherwise
      * @param removeFolders      true to allow remove folders, false otherwise
      * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
@@ -25,7 +26,7 @@ public interface PushService {
      *                                  outside the workspace
      */
     List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(
-            OutputOptionMixin output, String source, boolean removeAssets, boolean removeFolders,
+            OutputOptionMixin output, String workspace, String source, boolean removeAssets, boolean removeFolders,
             boolean ignoreEmptyFolders);
 
     /**
@@ -33,13 +34,14 @@ public interface PushService {
      * asynchronously, displays a progress bar, and waits for the completion of the push process.
      *
      * @param output             the output option mixin
+     * @param workspace          the workspace path
      * @param localPathStructure the local path structure of the folder being pushed
      * @param treeNode           the tree node representing the folder and its contents with all the push information
      *                           for each file and folder
      * @param treeNodePushInfo   the push information summary associated with the tree node
      * @throws RuntimeException if an error occurs during the push process
      */
-    void processTreeNodes(OutputOptionMixin output, AssetsUtils.LocalPathStructure localPathStructure,
+    void processTreeNodes(OutputOptionMixin output, String workspace, AssetsUtils.LocalPathStructure localPathStructure,
                           TreeNode treeNode, TreeNodePushInfo treeNodePushInfo);
 
 }
