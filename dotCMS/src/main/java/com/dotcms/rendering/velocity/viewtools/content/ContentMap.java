@@ -275,7 +275,8 @@ public class ContentMap {
                     return fam;
                 }
                 if (asset.isDotAsset()) {
-                    BinaryMap binmap = new BinaryMap(asset, asset.getContentType().fieldMap().get("asset"));
+					BinaryMap binmap = new BinaryMap(asset,
+							asset.getContentType().fieldMap().get("asset"), context);
                     // Store file asset map into fieldValueMap
                     addFieldValue(f, binmap);
                     return binmap;
@@ -297,7 +298,7 @@ public class ContentMap {
                     addFieldValue(f, fam);
                     return fam;
                 } else {
-                    BinaryMap bm = new BinaryMap(content, f);
+					BinaryMap bm = new BinaryMap(content, f, context);
 
                     // Store file asset into fieldValueMap
                     addFieldValue(f, bm);

@@ -76,3 +76,4 @@ This maintenance release includes the following code fixes:
 
 59. Fix defaultPath field variable
 60. https://github.com/dotCMS/core/issues/18123 : Add depth option to page API #18123
+61. https://github.com/dotCMS/core/issues/25217 : New method of generating shorty IDs to include the language ID is creating issues with static PP #25217
