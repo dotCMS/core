@@ -626,14 +626,19 @@
         });
 
 <% 
+	boolean isUrlMap = (structure.getDetailPage() !=null && structure.getUrlMapPattern()!=null);
+	String editPath = isUrlMap ?  conAPI.getUrlMapForContentlet(contentlet, user, false) : "";
     final String titleFieldValue = (contentlet != null ? contentlet.getTitle() : "").replace("'", "\'");
 %>
         var customEvent = document.createEvent("CustomEvent");
+		console.log("LLAMADO");
+		console.log(<%=isUrlMap%>);
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-contentlet-loaded",
             data: {
                 contentType: '<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>',
-                pageTitle: "<%=titleFieldValue%>"
+                pageTitle: "<%=titleFieldValue%>",
+				redirectTo: "<%=editPath%>"
             }
         });
         setTimeout(function() {

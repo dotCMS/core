@@ -129,12 +129,8 @@ export const INLINE_TINYMCE_SCRIPTS = `
     }
 
     function showCopyModalData(element) {
-        const container = element.closest('[data-dot-object="container"]');
-        const contentlet = element.closest('[data-dot-object="contentlet"]');
-
         return {
-            container,
-            contentlet,
+            target: element,
             selector: "[data-mode]",
             initEdit
         }
