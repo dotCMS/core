@@ -18,6 +18,7 @@ import { ButtonModule } from 'primeng/button';
 import { DataView, DataViewModule } from 'primeng/dataview';
 import { DropdownModule } from 'primeng/dropdown';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
@@ -41,7 +42,8 @@ import { DotMessagePipe, DotSiteSelectorDirective } from '@dotcms/ui';
         DotSiteSelectorDirective,
         DataViewModule,
         CommonModule,
-        DotMessagePipe
+        DotMessagePipe,
+        InputTextModule
     ],
     standalone: true,
     templateUrl: './template-builder-theme-selector.component.html',
@@ -95,7 +97,10 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
     }
 
     ngOnInit() {
-        const hostId = this.currentTheme?.hostId || this.siteService.currentSite?.identifier;
+        const hostId =
+            this.currentTheme?.hostId ||
+            this.siteService.currentSite?.identifier ||
+            'HOLA COMO ESTAS DSAD';
         this.paginatorService.url = 'v1/themes';
         this.paginatorService.paginationPerPage = 8;
         this.paginatorService.setExtraParams('hostId', hostId);
