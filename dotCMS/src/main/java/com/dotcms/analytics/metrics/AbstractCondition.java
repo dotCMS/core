@@ -1,10 +1,12 @@
 package com.dotcms.analytics.metrics;
 
+import com.dotcms.analytics.metrics.ParameterValuesTransformer.Values;
 import com.dotcms.experiments.business.result.Event;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
+import java.util.Collection;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
@@ -38,13 +40,15 @@ public interface AbstractCondition {
     @JsonIgnore
     default boolean isValid(final Parameter parameter, final Event event){
 
-        final Object[] values = parameter.getValueGetter().getValuesFromEvent(parameter, event);
+        final Collection values = parameter.getValueGetter().getValuesFromEvent(parameter, event);
 
-        final String[] filterAndTransformValues = parameter.type().getTransformer()
+        final Values filterAndTransformValues = parameter.type().getTransformer()
                 .transform(values, this);
 
-        final boolean conditionIsValid = Arrays.stream(filterAndTransformValues).anyMatch(value ->
-                operator().getFunction().apply(value, value())
+        final String realValue = filterAndTransformValues.getReal();
+
+        final boolean conditionIsValid = filterAndTransformValues.getValuesToCompare().stream()
+                .anyMatch(value -> operator().getFunction().apply(value, realValue)
         );
 
         return conditionIsValid;
