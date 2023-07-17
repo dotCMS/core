@@ -91,9 +91,9 @@ p-divider {
             opacity: 0;
             position: absolute;
             top: 43%;
-            left: 25%;
+            left: 35%;
             display: block;
-            width: 48%;
+            width: fit-content;
             z-index: 1;
             background-color: $color-palette-gray-200;
             color: $color-palette-gray-700;
