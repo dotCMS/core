@@ -11382,10 +11382,6 @@ a.category_higlighted, a.tag_higlighted {
   font-weight: bolder;
 }
 
-.related-content-dialog {
-  height: 90%;
-  width: 90%;
-}
 .related-content-dialog .dijitDialogPaneContent {
   padding: 0;
 }

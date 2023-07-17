@@ -49,6 +49,8 @@ import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
+import com.dotcms.experiments.model.RunningIds.RunningId;
+import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
 import com.dotcms.http.server.mock.MockHttpServerContext.RequestContext;
@@ -61,6 +63,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -125,6 +128,199 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#start(long, User)}
+     * When: The experiment is started
+     * Should: Generate a new Running Experiment ID
+     */
+    @Test
+    public void createRunningIdWhenExperimentIsTurnToRunning()
+            throws DotDataException, DotSecurityException {
+        final Experiment experiment = new ExperimentDataGen().nextPersisted();
+
+        final Experiment experimentFromDataBase_1 = APILocator.getExperimentsAPI()
+                .find(experiment.id().get(), APILocator.systemUser())
+                .orElseThrow(() -> new AssertionError("Experiment not found"));
+
+        assertNotNull(experimentFromDataBase_1.runningIds());
+
+        assertFalse(experimentFromDataBase_1.runningIds().iterator().hasNext());
+
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .start(experiment.id().get(), APILocator.systemUser());
+
+        try {
+            assertNotNull(experimentStarted.runningIds());
+            assertEquals(1, experimentStarted.runningIds().size());
+            final RunningId runningId = experimentStarted.runningIds().iterator().next();
+            assertNotNull(runningId);
+            assertNotNull(runningId.id());
+            assertNotNull(runningId.startDate());
+            assertNull(runningId.endDate());
+
+            final Experiment experimentFromDataBase_2 = APILocator.getExperimentsAPI()
+                    .find(experiment.id().get(), APILocator.systemUser())
+                    .orElseThrow(() -> new AssertionError("Experiment not found"));
+
+            assertNotNull(experimentFromDataBase_2.runningIds());
+
+            final RunningId runningIdFromDataBase_2 = experimentFromDataBase_2.runningIds()
+                    .iterator().next();
+            assertNotNull(runningIdFromDataBase_2);
+            assertNotNull(runningIdFromDataBase_2.id());
+            assertNotNull(runningIdFromDataBase_2.startDate());
+            assertNull(runningIdFromDataBase_2.endDate());
+        } finally {
+            APILocator.getExperimentsAPI().end(experimentStarted.id().get(), APILocator.systemUser());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#start(long, User)}
+     * When: The experiment is started but using {@link ExperimentsAPIImpl#startScheduled(long, User)}
+     * Should: Generate a new Running Experiment ID
+     */
+    @Test
+    public void createRunningIdWithStartScheduled()
+            throws DotDataException, DotSecurityException {
+        final Experiment experiment = new ExperimentDataGen()
+                .status(Status.SCHEDULED)
+                .scheduling(Scheduling.builder()
+                        .startDate(Instant.now())
+                        .endDate(Instant.now().plus(2, ChronoUnit.DAYS))
+                        .build())
+                .nextPersisted();
+
+        final Experiment experimentFromDataBase_1 = APILocator.getExperimentsAPI()
+                .find(experiment.id().get(), APILocator.systemUser())
+                .orElseThrow(() -> new AssertionError("Experiment not found"));
+
+        assertNotNull(experimentFromDataBase_1.runningIds());
+
+        assertFalse(experimentFromDataBase_1.runningIds().iterator().hasNext());
+
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .startScheduled(experiment.id().get(), APILocator.systemUser());
+
+        try {
+            assertNotNull(experimentStarted.runningIds());
+            assertEquals(1, experimentStarted.runningIds().size());
+            final RunningId runningId = experimentStarted.runningIds().iterator().next();
+            assertNotNull(runningId);
+            assertNotNull(runningId.id());
+            assertNotNull(runningId.startDate());
+            assertNull(runningId.endDate());
+
+            final Experiment experimentFromDataBase_2 = APILocator.getExperimentsAPI()
+                    .find(experiment.id().get(), APILocator.systemUser())
+                    .orElseThrow(() -> new AssertionError("Experiment not found"));
+
+            assertNotNull(experimentFromDataBase_2.runningIds());
+
+            final RunningId runningIdFromDataBase_2 = experimentFromDataBase_2.runningIds()
+                    .iterator().next();
+            assertNotNull(runningIdFromDataBase_2);
+            assertNotNull(runningIdFromDataBase_2.id());
+            assertNotNull(runningIdFromDataBase_2.startDate());
+            assertNull(runningIdFromDataBase_2.endDate());
+        } finally {
+            APILocator.getExperimentsAPI().end(experimentStarted.id().get(), APILocator.systemUser());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#start(long, User)}
+     * When: The experiment is started twice
+     * Should: Generate two Running Experiment ID different
+     */
+    @Test
+    public void restartExperimentMustGenerateTwoRunningIds()
+            throws DotDataException, DotSecurityException {
+        final Experiment experiment = new ExperimentDataGen().nextPersisted();
+
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .start(experiment.id().get(), APILocator.systemUser());
+
+        try {
+            final Experiment experimentToRestart = Experiment.builder().from(experimentStarted)
+                    .status(Status.DRAFT)
+                    .scheduling(Optional.empty())
+                    .build();
+
+           FactoryLocator.getExperimentsFactory().save(experimentToRestart);
+
+            APILocator.getExperimentsAPI()
+                    .start(experimentToRestart.id().get(), APILocator.systemUser());
+
+            final Experiment experimentAfterReStart = APILocator.getExperimentsAPI()
+                    .find(experimentToRestart.id().get(), APILocator.systemUser())
+                    .orElseThrow(() -> new AssertionError("Experiment not found"));
+
+            assertEquals(2, experimentAfterReStart.runningIds().size());
+
+            assertTrue(experimentAfterReStart.runningIds().getAll().stream()
+                    .anyMatch(runningId -> runningId.endDate() != null));
+
+            assertTrue(experimentAfterReStart.runningIds().getAll().stream()
+                    .anyMatch(runningId -> runningId.endDate() == null));
+
+            assertTrue(experimentAfterReStart.runningIds().get(0).id() != experimentAfterReStart.runningIds().get(1).id());
+        } finally {
+            APILocator.getExperimentsAPI().end(experimentStarted.id().get(), APILocator.systemUser());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#startScheduled(String, User)}
+     * When: The experiment is started twice using the {@link ExperimentsAPIImpl#startScheduled(String, User)}
+     * Should: Generate two Running Experiment ID different
+     */
+    @Test
+    public void restartExperimentUsingTheStartScheduled()
+            throws DotDataException, DotSecurityException {
+        final Experiment experiment = new ExperimentDataGen()
+                .status(Status.SCHEDULED)
+                .scheduling(Scheduling.builder()
+                        .startDate(Instant.now())
+                        .endDate(Instant.now().plus(2, ChronoUnit.DAYS))
+                        .build())
+                .nextPersisted();
+
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .startScheduled(experiment.id().get(), APILocator.systemUser());
+
+        final Experiment experimentToRestart = Experiment.builder().from(experimentStarted)
+                .status(Status.SCHEDULED)
+                .scheduling(Scheduling.builder()
+                        .startDate(Instant.now())
+                        .endDate(Instant.now().plus(2, ChronoUnit.DAYS))
+                        .build())
+                .build();
+
+        try {
+            FactoryLocator.getExperimentsFactory().save(experimentToRestart);
+
+            APILocator.getExperimentsAPI()
+                    .startScheduled(experimentToRestart.id().get(), APILocator.systemUser());
+
+            final Experiment experimentAfterReStart = APILocator.getExperimentsAPI()
+                    .find(experimentToRestart.id().get(), APILocator.systemUser())
+                    .orElseThrow(() -> new AssertionError("Experiment not found"));
+
+            assertEquals(2, experimentAfterReStart.runningIds().size());
+
+            assertTrue(experimentAfterReStart.runningIds().getAll().stream()
+                    .anyMatch(runningId -> runningId.endDate() != null));
+
+            assertTrue(experimentAfterReStart.runningIds().getAll().stream()
+                    .anyMatch(runningId -> runningId.endDate() == null));
+
+            assertTrue(experimentAfterReStart.runningIds().get(0).id() != experimentAfterReStart.runningIds().get(1).id());
+        } finally {
+            APILocator.getExperimentsAPI().end(experimentToRestart.id().get(), APILocator.systemUser());
+        }
     }
 
     /**

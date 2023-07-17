@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MultiSelectModule } from 'primeng/multiselect';
 
 import { DotDropdownSelectOption, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
 @Component({
@@ -13,7 +13,7 @@ import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.d
     imports: [
         FormsModule,
         // dotCMS
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotDropdownDirective,
         // PrimeNG
         MultiSelectModule
