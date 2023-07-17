@@ -226,6 +226,13 @@ export const ActionsMenu = (
                 content: suggestionsComponent.location.nativeElement,
                 rect: clientRect,
                 onHide: () => {
+                    editor.commands.focus();
+                    const queryRange = updateQueryRange({ editor, range });
+                    const text = editor.state.doc.textBetween(queryRange.from, queryRange.to, ' ');
+                    if (text === '/') {
+                        editor.commands.deleteRange(queryRange);
+                    }
+
                     const transaction = editor.state.tr.setMeta(FLOATING_ACTIONS_MENU_KEYBOARD, {
                         open: false
                     });
@@ -300,9 +307,23 @@ export const ActionsMenu = (
     }
 
     function onSelection({ editor, range, props }) {
+        const newRange = updateQueryRange({ editor, range });
+        execCommand({ editor: editor, range: newRange, props, customBlocks });
+    }
+
+    /**
+     * Returns a new range based on a query start and length
+     *
+     * @param editor {Editor}
+     * @param range {Range}
+     *
+     * @return range {Range}
+     */
+    function updateQueryRange({ editor, range }) {
         const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
         range.to = range.to + suggestionQuery;
-        execCommand({ editor: editor, range: range, props, customBlocks });
+
+        return range;
     }
 
     /* End new Functions */
