@@ -1,6 +1,7 @@
 package com.dotcms.analytics.metrics;
 
 
+import java.util.Collection;
 
 /**
  * No make any transformation to the values.
@@ -8,7 +9,7 @@ package com.dotcms.analytics.metrics;
 public class DefaultParameterValuesTransformer implements ParameterValuesTransformer<String> {
 
     @Override
-    public String[] transform(final String[] valuesFromEvent, final AbstractCondition condition) {
+    public Collection<String> transform(final Collection<String> valuesFromEvent, final AbstractCondition condition) {
         return valuesFromEvent;
     }
 }

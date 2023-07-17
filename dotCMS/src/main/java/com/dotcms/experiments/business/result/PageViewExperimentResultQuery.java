@@ -29,7 +29,7 @@ import com.dotcms.experiments.model.Experiment;
  * @see ExperimentResultQueryFactory
  * @see MetricExperimentResultQuery
  */
-public class BounceRateExperimentResultQuery implements  MetricExperimentResultQuery {
+public class PageViewExperimentResultQuery implements  MetricExperimentResultQuery {
 
     @Override
     public CubeJSQuery getCubeJSQuery(final Experiment experiment) {

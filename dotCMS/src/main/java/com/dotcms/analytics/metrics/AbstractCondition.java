@@ -4,7 +4,7 @@ import com.dotcms.experiments.business.result.Event;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.Arrays;
+import java.util.Collection;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
@@ -38,13 +38,13 @@ public interface AbstractCondition {
     @JsonIgnore
     default boolean isValid(final Parameter parameter, final Event event){
 
-        final Object[] values = parameter.getValueGetter().getValuesFromEvent(parameter, event);
+        final Collection<Object> values = parameter.getValueGetter().getValuesFromEvent(parameter, event);
 
-        final String[] filterAndTransformValues = parameter.type().getTransformer()
+        final Collection<String> filterAndTransformValues = parameter.type().getTransformer()
                 .transform(values, this);
 
-        final boolean conditionIsValid = Arrays.stream(filterAndTransformValues).anyMatch(value ->
-                operator().getFunction().apply(value, value())
+        final boolean conditionIsValid = filterAndTransformValues.stream()
+                .anyMatch(value -> operator().getFunction().apply(value, value())
         );
 
         return conditionIsValid;
@@ -97,7 +97,8 @@ public interface AbstractCondition {
          * try to check the Condition
          */
         enum Type {
-            SIMPLE(new DefaultParameterValuesTransformer());
+            SIMPLE(new DefaultParameterValuesTransformer()),
+            QUERY_PARAMETER(new QueryParameterValuesTransformer());
 
             final ParameterValuesTransformer parameterValuesTransformer;
             Type (final ParameterValuesTransformer parameterValuesTransformer) {
