@@ -6,7 +6,7 @@ import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dy
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotContainersService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAddStyleClassesDialogStore } from './components/template-builder/components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { DotLayoutPropertiesComponent } from './components/template-builder/components/dot-layout-properties/dot-layout-properties.component';
@@ -19,7 +19,7 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         NgIf,
         NgFor,
         AsyncPipe,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DynamicDialogModule,
         NgStyle,
         NgClass,

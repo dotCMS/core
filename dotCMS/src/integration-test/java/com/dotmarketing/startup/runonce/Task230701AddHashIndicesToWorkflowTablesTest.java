@@ -16,12 +16,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Verifies that the {@link Task230522AddHashIndicesToWorkflowTables} Upgrade Task is working as expected.
+ * Verifies that the {@link Task230701AddHashIndicesToWorkflowTables} Upgrade Task is working as expected.
  *
  * @author Jose Castro
  * @since Jun 22nd, 2023
  */
-public class Task230522AddHashIndicesToWorkflowTablesTest {
+public class Task230701AddHashIndicesToWorkflowTablesTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -30,7 +30,7 @@ public class Task230522AddHashIndicesToWorkflowTablesTest {
 
     /**
      * <ul>
-     *     <li><b>Method to test: </b>{@link Task230522AddHashIndicesToWorkflowTables#executeUpgrade()}</li>
+     *     <li><b>Method to test: </b>{@link Task230701AddHashIndicesToWorkflowTables#executeUpgrade()}</li>
      *     <li><b>Given Scenario: </b>Verifies that a new Hash Index is added to the specified Workflow tables.</li>
      *     <li><b>Expected Result: </b>Each Hash Index must be present.</li>
      * </ul>
@@ -38,7 +38,7 @@ public class Task230522AddHashIndicesToWorkflowTablesTest {
     @Test
     public void executeTaskUpgrade() throws DotDataException {
         final List<String> tables = List.of("workflow_comment", "workflow_history", "workflowtask_files");
-        final Task230522AddHashIndicesToWorkflowTables task = new Task230522AddHashIndicesToWorkflowTables();
+        final Task230701AddHashIndicesToWorkflowTables task = new Task230701AddHashIndicesToWorkflowTables();
         task.executeUpgrade();
         final DotDatabaseMetaData dbMetadata = new DotDatabaseMetaData();
         tables.forEach(table -> {

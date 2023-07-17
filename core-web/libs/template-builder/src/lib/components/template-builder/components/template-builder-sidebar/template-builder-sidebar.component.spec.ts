@@ -1,4 +1,4 @@
-import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FormsModule } from '@angular/forms';
@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderSidebarComponent } from './template-builder-sidebar.component';
@@ -27,7 +27,7 @@ describe('TemplateBuilderSidebarComponent', () => {
             FormsModule,
             HttpClientTestingModule,
             TemplateBuilderBoxComponent,
-            DotMessagePipeModule
+            DotMessagePipe
         ],
         providers: [
             {

@@ -21,7 +21,7 @@ const dotEditPage: Routes = [
         data: {
             featuredFlagToCheck: FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
         },
-
+        // needed to allow navigation from the page menu in the edit mode. See https://github.com/dotCMS/core/pull/25509
         runGuardsAndResolvers: 'always',
         children: [
             {

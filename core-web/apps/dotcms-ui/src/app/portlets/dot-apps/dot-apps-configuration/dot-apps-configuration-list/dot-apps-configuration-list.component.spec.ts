@@ -7,6 +7,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -43,7 +44,8 @@ describe('DotAppsConfigurationListComponent', () => {
                 ButtonModule,
                 DotAppsConfigurationItemModule,
                 HttpClientTestingModule,
-                DotPipesModule
+                DotPipesModule,
+                DotMessagePipe
             ],
             declarations: [DotAppsConfigurationListComponent],
             providers: [

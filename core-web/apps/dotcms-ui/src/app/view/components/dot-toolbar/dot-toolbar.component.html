@@ -1,36 +1,38 @@
 <p-toolbar>
     <div class="p-toolbar-group-left">
-        <div class="toolbar__button-wrapper">
-            <dot-icon-button
-                big
-                [icon]="(dotNavigationService.collapsed$ | async) ? 'menu' : 'arrow_back'"
-                inverted
-                (click)="handleMainButtonClick()"
-            ></dot-icon-button>
-        </div>
-        <div
-            class="toolbar__logo-wrapper"
-            [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async"
-            [class.toolbar__logo-wrapper--whitelabel]="logo$ | async"
-        >
-            <span
-                *ngIf="logo$ | async as logo; else toolbarLogo"
-                class="toolbar__logo--whitelabel"
-                [ngStyle]="{ 'background-image': logo }"
-            ></span>
-            <ng-template #toolbarLogo><span class="toolbar__logo"></span></ng-template>
-            <span class="toolbar__logo-bg"></span>
+        <div class="toolbar__dot-wrapper">
+            <div class="toolbar__button-wrapper">
+                <dot-icon-button
+                    [icon]="(dotNavigationService.collapsed$ | async) ? 'menu' : 'arrow_back'"
+                    (click)="handleMainButtonClick()"
+                    big
+                    inverted
+                ></dot-icon-button>
+            </div>
+            <div
+                class="toolbar__logo-wrapper"
+                [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async"
+                [class.toolbar__logo-wrapper--whitelabel]="logo$ | async"
+            >
+                <span
+                    class="toolbar__logo--whitelabel"
+                    *ngIf="logo$ | async as logo; else toolbarLogo"
+                    [ngStyle]="{ 'background-image': logo }"
+                ></span>
+                <ng-template #toolbarLogo><span class="toolbar__logo"></span></ng-template>
+                <span class="toolbar__logo-bg"></span>
+            </div>
         </div>
         <dot-crumbtrail class="toolbar__crumbtrail"></dot-crumbtrail>
     </div>
     <div class="p-toolbar-group-right">
         <dot-site-selector
+            class="toolbar__site-selector"
             #siteSelector
+            [archive]="false"
             (switch)="siteChange($event)"
             (hide)="iframeOverlayService.hide()"
             (display)="iframeOverlayService.show()"
-            [archive]="false"
-            class="toolbar__site-selector"
             cssClass="d-secondary"
             width="200px"
         >

@@ -778,7 +778,7 @@ create table contentlet (inode varchar(36) not null,
 	sort_order int4,
 	friendly_name varchar(255),
 	structure_inode varchar(36),
-	disabled_wysiwyg varchar(255),
+	disabled_wysiwyg varchar(1000),
 	identifier varchar(36),
 	language_id int8,
     variant_id varchar(255) default 'DEFAULT',
@@ -2510,7 +2510,8 @@ create table experiment (
      created_by varchar(255) not null,
      last_modified_by varchar(255) not null,
      goals jsonb,
-     lookback_window integer not null
+     lookback_window integer not null,
+     running_ids jsonb
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);

@@ -15,7 +15,10 @@ import {
     DotExperimentsService
 } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotEnterpriseLicenseResolver } from '@portlets/shared/resolvers/dot-enterprise-license-resolver.service';
+import {
+    DotPushPublishEnvironmentsResolver,
+    DotEnterpriseLicenseResolver
+} from '@portlets/shared/resolvers';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
@@ -48,7 +51,8 @@ import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/do
         DotPageLayoutService,
         DotFeatureFlagResolver,
         DotFavoritePageService,
-        DotEnterpriseLicenseResolver
+        DotEnterpriseLicenseResolver,
+        DotPushPublishEnvironmentsResolver
     ]
 })
 export class DotEditPageModule {}

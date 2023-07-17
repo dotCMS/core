@@ -11,12 +11,17 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
 
 export class PushPublishServiceMock {
     _lastEnvironmentPushed: string[];
+
+    get lastEnvironmentPushed(): string[] {
+        return this._lastEnvironmentPushed;
+    }
 
     pushPublishContent(): Observable<any> {
         return observableOf([]);
@@ -34,15 +39,11 @@ export class PushPublishServiceMock {
             }
         ]);
     }
-
-    get lastEnvironmentPushed(): string[] {
-        return this._lastEnvironmentPushed;
-    }
 }
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `<form [formGroup]="group">
+    template: ` <form [formGroup]="group">
         <dot-push-publish-env-selector
             showList="true"
             formControlName="environment"
@@ -51,6 +52,7 @@ export class PushPublishServiceMock {
 })
 class TestHostComponent {
     group: UntypedFormGroup;
+
     constructor() {
         this.group = new UntypedFormGroup({
             environment: new UntypedFormControl('')
@@ -74,7 +76,7 @@ describe('PushPublishEnvSelectorComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [PushPublishEnvSelectorComponent, TestHostComponent],
-            imports: [BrowserAnimationsModule],
+            imports: [BrowserAnimationsModule, DotMessagePipe],
             providers: [
                 PushPublishService,
                 { provide: PushPublishService, useValue: pushPublishServiceMock },

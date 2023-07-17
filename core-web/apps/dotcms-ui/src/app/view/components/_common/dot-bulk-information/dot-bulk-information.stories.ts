@@ -4,7 +4,7 @@ import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dy
 
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotBulkInformationComponent } from './dot-bulk-information.component';
@@ -21,7 +21,7 @@ export default {
     title: 'DotCMS/Misc/BulkDialog',
     decorators: [
         moduleMetadata({
-            imports: [DotMessagePipeModule],
+            imports: [DotMessagePipe],
             providers: [
                 DynamicDialogRef,
                 DotFormatDateService,

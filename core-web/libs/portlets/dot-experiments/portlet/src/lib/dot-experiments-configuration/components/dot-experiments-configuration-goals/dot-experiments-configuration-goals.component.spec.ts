@@ -16,7 +16,6 @@ import { ConfirmPopup } from 'primeng/confirmpopup';
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, ExperimentSteps, Goals, StepStatus } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,
@@ -60,7 +59,6 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             mockProvider(DotExperimentsService),
             mockProvider(ActivatedRoute, ACTIVE_ROUTE_MOCK_CONFIG),
             mockProvider(MessageService),
-            mockProvider(DotMessagePipe),
             mockProvider(DotHttpErrorManagerService)
         ]
     });

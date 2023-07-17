@@ -6,6 +6,7 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditLayoutSidebarComponent } from './dot-edit-layout-sidebar.component';
@@ -21,7 +22,8 @@ import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sideba
         DotContainerSelectorLayoutModule,
         ButtonModule,
         DotSidebarPropertiesModule,
-        DotPipesModule
+        DotPipesModule,
+        DotMessagePipe
     ],
     exports: [DotEditLayoutSidebarComponent],
     providers: []

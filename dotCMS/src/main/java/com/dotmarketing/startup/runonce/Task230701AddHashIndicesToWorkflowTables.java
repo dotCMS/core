@@ -23,7 +23,7 @@ import java.util.Map;
  * @author Jose Castro
  * @since Jun 22nd, 2023
  */
-public class Task230522AddHashIndicesToWorkflowTables implements StartupTask {
+public class Task230701AddHashIndicesToWorkflowTables implements StartupTask {
 
     private static final List<String> tables = List.of("workflow_comment", "workflow_history", "workflowtask_files");
 

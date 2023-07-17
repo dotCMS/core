@@ -19,7 +19,7 @@ import { Sidebar } from 'primeng/sidebar';
 import { DotMessageService } from '@dotcms/data-access';
 import { DefaultGoalConfiguration, ExperimentSteps, GOAL_TYPES } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,
@@ -52,13 +52,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     let sidebar: Sidebar;
 
     const createComponent = createComponentFactory({
-        imports: [
-            ButtonModule,
-            CardModule,
-            DropdownModule,
-            DotMessagePipeModule,
-            DotDropdownDirective
-        ],
+        imports: [ButtonModule, CardModule, DropdownModule, DotMessagePipe, DotDropdownDirective],
         component: DotExperimentsConfigurationGoalSelectComponent,
         providers: [
             DotExperimentsConfigurationStore,
