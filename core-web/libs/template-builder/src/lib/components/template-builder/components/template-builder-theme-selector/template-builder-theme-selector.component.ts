@@ -18,6 +18,7 @@ import { ButtonModule } from 'primeng/button';
 import { DataView, DataViewModule } from 'primeng/dataview';
 import { DropdownModule } from 'primeng/dropdown';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
@@ -41,7 +42,8 @@ import { DotMessagePipe, DotSiteSelectorDirective } from '@dotcms/ui';
         DotSiteSelectorDirective,
         DataViewModule,
         CommonModule,
-        DotMessagePipe
+        DotMessagePipe,
+        InputTextModule
     ],
     standalone: true,
     templateUrl: './template-builder-theme-selector.component.html',
