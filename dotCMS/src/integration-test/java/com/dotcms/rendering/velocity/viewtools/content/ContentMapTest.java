@@ -310,19 +310,18 @@ public class ContentMapTest extends IntegrationTestBase {
             final SimpleDateFormat dateFormat = new SimpleDateFormat(
                     "yyyy-MM-dd HH:mm:ss.SSS");
             final String formattedExpectedDate = dateFormat.format(contentDate);
-            final String formattedResultDateWithTrailingDigits = resultDate.toString();
+            final String dateWithTrailingDigits = resultDate.toString();
 
-            System.out.println("formattedExpectedDate: " + formattedExpectedDate);
-
-            final int index = formattedResultDateWithTrailingDigits.lastIndexOf('.');
-            String formattedResultDate = formattedResultDateWithTrailingDigits;
-            if (index > 1) {
+            final int startIndex = dateWithTrailingDigits.lastIndexOf('.');
+            String formattedResultDate = dateWithTrailingDigits;
+            if (startIndex > 1) {
+                final int endIndex = Math.min(startIndex + 4, dateWithTrailingDigits.length());
                 BigDecimal trailingDigits = new BigDecimal(
-                    formattedResultDateWithTrailingDigits.substring(index - 1));
-                DecimalFormat decimalFormat = new DecimalFormat("0.###");
+                        dateWithTrailingDigits.substring(startIndex - 1, endIndex));
+                DecimalFormat decimalFormat = new DecimalFormat("0.000");
                 formattedResultDate =
-                    formattedResultDateWithTrailingDigits.substring(0, index - 1) +
-                    decimalFormat.format(trailingDigits);
+                        dateWithTrailingDigits.substring(0, startIndex - 1) +
+                        decimalFormat.format(trailingDigits);
             }
 
             assertEquals(formattedExpectedDate, formattedResultDate);
