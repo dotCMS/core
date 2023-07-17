@@ -55,13 +55,10 @@ jobs:
         id: slack
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          # Slack channel id, channel name, or user id to post message.
-          # See also: https://api.slack.com/methods/chat.postMessage#channels
-          channel-id: 'C05HJBSLKDX' #cicd-test
           # For posting a rich message using Block Kit
           payload: |
             {
-              "text": "GitHub Action build result: ${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status }}\n${{ fromJSON(steps.workflow-data.outputs.json).pull_request_url }}",
+              "text": "Test report build result result: ${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status }}\n${{ fromJSON(steps.workflow-data.outputs.json).pull_request_url }}",
               "blocks": [
                 {
                   "type": "section",
@@ -73,4 +70,4 @@ jobs:
               ]
             }
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.CORE_SLACK_WEBHOOK }}
+          SLACK_WEBHOOK_URL: ${{ secrets.CORE_SLACK_WEBHOOK }}
