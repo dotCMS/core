@@ -793,6 +793,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
 
     private void processExperimentDependencies(final Experiment experiment)  {
         try {
+
+
             final Contentlet parentPage = APILocator.getContentletAPI()
                     .findContentletByIdentifierAnyLanguage(experiment.pageId());
 
@@ -805,15 +807,28 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                                 experiment.pageId()));
             }
 
-//            final List<Contentlet> contentOnVariants = APILocator.getContentletAPI().getAllContentByVariants(user, false,
-//                            experiment.trafficProportion().variants().stream()
-//                                    .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
-//                                    .toArray(String[]::new)).stream()
-//                    .filter((contentlet -> Try.of(contentlet::isWorking)
-//                            .getOrElse(false))).collect(Collectors.toList());
-//
-//            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentOnVariants,
-//                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
+            List<Variant> variants = experiment.trafficProportion().variants().stream()
+                    .map((experimentVariant -> {
+                        try {
+                            return APILocator.getVariantAPI().get(experimentVariant.id()).orElseThrow();
+                        } catch (DotDataException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })).filter((variant) -> !variant.name().equals(DEFAULT_VARIANT.name())).collect(
+                            Collectors.toList());
+
+            tryToAddAllAndProcessDependencies(PusheableAsset.VARIANT, variants,
+                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
+
+            final List<Contentlet> contentOnVariants = APILocator.getContentletAPI().getAllContentByVariants(user, false,
+                            experiment.trafficProportion().variants().stream()
+                                    .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
+                                    .toArray(String[]::new)).stream()
+                    .filter((contentlet -> Try.of(contentlet::isWorking)
+                            .getOrElse(false))).collect(Collectors.toList());
+
+            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentOnVariants,
+                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
 
         } catch (final DotDataException | DotSecurityException e) {
             Logger.error(this, String.format("An error occurred when processing dependencies on Experiment '%s' [%s]: %s",
