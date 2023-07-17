@@ -128,11 +128,6 @@ public class ExperimentHandler implements IHandler {
 	}
 
 	private void handleExperiments(final Collection<File> experiments) throws DotPublishingException {
-
-	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
-
-	        throw new RuntimeException("need an enterprise pro license to run this");
-        }
 		File workingOn = null;
         Experiment experiment = null;
 		try {
