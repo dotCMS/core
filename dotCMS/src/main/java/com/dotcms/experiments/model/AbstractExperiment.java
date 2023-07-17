@@ -14,6 +14,8 @@ import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.business.Ruleable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.time.Instant;
@@ -35,6 +37,8 @@ import org.immutables.value.Value;
  *
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
+@JsonDeserialize(as = Experiment.class)
+@JsonSerialize(as = Experiment.class)
 @Value.Immutable
 public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable {
     @JsonProperty("name")
@@ -103,16 +107,19 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     // Beginning Permissionable methods
 
     @Value.Derived
+    @JsonIgnore
     default String getIdentifier() {
         return id().orElse("");
     }
 
     @Value.Derived
+    @JsonIgnore
     default String getPermissionId() {
         return id().orElse("");
     }
 
     @Value.Derived
+    @JsonIgnore
     default String getOwner() {
         return createdBy();
     }
@@ -122,11 +129,13 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
 
     }
     @Value.Derived
+    @JsonIgnore
     default List<PermissionSummary> acceptedPermissions () {
         return Collections.emptyList();
     }
 
     @Value.Derived
+    @JsonIgnore
     default List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
         return Collections.emptyList();
     }
@@ -142,17 +151,20 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     }
 
     @Value.Derived
+    @JsonIgnore
     default String getPermissionType() {
         return this.getClass().getCanonicalName();
     }
 
     @Value.Derived
+    @JsonIgnore
     default boolean isParentPermissionable() {
         return false;
     }
 
     @Value.Derived
     @Override
+    @JsonIgnore
     default ManifestInfo getManifestInfo() {
         return new ManifestInfoBuilder()
                 .objectType(PusheableAsset.EXPERIMENT.getType())
