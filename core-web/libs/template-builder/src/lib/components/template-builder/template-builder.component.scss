@@ -85,18 +85,23 @@ p-divider {
 
     &.template-builder-row--wont-fit {
         cursor: no-drop;
-        filter: grayscale(100%);
 
         &:before {
-            opacity: 0;
             content: attr(data-wont-fit);
+            opacity: 0;
             position: absolute;
-            top: 45%;
+            top: 43%;
+            left: 25%;
             display: block;
-            width: 100%;
-            text-align: center;
-            font-size: $font-size-lg;
+            width: 48%;
+            z-index: 1;
+            background-color: $color-palette-gray-200;
+            color: $color-palette-gray-700;
+            font-size: $font-size-sm;
             transition: opacity 0.3s ease-in-out;
+            border-radius: $border-radius-sm;
+            padding: 0.25rem $spacing-3;
+            text-align: center;
         }
 
         &:hover:before {
@@ -104,7 +109,8 @@ p-divider {
         }
 
         ::ng-deep .row {
-            opacity: 0.1;
+            opacity: 0.4;
+            filter: grayscale(100%);
         }
     }
 }

@@ -286,7 +286,8 @@ export const MESSAGES_MOCK = {
     'editpage.layout.theme.search': 'Search',
     'dot.template.builder.classes.dialog.update.button': 'Update',
     'dot.template.builder.sidebar.header.title': 'Sidebar',
-    'dot.template.builder.row.box.wont.fit': 'You need a space of 3 columns to drop a box'
+    'dot.template.builder.row.box.wont.fit':
+        'Can’t drop a box in this row, you need at least 3 columns of space'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
