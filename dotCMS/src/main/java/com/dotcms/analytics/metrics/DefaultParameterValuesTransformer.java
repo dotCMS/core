@@ -9,7 +9,7 @@ import java.util.Collection;
 public class DefaultParameterValuesTransformer implements ParameterValuesTransformer<String> {
 
     @Override
-    public Collection<String> transform(final Collection<String> valuesFromEvent, final AbstractCondition condition) {
-        return valuesFromEvent;
+    public Values transform(final Collection<String> valuesFromEvent, final AbstractCondition condition) {
+        return new Values(condition.value(), valuesFromEvent);
     }
 }
