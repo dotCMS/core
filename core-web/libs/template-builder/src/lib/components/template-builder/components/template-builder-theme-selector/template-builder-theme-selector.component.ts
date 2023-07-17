@@ -97,10 +97,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
     }
 
     ngOnInit() {
-        const hostId =
-            this.currentTheme?.hostId ||
-            this.siteService.currentSite?.identifier ||
-            'HOLA COMO ESTAS DSAD';
+        const hostId = this.currentTheme?.hostId || this.siteService.currentSite?.identifier;
         this.paginatorService.url = 'v1/themes';
         this.paginatorService.paginationPerPage = 8;
         this.paginatorService.setExtraParams('hostId', hostId);
