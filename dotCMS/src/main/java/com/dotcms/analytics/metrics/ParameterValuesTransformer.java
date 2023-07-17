@@ -14,7 +14,7 @@ public interface ParameterValuesTransformer<T> {
      * Represents the values to use on an Operator:
      *
      * - real : it is the value from the Event after transform.
-     * - toCompare: Set of values to compar
+     * - toCompare: Set of values to compare with the real value.
      */
     class Values {
         private final String real;
