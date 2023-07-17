@@ -23,8 +23,7 @@ import {
     DotPageContainer,
     DotPageContainerPersonalized,
     DotPageRenderState,
-    DotPersona,
-    DotCMSContentlet
+    DotPersona
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
@@ -45,7 +44,10 @@ import {
 } from './models/dot-contentlets-events.model';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
-import { DotCopyContentModalService } from '../dot-copy-content-modal/dot-copy-content-modal.service';
+import {
+    DotCopyContentModalService,
+    ModelCopyContentResponse
+} from '../dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
@@ -97,9 +99,6 @@ export class DotEditContentHtmlService {
     private remoteRendered: boolean;
 
     private readonly docClickHandlers;
-
-    private editedContainerHTML: HTMLElement;
-    private editedContentletHTML: HTMLElement;
 
     get pagePersonalization() {
         if (!this.currentPersona) {
@@ -697,22 +696,31 @@ export class DotEditContentHtmlService {
     }
 
     private hanlderEditEvent(target: HTMLElement, data: DotIframeEditEvent) {
-        this.setEditedContent(target);
-        const { dotOnNumberOfPages = 0, dotMacroType } = target.dataset;
-        const isElementInMultiplePages = this.isInMultiplePages(this.editedContentletHTML);
-        const isEditMacro = dotMacroType === 'edit-contentet-macro';
+        const { dotOnNumberOfPages = 0, dotIdentifier } = target.dataset;
+        const contentlet: HTMLElement = target.closest('[data-dot-object="contentlet"]');
 
-        // If it's a EidtMacro we check for one or more pages
-        // If it's a contentlet we check for two or more pages
-        const isInMultiplePages = isEditMacro
-            ? Number(dotOnNumberOfPages)
-            : isElementInMultiplePages;
+        // If the identifiers don't match
+        const matchIdentifier = contentlet.dataset.dotIdentifier === dotIdentifier;
+        const isInMultiplePages = this.isInMultiplePages(contentlet);
+        const element = matchIdentifier ? contentlet : target;
 
-        if (isInMultiplePages) {
-            this.openCopyModal().subscribe((contentlet) => {
-                data.dataset = contentlet?.dataset || target.dataset;
-                this.iframeActions$.next(data);
-            });
+        const showModal = matchIdentifier ? isInMultiplePages : Number(dotOnNumberOfPages);
+
+        if (showModal) {
+            this.openCopyModal()
+                .pipe(
+                    switchMap(({ shouldCopy }) => {
+                        if (!shouldCopy) {
+                            return of(null);
+                        }
+
+                        return this.copyContent(element, matchIdentifier);
+                    })
+                )
+                .subscribe((contentletHTML) => {
+                    data.dataset = contentletHTML?.dataset || target.dataset;
+                    this.iframeActions$.next(data);
+                });
 
             return;
         }
@@ -829,14 +837,24 @@ export class DotEditContentHtmlService {
             },
             showCopyModal: (data: DotShowCopyModal) => {
                 const { target, initEdit, selector } = data;
-                this.setEditedContent(target);
+                const contentlet: HTMLElement = target.closest('[data-dot-object="contentlet"]');
 
-                this.openCopyModal().subscribe((contentlet: HTMLElement) => {
-                    const element = contentlet || target;
-                    const editor: HTMLElement = element.closest(selector) || element;
+                this.openCopyModal()
+                    .pipe(
+                        switchMap(({ shouldCopy }) => {
+                            if (!shouldCopy) {
+                                return of(null);
+                            }
 
-                    initEdit(editor);
-                });
+                            return this.copyContent(contentlet);
+                        })
+                    )
+                    .subscribe((contentlet: HTMLElement) => {
+                        const element = contentlet || target;
+                        const editor: HTMLElement = element.closest(selector) || element;
+
+                        initEdit(editor);
+                    });
             },
             inlineEdit: (data: DotInlineEditContent) => {
                 const { eventType: type } = data;
@@ -1038,17 +1056,16 @@ export class DotEditContentHtmlService {
         return contentletEl;
     }
 
-    private getTreeNodeData(): DotTreeNode {
+    private getTreeNode(contentlet: HTMLElement, container: HTMLElement): DotTreeNode {
         try {
             /* Get Copy content Data from the contentlet and Container*/
-            const { dotIdentifier: contentId, dotVariant: variantId } =
-                this.editedContentletHTML.dataset;
-            const { dotUuid: relationType, dotIdentifier: containerId } =
-                this.editedContainerHTML.dataset;
+            const { dotIdentifier: contentId, dotVariant: variantId = 'DEFAULT' } =
+                contentlet.dataset;
+            const { dotUuid: relationType, dotIdentifier: containerId } = container.dataset;
 
             return {
                 pageId: this.currentPage.identifier,
-                treeOrder: this.getTreeOrder(this.editedContentletHTML).toString(),
+                treeOrder: this.getTreeOrder(contentlet).toString(),
                 containerId,
                 contentId,
                 relationType,
@@ -1108,14 +1125,8 @@ export class DotEditContentHtmlService {
         return null;
     }
 
-    private openCopyModal(): Observable<HTMLElement | null> {
-        return this.dotCopyModalService
-            .open()
-            .pipe(
-                switchMap(({ shouldCopy }) =>
-                    shouldCopy ? this.copyAndReplaceContentlet() : of(null)
-                )
-            );
+    private openCopyModal(): Observable<ModelCopyContentResponse> {
+        return this.dotCopyModalService.open();
     }
 
     /**
@@ -1126,27 +1137,29 @@ export class DotEditContentHtmlService {
      * @return {*}  {Observable<ModelCopyContentResponse>}
      * @memberof DotCopyContentModalService
      */
-    private copyContentlet(): Observable<DotCMSContentlet> {
-        return this.dotCopyContentService.copyInPage(this.getTreeNodeData()).pipe(
+    private copyContent(contentlet: HTMLElement, replace = false): Observable<HTMLElement> {
+        const container: HTMLElement = contentlet.closest('[data-dot-object="container"]');
+        const dotPageContainer = this.getDotPageContainer(container);
+        const node = this.getTreeNode(contentlet, container);
+
+        return this.dotCopyContentService.copyInPage(node).pipe(
             tap(() => this.dotLoadingIndicatorService.show()),
+            switchMap((dotContentlet) =>
+                this.dotContainerContentletService.getContentletToContainer(
+                    dotPageContainer,
+                    dotContentlet,
+                    this.currentPage
+                )
+            ),
+            map((html) => {
+                if (replace) {
+                    return this.replaceHTMLContentlet(html, contentlet);
+                }
+
+                return this.generateNewContentlet(html);
+            }),
             finalize(() => this.dotLoadingIndicatorService.hide())
         );
-    }
-
-    private copyAndReplaceContentlet(): Observable<HTMLElement> {
-        return this.copyContentlet().pipe(
-            switchMap((contentlet) => this.replaceContentlet(contentlet))
-        );
-    }
-
-    private replaceContentlet(dotContentlet: DotPageContent) {
-        const dotPageContainer = this.getDotPageContainer(this.editedContainerHTML);
-
-        return this.dotContainerContentletService
-            .getContentletToContainer(dotPageContainer, dotContentlet, this.currentPage)
-            .pipe(
-                map((html: string) => this.replaceHTMLContentlet(html, this.editedContentletHTML))
-            );
     }
 
     /**
@@ -1158,20 +1171,29 @@ export class DotEditContentHtmlService {
      */
     private onEditBlockEditor(event: Event): void {
         const editor = event.target as HTMLElement;
-        this.setEditedContent(editor);
+        const contentlet: HTMLElement = editor.closest('[data-dot-object="contentlet"]');
+        const showModal = this.isInMultiplePages(contentlet);
 
-        const isInMultiplePages = this.isInMultiplePages(this.editedContentletHTML);
+        if (showModal) {
+            this.openCopyModal()
+                .pipe(
+                    switchMap(({ shouldCopy }) => {
+                        if (!shouldCopy) {
+                            return of(null);
+                        }
 
-        if (isInMultiplePages) {
-            this.openCopyModal().subscribe((contentlet) => {
-                const selector = '[data-block-editor-content]';
-                const newEditor: HTMLElement = contentlet?.querySelector(selector) || editor;
-                newEditor.classList.add(EDITOR_ACTIVE_CSS);
+                        return this.copyContent(contentlet, true);
+                    })
+                )
+                .subscribe((contentlet) => {
+                    const selector = '[data-block-editor-content]';
+                    const newEditor: HTMLElement = contentlet?.querySelector(selector) || editor;
+                    newEditor.classList.add(EDITOR_ACTIVE_CSS);
 
-                // Add click event to the new block editor in Page
-                newEditor.addEventListener('click', this.onEditBlockEditor.bind(this));
-                this.dispatchEditorEvent(newEditor);
-            });
+                    // Add click event to the new block editor in Page
+                    newEditor.addEventListener('click', this.onEditBlockEditor.bind(this));
+                    this.dispatchEditorEvent(newEditor);
+                });
 
             return;
         }
@@ -1191,17 +1213,5 @@ export class DotEditContentHtmlService {
             detail: { name: 'edit-block-editor', data: target }
         });
         window.top.document.dispatchEvent(customEvent);
-    }
-
-    /**
-     *
-     *
-     * @private
-     * @param {HTMLElement} target
-     * @memberof DotEditContentHtmlService
-     */
-    private setEditedContent(target: HTMLElement) {
-        this.editedContentletHTML = target.closest('[data-dot-object="contentlet"]');
-        this.editedContainerHTML = target.closest('[data-dot-object="container"]');
     }
 }
