@@ -156,12 +156,12 @@ export const GOALS_METADATA_MAP: Record<
     [GOAL_TYPES.URL_PARAMETER]: {
         label: 'experiments.goal.url_parameter.name',
         description: 'experiments.goal.url_parameter.description',
-        icon: 'pi-check-square'
+        icon: 'pi-paperclip'
     },
     [GOAL_TYPES.EXIT_RATE]: {
         label: 'experiments.goal.exit_rate.name',
         description: 'experiments.goal.exit_rate.description',
-        icon: 'pi-check-square'
+        icon: 'pi-sign-out'
     }
 };
 
