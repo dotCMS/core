@@ -3,13 +3,20 @@ import { Routes } from '@angular/router';
 import { ExperimentsConfigProperties } from '@dotcms/dotcms-models';
 import { DotExperimentsConfigResolver } from '@dotcms/portlets/dot-experiments/data-access';
 import {
-    DotPushPublishEnvironmentsResolver,
-    DotEnterpriseLicenseResolver
+    DotEnterpriseLicenseResolver,
+    DotPushPublishEnvironmentsResolver
 } from '@portlets/shared/resolvers';
 
+import { DotExperimentsAnalyticAppMisconfigurationComponent } from './dot-experiments-analytic-app-misconfiguration/dot-experiments-analytic-app-misconfiguration.component';
 import { DotExperimentsShellComponent } from './dot-experiments-shell/dot-experiments-shell.component';
+import { analyticsAppGuard } from './shared/guards/dot-experiments-analytic-app.guard';
 
 export const DotExperimentsPortletRoutes: Routes = [
+    {
+        path: 'analytic-app-misconfiguration',
+        component: DotExperimentsAnalyticAppMisconfigurationComponent,
+        title: 'experiments.container.no-analytic-app-configured.title'
+    },
     {
         path: ':pageId',
         component: DotExperimentsShellComponent,
@@ -17,6 +24,8 @@ export const DotExperimentsPortletRoutes: Routes = [
             isEnterprise: DotEnterpriseLicenseResolver,
             pushPublishEnvironments: DotPushPublishEnvironmentsResolver
         },
+
+        canActivateChild: [analyticsAppGuard],
 
         children: [
             {
