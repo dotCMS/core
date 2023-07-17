@@ -274,7 +274,9 @@ import org.junit.runners.Suite.SuiteClasses;
         IndexRegexUrlPatterStrategyIntegrationTest.class,
         RootIndexRegexUrlPatterStrategyIntegrationTest.class,
         SiteViewPaginatorIntegrationTest.class,
-        Task230523CreateVariantFieldInContentletIntegrationTest.class
+        Task230523CreateVariantFieldInContentletIntegrationTest.class,
+        Task230701AddHashIndicesToWorkflowTablesTest.class,
+        Task230713IncreaseDisabledWysiwygColumnSizeTest.class
 })
 
 public class MainSuite2b {

@@ -2,7 +2,7 @@ import { fromEvent, merge, Observable, Subject } from 'rxjs';
 
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, NavigationStart, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -133,6 +133,8 @@ browse from the page internal links
                         pageRendered
                     );
 
+                    this.variantData = null; // internal navigation, reset variant data - leave experiments.
+
                     if (this.isInternallyNavigatingToSamePage(pageRendered.page.pageURI)) {
                         this.dotPageStateService.setLocalState(dotRenderedPageState);
                     } else {
@@ -183,6 +185,18 @@ browse from the page internal links
         this.subscribeOverlayService();
         this.subscribeDraggedContentType();
         this.getExperimentResolverData();
+
+        /*This is needed when the user is in the edit mode in an experiment variant
+        and navigate to another page with the page menu and want to go back with the
+         browser back button */
+        this.router.events
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((event) => event instanceof NavigationEnd)
+            )
+            .subscribe((_event: NavigationStart) => {
+                this.getExperimentResolverData();
+            });
     }
 
     ngOnDestroy(): void {
