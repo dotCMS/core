@@ -10,6 +10,12 @@ import java.util.Collection;
 public interface ParameterValuesTransformer<T> {
     Values transform(final Collection<T> valuesFromEvent, final AbstractCondition condition);
 
+    /**
+     * Represents the values to use on an Operator:
+     *
+     * - real : it is the value from the Event after transform.
+     * - toCompare: Set of values to compar
+     */
     class Values {
         private final String real;
         private final Collection<String> toCompare;
