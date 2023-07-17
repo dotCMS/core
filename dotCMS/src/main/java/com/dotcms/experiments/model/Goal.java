@@ -19,14 +19,7 @@ import org.immutables.value.Value;
  * inside a Experiment, for example maybe we want "Maximize the amount of Reach Page for a specific page"
  * or "Minimize the amount of Bounce Rate for a specific page".
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({
-        @Type(value = ReachPageGoal.class, name = "REACH_PAGE"),
-        @Type(value = BounceRateGoal.class, name = "BOUNCE_RATE"),
-        @Type(value = ClickOnElementGoal.class, name = "CLICK_ON_ELEMENT"),
-        @Type(value = UrlParameterGoal.class, name = "URL_PARAMETER")
-})
-public abstract class Goal {
+public class Goal {
 
     public  enum GoalType {
         MINIMIZE,
@@ -34,9 +27,11 @@ public abstract class Goal {
     }
 
     private Metric metric;
+    private GoalType type;
 
-    public Goal(final @JsonProperty("metric") Metric metric){
+    public Goal(final @JsonProperty("metric") Metric metric, final @JsonProperty("type") GoalType type){
         this.metric = metric;
+        this.type = type;
     }
 
     @JsonProperty()
@@ -45,7 +40,9 @@ public abstract class Goal {
     }
 
     @JsonIgnore
-    public abstract GoalType type();
+    public  GoalType type() {
+        return type;
+    }
 
     @JsonIgnore
     public String name (){
