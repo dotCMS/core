@@ -81,37 +81,43 @@
             <version>2.13.3</version>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>org.testcontainers</groupId>-->
-<!--            <artifactId>junit-jupiter</artifactId>-->
-<!--            <version>${testcontainers.version}</version>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.testcontainers</groupId>-->
-<!--            <artifactId>testcontainers</artifactId>-->
-<!--            <version>${testcontainers.version}</version>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.testcontainers</groupId>-->
-<!--            <artifactId>postgresql</artifactId>-->
-<!--            <version>${testcontainers.version}</version>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
-
-<!--        <dependency>-->
-<!--            <groupId>org.testcontainers</groupId>-->
-<!--            <artifactId>elasticsearch</artifactId>-->
-<!--            <version>${testcontainers.version}</version>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
-            <groupId>io.brachu</groupId>
-            <artifactId>docker-compose-maven-plugin</artifactId>
-            <version>${docker-compose-plugin.version}</version>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>io.brachu</groupId>-->
+<!--            <artifactId>docker-compose-maven-plugin</artifactId>-->
+<!--            <version>${docker-compose-plugin.version}</version>-->
+<!--        </dependency>-->
 
 
         <dependency>
@@ -209,24 +215,24 @@
                         </executions>
                     </plugin>
 
-                    <plugin>
-                        <groupId>io.brachu</groupId>
-                        <artifactId>docker-compose-maven-plugin</artifactId>
-                        <version>${docker-compose-plugin.version}</version>
-                        <configuration>
-                            <projectName>${project.artifactId}</projectName>
-<!--                            <file>${project.basedir}/test/resources/docker-compose.yaml</file>-->
-                            <wait>2</wait>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>up</goal>
-                                    <goal>down</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
+<!--                    <plugin>-->
+<!--                        <groupId>io.brachu</groupId>-->
+<!--                        <artifactId>docker-compose-maven-plugin</artifactId>-->
+<!--                        <version>${docker-compose-plugin.version}</version>-->
+<!--                        <configuration>-->
+<!--                            <projectName>${project.artifactId}</projectName>-->
+<!--&lt;!&ndash;                            <file>${project.basedir}/test/resources/docker-compose.yaml</file>&ndash;&gt;-->
+<!--                            <wait>2</wait>-->
+<!--                        </configuration>-->
+<!--                        <executions>-->
+<!--                            <execution>-->
+<!--                                <goals>-->
+<!--                                    <goal>up</goal>-->
+<!--                                    <goal>down</goal>-->
+<!--                                </goals>-->
+<!--                            </execution>-->
+<!--                        </executions>-->
+<!--                    </plugin>-->
                 </plugins>
             </build>
             <properties>

@@ -1,11 +1,13 @@
 package com.dotcms.api;
 
+import com.dotcms.ContainerResource;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.folder.SearchByPathRequest;
 import com.google.common.collect.ImmutableList;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.util.List;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
+@QuarkusTestResource(value = ContainerResource.class)
 class FolderAPITest {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
