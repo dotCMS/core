@@ -4,13 +4,15 @@ import com.dotcms.UnitTestBase;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * WhileBlackList unit test.
  * @author jsanca
  */
-public class WhileBlackListTest extends UnitTestBase {
+public class WhileBlackListTest  {
 
     /**
      * Method to test: {@link WhiteBlackList#isAllowed(String)}
@@ -47,11 +49,12 @@ public class WhileBlackListTest extends UnitTestBase {
                 .addBlackPatterns(".*\\.jsp", ".*\\.html")
                 .build();
 
-        final Stream filteredStream = whiteBlackList.filter(Stream.of(null,"","js-are-allowed.js", "css-are-allowed.css", "jsp-are-not-allowed.jsp", "html-are-not-allowed.html"));
+        final Stream<String> filteredStream = whiteBlackList.filter(Stream.of(null,"","js-are-allowed.js", "css-are-allowed.css", "jsp-are-not-allowed.jsp", "html-are-not-allowed.html"));
 
-        Assert.assertEquals(2, filteredStream.count());
-        Assert.assertTrue(filteredStream.allMatch(s -> s.equals("js-are-allowed.js") || s.equals("css-are-allowed.css")));
-        Assert.assertTrue(filteredStream.noneMatch(s -> s.equals("jsp-are-not-allowed.jsp") || s.equals("html-are-not-allowed.html")));
+        final List<String> filteredList = filteredStream.collect(Collectors.toList());
+        Assert.assertEquals(2, filteredList.size());
+        Assert.assertTrue(filteredList.stream().anyMatch(s -> s.equals("js-are-allowed.js") || s.equals("css-are-allowed.css")));
+        Assert.assertTrue(filteredList.stream().noneMatch(s -> s.equals("jsp-are-not-allowed.jsp") || s.equals("html-are-not-allowed.html")));
     }
 
 }
