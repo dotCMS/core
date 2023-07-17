@@ -31,7 +31,10 @@ import com.dotcms.enterprise.publishing.remote.handler.ContentWorkflowHandlerTes
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtilTest;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3PublisherTest;
 import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
+import com.dotcms.experiments.business.IndexRegexUrlPatterStrategyIntegrationTest;
+import com.dotcms.experiments.business.RootIndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
+import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -143,12 +146,14 @@ import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
+import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
 import com.dotmarketing.util.ZipUtilTest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
+import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -309,7 +314,12 @@ import org.junit.runners.Suite.SuiteClasses;
         AssetPathResolverImplIntegrationTest.class,
         WebAssetHelperIntegrationTest.class,
         Task230701AddHashIndicesToWorkflowTablesTest.class,
-        Task230713IncreaseDisabledWysiwygColumnSizeTest.class
+        Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
+        ContentPageIntegrityCheckerTest.class,
+        IndexRegexUrlPatterStrategyIntegrationTest.class,
+        RootIndexRegexUrlPatterStrategyIntegrationTest.class,
+        SiteViewPaginatorIntegrationTest.class,
+        Task230523CreateVariantFieldInContentletIntegrationTest.class
 })
 
 public class MainSuite2b {
