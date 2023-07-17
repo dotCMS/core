@@ -12,7 +12,6 @@ import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.language.Language;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -140,18 +139,8 @@ public class PullBase {
     protected String checkBaseStructure(final String destination) throws IOException {
 
         final Path path = Paths.get(destination);
-        final Workspace workspace = workspaceManager.resolve(path);
+        final Workspace workspace = workspaceManager.getOrCreate(path);
         return workspace.files().toString();
-
-        /*// For the pull of files, everything will be stored in a folder called "files"
-        var filesFolder = Paths.get(destination, "files");
-
-        // Create the folder if it does not exist
-        if (!Files.exists(filesFolder)) {
-            Files.createDirectories(filesFolder);
-        }
-
-        return filesFolder.toString();*/
     }
 
     /**

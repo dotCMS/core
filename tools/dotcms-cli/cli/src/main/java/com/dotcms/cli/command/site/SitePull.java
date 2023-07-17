@@ -2,6 +2,7 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
+import com.dotcms.cli.common.WorkspaceMixin;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.site.SiteView;
@@ -38,6 +39,9 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOption;
 
+    @CommandLine.Mixin(name = "workspace")
+    WorkspaceMixin workspaceMixin;
+
     @Inject
     WorkspaceManager workspaceManager;
 
@@ -72,7 +76,7 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
                 final String asString = objectMapper.writeValueAsString(siteView);
                 output.info(asString);
 
-                final Workspace workspace = workspaceManager.resolve();
+                final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
                 final String fileName = String.format( "%s.%s", siteView.hostName(), formatOption.getInputOutputFormat().getExtension());
                 final Path path = Path.of(workspace.sites().toString(), fileName);
                 Files.writeString(path, asString);

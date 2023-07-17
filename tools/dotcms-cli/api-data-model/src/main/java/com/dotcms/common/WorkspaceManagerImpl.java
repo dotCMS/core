@@ -8,12 +8,21 @@ import io.quarkus.arc.DefaultBean;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.enterprise.context.ApplicationScoped;
-
+import javax.inject.Inject;
+import org.apache.commons.lang3.time.FastDateFormat;
+import org.jboss.logging.Logger;
+import java.io.File;
 @DefaultBean
 @ApplicationScoped
 public class WorkspaceManagerImpl implements WorkspaceManager {
+
+    @Inject
+    Logger logger;
 
     public static final String DOT_WORKSPACE_DIR_PATTERN = "^dot-workspace-\\d+$";
 
@@ -21,7 +30,7 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
 
     private static final ObjectMapper mapper = new YAMLMapperSupplier().get();
 
-    Workspace persist(Workspace workspace) throws IOException {
+    Workspace persist(final Workspace workspace) throws IOException {
 
         final Path files = workspace.files();
         final Path contentTypes = workspace.contentTypes();
@@ -69,8 +78,10 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
                 .build();
     }
 
+    public static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
+
     String workspaceEnclosingDirName() {
-        return String.format("dot-workspace-%d",System.currentTimeMillis());
+        return String.format("dot-workspace-%s",datetimeFormat.format(new Date()));
     }
 
     Optional<Path> findProjectRoot(Path currentPath) {
@@ -89,10 +100,10 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     }
 
     @Override
-    public Workspace resolve(Path currentPath) throws IOException {
-        final Optional<Path> projectRoot = findProjectRoot(currentPath);
-        if (projectRoot.isPresent()) {
-            return workspace(projectRoot.get());
+    public Workspace getOrCreate(Path currentPath) throws IOException {
+        final Optional<Workspace> workspace = findWorkspace(currentPath);
+        if (workspace.isPresent()) {
+            return workspace.get();
         } else {
             return persist(
                 workspace(currentPath)
@@ -101,7 +112,32 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     }
 
     @Override
-    public Workspace resolve() throws IOException {
-        return resolve(Path.of("").toAbsolutePath());
+    public Workspace getOrCreate() throws IOException {
+        return getOrCreate(Path.of("").toAbsolutePath());
     }
+
+    public Optional<Workspace> findWorkspace(Path currentPath) {
+        final Optional<Path> projectRoot = findProjectRoot(currentPath);
+        return projectRoot.map(this::workspace);
+    }
+
+    public Optional<Workspace> findWorkspace() {
+        final Optional<Path> projectRoot = findProjectRoot(Path.of("").toAbsolutePath());
+        return projectRoot.map(this::workspace);
+    }
+
+    @Override
+    public void destroy(final Workspace workspace) throws IOException {
+        deleteDirectoryStream(workspace.root());
+    }
+
+    private void deleteDirectoryStream(Path path) throws IOException {
+        try (Stream<Path> walk = Files.walk(path)) {
+            walk.sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .peek(System.out::println)
+                    .forEach(File::delete);
+        }
+    }
+
 }

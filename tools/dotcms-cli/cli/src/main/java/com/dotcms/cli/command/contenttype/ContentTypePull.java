@@ -3,6 +3,7 @@ package com.dotcms.cli.command.contenttype;
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
+import com.dotcms.cli.common.WorkspaceMixin;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
@@ -45,6 +46,9 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
     @CommandLine.Mixin(name = "shorten")
     ShortOutputOptionMixin shortOutputOption;
 
+    @CommandLine.Mixin(name = "workspace")
+    WorkspaceMixin workspaceMixin;
+
     @Inject
     WorkspaceManager workspaceManager;
 
@@ -67,8 +71,7 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
                     final String asString = objectMapper.writeValueAsString(contentType);
                     output.info(asString);
 
-                    final Workspace workspace = workspaceManager.resolve();
-
+                    final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
                     final String fileName = String.format("%s.%s",contentType.variable(), formatOption.getInputOutputFormat().getExtension());
                     final Path path = Path.of(workspace.contentTypes().toString(), fileName);
 

@@ -105,7 +105,7 @@ class PullFilesServiceTest {
             List<String> existingFolders = collectedFolders.stream().map(folder -> folder.replaceAll(
                     "^dot-workspace-\\d+/","")).collect(Collectors.toList());
 
-            var basePath = "files/live/en-US/" + testSiteName;
+            var basePath = "files/live/en-us/" + testSiteName;
             // Expected folder structure based on the treeNode object
             Map<String, List<String>> expectedFolders = Map.of(
                     basePath,

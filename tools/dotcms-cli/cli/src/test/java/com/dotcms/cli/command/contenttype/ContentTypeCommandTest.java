@@ -6,15 +6,17 @@ import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
+import com.dotcms.common.WorkspaceManager;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.dotcms.model.config.Workspace;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.*;
+import org.wildfly.common.Assert;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
@@ -32,6 +34,9 @@ public class ContentTypeCommandTest extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;
+
+    @Inject
+    WorkspaceManager workspaceManager;
 
     @BeforeAll
     public static void beforeAll() {
@@ -55,51 +60,49 @@ public class ContentTypeCommandTest extends CommandTest {
      * Pull single CT by varName
      */
     @Test
-    void Test_Command_Content_Type_Pull_Option() throws JsonProcessingException {
-
+    void Test_Command_Content_Type_Pull_Option() throws IOException {
+        final Workspace workspace = workspaceManager.getOrCreate();
         final CommandLine commandLine = getFactory().create();
-        final StringWriter writer = new StringWriter();
+                final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final String fileName = String.format("./fileAsset%d.json", System.currentTimeMillis());
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "fileAsset", "--saveTo", fileName);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "fileAsset", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             //System.out.println(output);
             final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
             final ContentType contentType = objectMapper.readValue(output, ContentType.class);
             Assertions.assertNotNull(contentType.variable());
-
-            try {
-                Files.delete(Path.of(fileName));
-            } catch (IOException e) {
-                // Quite
-            }
+          //  System.out.println(workspace);
+        } finally {
+            workspaceManager.destroy(workspace);
         }
     }
 
     @Test
-    void Test_Command_Content_Type_Pull_Then_Push_YML() throws JsonProcessingException {
+    void Test_Command_Content_Type_Pull_Then_Push_YML() throws IOException {
+        final Workspace workspace = workspaceManager.getOrCreate();
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final String fileName = String.format("./fileAsset%d.yml", System.currentTimeMillis());
-            int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "fileAsset", "--saveTo", fileName, "--format", "YML");
+            final String contentTypeVarName = "FileAsset";
+            int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, contentTypeVarName, "--format", "YML", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
-            //System.out.println(output);
+            System.out.println(output);
             try{
-                final Path path = Path.of(fileName);
+                final String fileName = String.format("%s.yml", contentTypeVarName);
+                final Path path = Path.of(workspace.contentTypes().toString(), fileName);
+                Assert.assertTrue(Files.exists(path));
                 byte[] bytes = Files.readAllBytes(path);
                 final ObjectMapper objectMapper = new YAMLMapperSupplier().get();
                 final ContentType contentType = objectMapper.readValue(bytes, ContentType.class);
                 Assertions.assertNotNull(contentType.variable());
-                status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME, fileName, "--format", "YML");
+                status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME, fileName, "--format", "YML", "--workspace", workspace.root().toString());
                 Assertions.assertEquals(ExitCode.OK, status);
-                Files.delete(path);
-            } catch (IOException e) {
-                // Quite
+            } finally {
+                workspaceManager.destroy(workspace);
             }
         }
     }
@@ -142,7 +145,6 @@ public class ContentTypeCommandTest extends CommandTest {
      */
     @Test
     void Test_Push_New_Content_Type_From_File_Then_Remove() throws IOException {
-
         final long identifier =  System.currentTimeMillis();
 
         final String varName = "__var__"+identifier;
@@ -178,29 +180,35 @@ public class ContentTypeCommandTest extends CommandTest {
         System.out.println(asString);
         final File jsonFile = File.createTempFile("temp", ".json");
         Files.writeString(jsonFile.toPath(), asString);
-
-        final CommandLine commandLine = getFactory().create();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME, jsonFile.getAbsolutePath() );
-            Assertions.assertEquals(ExitCode.OK, status);
-            final String output = writer.toString();
-            System.out.println(output);
-        }
-
-        final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeRemove.NAME, varName,  "--cli-test" );
-        Assertions.assertEquals(ExitCode.OK, status);
-
-        //A simple Thread.sleep() could do it too but Sonar strongly recommends we stay away from it.
-        int count = 0;
-        while(ExitCode.SOFTWARE != commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, varName )){
-            System.out.println("Waiting for content type to be removed");
-            count++;
-            if(count > 10){
-               fail("Content type was not removed");
+        final Workspace workspace = workspaceManager.getOrCreate();
+        try {
+            final CommandLine commandLine = getFactory().create();
+            final StringWriter writer = new StringWriter();
+            try (PrintWriter out = new PrintWriter(writer)) {
+                commandLine.setOut(out);
+                final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                        jsonFile.getAbsolutePath(), "--workspace", workspace.root().toString());
+                Assertions.assertEquals(ExitCode.OK, status);
+                final String output = writer.toString();
+                System.out.println(output);
             }
+
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeRemove.NAME, varName,
+                    "--cli-test", "--workspace", workspace.root().toString());
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            //A simple Thread.sleep() could do it too but Sonar strongly recommends we stay away from doing that.
+            int count = 0;
+            while (ExitCode.SOFTWARE != commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    varName, "--workspace", workspace.root().toString())) {
+                System.out.println("Waiting for content type to be removed");
+                count++;
+                if (count > 10) {
+                    fail("Content type was not removed");
+                }
+            }
+        } finally {
+            workspaceManager.destroy(workspace);
         }
     }
-
 }

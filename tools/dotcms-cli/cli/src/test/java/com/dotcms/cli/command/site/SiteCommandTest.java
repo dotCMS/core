@@ -3,6 +3,8 @@ package com.dotcms.cli.command.site;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.command.CommandTest;
 import com.dotcms.cli.common.InputOutputFormat;
+import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.Workspace;
 import io.quarkus.test.junit.QuarkusTest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,6 +29,9 @@ class SiteCommandTest extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;
+
+    @Inject
+    WorkspaceManager workspaceManager;
 
     @BeforeAll
     public static void beforeAll() {
@@ -105,6 +110,7 @@ class SiteCommandTest extends CommandTest {
     @Test
     void Test_Command_Site_Push_Publish_UnPublish_Then_Archive() throws IOException {
 
+        final Workspace workspace = workspaceManager.getOrCreate();
         final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
@@ -125,11 +131,11 @@ class SiteCommandTest extends CommandTest {
             status = commandLine.execute(SiteCommand.NAME, SiteUnarchive.NAME, newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName, "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
         } finally {
-            Files.deleteIfExists(Path.of(".", String.format("%s.%s", newSiteName, InputOutputFormat.defaultFormat().getExtension())));
+            workspaceManager.destroy(workspace);
         }
     }
 
@@ -157,7 +163,7 @@ class SiteCommandTest extends CommandTest {
      */
     @Test
     void Test_Command_Create_Then_Pull_Then_Push() throws IOException {
-
+        final Workspace workspace = workspaceManager.getOrCreate();
         final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
@@ -180,7 +186,7 @@ class SiteCommandTest extends CommandTest {
 
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName, "-saveTo="+newSiteName );
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName, "--workspace", workspace.root().toString());
 
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
 
@@ -191,7 +197,7 @@ class SiteCommandTest extends CommandTest {
             Assertions.assertTrue(output.contains("Failed pulling Site:"));
 
         } finally {
-            Files.deleteIfExists(Path.of(".", String.format("%s.%s", newSiteName, InputOutputFormat.defaultFormat().getExtension())));
+            workspaceManager.destroy(workspace);
         }
     }
 

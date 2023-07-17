@@ -2,6 +2,7 @@ package com.dotcms.cli.command.language;
 
 import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
+import com.dotcms.cli.common.WorkspaceMixin;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.language.Language;
@@ -44,6 +45,9 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
     @CommandLine.Mixin(name = "shorten")
     ShortOutputOptionMixin shortOutputOption;
 
+    @CommandLine.Mixin(name = "workspace")
+    WorkspaceMixin workspaceMixin;
+
     @Inject
     WorkspaceManager workspaceManager;
 
@@ -70,7 +74,7 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
                 final String asString = objectMapper.writeValueAsString(language);
                 output.info(asString);
 
-                final Workspace workspace = workspaceManager.resolve();
+                final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
                 final String fileName = String.format("%s.%s", language.isoCode(), formatOption.getInputOutputFormat().getExtension());
                 final Path path = Path.of(workspace.languages().toString(),fileName);
 
