@@ -38,7 +38,9 @@ public enum MetricType {
                     Parameter.builder().name("queryParameter")
                         .valueGetter(new QueryParameterValuesGetter())
                         .type(AbstractParameter.Type.QUERY_PARAMETER)
-                        .build())
+                        .build()
+            )
+            .optionalParameters(Parameter.builder().name("visitBefore").validate(false).build())
     );
 
     private final String label;

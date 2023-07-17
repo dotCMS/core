@@ -2,11 +2,10 @@ package com.dotcms.analytics.metrics;
 
 import com.dotcms.analytics.metrics.ParameterValuesTransformer.Values;
 import com.dotcms.experiments.business.result.Event;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import java.util.Arrays;
 
 import java.util.Collection;
 import org.immutables.value.Value;
@@ -47,10 +46,10 @@ public interface AbstractCondition {
         final Values filterAndTransformValues = parameter.type().getTransformer()
                 .transform(values, this);
 
-        final String realValue = filterAndTransformValues.getReal();
+        final String conditionValue = filterAndTransformValues.getConditionValue();
 
-        final boolean conditionIsValid = filterAndTransformValues.getValuesToCompare().stream()
-                .anyMatch(value -> operator().getFunction().apply(value, realValue)
+        final boolean conditionIsValid = filterAndTransformValues.getRealValues().stream()
+                .anyMatch(value -> operator().getFunction().apply(value, conditionValue)
         );
 
         return conditionIsValid;
@@ -58,7 +57,8 @@ public interface AbstractCondition {
     enum Operator {
         EQUALS((value1, value2) -> value1.equals(value2)),
         CONTAINS((value1, value2) -> value1.toString().contains(value2.toString())),
-        REGEX((value, regex) -> value.toString().matches(regex.toString()));
+        REGEX((value, regex) -> value.toString().matches(regex.toString())),
+        EXISTS((realValue, conditionValue) -> UtilMethods.isSet(realValue));
 
         private OperatorFunc function;
 
@@ -87,6 +87,11 @@ public interface AbstractCondition {
     @Value.Immutable
     interface AbstractParameter {
         String name();
+
+        @Default
+        default boolean validate(){
+            return true;
+        }
 
         @Default
         default Type type() {

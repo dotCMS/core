@@ -1,9 +1,11 @@
 package com.dotcms.experiments.business.result;
 
+import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 
 import com.dotcms.experiments.model.Experiment;
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -29,7 +31,15 @@ public class AfterLandOnPageExperimentAnalyzer implements MetricExperimentAnalyz
 
         final Collection<Event> results = new ArrayList<>();
 
-        final List<Event> events = browserSession.getEvents().stream()
+        final String visitBeforeUrl = metric.conditions().stream()
+                .filter(condition -> condition.parameter().equals("visitBefore"))
+                .map(condition -> condition.value())
+                .limit(1)
+                .findFirst()
+                .orElse(StringPool.BLANK);
+
+        final List<Event> events = getEventAfterVisitUrl(visitBeforeUrl, browserSession.getEvents())
+                .stream()
                 .filter(event -> event.getType() == EventType.PAGE_VIEW)
                 .collect(Collectors.toList());
 
@@ -41,5 +51,23 @@ public class AfterLandOnPageExperimentAnalyzer implements MetricExperimentAnalyz
 
         return results;
 
+    }
+
+    private List<Event> getEventAfterVisitUrl(final String visitBeforeUrl, final List<Event> events) {
+        List<Event> afterCondition = new ArrayList<>();
+
+        boolean foundCondition = false;
+
+        for (final Event event : events) {
+            if (!foundCondition) {
+                foundCondition = event.get("url").orElseThrow().toString().contains(visitBeforeUrl);
+            }
+
+            if (foundCondition) {
+                afterCondition.add(event);
+            }
+        }
+
+        return afterCondition;
     }
 }

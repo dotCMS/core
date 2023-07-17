@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.analytics.metrics.ParameterValuesTransformer.Values;
 import java.util.Collection;
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,12 +28,13 @@ public class QueryParameterValuesTransformerTest {
         final AbstractCondition condition = mock(AbstractCondition.class);
         when(condition.value()).thenReturn("{\"name\": \"TestName\", \"value\": \"testValue\"}");
 
-        final Collection<String> transforms = queryParameterValuesTransformer.transform(
+        final Values transforms = queryParameterValuesTransformer.transform(
                 valuesFromEvent, condition);
 
-        Assert.assertEquals(1, transforms.size());
+        Assert.assertEquals(1, transforms.getRealValues().size());
 
-        Assert.assertEquals("anyValue", transforms.iterator().next());
+        Assert.assertEquals("anyValue", transforms.getRealValues().iterator().next());
+        Assert.assertEquals("testValue", transforms.getConditionValue());
     }
 
 }
