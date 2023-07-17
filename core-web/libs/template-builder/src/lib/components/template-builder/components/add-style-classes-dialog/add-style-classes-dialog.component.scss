@@ -5,10 +5,6 @@
 }
 
 .dialog__auto-complete-container {
-    padding: $spacing-1 $spacing-7;
-    overflow: auto;
-    max-height: 5rem;
-
     .auto-complete-container__label {
         margin: 0;
         color: $black;

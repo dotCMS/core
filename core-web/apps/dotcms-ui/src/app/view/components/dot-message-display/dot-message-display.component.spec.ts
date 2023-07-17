@@ -10,8 +10,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotIconComponent, DotIconModule } from '@dotcms/ui';
+import { DotIconComponent, DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
 
 import { DotMessageDisplayComponent } from './dot-message-display.component';
 import { DotMessage, DotMessageSeverity, DotMessageType } from './model';

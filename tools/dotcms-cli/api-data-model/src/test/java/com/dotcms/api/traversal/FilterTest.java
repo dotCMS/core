@@ -620,6 +620,7 @@ public class FilterTest {
                 identifier(UUID.randomUUID().toString()).
                 inode(UUID.randomUUID().toString()).
                 live(true).
+                working(true).
                 lang("en-US").
                 sortOrder(0).
                 build();

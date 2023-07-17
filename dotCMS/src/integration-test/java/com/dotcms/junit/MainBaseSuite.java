@@ -1,7 +1,10 @@
 package com.dotcms.junit;
 
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.StdOutErrLog;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import java.util.LinkedList;
 import java.util.List;
 import org.junit.runner.Description;
@@ -15,7 +18,6 @@ public class MainBaseSuite extends Suite {
 
     public MainBaseSuite(Class<?> klass, RunnerBuilder builder) throws InitializationError {
         super(klass, getRunners(getAnnotatedClasses(klass)));
-        StdOutErrLog.tieSystemOutAndErrToLog();
     }
 
     // copied from Suite
@@ -30,8 +32,17 @@ public class MainBaseSuite extends Suite {
     }
 
     private static List<Runner> getRunners(Class<?>[] classes) throws InitializationError {
-
+        StdOutErrLog.tieSystemOutAndErrToLog();
         ByteBuddyFactory.init();
+        try {
+            Logger.info(MainBaseSuite.class, "START IntegrationTestInit *****************************");
+            IntegrationTestInitService.getInstance().init();
+            Logger.info(MainBaseSuite.class, "EMD  IntegrationTestInit *****************************");
+
+        } catch (Exception e) {
+            throw new DotRuntimeException("Failed to initialize Integration tests");
+        }
+
         List<Runner> runners = new LinkedList<>();
 
         for (Class<?> klazz : classes) {

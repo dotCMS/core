@@ -15,20 +15,24 @@ import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotESContentService,
-    DotPageRenderService
+    DotLicenseService,
+    DotPageRenderService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotDevice,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageMode,
     DotPageRenderState,
     DotPersona
 } from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
+    getExperimentMock,
     LoginServiceMock,
     mockDotPersona,
     mockDotRenderedPage,
@@ -37,8 +41,7 @@ import {
     mockUser,
     mockUserAuth
 } from '@dotcms/utils-testing';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
+import { DotLicenseServiceMock } from '@portlets/dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
 
 import { DotPageStateService } from './dot-page-state.service';
 
@@ -71,6 +74,7 @@ describe('DotPageStateService', () => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
+                DotSessionStorageService,
                 DotContentletLockerService,
                 DotHttpErrorManagerService,
                 DotPageRenderService,
@@ -87,6 +91,10 @@ describe('DotPageStateService', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
+                },
+                {
+                    provide: DotLicenseService,
+                    useClass: DotLicenseServiceMock
                 }
             ]
         });
@@ -190,7 +198,7 @@ describe('DotPageStateService', () => {
 
             expect(dotExperimentsService.getByStatus).toHaveBeenCalledWith(
                 '123',
-                DotExperimentStatusList.RUNNING
+                DotExperimentStatus.RUNNING
             );
 
             service.state$.subscribe((state: DotPageRenderState) => {

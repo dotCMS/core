@@ -3,8 +3,7 @@ import { NgModule } from '@angular/core';
 
 import { ToastModule } from 'primeng/toast';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
 
 import { DotMessageDisplayComponent } from './dot-message-display.component';
 import { DotMessageDisplayService } from './services';

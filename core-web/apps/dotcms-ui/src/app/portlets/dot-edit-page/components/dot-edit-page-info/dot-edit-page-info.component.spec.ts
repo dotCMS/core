@@ -30,8 +30,8 @@ describe('DotEditPageInfoComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotEditPageInfoComponent, DotMessagePipe],
-            imports: [DotApiLinkModule, DotCopyButtonModule],
+            declarations: [TestHostComponent, DotEditPageInfoComponent],
+            imports: [DotApiLinkModule, DotCopyButtonModule, DotMessagePipe],
             providers: [
                 {
                     provide: DotMessageService,

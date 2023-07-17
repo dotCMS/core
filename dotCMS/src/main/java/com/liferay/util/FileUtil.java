@@ -23,6 +23,8 @@
 package com.liferay.util;
 
 import com.dotcms.publisher.pusher.PushUtils;
+import java.util.Comparator;
+import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import com.dotmarketing.business.DotStateException;
@@ -239,7 +241,11 @@ public class FileUtil {
 		if (destination.exists()) {
 			Path destinationPath = Paths.get(destination.getAbsolutePath());
 			//"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
-			Files.delete(destinationPath);
+			try (Stream<Path> fileStream = Files.walk(destinationPath)) {
+				fileStream.sorted(Comparator.reverseOrder())
+						.map(Path::toFile)
+						.forEach(File::delete);
+			}
 		}
 
 		Path newLink = Paths.get(destination.getAbsolutePath());

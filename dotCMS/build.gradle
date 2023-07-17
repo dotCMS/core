@@ -263,10 +263,10 @@ dependencies {
 
     //// starter config
 
-    starter group: 'com.dotcms', name: 'starter', version: 'empty_20230525', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: 'empty_20230710', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
-    // starter group: 'com.dotcms', name: 'starter', version: '20230518', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20230525', ext: 'zip'
+    //starter group: 'com.dotcms', name: 'starter', version: '20230712', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20230710', ext: 'zip'
     
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
@@ -387,9 +387,12 @@ task integrationTest(type: Test, dependsOn:['prepareIntegrationTests']) {
     // Check if we want to run the tests suite
     def singleTest = System.getProperty("test.single")
     if (null != singleTest && singleTest == "com.dotcms.MainSuite"){
-        include "**/MainSuite.class"
+        include "**/MainSuite1a.class"
+        include "**/MainSuite1b.class"
+        include "**/MainSuite2a.class"
+        include "**/MainSuite2b.class"
     } else {
-        exclude "**/MainSuite.class"
+        exclude "**/MainSuite*.class"
     }
 
 
@@ -553,10 +556,13 @@ task generateDependenciesFromMaven(type: Exec) {
 
 
 task mavenClean(type: Exec) {
-    workingDir parentProjectDir
-    commandLine mvnCommand, 'clean'
+            workingDir parentProjectDir
+            commandLine mvnCommand, 'clean'
 }
-tasks.clean.dependsOn(tasks.mavenClean)
+
+if (project.gradle.startParameter.taskNames.contains("generateDependenciesFromMaven") && project.gradle.startParameter.taskNames.contains("clean")) {
+    tasks.clean.dependsOn(tasks.mavenClean)
+}
 
 task unpackMavenUI(type: Copy) {
        from(zipTree("${project.projectDir}/../core-web/target/core-web-${mavenUiVersion}.war")) {

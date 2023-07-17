@@ -15,11 +15,14 @@ public class LanguageForm extends Validated {
 
     private final String country;
 
+    private final String isoCode;
+
     public LanguageForm(final LanguageForm.Builder builder) {
         this.languageCode = builder.languageCode;
         this.countryCode = builder.countryCode;
         this.language = builder.language;
         this.country = builder.country;
+        this.isoCode = builder.isoCode;
         this.checkValid();
     }
 
@@ -39,6 +42,10 @@ public class LanguageForm extends Validated {
         return country;
     }
 
+    public String getIsoCode() {
+        return isoCode;
+    }
+
     public static final class Builder {
 
         @JsonProperty
@@ -52,6 +59,9 @@ public class LanguageForm extends Validated {
 
         @JsonProperty
         private String country;
+
+        @JsonProperty
+        private String isoCode;
 
         public Builder languageCode(final String languageCode) {
             this.languageCode = languageCode;
@@ -70,6 +80,11 @@ public class LanguageForm extends Validated {
 
         public Builder country(final String country) {
             this.country = country;
+            return this;
+        }
+
+        public Builder isoCode(final String isoCode) {
+            this.isoCode = isoCode;
             return this;
         }
 

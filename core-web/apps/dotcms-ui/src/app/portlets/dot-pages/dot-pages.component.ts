@@ -196,4 +196,15 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
             menuDOMID.includes('pageActionButton') || menuDOMID.includes('favoritePageActionButton')
         );
     }
+
+    /**
+     * Load pages on deactivation
+     *
+     * @memberof DotPagesComponent
+     */
+    loadPagesOnDeactivation() {
+        this.store.getPages({
+            offset: 0
+        });
+    }
 }

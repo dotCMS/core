@@ -36,31 +36,31 @@ public abstract class AbstractFilesCommand {
             if (cause instanceof IllegalArgumentException) {
 
                 output.error(String.format(
-                        "Error occurred while pulling folder contents: [%s] with message: [%s].",
+                        "Error occurred while processing: [%s] with message: [%s].",
                         folderPath, cause.getMessage()));
                 return CommandLine.ExitCode.USAGE;
             } else {
 
                 output.error(String.format(
-                        "Error occurred while pulling folder contents: [%s] with message: [%s].",
+                        "Error occurred while processing: [%s] with message: [%s].",
                         folderPath, throwable.getMessage()));
                 return CommandLine.ExitCode.SOFTWARE;
             }
         } else if (throwable instanceof IllegalArgumentException) {
 
             output.error(String.format(
-                    "Error occurred while pulling folder contents: [%s] with message: [%s].",
+                    "Error occurred while processing: [%s] with message: [%s].",
                     folderPath, throwable.getMessage()));
             return CommandLine.ExitCode.USAGE;
         } else if (throwable instanceof NotFoundException) {
 
             output.error(String.format(
-                    "Error occurred while pulling folder contents: [%s] with message: [%s].",
+                    "Error occurred while processing: [%s] with message: [%s].",
                     folderPath, throwable.getMessage()));
             return CommandLine.ExitCode.SOFTWARE;
         } else {
             output.error(String.format(
-                    "Error occurred while pulling folder contents: [%s] with message: [%s].",
+                    "Error occurred while processing: [%s] with message: [%s].",
                     folderPath, throwable.getMessage()));
             return CommandLine.ExitCode.SOFTWARE;
         }

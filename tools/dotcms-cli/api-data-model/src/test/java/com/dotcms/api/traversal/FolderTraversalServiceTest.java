@@ -11,17 +11,18 @@ import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 public class FolderTraversalServiceTest {
@@ -39,7 +40,7 @@ public class FolderTraversalServiceTest {
     ServiceManager serviceManager;
 
     @Inject
-    FolderTraversalService folderTraversalService;
+    RemoteFolderTraversalService folderTraversalService;
 
     @BeforeEach
     public void setupTest() throws IOException {

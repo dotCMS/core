@@ -20,7 +20,7 @@ import {
 } from '@components/_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotThemes } from '@dotcms/utils-testing';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
@@ -108,6 +108,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
                         url: '',
                         paginationPerPage: '',
                         total: '',
+                        extraParams: new Map(),
 
                         set searchParam(value) {
                             this.param = value;
@@ -124,8 +125,13 @@ describe('DotThemeSelectorDropdownComponent', () => {
                         get totalRecords() {
                             return this.total || mockDotThemes.length;
                         },
-                        setExtraParams() {},
+                        setExtraParams(key: string, value: string) {
+                            this.extraParams.set(key, value);
+                        },
                         getWithOffset() {
+                            return of([...mockDotThemes]);
+                        },
+                        get() {
                             return of([...mockDotThemes]);
                         }
                     }
@@ -155,7 +161,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
             ],
             imports: [
                 FormsModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 ReactiveFormsModule,
                 SearchableDropDownModule,
                 DotIconModule,
@@ -175,6 +181,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
             paginationService = TestBed.inject(PaginatorService);
             component = fixture.componentInstance;
             spyOn(component, 'propagateChange');
+            spyOn(paginationService, 'get').and.callThrough();
             fixture.detectChanges();
         });
 
@@ -186,14 +193,22 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 expect(component.themes).toEqual(mockDotThemes);
             }));
 
-            it('should not call pagination service if the url is not set', () => {
-                component.currentSiteIdentifier = '123';
-                spyOn(paginationService, 'getWithOffset');
-                component.searchableDropdown.pageChange.emit({ first: 0 } as PaginationEvent);
-                expect(paginationService.getWithOffset).not.toHaveBeenCalled();
+            it('should call paginatorService get method to System Host on init ', () => {
+                expect(paginationService.url).toEqual('v1/themes');
+                expect(paginationService.extraParams.get('hostId')).toEqual('SYSTEM_HOST');
+                expect(paginationService.get).toHaveBeenCalled();
             });
 
             it('should not call pagination service if the url is not set', () => {
+                //Paginator service is now called at least once at the beginning, that's why it has an url at the very beginning
+                component.currentSiteIdentifier = '123';
+                paginationService.url = '';
+                spyOn(paginationService, 'getWithOffset');
+                component.searchableDropdown.pageChange.emit({ first: 0 } as PaginationEvent);
+                expect(paginationService.getWithOffset).not.toHaveBeenCalledTimes(1);
+            });
+
+            it('should call pagination service if the url is set', () => {
                 component.currentSiteIdentifier = '123';
                 component.paginatorService.url = 'v1/test';
                 spyOn(paginationService, 'getWithOffset').and.callThrough();
@@ -330,9 +345,11 @@ describe('DotThemeSelectorDropdownComponent', () => {
             de = fixture.debugElement;
             dotThemesService = TestBed.inject(DotThemesService);
             fixture.detectChanges();
+            const selector = de.query(By.css('dot-theme-selector-dropdown')).componentInstance;
+            selector.value = null; // Paginator service is called once on init and it sets a default value that we need to clean to test this
+            fixture.detectChanges();
 
             expect(dotThemesService.get).not.toHaveBeenCalled();
-            const selector = de.query(By.css('dot-theme-selector-dropdown')).componentInstance;
             expect(selector.value).toBeNull();
         });
     });

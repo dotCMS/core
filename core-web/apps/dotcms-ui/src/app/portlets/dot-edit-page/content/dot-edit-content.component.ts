@@ -2,7 +2,7 @@ import { fromEvent, merge, Observable, Subject } from 'rxjs';
 
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, NavigationStart, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -38,7 +38,8 @@ import {
     DotPageRender,
     DotPageRenderState,
     DotVariantData,
-    ESContent
+    ESContent,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
@@ -84,6 +85,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     paletteCollapsed = false;
     isEnterpriseLicense = false;
     variantData: Observable<DotVariantData>;
+    featureFlagSeo = FeaturedFlags.FEATURE_FLAG_SEO_IMPROVEMENTS;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -130,6 +132,8 @@ browse from the page internal links
                         this.pageStateInternal.user,
                         pageRendered
                     );
+
+                    this.variantData = null; // internal navigation, reset variant data - leave experiments.
 
                     if (this.isInternallyNavigatingToSamePage(pageRendered.page.pageURI)) {
                         this.dotPageStateService.setLocalState(dotRenderedPageState);
@@ -181,6 +185,18 @@ browse from the page internal links
         this.subscribeOverlayService();
         this.subscribeDraggedContentType();
         this.getExperimentResolverData();
+
+        /*This is needed when the user is in the edit mode in an experiment variant
+        and navigate to another page with the page menu and want to go back with the
+         browser back button */
+        this.router.events
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((event) => event instanceof NavigationEnd)
+            )
+            .subscribe((_event: NavigationStart) => {
+                this.getExperimentResolverData();
+            });
     }
 
     ngOnDestroy(): void {

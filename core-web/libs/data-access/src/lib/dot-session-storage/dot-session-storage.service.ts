@@ -20,12 +20,12 @@ export class DotSessionStorageService {
      * @return {*}  {(string | null)}
      * @memberof DotSessionStorageService
      */
-    getVariationId(): string | null {
+    getVariationId(): string {
         if (typeof SESSION_STORAGE_VARIATION_KEY === 'string') {
-            return sessionStorage.getItem(SESSION_STORAGE_VARIATION_KEY);
+            return sessionStorage.getItem(SESSION_STORAGE_VARIATION_KEY) || 'DEFAULT';
         }
 
-        return null;
+        return 'DEFAULT';
     }
 
     /**

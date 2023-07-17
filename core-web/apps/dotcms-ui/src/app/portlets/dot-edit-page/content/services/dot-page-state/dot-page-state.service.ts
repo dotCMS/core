@@ -13,6 +13,7 @@ import {
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import {
     DotContentletLockerService,
+    DotLicenseService,
     DotMessageService,
     DotPageRenderService
 } from '@dotcms/data-access';
@@ -21,15 +22,15 @@ import {
     DotCMSContentlet,
     DotDevice,
     DotExperiment,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageRenderOptions,
     DotPageRenderParameters,
     DotPageRenderState,
     DotPersona,
     ESContent
 } from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
 import { PageModelChangeEvent, PageModelChangeEventType } from '../dot-edit-content-html/models';
 
@@ -41,6 +42,18 @@ export class DotPageStateService {
 
     private isInternalNavigation = false;
 
+    constructor(
+        private dotContentletLockerService: DotContentletLockerService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private dotMessageService: DotMessageService,
+        private dotPageRenderService: DotPageRenderService,
+        private dotRouterService: DotRouterService,
+        private loginService: LoginService,
+        private dotFavoritePageService: DotFavoritePageService,
+        private dotExperimentsService: DotExperimentsService,
+        private dotLicenseService: DotLicenseService
+    ) {}
+
     get pagePersonalization() {
         const persona = this.currentState?.viewAs?.persona;
 
@@ -50,17 +63,6 @@ export class DotPageStateService {
 
         return `dot:${persona.contentType}:${persona.keyTag}`;
     }
-
-    constructor(
-        private dotContentletLockerService: DotContentletLockerService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotMessageService: DotMessageService,
-        private dotPageRenderService: DotPageRenderService,
-        private dotRouterService: DotRouterService,
-        private loginService: LoginService,
-        private dotFavoritePageService: DotFavoritePageService,
-        private dotExperimentsService: DotExperimentsService
-    ) {}
 
     /**
      * Get the page state with the options passed
@@ -389,17 +391,31 @@ export class DotPageStateService {
     }
 
     private getRunningExperiment(pageId: string): Observable<DotExperiment> {
-        return this.dotExperimentsService.getByStatus(pageId, DotExperimentStatusList.RUNNING).pipe(
-            take(1),
-            catchError((error: HttpErrorResponse) => {
-                error.error.message = this.dotMessageService.get('experiments.error.fetching.data');
+        return this.dotLicenseService.isEnterprise().pipe(
+            switchMap((isEnterprise: boolean) => {
+                if (!isEnterprise) {
+                    return of(null);
+                }
 
-                this.dotHttpErrorManagerService.handle(error, true);
+                return this.dotExperimentsService
+                    .getByStatus(pageId, DotExperimentStatus.RUNNING)
+                    .pipe(
+                        take(1),
+                        catchError((error: HttpErrorResponse) => {
+                            error.error.message = this.dotMessageService.get(
+                                'experiments.error.fetching.data'
+                            );
 
-                return of(null);
-            }),
-            switchMap((experiments: DotExperiment[]) => {
-                return of(experiments && experiments.length > 0 ? experiments[0] : null);
+                            this.dotHttpErrorManagerService.handle(error, true);
+
+                            return of(null);
+                        }),
+                        switchMap((experiments: DotExperiment[]) => {
+                            return of(
+                                experiments && experiments.length > 0 ? experiments[0] : null
+                            );
+                        })
+                    );
             })
         );
     }

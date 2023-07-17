@@ -6,9 +6,8 @@ import { By } from '@angular/platform-browser';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -34,6 +33,7 @@ describe('DotPagesCardComponent', () => {
                 DotPagesFavoritePageEmptySkeletonComponent,
                 TooltipModule,
                 DotPipesModule,
+                DotMessagePipe,
                 UiDotIconButtonModule
             ],
             declarations: [DotPagesCardComponent],

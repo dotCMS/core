@@ -1,9 +1,9 @@
 @use "variables" as *;
 @import "mixins";
 
-::ng-deep {
-    .template-builder-box,
-    .template-builder-box--small {
+.template-builder-box,
+.template-builder-box--small {
+    ::ng-deep {
         .pi.pi-trash {
             color: $color-palette-primary-400;
         }
@@ -12,8 +12,10 @@
             margin-left: 0;
         }
     }
+}
 
-    .template-builder-box--small {
+.template-builder-box--small {
+    ::ng-deep {
         .p-button-text {
             margin: $spacing-3 0;
         }
@@ -26,50 +28,49 @@
             font-size: $font-size-sm;
             margin: $spacing-3;
         }
-    }
+        .p-dropdown .p-dropdown-trigger {
+            width: 0.875rem; // 14px
+            height: 0.875rem; // 14px
+        }
 
-    .p-dropdown {
-        display: flex;
-        flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
-        border: none;
-        background: none;
-        font-size: $spacing-2;
-        margin-left: $spacing-4;
-        padding: $spacing-2;
+        .p-dropdown {
+            border-radius: 50%;
+            padding: 0.5625rem; // 9px
+            margin-top: $spacing-3;
+            margin-bottom: $spacing-3;
+        }
     }
-    .p-dropdown:hover {
-        background: $color-palette-primary-200;
-    }
-    .p-dropdown-label.p-inputtext {
-        font-size: $font-size-sm;
-        color: $black;
-        padding: 0 0 0 $spacing-2;
-        max-width: 10rem;
-    }
-    .p-dropdown-trigger-icon {
-        color: $color-palette-primary;
-    }
-    .p-dropdown .p-dropdown-trigger {
-        width: auto;
+}
+
+p-dropdown {
+    ::ng-deep {
+        .p-dropdown {
+            display: flex;
+            flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
+            background: none;
+            margin-left: $spacing-4;
+        }
     }
 }
 
 .template-builder-box {
-    border: 1px solid $color-palette-primary-300;
+    border: 1px solid $color-palette-gray-400;
     border-radius: $border-radius-sm;
-    height: 14rem;
+    height: 100%;
     width: 100%;
     background-color: $white;
     overflow: hidden;
+
+    ::ng-deep {
+        .edit-classes-button {
+            margin-right: $spacing-1;
+        }
+    }
 }
 
 .template-builder-box__header-container {
-    background-color: $color-palette-primary-100;
+    background-color: $color-palette-gray-200;
     padding: $spacing-1 $spacing-4 $spacing-1 $spacing-2;
-
-    border-top: 1px solid $color-palette-primary-100;
-    border-radius: $border-radius-sm;
-
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -77,11 +78,11 @@
 
 .template-builder-box__item {
     padding: 0px $spacing-1 0px $spacing-3;
-    border: 1px solid $color-palette-primary-300;
     margin: $spacing-1 $spacing-3;
+    height: $spacing-6;
 
     &:first-child {
-        margin-top: $spacing-3;
+        margin-top: $spacing-2;
     }
 
     &:last-child {

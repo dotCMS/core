@@ -2,7 +2,6 @@ import { moduleMetadata } from '@storybook/angular';
 import { Meta, Story } from '@storybook/angular/types-6-0';
 
 import { CommonModule } from '@angular/common';
-import { Pipe, PipeTransform } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -11,19 +10,10 @@ import { DataViewModule } from 'primeng/dataview';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { SearchableDropdownComponent } from '.';
-
-@Pipe({
-    name: 'dm'
-})
-class DotMessagePipe implements PipeTransform {
-    transform(value: string): string {
-        return value;
-    }
-}
 
 export default {
     title: 'DotCMS/Searchable Dropdown',

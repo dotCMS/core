@@ -7,7 +7,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
  * Default Implementation for {@link RegexUrlPatterStrategy}
  */
  
-public class DefaultRegexUrlPatterStrategy extends RegexUrlPatterStrategy {
+public class DefaultRegexUrlPatterStrategy implements RegexUrlPatterStrategy {
 
     @Override
     public boolean isMatch(HTMLPageAsset htmlPageAsset) {

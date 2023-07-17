@@ -27,7 +27,6 @@ import { TabViewModule } from 'primeng/tabview';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
@@ -41,7 +40,7 @@ import {
     DotCMSContentTypeLayoutRow,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,
@@ -128,6 +127,7 @@ class TestDotLoadingIndicatorComponent {
     @Input()
     fullscreen: boolean;
 }
+
 @Injectable()
 class TestFieldDragDropService {
     _fieldDropFromSource: Subject<any> = new Subject();
@@ -214,7 +214,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 DotFieldValidationMessageModule,
                 ReactiveFormsModule,
                 HttpClientTestingModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 TabViewModule
             ],
             providers: [
@@ -496,7 +496,7 @@ describe('Load fields and drag and drop', () => {
                 ContentTypeFieldsAddRowModule,
                 DotDialogModule,
                 HttpClientTestingModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 TabViewModule
             ],
             providers: [

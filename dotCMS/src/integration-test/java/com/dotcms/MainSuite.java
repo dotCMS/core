@@ -1,8 +1,8 @@
 package com.dotcms;
 
-import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
+import com.dotcms.bayesian.BayesianAPIImplIT;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
@@ -46,10 +46,15 @@ import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.experiments.business.ExperimentAPIImpIntegrationTest;
+import com.dotcms.experiments.business.IndexRegexUrlPatterStrategyIntegrationTest;
+import com.dotcms.experiments.business.RootIndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
+import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
+import com.dotcms.integritycheckers.FolderIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
@@ -85,7 +90,8 @@ import com.dotcms.rest.IntegrityResourceIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
-import com.dotcms.rest.api.v1.assets.AssetPathResolverImplTest;
+import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
+import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
@@ -203,7 +209,9 @@ import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
+import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
+import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -220,6 +228,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
+
+
 
 
 @RunWith(MainBaseSuite.class)
@@ -623,7 +633,7 @@ import org.junit.runners.Suite.SuiteClasses;
         VersionableFactoryImplTest.class,
         Task220928AddLookbackWindowColumnToExperimentTest.class,
         TailLogResourceTest.class,
-        BayesianAPIImplTest.class,
+        BayesianAPIImplIT.class,
         ContentletDependenciesTest.class,
         SaveContentAsDraftActionletIntegrationTest.class,
         StoryBlockAPITest.class,
@@ -644,9 +654,17 @@ import org.junit.runners.Suite.SuiteClasses;
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
         SiteViewPaginatorIntegrationTest.class,
-        AssetPathResolverImplTest.class,
         CMSUrlUtilIntegrationTest.class,
-        HostFactoryImplTest.class
+        HostFactoryImplTest.class,        
+        RootIndexRegexUrlPatterStrategyIntegrationTest.class,
+        IndexRegexUrlPatterStrategyIntegrationTest.class,
+        ContentFileAssetIntegrityCheckerTest.class,
+        FolderIntegrityCheckerTest.class,
+        ContentPageIntegrityCheckerTest.class,
+        AssetPathResolverImplIntegrationTest.class,
+        WebAssetHelperIntegrationTest.class,
+        Task230701AddHashIndicesToWorkflowTablesTest.class,
+        Task230713IncreaseDisabledWysiwygColumnSizeTest.class
 })
 
 public class MainSuite {
