@@ -405,7 +405,7 @@ public class WebAssetHelper {
         final InputStream fileInputStream = form.getFileInputStream();
         final FileUploadDetail detail = form.getDetail();
         final String assetPath = detail.getAssetPath();
-        final boolean live = detail.getLive();
+        final boolean live = detail.isLive();
         final Optional<Language> lang = parseLang(detail.getLanguage(), true);
 
         if(lang.isEmpty()){
@@ -459,7 +459,7 @@ public class WebAssetHelper {
 
             if (assets.isEmpty()) {
                 //The file does not exist
-                final Contentlet contentlet = makeFileAsset(tempFile.file, folder, lang.get());
+                final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder, lang.get());
                 savedAsset = checkinOrPublish(contentlet, user, live);
 
             } else {
@@ -470,7 +470,7 @@ public class WebAssetHelper {
 
                 if (found.isEmpty()) {
                     //We're required to create a new version in a different language
-                    final Contentlet contentlet = makeFileAsset(tempFile.file, folder, lang.get());
+                    final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder, lang.get());
                     savedAsset = checkinOrPublish(contentlet, user, live);
 
                 } else {
@@ -482,7 +482,7 @@ public class WebAssetHelper {
 
                     final Contentlet checkout = contentletAPI.checkout(asset.getInode(), user, false);
 
-                    updateFileAsset(tempFile.file, folder, lang.get(), checkout);
+                    updateFileAsset(tempFile.file, host, folder, lang.get(), checkout);
                     savedAsset = checkinOrPublish(checkout, user, live);
                 }
             }
@@ -543,11 +543,11 @@ public class WebAssetHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Contentlet makeFileAsset(final File file, final Folder folder, Language lang)
+    Contentlet makeFileAsset(final File file, final Host host, final Folder folder, Language lang)
             throws DotDataException, DotSecurityException {
         final Contentlet contentlet = new Contentlet();
         contentlet.setContentTypeId(contentTypeAPI.find("FileAsset").id());
-        return updateFileAsset(file, folder, lang, contentlet);
+        return updateFileAsset(file, host, folder, lang, contentlet);
     }
 
 
@@ -559,12 +559,16 @@ public class WebAssetHelper {
      * @param contentlet
      * @return
      */
-    Contentlet updateFileAsset(final File file, final Folder folder, final Language lang, final Contentlet contentlet){
+    Contentlet updateFileAsset(final File file, final Host host, final Folder folder, final Language lang, final Contentlet contentlet){
         final String name = file.getName();
         contentlet.setProperty(FileAssetAPI.TITLE_FIELD, name);
         contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, name);
         contentlet.setProperty(FileAssetAPI.BINARY_FIELD, file);
-        contentlet.setFolder(folder.getInode());
+        if(!folder.isSystemFolder()){
+            contentlet.setFolder(folder.getInode());
+        } else {
+            contentlet.setHost(host.getIdentifier());
+        }
         contentlet.setLanguageId(lang.getId());
         return contentlet;
     }
