@@ -1,6 +1,7 @@
 import { ChartColors } from '@dotcms/dotcms-models';
 
 interface DotExperimentsChartjsOptions {
+    legendId: string;
     xAxisLabel: string;
     yAxisLabel: string;
 }
@@ -13,6 +14,7 @@ interface DotExperimentsChartjsOptions {
  * @param yAxisLabel
  */
 export const generateDotExperimentLineChartJsOptions = ({
+    legendId,
     xAxisLabel,
     yAxisLabel
 }: DotExperimentsChartjsOptions) => {

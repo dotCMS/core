@@ -48,6 +48,7 @@ export class DotExperimentsReportsChartComponent implements OnChanges {
         const { config, data } = changes;
         if (config?.currentValue && data.currentValue) {
             this.options = generateDotExperimentLineChartJsOptions({
+                legendId: this.chartId,
                 xAxisLabel: config.currentValue.xAxisLabel,
                 yAxisLabel: config.currentValue.yAxisLabel
             });

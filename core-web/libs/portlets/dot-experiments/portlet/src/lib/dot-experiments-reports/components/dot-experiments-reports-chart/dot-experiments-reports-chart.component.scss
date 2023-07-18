@@ -1,7 +1,14 @@
 @use "variables" as *;
 
 .chart__header {
-    padding-right: $spacing-1;
+    padding-right: 25px;
+}
+
+.header-title {
+    color: $black;
+    font-size: $font-size-md;
+    font-weight: $font-weight-bold;
+    margin: $spacing-0;
 }
 
 .empty__wrapper {
