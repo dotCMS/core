@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.liferay.util.StringPool;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
 import org.immutables.value.Value;
 
@@ -40,15 +41,8 @@ public interface AbstractMetric extends Serializable {
         boolean isValid = true;
 
         for (final Condition condition : conditions()) {
-
-            final String realValue = event.get(condition.parameter())
-                    .map(value -> value.toString())
-                    .orElse(StringPool.BLANK);
-
-            final String valueToCompare = condition.value();
-
-            isValid = isValid && condition.operator().getFunction()
-                    .apply(realValue, valueToCompare);
+            final Parameter parameter = type().getParameter(condition.parameter()).orElseThrow();
+            isValid = isValid && condition.isValid(parameter, event);
 
             if (!isValid) {
                 break;
