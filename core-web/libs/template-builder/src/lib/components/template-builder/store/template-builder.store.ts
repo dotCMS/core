@@ -7,6 +7,7 @@ import { Injectable } from '@angular/core';
 import { DotContainer } from '@dotcms/dotcms-models';
 
 import {
+    BOX_WIDTH,
     DotGridStackNode,
     DotGridStackWidget,
     DotTemplateBuilderState,
@@ -20,7 +21,8 @@ import {
     removeColumnByID,
     createDotGridStackWidgetFromNode,
     parseMovedNodeToWidget,
-    willBoxFitInRow
+    willBoxFitInRow,
+    getRemainingSpaceForBox
 } from '../utils/gridstack-utils';
 
 /**
@@ -39,7 +41,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         ...state,
         rows: state.rows.map((row) => ({
             ...row,
-            willBoxFit: willBoxFitInRow(row)
+            willBoxFit: willBoxFitInRow(row.subGridOpts?.children)
         }))
     }));
 
@@ -175,8 +177,16 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             ...state,
             rows: rows.map((row) => {
                 if (row.id === newColumn.parentId) {
-                    if (row.subGridOpts) row.subGridOpts.children.push(newColumn);
-                    else row.subGridOpts = { children: [newColumn] };
+                    const resizedColumn = {
+                        ...newColumn,
+                        w:
+                            getRemainingSpaceForBox(
+                                [...(row.subGridOpts?.children || [])],
+                                newColumn
+                            ) + BOX_WIDTH
+                    };
+                    if (row.subGridOpts) row.subGridOpts.children.push(resizedColumn);
+                    else row.subGridOpts = { children: [resizedColumn] };
                 }
 
                 return row;

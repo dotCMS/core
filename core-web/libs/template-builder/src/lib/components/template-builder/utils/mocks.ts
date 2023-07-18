@@ -510,7 +510,7 @@ export const ROWS_MOCK = [
                     ]
                 },
                 {
-                    w: 3,
+                    w: 4,
                     h: 1,
                     y: 0,
                     x: 3,
@@ -524,10 +524,24 @@ export const ROWS_MOCK = [
                     ]
                 },
                 {
-                    w: 3,
+                    w: 2,
                     h: 1,
                     y: 0,
-                    x: 8,
+                    x: 7,
+                    id: 'ef8a4b38-336c-4c9b-bf94-1bc87f7a74ea',
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            uuid: '3'
+                        }
+                    ]
+                },
+                {
+                    w: 4,
+                    h: 1,
+                    y: 0,
+                    x: 9,
                     id: '11f7745a-16fa-4236-b3c1-fdb182a59315',
                     styleClass: [],
                     containers: [

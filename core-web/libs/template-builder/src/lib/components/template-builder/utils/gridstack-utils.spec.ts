@@ -5,7 +5,7 @@ import {
     parseFromGridStackToDotObject,
     willBoxFitInRow
 } from './gridstack-utils';
-import { BOX_MOCK, EMPTY_ROWS_VALUE, MINIMAL_DATA_MOCK, ROWS_MOCK } from './mocks';
+import { EMPTY_ROWS_VALUE, MINIMAL_DATA_MOCK, ROWS_MOCK } from './mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -76,26 +76,22 @@ describe('parseFromGridStackToDotObject', () => {
 
 describe('willBoxFitInRow', () => {
     it('should fit when theres only a box with width 7', () => {
-        expect(willBoxFitInRow(ROWS_MOCK[0])).toBe(true);
+        expect(willBoxFitInRow(ROWS_MOCK[0].subGridOpts.children)).toBe(true);
     });
 
     it('should fit with 2 boxes and a gap of 3 between them', () => {
-        expect(willBoxFitInRow(ROWS_MOCK[1])).toBe(true);
+        expect(willBoxFitInRow(ROWS_MOCK[1].subGridOpts.children)).toBe(true);
     });
 
-    it('should not fit with boxes and a gap of 2 between them', () => {
-        expect(willBoxFitInRow(ROWS_MOCK[2])).toBe(false);
+    it('should not fit when the row is full', () => {
+        expect(willBoxFitInRow(ROWS_MOCK[2].subGridOpts.children)).toBe(false);
     });
 
     it('should fit with multiple boxes and a gap of 3 between them', () => {
-        expect(willBoxFitInRow(ROWS_MOCK[3])).toBe(true);
+        expect(willBoxFitInRow(ROWS_MOCK[3].subGridOpts.children)).toBe(true);
     });
 
     it('should fit when empty', () => {
-        expect(willBoxFitInRow(ROWS_MOCK[4])).toBe(true);
-    });
-
-    it("should not fit if it's not a row", () => {
-        expect(willBoxFitInRow(BOX_MOCK)).toBe(false);
+        expect(willBoxFitInRow(ROWS_MOCK[4].subGridOpts.children)).toBe(true);
     });
 });
