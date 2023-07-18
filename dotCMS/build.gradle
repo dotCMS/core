@@ -269,7 +269,7 @@ dependencies {
     }
     felixsystem group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
 
-    felixsystem group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
+    felixsystem group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '23.01'
 
     //// starter config
 

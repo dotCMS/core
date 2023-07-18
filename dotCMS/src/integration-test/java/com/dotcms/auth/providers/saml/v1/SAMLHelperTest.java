@@ -91,6 +91,13 @@ public class SAMLHelperTest extends IntegrationTestBase {
         }
 
         @Override
+        public Map<String, String> resolveAllAttributes(final HttpServletRequest request,
+                                                        final HttpServletResponse response,
+                                                        final IdentityProviderConfiguration identityProviderConfiguration) {
+            return null;
+        }
+
+        @Override
         public void renderMetadataXML(Writer writer, IdentityProviderConfiguration identityProviderConfiguration) {
 
         }
