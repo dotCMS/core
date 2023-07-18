@@ -508,7 +508,6 @@ describe('DotTemplateCreateEditComponent', () => {
                         },
                         themeId: '123'
                     });
-
                     expect(store.saveTemplate).toHaveBeenCalledWith({
                         type: 'design',
                         title: 'Some template',
@@ -529,7 +528,7 @@ describe('DotTemplateCreateEditComponent', () => {
                     });
                 });
 
-                it('should call saveWorkingTemplate when updateTemplate', () => {
+                it('should call updateWorkingTemplate from store when updateTemplate', () => {
                     const builder = de.query(By.css('dot-template-builder'));
                     builder.triggerEventHandler('updateTemplate', {
                         layout: {
