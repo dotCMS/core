@@ -1,1 +1,29 @@
-<p>dot-page-tools-seo works!</p>
+<p-dialog
+    class="page-tools-dialog"
+    [(visible)]="visible"
+    [position]="'right'"
+    [closable]="false"
+    [draggable]="false"
+    header="Page Tools"
+>
+    <div class="page-tools">
+        <ul class="page-tools-list">
+            <li class="page-tools-list__item" *ngFor="let tool of tools">
+                <a class="page-tools-list__link" href="{{ tool.runnableLink }}" target="_blank">
+                    <img class="logo" src="{{ tool.icon }}" alt="seo" />
+                    <div class="page-tools-list__content">
+                        <span class="page-tools-list__title">{{ tool.title }}</span>
+                        <p>
+                            {{ tool.description }}
+                        </p>
+                        <div class="page-tools-list__tags">
+                            <div class="page-tools-list__tag" *ngFor="let tag of tool.tags">
+                                {{ tag }}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </li>
+        </ul>
+    </div>
+</p-dialog>
