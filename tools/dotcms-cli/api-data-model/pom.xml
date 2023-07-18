@@ -54,7 +54,6 @@
             <artifactId>resteasy-jackson2-provider</artifactId>
         </dependency>
 
-
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
