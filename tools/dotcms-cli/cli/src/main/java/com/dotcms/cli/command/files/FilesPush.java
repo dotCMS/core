@@ -151,8 +151,9 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                                 treeNode,
                                 false,
                                 true);
-                        output.info(sb.toString());
                     }
+
+                    output.info(sb.toString());
 
                     // ---
                     // Pushing the tree
