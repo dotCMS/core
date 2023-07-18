@@ -23,6 +23,7 @@ jobs:
       - name: Run tests
         working-directory: ./tools/dotcms-cli/
         run: |
+          java -version
           pwd
           ls -la
           ./mvnw test
