@@ -457,7 +457,7 @@ export const ROWS_MOCK = [
         subGridOpts: {
             children: [
                 {
-                    w: 6,
+                    w: 7,
                     h: 1,
                     y: 0,
                     x: 0,
@@ -577,10 +577,10 @@ export const ROWS_MOCK = [
                     ]
                 },
                 {
-                    w: 3,
+                    w: 5,
                     h: 1,
                     y: 0,
-                    x: 6,
+                    x: 4,
                     id: '95d2cc1c-64c4-4d10-a88a-7c654947a51a',
                     styleClass: [],
                     containers: [
@@ -591,7 +591,7 @@ export const ROWS_MOCK = [
                     ]
                 },
                 {
-                    w: 3,
+                    w: 4,
                     h: 1,
                     y: 0,
                     x: 9,

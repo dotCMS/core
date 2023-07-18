@@ -185,6 +185,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                                 newColumn
                             ) + BOX_WIDTH
                     };
+
                     if (row.subGridOpts) row.subGridOpts.children.push(resizedColumn);
                     else row.subGridOpts = { children: [resizedColumn] };
                 }
