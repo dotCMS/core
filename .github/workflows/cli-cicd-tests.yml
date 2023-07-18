@@ -13,6 +13,11 @@ jobs:
     name: CLI tests
     runs-on: ubuntu-latest
     steps:
+      - name: Prepare environment
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y maven
+          mvn -version
       - name: Checkout core
         uses: actions/checkout@v3
       - name: Run tests
@@ -20,7 +25,7 @@ jobs:
         run: |
           pwd
           ls -la
-          ./mvn test
+          mvn test
 #      - name: Run cli tests
 #        working-directory: ./tools/dotcms-cli
 #        run: |
