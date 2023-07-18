@@ -1,5 +1,9 @@
 @use "variables" as *;
 
+.chart__header {
+    padding-right: 25px;
+}
+
 .header-title {
     color: $black;
     font-size: $font-size-md;

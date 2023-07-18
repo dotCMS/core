@@ -1,13 +1,11 @@
 <ng-container *ngIf="!isLoading; else loadingStateTpl">
-    <div class="flex flex-column gap-3">
-        <div class="flex flex-row justify-content-between header">
-            <h1 class="header-title" data-testId="chart-title">
-                {{ config.title }}
-            </h1>
-            <div id="legend-container" data-testId="chart-legends"></div>
+    <div class="flex flex-column gap-2">
+        <div class="flex flex-row justify-content-end chart__header">
+            <div class="legend-wrapper" data-testId="chart-legends"></div>
         </div>
         <ng-container *ngIf="!isEmpty; else emptyStateTpl">
             <p-chart
+                id="{{ chartId }}"
                 #chart
                 [data]="data"
                 [options]="options"
