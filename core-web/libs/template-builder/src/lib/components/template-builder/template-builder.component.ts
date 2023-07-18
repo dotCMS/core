@@ -54,7 +54,9 @@ import { DotTemplateBuilderStore } from './store/template-builder.store';
 import {
     GRID_STACK_ROW_HEIGHT,
     GRID_STACK_UNIT,
+    boxInitialOptions,
     gridOptions,
+    rowInitialOptions,
     subGridOptions
 } from './utils/gridstack-options';
 import {
@@ -112,6 +114,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public readonly colIcon = colIcon;
     public readonly boxWidth = BOX_WIDTH;
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
+    public readonly rowOptions = rowInitialOptions;
+    public readonly boxOptions = boxInitialOptions;
     private dotLayout: DotLayout;
 
     grid!: GridStack;

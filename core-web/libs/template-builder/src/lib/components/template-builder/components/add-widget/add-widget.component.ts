@@ -1,7 +1,15 @@
+import { GridStackWidget } from 'gridstack';
 import { DDElementHost } from 'gridstack/dist/dd-element';
 
 import { NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, Input } from '@angular/core';
+import {
+    AfterViewInit,
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    HostListener,
+    Input
+} from '@angular/core';
 
 @Component({
     selector: 'dotcms-add-widget',
@@ -11,13 +19,60 @@ import { ChangeDetectionStrategy, Component, ElementRef, Input } from '@angular/
     imports: [NgIf],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AddWidgetComponent {
+export class AddWidgetComponent implements AfterViewInit {
     @Input() label = 'Add Widget';
     @Input() icon = '';
+    @Input() gridstackOptions: GridStackWidget;
 
     protected imageError = false;
 
     constructor(private el: ElementRef) {}
+
+    ngAfterViewInit(): void {
+        this.el.nativeElement.gridstackNode = {
+            ...this.gridstackOptions
+        };
+    }
+
+    @HostListener('mousedown')
+    setGridOptions(): void {
+        /*
+            GS = GrisStack
+
+            This code is a hack made to override all the gridstack logic on "dropover",
+            that is basically when you hover an element on a row.
+
+            This does not interfere with the logic when moving from a row to another, that has another workflow.
+
+            Basically, we need to set the initial size for our widgets and
+            what's happening is that GS cleans the node where it takes the initial options if it takes it from attributes
+            and the values are the same as the defaults like: gs-w="1", gs-h="1" or gs-x="0", gs-y="0".
+
+            So, after it deletes this attributes (now our node doesn't have any options on attributes), it will calculate
+            all the sizes based on the client size and the button size, so it can occupy the same space as the button itself.
+
+            That behavior makes GS initialize our widgets with arbitrary sizes calculated under the hood,
+            so we need to override it.
+
+            And the way to override it is to set the gridstackNode property on the element,
+            so GS will take the options from there instead of the attributes.
+
+            But, what's happening again, is that GS is cleaning the gridstackNode property as well when the drop is made.
+
+            So we need to set it again on the mousedown event, so it will be set after GS cleans it.
+
+
+            TODO:
+            We still have an edge case to fix, the dropover is fired everytime you hover on an element,
+            so after a while it will clean the object and the attrs again when deciding where to drop the box.
+
+            I already tried to listen to the "drag" event on the addBox button, to set the width and height again when dragging the button,,
+            but it didn't work, GS cleans that event everytime you "dropover" or "dropout" of a row.
+        */
+        this.el.nativeElement.gridstackNode = {
+            ...this.gridstackOptions
+        };
+    }
 
     get nativeElement(): DDElementHost {
         return this.el.nativeElement;

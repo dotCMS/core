@@ -6,18 +6,18 @@
         <dotcms-add-widget
             [label]="'dot.template.builder.add.row' | dm"
             [icon]="rowIcon"
+            [gridstackOptions]="this.rowOptions"
             data-widget-type="row"
-            gs-w="12"
-            gs-h="1"
             data-testId="add-row"
         ></dotcms-add-widget>
         <dotcms-add-widget
+            id="box-picker"
             #addBox
             [label]="'dot.template.builder.add.box' | dm"
+            [gridstackOptions]="this.boxOptions"
             [attr.gs-w]="boxWidth"
             [icon]="colIcon"
             data-widget-type="col"
-            gs-h="1"
             data-testId="add-box"
         ></dotcms-add-widget>
         <p-divider layout="vertical"></p-divider>
