@@ -20,7 +20,7 @@ jobs:
         run: |
           pwd
           ls -la
-          ./mvnw test
+          ./mvn test
 #      - name: Run cli tests
 #        working-directory: ./tools/dotcms-cli
 #        run: |
