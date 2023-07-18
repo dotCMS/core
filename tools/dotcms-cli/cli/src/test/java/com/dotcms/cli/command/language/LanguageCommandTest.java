@@ -5,6 +5,8 @@ import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
 import com.dotcms.cli.common.InputOutputFormat;
+import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.Workspace;
 import com.dotcms.model.language.Language;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +30,8 @@ import picocli.CommandLine.ExitCode;
 public class LanguageCommandTest extends CommandTest {
     @Inject
     AuthenticationContext authenticationContext;
+    @Inject
+    WorkspaceManager workspaceManager;
 
     @BeforeAll
     public static void beforeAll() {
@@ -55,18 +59,19 @@ public class LanguageCommandTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Pull_By_Id() throws IOException {
+        final Workspace workspace = workspaceManager.getOrCreate();
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "1");
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "1", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
             Language result = mapper.readValue(output, Language.class);
             Assertions.assertEquals(1, result.id().get());
         } finally {
-            Files.deleteIfExists(Path.of(".", String.format("%s.%s", "English", InputOutputFormat.defaultFormat().getExtension())));
+            workspaceManager.destroy(workspace);
         }
     }
 
@@ -78,18 +83,19 @@ public class LanguageCommandTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Pull_By_IsoCode() throws IOException {
+        final Workspace workspace = workspaceManager.getOrCreate();
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US");
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
             Language result = mapper.readValue(output, Language.class);
             Assertions.assertEquals(1, result.id().get());
         } finally {
-            Files.deleteIfExists(Path.of(".", String.format("%s.%s", "English", InputOutputFormat.defaultFormat().getExtension())));
+            workspaceManager.destroy(workspace);
         }
     }
 
@@ -211,7 +217,8 @@ public class LanguageCommandTest extends CommandTest {
      * <b>Expected Result:</b> The language with iso code "es-VE" should be removed
      */
     @Test
-    void Test_Command_Language_Remove_byIsoCode() {
+    void Test_Command_Language_Remove_byIsoCode() throws IOException {
+        final Workspace workspace = workspaceManager.getOrCreate();
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -225,8 +232,10 @@ public class LanguageCommandTest extends CommandTest {
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             //We check that the language with iso code "es-VE" is not present
-            status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE");
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
+        } finally {
+            workspaceManager.destroy(workspace);
         }
     }
 
@@ -237,6 +246,7 @@ public class LanguageCommandTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Remove_byId() throws IOException {
+        final Workspace workspace = workspaceManager.getOrCreate();
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -244,7 +254,7 @@ public class LanguageCommandTest extends CommandTest {
             commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "es-ve");
             commandLine.setOut(out);
             //we pull the language with iso code "es-VE" to get its id
-            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE");
+            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
@@ -256,10 +266,10 @@ public class LanguageCommandTest extends CommandTest {
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             //We check that the language with iso code "es-VE" is not present
-            status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE");
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
         } finally {
-            Files.deleteIfExists(Path.of(".", String.format("%s.%s", "Spanish", InputOutputFormat.defaultFormat().getExtension())));
+            workspaceManager.destroy(workspace);
         }
     }
 }
