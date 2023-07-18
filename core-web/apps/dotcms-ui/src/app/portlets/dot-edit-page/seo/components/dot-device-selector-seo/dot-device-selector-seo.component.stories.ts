@@ -15,7 +15,7 @@ import { PanelModule } from 'primeng/panel';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotDevices } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -49,7 +49,7 @@ export default {
                 OverlayPanelModule,
                 PanelModule,
                 DividerModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 BrowserAnimationsModule
             ],
             providers: [

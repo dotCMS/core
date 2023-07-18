@@ -58,7 +58,8 @@
 
                 <dotcms-remove-confirm-dialog
                     *ngIf="actions.includes('delete')"
-                    (deleteConfirmed)="deleteColumn.emit()"
+                    [skipConfirmation]="items.length === 0"
+                    (deleteConfirmed)="requestColumnDelete()"
                     (deleteRejected)="deleteColumnRejected.emit()"
                 >
                 </dotcms-remove-confirm-dialog>
@@ -101,6 +102,7 @@
         ></p-button>
         <dotcms-remove-confirm-dialog
             *ngIf="actions.includes('delete')"
+            [skipConfirmation]="items.length === 0"
             (deleteConfirmed)="deleteColumn.emit()"
             (deleteRejected)="deleteColumnRejected.emit()"
         >
