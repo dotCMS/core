@@ -152,6 +152,15 @@ export class DotPageStateService {
                 }
             );
 
+        this.getRunningExperiment(state.page.identifier)
+            .pipe(take(1))
+            .subscribe((experiment: DotExperiment) => {
+                if (experiment) {
+                    state.runningExperiment = experiment;
+                    this.setCurrentState(state);
+                }
+            });
+
         this.setCurrentState(state);
         this.isInternalNavigation = true;
     }
@@ -191,8 +200,16 @@ export class DotPageStateService {
      * @memberof DotPageStateService
      */
     setLocalState(state: DotPageRenderState): void {
-        this.setCurrentState(state);
-        this.state$.next(state);
+        this.getRunningExperiment(state.page.identifier)
+            .pipe(take(1))
+            .subscribe((experiment: DotExperiment) => {
+                if (experiment) {
+                    state.runningExperiment = experiment;
+                }
+
+                this.setCurrentState(state);
+                this.state$.next(state);
+            });
     }
 
     /**
