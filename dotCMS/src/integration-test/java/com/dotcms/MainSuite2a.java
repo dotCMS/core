@@ -42,7 +42,6 @@ import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
 import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
 import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
 import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumnTest;
-import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
@@ -170,7 +169,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ContainerFactoryImplTest.class,
         TemplateFactoryImplTest.class,
         TestConfig.class,
-        ConfigTest.class,
         FolderTest.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
