@@ -16,7 +16,8 @@ describe('DotExperimentOptionsComponent', () => {
                          <dot-experiment-options-item
                                       value="a"
                                       detail="Detail A"
-                                      title="Title A">
+                                      title="Title A"
+                                      icon="test-icon">
                          </dot-experiment-options-item>
                          <dot-experiment-options-item
                                       value="b"
@@ -40,9 +41,11 @@ describe('DotExperimentOptionsComponent', () => {
 
         expect(headers[0].querySelector('h2')).toHaveText('Title A');
         expect(headers[0].querySelector('p')).toHaveText('Detail A');
+        expect(headers[0].querySelector('i')).toHaveClass('test-icon');
 
         expect(headers[1].querySelector('h2')).toHaveText('Title B');
         expect(headers[1].querySelector('p')).toHaveText('Detail B');
+        expect(headers[1].querySelector('i')).not.toExist();
     });
 
     it('should add the class expand to an option clicked that contains content', () => {

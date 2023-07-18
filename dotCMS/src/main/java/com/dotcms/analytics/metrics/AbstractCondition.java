@@ -1,8 +1,14 @@
 package com.dotcms.analytics.metrics;
 
+import com.dotcms.analytics.metrics.ParameterValuesTransformer.Values;
+import com.dotcms.experiments.business.result.Event;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Arrays;
+import java.util.Collection;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
 
 /**
  * Represents a condition for a {@link Metric}. A Metric can have zero to many Conditions.
@@ -22,6 +28,31 @@ public interface AbstractCondition {
     Operator operator();
     String value();
 
+    /**
+     * Return true is the Condition is meet on the {@link Event} using the {@link MetricType}.
+     * The {@link Parameter}  define how is the value taken from the {@link Event} and
+     * how are this values process before by evaluate by the Condition.
+     *
+     * @param parameter
+     * @param event
+     * @return
+     */
+    @JsonIgnore
+    default boolean isValid(final Parameter parameter, final Event event){
+
+        final Collection values = parameter.getValueGetter().getValuesFromEvent(parameter, event);
+
+        final Values filterAndTransformValues = parameter.type().getTransformer()
+                .transform(values, this);
+
+        final String realValue = filterAndTransformValues.getReal();
+
+        final boolean conditionIsValid = filterAndTransformValues.getValuesToCompare().stream()
+                .anyMatch(value -> operator().getFunction().apply(value, realValue)
+        );
+
+        return conditionIsValid;
+    }
     enum Operator {
         EQUALS((value1, value2) -> value1.equals(value2)),
         CONTAINS((value1, value2) -> value1.toString().contains(value2.toString())),
@@ -54,6 +85,34 @@ public interface AbstractCondition {
     @Value.Immutable
     interface AbstractParameter {
         String name();
+
+        @Default
+        default Type type() {
+            return Type.SIMPLE;
+        }
+
+        @Default
+        default ParameterValueGetter getValueGetter() {
+            return new DefaultParameterValuesGetter();
+        }
+
+        /**
+         * Type of the Parameter it set how its value is going to be handled before
+         * try to check the Condition
+         */
+        enum Type {
+            SIMPLE(new DefaultParameterValuesTransformer());
+
+            final ParameterValuesTransformer parameterValuesTransformer;
+            Type (final ParameterValuesTransformer parameterValuesTransformer) {
+                this.parameterValuesTransformer = parameterValuesTransformer;
+            }
+
+            public <T> ParameterValuesTransformer<T> getTransformer() {
+                return parameterValuesTransformer;
+            }
+        }
+
     }
 
 }
