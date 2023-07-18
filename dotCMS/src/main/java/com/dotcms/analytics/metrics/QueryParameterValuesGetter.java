@@ -11,6 +11,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * {@link ParameterValueGetter} to get the Query Parameters from the Event's Url.
+ */
 public class QueryParameterValuesGetter implements ParameterValueGetter<QueryParameter> {
     @Override
     public Collection<QueryParameter> getValuesFromEvent(

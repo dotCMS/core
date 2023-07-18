@@ -1,5 +1,8 @@
 package com.dotcms.analytics.metrics;
 
+/**
+ * Represents a Url Query Parameter
+ */
 public class QueryParameter {
     private String name;
     private String value;

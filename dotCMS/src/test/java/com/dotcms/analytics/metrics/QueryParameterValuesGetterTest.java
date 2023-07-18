@@ -12,6 +12,9 @@ import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * Test of {@link QueryParameterValuesGetter}
+ */
 public class QueryParameterValuesGetterTest {
     @Test
     public void getQueryParamsFromUrlWithOneQueryParams(){
