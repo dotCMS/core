@@ -65,8 +65,8 @@
 
 <!--        <dependency>-->
 <!--            <groupId>org.jboss.resteasy</groupId>-->
-<!--            <artifactId>resteasy-jackson-provider</artifactId>-->
-<!--            <version>3.15.6.Final</version>-->
+<!--            <artifactId>resteasy-jackson2-provider</artifactId>-->
+<!--            <version>3.1.0.Final</version>-->
 <!--        </dependency>-->
 
         <dependency>
@@ -193,6 +193,47 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Main-Class>de.example.MainClass</Main-Class>
+                                        <X-Compile-Source-JDK>1.8</X-Compile-Source-JDK>
+                                        <X-Compile-Target-JDK>1.8</X-Compile-Target-JDK>
+                                    </manifestEntries>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/services/javax.ws.rs.ext.Providers</resource>
+                                </transformer>
+                            </transformers>
+                            <artifactSet/>
+                            <outputFile>${project.build.directory}/${project.artifactId}-${project.version}-fat.jar</outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
 
     </build>
