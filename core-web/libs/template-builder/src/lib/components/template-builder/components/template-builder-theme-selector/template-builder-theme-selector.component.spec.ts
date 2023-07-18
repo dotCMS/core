@@ -10,6 +10,7 @@ import { ButtonModule } from 'primeng/button';
 import { DataViewModule } from 'primeng/dataview';
 import { DropdownModule } from 'primeng/dropdown';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { DotEventsService, DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService, mockSites, SiteService } from '@dotcms/dotcms-js';
@@ -29,6 +30,7 @@ describe('TemplateBuilderThemeSelectorComponent', () => {
             CommonModule,
             ButtonModule,
             DropdownModule,
+            InputTextModule,
             DataViewModule,
             DotMessagePipe,
             DotSiteSelectorDirective,
