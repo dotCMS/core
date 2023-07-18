@@ -19,6 +19,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -35,12 +36,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.glassfish.jersey.internal.util.Base64;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -101,6 +105,9 @@ public class WebAssetHelperIntegrationTest {
                 "/lol", "");
     }
 
+    String rootFolderPath(){
+        return String.format("//%s/", host.getHostname());
+    }
 
     /**
      *  Method to test :  {@link WebAssetHelper#getAssetInfo(String, User)}
@@ -162,26 +169,12 @@ public class WebAssetHelperIntegrationTest {
     @Test
     public void TestUploadFile() throws DotDataException, DotSecurityException, IOException {
 
-
-        final MockHeaderRequest request = new MockHeaderRequest(
-                (
-                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
-                ).request()
-        );
-
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
-        request.setHeader("User-Agent", "Fake-Agent");
-        request.setHeader("Host", "localhost");
-        request.setHeader("Origin", "localhost");
-        request.setAttribute(WebKeys.USER, APILocator.systemUser());
+        final MockHeaderRequest request = getMockHeaderRequest();
 
         File newTestFile = FileUtil.createTemporaryFile("lol", ".txt", RandomStringUtils.random(1000));
 
-        final FormDataContentDisposition formDataContentDisposition = FormDataContentDisposition
-                .name(newTestFile.getName())
-                .fileName(newTestFile.getName())
-                .size(newTestFile.length())
-                .build();
+        final FormDataContentDisposition formDataContentDisposition = getFormDataContentDisposition(
+                newTestFile);
 
         final String path = parentFolderPath() + newTestFile.getName();
 
@@ -208,6 +201,84 @@ public class WebAssetHelperIntegrationTest {
 
     }
 
+    /**
+     * Helper method to create a FormDataContentDisposition object
+     * @param newTestFile
+     * @return
+     */
+    private static FormDataContentDisposition getFormDataContentDisposition(File newTestFile) {
+        return FormDataContentDisposition
+                .name(newTestFile.getName())
+                .fileName(newTestFile.getName())
+                .size(newTestFile.length())
+                .build();
+    }
+
+    /**
+     * Helper method to create a MockHeaderRequest object
+     * @return
+     */
+    @NotNull
+    private static MockHeaderRequest getMockHeaderRequest() {
+        final MockHeaderRequest request = new MockHeaderRequest(
+                (
+                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                ).request()
+        );
+
+        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("User-Agent", "Fake-Agent");
+        request.setHeader("Host", "localhost");
+        request.setHeader("Origin", "localhost");
+        request.setAttribute(WebKeys.USER, APILocator.systemUser());
+        return request;
+    }
+
+
+    /**
+     * Scenario  We had a bug where stuff sent to live under site's root folder would end up in the system folder
+     * Expected Result: We send a file to live under the root folder, and it ends up there and not in the system folder.
+     * We validate checking the info saved on the identifier table verifying the host_inode is the same host inode and never SYSTEM_HOST
+     * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+     public void Test_Upload_File_Under_Root() throws DotDataException, DotSecurityException, IOException {
+        final MockHeaderRequest request = getMockHeaderRequest();
+        final File newTestFile = FileUtil.createTemporaryFile("robots", ".txt", RandomStringUtils.random(1000));
+        final FormDataContentDisposition formDataContentDisposition = getFormDataContentDisposition(newTestFile);
+        final String path = rootFolderPath() + newTestFile.getName();
+
+        final FileUploadDetail detail = new FileUploadDetail(path, language.toString(), true);
+
+        try(final InputStream inputStream = Files.newInputStream(newTestFile.toPath())){
+            final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+            final FileUploadData form = new FileUploadData();
+            form.setFileInputStream(inputStream);
+            form.setContentDisposition(formDataContentDisposition);
+            form.setAssetPath(path);
+            form.setDetail(detail);
+
+            final WebAssetView assetInfo = webAssetHelper.saveUpdateAsset(request, form, APILocator.systemUser());
+            Assert.assertNotNull(assetInfo);
+            Assert.assertTrue(assetInfo instanceof AssetView);
+            AssetView assetView = (AssetView) assetInfo;
+            Assert.assertTrue(assetView.live());
+
+            @SuppressWarnings("unchecked")
+            final List<Map<String,String>> results = new DotConnect().setSQL(
+                        "select * from identifier i where i.id = ?"
+                    ).addParam(assetView.identifier())
+                    .loadResults();
+
+            Assert.assertEquals(1, results.size());
+            final Map<String, String> map = results.get(0);
+            Assert.assertEquals(newTestFile.getName(), map.get("asset_name"));
+            Assert.assertEquals(host.getIdentifier(), map.get("host_inode"));
+        }
+     }
 
     /**
      * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
@@ -220,27 +291,14 @@ public class WebAssetHelperIntegrationTest {
     @Test
     public void TestUploadEmptyFile() throws DotDataException, DotSecurityException, IOException {
 
-        final MockHeaderRequest request = new MockHeaderRequest(
-                (
-                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
-                ).request()
-        );
-
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
-        request.setHeader("User-Agent", "Fake-Agent");
-        request.setHeader("Host", "localhost");
-        request.setHeader("Origin", "localhost");
-        request.setAttribute(WebKeys.USER, APILocator.systemUser());
+        final MockHeaderRequest request = getMockHeaderRequest();
 
         File newTestFile = FileUtil.createTemporaryFile("lol", ".txt");
 
         Assert.assertEquals(0, newTestFile.length());
 
-        final FormDataContentDisposition formDataContentDisposition = FormDataContentDisposition
-                .name(newTestFile.getName())
-                .fileName(newTestFile.getName())
-                .size(newTestFile.length())
-                .build();
+        final FormDataContentDisposition formDataContentDisposition = getFormDataContentDisposition(
+                newTestFile);
 
         final String path = parentFolderPath() + newTestFile.getName();
 
