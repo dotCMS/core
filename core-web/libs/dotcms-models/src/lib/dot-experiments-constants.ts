@@ -134,26 +134,34 @@ export const DefaultGoalConfiguration: Goals = {
     }
 };
 
-export const GOALS_METADATA_MAP: Record<GOAL_TYPES, { label: string; description: string }> = {
+export const GOALS_METADATA_MAP: Record<
+    GOAL_TYPES,
+    { label: string; description: string; icon: string }
+> = {
     [GOAL_TYPES.REACH_PAGE]: {
         label: 'experiments.goal.reach_page.name',
-        description: 'experiments.goal.reach_page.description'
+        description: 'experiments.goal.reach_page.description',
+        icon: 'pi-file-excel'
     },
     [GOAL_TYPES.BOUNCE_RATE]: {
         label: 'experiments.goal.bounce_rate.name',
-        description: 'experiments.goal.bounce_rate.description'
+        description: 'experiments.goal.bounce_rate.description',
+        icon: 'pi-chart-pie'
     },
     [GOAL_TYPES.CLICK_ON_ELEMENT]: {
         label: 'experiments.goal.click_on_element.name',
-        description: 'experiments.goal.click_on_element.description'
+        description: 'experiments.goal.click_on_element.description',
+        icon: 'pi-check-square'
     },
     [GOAL_TYPES.URL_PARAMETER]: {
         label: 'experiments.goal.url_parameter.name',
-        description: 'experiments.goal.url_parameter.description'
+        description: 'experiments.goal.url_parameter.description',
+        icon: 'pi-paperclip'
     },
     [GOAL_TYPES.EXIT_RATE]: {
         label: 'experiments.goal.exit_rate.name',
-        description: 'experiments.goal.exit_rate.description'
+        description: 'experiments.goal.exit_rate.description',
+        icon: 'pi-sign-out'
     }
 };
 
