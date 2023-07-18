@@ -15,7 +15,7 @@ import { DotContainerSelectorModule } from '@components/dot-container-selector/d
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotPageLayoutService } from '@dotcms/data-access';
 import { TemplateBuilderModule } from '@dotcms/template-builder';
-import { UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 
@@ -49,7 +49,8 @@ import { DotDialogModule } from '../dot-dialog/dot-dialog.module';
         DotPipesModule,
         DotLayoutDesignerModule,
         DotDialogModule,
-        TemplateBuilderModule
+        TemplateBuilderModule,
+        DotMessagePipe
     ],
     exports: [DotEditLayoutDesignerComponent],
     providers: [DotPageLayoutService]

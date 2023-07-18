@@ -10,7 +10,7 @@ import { DialogModule } from 'primeng/dialog';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotContainersServiceMock, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
@@ -36,7 +36,7 @@ describe('TemplateBuilderBoxComponent', () => {
             RemoveConfirmDialogComponent,
             NoopAnimationsModule,
             DialogModule,
-            DotMessagePipeModule
+            DotMessagePipe
         ],
         providers: [
             {
@@ -206,6 +206,20 @@ describe('TemplateBuilderBoxComponent', () => {
         });
 
         done();
+    });
+
+    it('should trigger deleteColumn when clicking on deleteColumn button and there are no containers', () => {
+        spectator.component.items = [];
+        spectator.detectComponentChanges();
+        const deleteMock = jest.spyOn(spectator.component.deleteColumn, 'emit');
+
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+
+        spectator.dispatchFakeEvent(deleteButton, 'onClick');
+
+        spectator.detectChanges();
+
+        expect(deleteMock).toHaveBeenCalled();
     });
 
     describe('Dialog', () => {

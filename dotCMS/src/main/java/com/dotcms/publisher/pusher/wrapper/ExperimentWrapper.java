@@ -12,8 +12,11 @@ import com.dotmarketing.portlets.rules.model.Rule;
  */
 public class ExperimentWrapper {
 
-	private Experiment experiment = null;
+	private Experiment experiment;
 	private Operation operation = null;
+
+	public ExperimentWrapper() {
+	}
 
 	/**
 	 * Builds a wrapper for the specified {@link Experiment} object.
@@ -36,9 +39,7 @@ public class ExperimentWrapper {
 	}
 
 	/**
-	 * Sets the {@link Rule} object containing all its required data: Condition
-	 * Groups, Conditions, Actions, configuration parameters, etc.
-	 * 
+	 * Sets the {@link Experiment} object
 	 * @param experiment
 	 *            - The {@link Experiment} object.
 	 */

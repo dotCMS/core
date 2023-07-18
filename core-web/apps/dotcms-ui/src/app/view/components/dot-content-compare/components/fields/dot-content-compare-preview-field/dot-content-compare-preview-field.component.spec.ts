@@ -2,7 +2,7 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentComparePreviewFieldComponent } from './dot-content-compare-preview-field.component';
@@ -18,7 +18,7 @@ describe('DotContentComparePreviewFieldComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotContentComparePreviewFieldComponent],
-            imports: [DotMessagePipeModule],
+            imports: [DotMessagePipe],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
         fixture = TestBed.createComponent(DotContentComparePreviewFieldComponent);

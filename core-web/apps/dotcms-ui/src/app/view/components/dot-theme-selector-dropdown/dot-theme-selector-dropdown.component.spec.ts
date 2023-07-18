@@ -20,7 +20,7 @@ import {
 } from '@components/_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotThemes } from '@dotcms/utils-testing';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
@@ -161,7 +161,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
             ],
             imports: [
                 FormsModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 ReactiveFormsModule,
                 SearchableDropDownModule,
                 DotIconModule,

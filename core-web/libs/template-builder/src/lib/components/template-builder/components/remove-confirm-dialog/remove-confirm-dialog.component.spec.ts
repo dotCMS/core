@@ -4,7 +4,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { RemoveConfirmDialogComponent } from './remove-confirm-dialog.component';
 
@@ -15,10 +15,9 @@ describe('RemoveConfirmDialogComponent', () => {
 
     const createComponent = createComponentFactory({
         component: RemoveConfirmDialogComponent,
-        imports: [DotMessagePipeModule],
+        imports: [DotMessagePipe],
         providers: [
             ConfirmationService,
-            DotMessagePipe,
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
@@ -66,5 +65,25 @@ describe('RemoveConfirmDialogComponent', () => {
 
         spectator.component.onEscapePress();
         expect(rejectEventSpy).toHaveBeenCalled();
+    });
+
+    it('should emit confirmation when button is clicked and skipConfirmation is set to true', () => {
+        spectator.component.skipConfirmation = true;
+        const confirmEventSpy = jest.spyOn(spectator.component.deleteConfirmed, 'emit');
+
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+        spectator.dispatchMouseEvent(deleteButton, 'onClick');
+
+        expect(confirmEventSpy).toHaveBeenCalled();
+    });
+
+    it('should not emit confirmation when button is clicked and skipConfirmation is set to false', () => {
+        spectator.component.skipConfirmation = false;
+        const confirmEventSpy = jest.spyOn(spectator.component.deleteConfirmed, 'emit');
+
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+        spectator.dispatchMouseEvent(deleteButton, 'onClick');
+
+        expect(confirmEventSpy).toHaveBeenCalledTimes(0);
     });
 });

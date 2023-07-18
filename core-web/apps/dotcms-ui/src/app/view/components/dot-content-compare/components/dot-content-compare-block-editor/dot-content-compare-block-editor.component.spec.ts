@@ -9,6 +9,7 @@ import { DotDiffPipe } from '@dotcms/app/view/pipes';
 import { DotDiffPipeModule } from '@dotcms/app/view/pipes/dot-diff/dot-diff.pipe.module';
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { BlockEditorMockComponent } from './block-editor-mock/block-editor-mock.component';
@@ -241,7 +242,8 @@ describe('DotContentCompareBlockEditorComponent', () => {
                 HttpClientTestingModule,
                 CommonModule,
                 BlockEditorMockComponent,
-                DotPipesModule
+                DotPipesModule,
+                DotMessagePipe
             ]
         }).compileComponents();
     });

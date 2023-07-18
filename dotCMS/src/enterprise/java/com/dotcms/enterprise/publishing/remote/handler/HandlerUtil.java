@@ -45,6 +45,8 @@
 
 package com.dotcms.enterprise.publishing.remote.handler;
 
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -143,10 +145,16 @@ public class HandlerUtil {
     protected static void setMultiTree(String pageIdentifier, String pageInode, Long pageLanguage, List<Map<String, Object>> wrapperMultiTree, String modUser)
             throws DotDataException, DotSecurityException {
 
+        String variantId = wrapperMultiTree.isEmpty() ? DEFAULT_VARIANT.name() :
+                (String) wrapperMultiTree.get(0).get("variantId");
+
+        variantId = UtilMethods.isSet(variantId) ? variantId : DEFAULT_VARIANT.name();
+
         //Remove the current records
         DotConnect dc = new DotConnect();
-        dc.setSQL( "delete from multi_tree where parent1=?" );
+        dc.setSQL( "delete from multi_tree where parent1=? and variant_id=?" );
         dc.addParam( pageIdentifier );
+        dc.addParam(variantId);
         dc.loadResult();
         HibernateUtil.getSession().clear();
 
@@ -158,6 +166,7 @@ public class HandlerUtil {
             multiTree.setParent2( (String) multiTreeData.get( "parent2" ) );
             multiTree.setRelationType( (String) multiTreeData.get( "relation_type" ) );
             multiTree.setTreeOrder( Integer.parseInt( multiTreeData.get( "tree_order" ).toString() ) );
+            multiTree.setVariantId( (String) multiTreeData.get( "variantId" ) );
             if(multiTreeData.containsKey("personalization")) {
               multiTree.setPersonalization((String) multiTreeData.get( "personalization" ) );
             }

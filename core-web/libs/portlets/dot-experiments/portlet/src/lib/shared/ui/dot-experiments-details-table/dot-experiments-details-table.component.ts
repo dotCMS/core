@@ -10,7 +10,7 @@ import {
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus, DotExperimentVariantDetail } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/dot-string-template-outlet.directive';
 
 /**
@@ -34,7 +34,7 @@ import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/do
         KeyValuePipe,
         SkeletonModule,
         DotStringTemplateOutletDirective,
-        DotMessagePipeModule
+        DotMessagePipe
     ],
     templateUrl: './dot-experiments-details-table.component.html',
     styleUrls: ['./dot-experiments-details-table.component.scss'],

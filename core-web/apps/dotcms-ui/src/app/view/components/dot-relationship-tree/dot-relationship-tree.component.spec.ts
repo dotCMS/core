@@ -5,7 +5,7 @@ import { By } from '@angular/platform-browser';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -46,7 +46,7 @@ describe('DotRelationshipTreeComponent', () => {
         beforeEach(async () => {
             await TestBed.configureTestingModule({
                 declarations: [TestHostComponent, DotRelationshipTreeComponent],
-                imports: [DotIconModule, DotPipesModule, DotCopyButtonModule],
+                imports: [DotIconModule, DotPipesModule, DotMessagePipe, DotCopyButtonModule],
                 providers: [
                     {
                         provide: DotMessageService,
@@ -91,7 +91,7 @@ describe('DotRelationshipTreeComponent', () => {
         beforeEach(async () => {
             await TestBed.configureTestingModule({
                 declarations: [TestHostComponent, DotRelationshipTreeComponent],
-                imports: [DotIconModule, DotPipesModule, DotCopyButtonModule],
+                imports: [DotIconModule, DotPipesModule, DotMessagePipe, DotCopyButtonModule],
                 providers: [
                     {
                         provide: DotMessageService,

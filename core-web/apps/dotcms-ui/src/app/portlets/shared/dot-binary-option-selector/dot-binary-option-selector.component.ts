@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 export interface OPTION {
     value: string;
@@ -23,7 +23,7 @@ export interface BINARY_OPTION {
 @Component({
     selector: 'dot-binary-selector',
     standalone: true,
-    imports: [CommonModule, FormsModule, DotMessagePipeModule, ButtonModule, DynamicDialogModule],
+    imports: [CommonModule, FormsModule, DotMessagePipe, ButtonModule, DynamicDialogModule],
     templateUrl: './dot-binary-option-selector.component.html',
     styleUrls: ['./dot-binary-option-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

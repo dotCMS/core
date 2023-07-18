@@ -32,7 +32,7 @@ import {
     MAX_INPUT_DESCRIPTIVE_LENGTH,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import {
     DotSidebarDirective,
@@ -54,7 +54,7 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         CommonModule,
         ReactiveFormsModule,
 
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotFieldValidationMessageModule,
         DotSidebarHeaderComponent,
         DotSidebarDirective,

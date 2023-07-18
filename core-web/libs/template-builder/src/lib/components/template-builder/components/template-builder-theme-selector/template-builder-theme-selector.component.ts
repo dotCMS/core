@@ -18,13 +18,14 @@ import { ButtonModule } from 'primeng/button';
 import { DataView, DataViewModule } from 'primeng/dataview';
 import { DropdownModule } from 'primeng/dropdown';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
 import { DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule, DotSiteSelectorDirective } from '@dotcms/ui';
+import { DotMessagePipe, DotSiteSelectorDirective } from '@dotcms/ui';
 
 /**
  * The DotThemeSelectorComponent is modal that
@@ -41,7 +42,8 @@ import { DotMessagePipeModule, DotSiteSelectorDirective } from '@dotcms/ui';
         DotSiteSelectorDirective,
         DataViewModule,
         CommonModule,
-        DotMessagePipeModule
+        DotMessagePipe,
+        InputTextModule
     ],
     standalone: true,
     templateUrl: './template-builder-theme-selector.component.html',
@@ -57,22 +59,12 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
 
     @ViewChild('dataView', { static: true })
     dataView: DataView;
-
-    private destroy$: Subject<boolean> = new Subject<boolean>();
-    private SEARCH_PARAM = 'searchParam';
-    private initialLoad = true;
-
     themes: DotTheme[] = [];
     themeId: string;
     currentTheme: DotTheme;
-
-    get totalRecords(): number {
-        return this.paginatorService.totalRecords;
-    }
-
-    get paginationPerPage(): number {
-        return this.paginatorService.paginationPerPage;
-    }
+    private destroy$: Subject<boolean> = new Subject<boolean>();
+    private SEARCH_PARAM = 'searchParam';
+    private initialLoad = true;
 
     constructor(
         private config: DynamicDialogConfig,
@@ -94,6 +86,14 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
                     this.cd.detectChanges();
                 });
         }
+    }
+
+    get totalRecords(): number {
+        return this.paginatorService.totalRecords;
+    }
+
+    get paginationPerPage(): number {
+        return this.paginatorService.paginationPerPage;
     }
 
     ngOnInit() {

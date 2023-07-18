@@ -15,7 +15,7 @@ import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
 
@@ -24,20 +24,17 @@ import { StyleClassModel } from '../../models/models';
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
-    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipeModule, NgIf, AsyncPipe],
+    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe, NgIf, AsyncPipe],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, OnDestroy {
-    private autoCompleteInput: HTMLInputElement;
-
-    private destroy$: Subject<void> = new Subject<void>();
-
     public vm$ = this.store.vm$;
-
     @ViewChild(AutoComplete)
     autoComplete: AutoComplete;
+    private autoCompleteInput: HTMLInputElement;
+    private destroy$: Subject<void> = new Subject<void>();
 
     constructor(
         private ref: DynamicDialogRef,

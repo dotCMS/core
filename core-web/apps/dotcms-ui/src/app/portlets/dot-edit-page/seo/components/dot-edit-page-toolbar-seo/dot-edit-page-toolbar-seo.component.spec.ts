@@ -54,6 +54,7 @@ import {
     DotPageRenderState,
     ESContent
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -169,6 +170,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 DotEditPageInfoSeoComponent,
                 DotEditPageWorkflowsActionsModule,
                 DotPipesModule,
+                DotMessagePipe,
                 DotWizardModule,
                 TooltipModule,
                 TagModule,
@@ -332,7 +334,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
     describe('dot-edit-page-view-as-controller', () => {
         it('should have pageState attr', () => {
             fixtureHost.detectChanges();
-            const dotEditPageViewAs = de.query(By.css('dot-edit-page-view-as-controller'));
+            const dotEditPageViewAs = de.query(By.css('dot-edit-page-view-as-controller-seo'));
             expect(dotEditPageViewAs.componentInstance.pageState).toBe(mockDotRenderedPageState);
         });
     });

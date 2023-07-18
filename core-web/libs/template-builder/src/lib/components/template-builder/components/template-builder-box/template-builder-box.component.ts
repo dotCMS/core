@@ -19,7 +19,7 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotContainer, DotContainerMap } from '@dotcms/dotcms-models';
-import { DotContainerOptionsDirective, DotMessagePipeModule } from '@dotcms/ui';
+import { DotContainerOptionsDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
 import { getBoxVariantByWidth } from '../../utils/gridstack-utils';
@@ -43,12 +43,10 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
         DotContainerOptionsDirective,
         ReactiveFormsModule,
         CommonModule,
-        DotMessagePipeModule
+        DotMessagePipe
     ]
 })
 export class TemplateBuilderBoxComponent implements OnChanges {
-    protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
-
     @Output()
     editClasses: EventEmitter<void> = new EventEmitter<void>();
     @Output()
@@ -59,27 +57,27 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     deleteColumn: EventEmitter<void> = new EventEmitter<void>();
     @Output()
     deleteColumnRejected: EventEmitter<void> = new EventEmitter<void>();
-
     @Input() items: DotTemplateBuilderContainer[];
     @Input() width = 1;
     @Input() containerMap: DotContainerMap;
     @Input() actions = ['add', 'delete', 'edit'];
-
-    private _dropdownLabel: string | null = null;
     dialogVisible = false;
     boxVariant = TemplateBuilderBoxSize.small;
     formControl = new FormControl(null); // used to programmatically set dropdown value, so that the same value can be selected twice consecutively
+    protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
 
     constructor(private el: ElementRef, private dotMessage: DotMessageService) {}
 
-    get nativeElement(): GridItemHTMLElement {
-        return this.el.nativeElement;
-    }
+    private _dropdownLabel: string | null = null;
 
     get dropdownLabel(): string {
         return this.boxVariant === this.templateBuilderSizes.large || this.dialogVisible
             ? this._dropdownLabel
             : '';
+    }
+
+    get nativeElement(): GridItemHTMLElement {
+        return this.el.nativeElement;
     }
 
     ngOnChanges(): void {
@@ -90,5 +88,9 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     onContainerSelect({ value }: { value: DotContainer }) {
         this.addContainer.emit(value);
         this.formControl.setValue(null);
+    }
+
+    requestColumnDelete() {
+        this.deleteColumn.emit();
     }
 }
