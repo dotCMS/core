@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 
+
 @QuarkusTest
 @QuarkusTestResource(ContainerResource.class)
 public class ContainerTest {
