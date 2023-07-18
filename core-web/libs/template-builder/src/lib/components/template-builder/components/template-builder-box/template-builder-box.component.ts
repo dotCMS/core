@@ -89,4 +89,8 @@ export class TemplateBuilderBoxComponent implements OnChanges {
         this.addContainer.emit(value);
         this.formControl.setValue(null);
     }
+
+    requestColumnDelete() {
+        this.deleteColumn.emit();
+    }
 }

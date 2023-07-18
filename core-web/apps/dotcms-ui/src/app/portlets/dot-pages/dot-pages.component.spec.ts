@@ -13,7 +13,6 @@ import { of } from 'rxjs/internal/observable/of';
 
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotCreateContentletComponent } from '@components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.component';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
@@ -394,30 +393,14 @@ describe('DotPagesComponent', () => {
         });
     });
 
-    it('should get pages after closing DotCreateContentletComponent', () => {
-        const dialogComponentFixture = TestBed.createComponent(DotCreateContentletComponent);
-        fixture.detectChanges();
-
-        const dialogComponent = dialogComponentFixture.componentInstance;
-
+    it('should trigger getPages when deactivating the router-outlet', () => {
         const routerOutlet = de.query(By.css('router-outlet'));
-
-        routerOutlet.triggerEventHandler('activate', dialogComponent);
-        fixture.detectChanges();
-
-        dialogComponent.shutdown.emit();
-        fixture.detectChanges();
-        expect(store.getPages).toHaveBeenCalled();
-    });
-    it('should trigger unsubscribeToShutdown when deactivating the router-outlet', () => {
-        const routerOutlet = de.query(By.css('router-outlet'));
-        spyOn(component, 'unsubscribeToShutdown');
 
         routerOutlet.triggerEventHandler('activate');
         fixture.detectChanges();
         routerOutlet.triggerEventHandler('deactivate');
         fixture.detectChanges();
 
-        expect(component.unsubscribeToShutdown).toHaveBeenCalled();
+        expect(store.getPages).toHaveBeenCalled();
     });
 });
