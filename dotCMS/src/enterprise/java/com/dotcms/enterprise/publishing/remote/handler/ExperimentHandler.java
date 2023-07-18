@@ -58,6 +58,7 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ExperimentBundler;
 import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.publisher.pusher.wrapper.ContentTypeWrapper;
 import com.dotcms.publisher.pusher.wrapper.ExperimentWrapper;
@@ -156,6 +157,10 @@ public class ExperimentHandler implements IHandler {
 	        	} else {
 	        		// save or update Experiment
 					experimentsAPI.save(experiment, APILocator.systemUser());
+
+					if(experiment.status()== Status.RUNNING || experiment.status()== Status.ENDED) {
+						experimentsAPI.cacheRunningExperiments();
+					}
 				}
 			}
     	} catch (final Exception e) {

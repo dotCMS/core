@@ -949,7 +949,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @CloseDBIfOpened
-    private List<Experiment> cacheRunningExperiments() throws DotDataException {
+    @Override
+    public List<Experiment> cacheRunningExperiments() throws DotDataException {
         final List<Experiment> experiments = FactoryLocator
             .getExperimentsFactory()
             .list(ExperimentFilter.builder().statuses(set(Status.RUNNING)).build());

@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResults;
@@ -186,6 +187,9 @@ public interface ExperimentsAPI {
      */
     ExperimentResults getResults(final Experiment experiment, User user)
             throws DotDataException, DotSecurityException;
+
+    @CloseDBIfOpened
+    List<Experiment> cacheRunningExperiments() throws DotDataException;
 
     /**
      * Return a list of the Events into an Experiment group by {@link BrowserSession}
