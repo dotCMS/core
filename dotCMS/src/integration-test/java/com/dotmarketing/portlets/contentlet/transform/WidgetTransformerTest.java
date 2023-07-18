@@ -1,10 +1,13 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -42,17 +45,6 @@ public class WidgetTransformerTest extends BaseWorkflowIntegrationTest {
     public static void prepare() throws Exception {
 
 
-        for(String key : System.getenv().keySet()){
-
-            System.err.println(("      - "  + key + " : " + System.getenv(key)));
-
-        }
-
-
-
-
-
-
 
         IntegrationTestInitService.getInstance().init();
 
@@ -65,14 +57,6 @@ public class WidgetTransformerTest extends BaseWorkflowIntegrationTest {
                         .required(true)
                         .next()
         );
-        fields.add(
-                new FieldDataGen()
-                        .name("widgetCode")
-                        .velocityVarName("widgetCode")
-                        .required(true)
-                        .values("$code")
-                        .next()
-        );
 
 
         ContentType simpleWidgetContentType = new ContentTypeDataGen()
@@ -81,6 +65,13 @@ public class WidgetTransformerTest extends BaseWorkflowIntegrationTest {
                 .velocityVarName("SimpleWidget" + System.currentTimeMillis())
                 .fields(fields)
                 .nextPersisted();
+
+
+
+        Field codeField = simpleWidgetContentType.fieldMap().get("widgetCode");
+        APILocator.getContentTypeFieldAPI().save(FieldBuilder.builder(codeField).values("$code").build(), APILocator.systemUser());
+
+
 
 
         site = new SiteDataGen().nextPersisted();
