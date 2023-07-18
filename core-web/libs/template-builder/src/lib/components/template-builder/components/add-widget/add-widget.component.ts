@@ -54,7 +54,7 @@ export class AddWidgetComponent implements AfterViewInit {
             That behavior makes GS initialize our widgets with arbitrary sizes calculated under the hood,
             so we need to override it.
 
-            And the way to override it is to set the gridstackNode property on the element,
+            And the way to override is to set the gridstackNode property on the element,
             so GS will take the options from there instead of the attributes.
 
             But, what's happening again, is that GS is cleaning the gridstackNode property as well when the drop is made.
