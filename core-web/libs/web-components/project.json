@@ -1,0 +1,25 @@
+{
+    "name": "web-components",
+    "$schema": "../node_modules/nx/schemas/project-schema.json",
+    "projectType": "library",
+    "sourceRoot": "libs/web-components/src",
+    "prefix": "dotcms",
+    "targets": {
+        "test": {
+            "executor": "@angular-devkit/build-angular:karma",
+            "options": {
+                "tsConfig": "libs/web-components/tsconfig.spec.json",
+                "karmaConfig": "libs/web-components/karma.conf.js",
+                "polyfills": ["zone.js", "zone.js/testing"]
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": ["libs/web-components/**/*.ts", "libs/web-components/**/*.html"]
+            }
+        }
+    },
+    "tags": []
+}

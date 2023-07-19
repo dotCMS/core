@@ -1,0 +1,98 @@
+{
+    "name": "web-components-builder",
+    "$schema": "../node_modules/nx/schemas/project-schema.json",
+    "projectType": "application",
+    "sourceRoot": "apps/web-components-builder/src",
+    "prefix": "dotcms",
+    "targets": {
+        "build": {
+            "executor": "@angular-devkit/build-angular:browser",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/apps/web-components-builder",
+                "index": "apps/web-components-builder/src/index.html",
+                "main": "apps/web-components-builder/src/main.ts",
+                "polyfills": ["zone.js"],
+                "tsConfig": "apps/web-components-builder/tsconfig.app.json",
+                "inlineStyleLanguage": "scss",
+                "assets": [
+                    "apps/web-components-builder/src/favicon.ico",
+                    "apps/web-components-builder/src/assets"
+                ],
+                "styles": ["apps/web-components-builder/src/styles.scss"],
+                "scripts": [
+                    {
+                        "bundleName": "generator-runtime",
+                        "input": "node_modules/regenerator-runtime/runtime.js"
+                    }
+                ]
+            },
+            "configurations": {
+                "production": {
+                    "budgets": [
+                        {
+                            "type": "initial",
+                            "maximumWarning": "500kb",
+                            "maximumError": "1mb"
+                        },
+                        {
+                            "type": "anyComponentStyle",
+                            "maximumWarning": "2kb",
+                            "maximumError": "4kb"
+                        }
+                    ],
+                    "outputHashing": "all"
+                },
+                "development": {
+                    "buildOptimizer": false,
+                    "optimization": false,
+                    "vendorChunk": true,
+                    "extractLicenses": false,
+                    "sourceMap": true,
+                    "namedChunks": true
+                }
+            },
+            "defaultConfiguration": "production"
+        },
+        "serve": {
+            "executor": "@angular-devkit/build-angular:dev-server",
+            "configurations": {
+                "production": {
+                    "browserTarget": "web-components-builder:build:production"
+                },
+                "development": {
+                    "browserTarget": "web-components-builder:build:development"
+                }
+            },
+            "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "options": {
+                "browserTarget": "web-components-builder:build"
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": [
+                    "apps/web-components-builder/**/*.ts",
+                    "apps/web-components-builder/**/*.html"
+                ]
+            }
+        },
+        "test": {
+            "executor": "@angular-devkit/build-angular:karma",
+            "options": {
+                "tsConfig": "apps/web-components-builder/tsconfig.spec.json",
+                "karmaConfig": "apps/web-components-builder/karma.conf.js",
+                "polyfills": ["zone.js", "zone.js/testing"],
+                "styles": [],
+                "scripts": [],
+                "assets": []
+            }
+        }
+    },
+    "tags": []
+}
