@@ -2,9 +2,7 @@
 @use "variables" as *;
 @import "mixins";
 
-// Main buttons
-
-// Main Buttons sizes
+// Shared styles between all buttons
 .p-button:not(.p-button-icon-only, .p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     gap: $spacing-1;
     padding: 0 $spacing-3;
@@ -24,7 +22,7 @@
     .p-button-icon,
     .pi {
         color: $white;
-        font-size: $font-size-lg;
+        font-size: $icon-md;
     }
 
     &.p-button-lg {
@@ -38,7 +36,7 @@
 
         .p-button-icon,
         .pi {
-            font-size: $font-size-xl;
+            font-size: $icon-lg;
         }
     }
 
@@ -55,12 +53,28 @@
 
         .p-button-icon,
         .pi {
-            font-size: $font-size-md;
+            font-size: $icon-sm;
         }
     }
 }
 
-// Severity colors for main basic button
+// Shared disabled styles
+.p-button:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
+    background-color: $color-palette-gray-op-20;
+    color: $color-palette-gray-500;
+    opacity: 1;
+
+    .p-button-label,
+    .p-button-icon {
+        color: inherit;
+    }
+
+    &.p-button-outlined {
+        border: 1.5px solid $color-palette-gray-300;
+    }
+}
+
+// Severity for basic button
 .p-button:enabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     background-color: $color-palette-primary;
 
@@ -112,11 +126,11 @@
     }
 
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: $color-palette-primary-op-10;
     }
 
     &:active {
-        background-color: $color-palette-primary-200;
+        background-color: $color-palette-primary-op-20;
     }
 
     &:focus {
@@ -140,11 +154,11 @@
         }
 
         &:hover {
-            background-color: $color-palette-secondary-100;
+            background-color: $color-palette-secondary-op-10;
         }
 
         &:active {
-            background-color: $color-palette-secondary-200;
+            background-color: $color-palette-secondary-op-20;
         }
 
         &:focus {
@@ -172,7 +186,7 @@ a.p-button.p-button-text {
     }
 
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: $color-palette-primary-op-10;
     }
 
     &:active {
@@ -198,7 +212,7 @@ a.p-button.p-button-text {
         }
 
         &:hover {
-            background-color: $color-palette-secondary-100;
+            background-color: $color-palette-secondary-op-10;
         }
 
         &:active {
@@ -222,11 +236,11 @@ a.p-button.p-button-text {
         }
 
         &:hover {
-            background-color: rgb($color-accessible-text-red, 0.08);
+            background-color: $color-accessible-text-red-op-10;
         }
 
         &:active {
-            background-color: rgb($color-accessible-text-red, 0.15);
+            background-color: $color-accessible-text-red-op-20;
         }
 
         &:focus {
@@ -236,27 +250,7 @@ a.p-button.p-button-text {
     }
 }
 
-// Buttons disabled styles
-.p-button:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
-    background-color: $color-palette-gray-200;
-    color: $color-palette-gray-500;
-    opacity: 1;
-
-    .p-button-label,
-    .p-button-icon {
-        color: inherit;
-    }
-
-    &.p-button-outlined {
-        border: 1.5px solid $color-palette-gray-300;
-    }
-
-    &.p-button-text {
-        background-color: $white;
-    }
-}
-
-// Icon Only Buttons Sizes
+// Icon Only Sizes
 .p-button-icon-only:not(.p-splitbutton-menubutton) {
     height: $field-height-md;
     width: $field-height-md;
