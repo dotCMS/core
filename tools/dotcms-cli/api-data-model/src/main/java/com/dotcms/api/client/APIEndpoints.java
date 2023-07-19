@@ -5,6 +5,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
+import org.jboss.resteasy.plugins.providers.jaxb.JAXBXmlRootElementProvider;
 
 /**
  * This class is meant to store all the API-Clients under a given base API URI
@@ -29,6 +30,7 @@ public class APIEndpoints {
         return (T) registry.computeIfAbsent(clazz, c ->
                  RestClientBuilder.newBuilder()
                         .register(ClientObjectMapper.class)
+                        .register(new JAXBXmlRootElementProvider())
                         .baseUri(apiBaseUri)
                         .build(c)
                 );
