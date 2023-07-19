@@ -78,6 +78,7 @@ jobs:
           if [[ "${BRANCHING_MODEL}" == 'trunk-based' ]]; then
             BUILD_HASH=${GITHUB_SHA}
             RELEASE_VERSION=${{ github.event.release.tag_name }}
+            RELEASE_VERSION=${RELEASE_VERSION//v/}
           else
             BUILD_HASH=$(git log -1 --pretty=%h)
             eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
