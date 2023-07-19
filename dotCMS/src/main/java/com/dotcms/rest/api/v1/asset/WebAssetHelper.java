@@ -116,9 +116,23 @@ public class WebAssetHelper {
      */
     public WebAssetView getAssetInfo(final String path, final User user)
             throws DotDataException, DotSecurityException {
-
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
                 .resolve(path, user);
+        return getAssetInfo(assetAndPath, user);
+    }
+
+    /**
+     * Entry point here it is determined if the path is a folder or an asset.
+     * If it is a folder it will return a FolderView, if it is an asset it will return an AssetView
+     * @param assetAndPath resolved asset and path
+     * @param user current user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    WebAssetView getAssetInfo(final ResolvedAssetAndPath assetAndPath, final User user)
+            throws DotDataException, DotSecurityException {
+
         final Host host = assetAndPath.resolvedHost();
         final Folder folder = assetAndPath.resolvedFolder();
         final String assetName = assetAndPath.asset();
@@ -408,8 +422,8 @@ public class WebAssetHelper {
         final boolean live = detail.isLive();
         final Optional<Language> lang = parseLang(detail.getLanguage(), true);
 
-        if(lang.isEmpty()){
-            throw new IllegalArgumentException("Unable to determine what language for asset.");
+        if (lang.isEmpty()) {
+            throw new IllegalArgumentException("Unable to determine language for asset.");
         }
 
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
@@ -426,67 +440,30 @@ public class WebAssetHelper {
         final DotTempFile tempFile = tempFileAPI.createTempFile(assetName, request,
                 fileInputStream);
         try {
-
-            final Builder builder = BrowserQuery.builder();
-            builder.showDotAssets(false)
-                    .withUser(user)
-                    .showFiles(true)
-                    .showFolders(true)
-                    .showArchived(true) // yes we need to take into account archived assets here
-                    .showWorking(!live)
-                    .showLinks(false)
-                    .showDotAssets(false)
-                    .showImages(true)
-                    .showContent(true)
-                    .withLanguageId(lang.get().getId())
-                    .sortBy(SORT_BY)
-                    .sortByDesc(true)
-            ;
-
-            if (folder.isSystemFolder()) {
-                builder.withHostOrFolderId(host.getIdentifier());
-            } else {
-                builder.withHostOrFolderId(folder.getInode());
-            }
-
-            builder.withFileName(assetName);
-            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
-            final List<Contentlet> assets = folderContent.stream()
-                    .filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
-                    .collect(Collectors.toList());
-
+            final WebAssetView assetView = Try.of(() -> getAssetInfo(assetAndPath, user))
+                    .getOrNull();
             Contentlet savedAsset = null;
 
-            if (assets.isEmpty()) {
-                //The file does not exist
-                final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder, lang.get());
-                savedAsset = checkinOrPublish(contentlet, user, live);
+            if (assetView instanceof AssetVersionsView) {
+
+                final AssetVersionsView versionsView = (AssetVersionsView) assetView;
+                //so we have an asset version. We need to update it or create a new version of it probably in a different language
+
+                final List<AssetView> versions = versionsView.versions();
+                // We trust that the asset we're getting here is working and or live which is the inode we need to do the checkout
+                final AssetView asset = versions.get(0);
+
+                //now checkout and create a new version of the asset in the given language
+                final Contentlet checkout = contentletAPI.checkout(asset.inode(), user, false);
+                updateFileAsset(tempFile.file, host, folder, lang.get(), checkout);
+                savedAsset = checkinOrPublish(checkout, user, live);
 
             } else {
-
-                final Optional<Contentlet> found = assets.stream()
-                        .filter(contentlet -> lang.get().getId() == contentlet.getLanguageId())
-                        .findFirst();
-
-                if (found.isEmpty()) {
-                    //We're required to create a new version in a different language
-                    final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder, lang.get());
-                    savedAsset = checkinOrPublish(contentlet, user, live);
-
-                } else {
-                    final Contentlet asset = found.get();
-
-                    if(asset.isArchived()){
-                        contentletAPI.unarchive(asset, user, false);
-                    }
-
-                    final Contentlet checkout = contentletAPI.checkout(asset.getInode(), user, false);
-
-                    updateFileAsset(tempFile.file, host, folder, lang.get(), checkout);
-                    savedAsset = checkinOrPublish(checkout, user, live);
-                }
+                //asset does not exist. So create new one
+                final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder,
+                        lang.get());
+                savedAsset = checkinOrPublish(contentlet, user, live);
             }
-
             final FileAsset fileAsset = fileAssetAPI.fromContentlet(savedAsset);
             return toAsset(fileAsset);
         } finally {
