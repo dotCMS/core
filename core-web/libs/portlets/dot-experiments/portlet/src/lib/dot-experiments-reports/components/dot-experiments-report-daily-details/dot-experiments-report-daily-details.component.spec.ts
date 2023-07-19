@@ -1,14 +1,13 @@
+import { DotExperimentsReportDailyDetailsComponent } from './dot-experiments-report-daily-details.component';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from "@ngneat/spectator/jest";
-import { DotExperimentsReportDailyDetailsComponent } from "./dot-experiments-report-daily-details.component";
-import { DotExperimentsReportsStore } from "../../store/dot-experiments-reports-store";
+import { MockProvider } from 'ng-mocks';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-store';
 import { ConfirmationService, MessageService } from "primeng/api";
+import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsService } from "@dotcms/portlets/dot-experiments/data-access";
-import { DotMessageService } from "@dotcms/data-access";
 import { DotHttpErrorManagerService } from "@services/dot-http-error-manager/dot-http-error-manager.service";
 import { ConfirmPopup } from "primeng/confirmpopup";
-import {
-  DotExperimentsDetailsTableComponent
-} from "../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component";
 import { DotExperimentVariantDetail } from "@dotcms/dotcms-models";
 
 describe('DotExperimentsReportDailyDetailsComponent', () => {
