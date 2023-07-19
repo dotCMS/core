@@ -91,6 +91,19 @@ const block: DotMenuItem[] = [
     }
 ];
 
+const scripts: DotMenuItem[] = [
+    {
+        label: 'Superscript',
+        icon: 'superscript',
+        id: 'superscript'
+    },
+    {
+        label: 'Subscript',
+        icon: 'subscript',
+        id: 'subscript'
+    }
+];
+
 export const getEditorBlockOptions = () => {
     return (
         [...suggestionOptions, dotContentet]
@@ -111,7 +124,8 @@ export const suggestionOptions: DotMenuItem[] = [
     ...table,
     ...list,
     ...block,
-    paragraph
+    paragraph,
+    ...scripts
 ];
 
 export const tableChangeToItems: DotMenuItem[] = [...headings, paragraph, ...list];
