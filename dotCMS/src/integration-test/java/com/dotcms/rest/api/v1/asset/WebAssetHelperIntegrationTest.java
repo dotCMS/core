@@ -22,6 +22,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -36,7 +37,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -244,7 +244,7 @@ public class WebAssetHelperIntegrationTest {
      * @throws DotSecurityException
      * @throws IOException
      */
-    @Test
+     @Test
      public void Test_Upload_File_Under_Root() throws DotDataException, DotSecurityException, IOException {
         final MockHeaderRequest request = getMockHeaderRequest();
         final File newTestFile = FileUtil.createTemporaryFile("robots", ".txt", RandomStringUtils.random(1000));
@@ -279,6 +279,73 @@ public class WebAssetHelperIntegrationTest {
             Assert.assertEquals(host.getIdentifier(), map.get("host_inode"));
         }
      }
+
+    /**
+     * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
+     * Given Scenario: We submit a valid path and a file in two different languages
+     * Expected Result: We get the asset info back as proof of success and no exception should arise
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void Test_Upload_File_In_Multiple_Languages() throws DotDataException, DotSecurityException, IOException {
+
+        final Language secondLang = new LanguageDataGen().nextPersisted();
+        final File newTestFile = FileUtil.createTemporaryFile("multi-lang-example", ".txt", RandomStringUtils.random(1000));
+        final String path = rootFolderPath() + newTestFile.getName();
+
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString());
+        pushFileForLanguageThenValidate(newTestFile, path, secondLang.toString());
+    }
+
+    @Test
+    public void Test_Upload_File_Archive_Then_Update() throws DotDataException, DotSecurityException, IOException {
+
+        final File newTestFile = FileUtil.createTemporaryFile("archive-me", ".txt", RandomStringUtils.random(1000));
+        final String path = rootFolderPath() + newTestFile.getName();
+
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString());
+
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final WebAssetView assetInfo = webAssetHelper.getAssetInfo(path, APILocator.systemUser());
+
+        Assert.assertTrue(assetInfo instanceof AssetVersionsView);
+        final AssetVersionsView assetVersionsView = (AssetVersionsView) assetInfo;
+        AssetView assetView = assetVersionsView.versions().get(0);
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+        final Contentlet fileAsset = contentletAPI.findContentletByIdentifierAnyLanguage(assetView.identifier()) ;
+        contentletAPI.archive(fileAsset, APILocator.systemUser(), false);
+
+        //Pushing again should unarchive
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString());
+
+        final Contentlet unarchived = contentletAPI.findContentletByIdentifierAnyLanguage(
+                assetView.identifier());
+        Assert.assertFalse(unarchived.isArchived());
+
+    }
+
+    private static void pushFileForLanguageThenValidate(final File newTestFile, final String path, final String langString) throws IOException, DotDataException, DotSecurityException {
+        final FormDataContentDisposition formDataContentDisposition = getFormDataContentDisposition(newTestFile);
+        try(final InputStream inputStream = Files.newInputStream(newTestFile.toPath())){
+            final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+            final MockHeaderRequest request = getMockHeaderRequest();
+            final FileUploadData form = new FileUploadData();
+            form.setFileInputStream(inputStream);
+            form.setContentDisposition(formDataContentDisposition);
+            form.setAssetPath(path);
+            form.setDetail(new FileUploadDetail(path, langString, true));
+
+            final WebAssetView assetInfo = webAssetHelper.saveUpdateAsset(request, form, APILocator.systemUser());
+            Assert.assertNotNull(assetInfo);
+            Assert.assertTrue(assetInfo instanceof AssetView);
+            AssetView assetView = (AssetView) assetInfo;
+            Assert.assertTrue(assetView.live());
+        }
+    }
 
     /**
      * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}

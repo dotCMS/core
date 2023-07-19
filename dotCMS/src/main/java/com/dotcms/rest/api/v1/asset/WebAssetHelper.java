@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -118,7 +119,7 @@ public class WebAssetHelper {
             throws DotDataException, DotSecurityException {
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
                 .resolve(path, user);
-        return getAssetInfo(assetAndPath, user);
+        return getAssetInfo(assetAndPath,false, user);
     }
 
     /**
@@ -130,21 +131,21 @@ public class WebAssetHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    WebAssetView getAssetInfo(final ResolvedAssetAndPath assetAndPath, final User user)
+    WebAssetView getAssetInfo(final ResolvedAssetAndPath assetAndPath, final boolean showArchived, final User user)
             throws DotDataException, DotSecurityException {
 
         final Host host = assetAndPath.resolvedHost();
         final Folder folder = assetAndPath.resolvedFolder();
         final String assetName = assetAndPath.asset();
 
-        final List<Treeable> assets;
+        final List<Contentlet> assets;
 
         final Builder builder = BrowserQuery.builder();
         builder.showDotAssets(false)
                 .withUser(user)
                 .showFiles(true)
                 .showFolders(true)
-                .showArchived(false)
+                .showArchived(showArchived)
                 .showLinks(false)
                 .showDotAssets(false)
                 .showImages(true)
@@ -166,14 +167,18 @@ public class WebAssetHelper {
             //We're requesting an asset specifically therefore we need to find it and  build the response
             builder.withFileName(assetName);
 
-            final List<Treeable> folderContent = sortByIdentifier(
+            final List<Contentlet> folderContent = sortByIdentifier(
                     collectAllVersions(builder)
             );
-            assets = folderContent.stream().filter(Contentlet.class::isInstance).collect(Collectors.toList());
+            assets = folderContent.stream().filter(Objects::nonNull).map(
+                    Contentlet.class::cast).collect(Collectors.toList());
             if (assets.isEmpty()) {
                 throw new NotFoundInDbException(String.format(" Asset [%s] not found", assetName));
             }
+            final Contentlet asset = assets.get(0);
             return AssetVersionsView.builder()
+                    .identifier(asset.getIdentifier())
+                    .archived(asset.isArchived())
                     .versions(toAssets(assets))
                     .build();
         } else {
@@ -191,6 +196,17 @@ public class WebAssetHelper {
                    contentletAPI.findLiveOrWorkingVersions(identifiers, user, false)
            );
 
+           AssetVersionsView versionsView = null;
+           if(!assets.isEmpty()){
+               //We're looking at a non-empty folder
+               final Contentlet asset = assets.get(0);
+               versionsView =
+                       AssetVersionsView.builder()
+                               .identifier(asset.getIdentifier())
+                               .archived(asset.isArchived())
+                               .versions(toAssets(assets)).build();
+           }
+
             return FolderView.builder()
                     .sortOrder(folder.getSortOrder())
                     .filesMasks(folder.getFilesMasks())
@@ -202,9 +218,7 @@ public class WebAssetHelper {
                     .identifier(folder.getIdentifier())
                     .inode(folder.getInode())
                     .subFolders(toAssetFolders(subFolders))
-                    .assets(
-                            AssetVersionsView.builder().versions(toAssets(assets)).build()
-                    )
+                    .assets(versionsView)
                     .build();
         }
     }
@@ -215,7 +229,7 @@ public class WebAssetHelper {
      * @param contentlets
      * @return
      */
-    List<Treeable> sortByIdentifier(Collection<Contentlet> contentlets) {
+    List<Contentlet> sortByIdentifier(Collection<Contentlet> contentlets) {
         return contentlets.stream()
                 .sorted(Comparator.comparing(Contentlet::getIdentifier))
                 .collect(Collectors.toList());
@@ -250,7 +264,7 @@ public class WebAssetHelper {
      * @param assets folders to convert
      * @return list of {@link FolderView}
      */
-    Iterable<AssetView> toAssets(final Collection<Treeable> assets) {
+    Iterable<AssetView> toAssets(final Collection<? extends Treeable> assets) {
 
         return assets.stream().filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
                 .filter(Contentlet::isFileAsset)
@@ -434,13 +448,15 @@ public class WebAssetHelper {
         final String assetName = null != assetAndPath.asset() ? assetAndPath.asset() : fileName;
 
         if (null == fileInputStream) {
+            //if no FileInputStream  is present we return the folder info
+            //because we support creating folders by just specifying the path
             return toAssetsFolder(folder);
         }
 
         final DotTempFile tempFile = tempFileAPI.createTempFile(assetName, request,
                 fileInputStream);
         try {
-            final WebAssetView assetView = Try.of(() -> getAssetInfo(assetAndPath, user))
+            final WebAssetView assetView = Try.of(() -> getAssetInfo(assetAndPath, true, user))
                     .getOrNull();
             Contentlet savedAsset = null;
 
@@ -452,6 +468,11 @@ public class WebAssetHelper {
                 final List<AssetView> versions = versionsView.versions();
                 // We trust that the asset we're getting here is working and or live which is the inode we need to do the checkout
                 final AssetView asset = versions.get(0);
+
+                if(versionsView.archived()){
+                    contentletAPI.findLiveOrWorkingVersions(Set.of(asset.identifier()), user, false)
+                            .forEach(contentlet -> handleArchivedContent(contentlet, user));
+                }
 
                 //now checkout and create a new version of the asset in the given language
                 final Contentlet checkout = contentletAPI.checkout(asset.inode(), user, false);
@@ -468,6 +489,23 @@ public class WebAssetHelper {
             return toAsset(fileAsset);
         } finally {
             disposeTempFile(tempFile);
+        }
+    }
+
+    /**
+     * Handles archived content
+     * @param contentlet the contentlet to handle
+     * @param user the user performing the action
+     */
+    private void handleArchivedContent(final Contentlet contentlet, final User user) {
+        try {
+            if (contentlet.isArchived()) {
+                contentletAPI.unarchive(contentlet, user, false);
+            }
+        } catch (DotSecurityException | DotDataException e) {
+            Logger.warn(WebAssetHelper.class, String.format(
+                    "An error occurred handling archived piece of content with id [%s]. ",
+                    contentlet.getIdentifier()), e);
         }
     }
 
