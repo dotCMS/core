@@ -3,6 +3,8 @@ package com.dotcms.api.client.files.traversal;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.common.AssetsUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Service for traversing a file system directory and building a hierarchical tree representation of
@@ -22,10 +24,11 @@ public interface LocalTraversalService {
      * @param removeAssets       true to allow remove assets, false otherwise
      * @param removeFolders      true to allow remove folders, false otherwise
      * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
-     * @return the root node of the hierarchical tree
+     * @return a pair representing a folder's local path structure and its corresponding root node of the hierarchical tree
      */
-    TreeNode traverseLocalFolder(OutputOptionMixin output, final String workspacePath, final String source,
-                                 boolean removeAssets, boolean removeFolders, boolean ignoreEmptyFolders);
+    Pair<AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(
+            OutputOptionMixin output, final String workspacePath, final String source,
+            boolean removeAssets, boolean removeFolders, boolean ignoreEmptyFolders);
 
     /**
      * Builds the file system tree from the specified root node. The tree is built using a ForkJoinPool, which allows

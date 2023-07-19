@@ -150,7 +150,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                                 List.of(localPathStructure.language()),
                                 treeNode,
                                 false,
-                                true);
+                                true,
+                                localPathStructure.languageExists());
                     }
 
                     output.info(sb.toString());

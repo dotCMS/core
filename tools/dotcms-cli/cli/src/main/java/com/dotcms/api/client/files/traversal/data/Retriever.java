@@ -1,10 +1,12 @@
 package com.dotcms.api.client.files.traversal.data;
 
 import com.dotcms.api.AssetAPI;
+import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FolderView;
+import com.dotcms.model.language.Language;
 import com.google.common.collect.ImmutableList;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -26,6 +28,22 @@ public class Retriever {
 
     @Inject
     protected RestClientFactory clientFactory;
+
+    /**
+     * Retrieves a language from the remote server.
+     *
+     * @param language the language to retrieve
+     * @return the retrieved language
+     */
+    @ActivateRequestContext
+    public Language retrieveLanguage(String language) {
+
+        final LanguageAPI languageAPI = this.clientFactory.getClient(LanguageAPI.class);
+
+        // Execute the REST call to retrieve the language from the language code
+        var response = languageAPI.getFromLanguageIsoCode(language);
+        return response.entity();
+    }
 
     /**
      * Retrieves folder information from the remote server.

@@ -112,6 +112,11 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
     public void pushTreeNode(final String workspace, final AssetsUtils.LocalPathStructure localPathStructure,
                              final TreeNode treeNode, ConsoleProgressBar progressBar) {
 
+        // If the language does not exist we need to create it
+        if (!localPathStructure.languageExists()) {
+            pusher.createLanguage(localPathStructure.language());
+        }
+
         // ---
         var forkJoinPool = ForkJoinPool.commonPool();
         var task = new PushTreeNodeTask(

@@ -116,13 +116,12 @@ public class PushTreeNodeTask extends RecursiveAction {
                     // And we need to create the non-existing site
                     pusher.pushSite(folder.host(), this.localPathStructure.status());
                     logger.debug(String.format("Site [%s] created", folder.host()));
-                } /*else { // If the folder does not exist is created by the resource when the asset is pushed,
-                           // we don't need to create it here.
+                } else {
 
                     // Creating the non-existing folder
                     pusher.createFolder(folder.host(), folder.path());
                     logger.debug(String.format("Folder [%s] created", folder.path()));
-                }*/
+                }
 
                 // Folder processed, updating the progress bar
                 this.progressBar.incrementStep();

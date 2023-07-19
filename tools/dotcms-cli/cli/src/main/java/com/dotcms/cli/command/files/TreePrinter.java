@@ -30,6 +30,7 @@ public class TreePrinter {
 
     final String STATUS_REGULAR_FORMAT = "@|bold %s|@";
     final String LANGUAGE_REGULAR_FORMAT = "@|bold \uD83C\uDF10 %s|@";
+    final String LANGUAGE_PUSH_FORMAT = "@|bold," + COLOR_NEW + " \uD83C\uDF10 %s \u2795|@";
     final String FOLDER_REGULAR_FORMAT = "\uD83D\uDCC2 %s";
     final String FOLDER_DELETE_FORMAT = "@|bold," + COLOR_DELETED + " \uD83D\uDCC2 %s \u2716|@";
     final String FOLDER_PUSH_FORMAT = "@|bold," + COLOR_NEW + " \uD83D\uDCC2 %s \u2795|@";
@@ -94,9 +95,9 @@ public class TreePrinter {
         Collections.sort(sortedWorkingLanguages);
 
         // Live tree
-        formatByStatus(sb, true, sortedLiveLanguages, rootNode, showEmptyFolders, false);
+        formatByStatus(sb, true, sortedLiveLanguages, rootNode, showEmptyFolders, false, true);
         // Working tree
-        formatByStatus(sb, false, sortedWorkingLanguages, rootNode, showEmptyFolders, false);
+        formatByStatus(sb, false, sortedWorkingLanguages, rootNode, showEmptyFolders, false, true);
     }
 
     /**
@@ -113,9 +114,11 @@ public class TreePrinter {
      *                         set to true, all folders will be included. If set to false, only folders
      *                         containing assets or having children with assets will be included.
      * @param forPushChanges   A boolean indicating whether the formatting is for push changes or not.
+     * @param languageExists   A boolean indicating whether the language exists or not.
      */
     public void formatByStatus(StringBuilder sb, boolean isLive, List<String> sortedLanguages,
-                               final TreeNode rootNode, final boolean showEmptyFolders, final boolean forPushChanges) {
+                               final TreeNode rootNode, final boolean showEmptyFolders,
+                               final boolean forPushChanges, final boolean languageExists) {
 
         if (sortedLanguages.isEmpty()) {
             return;
@@ -144,7 +147,8 @@ public class TreePrinter {
             boolean isLastLang = !langIterator.hasNext();
             sb.append("     ").
                     append((isLastLang ? "└── " : "├── ")).
-                    append(String.format(LANGUAGE_REGULAR_FORMAT, lang)).append('\n');
+                    append(String.format(languageExists ? LANGUAGE_REGULAR_FORMAT : LANGUAGE_PUSH_FORMAT, lang)).
+                    append('\n');
 
             var siteFormat = SITE_REGULAR_FORMAT;
             if (rootNode.folder().markForPush().isPresent()) {
@@ -176,7 +180,7 @@ public class TreePrinter {
                             append(parentFolderIdent).
                             append((isLastLang ? "" : "    ")).
                             append("└── ").
-                            append(String.format("@|bold \uD83D\uDCC2 %s|@", initialPath.getName(i))).
+                            append(String.format(FOLDER_REGULAR_FORMAT, initialPath.getName(i))).
                             append('\n');
                     if (i + 1 < initialPath.getNameCount()) {
                         parentFolderIdent += "    ";

@@ -471,6 +471,7 @@ public class AssetsUtils {
         private String fileName;
         private String folderPath;
         private Path filePath;
+        private boolean languageExists;
 
         private LocalPathStructure(Builder builder) {
             this.isDirectory = builder.isDirectory;
@@ -480,6 +481,7 @@ public class AssetsUtils {
             this.fileName = builder.fileName;
             this.folderPath = builder.folderPath;
             this.filePath = builder.filePath;
+            this.languageExists = true;
         }
 
         public boolean isDirectory() {
@@ -527,6 +529,14 @@ public class AssetsUtils {
             }
 
             return folderName;
+        }
+
+        public void setLanguageExists(boolean languageExists) {
+            this.languageExists = languageExists;
+        }
+
+        public boolean languageExists() {
+            return this.languageExists;
         }
 
         @Override

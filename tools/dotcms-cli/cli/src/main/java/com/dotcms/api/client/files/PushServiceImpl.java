@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static com.dotcms.common.AssetsUtils.ParseLocalPath;
-
 @DefaultBean
 @Dependent
 public class PushServiceImpl implements PushService {
@@ -68,12 +66,12 @@ public class PushServiceImpl implements PushService {
         var roots = AssetsUtils.ParseRootPaths(workspaceFile, sourceFile);
         for (var root : roots) {
 
-            final var localPathStructure = ParseLocalPath(workspaceFile, new File(root));
-            var treeNode = localTraversalService.traverseLocalFolder(output, workspace, root,
+            // Traversing the local folder
+            var result = localTraversalService.traverseLocalFolder(output, workspace, root,
                     removeAssets, removeFolders, ignoreEmptyFolders);
 
             traversalResult.add(
-                    Pair.of(localPathStructure, treeNode)
+                    result
             );
         }
 

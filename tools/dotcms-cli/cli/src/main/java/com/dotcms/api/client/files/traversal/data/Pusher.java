@@ -2,6 +2,7 @@ package com.dotcms.api.client.files.traversal.data;
 
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.FolderAPI;
+import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.model.ResponseEntityView;
@@ -9,6 +10,7 @@ import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FileUploadData;
 import com.dotcms.model.asset.FileUploadDetail;
+import com.dotcms.model.language.Language;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
 import com.google.common.collect.ImmutableList;
@@ -34,6 +36,22 @@ public class Pusher {
 
     @Inject
     Logger logger;
+
+    /**
+     * Creates a language in the remote server.
+     *
+     * @param language the language to create
+     * @return the created language
+     */
+    @ActivateRequestContext
+    public Language createLanguage(String language) {
+
+        final LanguageAPI languageAPI = this.clientFactory.getClient(LanguageAPI.class);
+
+        // Execute the REST call to create the language
+        final var response = languageAPI.create(language);
+        return response.entity();
+    }
 
     /**
      * Archives an asset in the remote server.
