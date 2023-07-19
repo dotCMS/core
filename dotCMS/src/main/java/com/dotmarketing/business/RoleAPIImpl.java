@@ -2,9 +2,12 @@ package com.dotmarketing.business;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.RoleNameException;
@@ -18,6 +21,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.SystemProperties;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -417,6 +421,8 @@ public class RoleAPIImpl implements RoleAPI {
 			throw new DotStateException("Cannot alter layouts on this role");
 		}
 		roleFactory.addLayoutToRole(layout, role);
+
+		Logger.debug(this,"Calling update to menu from RoleAPI.addLayoutToRole");
         APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
@@ -444,6 +450,7 @@ public class RoleAPIImpl implements RoleAPI {
 		Logger.info(this.getClass(), "removing layout " + layout.getName() + " from role " + role.getName());
 		roleFactory.removeLayoutFromRole(layout, role);
 
+		Logger.debug(this,"Calling update to menu from RoleAPI.removeLayoutFromRole");
 	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 
 	}
@@ -459,7 +466,10 @@ public class RoleAPIImpl implements RoleAPI {
 	public void removeRoleFromUser(final Role role, final User user) throws DotDataException, DotStateException {
 		final Role roleFromDb = loadRoleById(role.getId());
 		roleFactory.removeRoleFromUser(roleFromDb, user);
-	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+
+		Logger.debug(this,"Calling update to menu from RoleAPI.removeRoleFromUser");
+		final HttpServletRequest request   = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(Visibility.USER, WebAPILocator.getUserWebAPI().getUser(request).getUserId()));
 	}
 
 	@Override
@@ -469,7 +479,10 @@ public class RoleAPIImpl implements RoleAPI {
 		for(Role role : roles) {
 			removeRoleFromUser(role, user);
 		}
-        APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+
+		Logger.debug(this,"Calling update to menu from RoleAPI.removeAllRolesFromUser");
+		final HttpServletRequest request   = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(Visibility.USER, WebAPILocator.getUserWebAPI().getUser(request).getUserId()));
 	}
 
 	@WrapInTransaction

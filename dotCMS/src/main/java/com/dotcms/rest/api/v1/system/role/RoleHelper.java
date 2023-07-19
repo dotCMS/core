@@ -9,6 +9,7 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import java.util.ArrayList;
@@ -61,6 +62,7 @@ public class RoleHelper {
             }
         }
 
+        Logger.debug(this,"Calling update to menu from RoleHelper");
         //Send a websocket event to notificate a layout change
         systemEventsAPI.pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(layoutsAdded));
 

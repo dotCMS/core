@@ -585,7 +585,8 @@ public class RoleAjax {
 				roleAPI.addLayoutToRole(layout, role);
 			}
 		}
-		
+
+		Logger.debug(this,"Calling update to menu from RoleAjax.saveRoleLayouts");
 		//Send a websocket event to notificate a layout change  
 		systemEventsAPI.pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 				
@@ -638,7 +639,8 @@ public class RoleAjax {
 
 		layoutAPI.setPortletIdsToLayout(newLayout, portletIds);
 		
-		//Send a websocket event to notificate a layout change  
+		//Send a websocket event to notificate a layout change
+		Logger.debug(this,"Calling update to menu from RoleAjax.addNewLayout");
 		systemEventsAPI.pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 				
 		Map<String, Object> layoutMap =  newLayout.toMap();
@@ -663,7 +665,8 @@ public class RoleAjax {
 
 		layoutAPI.setPortletIdsToLayout(layout, portletIds);
 		
-		//Send a websocket event to notificate a layout change  
+		//Send a websocket event to notificate a layout change
+		Logger.debug(this,"Calling update to menu from RoleAjax.updateLayout");
 		systemEventsAPI.pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 				
 	}
@@ -678,7 +681,8 @@ public class RoleAjax {
 		Layout layout = layoutAPI.loadLayout(layoutId);
 		layoutAPI.removeLayout(layout);
 		
-		//Send a websocket event to notificate a layout change  
+		//Send a websocket event to notificate a layout change
+		Logger.debug(this,"Calling update to menu from RoleAjax.deleteLayout");
 		systemEventsAPI.pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
