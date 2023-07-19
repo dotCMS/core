@@ -7,6 +7,7 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -93,6 +94,9 @@ public class ContentPageIntegrityCheckerTest extends IntegrationTestBase impleme
 
         integrityChecker.executeFix(endpointId.get());
         Assert.assertTrue(validateFix(remoteIdentifier));
+
+        APILocator.getHostAPI().archive(host,APILocator.systemUser(),false);
+        APILocator.getHostAPI().delete(host,APILocator.systemUser(),false);
     }
 
     /**
