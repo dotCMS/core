@@ -115,6 +115,10 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
         }
 
         try {
+            final String currentRunningId = experiment.runningIds().getCurrent()
+                    .map(runningId -> runningId.id())
+                    .orElse(null);
+
             return new SelectedExperiment.Builder()
                     .id(experiment.id().orElse(StringPool.BLANK))
                     .name(experiment.name())
@@ -122,6 +126,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     .variant(variantSelected)
                     .lookBackWindow(nextLookBackWindow())
                     .expireTime(experiment.lookBackWindowExpireTime())
+                    .runningId(currentRunningId)
                     .redirectPattern(ExperimentUrlPatternCalculator.INSTANCE.calculateUrlRegexPattern(htmlPageAsset))
                     .build();
         } catch (DotDataException e) {
