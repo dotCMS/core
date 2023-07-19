@@ -46,29 +46,29 @@
 <!--            <version>6.2.4.Final</version>-->
 <!--        </dependency>-->
 
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxb-provider</artifactId>
-            <version>6.2.4.Final</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.jboss.resteasy</groupId>-->
+<!--            <artifactId>resteasy-jaxb-provider</artifactId>-->
+<!--            <version>6.2.4.Final</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-            <version>4.0.0</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.glassfish.jaxb</groupId>-->
+<!--            <artifactId>jaxb-runtime</artifactId>-->
+<!--            <version>4.0.0</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>4.0.0</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>jakarta.xml.bind</groupId>-->
+<!--            <artifactId>jakarta.xml.bind-api</artifactId>-->
+<!--            <version>4.0.0</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>jakarta.ws.rs</groupId>
-            <artifactId>jakarta.ws.rs-api</artifactId>
-            <version>3.1.0</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>jakarta.ws.rs</groupId>-->
+<!--            <artifactId>jakarta.ws.rs-api</artifactId>-->
+<!--            <version>3.1.0</version>-->
+<!--        </dependency>-->
 
 <!--        <dependency>-->
 <!--            <groupId>org.jboss.resteasy</groupId>-->
@@ -218,21 +218,6 @@
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
                 </configuration>
-            </plugin>
-            <plugin>
-                <!-- https://github.com/wildfly/jandex-maven-plugin -->
-                <groupId>org.jboss.jandex</groupId>
-                <artifactId>jandex-maven-plugin</artifactId>
-                <version>1.2.1</version>
-                <executions>
-                    <execution>
-                        <id>make-index</id>
-                        <goals>
-                            <!-- phase is 'process-classes by default' -->
-                            <goal>jandex</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
 
