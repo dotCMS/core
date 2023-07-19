@@ -1,17 +1,15 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-
-import { ConfirmationService, MessageService } from 'primeng/api';
-import { ConfirmPopup } from 'primeng/confirmpopup';
-
-import { DotMessageService } from '@dotcms/data-access';
-import { DotExperimentVariantDetail } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-
-import { DotExperimentsReportDailyDetailsComponent } from './dot-experiments-report-daily-details.component';
-
-import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
-import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-store';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from "@ngneat/spectator/jest";
+import { DotExperimentsReportDailyDetailsComponent } from "./dot-experiments-report-daily-details.component";
+import { DotExperimentsReportsStore } from "../../store/dot-experiments-reports-store";
+import { ConfirmationService, MessageService } from "primeng/api";
+import { DotExperimentsService } from "@dotcms/portlets/dot-experiments/data-access";
+import { DotMessageService } from "@dotcms/data-access";
+import { DotHttpErrorManagerService } from "@services/dot-http-error-manager/dot-http-error-manager.service";
+import { ConfirmPopup } from "primeng/confirmpopup";
+import {
+  DotExperimentsDetailsTableComponent
+} from "../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component";
+import { DotExperimentVariantDetail } from "@dotcms/dotcms-models";
 
 describe('DotExperimentsReportDailyDetailsComponent', () => {
     let spectator: Spectator<DotExperimentsReportDailyDetailsComponent>;
