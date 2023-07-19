@@ -7,7 +7,12 @@ import { map } from 'rxjs/operators';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import { DotPageRender, DotPageRenderState, DotTemplate } from '@dotcms/dotcms-models';
+import {
+    DotPageRender,
+    DotPageRenderState,
+    DotTemplate,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 
 interface DotEditPageNavItem {
     action?: (inode: string, event?: Event) => void;
@@ -93,11 +98,13 @@ export class DotEditPageNavComponent implements OnChanges {
             }
         ];
 
-        if (this.route.snapshot.data?.featuredFlag) {
+        if (this.route.snapshot.data?.featuredFlags[FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]) {
             navItems.push(this.getExperimentsNavItem(dotRenderedPage, enterpriselicense));
         }
 
-        navItems.push(this.getPageToolsNavItem(enterpriselicense));
+        if (this.route.snapshot.data?.featuredFlags[FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]) {
+            navItems.push(this.getPageToolsNavItem(enterpriselicense));
+        }
 
         return navItems;
     }
@@ -154,7 +161,7 @@ export class DotEditPageNavComponent implements OnChanges {
             needsEntepriseLicense: !enterpriselicense,
             disabled: false,
             icon: 'grid_view',
-            label: 'Page Tools',
+            label: this.dotMessageService.get('editpage.toolbar.nav.page.tools'),
             action: () => {
                 this.openOverlayPanel.emit();
             }

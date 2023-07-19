@@ -25,10 +25,26 @@ export class DotFeatureFlagResolver implements Resolve<Observable<boolean>> {
     constructor(private readonly dotConfigurationService: DotPropertiesService) {}
 
     resolve(route: ActivatedRouteSnapshot) {
-        if (route.data.featuredFlagToCheck) {
-            return this.dotConfigurationService
-                .getKey(route.data.featuredFlagToCheck)
-                .pipe(map((result) => result && result === 'true'));
+        if (route.data.featuredFlagsToCheck) {
+            return this.dotConfigurationService.getKeys(route.data.featuredFlagsToCheck).pipe(
+                map((result) =>
+                    route.data.featuredFlagsToCheck.reduce(
+                        (
+                            acc: {
+                                [key: string]: boolean;
+                            },
+                            key: string
+                        ) => {
+                            if (result && result[key]) {
+                                acc[key] = result && result[key] === 'true';
+                            }
+
+                            return acc;
+                        },
+                        {}
+                    )
+                )
+            );
         }
 
         return of(false);
