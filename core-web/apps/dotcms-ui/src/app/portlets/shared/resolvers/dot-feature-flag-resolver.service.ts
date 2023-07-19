@@ -35,9 +35,7 @@ export class DotFeatureFlagResolver implements Resolve<Observable<boolean>> {
                             },
                             key: string
                         ) => {
-                            if (result && result[key]) {
-                                acc[key] = result && result[key] === 'true';
-                            }
+                            acc[key] = result && result[key] === 'true';
 
                             return acc;
                         },
