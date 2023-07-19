@@ -20,7 +20,8 @@ public class GoalFactory {
             MetricType.EXIT_RATE,  metric -> new Goal(metric, GoalType.MINIMIZE),
             MetricType.REACH_PAGE, metric -> new Goal(metric, GoalType.MAXIMIZE),
             MetricType.CLICK_ON_ELEMENT, metric -> new Goal(metric, GoalType.MAXIMIZE),
-            MetricType.URL_PARAMETER, metric -> new Goal(metric, GoalType.MAXIMIZE)
+            MetricType.URL_PARAMETER, metric -> new Goal(metric, GoalType.MAXIMIZE),
+            MetricType.BOUNCE_RATE,  metric -> new Goal(metric, GoalType.MINIMIZE)
     );
 
     /**

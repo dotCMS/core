@@ -69,7 +69,8 @@ public enum ExperimentResultsQueryFactory {
         return map(
             MetricType.REACH_PAGE, new ReachPageExperimentResultQuery(),
             MetricType.EXIT_RATE, new PageViewExperimentResultQuery(),
-            MetricType.URL_PARAMETER, new PageViewExperimentResultQuery()
+            MetricType.URL_PARAMETER, new PageViewExperimentResultQuery(),
+            MetricType.BOUNCE_RATE, new PageViewExperimentResultQuery()
         );
     }
 
