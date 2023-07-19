@@ -97,7 +97,7 @@ export class DotEditPageNavComponent implements OnChanges {
             navItems.push(this.getExperimentsNavItem(dotRenderedPage, enterpriselicense));
         }
 
-        navItems.push(this.getPageToolsNavItem(dotRenderedPage, enterpriselicense));
+        navItems.push(this.getPageToolsNavItem(enterpriselicense));
 
         return navItems;
     }
@@ -149,10 +149,7 @@ export class DotEditPageNavComponent implements OnChanges {
         };
     }
 
-    private getPageToolsNavItem(
-        dotRenderedPage: DotPageRender,
-        enterpriselicense: boolean
-    ): DotEditPageNavItem {
+    private getPageToolsNavItem(enterpriselicense: boolean): DotEditPageNavItem {
         return {
             needsEntepriseLicense: !enterpriselicense,
             disabled: false,

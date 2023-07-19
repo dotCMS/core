@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 .page-tools {
-    width: 26.3rem;
+    width: $page-tools-width;
 }
 
 .page-tools-list {
@@ -12,7 +12,7 @@
 .page-tools-list__item {
     display: flex;
     flex-direction: row;
-    padding: 1rem 1.5rem;
+    padding: $spacing-3 $spacing-4;
 
     &:hover {
         background-color: $color-palette-gray-100;
@@ -23,27 +23,27 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-left: 1rem;
-    line-height: 1.225rem;
+    padding-left: $spacing-3;
+    line-height: 1.2;
 }
 
 .page-tools-list__title {
-    font-size: 1rem;
-    font-weight: 600;
-    line-height: 1.4rem;
-    margin-bottom: 0.5rem;
+    font-size: $font-size-md;
+    font-weight: $font-weight-semi-bold;
+    line-height: 1.4;
+    margin-bottom: $spacing-1;
 }
 
 .page-tools-list__tags {
     display: flex;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
+    gap: $spacing-1;
+    margin-top: $spacing-1;
 }
 
 .page-tools-list__tag {
     background-color: $color-palette-gray-300;
-    padding: 0.4rem;
-    border-radius: 0.2rem;
+    padding: $spacing-1;
+    border-radius: $border-radius-sm;
 }
 
 .page-tools-list__link {
@@ -52,21 +52,25 @@
     display: flex;
 }
 
-.logo {
-    width: 2.6rem;
-    height: 2.6rem;
+.page-tools-list__logo {
+    width: $page-tools-logo-size;
+    height: $page-tools-logo-size;
+}
+
+.page-tools-list__description {
+    margin: 0;
 }
 
 ::ng-deep {
     .page-tools-dialog {
         .p-dialog-right {
             .p-dialog {
-                margin-right: 5rem;
+                margin-right: $spacing-9;
             }
         }
         .p-dialog {
             .p-dialog-header {
-                padding: 1rem;
+                padding: $spacing-3;
                 border-bottom: 1px solid $color-palette-gray-300;
             }
 

@@ -5,6 +5,7 @@ import { DialogModule } from 'primeng/dialog';
 
 import { DotPageToolsService } from '@dotcms/data-access';
 import { DotPageTools } from '@dotcms/dotcms-models';
+import { Observable } from 'rxjs';
 
 @Component({
     selector: 'dot-dot-page-tools-seo',
@@ -18,13 +19,11 @@ import { DotPageTools } from '@dotcms/dotcms-models';
 })
 export class DotPageToolsSeoComponent implements OnInit {
     @Input() visible: boolean;
-    tools: DotPageTools;
+    tools$: Observable<DotPageTools>;
 
     constructor(private dotPageToolsService: DotPageToolsService) {}
 
     ngOnInit() {
-        this.dotPageToolsService.get().subscribe((tools: DotPageTools) => {
-            this.tools = tools;
-        });
+        this.tools$ = this.dotPageToolsService.get();
     }
 }
