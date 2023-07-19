@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 
@@ -5,7 +7,6 @@ import { DialogModule } from 'primeng/dialog';
 
 import { DotPageToolsService } from '@dotcms/data-access';
 import { DotPageTools } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
 
 @Component({
     selector: 'dot-dot-page-tools-seo',
