@@ -1,18 +1,17 @@
 package com.dotcms.api.traversal;
 
-import static com.dotcms.model.asset.BasicMetadataFields.PATH_META_KEY;
-import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
-import static com.dotcms.model.asset.BasicMetadataFields.SIZE_META_KEY;
-
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
+import static com.dotcms.model.asset.BasicMetadataFields.*;
 
 @QuarkusTest
 public class FilterTest {
@@ -107,6 +106,90 @@ public class FilterTest {
         // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::implicitGlobInclude).count());
+        Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_includes5() {
+
+        var filter = Filter.builder()
+                .rootPath("/")
+                .includeAsset("robots.txt")
+                .build();
+
+        var folderBuilder = FolderView.builder();
+        folderBuilder.name("/").path("/").level(0);
+
+        // Assets
+        var assetVersionViewBuilder = AssetVersionsView.builder();
+        assetVersionViewBuilder.addVersions(
+                assetViewForPath("robots.txt", "/")
+        );
+        folderBuilder.assets(assetVersionViewBuilder.build());
+
+        var filteredFolderView = filter.apply(folderBuilder.build());
+
+        // Test when the path matches an implicitGlobInclude pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
+                filter(FolderView::implicitGlobInclude).count());
+        Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_includes6() {
+
+        var filter = Filter.builder()
+                .rootPath("/")
+                .includeFolder("images/**")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an implicitGlobInclude pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::implicitGlobInclude).count());
+        Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_includes7() {
+
+        var filter = Filter.builder()
+                .rootPath("/")
+                .includeFolder("/images/dir1")
+                .build();
+
+        var folder = folderViewForPath("dir1", "/images/dir1/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an implicitGlobInclude pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
+                filter(FolderView::implicitGlobInclude).count());
+        Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_includes8() {
+
+        var filter = Filter.builder()
+                .rootPath("/")
+                .includeFolder("images/dir1")
+                .build();
+
+        var folder = folderViewForPath("dir1", "/images/dir1/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an implicitGlobInclude pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
                 filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }

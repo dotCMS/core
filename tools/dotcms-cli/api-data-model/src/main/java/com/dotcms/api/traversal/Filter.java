@@ -79,9 +79,7 @@ public class Filter {
                 var assetPath = Paths.get(assetVersionPath).
                         resolve(assetVersion.name()).toString();
 
-                if (!rootPath.equals("/")) {
-                    assetPath = assetPath.replaceFirst("^" + rootPath, "");
-                }
+                assetPath = assetPath.replaceFirst("^" + rootPath, "");
 
                 if (useAsset(assetPath)) {
                     filteredAssets.add(assetVersion);
@@ -105,9 +103,7 @@ public class Filter {
 
         var folderPath = subFolder.path();
 
-        if (!rootPath.equals("/")) {
-            folderPath = folderPath.replaceFirst("^" + rootPath, "");
-        }
+        folderPath = folderPath.replaceFirst("^" + rootPath, "");
 
         FileSystem fileSystem = FileSystems.getDefault();
 
