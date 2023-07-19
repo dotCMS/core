@@ -24,13 +24,12 @@
     flex-direction: column;
     justify-content: center;
     padding-left: $spacing-3;
-    line-height: 1.2;
 }
 
 .page-tools-list__title {
     font-size: $font-size-md;
     font-weight: $font-weight-semi-bold;
-    line-height: 1.4;
+    line-height: $line-height;
     margin-bottom: $spacing-1;
 }
 
@@ -60,6 +59,7 @@
 
 .page-tools-list__description {
     margin: 0;
+    line-height: $line-height;
 }
 
 ::ng-deep {

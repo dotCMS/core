@@ -12,14 +12,14 @@
             "title": "Mozilla Observatory",
             "description": "Assesses and improve the security posture of websites by scanning them for various security-related issues and vulnerabilities.",
             "tags": ["Marketing and Sales", "Productivity"],
-            "runnableLink": "https://securityheaders.com/?q=dotcms.com&followRedirects=on"
+            "runnableLink": "https://observatory.mozilla.org/analyze/dotcms.com"
         },
         {
             "icon": "assets/seo/security-headers.png",
             "title": "Security Headers",
             "description": "Enhances the security of websites by providing instructions to web browsers.",
             "tags": ["Marketing and Sales", "Productivity"],
-            "runnableLink": "https://observatory.mozilla.org/analyze/dotcms.com"
+            "runnableLink": "https://securityheaders.com/?q=dotcms.com&followRedirects=on"
         }
     ]
 }
