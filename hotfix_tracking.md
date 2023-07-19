@@ -79,3 +79,4 @@ This maintenance release includes the following code fixes:
 61. https://github.com/dotCMS/core/issues/25217 : New method of generating shorty IDs to include the language ID is creating issues with static PP #25217
 62. https://github.com/dotCMS/core/issues/25437 : Add SAML the ability to retrieve non-stardard attributes #25437
 63. https://github.com/dotCMS/core/issues/25556 : UPDATE_PORTLET_LAYOUTS event is sent without user limitation #25556
+64. https://github.com/dotCMS/core/issues/23276 : Content detailed page throwing 404 when URL contains a trailing slash. #23276

@@ -1,6 +1,7 @@
 package com.dotmarketing.filters;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.filters.CMSFilter.CMS_INDEX_PAGE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
 import static java.util.stream.Collectors.toSet;
@@ -18,6 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter.IAm;
+import com.dotmarketing.filters.CMSFilter.IAmSubType;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -28,6 +30,8 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -108,56 +112,63 @@ public class CMSUrlUtil {
 	 * @param uri
 	 * @param site
 	 * @param languageId
-	 * @return
+	 * @return Tuple2<IAm, IAmSubType>
 	 */
-    public IAm resolveResourceType(final IAm iAm,
-            final String uri,
-            final Host site,
-            final long languageId) {
+	public Tuple2<IAm, CMSFilter.IAmSubType> resolveResourceType(final IAm iAm,
+																 final String uri,
+																 final Host site,
+																 final long languageId) {
 
         final String uriWithoutQueryString = this.getUriWithoutQueryString (uri);
         if (isFileAsset(uriWithoutQueryString, site, languageId)) {
-            return IAm.FILE;
-        } 
-        if (isPageAsset(uriWithoutQueryString, site, languageId)) {
-            return IAm.PAGE;
+			return Tuple.of(IAm.FILE, IAmSubType.NONE);
+        }
+		Tuple2<Boolean, IAmSubType> isPage = resolvePageAssetSubtype(uriWithoutQueryString, site, languageId);
+
+		if (isPage._1()) {
+			return Tuple.of(IAm.PAGE, isPage._2());
         }
         if(isFolder(uriWithoutQueryString, site)) {
             // resolves correctly for folders with index pages
-            return uriWithoutQueryString.endsWith("/") && isPageAsset(uriWithoutQueryString + CMSFilter.CMS_INDEX_PAGE, site, languageId) 
-                        ? IAm.PAGE
-                        : IAm.FOLDER;     
-            
-        }
+			return uriWithoutQueryString.endsWith("/") && isPageAsset(uriWithoutQueryString + CMS_INDEX_PAGE, site, languageId)
+					? Tuple.of(IAm.PAGE, IAmSubType.PAGE_INDEX)
+					: Tuple.of(IAm.FOLDER,IAmSubType.NONE);
 
-        return IAm.NOTHING_IN_THE_CMS;
+		}
+
+		return Tuple.of(IAm.NOTHING_IN_THE_CMS, IAmSubType.NONE);
         
 
         } // resolveResourceType.
+
+	public boolean isPageAsset(final String uri, final Host host, final long languageId) {
+		return resolvePageAssetSubtype(uri, host, languageId)._1();
+	}
 	/**
 	 * Indicates if the uri belongs to a Page Asset
 	 *
 	 * @param uri The current uri
 	 * @param host The current host
 	 * @param languageId The current language Id
-	 * @return true if the URI is a Page Asset, false if not
+	 * @return a tuple where the boolean will be true if the URI is a Page Asset, false if not
+	 * and the IAmSubType will be the type of page asset when the boolean is true
 	 */
-	public boolean isPageAsset(String uri, Host host, Long languageId) {
+	public Tuple2<Boolean, IAmSubType> resolvePageAssetSubtype(final String uri, final Host host, final Long languageId) {
 		Identifier id;
 		if (!UtilMethods.isSet(uri)) {
-			return false;
+			return Tuple.of(false, IAmSubType.NONE);
 		}
 		try {
 			id = APILocator.getIdentifierAPI().find(host, uri);
 		} catch (Exception e) {
 			Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
-			return false;
+			return Tuple.of(false, IAmSubType.NONE);
 		}
 		if (id == null || id.getId() == null) {
-			return false;
+			return Tuple.of(false, IAmSubType.NONE);
 		}
 		if (HTMLPAGE.equals(id.getAssetType())) {
-			return true;
+			return Tuple.of(true, IAmSubType.NONE);
 		}
 		if (CONTENTLET.equals(id.getAssetType())) {
 			try {
@@ -188,14 +199,14 @@ public class CMSUrlUtil {
 
 				}
 				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
-					return false;//At this point we know is not a page
+					return Tuple.of(false, IAmSubType.NONE);//At this point we know is not a page
 				} 
 				Contentlet c = APILocator.getContentletAPI().find(cinfo.get().getWorkingInode(), APILocator.systemUser(),false);
-				return c.isHTMLPage();
+				return Tuple.of(c.isHTMLPage(), IAmSubType.NONE);
 				
 			} catch (Exception e) {
 				Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
-				return false;
+				return Tuple.of(false, IAmSubType.NONE);
 			}
 		}
 
@@ -207,10 +218,12 @@ public class CMSUrlUtil {
 					host,
 					APILocator.getUserAPI().getSystemUser());
 
-			return APILocator.getURLMapAPI().isUrlPattern(urlMapContext);
+			boolean isUrlMap = APILocator.getURLMapAPI().isUrlPattern(urlMapContext);
+
+			return Tuple.of(isUrlMap, isUrlMap ? IAmSubType.PAGE_URL_MAP : IAmSubType.NONE);
 		} catch (final DotDataException | DotSecurityException e){
 			Logger.error(this.getClass(), e.getMessage());
-			return false;
+			return Tuple.of(false, IAmSubType.NONE);
 		}
 	}
 
@@ -316,7 +329,7 @@ public class CMSUrlUtil {
 	 *
 	 * @param uri The current uri
 	 * @param host The current host
-	 * @param languageId The current language Id
+	 * @param language The current language
 	 * @return true if the URI is a vanity URL, false if not
 	 */
 	public boolean isVanityUrl(final String uri,

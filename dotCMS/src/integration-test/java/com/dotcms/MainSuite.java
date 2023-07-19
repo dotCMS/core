@@ -117,6 +117,7 @@ import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
+import com.dotmarketing.filters.CMSUrlUtilTest;
 import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
@@ -610,7 +611,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ManifestUtilTest.class,
         ZipUtilTest.class,
         PopulateContentletAsJSONJobTest.class,
-        Task230426AlterVarcharLengthOfLockedByColTest.class
+        Task230426AlterVarcharLengthOfLockedByColTest.class,
+        CMSUrlUtilTest.class
 
 })
 public class MainSuite {
