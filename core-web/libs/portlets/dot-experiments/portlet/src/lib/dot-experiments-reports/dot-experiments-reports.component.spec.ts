@@ -39,6 +39,7 @@ import {
 
 import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
+import { DotExperimentsReportDailyDetailsComponent } from './components/dot-experiments-report-daily-details/dot-experiments-report-daily-details.component';
 
 const ActivatedRouteMock = {
     snapshot: {
@@ -158,7 +159,9 @@ describe('DotExperimentsReportsComponent', () => {
     it('should show DotExperimentsReportsChartComponent when no loading', () => {
         spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
         spectator.detectChanges();
+
         expect(spectator.query(MockDotExperimentsReportsChartComponent)).toExist();
+        expect(spectator.query(DotExperimentsReportDailyDetailsComponent)).toExist();
     });
 
     it('should show the SummaryComponent', () => {

@@ -13,8 +13,10 @@ import {
 
 import { DotExperimentsReportsChartComponent } from './dot-experiments-reports-chart.component';
 
+import * as Utilities from '../../../shared/dot-experiment.utils';
+import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
+
 const messageServiceMock = new MockDotMessageService({
-    'experiments.reports.chart.title': 'title',
     'experiments.reports.chart.empty.title': 'x axis label',
     'experiments.reports.chart.empty.description': 'y axis label'
 });
@@ -41,6 +43,9 @@ class MockUIChart {
 })
 export class MockChartModule {}
 
+// spyOn an exported function with Jest
+jest.spyOn(Utilities, 'getRandomUUID').mockReturnValue('1234');
+
 describe('DotExperimentsReportsChartComponent', () => {
     let spectator: Spectator<DotExperimentsReportsChartComponent>;
 
@@ -55,6 +60,7 @@ describe('DotExperimentsReportsChartComponent', () => {
                 }
             ]
         ],
+        imports: [DotMessagePipe],
         providers: [
             {
                 provide: DotMessageService,
@@ -76,12 +82,10 @@ describe('DotExperimentsReportsChartComponent', () => {
             data: CHARTJS_DATA_MOCK_WITH_DATA,
             config: {
                 xAxisLabel: 'experiments.chart.xAxisLabel',
-                yAxisLabel: 'experiments.chart.yAxisLabel',
-                title: 'experiments.reports.chart.title'
+                yAxisLabel: 'experiments.chart.yAxisLabel'
             }
         });
 
-        expect(spectator.query(byTestId('chart-title'))).toContainText('title');
         expect(spectator.query(byTestId('chart-legends'))).toExist();
         expect(spectator.query(MockUIChart)).toExist();
     });
@@ -98,8 +102,7 @@ describe('DotExperimentsReportsChartComponent', () => {
             data: CHARTJS_DATA_MOCK_EMPTY,
             config: {
                 xAxisLabel: 'experiments.chart.xAxisLabel',
-                yAxisLabel: 'experiments.chart.yAxisLabel',
-                title: 'experiments.reports.chart.title'
+                yAxisLabel: 'experiments.chart.yAxisLabel'
             }
         });
 
