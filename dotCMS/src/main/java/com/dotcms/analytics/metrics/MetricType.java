@@ -29,8 +29,8 @@ public enum MetricType {
                     Parameter.builder().name("target").build()
             )
             .availableOperators(Operator.EQUALS, Operator.CONTAINS)),
-    BOUNCE_RATE(new Builder()
-            .label("Bounce Rate")
+    EXIT_RATE(new Builder()
+            .label("Exit Rate")
             .optionalParameters(Parameter.builder().name("url").build())),
     URL_PARAMETER(new Builder()
             .label("Url Parameter")

@@ -228,7 +228,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
             final Builder builder) {
 
-        if (goals.primary().getMetric().type() == MetricType.BOUNCE_RATE &&
+        if (goals.primary().getMetric().type() == MetricType.EXIT_RATE &&
                 !hasCondition(goals, "url")) {
             addUrlCondition(page, builder, goals);
         } else if (goals.primary().getMetric().type() == MetricType.URL_PARAMETER &&
