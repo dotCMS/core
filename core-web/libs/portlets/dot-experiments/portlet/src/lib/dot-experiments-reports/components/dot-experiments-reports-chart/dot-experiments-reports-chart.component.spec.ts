@@ -10,11 +10,11 @@ import {
     CHARTJS_DATA_MOCK_WITH_DATA,
     MockDotMessageService
 } from '@dotcms/utils-testing';
+import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsReportsChartComponent } from './dot-experiments-reports-chart.component';
 
 import * as Utilities from '../../../shared/dot-experiment.utils';
-import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.reports.chart.empty.title': 'x axis label',
