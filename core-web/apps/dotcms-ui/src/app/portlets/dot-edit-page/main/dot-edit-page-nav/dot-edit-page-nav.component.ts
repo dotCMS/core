@@ -15,7 +15,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 interface DotEditPageNavItem {
-    action?: (inode: string, event?: Event) => void;
+    action?: (inode: string) => void;
     disabled: boolean;
     icon: string;
     label: string;
