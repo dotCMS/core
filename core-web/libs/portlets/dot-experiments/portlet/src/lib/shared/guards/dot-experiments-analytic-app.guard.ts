@@ -9,17 +9,18 @@ import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-acc
  * Guard for check if all the necessary to track, record and retrieve information
  * from Experiments infrastructure.
  */
-export const analyticsAppGuard = () => {
+export const AnalyticsAppGuard = () => {
     const router = inject(Router);
-    const service = inject(DotExperimentsService);
 
-    return service.healthCheck().pipe(
-        tap((value) => {
-            return !value
-                ? router.navigate(['/edit-page/experiments/analytic-app-misconfiguration'], {
-                      queryParamsHandling: 'merge'
-                  })
-                : true;
-        })
-    );
+    return inject(DotExperimentsService)
+        .healthCheck()
+        .pipe(
+            tap((value) => {
+                return !value
+                    ? router.navigate(['/edit-page/experiments/analytic-app-misconfiguration'], {
+                          queryParamsHandling: 'merge'
+                      })
+                    : true;
+            })
+        );
 };

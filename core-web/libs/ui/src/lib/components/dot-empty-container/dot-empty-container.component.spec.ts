@@ -2,12 +2,15 @@ import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectat
 import { byTestId } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotEmptyContainerComponent } from '@dotcms/ui';
+import { DotEmptyContainerComponent, PrincipalConfiguration } from '@dotcms/ui';
 
 const BUTTON_LABEL = 'Amazing Label';
-const TEXT_INPUT = 'My title';
-const SUBTITLE_INPUT = 'My subtitle';
-const ICON_PRIMENG_CLASS = 'icon-class';
+
+const BASIC_CONFIGURATION: PrincipalConfiguration = {
+    title: 'My title',
+    icon: 'icon-class',
+    subtitle: 'My subtitle'
+};
 
 describe('DotEmptyContainerComponent', () => {
     let spectator: Spectator<DotEmptyContainerComponent>;
@@ -19,37 +22,28 @@ describe('DotEmptyContainerComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+        spectator.setInput('configuration', BASIC_CONFIGURATION);
     });
 
     describe('Only Principal message', () => {
         beforeEach(() => {
             spectator.setInput('hideContactUsLink', true);
         });
-        it('should has only a principal message and `title` Input', () => {
-            spectator.setInput('title', TEXT_INPUT);
-
+        it('should has only a principal empty message with, title, icon and subtitle', () => {
             expect(spectator.query(byTestId('message-principal'))).toExist();
             expect(spectator.query(byTestId('message-extra'))).not.toExist();
 
-            expect(spectator.query(byTestId('message-title'))).toContainText(TEXT_INPUT);
-        });
-
-        it('should has icon when you send a `icon` Input', () => {
-            expect(spectator.query(byTestId('message-icon'))).not.toExist();
-
-            spectator.setInput('icon', ICON_PRIMENG_CLASS);
+            expect(spectator.query(byTestId('message-title'))).toContainText(
+                BASIC_CONFIGURATION.title
+            );
 
             expect(spectator.query(byTestId('message-icon'))).toExist();
-            expect(spectator.query(byTestId('message-icon'))).toHaveClass(ICON_PRIMENG_CLASS);
-        });
-
-        it('should has subtitle when you send a `subtitle` Input', () => {
-            expect(spectator.query(byTestId('message-subtitle'))).not.toExist();
-
-            spectator.setInput('subtitle', SUBTITLE_INPUT);
+            expect(spectator.query(byTestId('message-icon'))).toHaveClass(BASIC_CONFIGURATION.icon);
 
             expect(spectator.query(byTestId('message-subtitle'))).toExist();
-            expect(spectator.query(byTestId('message-subtitle'))).toContainText(SUBTITLE_INPUT);
+            expect(spectator.query(byTestId('message-subtitle'))).toContainText(
+                BASIC_CONFIGURATION.subtitle
+            );
         });
     });
     describe('With extra message', () => {

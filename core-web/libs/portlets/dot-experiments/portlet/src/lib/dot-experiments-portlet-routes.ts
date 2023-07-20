@@ -8,8 +8,11 @@ import {
 } from '@portlets/shared/resolvers';
 
 import { DotExperimentsAnalyticAppMisconfigurationComponent } from './dot-experiments-analytic-app-misconfiguration/dot-experiments-analytic-app-misconfiguration.component';
+import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration/dot-experiments-configuration.component';
+import { DotExperimentsListComponent } from './dot-experiments-list/dot-experiments-list.component';
+import { DotExperimentsReportsComponent } from './dot-experiments-reports/dot-experiments-reports.component';
 import { DotExperimentsShellComponent } from './dot-experiments-shell/dot-experiments-shell.component';
-import { analyticsAppGuard } from './shared/guards/dot-experiments-analytic-app.guard';
+import { AnalyticsAppGuard } from './shared/guards/dot-experiments-analytic-app.guard';
 
 export const DotExperimentsPortletRoutes: Routes = [
     {
@@ -25,15 +28,13 @@ export const DotExperimentsPortletRoutes: Routes = [
             pushPublishEnvironments: DotPushPublishEnvironmentsResolver
         },
 
-        canActivateChild: [analyticsAppGuard],
+        canActivateChild: [AnalyticsAppGuard],
 
         children: [
             {
                 path: '',
                 title: 'experiment.container.list.title',
-                loadComponent: async () =>
-                    (await import('./dot-experiments-list/dot-experiments-list.component'))
-                        .DotExperimentsListComponent
+                component: DotExperimentsListComponent
             },
             {
                 path: ':experimentId/configuration',
@@ -47,19 +48,12 @@ export const DotExperimentsPortletRoutes: Routes = [
                         ExperimentsConfigProperties.EXPERIMENTS_MAX_DURATION
                     ]
                 },
-                loadComponent: async () =>
-                    (
-                        await import(
-                            './dot-experiments-configuration/dot-experiments-configuration.component'
-                        )
-                    ).DotExperimentsConfigurationComponent
+                component: DotExperimentsConfigurationComponent
             },
             {
                 path: ':experimentId/reports',
                 title: 'experiment.container.report.title',
-                loadComponent: async () =>
-                    (await import('./dot-experiments-reports/dot-experiments-reports.component'))
-                        .DotExperimentsReportsComponent
+                component: DotExperimentsReportsComponent
             }
         ]
     }

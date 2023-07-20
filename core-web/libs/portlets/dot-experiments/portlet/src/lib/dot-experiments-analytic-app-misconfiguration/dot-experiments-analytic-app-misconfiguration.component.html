@@ -5,9 +5,7 @@
 <div class="flex justify-content-center align-items-center h-full">
     <dot-empty-container
         [buttonLabel]="'experiments.analytics-app-misconfiguration.btn-label' | dm"
-        [icon]="'pi-chart-line'"
-        [subtitle]="'experiments.analytics-app-misconfiguration.subtitle' | dm"
-        [title]="'experiments.analytics-app-misconfiguration.title' | dm"
+        [configuration]="emptyConfiguration"
         (buttonAction)="goToAnalyticsApp()"
     />
 </div>

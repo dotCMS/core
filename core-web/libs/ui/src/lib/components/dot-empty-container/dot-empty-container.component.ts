@@ -5,8 +5,14 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
+export interface PrincipalConfiguration {
+    title: string;
+    subtitle?: string;
+    icon: string;
+}
+
 /**
- * Component to show a empty container with a title, subtitle and a button
+ * Component to show an empty container with a title, subtitle and a button
  * @export DotEmptyContainerComponent
  */
 @Component({
@@ -18,25 +24,12 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEmptyContainerComponent {
-    /**
-     * Icon to show in the container
-     */
-    @Input()
-    icon: string;
-
-    /**
-     * Title to show in the container
-     *
-     */
     //Todo: make required when Angular 16 updated
-    @Input()
-    title: string;
-
     /**
-     * Subtitle to show in the container
+     * Principal configuration of the component
      */
     @Input()
-    subtitle: string;
+    configuration: PrincipalConfiguration;
 
     /**
      * Button label to show in the container
