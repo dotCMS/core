@@ -494,7 +494,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         Experiment toReturn;
 
         if(emptyScheduling(persistedExperiment)) {
-            final Scheduling scheduling = startNowScheduling(persistedExperiment);
+            final Scheduling scheduling = startNowScheduling();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
             validateNoConflictsWithScheduledExperiments(experimentToSave, user);
             toReturn = innerStart(experimentToSave, user);
@@ -502,6 +502,71 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             Scheduling scheduling = persistedExperiment.scheduling().get();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
             validateNoConflictsWithScheduledExperiments(experimentToSave, user);
+            toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
+        }
+
+        return toReturn;
+    }
+
+    @Override
+    public Experiment forceStart(String experimentId, User user)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
+                invalidLicenseMessageSupplier);
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+
+        final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
+                ()-> new IllegalArgumentException("Experiment with provided id not found")
+        );
+
+        validatePermissions(user, persistedExperiment,
+                "You don't have permission to start the Experiment. "
+                        + "Experiment Id: " + persistedExperiment.id());
+
+        DotPreconditions.isTrue(persistedExperiment.status()!=Status.RUNNING ||
+                        persistedExperiment.status() != Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
+                DotStateException.class);
+
+        DotPreconditions.isTrue(persistedExperiment.status()== DRAFT
+                ,()-> "Only DRAFT experiments can be started",
+                DotStateException.class);
+
+        DotPreconditions.checkState(hasAtLeastOneVariant(persistedExperiment), "The Experiment needs at "
+                + "least one Page Variant in order to be started.");
+
+        DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
+                + "have the Goal set.");
+
+        final List<Experiment> runningExperimentsOnPage = list(ExperimentFilter.builder()
+                .pageId(persistedExperiment.pageId())
+                .statuses(Set.of(RUNNING))
+                .build(), user);
+
+        if(!runningExperimentsOnPage.isEmpty()) {
+            final boolean meantToRunNow = persistedExperiment.scheduling().isEmpty();
+
+            if(meantToRunNow) {
+                end(runningExperimentsOnPage.get(0).id().orElseThrow(), user);
+            }
+
+            final Experiment runningExperiment = runningExperimentsOnPage.get(0);
+            if(conflictingStartOrEndDate(runningExperiment.scheduling().orElseThrow(),
+                    persistedExperiment.scheduling().orElseThrow())) {
+                end(runningExperiment.id().orElseThrow(), user);
+            }
+        }
+
+        Experiment toReturn;
+
+        if(emptyScheduling(persistedExperiment)) {
+            final Scheduling scheduling = startNowScheduling();
+            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
+            cancelScheduledExperimentsUponConflicts(experimentToSave, user);
+            toReturn = innerStart(experimentToSave, user);
+        } else {
+            Scheduling scheduling = persistedExperiment.scheduling().get();
+            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
+            cancelScheduledExperimentsUponConflicts(experimentToSave, user);
             toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
         }
 
@@ -558,6 +623,38 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                         + "Overlapping with Experiment: "
                 + scheduledExperimentsOnPage.get(0).name(),
                 DotStateException.class);
+    }
+
+    private void cancelScheduledExperimentsUponConflicts(final Experiment experimentToCheck,
+            final User user) throws DotDataException {
+
+        final List<Experiment> scheduledExperimentsOnPage = list(ExperimentFilter.builder()
+                .pageId(experimentToCheck.pageId())
+                .statuses(Set.of(SCHEDULED))
+                .build(), user);
+
+        scheduledExperimentsOnPage.stream().filter(scheduledExperiment -> {
+            final Scheduling scheduling = scheduledExperiment.scheduling().orElseThrow();
+            final Scheduling schedulingToCheck = experimentToCheck.scheduling().orElseThrow();
+            return conflictingStartOrEndDate(scheduling, schedulingToCheck);
+        }).forEach(scheduledExperiment -> {
+            try {
+                cancel(scheduledExperiment.id().orElseThrow(), user);
+            } catch (DotDataException | DotSecurityException e) {
+                throw new DotStateException(e);
+            }
+        });
+    }
+
+    private static boolean conflictingStartOrEndDate(Scheduling scheduling, Scheduling schedulingToCheck) {
+        return (schedulingToCheck.startDate().orElseThrow()
+                .isAfter(scheduling.startDate().orElseThrow()) &&
+                schedulingToCheck.startDate().orElseThrow()
+                        .isBefore(scheduling.endDate().orElseThrow()))
+                || (schedulingToCheck.endDate().orElseThrow()
+                .isAfter(scheduling.startDate().orElseThrow()) &&
+                schedulingToCheck.endDate().orElseThrow()
+                        .isBefore(scheduling.endDate().orElseThrow()));
     }
 
     @Override
@@ -1166,7 +1263,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return variantIndex;
     }
 
-    private Scheduling startNowScheduling(final Experiment experiment) {
+    private Scheduling startNowScheduling() {
         // Setting "now" with an additional minute to avoid failing validation
         final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
         return Scheduling.builder().startDate(now)

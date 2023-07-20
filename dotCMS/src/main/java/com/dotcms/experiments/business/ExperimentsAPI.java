@@ -86,6 +86,13 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
+     * Similar to #start, but it forces the start of the Experiment even if there is an Experiment
+     * already running for the same page, which would then be stopped.
+     */
+    Experiment forceStart(final String experimentId, final User user)
+            throws DotDataException, DotSecurityException;
+
+    /**
      * Starts the SCHEDULED Experiment with the given id
      * @param experimentId the id
      * @param user the user

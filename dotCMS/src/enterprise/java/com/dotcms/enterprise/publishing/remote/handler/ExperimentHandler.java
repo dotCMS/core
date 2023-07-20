@@ -60,6 +60,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.ExperimentBundler;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.publisher.pusher.wrapper.ContentTypeWrapper;
 import com.dotcms.publisher.pusher.wrapper.ExperimentWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
@@ -86,6 +87,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -156,9 +159,19 @@ public class ExperimentHandler implements IHandler {
 					}
 	        	} else {
 	        		// save or update Experiment
-					experimentsAPI.save(experiment, APILocator.systemUser());
-
-					if(experiment.status()== Status.RUNNING || experiment.status()== Status.ENDED) {
+					if(experiment.status()== Status.RUNNING || experiment.status()== Status.SCHEDULED) {
+						Experiment asDraft = Experiment.builder().from(experiment)
+								.status(Status.DRAFT).build();
+						if(experiment.status()==Status.RUNNING) {
+							final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
+							asDraft = asDraft.withScheduling(Scheduling.builder().startDate(now)
+									.endDate(asDraft.scheduling().orElseThrow().endDate())
+									.build());
+						}
+						experimentsAPI.save(asDraft, APILocator.systemUser());
+						experimentsAPI.forceStart(asDraft.id().orElseThrow(), APILocator.systemUser());
+					} else if(experiment.status()==Status.ENDED) {
+						experimentsAPI.save(experiment, APILocator.systemUser());
 						experimentsAPI.cacheRunningExperiments();
 					}
 				}
