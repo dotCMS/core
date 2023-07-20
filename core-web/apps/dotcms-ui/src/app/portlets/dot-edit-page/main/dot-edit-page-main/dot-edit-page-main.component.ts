@@ -22,6 +22,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     pageState$: Observable<DotPageRenderState>;
     private pageUrl: string;
     private languageId: string;
+    private host: string;
     private pageIsSaved = false;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly customEventsHandler;
@@ -64,6 +65,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
                 this.titleService.setTitle(`${newTitle}${subtTitle ? ` - ${subtTitle}` : ''}`);
                 this.pageUrl = page.pageURI;
                 this.languageId = page.languageId.toString();
+                this.host = page.hostName;
             })
         );
 
@@ -112,5 +114,9 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
                 }
             }
         });
+    }
+
+    public getCurrentURL(): string {
+        return `${this.host}${this.pageUrl}?language_id=${this.languageId}`;
     }
 }

@@ -102,7 +102,7 @@ export class DotEditPageNavComponent implements OnChanges {
             navItems.push(this.getExperimentsNavItem(dotRenderedPage, enterpriselicense));
         }
 
-        if (this.route.snapshot.data?.featuredFlags[FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]) {
+        if (!this.route.snapshot.data?.featuredFlags[FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]) {
             navItems.push(this.getPageToolsNavItem(enterpriselicense));
         }
 

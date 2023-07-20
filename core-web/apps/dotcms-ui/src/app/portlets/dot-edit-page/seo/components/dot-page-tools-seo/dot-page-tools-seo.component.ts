@@ -20,11 +20,16 @@ import { DotPageTools } from '@dotcms/dotcms-models';
 })
 export class DotPageToolsSeoComponent implements OnInit {
     @Input() visible: boolean;
+    @Input() currentPageUrl: string;
     tools$: Observable<DotPageTools>;
 
     constructor(private dotPageToolsService: DotPageToolsService) {}
 
     ngOnInit() {
         this.tools$ = this.dotPageToolsService.get();
+    }
+
+    getRunnableLink(url: string): string {
+        return url.replace('{currentPageUrl}', this.currentPageUrl);
     }
 }

@@ -5,6 +5,9 @@
     dotExperimentClass
     dotNavbar
 ></dot-edit-page-nav>
-<dot-dot-page-tools-seo [visible]="visible"></dot-dot-page-tools-seo>
+<dot-dot-page-tools-seo
+    [visible]="visible"
+    [currentPageUrl]="getCurrentURL()"
+></dot-dot-page-tools-seo>
 <dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
 <dot-block-editor-sidebar></dot-block-editor-sidebar>
