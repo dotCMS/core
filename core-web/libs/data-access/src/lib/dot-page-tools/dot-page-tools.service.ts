@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-import { DotPageTools } from '@dotcms/dotcms-models';
+import { DotPageTool, DotPageTools } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotPageToolsService {
@@ -14,9 +14,9 @@ export class DotPageToolsService {
 
     /**
      * Returns the page tools from the assets file
-     * @returns {Observable<DotPageTools>}
+     * @returns {Observable<DotPageTool[]>}
      */
-    get(): Observable<DotPageTools> {
+    get(): Observable<DotPageTool[]> {
         return this.http.get<{ entity: DotPageTools }>(this.seoToolsUrl).pipe(pluck('pageTools'));
     }
 }

@@ -6,7 +6,7 @@ import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core
 import { DialogModule } from 'primeng/dialog';
 
 import { DotPageToolsService } from '@dotcms/data-access';
-import { DotPageTools } from '@dotcms/dotcms-models';
+import { DotPageTool } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-dot-page-tools-seo',
@@ -21,7 +21,7 @@ import { DotPageTools } from '@dotcms/dotcms-models';
 export class DotPageToolsSeoComponent implements OnInit {
     @Input() visible: boolean;
     @Input() currentPageUrl: string;
-    tools$: Observable<DotPageTools>;
+    tools$: Observable<DotPageTool[]>;
 
     constructor(private dotPageToolsService: DotPageToolsService) {}
 
