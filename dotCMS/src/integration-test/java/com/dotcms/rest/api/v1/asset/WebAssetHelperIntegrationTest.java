@@ -299,6 +299,14 @@ public class WebAssetHelperIntegrationTest {
         pushFileForLanguageThenValidate(newTestFile, path, secondLang.toString());
     }
 
+    /**
+     * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
+     * Given Scenario: We submit a valid path and a file then we archive it
+     * Expected Result: We get the asset info back as proof of success and the asset should be unarchived
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
     @Test
     public void Test_Upload_File_Archive_Then_Update() throws DotDataException, DotSecurityException, IOException {
 
@@ -328,6 +336,15 @@ public class WebAssetHelperIntegrationTest {
 
     }
 
+    /**
+     * Helper method to Send a file in a given language and validate the result
+     * @param newTestFile
+     * @param path
+     * @param langString
+     * @throws IOException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     private static void pushFileForLanguageThenValidate(final File newTestFile, final String path, final String langString) throws IOException, DotDataException, DotSecurityException {
         final FormDataContentDisposition formDataContentDisposition = getFormDataContentDisposition(newTestFile);
         try(final InputStream inputStream = Files.newInputStream(newTestFile.toPath())){
