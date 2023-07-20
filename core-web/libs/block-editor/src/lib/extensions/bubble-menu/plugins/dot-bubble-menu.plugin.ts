@@ -444,6 +444,12 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             },
             codeBlock: () => {
                 this.editor.chain().focus().clearNodes().toggleCodeBlock().run();
+            },
+            subscript: () => {
+                this.editor.chain().focus().clearNodes().toggleSubscript().run();
+            },
+            superscript: () => {
+                this.editor.chain().focus().clearNodes().toggleSuperscript().run();
             }
         };
 

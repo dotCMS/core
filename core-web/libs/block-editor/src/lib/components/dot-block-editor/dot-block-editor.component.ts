@@ -19,6 +19,7 @@ import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-charact
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
+import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
@@ -371,6 +372,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 nocookie: true,
                 modestBranding: true
             }),
+            Subscript,
             Superscript,
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
