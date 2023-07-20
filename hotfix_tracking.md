@@ -82,3 +82,4 @@ This maintenance release includes the following code fixes:
 64. https://github.com/dotCMS/core/issues/23276 : Content detailed page throwing 404 when URL contains a trailing slash. #23276
 65. https://github.com/dotCMS/core/issues/24424 : Error when right click on role name #24424
 66. https://github.com/dotCMS/core/issues/25120 : Stopped sites are not listed #25120
+67. https://github.com/dotCMS/core/issues/25136 : Site Browser is not sorting items by default #25136
