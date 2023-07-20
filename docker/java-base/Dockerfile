@@ -6,7 +6,7 @@ FROM ubuntu:20.04 as base-builder
 WORKDIR /srv
 
 # Defining default Java, can be any java provided by sdkman
-ARG JAVA_VERSION="11.0.16-amzn"
+ARG JAVA_VERSION="11.0.17-amzn"
 
 ENV JAVA_OUTPUT_DIR="/java"
 ENV DEBIAN_FRONTEND=noninteractive
