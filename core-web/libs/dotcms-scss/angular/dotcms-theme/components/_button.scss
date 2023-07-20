@@ -17,44 +17,44 @@
         color: inherit;
         font-size: $icon-md;
     }
-}
 
-// Shared but not icon only
-.p-button:not(.p-button-icon-only, .p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
-    border-radius: $border-radius-md;
-    font-size: $font-size-md;
-    gap: $spacing-1;
-    height: $field-height-md;
-    padding: 0 $spacing-3;
-    text-transform: capitalize;
+    // Shared but not icon only
+    &:not(.p-button-icon-only, .p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
+        border-radius: $border-radius-md;
+        font-size: $font-size-md;
+        gap: $spacing-1;
+        height: $field-height-md;
+        padding: 0 $spacing-3;
+        text-transform: capitalize;
 
-    &.p-button-lg {
-        height: $field-height-lg;
-        border-radius: $border-radius-lg;
-        font-size: $font-size-lg;
+        &.p-button-lg {
+            height: $field-height-lg;
+            border-radius: $border-radius-lg;
+            font-size: $font-size-lg;
 
-        .p-button-label {
-            font-size: inherit;
+            .p-button-label {
+                font-size: inherit;
+            }
+
+            .p-button-icon.pi {
+                font-size: $icon-lg;
+            }
         }
 
-        .p-button-icon.pi {
-            font-size: $icon-lg;
-        }
-    }
+        &.p-button-sm {
+            border-radius: $border-radius-sm;
+            font-size: $font-size-sm;
+            gap: $spacing-0;
+            height: $field-height-sm;
+            padding: 0 $spacing-1;
 
-    &.p-button-sm {
-        border-radius: $border-radius-sm;
-        font-size: $font-size-sm;
-        gap: $spacing-0;
-        height: $field-height-sm;
-        padding: 0 $spacing-1;
+            .p-button-label {
+                font-size: inherit;
+            }
 
-        .p-button-label {
-            font-size: inherit;
-        }
-
-        .p-button-icon.pi {
-            font-size: $icon-sm;
+            .p-button-icon.pi {
+                font-size: $icon-sm;
+            }
         }
     }
 }
