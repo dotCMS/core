@@ -27,12 +27,14 @@ import java.util.concurrent.CompletableFuture;
 public class FilesPull extends AbstractFilesCommand implements Callable<Integer> {
 
     static final String NAME = "pull";
-
+    
+    //TODO: Should this be a File instead of a string ???
     @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "source",
             description = "dotCMS path to the directory or file to pull "
                     + "- Format: //{site}/{folder} or //{site}/{folder}/{file}")
     String source;
 
+    //TODO: Should this be a File instead of a string ???
     @CommandLine.Parameters(index = "1", arity = "1", paramLabel = "destination", defaultValue = ".",
             description = "Local root directory of the CLI project.")
     String destination;

@@ -24,8 +24,6 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     @Inject
     Logger logger;
 
-    public static final String DOT_WORKSPACE_DIR_PATTERN = "^dot-workspace-\\d+$";
-
     public static final String DOT_WORKSPACE_YML = ".dot-workspace.yml";
 
     private static final ObjectMapper mapper = new YAMLMapperSupplier().get();
@@ -66,22 +64,9 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
                     String.format("Path [%s] must be a directory", path)
             );
         }
-
-        Path workingPath = path;
-
-        //if we're not already within a workspace directory, create one
-        if(!workingPath.getFileName().toString().matches(DOT_WORKSPACE_DIR_PATTERN)){
-            workingPath = Path.of(path.toString(), workspaceEnclosingDirName());
-        }
         //All other fields are derived therefore we only need to set the root
-        return Workspace.builder().root(workingPath)
+        return Workspace.builder().root(path)
                 .build();
-    }
-
-    public static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
-
-    String workspaceEnclosingDirName() {
-        return String.format("dot-workspace-%s",datetimeFormat.format(new Date()));
     }
 
     Optional<Path> findProjectRoot(Path currentPath) {
@@ -128,7 +113,11 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
 
     @Override
     public void destroy(final Workspace workspace) throws IOException {
-        deleteDirectoryStream(workspace.root());
+        deleteDirectoryStream(workspace.sites());
+        deleteDirectoryStream(workspace.languages());
+        deleteDirectoryStream(workspace.contentTypes());
+        deleteDirectoryStream(workspace.files());
+        Files.deleteIfExists(workspace.root().resolve(DOT_WORKSPACE_YML));
     }
 
     private void deleteDirectoryStream(Path path) throws IOException {

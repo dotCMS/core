@@ -30,19 +30,14 @@ class WorkspaceManagerTest {
         final Optional<Workspace> workspace = workspaceManager.findWorkspace(testDir);
         Assert.assertFalse(workspace.isPresent());
         final Workspace newWorkspace = workspaceManager.getOrCreate(testDir);
-        Assert.assertTrue(Files.exists(newWorkspace.root()));
         Assert.assertTrue(Files.exists(newWorkspace.contentTypes()));
         Assert.assertTrue(Files.exists(newWorkspace.languages()));
         Assert.assertTrue(Files.exists(newWorkspace.files()));
         Assert.assertTrue(Files.exists(newWorkspace.sites()));
-
         workspaceManager.destroy(newWorkspace);
-
-        Assert.assertFalse(Files.exists(newWorkspace.root()));
         Assert.assertFalse(Files.exists(newWorkspace.contentTypes()));
         Assert.assertFalse(Files.exists(newWorkspace.languages()));
         Assert.assertFalse(Files.exists(newWorkspace.sites()));
-
     }
 
 }
