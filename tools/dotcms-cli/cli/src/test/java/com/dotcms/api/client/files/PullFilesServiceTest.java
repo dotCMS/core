@@ -98,7 +98,7 @@ public class PullFilesServiceTest {
                     .filter(Files::isDirectory)
                     .forEach(path -> existingFolders.add(tempFolder.relativize(path).toString()));
 
-            var basePath = "files/live/en-US/" + testSiteName;
+            var basePath = "files/live/en-us/" + testSiteName;
             // Expected folder structure based on the treeNode object
             Map<String, List<String>> expectedFolders = Map.of(
                     basePath,
