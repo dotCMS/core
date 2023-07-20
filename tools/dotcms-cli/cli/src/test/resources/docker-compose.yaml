@@ -64,7 +64,7 @@ volumes:
   postgres-data:
   elasticsearch-data:
   dotcms-shared:
-  license:
+#  license:
 
 networks:
   dotcms-net:
