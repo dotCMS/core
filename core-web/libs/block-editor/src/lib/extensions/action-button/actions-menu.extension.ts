@@ -170,8 +170,8 @@ function execCommand({
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
         },
         image: () => editor.commands.openAssetForm({ type: 'image' }),
-        subscript: () => editor.commands.setSubscript(),
-        superscript: () => editor.commands.setSuperscript(),
+        subscript: () => editor.chain().setSubscript().focus().run(),
+        superscript: () => editor.chain().setSuperscript().focus().run(),
         video: () => editor.commands.openAssetForm({ type: 'video' })
     };
 
