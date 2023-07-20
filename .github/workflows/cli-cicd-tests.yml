@@ -18,10 +18,10 @@ jobs:
       - name: Run tests
         working-directory: ./tools/dotcms-cli/
         run: |
-          docker --version
-          docker-compose --version
-          docker pull dotcms/dotcms:master_1bc0c86_SNAPSHOT
+#          docker --version
+#          docker-compose --version
+#          docker pull dotcms/dotcms:master_1bc0c86_SNAPSHOT
 #          java -version
 #          pwd
 #          ls -la
-          ./mvnw test -D"quarkus.log.category.\"com.dotcms\".level=DEBUG"
+          ./mvnw test -Dquarkus.log.category.\"com.dotcms\".level=DEBUG
