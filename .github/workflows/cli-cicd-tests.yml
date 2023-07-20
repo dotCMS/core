@@ -24,4 +24,4 @@ jobs:
 #          java -version
 #          pwd
 #          ls -la
-          ./mvnw test -Dquarkus.log.category.\"com.dotcms\".level=DEBUG
+          ./mvnw test
