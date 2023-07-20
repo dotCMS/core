@@ -14,6 +14,9 @@ import java.util.Map;
 
 public class ContainerResource implements QuarkusTestResourceLifecycleManager {
 
+    /*
+    * TODO: Load all these values from a properties file
+    * */
     private static final int POSTGRES_SERVICE_PORT = 5432;
     private static final int ELASTICSEARCH_SERVICE_PORT = 9200;
     private static final int DOTCMS_SERVICE_PORT = 8080;
@@ -28,7 +31,6 @@ public class ContainerResource implements QuarkusTestResourceLifecycleManager {
         DockerComposeContainer dockerComposeContainer = new DockerComposeContainer("dotcms-env", new File("src/test/resources/docker-compose.yaml"));
         dockerComposeContainer.withExposedService("postgres", POSTGRES_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)));
         dockerComposeContainer.withExposedService("elasticsearch", ELASTICSEARCH_SERVICE_PORT, Wait.forHttp("/").forPort(ELASTICSEARCH_SERVICE_PORT).forStatusCode(200));
-//        dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)));
         dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forHttp("/dotAdmin").forPort(DOTCMS_SERVICE_PORT).forStatusCode(200));
         dockerComposeContainer.withLogConsumer("dotcms", new Slf4jLogConsumer(LOGGER));
         dockerComposeContainer.withLocalCompose(LOCAL_COMPOSE);

@@ -13,25 +13,15 @@ jobs:
     name: CLI tests
     runs-on: ubuntu-latest
     steps:
-#      - name: Prepare environment
-#        run: |
-#          sudo apt-get update -y
-#          sudo apt-get install -y maven
-#          mvn -version
       - name: Checkout core
         uses: actions/checkout@v3
       - name: Run tests
         working-directory: ./tools/dotcms-cli/
         run: |
-          java -version
-          pwd
-          ls -la
-          ./mvnw clean install
-#      - name: Run cli tests
-#        working-directory: ./tools/dotcms-cli
-#        run: |
-#          # Acá deberia para levantar las dependecias (DB? Quarkus)
-#          ./mvnw test
-#      - name: Store results
-#        run: |
-#          github-de-dani.sh
+          docker --version
+          docker-compose --version
+          docker pull dotcms/dotcms:master_1bc0c86_SNAPSHOT
+#          java -version
+#          pwd
+#          ls -la
+          ./mvnw test -D"quarkus.log.category.\"com.dotcms\".level=DEBUG"
