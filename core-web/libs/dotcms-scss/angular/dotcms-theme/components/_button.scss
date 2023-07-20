@@ -19,7 +19,7 @@
     }
 
     // Shared but not icon only
-    &:not(.p-button-icon-only, .p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
+    &:not(.p-button-icon-only) {
         border-radius: $border-radius-md;
         font-size: $font-size-md;
         gap: $spacing-1;
