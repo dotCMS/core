@@ -83,3 +83,4 @@ This maintenance release includes the following code fixes:
 65. https://github.com/dotCMS/core/issues/24424 : Error when right click on role name #24424
 66. https://github.com/dotCMS/core/issues/25120 : Stopped sites are not listed #25120
 67. https://github.com/dotCMS/core/issues/25136 : Site Browser is not sorting items by default #25136
+68. https://github.com/dotCMS/core/issues/25189 : Data mixing issue when ordering values of Content Type with multiple key/value fields #25189
