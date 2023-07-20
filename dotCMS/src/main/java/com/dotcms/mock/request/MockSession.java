@@ -2,132 +2,135 @@ package com.dotcms.mock.request;
 
 import com.dotmarketing.util.UUIDGenerator;
 
-import java.util.*;
-
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
-
-@SuppressWarnings("deprecation")
-public class MockSession implements  HttpSession {
-	
-	final String id;
-	final long createionTime;
-	final Map<String, Object> valmap = new HashMap<>();
-	public MockSession(final String id) {
-		super();
-		this.id=id;
-		createionTime = System.currentTimeMillis();
-	}
+import java.util.*;
 
 
-	public MockSession(final HttpSession sessionIn) {
-		super();
-		this.id = UUIDGenerator.generateUuid();
-		createionTime = System.currentTimeMillis();
-		if (sessionIn != null) {
-			Collections.list(sessionIn.getAttributeNames()).forEach(k -> valmap.put(k, sessionIn.getAttribute(k)));
-		}
-	}
+public class MockSession implements HttpSession {
+
+    String id;
+    long creationTime;
+    final Map<String, Object> valmap = new HashMap<>();
+
+    public MockSession(final String id) {
+        this(null, id);
+    }
 
 
+    public MockSession(final HttpSession sessionIn) {
+        this(sessionIn, UUIDGenerator.generateUuid());
+    }
 
-	@Override
-	public void setMaxInactiveInterval(int arg0) {
+    public MockSession(final HttpSession sessionIn, final String id) {
+        super();
+        this.id = id;
+        this.creationTime = System.currentTimeMillis();
+        if (sessionIn != null) {
+            Collections.list(sessionIn.getAttributeNames()).forEach(k -> valmap.put(k, sessionIn.getAttribute(k)));
+        }
+    }
 
 
-	}
+    @Override
+    public void setMaxInactiveInterval(int arg0) {
+        // has no effect
 
-	@Override
-	public void setAttribute(String arg0, Object arg1) {
-		valmap.put(arg0, arg1);
+    }
 
-	}
+    @Override
+    public void setAttribute(String arg0, Object arg1) {
+        valmap.put(arg0, arg1);
 
-	@Override
-	public void removeValue(String arg0) {
-		valmap.remove(arg0);
+    }
 
-	}
+    @Override
+    public void removeValue(String arg0) {
+        valmap.remove(arg0);
 
-	@Override
-	public void removeAttribute(String arg0) {
-		valmap.remove(arg0);
+    }
 
-	}
+    @Override
+    public void removeAttribute(String arg0) {
+        valmap.remove(arg0);
 
-	@Override
-	public void putValue(String arg0, Object arg1) {
-		valmap.put(arg0, arg1);
+    }
 
-	}
+    @Override
+    public void putValue(String arg0, Object arg1) {
+        valmap.put(arg0, arg1);
 
-	@Override
-	public boolean isNew() {
+    }
 
-		return (valmap.isEmpty());
-	}
+    @Override
+    public boolean isNew() {
 
-	@Override
-	public void invalidate() {
-		valmap.clear();
+        return (valmap.isEmpty());
+    }
 
-	}
+    @Override
+    public void invalidate() {
+        valmap.clear();
+        this.id = UUIDGenerator.generateUuid();
+        this.creationTime = System.currentTimeMillis();
 
-	@Override
-	public String[] getValueNames() {
+    }
 
-		return valmap.keySet().toArray(new String[valmap.size()]);
-	}
+    @Override
+    public String[] getValueNames() {
 
-	@Override
-	public Object getValue(String arg0) {
-		return valmap.get(arg0);
-	}
+        return valmap.keySet().toArray(new String[valmap.size()]);
+    }
 
-	@Override
-	public ServletContext getServletContext() {
+    @Override
+    public Object getValue(String arg0) {
+        return valmap.get(arg0);
+    }
 
-		return null;
-	}
+    @Override
+    public ServletContext getServletContext() {
 
-	@Override
-	public int getMaxInactiveInterval() {
+        return null;
+    }
 
-		return 0;
-	}
+    @Override
+    public int getMaxInactiveInterval() {
 
-	@Override
-	public long getLastAccessedTime() {
+        return 0;
+    }
 
-		return 0;
-	}
+    @Override
+    public long getLastAccessedTime() {
 
-	@Override
-	public String getId() {
+        return 0;
+    }
 
-		return id;
-	}
+    @Override
+    public String getId() {
 
-	@Override
-	public long getCreationTime() {
+        return id;
+    }
 
-		return createionTime;
-	}
+    @Override
+    public long getCreationTime() {
 
-	@Override
-	public Enumeration<String> getAttributeNames() {
-		return new Vector<String>(valmap.keySet()).elements();
-	}
+        return creationTime;
+    }
 
-	@Override
-	public Object getAttribute(String arg0) {
-		return valmap.get(arg0);
-	}
+    @Override
+    public Enumeration<String> getAttributeNames() {
+        return new Vector<>(valmap.keySet()).elements();
+    }
 
-	@Override
-	public HttpSessionContext getSessionContext() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Object getAttribute(String arg0) {
+        return valmap.get(arg0);
+    }
+
+    @Override
+    public HttpSessionContext getSessionContext() {
+        // Not implemented
+        return null;
+    }
 }

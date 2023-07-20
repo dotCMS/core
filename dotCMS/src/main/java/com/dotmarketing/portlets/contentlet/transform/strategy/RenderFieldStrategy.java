@@ -140,10 +140,7 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
 
         final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
 
-        return UtilMethods.isSet(dotJSON)
-                ? dotJSON.size() > 0
-                    ? dotJSON.getMap() : Collections.emptyMap()
-                : Collections.emptyMap();
+        return UtilMethods.isSet(dotJSON) ? dotJSON.getMap() : Collections.emptyMap();
     }
 
     public static Object renderFieldValue(final HttpServletRequest request,

@@ -1,13 +1,5 @@
 package com.dotcms.content.business.json;
 
-import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
-import static junit.framework.TestCase.assertNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.business.json.ContentletJsonHelper.INSTANCE;
 import com.dotcms.content.model.FieldValue;
@@ -22,12 +14,7 @@ import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.CategoryDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TagDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
@@ -49,6 +36,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -60,11 +52,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
-import org.immutables.value.Value.Parameter;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static junit.framework.TestCase.assertNull;
+import static org.junit.Assert.*;
 
 public class ContentletJsonAPITest extends IntegrationTestBase {
 

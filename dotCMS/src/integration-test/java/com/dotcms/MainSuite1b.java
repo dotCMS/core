@@ -18,6 +18,7 @@ import com.dotcms.rendering.velocity.viewtools.XsltToolTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
+
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
@@ -88,7 +89,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceIssue15124Test.class,
         com.dotcms.rest.api.v1.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v1.contenttype.FieldVariableResourceTest.class,
-        com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.class
+        com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.class,
+        com.dotmarketing.portlets.contentlet.transform.WidgetViewStrategyTest.class
 
 })
 
