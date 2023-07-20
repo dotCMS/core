@@ -1,6 +1,5 @@
 import { DoBootstrap, Injector, NgModule } from '@angular/core';
 import { createCustomElement } from '@angular/elements';
-import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { WebComponentsModule, InputFieldComponent } from '@dotcms/web-components';
@@ -14,7 +13,7 @@ const CUSTOM_ELEMENTS = [
 
 @NgModule({
     declarations: [],
-    imports: [BrowserModule, FormsModule, WebComponentsModule],
+    imports: [BrowserModule, WebComponentsModule],
     providers: []
 })
 export class AppModule implements DoBootstrap {

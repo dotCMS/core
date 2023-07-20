@@ -46,6 +46,8 @@
 
 </style>
 
+<script src="/html/content-fields.js"></script>
+
 <script type="text/javascript">
 
 	const relationsLoadedMap = {};

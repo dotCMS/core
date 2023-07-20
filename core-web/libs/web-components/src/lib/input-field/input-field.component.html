@@ -1,7 +1,7 @@
-<label>{{ label }}</label>
 <input
     [(ngModel)]="value"
     [type]="type"
     [placeholder]="placeholder"
     (input)="valueChange.emit(value)"
+    pInputText
 />

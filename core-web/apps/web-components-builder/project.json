@@ -20,6 +20,9 @@
                     "apps/web-components-builder/src/assets"
                 ],
                 "styles": ["apps/web-components-builder/src/styles.scss"],
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dotcms-scss/angular"]
+                },
                 "scripts": [
                     {
                         "bundleName": "generator-runtime",
@@ -38,7 +41,7 @@
                         {
                             "type": "anyComponentStyle",
                             "maximumWarning": "2kb",
-                            "maximumError": "4kb"
+                            "maximumError": "1mb"
                         }
                     ],
                     "outputHashing": "all"

@@ -1,0 +1,33 @@
+.p-hidden {
+    display: none;
+}
+
+.p-hidden-space {
+    visibility: hidden;
+}
+
+.p-hidden-accessible {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+}
+
+.p-hidden-accessible input,
+.p-hidden-accessible select {
+    transform: scale(0);
+}
+
+.p-reset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    text-decoration: none;
+    font-size: 100%;
+    list-style: none;
+}

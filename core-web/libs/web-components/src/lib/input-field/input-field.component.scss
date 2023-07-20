@@ -1,0 +1,5 @@
+@use "variables" as *;
+
+:host ::ng-deep {
+    @import "libs/dotcms-scss/angular/dotcms-theme/components/_inputtext.scss";
+}

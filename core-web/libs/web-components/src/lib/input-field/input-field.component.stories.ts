@@ -3,6 +3,8 @@ import { moduleMetadata, Story, Meta } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+import { InputTextModule } from 'primeng/inputtext';
+
 import { InputFieldComponent } from './input-field.component';
 
 export default {
@@ -10,7 +12,7 @@ export default {
     component: InputFieldComponent,
     decorators: [
         moduleMetadata({
-            imports: [CommonModule, FormsModule]
+            imports: [CommonModule, FormsModule, InputTextModule]
         })
     ]
 } as Meta<InputFieldComponent>;
