@@ -828,7 +828,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if (showStopped && !showArchived) {
             // Return stopped Sites
             siteListOpt = this.getHostFactory()
-                    .findStoppedSites(filter, false, limit, offset, showSystemHost, user, respectFrontendRoles);
+                    .findLiveAndStopped(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
                 return convertToSitePaginatedList(siteListOpt.get());
             }

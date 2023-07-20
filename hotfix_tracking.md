@@ -81,3 +81,4 @@ This maintenance release includes the following code fixes:
 63. https://github.com/dotCMS/core/issues/25556 : UPDATE_PORTLET_LAYOUTS event is sent without user limitation #25556
 64. https://github.com/dotCMS/core/issues/23276 : Content detailed page throwing 404 when URL contains a trailing slash. #23276
 65. https://github.com/dotCMS/core/issues/24424 : Error when right click on role name #24424
+66. https://github.com/dotCMS/core/issues/25120 : Stopped sites are not listed #25120

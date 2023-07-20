@@ -136,6 +136,31 @@ public class SitePaginatorTest {
 
     /**
      * <b>Method to test:</b> {@link SitePaginator#getItems(User, String, int, int, String, OrderDirection, Map)} <br></br>
+     * <b>Given Scenario:</b> SitePaginator is invoked with a dummy filter to get stopped and live hosts<br></br>
+     * <b>Expected Result:</b> {@link HostAPI#search(String, boolean, boolean, boolean, int, int, User, boolean)} is expected to be called<br></br>
+     */
+    @Test
+    public void test_GetItems_StoppedAndLiveSites(){
+        final String filter = "filter";
+        final boolean showArchived = false;
+        final boolean showStopped = true;
+        final int limit = 5;
+        final int offset = 4;
+        final User user = new User();
+
+        when(hostAPI.search( filter, showArchived, showStopped,false, limit, offset, user, false ))
+                .thenReturn( hosts );
+
+
+        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
+                map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived));
+
+        assertEquals(totalRecords, items.getTotalResults());
+        assertEquals(hosts, items);
+    }
+
+    /**
+     * <b>Method to test:</b> {@link SitePaginator#getItems(User, String, int, int, String, OrderDirection, Map)} <br></br>
      * <b>Given Scenario:</b> SitePaginator is invoked with a dummy filter setting showSystemHost param<br></br>
      * <b>Expected Result:</b> {@link HostAPI#search(String, boolean, int, int, User, boolean)} is expected to be called<br></br>
      */
