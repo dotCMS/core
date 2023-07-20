@@ -26,6 +26,8 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly customEventsHandler;
 
+    visible: boolean;
+
     constructor(
         private route: ActivatedRoute,
         private dotContentletEditorService: DotContentletEditorService,
@@ -66,6 +68,10 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         );
 
         this.subscribeIframeCloseAction();
+    }
+
+    showPageTools() {
+        this.visible = !this.visible;
     }
 
     ngOnDestroy(): void {

@@ -1,6 +1,6 @@
 import { Observable, of as observableOf } from 'rxjs';
 
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -10,7 +10,7 @@ import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import { DotPageRender, DotPageRenderState, DotTemplate } from '@dotcms/dotcms-models';
 
 interface DotEditPageNavItem {
-    action?: (inode: string) => void;
+    action?: (inode: string, event?: Event) => void;
     disabled: boolean;
     icon: string;
     label: string;
@@ -26,6 +26,7 @@ interface DotEditPageNavItem {
 })
 export class DotEditPageNavComponent implements OnChanges {
     @Input() pageState: DotPageRenderState;
+    @Output() openOverlayPanel: EventEmitter<void> = new EventEmitter();
 
     isEnterpriseLicense: boolean;
     model: Observable<DotEditPageNavItem[]>;
@@ -96,6 +97,8 @@ export class DotEditPageNavComponent implements OnChanges {
             navItems.push(this.getExperimentsNavItem(dotRenderedPage, enterpriselicense));
         }
 
+        navItems.push(this.getPageToolsNavItem(dotRenderedPage, enterpriselicense));
+
         return navItems;
     }
 
@@ -143,6 +146,21 @@ export class DotEditPageNavComponent implements OnChanges {
             icon: 'science',
             label: this.dotMessageService.get('editpage.toolbar.nav.experiments'),
             link: `experiments/${dotRenderedPage.page.identifier}`
+        };
+    }
+
+    private getPageToolsNavItem(
+        dotRenderedPage: DotPageRender,
+        enterpriselicense: boolean
+    ): DotEditPageNavItem {
+        return {
+            needsEntepriseLicense: !enterpriselicense,
+            disabled: false,
+            icon: 'grid_view',
+            label: 'Page Tools',
+            action: () => {
+                this.openOverlayPanel.emit();
+            }
         };
     }
 
