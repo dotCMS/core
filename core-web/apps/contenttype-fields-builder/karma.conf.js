@@ -10,7 +10,7 @@ module.exports = function (config) {
         ...baseConfig,
         coverageReporter: {
             ...baseConfig.coverageReporter,
-            dir: join(__dirname, '../../coverage/libs/web-components')
+            dir: join(__dirname, '../../coverage/apps/contenttype-fields-builder')
         }
     });
 };

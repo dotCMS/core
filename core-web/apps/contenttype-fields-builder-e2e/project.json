@@ -1,0 +1,31 @@
+{
+    "name": "contenttype-fields-builder-e2e",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/contenttype-fields-builder-e2e/src",
+    "projectType": "application",
+    "targets": {
+        "e2e": {
+            "executor": "@nrwl/cypress:cypress",
+            "options": {
+                "cypressConfig": "apps/contenttype-fields-builder-e2e/cypress.json",
+                "devServerTarget": "contenttype-fields-builder:serve:development",
+                "testingType": "e2e",
+                "tsConfig": "apps/contenttype-fields-builder-e2e/tsconfig.json"
+            },
+            "configurations": {
+                "production": {
+                    "devServerTarget": "contenttype-fields-builder:serve:production"
+                }
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": ["apps/contenttype-fields-builder-e2e/**/*.{js,ts}"]
+            }
+        }
+    },
+    "tags": [],
+    "implicitDependencies": ["contenttype-fields-builder"]
+}

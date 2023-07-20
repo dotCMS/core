@@ -1,15 +1,15 @@
 {
-    "name": "web-components",
+    "name": "contenttype-fields",
     "$schema": "../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
-    "sourceRoot": "libs/web-components/src",
+    "sourceRoot": "libs/contenttype-fields/src",
     "prefix": "dotcms",
     "targets": {
         "test": {
             "executor": "@angular-devkit/build-angular:karma",
             "options": {
-                "tsConfig": "libs/web-components/tsconfig.spec.json",
-                "karmaConfig": "libs/web-components/karma.conf.js",
+                "tsConfig": "libs/contenttype-fields/tsconfig.spec.json",
+                "karmaConfig": "libs/contenttype-fields/karma.conf.js",
                 "polyfills": ["zone.js", "zone.js/testing"]
             }
         },
@@ -17,7 +17,10 @@
             "executor": "@nrwl/linter:eslint",
             "outputs": ["{options.outputFile}"],
             "options": {
-                "lintFilePatterns": ["libs/web-components/**/*.ts", "libs/web-components/**/*.html"]
+                "lintFilePatterns": [
+                    "libs/contenttype-fields/**/*.ts",
+                    "libs/contenttype-fields/**/*.html"
+                ]
             }
         }
     },

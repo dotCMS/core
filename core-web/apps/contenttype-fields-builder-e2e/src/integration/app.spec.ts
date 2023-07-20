@@ -1,6 +1,6 @@
 import { getGreeting } from '../support/app.po';
 
-describe('web-components-builder', () => {
+describe('contenttype-fields-builder', () => {
     beforeEach(() => cy.visit('/'));
 
     it('should display welcome message', () => {
@@ -8,6 +8,6 @@ describe('web-components-builder', () => {
         cy.login('my-email@something.com', 'myPassword');
 
         // Function helper example, see `../support/app.po.ts` file
-        getGreeting().contains('Welcome web-components-builder');
+        getGreeting().contains('Welcome contenttype-fields-builder');
     });
 });

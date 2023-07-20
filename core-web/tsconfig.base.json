@@ -40,7 +40,7 @@
             "@dotcms/utils": ["libs/utils/src"],
             "@dotcms/utils-testing": ["libs/utils-testing/src/index.ts"],
             "@dotcms/utils/*": ["libs/utils/src/*"],
-            "@dotcms/web-components": ["libs/web-components/src/index.ts"],
+            "@dotcms/contenttype-fields": ["libs/contenttype-fields/src/index.ts"],
             "@models/*": ["apps/dotcms-ui/src/app/shared/models/*"],
             "@pipes/*": ["apps/dotcms-ui/src/app/view/pipes/*"],
             "@portlets/*": ["apps/dotcms-ui/src/app/portlets/*"],

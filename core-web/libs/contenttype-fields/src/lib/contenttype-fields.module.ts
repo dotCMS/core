@@ -21,4 +21,4 @@ import { InputFieldComponent } from './input-field/input-field.component';
     declarations: [InputFieldComponent],
     exports: [InputFieldComponent]
 })
-export class WebComponentsModule {}
+export class ContenttypeFieldsModule {}

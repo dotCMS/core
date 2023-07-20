@@ -6,7 +6,7 @@
     "supportFile": "./src/support/index.ts",
     "pluginsFile": "./src/plugins/index",
     "video": true,
-    "videosFolder": "../../dist/cypress/apps/web-components-builder-e2e/videos",
-    "screenshotsFolder": "../../dist/cypress/apps/web-components-builder-e2e/screenshots",
+    "videosFolder": "../../dist/cypress/apps/contenttype-fields-builder-e2e/videos",
+    "screenshotsFolder": "../../dist/cypress/apps/contenttype-fields-builder-e2e/screenshots",
     "chromeWebSecurity": false
 }

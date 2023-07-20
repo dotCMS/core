@@ -1,25 +1,25 @@
 {
-    "name": "web-components-builder",
+    "name": "contenttype-fields-builder",
     "$schema": "../node_modules/nx/schemas/project-schema.json",
     "projectType": "application",
-    "sourceRoot": "apps/web-components-builder/src",
+    "sourceRoot": "apps/contenttype-fields-builder/src",
     "prefix": "dotcms",
     "targets": {
         "build": {
             "executor": "@angular-devkit/build-angular:browser",
             "outputs": ["{options.outputPath}"],
             "options": {
-                "outputPath": "dist/apps/web-components-builder",
-                "index": "apps/web-components-builder/src/index.html",
-                "main": "apps/web-components-builder/src/main.ts",
+                "outputPath": "dist/apps/contenttype-fields-builder",
+                "index": "apps/contenttype-fields-builder/src/index.html",
+                "main": "apps/contenttype-fields-builder/src/main.ts",
                 "polyfills": ["zone.js"],
-                "tsConfig": "apps/web-components-builder/tsconfig.app.json",
+                "tsConfig": "apps/contenttype-fields-builder/tsconfig.app.json",
                 "inlineStyleLanguage": "scss",
                 "assets": [
-                    "apps/web-components-builder/src/favicon.ico",
-                    "apps/web-components-builder/src/assets"
+                    "apps/contenttype-fields-builder/src/favicon.ico",
+                    "apps/contenttype-fields-builder/src/assets"
                 ],
-                "styles": ["apps/web-components-builder/src/styles.scss"],
+                "styles": ["apps/contenttype-fields-builder/src/styles.scss"],
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
@@ -61,10 +61,10 @@
             "executor": "@angular-devkit/build-angular:dev-server",
             "configurations": {
                 "production": {
-                    "browserTarget": "web-components-builder:build:production"
+                    "browserTarget": "contenttype-fields-builder:build:production"
                 },
                 "development": {
-                    "browserTarget": "web-components-builder:build:development"
+                    "browserTarget": "contenttype-fields-builder:build:development"
                 }
             },
             "defaultConfiguration": "development"
@@ -72,7 +72,7 @@
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
             "options": {
-                "browserTarget": "web-components-builder:build"
+                "browserTarget": "contenttype-fields-builder:build"
             }
         },
         "lint": {
@@ -80,16 +80,16 @@
             "outputs": ["{options.outputFile}"],
             "options": {
                 "lintFilePatterns": [
-                    "apps/web-components-builder/**/*.ts",
-                    "apps/web-components-builder/**/*.html"
+                    "apps/contenttype-fields-builder/**/*.ts",
+                    "apps/contenttype-fields-builder/**/*.html"
                 ]
             }
         },
         "test": {
             "executor": "@angular-devkit/build-angular:karma",
             "options": {
-                "tsConfig": "apps/web-components-builder/tsconfig.spec.json",
-                "karmaConfig": "apps/web-components-builder/karma.conf.js",
+                "tsConfig": "apps/contenttype-fields-builder/tsconfig.spec.json",
+                "karmaConfig": "apps/contenttype-fields-builder/karma.conf.js",
                 "polyfills": ["zone.js", "zone.js/testing"],
                 "styles": [],
                 "scripts": [],
