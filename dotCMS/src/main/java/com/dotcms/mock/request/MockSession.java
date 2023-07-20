@@ -1,9 +1,8 @@
 package com.dotcms.mock.request;
 
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Vector;
+import com.dotmarketing.util.UUIDGenerator;
+
+import java.util.*;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
@@ -14,13 +13,24 @@ public class MockSession implements  HttpSession {
 	
 	final String id;
 	final long createionTime;
+	final Map<String, Object> valmap = new HashMap<>();
 	public MockSession(final String id) {
 		super();
 		this.id=id;
 		createionTime = System.currentTimeMillis();
 	}
 
-	Map<String, Object> valmap = new HashMap<>();
+
+	public MockSession(final HttpSession sessionIn) {
+		super();
+		this.id = UUIDGenerator.generateUuid();
+		createionTime = System.currentTimeMillis();
+		if (sessionIn != null) {
+			Collections.list(sessionIn.getAttributeNames()).forEach(k -> valmap.put(k, sessionIn.getAttribute(k)));
+		}
+	}
+
+
 
 	@Override
 	public void setMaxInactiveInterval(int arg0) {
@@ -60,7 +70,7 @@ public class MockSession implements  HttpSession {
 
 	@Override
 	public void invalidate() {
-		valmap = new HashMap<>();
+		valmap.clear();
 
 	}
 

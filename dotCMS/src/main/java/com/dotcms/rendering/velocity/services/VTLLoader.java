@@ -101,7 +101,7 @@ public class VTLLoader implements DotLoader {
             f = new java.io.File(filePath);
         }
         if (!f.exists()) {
-            throw new ResourceNotFoundException("cannot find resource");
+            throw new ResourceNotFoundException("cannot find resource:" + f);
         }
         String canon = f.getCanonicalPath();
         File dynamicContent = new File(ConfigUtils.getDynamicContentPath());

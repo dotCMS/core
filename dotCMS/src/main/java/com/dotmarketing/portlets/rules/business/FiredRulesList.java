@@ -1,11 +1,12 @@
 package com.dotmarketing.portlets.rules.business;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
  * Created by freddyrodriguez on 29/3/16.
  */
-public class FiredRulesList {
+public class FiredRulesList implements Serializable {
     private List<FiredRule> list = new LinkedList<>();
     private Map<String, Integer> map = new HashMap();
 

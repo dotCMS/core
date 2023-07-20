@@ -23,8 +23,8 @@ public class MockSessionRequest extends HttpServletRequestWrapper implements Moc
 
 	public MockSessionRequest(HttpServletRequest request) {
 	    super(request);
-	    if (request.getSession(false)!= null) {
-	      session = request.getSession();
+	    if (request.getSession(false) != null) {
+	      session = new MockSession(request.getSession());
 	    }
 
 	}
@@ -50,9 +50,7 @@ public class MockSessionRequest extends HttpServletRequestWrapper implements Moc
 	public HttpSession getSession(boolean create) {
 		return (create) 
 		        ? getSession() 
-		        : session!=null 
-		            ? session 
-		                    : null;
+		        : session;
 
 	}
 

@@ -55,6 +55,7 @@ public class WidgetTransformerTest extends BaseWorkflowIntegrationTest {
                         .name("Code")
                         .velocityVarName("code")
                         .required(true)
+                        .sortOrder(10)
                         .next()
         );
 
@@ -69,7 +70,7 @@ public class WidgetTransformerTest extends BaseWorkflowIntegrationTest {
 
 
         Field codeField = simpleWidgetContentType.fieldMap().get("widgetCode");
-        APILocator.getContentTypeFieldAPI().save(FieldBuilder.builder(codeField).values("$code").build(), APILocator.systemUser());
+        APILocator.getContentTypeFieldAPI().save(FieldBuilder.builder(codeField).values("$code").sortOrder(100).build(), APILocator.systemUser());
 
 
 
@@ -79,15 +80,15 @@ public class WidgetTransformerTest extends BaseWorkflowIntegrationTest {
         Contentlet con = new Contentlet();
         con.setContentType(simpleWidgetContentType);
         con.setStringProperty("code", DONT_RENDER_THIS_CODE);
-        con.setStringProperty("title", "NoRender");
-        widgetWithoutJson = ContentletDataGen.checkin(widgetWithoutJson);
+        con.setStringProperty("widgetTitle", "NoRender");
+        widgetWithoutJson = ContentletDataGen.checkin(con);
 
 
         con = new Contentlet();
         con.setContentType(simpleWidgetContentType);
         con.setStringProperty("code", YES_RENDER_THIS_CODE);
-        con.setStringProperty("title", "NoRender");
-        widgetWithJson = ContentletDataGen.checkin(widgetWithJson);
+        con.setStringProperty("widgetTitle", "NoRender");
+        widgetWithJson = ContentletDataGen.checkin(con);
 
 
 
@@ -99,8 +100,6 @@ public class WidgetTransformerTest extends BaseWorkflowIntegrationTest {
 
         Map<String, Object> map = new DotTransformerBuilder().defaultOptions().content(widgetWithoutJson).build().toMaps().get(0);
         Map<String,Object> widgetCode = (Map<String, Object>)map.get("widgetCodeJSON");
-
-        String renderedValue = (String) widgetCode.get("widgetCodeJSON");
         assertTrue(widgetCode.isEmpty());
 
 
