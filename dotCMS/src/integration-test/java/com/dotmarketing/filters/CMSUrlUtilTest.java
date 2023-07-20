@@ -60,7 +60,7 @@ public class CMSUrlUtilTest {
         systemUser = APILocator.getUserAPI().getSystemUser();
 
         /* Default variables */
-        site = new SiteDataGen().nextPersisted();
+        site = new SiteDataGen().name("CMSURLUtilTest " + System.currentTimeMillis()).nextPersisted(true);
         defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
         final String parent1Name = "news-events";

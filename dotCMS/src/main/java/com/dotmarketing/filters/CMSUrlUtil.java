@@ -141,7 +141,7 @@ public class CMSUrlUtil {
 
         } // resolveResourceType.
 
-	public boolean isPageAsset(final String uri, final Host host, final long languageId) {
+	public boolean isPageAsset(final String uri, final Host host, final Long languageId) {
 		return resolvePageAssetSubtype(uri, host, languageId)._1();
 	}
 	/**
