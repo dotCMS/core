@@ -543,10 +543,11 @@ export const MainTemplate = `
             disabled="true"
         ></button>
     </div>
-    </div>
-    `;
+</div>
+`;
 
-export const IconOnlyBasicTemplate = `<div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
+export const IconOnlyTemplate = `
+<div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button class="p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
         <button class="p-button-rounded" pButton icon="pi pi-ellipsis-v" disabled="true"></button>
@@ -588,137 +589,137 @@ export const IconOnlyBasicTemplate = `<div style="display: flex; gap: 24px; flex
     </div>
 </div>
 
-`;
+<hr />
 
-export const IconOnlyTemplate = `<div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button class="p-button-outlined p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
-    <button
-        class="p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
-        class="p-button-sm p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-sm p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
-        class="p-button-secondary p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-secondary p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
-        class="p-button-sm p-button-secondary p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-sm p-button-secondary p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
+<div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
+    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+        <button class="p-button-outlined p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
+        <button
+            class="p-button-outlined p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+            disabled="true"
+        ></button>
+    </div>
+    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+        <button
+            class="p-button-sm p-button-outlined p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+        ></button>
+        <button
+            class="p-button-sm p-button-outlined p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+            disabled="true"
+        ></button>
+    </div>
+    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+        <button
+            class="p-button-secondary p-button-outlined p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+        ></button>
+        <button
+            class="p-button-secondary p-button-outlined p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+            disabled="true"
+        ></button>
+    </div>
+    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+        <button
+            class="p-button-sm p-button-secondary p-button-outlined p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+        ></button>
+        <button
+            class="p-button-sm p-button-secondary p-button-outlined p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+            disabled="true"
+        ></button>
+    </div>
 </div>
 
 <hr />
 
 <div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button class="p-button-text p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
-    <button
-        class="p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
-        class="p-button-sm p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-sm p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
-        class="p-button-secondary p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-secondary p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+        <button class="p-button-text p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
+        <button
+            class="p-button-text p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+            disabled="true"
+        ></button>
+    </div>
+    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+        <button
+            class="p-button-sm p-button-text p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+        ></button>
+        <button
+            class="p-button-sm p-button-text p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+            disabled="true"
+        ></button>
+    </div>
+    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+        <button
+            class="p-button-secondary p-button-text p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+        ></button>
+        <button
+            class="p-button-secondary p-button-text p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+            disabled="true"
+        ></button>
+    </div>
+    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
 
-    <button
-        class="p-button-sm p-button-secondary p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-sm p-button-secondary p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
-        class="p-button-danger p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-danger p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
-        class="p-button-sm p-button-danger p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-sm p-button-danger p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
+        <button
+            class="p-button-sm p-button-secondary p-button-text p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+        ></button>
+        <button
+            class="p-button-sm p-button-secondary p-button-text p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+            disabled="true"
+        ></button>
+    </div>
+    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+        <button
+            class="p-button-danger p-button-text p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+        ></button>
+        <button
+            class="p-button-danger p-button-text p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+            disabled="true"
+        ></button>
+    </div>
+    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+        <button
+            class="p-button-sm p-button-danger p-button-text p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+        ></button>
+        <button
+            class="p-button-sm p-button-danger p-button-text p-button-rounded"
+            pButton
+            icon="pi pi-ellipsis-v"
+            disabled="true"
+        ></button>
+    </div>
 </div>
 `;
 
