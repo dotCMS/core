@@ -230,10 +230,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         if (isExitOrBounceRate(goals) && !hasCondition(goals, "url")) {
             addUrlCondition(page, builder, goals);
-        } else if (goals.primary().getMetric().type() == MetricType.URL_PARAMETER &&
-                !hasCondition(goals, "visitBefore")) {
+        } else if (isUrlParameterOrReachPage(goals) && !hasCondition(goals, "visitBefore")) {
             addVisitBeforeCondition(page, builder, goals);
         }
+    }
+
+    private static boolean isUrlParameterOrReachPage(Goals goals) {
+        final MetricType metricType = goals.primary().getMetric().type();
+        return metricType == MetricType.URL_PARAMETER || metricType == MetricType.REACH_PAGE;
     }
 
     private static boolean isExitOrBounceRate(Goals goals) {
@@ -242,19 +246,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private void addVisitBeforeCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
+        final com.dotcms.analytics.metrics.Condition visitBefore = com.dotcms.analytics.metrics.Condition.builder()
+                .parameter("visitBefore")
+                .operator(Operator.REGEX)
+                .value(ExperimentUrlPatternCalculator.INSTANCE.calculateUrlRegexPattern(page))
+                .build();
 
-        try {
-            final com.dotcms.analytics.metrics.Condition visitBefore = com.dotcms.analytics.metrics.Condition.builder()
-                    .parameter("visitBefore")
-                    .operator(Operator.CONTAINS)
-                    .value(page.getURI())
-                    .build();
-
-            final Goals newGoal = createNewGoals(goals, visitBefore);
-            builder.goals(newGoal);
-        } catch (DotDataException e) {
-            throw new DotRuntimeException(e);
-        }
+        final Goals newGoal = createNewGoals(goals, visitBefore);
+        builder.goals(newGoal);
     }
 
     private void addUrlCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {

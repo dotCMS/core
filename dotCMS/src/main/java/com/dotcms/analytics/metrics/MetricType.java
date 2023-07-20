@@ -18,7 +18,8 @@ public enum MetricType {
     REACH_PAGE(new Builder()
             .label("Reaching a Page")
             .allRequiredParameters (Parameter.builder().name("url").build()) //TODO we can create singletons of these Parameters in order to reuse
-            .optionalParameters(Parameter.builder().name("referer").build())
+            .optionalParameters(Parameter.builder().name("referer").build(),
+                    Parameter.builder().name("visitBefore").validate(false).build())
             .availableOperators(Operator.EQUALS, Operator.CONTAINS)),
     CLICK_ON_ELEMENT(new Builder()
             .label("Clicking on Element")
