@@ -400,6 +400,14 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 this.editor.commands.unsetAllMarks();
                 this.editor.commands.clearNodes();
                 break;
+
+            case 'superscript':
+                this.editor.commands.toggleSuperscript();
+                break;
+
+            case 'subscript':
+                this.editor.commands.toggleSubscript();
+                break;
         }
     }
 
@@ -444,12 +452,6 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             },
             codeBlock: () => {
                 this.editor.chain().focus().clearNodes().toggleCodeBlock().run();
-            },
-            subscript: () => {
-                this.editor.chain().focus().clearNodes().toggleSubscript().run();
-            },
-            superscript: () => {
-                this.editor.chain().focus().clearNodes().toggleSuperscript().run();
             }
         };
 
