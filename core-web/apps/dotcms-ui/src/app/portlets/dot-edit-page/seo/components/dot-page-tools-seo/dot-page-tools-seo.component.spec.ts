@@ -1,3 +1,4 @@
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotPageToolsSeoComponent } from './dot-page-tools-seo.component';
@@ -8,7 +9,7 @@ describe('DotPageToolsSeoComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [DotPageToolsSeoComponent]
+            imports: [DotPageToolsSeoComponent, HttpClientTestingModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotPageToolsSeoComponent);

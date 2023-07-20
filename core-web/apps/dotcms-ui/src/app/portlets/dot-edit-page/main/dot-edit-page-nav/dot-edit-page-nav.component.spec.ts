@@ -10,7 +10,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
-import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotPageRender, DotPageRenderState, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
     getExperimentMock,
@@ -32,7 +32,12 @@ class ActivatedRouteMock {
                     }
                 ]
             },
-            data: { featuredFlagExperiment: true },
+            data: {
+                featuredFlags: {
+                    [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: false,
+                    [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: false
+                }
+            },
             queryParams: { experimentId: EXPERIMENT_MOCK.id }
         };
     }
@@ -84,7 +89,8 @@ describe('DotEditPageNavComponent', () => {
         'editpage.toolbar.nav.code': 'Code',
         'editpage.toolbar.nav.license.enterprise.only': 'Enterprise only',
         'editpage.toolbar.nav.layout.advance.disabled': 'Can’t edit advanced template',
-        'editpage.toolbar.nav.experiments': 'Experiments'
+        'editpage.toolbar.nav.experiments': 'Experiments',
+        'editpage.toolbar.nav.page.tools': 'Page Tools'
     });
 
     beforeEach(waitForAsync(() => {
@@ -357,7 +363,11 @@ describe('DotEditPageNavComponent', () => {
                         }
                     ]
                 },
-                data: { featuredFlag: true }
+                data: {
+                    featuredFlags: {
+                        [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: true
+                    }
+                }
             });
             fixture.detectChanges();
 
@@ -384,7 +394,7 @@ describe('DotEditPageNavComponent', () => {
                         }
                     ]
                 },
-                data: { featuredFlag: false }
+                data: { featuredFlags: { [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: false } }
             });
             fixture.detectChanges();
 
