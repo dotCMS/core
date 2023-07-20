@@ -18,10 +18,7 @@ jobs:
       - name: Run tests
         working-directory: ./tools/dotcms-cli/
         run: |
-#          docker --version
-#          docker-compose --version
-#          docker pull dotcms/dotcms:master_1bc0c86_SNAPSHOT
-#          java -version
-#          pwd
-#          ls -la
+          java -version
+          pwd
+          ./mvnw -version
           ./mvnw test
