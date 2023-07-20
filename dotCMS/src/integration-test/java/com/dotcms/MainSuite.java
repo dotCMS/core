@@ -1,8 +1,6 @@
 package com.dotcms;
 
 import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
-import com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest;
-import com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
@@ -10,7 +8,6 @@ import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -29,16 +26,7 @@ import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.bundler.URLMapBundlerTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
-import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.ContentBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.FolderBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.HostBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.LinkBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.*;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.ContentWorkflowHandlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtilTest;
@@ -72,12 +60,7 @@ import com.dotcms.publishing.manifest.ManifestReaderFactoryTest;
 import com.dotcms.publishing.manifest.ManifestUtilTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
-import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
-import com.dotcms.rendering.velocity.viewtools.FileToolTest;
-import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
-import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
-import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
-import com.dotcms.rendering.velocity.viewtools.XsltToolTest;
+import com.dotcms.rendering.velocity.viewtools.*;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
 import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
@@ -103,7 +86,6 @@ import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
-import com.dotcms.util.content.json.PopulateContentletAsJSONUtilTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
 import com.dotcms.variant.VariantFactoryTest;
@@ -117,7 +99,7 @@ import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
-import com.dotmarketing.filters.CMSUrlUtilTest;
+import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
 import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
@@ -138,20 +120,7 @@ import com.dotmarketing.portlets.rules.actionlet.PersonaActionletTest;
 import com.dotmarketing.portlets.rules.actionlet.SendRedirectActionletTest;
 import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionletTest;
 import com.dotmarketing.portlets.rules.actionlet.StopProcessingActionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.DateTimeConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.HttpMethodConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.PagesViewedConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.PersonaConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.ReferrerURLConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.RequestAttributeConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.RequestHeaderConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.RequestParameterConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.SessionAttributeConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersCountryConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersPlatformConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentURLConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.*;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
@@ -166,13 +135,7 @@ import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.*;
-import com.dotmarketing.util.ConfigTest;
-import com.dotmarketing.util.HashBuilderTest;
-import com.dotmarketing.util.MaintenanceUtilTest;
-import com.dotmarketing.util.ResourceCollectorUtilTest;
-import com.dotmarketing.util.TestConfig;
-import com.dotmarketing.util.UtilMethodsITest;
-import com.dotmarketing.util.ZipUtilTest;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
@@ -186,6 +149,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         Task230119MigrateContentToProperPersonaTagAndRemoveDupTagsTest.class,
+        CMSUrlUtilIntegrationTest.class,
         RulesAPIImplIntegrationTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
@@ -609,10 +573,8 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class,
         PopulateContentletAsJSONJobTest.class,
-        Task230426AlterVarcharLengthOfLockedByColTest.class,
-        CMSUrlUtilTest.class
+        Task230426AlterVarcharLengthOfLockedByColTest.class
 
 })
 public class MainSuite {

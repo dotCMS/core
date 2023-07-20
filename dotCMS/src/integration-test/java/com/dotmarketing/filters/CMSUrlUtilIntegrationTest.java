@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-import com.dotcms.LicenseTestUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -37,7 +36,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class CMSUrlUtilTest {
+public class CMSUrlUtilIntegrationTest {
     private static final String TEST_PATTERN = "/testpattern";
     private static ContentletAPI contentletAPI;
     private static Host site;
