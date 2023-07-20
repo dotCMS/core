@@ -53,7 +53,7 @@ services:
       - postgres
     volumes:
       - dotcms-shared:/data/shared
-      - ./license:/data/shared/assets
+#      - ./license:/data/shared/assets
     networks:
       - dotcms-net
     ports:
