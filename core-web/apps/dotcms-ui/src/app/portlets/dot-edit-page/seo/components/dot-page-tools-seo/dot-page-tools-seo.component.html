@@ -4,7 +4,7 @@
     [position]="'right'"
     [closable]="false"
     [draggable]="false"
-    header="Page Tools"
+    header="{{ 'editpage.toolbar.nav.page.tools' | dm }}"
 >
     <div class="page-tools">
         <ul class="page-tools-list">
@@ -14,7 +14,11 @@
                     href="{{ getRunnableLink(tool.runnableLink) }}"
                     target="_blank"
                 >
-                    <img class="page-tools-list__logo" src="{{ tool.icon }}" alt="seo" />
+                    <img
+                        class="page-tools-list__logo"
+                        src="{{ tool.icon }}"
+                        alt="{{ tool.title }}"
+                    />
                     <div class="page-tools-list__content">
                         <span class="page-tools-list__title">{{ tool.title }}</span>
                         <p class="page-tools-list__description">

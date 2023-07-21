@@ -7,13 +7,13 @@ import { DialogModule } from 'primeng/dialog';
 
 import { DotPageToolsService } from '@dotcms/data-access';
 import { DotPageTool } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
-    selector: 'dot-dot-page-tools-seo',
+    selector: 'dot-page-tools-seo',
     standalone: true,
-    imports: [CommonModule, DialogModule],
     providers: [DotPageToolsService],
-
+    imports: [CommonModule, DialogModule, DotMessagePipe],
     templateUrl: './dot-page-tools-seo.component.html',
     styleUrls: ['./dot-page-tools-seo.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -21,6 +21,7 @@ import { DotPageTool } from '@dotcms/dotcms-models';
 export class DotPageToolsSeoComponent implements OnInit {
     @Input() visible: boolean;
     @Input() currentPageUrl: string;
+    dialogHeader: string;
     tools$: Observable<DotPageTool[]>;
 
     constructor(private dotPageToolsService: DotPageToolsService) {}
