@@ -23,7 +23,7 @@ services:
       - 8443:8443
 
     environment:
-      CMS_JAVA_OPTS: '-Xmx1g '
+      CMS_JAVA_OPTS: '-Xmx2g '
       LANG: 'C.UTF-8'
       TZ: 'UTC'
       DB_BASE_URL: "jdbc:postgresql://postgres/dotcms"
@@ -55,6 +55,7 @@ services:
       POSTGRES_PASSWORD: dotcms
       POSTGRES_DB: dotcms
       MAX_LOCKS_PER_TRANSACTION: 60
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     ports:
       - "5432:5432"
 
