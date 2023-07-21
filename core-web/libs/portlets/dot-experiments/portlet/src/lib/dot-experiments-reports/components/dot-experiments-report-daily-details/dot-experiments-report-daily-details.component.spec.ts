@@ -57,6 +57,7 @@ describe('DotExperimentsReportDailyDetailsComponent', () => {
 
         spectator.setInput('detailData', [variant]);
         spectator.setInput('experimentId', EXPERIMENT_ID);
+        spectator.setInput('hasEnoughSessions', true);
 
         jest.spyOn(store, 'promoteVariant');
 
