@@ -23,7 +23,7 @@ services:
       - 8443:8443
 
     environment:
-      CMS_JAVA_OPTS: '-Xmx2g '
+      CMS_JAVA_OPTS: '-Xmx1g '
       LANG: 'C.UTF-8'
       TZ: 'UTC'
       DB_BASE_URL: "jdbc:postgresql://postgres/dotcms"
