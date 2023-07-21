@@ -115,6 +115,11 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         });
     }
 
+    /**
+     * Get current URL
+     * @returns string
+     * @memberof DotEditPageMainComponent
+     * */
     public getCurrentURL(): string {
         return `${this.hostName}${this.pageUrl}?language_id=${this.languageId}`;
     }
