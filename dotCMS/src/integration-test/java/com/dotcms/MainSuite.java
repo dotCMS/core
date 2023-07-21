@@ -38,6 +38,7 @@ import com.dotcms.experiments.business.ExperimentAPIImpIT;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIT;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.FolderIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -495,6 +496,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
         Task211012AddCompanyDefaultLanguageTest.class,
         HostIntegrityCheckerTest.class,
+        FolderIntegrityCheckerTest.class,
         MetaWebInterceptorTest.class,
         BrowserUtilTest.class,
         Task211101AddContentletAsJsonColumnTest.class,
