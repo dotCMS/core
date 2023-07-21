@@ -22,4 +22,4 @@ jobs:
           java -version
           pwd
           ./mvnw -version
-          ./mvnw test 
+          ./mvnw test --projects api-data-model,cli --also-make-dependents

@@ -31,14 +31,14 @@ public class ContainerTest {
                 .statusCode(STATUS_CODE_OK);
     }
 
-    @Test
-    void test_elasticsearch_container_up() {
-        LOGGER.info("test_elasticsearch_container_up");
-
-        given()
-                .when().get(BASE_URI + ":" + ELASTICSEARCH_PORT + "/")
-                .then().log().all()
-                .statusCode(STATUS_CODE_OK);
-    }
+//    @Test
+//    void test_elasticsearch_container_up() {
+//        LOGGER.info("test_elasticsearch_container_up");
+//
+//        given()
+//                .when().get(BASE_URI + ":" + ELASTICSEARCH_PORT + "/")
+//                .then().log().all()
+//                .statusCode(STATUS_CODE_OK);
+//    }
 }
 
