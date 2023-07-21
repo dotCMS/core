@@ -11,6 +11,26 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
+/**
+ * @{link ParameterValuesTransformer} to transform the {@link QueryParameter} into String to be used
+ * on {@link com.dotcms.analytics.metrics.AbstractCondition.Operator}.
+ *
+ * We need to transform any values type to String to be use on the Operators, so what this class do
+ * is the follow:
+ *
+ * - Read the {@link Condition}'s value, it should come with the follow Json format:
+ *
+ * <code>{
+ *     name: [Parameter Name],
+ *     value: [Parameter Value]
+ * }</code>
+ *
+ * - Filter the set of QueryParameters by the name read from {@link Condition}'s value.
+ * - Return just the value of the QueryParameters filtered.
+ *
+ * @see QueryParameterValuesTransformer#transform(Collection, AbstractCondition)
+ */
 public class QueryParameterValuesTransformer implements ParameterValuesTransformer<QueryParameter> {
 
     @Override

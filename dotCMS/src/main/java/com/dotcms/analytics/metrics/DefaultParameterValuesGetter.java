@@ -3,12 +3,11 @@ package com.dotcms.analytics.metrics;
 import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
 import com.dotcms.experiments.business.result.Event;
 
-import io.jsonwebtoken.lang.Collections;
 import java.util.Collection;
 
 import com.google.common.collect.ImmutableSet;
-import java.util.Collection;
-import java.util.Set;
+
+
 
 /**
  * Take the value from the {@link Event}'s attribute that has the same name that the {@link Parameter#name()}

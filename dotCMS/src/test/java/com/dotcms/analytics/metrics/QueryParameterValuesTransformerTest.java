@@ -9,6 +9,10 @@ import java.util.Collection;
 import org.junit.Assert;
 import org.junit.Test;
 
+
+/**
+ * Test of {@link QueryParameterValuesTransformer}
+ */
 public class QueryParameterValuesTransformerTest {
 
     /**

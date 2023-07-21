@@ -6,7 +6,7 @@ FROM ubuntu:20.04 as base-builder
 WORKDIR /srv
 
 # Defining default Java, can be any java provided by sdkman
-ARG JAVA_VERSION="11.0.16-amzn"
+ARG JAVA_VERSION="11.0.17-amzn"
 
 ENV JAVA_OUTPUT_DIR="/java"
 ENV DEBIAN_FRONTEND=noninteractive
@@ -45,7 +45,7 @@ RUN bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
     /root/.sdkman/candidates/java/$JAVA_VERSION/bin/jlink \
     --verbose \
     --add-modules \
-        java.base,jdk.crypto.ec,jdk.jdwp.agent,jdk.management,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi,jdk.compiler,jdk.zipfs,jdk.naming.dns,jdk.localedata \
+        java.base,jdk.crypto.ec,jdk.jdwp.agent,jdk.management,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi,jdk.compiler,jdk.zipfs,jdk.naming.dns,jdk.localedata,java.xml,jdk.xml.dom \
     --compress 2 \
     --no-header-files \
     --no-man-pages \

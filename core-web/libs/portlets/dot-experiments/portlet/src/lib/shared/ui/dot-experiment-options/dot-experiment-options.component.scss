@@ -15,7 +15,7 @@
         header {
             padding: $spacing-4;
             gap: $spacing-1;
-            flex-direction: column;
+            align-items: baseline;
             display: flex;
             cursor: pointer;
 
@@ -33,6 +33,11 @@
             p {
                 font-size: $font-size-md;
                 color: $color-palette-gray-700;
+            }
+
+            i {
+                font-size: $font-size-md;
+                color: $color-palette-secondary;
             }
         }
 

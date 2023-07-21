@@ -8575,23 +8575,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletStateException
      */
     private Contentlet findWorkingContentlet(Contentlet content)
-            throws DotSecurityException, DotDataException, DotContentletStateException {
-        Contentlet con = null;
-        List<Contentlet> workingCons = new ArrayList<>();
+            throws DotDataException, DotContentletStateException {
+        Contentlet workingCons = null;
         if (InodeUtils.isSet(content.getIdentifier())) {
-            workingCons = contentFactory.findContentletsByIdentifier(content.getIdentifier(), false,
-                    content.getLanguageId());
+            workingCons = contentFactory.findContentletByIdentifier(content.getIdentifier(), false,
+                    content.getLanguageId(), content.getVariantId());
+
+            if (!UtilMethods.isSet(workingCons)) {
+                workingCons = contentFactory.findContentletByIdentifier(content.getIdentifier(), false,
+                        content.getLanguageId(), VariantAPI.DEFAULT_VARIANT.name());
+            }
         }
-        if (workingCons.size() > 0) {
-            con = workingCons.get(0);
-        }
-        if (workingCons.size() > 1) {
-            Logger.warn(this,
-                    "Multiple working contentlets found for identifier:" + content.getIdentifier()
-                            + " with languageid:" + content.getLanguageId()
-                            + " returning the lastest modified.");
-        }
-        return con;
+
+        return workingCons;
     }
 
     /**

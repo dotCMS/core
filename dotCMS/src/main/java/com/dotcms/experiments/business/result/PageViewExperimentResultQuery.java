@@ -24,13 +24,12 @@ import com.dotcms.experiments.model.Experiment;
  *     }
  * </code>
  *
- * This Query is merged with the static part create in {@link ExperimentResultQueryFactory}
+ * This Query is merged with the static part create in {@link ExperimentResultsQueryFactory}
  *
- * @see ExperimentResultQueryFactory
- * @see MetricExperimentResultQuery
+ * @see ExperimentResultsQueryFactory
+ * @see MetricExperimentResultsQuery
  */
-public class PageViewExperimentResultQuery implements  MetricExperimentResultQuery {
-
+public class PageViewExperimentResultQuery implements  MetricExperimentResultsQuery {
     @Override
     public CubeJSQuery getCubeJSQuery(final Experiment experiment) {
 
