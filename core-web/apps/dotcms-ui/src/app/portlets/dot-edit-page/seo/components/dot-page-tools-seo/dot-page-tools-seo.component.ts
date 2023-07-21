@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, NgForOf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 
 import { DialogModule } from 'primeng/dialog';
@@ -13,7 +13,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-page-tools-seo',
     standalone: true,
     providers: [DotPageToolsService],
-    imports: [CommonModule, DialogModule, DotMessagePipe],
+    imports: [NgForOf, AsyncPipe, DialogModule, DotMessagePipe],
     templateUrl: './dot-page-tools-seo.component.html',
     styleUrls: ['./dot-page-tools-seo.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -29,6 +29,12 @@ export class DotPageToolsSeoComponent implements OnInit {
     ngOnInit() {
         this.tools$ = this.dotPageToolsService.get();
     }
+
+    /**
+     * This method is used to get the runnable link for the tool
+     * @param url
+     * @returns
+     */
 
     getRunnableLink(url: string): string {
         return url.replace('{currentPageUrl}', this.currentPageUrl);
