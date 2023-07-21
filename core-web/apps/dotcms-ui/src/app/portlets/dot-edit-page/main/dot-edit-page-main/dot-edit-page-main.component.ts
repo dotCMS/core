@@ -22,12 +22,11 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     pageState$: Observable<DotPageRenderState>;
     private pageUrl: string;
     private languageId: string;
-    private host: string;
+    private hostName: string;
     private pageIsSaved = false;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly customEventsHandler;
-
-    visible: boolean;
+    togglePageTools: boolean;
 
     constructor(
         private route: ActivatedRoute,
@@ -65,7 +64,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
                 this.titleService.setTitle(`${newTitle}${subtTitle ? ` - ${subtTitle}` : ''}`);
                 this.pageUrl = page.pageURI;
                 this.languageId = page.languageId.toString();
-                this.host = page.hostName;
+                this.hostName = page.hostName;
             })
         );
 
@@ -73,7 +72,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     }
 
     showPageTools() {
-        this.visible = !this.visible;
+        this.togglePageTools = !this.togglePageTools;
     }
 
     ngOnDestroy(): void {
@@ -117,6 +116,6 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     }
 
     public getCurrentURL(): string {
-        return `${this.host}${this.pageUrl}?language_id=${this.languageId}`;
+        return `${this.hostName}${this.pageUrl}?language_id=${this.languageId}`;
     }
 }
