@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-
 /**
  * @{link ParameterValuesTransformer} to transform the {@link QueryParameter} into String to be used
  * on {@link com.dotcms.analytics.metrics.AbstractCondition.Operator}.

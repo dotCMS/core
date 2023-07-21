@@ -29,6 +29,7 @@ import com.dotcms.experiments.model.Experiment;
  * @see ExperimentResultsQueryFactory
  * @see MetricExperimentResultsQuery
  */
+
 public class PageViewExperimentResultQuery implements  MetricExperimentResultsQuery {
     @Override
     public CubeJSQuery getCubeJSQuery(final Experiment experiment) {

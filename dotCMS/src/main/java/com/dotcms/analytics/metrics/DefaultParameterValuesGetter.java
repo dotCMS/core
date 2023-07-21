@@ -2,11 +2,8 @@ package com.dotcms.analytics.metrics;
 
 import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
 import com.dotcms.experiments.business.result.Event;
-
 import java.util.Collection;
-
 import com.google.common.collect.ImmutableSet;
-
 
 
 /**

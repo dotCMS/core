@@ -117,7 +117,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(DataProviderRunner.class)
 public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
-
+    
     private static final String CUBEJS_SERVER_IP = "127.0.0.1";
     private static final int CUBEJS_SERVER_PORT = 5000;
     private static final String CUBEJS_SERVER_URL = String.format("http://%s:%s", CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
@@ -1798,30 +1798,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
-    private static Experiment createExperimentWithUrlParameterGoal(
-            final HTMLPageAsset experimentPage) {
-        return createExperimentWithUrlParameterGoal(experimentPage, Operator.EQUALS,
-                "{\"name\":\"testName\", \"value\":\"testValue\"}");
-    }
-
-    private static Experiment createExperimentWithUrlParameterGoal(
-            final HTMLPageAsset experimentPage, final Operator operator, final String value) {
-
-        final Condition queryParameterCondition = Condition.builder()
-                .parameter("queryParameter")
-                .value(value)
-                .operator(operator)
-                .build();
-
-        final Metric metric = Metric.builder()
-                .name("Testing Metric")
-                .type(MetricType.URL_PARAMETER)
-                .addConditions(queryParameterCondition)
-                .build();
-
-        return createExperiment(experimentPage, metric);
-    }
-
     /**
      * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
@@ -2914,6 +2890,30 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    private static Experiment createExperimentWithUrlParameterGoal(
+            final HTMLPageAsset experimentPage) {
+        return createExperimentWithUrlParameterGoal(experimentPage, Operator.EQUALS,
+                "{\"name\":\"testName\", \"value\":\"testValue\"}");
+    }
+
+    private static Experiment createExperimentWithUrlParameterGoal(
+            final HTMLPageAsset experimentPage, final Operator operator, final String value) {
+
+        final Condition queryParameterCondition = Condition.builder()
+                .parameter("queryParameter")
+                .value(value)
+                .operator(operator)
+                .build();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.URL_PARAMETER)
+                .addConditions(queryParameterCondition)
+                .build();
+
+        return createExperiment(experimentPage, metric);
+    }
+
     @DataProvider
     public static String[] indexPaths() throws Exception {
         return new String[]{
@@ -3908,7 +3908,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .next();
         APILocator.getExperimentsAPI().getResults(experiment, APILocator.systemUser());
     }
-
+    
     /**
      * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
      * When: Try to save a Experiment with a Bounce Rate goal and it does not have ane url parameter set

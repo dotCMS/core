@@ -1,6 +1,5 @@
 package com.dotcms.analytics.metrics;
 
-
 /**
  * Represents a Url Query Parameter
  */

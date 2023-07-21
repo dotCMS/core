@@ -1,6 +1,5 @@
 package com.dotcms.analytics.metrics;
 
-
 import static com.dotcms.util.HttpRequestDataUtil.getQueryParams;
 
 import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
@@ -8,7 +7,10 @@ import com.dotcms.experiments.business.result.Event;
 import com.dotmarketing.exception.DotRuntimeException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -25,5 +27,7 @@ public class QueryParameterValuesGetter implements ParameterValueGetter<QueryPar
         return getQueryParams(urlValue).entrySet().stream()
                 .map(entry -> new QueryParameter(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
+
     }
+
 }
