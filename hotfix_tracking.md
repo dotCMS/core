@@ -87,3 +87,5 @@ This maintenance release includes the following code fixes:
 69. https://github.com/dotCMS/core/issues/25293 : Date format has changed for fields in newer versions of dotCMS #25293
 70. https://github.com/dotCMS/core/issues/24415 : Related content doesn't match with Content Language. #24415
 71. https://github.com/dotCMS/core/issues/25258 : WYSIWYG not adding images when it's not default lang #25258
+72. https://github.com/dotCMS/core/issues/24840 : Clean up dojo folder #24840
+73.
