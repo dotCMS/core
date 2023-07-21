@@ -5,6 +5,7 @@ import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfi
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -27,11 +28,13 @@ public class SecretTool implements ViewTool {
 
     private InternalContextAdapterImpl internalContextAdapter;
     private Context context;
+	private HttpServletRequest request;
 
 	@Override
 	public void init(final Object initData) {
 
         final ViewContext context = (ViewContext) initData;
+		this.request = context.getRequest();
         this.context = context.getVelocityContext();
 	}
 
@@ -106,7 +109,9 @@ public class SecretTool implements ViewTool {
     private static final boolean ENABLE_SCRIPTING = Config.getBooleanProperty("ENABLE_SCRIPTING", false);
 
     /**
-     * Determine if the template can be evaluated by the user with the role SCRIPTING_DEVELOPER
+     * Test 2 things.
+	 * 1) see if the user has the scripting role
+	 * 2) otherwise check if the last modified user has the scripting role
      * @return boolean
      */
     protected boolean canUserEvaluate() {
@@ -118,16 +123,30 @@ public class SecretTool implements ViewTool {
         }
 
         try {
-            this.internalContextAdapter = new InternalContextAdapterImpl(context);
-            final String fieldResourceName = this.internalContextAdapter.getCurrentTemplateName();
-            final String contentletFileAssetInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
-            final Contentlet contentlet = APILocator.getContentletAPI().find(contentletFileAssetInode, APILocator.systemUser(), true);
-            final User user      = APILocator.getUserAPI().loadUserById(contentlet.getModUser(), APILocator.systemUser(), true);
-            final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
-            return APILocator.getRoleAPI().doesUserHaveRole(user, scripting);
+
+			boolean hasScriptingRole = false;
+			final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
+			final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+			// try with the current user
+			if (null != user) {
+
+				hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(user, scripting);
+			}
+
+			if (!hasScriptingRole) {
+
+				this.internalContextAdapter    = new InternalContextAdapterImpl(context);
+				final String fieldResourceName = this.internalContextAdapter.getCurrentTemplateName();
+				final String contentletFileAssetInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
+				final Contentlet contentlet = APILocator.getContentletAPI().find(contentletFileAssetInode, APILocator.systemUser(), true);
+				final User lastModifiedUser = APILocator.getUserAPI().loadUserById(contentlet.getModUser(), APILocator.systemUser(), true);
+				hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, scripting);
+			}
+
+			return hasScriptingRole;
         } catch(Exception e){
             Logger.warn(this.getClass(), "Scripting called with error" + e);
             return false;
         }
-    }
+    } // canUserEvaluate.
 }
