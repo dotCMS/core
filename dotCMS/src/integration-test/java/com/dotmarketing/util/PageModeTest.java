@@ -13,7 +13,6 @@ import com.google.common.collect.ImmutableMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.eclipse.persistence.internal.oxm.mappings.Login;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
