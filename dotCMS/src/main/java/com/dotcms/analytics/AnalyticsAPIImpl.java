@@ -72,6 +72,11 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     public AccessToken getAccessToken(final AnalyticsApp analyticsApp,
                                       final AccessTokenFetchMode fetchMode) throws AnalyticsException {
         if (fetchMode == AccessTokenFetchMode.FORCE_RENEW) {
+            Logger.info(
+                this,
+                String.format(
+                    "Forcing ACCESS_TOKEN refresh for clientId %s",
+                    analyticsApp.getAnalyticsProperties().clientId()));
             // renew it right away
             return refreshAccessToken(analyticsApp);
         }
@@ -353,16 +358,17 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      */
     private AccessToken resolveToken(final AnalyticsApp analyticsApp, final boolean force) throws AnalyticsException {
         final AccessToken accessToken = getAccessToken(analyticsApp, AccessTokenFetchMode.BACKEND_FALLBACK);
+        final String clientId = analyticsApp.getAnalyticsProperties().clientId();
 
         if (Objects.isNull(accessToken) && !force) {
             throw new AnalyticsException(String.format(
                 "ACCESS_TOKEN could not be fetched for clientId %s from %s",
-                analyticsApp.getAnalyticsProperties().clientId(),
+                clientId,
                 analyticsIdpUrl));
         }
 
         final TokenStatus tokenStatus = AnalyticsHelper.get().resolveTokenStatus(accessToken);
-        if (tokenStatus.matchesAny(TokenStatus.EXPIRED, TokenStatus.NONE) && force) {
+        if (force || tokenStatus.matchesAny(TokenStatus.EXPIRED, TokenStatus.NONE)) {
             return getAccessToken(analyticsApp, AccessTokenFetchMode.FORCE_RENEW);
         }
 
