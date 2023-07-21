@@ -37,6 +37,7 @@ jobs:
         run: |
           BUILD_ID=$(basename "${{ github.ref }}")
           BUILD_HASH=$(git log -1 --pretty=%h)
+          BUILD_HASH=${BUILD_HASH::7}
           eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
           DOTCMS_VERSION="${dotcmsReleaseVersion}"
           PLATFORMS='linux/amd64'

@@ -32,6 +32,7 @@ jobs:
             RELEASE_VERSION=${{ github.event.release.tag_name }}
           else
             BUILD_HASH=$(git log -1 --pretty=%h)
+            BUILD_HASH=${BUILD_HASH::7}
             eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
             RELEASE_VERSION="${dotcmsReleaseVersion}"
           fi
@@ -81,6 +82,7 @@ jobs:
             RELEASE_VERSION=${RELEASE_VERSION//v/}
           else
             BUILD_HASH=$(git log -1 --pretty=%h)
+            BUILD_HASH=${BUILD_HASH::7}
             eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
             RELEASE_VERSION="${dotcmsReleaseVersion}"
           fi
@@ -151,15 +153,15 @@ jobs:
             BUILD_FROM=TAG
             BUILD_ID=${{ env.BUILD_ID }}
         if: success()
-      - name: Slack Notification
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
-          SLACK_USERNAME: dotBot
-          SLACK_TITLE: "Important news!"
-          SLACK_MSG_AUTHOR: " "
-          MSG_MINIMAL: true
-          SLACK_FOOTER: ""
-          SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - ${{ env.BUILD_ID }} :rocket:"
-        if: success() && env.IS_RELEASE == 'true'
+#      - name: Slack Notification
+#        uses: rtCamp/action-slack-notify@v2
+#        env:
+#          SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+#          SLACK_USERNAME: dotBot
+#          SLACK_TITLE: "Important news!"
+#          SLACK_MSG_AUTHOR: " "
+#          MSG_MINIMAL: true
+#          SLACK_FOOTER: ""
+#          SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
+#          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - ${{ env.BUILD_ID }} :rocket:"
+#        if: success() && env.IS_RELEASE == 'true'
