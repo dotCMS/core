@@ -11,7 +11,8 @@ on:
 jobs:
   cli_tests:
     name: CLI tests
-    runs-on: ubuntu-latest
+#    runs-on: ubuntu-latest
+    runs-on: macos-13
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
