@@ -362,7 +362,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         }
 
         final TokenStatus tokenStatus = AnalyticsHelper.get().resolveTokenStatus(accessToken);
-        if (tokenStatus.matchesAny(TokenStatus.EXPIRED, TokenStatus.NONE) && force) {
+        if (force || tokenStatus.matchesAny(TokenStatus.EXPIRED, TokenStatus.NONE)) {
             return getAccessToken(analyticsApp, AccessTokenFetchMode.FORCE_RENEW);
         }
 
