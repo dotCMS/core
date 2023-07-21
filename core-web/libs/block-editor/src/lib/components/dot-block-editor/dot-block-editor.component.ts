@@ -152,10 +152,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                     ]
                 });
 
-                this.editor.on('create', () => this.updateChartCount());
+                this.editor.on('create', () => this.updateCharCount());
                 this.subject
                     .pipe(takeUntil(this.destroy$), debounceTime(250))
-                    .subscribe(() => this.updateChartCount());
+                    .subscribe(() => this.updateCharCount());
 
                 this.editor.on('transaction', ({ editor }) => {
                     this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
@@ -172,11 +172,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.valueChange.emit(value);
     }
 
-    private updateChartCount(): void {
+    private updateCharCount(): void {
         const tr = this.editor.state.tr.setMeta('addToHistory', false);
 
         if (this.characterCount.characters() != 0) {
-            tr.step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
+            tr.step(new SetDocAttrStep('charCount', this.characterCount.characters()))
                 .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
                 .step(new SetDocAttrStep('readingTime', this.readingTime));
         } else {
