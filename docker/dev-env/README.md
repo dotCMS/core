@@ -30,7 +30,7 @@ wget --header="$AUTH_HEADER" -t 1 -O dotcms_db.sql.gz $DOTCMS_SOURCE_ENVIRONMENT
 ## Running
 ```
 export TOK=XXXXXXXXXXXXXXXXXXXXXXXX.eXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-## Build and Run with a Token
+## Build and Run with a dotCMS API Token
 
 docker build . -t dotcms/dev &&\
 docker run -it \
