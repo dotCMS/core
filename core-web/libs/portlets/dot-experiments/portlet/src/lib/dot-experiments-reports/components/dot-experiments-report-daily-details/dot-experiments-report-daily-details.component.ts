@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -16,13 +17,14 @@ import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-
     selector: 'dot-experiments-report-daily-details',
     standalone: true,
     imports: [
-        ButtonModule,
+        NgIf,
+        NgClass,
+        TitleCasePipe,
         DotExperimentsDetailsTableComponent,
         DotMessagePipe,
         TagModule,
-        NgClass,
-        TitleCasePipe,
-        NgIf
+        ButtonModule,
+        ConfirmPopupModule
     ],
     templateUrl: './dot-experiments-report-daily-details.component.html',
     styleUrls: ['./dot-experiments-report-daily-details.component.scss'],

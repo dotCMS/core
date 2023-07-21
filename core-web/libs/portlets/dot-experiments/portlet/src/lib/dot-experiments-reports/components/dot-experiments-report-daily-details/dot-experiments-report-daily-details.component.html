@@ -1,6 +1,6 @@
 <dot-experiments-details-table
     [data]="detailData"
-    [isEmpty]="hasEnoughSessions"
+    [isEmpty]="!hasEnoughSessions"
     [title]="'experiments.reports.resume' | dm"
 >
     <ng-template #headers>
@@ -113,3 +113,4 @@
         </div>
     </ng-template>
 </dot-experiments-details-table>
+<p-confirmPopup></p-confirmPopup>
