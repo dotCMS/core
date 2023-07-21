@@ -405,6 +405,7 @@
 
 		//Invoked when a contentlet is selected to fill the contentlet data in the table
 		function <%= relationJsName %>_addRelationshipCallback(selectedData){
+			selectedData = selectedData.filter(sibling => sibling.langId == <%= contentlet.getLanguageId() %>);
 			var data = new Array();
 			var dataToRelate = new Array();
             var entries = numberOfRows<%= relationJsName%>();
