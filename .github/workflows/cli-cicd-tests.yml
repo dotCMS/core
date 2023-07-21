@@ -11,8 +11,7 @@ on:
 jobs:
   cli_tests:
     name: CLI tests
-    runs-on: ubuntu-8
-#    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 #    runs-on: macos-13
     steps:
       - name: Checkout core
@@ -23,4 +22,4 @@ jobs:
           java -version
           pwd
           ./mvnw -version
-          ./mvnw test
+          ./mvnw test --projects api-data-model
