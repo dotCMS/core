@@ -2,8 +2,9 @@
 version: "3.7"
   # https://docs.docker.com/compose/compose-file/
 networks:
-  db_net:
-  es_net:
+  dot_net:
+#  db_net:
+#  es_net:
 
 volumes:
   cms-shared:
@@ -43,8 +44,9 @@ services:
         source: ./license/license.dat
         target: /data/local/dotsecure/license/license.dat
     networks:
-      - db_net
-      - es_net
+      - dot_net
+#      - db_net
+#      - es_net
 
   postgres:
     image: postgres:15
@@ -59,7 +61,8 @@ services:
     tmpfs:
       - /var/lib/postgresql/data:rw
     networks:
-      - db_net
+      - dot_net
+#        - db_net
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
@@ -69,7 +72,8 @@ services:
       - discovery.type=single-node
       - data
       - bootstrap.memory_lock=true
-      - CLI_JAVA_OPTS="-Xms1g -Xmx1g"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx1g"
+#      - CLI_JAVA_OPTS="-Xms1g -Xmx1g"
     ulimits:
       memlock:
         soft: -1 # Set memlock to unlimited (no soft or hard limit)
@@ -81,4 +85,5 @@ services:
       - 9200:9200
       - 9600:9600
     networks:
-      - es_net
+      - dot_net
+#      - es_net
