@@ -11,6 +11,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -19,6 +20,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import net.jodah.failsafe.CircuitBreaker;
@@ -51,7 +53,7 @@ class MonitorHelper {
     private static final long   DEFAULT_ASSET_FS_TIMEOUT    = 1000;
     private static final long   DEFAULT_INDEX_TIMEOUT       = 1000;
     private static final long   DEFAULT_DB_TIMEOUT          = 1000;
-    private static final String[] DEFAULT_IP_ACL_VALUE        = new String[] {"127.0.0.1/32","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16","0:0:0:0:0:0:0:1"};
+    private static final String[] DEFAULT_IP_ACL_VALUE        = new String[] {"127.0.0.1/32","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16"};
 
 
     private static final String SYSTEM_STATUS_API_IP_ACL           = "SYSTEM_STATUS_API_IP_ACL";
@@ -63,28 +65,40 @@ class MonitorHelper {
 
     private static final int SYSTEM_STATUS_CACHE_RESPONSE_SECONDS = Config.getIntProperty("SYSTEM_STATUS_CACHE_RESPONSE_SECONDS",10);
     
-    
+    private static final String[] ACLS_IPS = Config.getStringArrayProperty(SYSTEM_STATUS_API_IP_ACL, DEFAULT_IP_ACL_VALUE);
+
+
+    private static final long localFSTimeout = Config.getLongProperty(SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT, DEFAULT_LOCAL_FS_TIMEOUT);
+    private static final long cacheTimeout  = Config.getLongProperty(SYSTEM_STATUS_API_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT);
+    private static final long assetTimeout = Config.getLongProperty(SYSTEM_STATUS_API_ASSET_FS_TIMEOUT, DEFAULT_ASSET_FS_TIMEOUT);
+    private static final long indexTimeout = Config.getLongProperty(SYSTEM_STATUS_API_INDEX_TIMEOUT, DEFAULT_INDEX_TIMEOUT);
+    private static final long dbTimeout = Config.getLongProperty(SYSTEM_STATUS_API_DB_TIMEOUT, DEFAULT_DB_TIMEOUT);
+
     
     boolean accessGranted = false;
     boolean useExtendedFormat = false;
 
     MonitorHelper(final HttpServletRequest request) throws UnknownHostException {
-        this.useExtendedFormat = request.getParameter("extended")!=null;
+        try {
+            this.useExtendedFormat = request.getParameter("extended") != null;
 
-        // set this.accessGranted
-        final String[] aclIPs = Config.getStringArrayProperty(SYSTEM_STATUS_API_IP_ACL, DEFAULT_IP_ACL_VALUE);
+            // set this.accessGranted
 
-        final String clientIP = HttpRequestDataUtil.getIpAddress(request).toString().split(StringPool.SLASH)[1];
-        if(aclIPs == null) {
-            this.accessGranted = true;
-        }
-        else {
-            for(String aclIP : aclIPs) {
-                if(IPUtils.isIpInCIDR(clientIP, aclIP)){
-                    this.accessGranted = true;
-                    break;
+
+            final String clientIP = HttpRequestDataUtil.getIpAddress(request).toString().split(StringPool.SLASH)[1];
+            if (ACLS_IPS == null || ACLS_IPS.length == 0) {
+                this.accessGranted = true;
+            } else {
+                for (String aclIP : ACLS_IPS) {
+                    if (IPUtils.isIpInCIDR(clientIP, aclIP)) {
+                        this.accessGranted = true;
+                        break;
+                    }
                 }
             }
+        }catch(Exception e){
+            Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
+            throw new DotRuntimeException(e);
         }
     }
 
@@ -103,12 +117,6 @@ class MonitorHelper {
         final MonitorStats monitorStats = new MonitorStats();
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
-
-        final long localFSTimeout = Config.getLongProperty(SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT, DEFAULT_LOCAL_FS_TIMEOUT);
-        final long cacheTimeout  = Config.getLongProperty(SYSTEM_STATUS_API_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT);
-        final long assetTimeout = Config.getLongProperty(SYSTEM_STATUS_API_ASSET_FS_TIMEOUT, DEFAULT_ASSET_FS_TIMEOUT);
-        final long indexTimeout = Config.getLongProperty(SYSTEM_STATUS_API_INDEX_TIMEOUT, DEFAULT_INDEX_TIMEOUT);
-        final long dbTimeout = Config.getLongProperty(SYSTEM_STATUS_API_DB_TIMEOUT, DEFAULT_DB_TIMEOUT);
 
         monitorStats.subSystemStats.isDBHealthy = isDBHealthy(dbTimeout);
         monitorStats.subSystemStats.isLiveIndexHealthy = isIndexHealthy(indiciesInfo.getLive(), indexTimeout);
