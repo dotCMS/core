@@ -329,21 +329,21 @@ jobs:
           echo '"trigger_event_name": "'$GITHUB_EVENT_NAME'",' >> workflow-data.json
           echo '"source_repository": "'$GITHUB_REPOSITORY'",' >> workflow-data.json
 
-          echo '"merge_sha": "'${{ github.sha }}'",' >> workflow-data.js
+          echo '"merge_sha": "'${{ github.sha }}'",' >> workflow-data.json
           
-          echo '"base_sha": "'${{ github.event.pull_request.base.sha }}'",' >> workflow-data.js
-          echo '"base_branch": "'${{ github.event.pull_request.base.sha }}'",' >> workflow-data.js
-          echo '"base_author": "'${{ github.event.pull_request.base.user.login }}'",' >> workflow-data.js
+          echo '"base_sha": "'${{ github.event.pull_request.base.sha }}'",' >> workflow-data.json
+          echo '"base_branch": "'${{ github.event.pull_request.base.sha }}'",' >> workflow-data.json
+          echo '"base_author": "'${{ github.event.pull_request.base.user.login }}'",' >> workflow-data.json
           
           echo '"head_author": "'${{ github.event.pull_request.head.user.login }}'",' >> workflow-data.json
           echo '"head_name": "'${{ github.event.pull_request.head.ref }}'",' >> workflow-data.json
           echo '"head_sha": "'${{ github.event.pull_request.head.sha }}'",' >> workflow-data.json
           
-          echo '"pr_id": "'${{ github.event.pull_request.id }}'",' >> workflow-data.js
-          echo '"pr_number": "'${{ github.event.pull_request.number }}'",' >> workflow-data.js
-          echo '"pr_title": "'${{ github.event.pull_request.title }}'",' >> workflow-data.js
-          echo '"pr_author": "'${{ github.event.pull_request.user.login }}'",' >> workflow-data.js
-          echo '"pr_merge_state": "'${{ github.event.pull_request.mergeable_state }}'",' >> workflow-data.js
+          echo '"pr_id": "'${{ github.event.pull_request.id }}'",' >> workflow-data.json
+          echo '"pr_number": "'${{ github.event.pull_request.number }}'",' >> workflow-data.json
+          echo '"pr_title": "'${{ github.event.pull_request.title }}'",' >> workflow-data.json
+          echo '"pr_author": "'${{ github.event.pull_request.user.login }}'",' >> workflow-data.json
+          echo '"pr_merge_state": "'${{ github.event.pull_request.mergeable_state }}'",' >> workflow-data.json
           
           
           echo '"build_reports": [' >> workflow-data.json
