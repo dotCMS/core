@@ -18,7 +18,7 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 
-export const DEBOUNCE_TIME = 5000;
+export const AUTOSAVE_DEBOUNCE_TIME = 5000;
 
 @Component({
     selector: 'dot-template-builder',
@@ -74,7 +74,7 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     saveTemplateDebounce() {
         // Approach based on DotEditLayoutComponent, see that component for more info
         this.templateUpdate$
-            .pipe(debounceTime(DEBOUNCE_TIME), takeUntil(this.destroy$))
+            .pipe(debounceTime(AUTOSAVE_DEBOUNCE_TIME), takeUntil(this.destroy$))
             .subscribe((templateItem) => {
                 this.saveAndPublish.emit(templateItem);
             });
