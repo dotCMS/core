@@ -19,8 +19,8 @@ jobs:
       - name: Run tests
         working-directory: ./tools/dotcms-cli/
         run: |
-          java -version
           pwd
+          java -version
           ./mvnw -version
-          ./mvnw test --projects api-data-model
-# ,cli --also-make-dependents
+          ./mvnw test
+# --projects api-data-model,cli --also-make-dependents

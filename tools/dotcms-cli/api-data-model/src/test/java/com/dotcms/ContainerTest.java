@@ -11,12 +11,12 @@ import static io.restassured.RestAssured.given;
 @QuarkusTestResource(ContainerResource.class)
 public class ContainerTest {
 
-    private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ContainerTest.class);
-    private static final String BASE_URI = "http://localhost";
-    private static final String DOTCMS_PORT = "8080";
-    private static final String ELASTICSEARCH_PORT = "9200";
-
-    private static final int STATUS_CODE_OK = 200;
+//    private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ContainerTest.class);
+//    private static final String BASE_URI = "http://localhost";
+//    private static final String DOTCMS_PORT = "8080";
+//    private static final String ELASTICSEARCH_PORT = "9200";
+//
+//    private static final int STATUS_CODE_OK = 200;
 
     /*
      * TODO: Parameterize
