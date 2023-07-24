@@ -16,11 +16,18 @@ jobs:
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
-      - name: Run tests
+      - name: Run api-data-model tests
         working-directory: ./tools/dotcms-cli/
         run: |
-          pwd
-          java -version
-          ./mvnw -version
-          ./mvnw test
+#          pwd
+#          java -version
+#          ./mvnw -version
+          ./mvnw test api-data-model
+      - name: Run cli tests
+        working-directory: ./tools/dotcms-cli/
+        run: |
+#          pwd
+#          java -version
+#          ./mvnw -version
+          ./mvnw test cli --also-make-dependents
 # --projects api-data-model,cli --also-make-dependents
