@@ -1,5 +1,7 @@
 package com.dotcms.analytics.metrics;
 
+
+import java.util.Collection;
 import com.dotcms.experiments.business.result.Event;
 import java.util.Collection;
 
@@ -8,6 +10,7 @@ import java.util.Collection;
  * @param <T>
  */
 public interface ParameterValuesTransformer<T> {
+
     Values transform(final Collection<T> valuesFromEvent, final AbstractCondition condition);
 
     /**
@@ -17,20 +20,20 @@ public interface ParameterValuesTransformer<T> {
      * - toCompare: Set of values to compare with the real value.
      */
     class Values {
-        private final String real;
-        private final Collection<String> toCompare;
+        private final Collection<String> realValues;
+        private final String conditionValue;
 
-        public Values(final String real, final Collection<String> toCompare) {
-            this.real = real;
-            this.toCompare = toCompare;
+        public Values(final String conditionValue, final Collection<String> realValues) {
+            this.realValues = realValues;
+            this.conditionValue = conditionValue;
         }
 
-        public String getReal() {
-            return real;
+        public Collection<String> getRealValues() {
+            return realValues;
         }
 
-        public Collection<String> getValuesToCompare() {
-            return toCompare;
+        public String getConditionValue() {
+            return conditionValue;
         }
     }
 }
