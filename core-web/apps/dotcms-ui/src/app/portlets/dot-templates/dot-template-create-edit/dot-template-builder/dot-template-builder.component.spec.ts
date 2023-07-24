@@ -26,7 +26,10 @@ import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotTemplateBuilderComponent } from './dot-template-builder.component';
+import {
+    AUTOSAVE_DEBOUNCE_TIME,
+    DotTemplateBuilderComponent
+} from './dot-template-builder.component';
 
 import {
     DotTemplateItem,
@@ -241,7 +244,7 @@ describe('DotTemplateBuilderComponent', () => {
                 spyOn(component.saveAndPublish, 'emit');
                 const builder = de.query(By.css('dot-edit-layout-designer'));
                 builder.triggerEventHandler('saveAndPublish', EMPTY_TEMPLATE_DESIGN);
-                tick(5000);
+                tick(AUTOSAVE_DEBOUNCE_TIME);
                 expect(component.saveAndPublish.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
             });
         });
