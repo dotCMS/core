@@ -62,7 +62,7 @@ export class AddWidgetComponent implements AfterViewInit {
             So we need to set it again on the mousedown event, so it will be set after GS cleans it.
 
             Also see the method fixGridstackNodeOnMouseLeave in template-builder.component.ts, that fixes the case
-            when when you leave a row and GS cleans the gridstackNode property.
+            when you leave a row and GS cleans the gridstackNode property.
         */
 
         this.el.nativeElement.gridstackNode = {
