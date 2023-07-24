@@ -2068,6 +2068,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     let holderDiv = document.createElement("div");
                     holderDiv.className="listingThumbDiv";
 
+
                     let cardThumbnail = document.createElement("dot-contentlet-thumbnail");
 
                     cardThumbnail.iconSize="48px";
@@ -2089,10 +2090,14 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     contentStructureType = cellData["contentStructureType"];
                     structure_id = cellData["structureInode"];
                     hasLiveVersion = cellData["hasLiveVersion"];
-
-                    cell.onclick=function(){
-                        editContentlet(cellData.inode,'<%= user.getUserId() %>','<%= referer %>', liveSt , workingSt , write );
-                    };
+                    holderDiv.setAttribute('data-inode', cellData["inode"]);
+                    holderDiv.setAttribute('data-live', liveSt);
+                    holderDiv.setAttribute('data-working', workingSt);
+                    holderDiv.setAttribute('data-write', write);
+                    holderDiv.addEventListener('click', function(e){
+                        let dataSet =  e.currentTarget.dataset;
+                        editContentlet(dataSet["inode"],'<%= user.getUserId() %>','<%= referer %>', dataSet["live"] , dataSet["working"] , dataSet["write"] );
+                    }, false);
 
 
 
