@@ -3,51 +3,48 @@ name: 'Publish tests results'
 description: 'Publishes test results report to Github'
 author: 'victoralfaro-dotcms'
 inputs:
+  project_root:
+    description: 'Project root'
+    required: true
+    default: ${{ github.WORKSPACE }}
+  tests_results_repo:
+    description: 'Repo to store results for'
+    required: true
+    default: core-test-results
   build_id:
     description: 'Branch/Commit to reference'
     required: true
   build_hash:
     description: 'Build hash'
     required: true
+    default: ${{ github.sha }}
   test_type:
     description: Test type
-    type: choice
-    options:
-    - unit
-    - integration
-    - postman
     required: true
-  db_type:
-    description: 'Database type'
-    required: false
   pull_request:
     description: 'Pull request'
-    required: true
+    required: false
   target_project:
     description: 'Project to store results for'
     required: true
     default: core
-  project_root:
-    description: 'Project root'
-    required: true
-    default: ${{ github.WORKSPACE }}
   tests_results_status:
     description: 'Test results status'
     type: choice
     options:
     - PASSED
     - FAILED
-    required: true
-  tests_results_report_location:
-    description: 'Tests report location'
-    required: true
+    required: false
   tests_results_location:
     description: 'Tests results location'
+    required: false
+  tests_results_report_location:
+    description: 'Tests results report location'
     required: true
-  cicd_github_token:
-    description: 'Token to use when it comes to push to results repo'
-    required: true
-  mode:
+  tests_results_log_location:
+    description: 'Tests results log location'
+    required: false
+  include:
     description: 'Test results mode'
     type: choice
     options:
@@ -55,12 +52,15 @@ inputs:
     - RESULTS
     - LOGS
     default: 'ALL'
-  partial:
+  mode:
     description: 'Partial command to execute'
     required: false
   run_identifier:
     description: 'Test results run identifier'
     required: false
+  cicd_github_token:
+    description: 'Token to use when it comes to push to results repo'
+    required: true
 outputs:
   tests_report_url:
     description: 'Test results commit url'
