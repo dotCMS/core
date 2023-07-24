@@ -8,7 +8,7 @@
 
     .related-content-form {
         width: 90vw;
-        height: 90vw;
+        height: 90vh;
     }
 </style>
 <form

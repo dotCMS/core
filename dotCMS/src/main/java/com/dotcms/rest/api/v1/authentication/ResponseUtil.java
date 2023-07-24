@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import static com.dotcms.exception.ExceptionUtil.BAD_REQUEST_EXCEPTIONS;
+import static com.dotcms.exception.ExceptionUtil.DUPLICATE_EXCEPTIONS;
 import static com.dotcms.exception.ExceptionUtil.NOT_FOUND_EXCEPTIONS;
 import static com.dotcms.exception.ExceptionUtil.SECURITY_EXCEPTIONS;
 import static com.dotcms.exception.ExceptionUtil.causedBy;
@@ -155,6 +156,10 @@ public class ResponseUtil implements Serializable {
             return createNonAuthenticatedResponse(e);
         }
 
+        if(causedBy(e, DUPLICATE_EXCEPTIONS)){
+            return createDuplicateResponse(e);
+        }
+
         if(causedBy(e, SECURITY_EXCEPTIONS)){
             return createUnAuthorizedResponse(e);
         }
@@ -183,6 +188,16 @@ public class ResponseUtil implements Serializable {
         }
 
         return ExceptionMapperUtil.createResponse(rootCause, Response.Status.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * In case of an duplicate record attempt this will fulfill the response so it can be interpreted by a front-end consumer
+     * @param e Exception
+     * @return Response
+     */
+    private static Response createDuplicateResponse(final Throwable e) {
+        SecurityLogger.logInfo(ResponseUtil.class, e.getMessage());
+        return ExceptionMapperUtil.createResponse(e, Response.Status.PRECONDITION_FAILED);
     }
 
     /**
