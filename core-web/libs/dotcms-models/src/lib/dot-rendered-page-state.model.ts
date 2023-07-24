@@ -87,4 +87,8 @@ export class DotPageRenderState extends DotPageRender {
     set dotRenderedPageState(dotRenderedPageState: DotPageRender) {
         this.dotRenderedPage = dotRenderedPageState;
     }
+
+    set runningExperiment(runningExperiment: DotExperiment) {
+        this._state.runningExperiment = runningExperiment;
+    }
 }
