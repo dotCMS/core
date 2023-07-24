@@ -4,6 +4,7 @@ import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParse
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -43,11 +44,13 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -68,6 +71,7 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 
 
@@ -75,6 +79,7 @@ import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -789,6 +794,72 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
+    }
+
+    @Test
+    public void aaa() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final ContentType contentType = createContentType();
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
+        final Contentlet contentlet_1 = createContentlet(language, host, contentType,
+                "title", "FIRST CONTENTLET");
+
+        addToPage(container, page, contentlet_1);
+
+        final HttpServletRequest mockRequestSpecificVariant = createHttpServletRequest(language, host,
+                variant, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequestSpecificVariant);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String htmlBeforeSecondContentlet = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequestSpecificVariant, mockResponse);
+        Assert.assertEquals("<div>FIRST CONTENTLET</div>", htmlBeforeSecondContentlet);
+
+        final Contentlet contentlet_2 = createContentlet(language, host, contentType,
+                "title", "SECOND CONTENTLET");
+
+        addToPage(container, page, contentlet_2);
+
+        final Optional<Table<String, String, Set<PersonalizedContentlet>>> pageMultiTreesOptional =
+                CacheLocator.getMultiTreeCache().getPageMultiTrees(page.getIdentifier(), variant.name(), true);
+
+       assertFalse(pageMultiTreesOptional.isPresent());
+
+        final HttpServletRequest mockRequestDefault = createHttpServletRequest(language, host,
+                VariantAPI.DEFAULT_VARIANT, page);
+        final HttpSession sessionDefault = createHttpSession(mockRequestDefault);
+        when(sessionDefault.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String htmlAfterSecondContentDefault = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequestDefault, mockResponse);
+
+        Assert.assertEquals("<div>FIRST CONTENTLETSECOND CONTENTLET</div>", htmlAfterSecondContentDefault);
+
+        String htmlAfterSecondContentVariant = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequestSpecificVariant, mockResponse);
+
+        Assert.assertEquals("<div>FIRST CONTENTLETSECOND CONTENTLET</div>", htmlAfterSecondContentVariant);
     }
 
     /**
