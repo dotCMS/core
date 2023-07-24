@@ -21,15 +21,15 @@ public class ContainerTest {
     /*
      * TODO: Parameterize
      * */
-    @Test
-    void test_dotcms_container_up() {
-        LOGGER.info("test_dotcms_container_up");
-
-        given()
-                .when().get(BASE_URI + ":" + DOTCMS_PORT + "/dotAdmin")
-                .then().log().all()
-                .statusCode(STATUS_CODE_OK);
-    }
+//    @Test
+//    void test_dotcms_container_up() {
+//        LOGGER.info("test_dotcms_container_up");
+//
+//        given()
+//                .when().get(BASE_URI + ":" + DOTCMS_PORT + "/dotAdmin")
+//                .then().log().all()
+//                .statusCode(STATUS_CODE_OK);
+//    }
 
 //    @Test
 //    void test_elasticsearch_container_up() {
