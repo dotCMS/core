@@ -28,7 +28,6 @@ import picocli.CommandLine;
            "  By default files are saved to the current directory. in json format.",
            "  The format can be changed using the @|yellow --format|@ option.",
            "  format can be either @|yellow JSON|@ or @|yellow YAML|@.",
-           "  File location can be changed using the @|yellow --saveTo|@ option.",
            "" // empty line left here on purpose to make room at the end
         }
 )

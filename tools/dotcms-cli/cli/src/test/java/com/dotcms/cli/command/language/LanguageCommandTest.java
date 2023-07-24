@@ -4,6 +4,8 @@ import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
+import com.dotcms.cli.command.contenttype.ContentTypeCommand;
+import com.dotcms.cli.command.contenttype.ContentTypePull;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
@@ -17,12 +19,14 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.wildfly.common.Assert;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
@@ -272,4 +276,39 @@ public class LanguageCommandTest extends CommandTest {
             workspaceManager.destroy(workspace);
         }
     }
+
+    /**
+     * Given scenario: Despite the number of times the same lang gets pulled, it should only be created once
+     * Expected result: The WorkspaceManager should be able to create and destroy a workspace
+     * @throws IOException
+     */
+    @Test
+    void Test_Pull_Same_Language_Multiple_Times() throws IOException {
+        final Workspace workspace = workspaceManager.getOrCreate();
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String lang = "en-US";
+            for (int i=0; i<= 5; i++) {
+                final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, lang, "--workspace", workspace.root().toString());
+                Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+                System.out.println("Lang Pulled: " + i);
+            }
+
+            final String fileName = String.format("%s.json", lang);
+            final Path path = Path.of(workspace.languages().toString(), fileName);
+            Assert.assertTrue(Files.exists(path));
+
+            try (Stream<Path> walk = Files.walk(workspace.languages())) {
+                long count = walk.filter(p -> Files.isRegularFile(p) && p.getFileName().toString()
+                        .startsWith(lang.toLowerCase())).count();
+                Assertions.assertEquals(1, count);
+            }
+
+        } finally {
+            workspaceManager.destroy(workspace);
+        }
+    }
+
 }

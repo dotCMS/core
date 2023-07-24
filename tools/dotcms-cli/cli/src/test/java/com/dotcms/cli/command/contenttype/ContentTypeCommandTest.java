@@ -15,6 +15,9 @@ import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.model.config.Workspace;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.*;
 import org.wildfly.common.Assert;
 import picocli.CommandLine;
@@ -207,6 +210,41 @@ public class ContentTypeCommandTest extends CommandTest {
                     fail("Content type was not removed");
                 }
             }
+        } finally {
+            workspaceManager.destroy(workspace);
+        }
+    }
+
+    /**
+     * Given scenario: Despite the number of times the same content type is pulled, it should only be created once
+     * Expected result: The WorkspaceManager should be able to create and destroy a workspace
+     * @throws IOException
+     */
+    @Test
+    void Test_Pull_Same_Content_Type_Multiple_Times() throws IOException {
+        final Workspace workspace = workspaceManager.getOrCreate();
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String contentTypeVarName = "Blog";
+            for (int i=0; i<= 5; i++) {
+                int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                contentTypeVarName, "--workspace", workspace.root().toString());
+                Assertions.assertEquals(ExitCode.OK, status);
+                System.out.println("CT Pulled: " + i);
+            }
+
+            final String fileName = String.format("%s.json", contentTypeVarName);
+            final Path path = Path.of(workspace.contentTypes().toString(), fileName);
+            Assert.assertTrue(Files.exists(path));
+
+            try (Stream<Path> walk = Files.walk(workspace.contentTypes())) {
+                long count = walk.filter(p -> Files.isRegularFile(p) && p.getFileName().toString()
+                        .startsWith(contentTypeVarName)).count();
+                Assertions.assertEquals(1, count);
+            }
+
         } finally {
             workspaceManager.destroy(workspace);
         }

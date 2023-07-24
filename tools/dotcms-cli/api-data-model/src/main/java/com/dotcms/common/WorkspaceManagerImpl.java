@@ -5,31 +5,23 @@ import com.dotcms.model.config.Workspace;
 import com.dotcms.model.config.WorkspaceInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.arc.DefaultBean;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.Optional;
 import java.util.stream.Stream;
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import org.apache.commons.lang3.time.FastDateFormat;
-import org.jboss.logging.Logger;
-import java.io.File;
 @DefaultBean
 @ApplicationScoped
 public class WorkspaceManagerImpl implements WorkspaceManager {
-
-    @Inject
-    Logger logger;
 
     public static final String DOT_WORKSPACE_YML = ".dot-workspace.yml";
 
     private static final ObjectMapper mapper = new YAMLMapperSupplier().get();
 
     Workspace persist(final Workspace workspace) throws IOException {
-
         final Path files = workspace.files();
         final Path contentTypes = workspace.contentTypes();
         final Path sites = workspace.sites();
@@ -51,8 +43,11 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
             Files.createDirectories(languages);
         }
 
-        try (var outputStream = Files.newOutputStream(workspace.root().resolve(DOT_WORKSPACE_YML))) {
-            mapper.writeValue(outputStream, WorkspaceInfo.builder().name("default").build());
+        final Path rootPath = workspace.root().resolve(DOT_WORKSPACE_YML);
+        if (!Files.exists(rootPath)) {
+            try (var outputStream = Files.newOutputStream(rootPath)) {
+                mapper.writeValue(outputStream, WorkspaceInfo.builder().name("default").build());
+            }
         }
 
         return workspace;
@@ -88,8 +83,10 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     public Workspace getOrCreate(Path currentPath) throws IOException {
         final Optional<Workspace> workspace = findWorkspace(currentPath);
         if (workspace.isPresent()) {
-            return workspace.get();
+            //calling persist to make sure all the directories are created
+            return persist(workspace.get());
         } else {
+            //No workspace found, create one
             return persist(
                 workspace(currentPath)
             );

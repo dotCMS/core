@@ -35,7 +35,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     String source;
 
     //TODO: Should this be a File instead of a string ???
-    @CommandLine.Parameters(index = "1", arity = "1", paramLabel = "destination", defaultValue = ".",
+    @CommandLine.Parameters(index = "1", arity = "1", paramLabel = "destination", defaultValue = "",
             description = "Local root directory of the CLI project.")
     String destination;
 
