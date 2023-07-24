@@ -8,6 +8,8 @@ import com.liferay.util.StringPool;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 /**
@@ -42,10 +44,13 @@ public interface AbstractMetric extends Serializable {
 
         for (final Condition condition : conditions()) {
             final Parameter parameter = type().getParameter(condition.parameter()).orElseThrow();
-            isValid = isValid && condition.isValid(parameter, event);
 
-            if (!isValid) {
-                break;
+            if (parameter.validate()) {
+                isValid = isValid && condition.isValid(parameter, event);
+
+                if (!isValid) {
+                    break;
+                }
             }
         }
 

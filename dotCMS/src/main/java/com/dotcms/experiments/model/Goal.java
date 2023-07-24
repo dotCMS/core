@@ -23,7 +23,8 @@ import org.immutables.value.Value;
 @JsonSubTypes({
         @Type(value = ReachPageGoal.class, name = "REACH_PAGE"),
         @Type(value = BounceRateGoal.class, name = "BOUNCE_RATE"),
-        @Type(value = ClickOnElementGoal.class, name = "CLICK_ON_ELEMENT")
+        @Type(value = ClickOnElementGoal.class, name = "CLICK_ON_ELEMENT"),
+        @Type(value = UrlParameterGoal.class, name = "URL_PARAMETER")
 })
 public abstract class Goal {
 
