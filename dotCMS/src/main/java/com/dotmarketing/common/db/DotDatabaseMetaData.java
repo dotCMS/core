@@ -500,6 +500,17 @@ public class DotDatabaseMetaData {
         connection.createStatement().executeUpdate("ALTER TABLE " + tableName + " DROP COLUMN " + columnName); // Drop the column
     }
 
+    /**
+     * Drop the table
+     * @param connection
+     * @param systemTable
+     * @throws SQLException
+     */
+    public void dropTable(final Connection connection, final String systemTable) throws SQLException {
+
+        new DotConnect().executeStatement("DROP TABLE " + systemTable, connection);
+    }
+
     private void dropColumnMySQLDependencies(final Connection connection, final String tableName, final String columnName) throws SQLException {
 
         try (final ResultSet resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
@@ -814,6 +825,5 @@ public class DotDatabaseMetaData {
         dotConnect.setSQL(query);
         return (Map<String, String>)dotConnect.loadResults().get(0);
     }
-
 } // E:O:F:DotDatabaseMetaData.
 
