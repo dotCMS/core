@@ -173,6 +173,8 @@ public class ExperimentHandler implements IHandler {
 					} else if(experiment.status()==Status.ENDED) {
 						experimentsAPI.save(experiment, APILocator.systemUser());
 						experimentsAPI.cacheRunningExperiments();
+					} else {
+						experimentsAPI.save(experiment, APILocator.systemUser());
 					}
 				}
 			}
