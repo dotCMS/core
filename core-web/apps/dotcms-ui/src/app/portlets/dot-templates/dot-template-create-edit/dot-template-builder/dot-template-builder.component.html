@@ -24,14 +24,6 @@
                     data-testId="new-template-builder"
                 >
                     <dot-global-message toolbar-left></dot-global-message>
-                    <button
-                        [label]="'Publish' | dm"
-                        (click)="saveAndPublish.emit(item)"
-                        type="button"
-                        data-testId="save-and-publish-btn"
-                        toolbar-actions-right
-                        pButton
-                    ></button>
                 </dotcms-template-builder>
             </ng-template>
             <ng-template #disabledComponent>
