@@ -14,6 +14,7 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
+    CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatus,
     DotExperimentsWithActions,
@@ -186,6 +187,11 @@ export class DotExperimentsListStore
         )
     }));
 
+    readonly stopExperimentById = this.updater((state, experimentId: string) => ({
+        ...state,
+        experiments: state.experiments.filter((exp) => exp.id != experimentId)
+    }));
+
     readonly openSidebar = this.updater((state) => ({
         ...state,
         sidebar: {
@@ -323,6 +329,33 @@ export class DotExperimentsListStore
         );
     });
 
+    readonly stopExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
+        return experiment$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
+            switchMap((experiment) =>
+                this.dotExperimentsService.stop(experiment.id).pipe(
+                    tapResponse(
+                        () => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.action.stop.confirm-title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.action.stop.confirm-message',
+                                    experiment.name
+                                )
+                            });
+                            this.stopExperimentById(experiment.id);
+                        },
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                    )
+                )
+            )
+        );
+    });
+
     readonly vm$: Observable<VmListExperiments> = this.select(
         this.state$,
         this.isLoading$,
@@ -437,6 +470,27 @@ export class DotExperimentsListStore
                 command: () => this.archiveExperiment(experiment)
             },
 
+            // End experiment
+            {
+                label: this.dotMessageService.get('experiments.action.end-experiment'),
+                visible: experiment?.status === DotExperimentStatus.RUNNING,
+                command: () => {
+                    this.confirmationService.confirm({
+                        key: CONFIGURATION_CONFIRM_DIALOG_KEY,
+                        header: this.dotMessageService.get('experiments.action.end-experiment'),
+                        message: this.dotMessageService.get(
+                            'experiments.action.stop.delete-confirm'
+                        ),
+                        acceptLabel: this.dotMessageService.get('stop'),
+                        rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                        rejectButtonStyleClass: 'p-button-secondary',
+                        accept: () => {
+                            this.stopExperiment(experiment);
+                        }
+                    });
+                }
+            },
+
             // Push Publish Action
             {
                 label: this.dotMessageService.get('contenttypes.content.push_publish'),
@@ -453,7 +507,9 @@ export class DotExperimentsListStore
                 id: 'dot-experiments-add-to-bundle',
                 label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
                 visible: hasEnterpriseLicense,
-                command: () => this.showAddToBundle(experiment.identifier)
+                command: () => {
+                    this.showAddToBundle(experiment.id);
+                }
             }
         ];
     }
