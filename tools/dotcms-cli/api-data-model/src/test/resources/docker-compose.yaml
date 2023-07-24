@@ -1,27 +1,42 @@
-# https://docs.docker.com/compose/compose-file/compose-versioning/
-version: "3.7"
-  # https://docs.docker.com/compose/compose-file/
-networks:
-  dot_net:
-#  db_net:
-#  es_net:
-
-volumes:
-  cms-shared:
-  cms-local:
-  output:
-  license:
-
+version: '3'
 services:
-  dotcms:
-    image: dotcms/dotcms:master_1bc0c86_SNAPSHOT
-#    image: dotcms/dotcms:latest
-#    command: ["dotcms", "${TEST_TYPE}"]
+  postgres:
+    image: postgres:15
     ports:
-      - 8000:8000
-      - 8080:8080
-      - 8443:8443
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=dotcms
+      - POSTGRES_PASSWORD=dotcms
+      - POSTGRES_DB=dotcms
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - dotcms-net
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.16.1
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - cluster.name=elastic-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx1g"
+    ulimits:
+      memlock:
+        soft: -1 # Set memlock to unlimited (no soft or hard limit)
+        hard: -1
+      nofile:
+        soft: 65536 # Maximum number of open files for the opensearch user - set to at least 65536
+        hard: 65536
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - dotcms-net
+
+  dotcms:
+    image: dotcms/dotcms:master_1bc0c86_SNAPSHOT # it must be the same version built in the previous step
     environment:
       CMS_JAVA_OPTS: '-Xmx1g '
       LANG: 'C.UTF-8'
@@ -33,58 +48,25 @@ services:
       DOT_INITIAL_ADMIN_PASSWORD: 'admin'
       DOT_ES_ENDPOINTS: 'http://elasticsearch:9200'
       #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
-
     depends_on:
-      - postgres
       - elasticsearch
+      - postgres
     volumes:
-      - cms-shared:/data/shared
-      - cms-local:/data/local
+      - dotcms-shared:/data/shared
       - type: bind
         source: ./license/license.dat
         target: /data/local/dotsecure/license/license.dat
     networks:
-      - dot_net
-#      - db_net
-#      - es_net
-
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: dotcms
-      POSTGRES_PASSWORD: dotcms
-      POSTGRES_DB: dotcms
-      MAX_LOCKS_PER_TRANSACTION: 60
-    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+      - dotcms-net
     ports:
-      - "5432:5432"
+      - "8080:8080"
+      - "8443:8443"
 
-    tmpfs:
-      - /var/lib/postgresql/data:rw
-    networks:
-      - dot_net
-#        - db_net
+volumes:
+  postgres-data:
+  elasticsearch-data:
+  dotcms-shared:
+#  license:
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
-
-    environment:
-      - cluster.name=elastic-cluster
-      - discovery.type=single-node
-      - data
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx1g"
-#      - CLI_JAVA_OPTS="-Xms1g -Xmx1g"
-    ulimits:
-      memlock:
-        soft: -1 # Set memlock to unlimited (no soft or hard limit)
-        hard: -1
-      nofile:
-        soft: 65536 # Maximum number of open files for the elasticsearch user - set to at least 65536
-        hard: 65536
-    ports:
-      - 9200:9200
-      - 9600:9600
-    networks:
-      - dot_net
-#      - es_net
+networks:
+  dotcms-net:
