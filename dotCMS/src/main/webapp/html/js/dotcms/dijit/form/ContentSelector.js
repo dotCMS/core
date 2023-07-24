@@ -1221,7 +1221,7 @@ dojo.declare(
                       iconName +
                       '\')" src="/dA/' +
                       cellData.inode +
-                      '/titleImage/256w" alt="' +
+                      '/titleImage/500w/50q" alt="' +
                       cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') +
                       '" >'
                     : '<span class="' +
