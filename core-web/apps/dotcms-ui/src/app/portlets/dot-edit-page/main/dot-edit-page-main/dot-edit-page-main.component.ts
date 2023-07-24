@@ -63,7 +63,6 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
                 this.titleService.setTitle(`${newTitle}${subtTitle ? ` - ${subtTitle}` : ''}`);
                 this.pageUrl = page.pageURI;
                 this.languageId = page.languageId.toString();
-                this.hostName = page.hostName;
             })
         );
 
