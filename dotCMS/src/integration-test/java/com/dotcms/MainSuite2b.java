@@ -3,6 +3,8 @@ package com.dotcms;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.bayesian.BayesianAPIImplIT;
+import com.dotcms.business.SystemAPITest;
+import com.dotcms.business.SystemTableFactoryTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
@@ -141,6 +143,7 @@ import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExper
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
+import com.dotmarketing.startup.runonce.Task230707CreateSystemTableTest;
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
@@ -305,6 +308,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230426AlterVarcharLengthOfLockedByColTest.class,
         AssetPathResolverImplIntegrationTest.class,
         WebAssetHelperIntegrationTest.class,
+        SystemTableFactoryTest.class,
+        Task230707CreateSystemTableTest.class,
+        SystemAPITest.class,
         Task230701AddHashIndicesToWorkflowTablesTest.class,
         Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
         ContentPageIntegrityCheckerTest.class,
