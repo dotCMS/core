@@ -422,7 +422,7 @@ describe('DotEditPageNavComponent', () => {
             expect(menuListItems.length).toEqual(5);
         });
 
-        it('Shouldn`t have Page Tools item', () => {
+        it('Should not have Page Tools item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
             spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
                 firstChild: {
