@@ -61,14 +61,10 @@ export class AddWidgetComponent implements AfterViewInit {
 
             So we need to set it again on the mousedown event, so it will be set after GS cleans it.
 
-
-            TODO:
-            We still have an edge case to fix, the dropover is fired everytime you hover on an element,
-            so after a while it will clean the object and the attrs again when deciding where to drop the box.
-
-            I already tried to listen to the "drag" event on the addBox button, to set the width and height again when dragging the button,,
-            but it didn't work, GS cleans that event everytime you "dropover" or "dropout" of a row.
+            Also see the method fixGridstackNodeOnMouseLeave in template-builder.component.ts, that fixes the case
+            when when you leave a row and GS cleans the gridstackNode property.
         */
+
         this.el.nativeElement.gridstackNode = {
             ...this.gridstackOptions
         };

@@ -78,10 +78,12 @@ export const gridOptions: GridStackOptions = {
 
 export const rowInitialOptions = {
     w: 12,
-    h: 1
+    h: 1,
+    _isExternal: true
 };
 
 export const boxInitialOptions = {
     w: BOX_WIDTH,
-    h: 1
+    h: 1,
+    _isExternal: true
 };
