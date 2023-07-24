@@ -231,6 +231,25 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         if (goals.primary().getMetric().type() == MetricType.BOUNCE_RATE &&
                 !hasCondition(goals, "url")) {
             addUrlCondition(page, builder, goals);
+        } else if (goals.primary().getMetric().type() == MetricType.URL_PARAMETER &&
+                !hasCondition(goals, "visitBefore")) {
+            addVisitBeforeCondition(page, builder, goals);
+        }
+    }
+
+    private void addVisitBeforeCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
+
+        try {
+            final com.dotcms.analytics.metrics.Condition visitBefore = com.dotcms.analytics.metrics.Condition.builder()
+                    .parameter("visitBefore")
+                    .operator(Operator.CONTAINS)
+                    .value(page.getURI())
+                    .build();
+
+            final Goals newGoal = createNewGoals(goals, visitBefore);
+            builder.goals(newGoal);
+        } catch (DotDataException e) {
+            throw new DotRuntimeException(e);
         }
     }
 
@@ -939,9 +958,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
             "The Experiment must be RUNNING or ENDED to get results");
 
-        final List<BrowserSession> events = getEvents(experiment, user);
+        final List<BrowserSession> events = getEvents(experimentFromDataBase, user);
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
-            experiment, events);
+                experimentFromDataBase, events);
 
         experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
 

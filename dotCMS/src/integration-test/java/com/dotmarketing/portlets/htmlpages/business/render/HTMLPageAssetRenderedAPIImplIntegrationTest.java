@@ -1685,6 +1685,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "    let experimentsShortData = {\n"
                 + "        experiments: experimentData.experiments.map((experiment) => ({\n"
                 + "                experiment: experiment.id,\n"
+                + "                runningId: experiment.runningId,\n"
                 + "                variant: experiment.variant.name,\n"
                 + "                lookBackWindow: experiment.lookBackWindow.value\n"
                 + "            })\n"
