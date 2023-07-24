@@ -365,7 +365,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                         }
                     ]
                 }
-            }
+            },
+            containerMap: { ...state.containerMap, [container.identifier]: container }
         };
     });
 
