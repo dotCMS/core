@@ -11843,3 +11843,13 @@ body {
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
 }
+
+.listingThumbDiv{
+  height: 60px;
+  width: 80px;
+  position: relative;
+  border-radius: 5px;
+  overflow: hidden;
+  cursor: pointer;
+
+}
