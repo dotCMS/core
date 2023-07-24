@@ -9,10 +9,12 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.google.common.collect.Lists;
 
@@ -32,6 +34,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 
+import com.liferay.portlet.ActionRequestImpl;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -437,5 +440,37 @@ public class PublishFactoryTest extends IntegrationTestBase {
                 .findWorkingTemplate(fileAssetTemplate.getIdentifier(),systemUser,false));
 
         Assert.assertTrue(APILocator.getTemplateAPI().isLive(fileAssetTemplate));
+    }
+
+    /***
+     * Method to Test: {@link PublishFactory#getUnpublishedRelatedAssets(Folder, List, User, boolean)}
+     * When: Try to publish a folder with a file that is not published.
+     * Should: get the list of unpublished files.
+     */
+    @Test
+    public void test_getUnpublishedRelatedAssets() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final Link link = new LinkDataGen(folder).nextPersisted(false);
+
+        final User systemUser = APILocator.systemUser();
+        final List<Contentlet> relatedNotPublished = new ArrayList<>();
+         PublishFactory.getUnpublishedRelatedAssets(folder,relatedNotPublished, systemUser, false);
+         relatedNotPublished.contains(link);
+        Assert.assertTrue(relatedNotPublished.contains(link));
+    }
+
+    /***
+     * Method to Test: {@link PublishFactory#publishAsset(Folder, User, boolean, boolean)}
+     * When: Try to publish a folder with a file that is not published.
+     * Should: Publish the file inside the folder.
+     */
+    @Test
+    public void test_publishAsset() throws DotDataException, DotSecurityException, WebAssetException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final Link link = new LinkDataGen(folder).nextPersisted(false);
+        final boolean response = PublishFactory.publishAsset(folder, systemUser, false, false);
+        Assert.assertTrue(response);
     }
 }
