@@ -12,7 +12,7 @@ import { DotPropertiesService } from '@dotcms/data-access';
  *
  * @export
  * @class DotFeatureFlagResolver
- * @implements {Resolve<Observable<boolean>>}
+ * @implements {Observable<Record<string, boolean>>}
  *
  * Need set in data the feature flag with the index name featuredFlag and the FeatureFlag needed
  * @example
@@ -21,7 +21,7 @@ import { DotPropertiesService } from '@dotcms/data-access';
  *  }
  */
 @Injectable()
-export class DotFeatureFlagResolver implements Resolve<Observable<boolean>> {
+export class DotFeatureFlagResolver implements Resolve<Observable<Record<string, boolean>>> {
     constructor(private readonly dotConfigurationService: DotPropertiesService) {}
 
     resolve(route: ActivatedRouteSnapshot) {

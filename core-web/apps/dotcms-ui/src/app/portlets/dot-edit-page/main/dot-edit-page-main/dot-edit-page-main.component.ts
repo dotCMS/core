@@ -26,7 +26,6 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     private pageIsSaved = false;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly customEventsHandler;
-    togglePageTools: boolean;
 
     constructor(
         private route: ActivatedRoute,
@@ -71,10 +70,6 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         this.subscribeIframeCloseAction();
     }
 
-    showPageTools() {
-        this.togglePageTools = !this.togglePageTools;
-    }
-
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
@@ -113,14 +108,5 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
                 }
             }
         });
-    }
-
-    /**
-     * Get current URL
-     * @returns string
-     * @memberof DotEditPageMainComponent
-     * */
-    public getCurrentURL(): string {
-        return `${this.hostName}${this.pageUrl}?language_id=${this.languageId}`;
     }
 }

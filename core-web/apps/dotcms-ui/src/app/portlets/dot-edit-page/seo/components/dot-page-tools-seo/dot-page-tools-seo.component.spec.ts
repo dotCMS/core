@@ -39,9 +39,9 @@ describe('DotPageToolsSeoComponent', () => {
     beforeEach(() => {
         spectator = createHost(
             `<dot-page-tools-seo
-            [visible]="visible"
-            [currentPageUrl]="currentPageUrl"
-        ></dot-page-tools-seo>`,
+                [visible]="visible"
+                [currentPageUrl]="currentPageUrl">
+             </dot-page-tools-seo>`,
             {
                 hostProps: {
                     visible: true,

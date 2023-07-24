@@ -9,15 +9,11 @@
     <div class="page-tools">
         <ul class="page-tools-list">
             <li class="page-tools-list__item" *ngFor="let tool of tools$ | async">
-                <a
-                    class="page-tools-list__link"
-                    href="{{ getRunnableLink(tool.runnableLink) }}"
-                    target="_blank"
-                >
+                <a class="page-tools-list__link" href="{{ tool.runnableLink }}" target="_blank">
                     <img
-                        class="page-tools-list__logo"
                         src="{{ tool.icon }}"
                         alt="{{ tool.title }}"
+                        style="width: 2.6rem; height: 2.6rem"
                     />
                     <div class="page-tools-list__content">
                         <span class="page-tools-list__title">{{ tool.title }}</span>

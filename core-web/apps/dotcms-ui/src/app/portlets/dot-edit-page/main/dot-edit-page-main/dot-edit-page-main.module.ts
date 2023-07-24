@@ -14,7 +14,6 @@ import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-exp
 
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 
-import { DotPageToolsSeoComponent } from '../../seo/components/dot-page-tools-seo/dot-page-tools-seo.component';
 import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
 
 @NgModule({
@@ -27,8 +26,7 @@ import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.mod
         DotEditPageNavDirective,
         DotExperimentClassDirective,
         OverlayPanelModule,
-        DialogModule,
-        DotPageToolsSeoComponent
+        DialogModule
     ],
     providers: [DotRouterService, DotCustomEventHandlerService],
     declarations: [DotEditPageMainComponent]

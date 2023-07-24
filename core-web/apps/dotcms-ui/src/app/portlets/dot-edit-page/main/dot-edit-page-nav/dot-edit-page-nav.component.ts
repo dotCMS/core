@@ -1,6 +1,6 @@
 import { Observable, of as observableOf } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -31,8 +31,7 @@ interface DotEditPageNavItem {
 })
 export class DotEditPageNavComponent implements OnChanges {
     @Input() pageState: DotPageRenderState;
-    @Output() openOverlayPanel: EventEmitter<void> = new EventEmitter();
-
+    togglePageTools: boolean;
     isEnterpriseLicense: boolean;
     model: Observable<DotEditPageNavItem[]>;
 
@@ -163,7 +162,7 @@ export class DotEditPageNavComponent implements OnChanges {
             icon: 'grid_view',
             label: this.dotMessageService.get('editpage.toolbar.nav.page.tools'),
             action: () => {
-                this.openOverlayPanel.emit();
+                this.showPageTools();
             }
         };
     }
@@ -181,5 +180,20 @@ export class DotEditPageNavComponent implements OnChanges {
         const isCurrentExperimentAndRunning = experimentId === runningExperiment?.id;
 
         return isCurrentExperimentAndRunning && this.isVariantMode;
+    }
+
+    private showPageTools(): void {
+        this.togglePageTools = !this.togglePageTools;
+    }
+
+    /**
+     * Get current URL
+     * @returns string
+     * @memberof DotEditPageMainComponent
+     * */
+    public getCurrentURL(): string {
+        const page = this.pageState.page;
+
+        return `${page?.hostName}${page?.pageURI}?language_id=${page?.languageId}`;
     }
 }

@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 .page-tools {
-    width: $page-tools-width;
+    width: 26.3rem;
 }
 
 .page-tools-list {
@@ -51,11 +51,6 @@
     color: $black;
     text-decoration: none;
     display: flex;
-}
-
-.page-tools-list__logo {
-    width: $page-tools-logo-size;
-    height: $page-tools-logo-size;
 }
 
 .page-tools-list__description {

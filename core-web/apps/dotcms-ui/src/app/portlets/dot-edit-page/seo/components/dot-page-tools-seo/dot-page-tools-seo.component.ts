@@ -1,9 +1,11 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { AsyncPipe, NgForOf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 
 import { DialogModule } from 'primeng/dialog';
+
+import { switchMap } from 'rxjs/operators';
 
 import { DotPageToolsService } from '@dotcms/data-access';
 import { DotPageTool } from '@dotcms/dotcms-models';
@@ -27,7 +29,18 @@ export class DotPageToolsSeoComponent implements OnInit {
     constructor(private dotPageToolsService: DotPageToolsService) {}
 
     ngOnInit() {
-        this.tools$ = this.dotPageToolsService.get();
+        this.tools$ = this.dotPageToolsService.get().pipe(
+            switchMap((tools) => {
+                const updatedTools = tools.map((tool) => {
+                    return {
+                        ...tool,
+                        runnableLink: this.getRunnableLink(tool.runnableLink)
+                    };
+                });
+
+                return of(updatedTools);
+            })
+        );
     }
 
     /**
