@@ -3,6 +3,7 @@ import { Observable, of } from 'rxjs';
 import { AsyncPipe, NgForOf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 
+import { ChipModule } from 'primeng/chip';
 import { DialogModule } from 'primeng/dialog';
 
 import { switchMap } from 'rxjs/operators';
@@ -15,7 +16,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-page-tools-seo',
     standalone: true,
     providers: [DotPageToolsService],
-    imports: [NgForOf, AsyncPipe, DialogModule, DotMessagePipe],
+    imports: [NgForOf, AsyncPipe, DialogModule, DotMessagePipe, ChipModule],
     templateUrl: './dot-page-tools-seo.component.html',
     styleUrls: ['./dot-page-tools-seo.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -48,8 +49,7 @@ export class DotPageToolsSeoComponent implements OnInit {
      * @param url
      * @returns
      */
-
-    getRunnableLink(url: string): string {
+    private getRunnableLink(url: string): string {
         return url.replace('{currentPageUrl}', this.currentPageUrl);
     }
 }

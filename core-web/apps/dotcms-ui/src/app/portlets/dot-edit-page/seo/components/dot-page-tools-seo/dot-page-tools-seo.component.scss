@@ -34,17 +34,10 @@
     margin-bottom: $spacing-1;
 }
 
-.page-tools-list__tags {
+.page-tools-list__chips {
     display: flex;
     gap: $spacing-1;
     margin-top: $spacing-1;
-}
-
-.page-tools-list__tag {
-    background-color: $color-palette-gray-300;
-    padding: $spacing-1;
-    border-radius: $border-radius-sm;
-    color: $color-palette-gray-700;
 }
 
 .page-tools-list__link {

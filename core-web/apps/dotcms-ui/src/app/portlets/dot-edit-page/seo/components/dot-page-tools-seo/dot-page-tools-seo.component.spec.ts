@@ -1,4 +1,4 @@
-import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
+import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -45,7 +45,7 @@ describe('DotPageToolsSeoComponent', () => {
             {
                 hostProps: {
                     visible: true,
-                    currentPageUrl: 'https://demo.dotcms.com'
+                    currentPageUrl: 'blogTest'
                 }
             }
         );
@@ -53,7 +53,7 @@ describe('DotPageToolsSeoComponent', () => {
 
     it('should have page tool list', () => {
         spectator.detectChanges();
-        const menuListItems = spectator.queryAll('.page-tools-list__item');
+        const menuListItems = spectator.queryAll(byTestId('page-tools-list-item'));
 
         expect(menuListItems.length).toEqual(3);
     });
@@ -62,13 +62,13 @@ describe('DotPageToolsSeoComponent', () => {
         const tools = mockPageTools.pageTools;
         spectator.detectChanges();
 
-        const anchorElements = spectator.queryAll('.page-tools-list__link');
+        const anchorElements = spectator.queryAll(byTestId('page-tools-list-link'));
 
         expect(anchorElements.length).toEqual(3);
 
         anchorElements.forEach((anchorElement, index) => {
             const href = anchorElement.getAttribute('href');
-            expect(href).toEqual(spectator.component.getRunnableLink(tools[index].runnableLink));
+            expect(href).toEqual(tools[index].runnableLink);
         });
     });
 });
