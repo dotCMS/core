@@ -56,7 +56,13 @@ export class SuggestionsService {
     /**
      * Get contentlets filtered by url
      *
-     * @param {*} { link }
+     * @param {{
+     *         link: string;
+     *         currentLanguage?: number;
+     *     }} {
+     *         link,
+     *         currentLanguage = DEFAULT_LANG_ID
+     *     }
      * @return {*}  {Observable<DotCMSContentlet[]>}
      * @memberof SuggestionsService
      */
