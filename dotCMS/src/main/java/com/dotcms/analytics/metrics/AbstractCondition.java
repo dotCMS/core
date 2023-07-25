@@ -2,24 +2,12 @@ package com.dotcms.analytics.metrics;
 
 import com.dotcms.analytics.metrics.ParameterValuesTransformer.Values;
 import com.dotcms.experiments.business.result.Event;
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/master
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-<<<<<<< HEAD
-=======
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.Arrays;
-
->>>>>>> origin/master
 import java.util.Collection;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
