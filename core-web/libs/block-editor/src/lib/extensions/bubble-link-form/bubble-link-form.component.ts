@@ -228,7 +228,7 @@ export class BubbleLinkFormComponent implements OnInit {
     searchContentlets({ link = '' }) {
         this.loading = true;
         this.suggestionsService
-            .getContentletsUrlMap({ filter: link })
+            .getContentletsByLink({ link })
             .pipe(take(1))
             .subscribe((contentlets: DotCMSContentlet[]) => {
                 this.items = contentlets.map((contentlet) => {

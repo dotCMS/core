@@ -7,7 +7,7 @@ import { pluck } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { ContentletFilters, DEFAULT_LANG_ID } from '../../../extensions';
+import { ContentletFilters } from '../../../extensions';
 
 @Injectable()
 export class SuggestionsService {
@@ -54,19 +54,16 @@ export class SuggestionsService {
     }
 
     /**
-     * Get contentlets filtered by urlMap
+     * Get contentlets filtered by url
      *
-     * @param {*} { filter, currentLanguage = DEFAULT_LANG_ID }
+     * @param {*} { link }
      * @return {*}  {Observable<DotCMSContentlet[]>}
      * @memberof SuggestionsService
      */
-    getContentletsUrlMap({
-        filter,
-        currentLanguage = DEFAULT_LANG_ID
-    }): Observable<DotCMSContentlet[]> {
+    getContentletsByLink({ link }): Observable<DotCMSContentlet[]> {
         return this.http
             .post('/api/content/_search', {
-                query: `+languageId:${currentLanguage} +deleted:false +working:true +(urlmap:*${filter}* OR +(basetype:5 AND path:*${filter}*))`,
+                query: `+deleted:false +working:true +(urlmap:*${link}* OR +(basetype:5 AND path:*${link}*))`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 40
