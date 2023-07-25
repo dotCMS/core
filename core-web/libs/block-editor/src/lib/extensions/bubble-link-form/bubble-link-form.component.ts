@@ -18,6 +18,7 @@ import { SuggestionPageComponent } from './components/suggestion-page/suggestion
 
 import { Languages, SuggestionsCommandProps } from '../../shared';
 import { DotLanguageService, SuggestionsService } from '../../shared/services';
+import { DEFAULT_LANG_ID } from '../bubble-menu/models';
 import { isValidURL } from '../bubble-menu/utils';
 
 export interface NodeProps {
@@ -40,6 +41,7 @@ export class BubbleLinkFormComponent implements OnInit {
     @Output() setNodeProps: EventEmitter<NodeProps> = new EventEmitter();
 
     @Input() showSuggestions = false;
+    @Input() languageId = DEFAULT_LANG_ID;
     @Input() initialValues: NodeProps = {
         link: '',
         blank: true
@@ -228,7 +230,7 @@ export class BubbleLinkFormComponent implements OnInit {
     searchContentlets({ link = '' }) {
         this.loading = true;
         this.suggestionsService
-            .getContentletsByLink({ link })
+            .getContentletsByLink({ link, currentLanguage: this.languageId })
             .pipe(take(1))
             .subscribe((contentlets: DotCMSContentlet[]) => {
                 this.items = contentlets.map((contentlet) => {
