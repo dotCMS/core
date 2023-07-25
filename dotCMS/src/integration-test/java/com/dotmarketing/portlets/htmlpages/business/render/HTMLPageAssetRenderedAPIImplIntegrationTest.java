@@ -796,8 +796,21 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
 
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When:
+     * - Create a Page and Add a Contentlet to it.
+     * - Create a new Variant and render the POage in this Variant.
+     * - Add a second Content to the Page on the DEFAULT Variant.
+     * - The {@link com.dotmarketing.cache.MultiTreeCache} is clean for this Page and the Render not have
+     * the second Contentlet.
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
-    public void aaa() throws WebAssetException, DotDataException, DotSecurityException {
+    public void renderPageInVariantAfterAddContent() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
         final Host host = new SiteDataGen().nextPersisted();
         final Variant variant = new VariantDataGen().nextPersisted();

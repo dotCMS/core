@@ -41,11 +41,11 @@ public class MultiTreeCache implements Cachable {
             final String pageIdentifier, final String variantName, final boolean live) {
         final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
 
-        final Map<String, Table<String, String, Set<PersonalizedContentlet>>> allPageMultiTress =
-                getMultiTreeMap(pageIdentifier, group).orElseThrow();
+        final Optional<Map<String, Table<String, String, Set<PersonalizedContentlet>>>> allPageMultiTress =
+                getMultiTreeMap(pageIdentifier, group);
 
-        return Optional.ofNullable(allPageMultiTress.get(variantName));
-
+        return allPageMultiTress.isPresent() ? Optional.ofNullable(allPageMultiTress.get().get(variantName))
+                : Optional.empty();
     }
 
     private Optional<Map<String, Table<String, String, Set<PersonalizedContentlet>>>> getMultiTreeMap(
@@ -79,8 +79,7 @@ public class MultiTreeCache implements Cachable {
     }
 
     public void removePageMultiTrees(final String pageIdentifier) {
-        Arrays.asList(getGroups()).forEach(group -> removePageMultiTrees(pageIdentifier,
-                VariantAPI.DEFAULT_VARIANT.name(), group));
+        Arrays.asList(getGroups()).forEach(group -> cache.remove(pageIdentifier, group));
     }
 
     public void removePageMultiTrees(final String pageIdentifier, final String variantName) {
@@ -88,7 +87,17 @@ public class MultiTreeCache implements Cachable {
     }
 
     public void removePageMultiTrees(final String pageIdentifier, final String variantName, final String group) {
-        cache.remove(getKey(pageIdentifier, variantName), group);
+
+        final Map<String, Table<String, String, Set<PersonalizedContentlet>>> multiTreeMap =
+                getMultiTreeMap(pageIdentifier, group).orElseGet(() -> new HashMap<>());
+
+        multiTreeMap.remove(variantName);
+
+        if (multiTreeMap.isEmpty()) {
+            cache.remove(pageIdentifier, group);
+        } else {
+            cache.put(pageIdentifier, multiTreeMap, group);
+        }
     }
 
     @Override

@@ -567,4 +567,61 @@ public class MultiTreeCacheTest {
         assertFalse(multiTreeCache.getPageMultiTrees(pageId, specificVariantName, false).isPresent());
     }
 
+    /**
+     * Method to test: {@link MultiTreeCache#removePageMultiTrees(String)}
+     * When: When you put MultiTress inside a Cache for differenet Variants
+     * Should: Remove all the MultiTrees for all the variants
+     */
+    @Test
+    public void putAndRemoveAll(){
+        final MultiTreeCache multiTreeCache = CacheLocator.getMultiTreeCache();
+
+        final String pageId = RandomStringUtils.random(20);
+
+        final Table<String, String, Set<PersonalizedContentlet>> multiTreesLiveDefault =  mock(Table.class);
+        final Table<String, String, Set<PersonalizedContentlet>> multiTreesWorkingDefault =  mock(Table.class);
+        final Table<String, String, Set<PersonalizedContentlet>> multiTreesLiveSpecificVariant =  mock(Table.class);
+        final Table<String, String, Set<PersonalizedContentlet>> multiTreesWorkingSpecificVariant =  mock(Table.class);
+
+        final String specificVariantName = "Specific Variant";
+
+        final boolean present_1 = Stream.of(
+                        multiTreeCache.getPageMultiTrees(pageId, VariantAPI.DEFAULT_VARIANT.name(), true),
+                        multiTreeCache.getPageMultiTrees(pageId, VariantAPI.DEFAULT_VARIANT.name(), false),
+                        multiTreeCache.getPageMultiTrees(pageId, specificVariantName, true),
+                        multiTreeCache.getPageMultiTrees(pageId, specificVariantName, false)
+                )
+                .filter(optional -> optional.isPresent())
+                .findFirst()
+                .isPresent();
+
+        if (present_1) {
+            throw new AssertException("Value Not Expected");
+        }
+
+        multiTreeCache.putPageMultiTrees(pageId, VariantAPI.DEFAULT_VARIANT.name(), true, multiTreesLiveDefault);
+        multiTreeCache.putPageMultiTrees(pageId, VariantAPI.DEFAULT_VARIANT.name(), false, multiTreesWorkingDefault);
+
+        multiTreeCache.putPageMultiTrees(pageId, specificVariantName, true, multiTreesLiveSpecificVariant);
+        multiTreeCache.putPageMultiTrees(pageId, specificVariantName, false, multiTreesWorkingSpecificVariant);
+
+        assertEquals(multiTreesLiveDefault, multiTreeCache.getPageMultiTrees(
+                pageId, VariantAPI.DEFAULT_VARIANT.name(), true).orElseThrow());
+
+        assertEquals(multiTreesWorkingDefault, multiTreeCache.getPageMultiTrees(
+                pageId, VariantAPI.DEFAULT_VARIANT.name(), false).orElseThrow());
+        assertEquals(multiTreesLiveSpecificVariant, multiTreeCache.getPageMultiTrees(
+                pageId, specificVariantName, true).orElseThrow());
+        assertEquals(multiTreesWorkingSpecificVariant, multiTreeCache.getPageMultiTrees(
+                pageId, specificVariantName, false).orElseThrow());
+
+        multiTreeCache.removePageMultiTrees(pageId);
+
+        assertFalse(multiTreeCache.getPageMultiTrees(pageId, VariantAPI.DEFAULT_VARIANT.name(), true).isPresent());
+
+        assertFalse(multiTreeCache.getPageMultiTrees(pageId, VariantAPI.DEFAULT_VARIANT.name(), false).isPresent());
+        assertFalse(multiTreeCache.getPageMultiTrees(pageId, specificVariantName, true).isPresent());
+        assertFalse(multiTreeCache.getPageMultiTrees(pageId, specificVariantName, false).isPresent());
+    }
+
 }
