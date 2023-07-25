@@ -132,6 +132,16 @@ const textMarks: Array<BubbleMenuItem> = [
     {
         icon: 'strikethrough_s',
         markAction: 'strike',
+        active: false
+    },
+    {
+        icon: 'superscript',
+        markAction: 'superscript',
+        active: false
+    },
+    {
+        icon: 'subscript',
+        markAction: 'subscript',
         active: false,
         divider: true
     }
