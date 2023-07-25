@@ -12,10 +12,62 @@ jobs:
   report:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion != 'skipped'
+    outputs:
+      workflow-json: ${{ steps.workflow-data.outputs.json }}
     steps:
-      - uses: dorny/test-reporter@v1
+      - name: Log GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Download Worlfkow Data
+        uses: dawidd6/action-download-artifact@v2
         with:
-          artifact: /^build-reports-(.*)/        # artifact name
+          name: 'workflow-data'
+          workflow: ${{ github.event.workflow.id }}
+          run_id: ${{ github.event.workflow_run.id }}
+          if_no_artifact_found: warn
+
+      - name: Get Workflow Data
+        id: workflow-data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ ! -e "workflow-data.json" ]]
+          then
+            echo "::warn title=Artifact 'workflow-data' missing::Expected artifact 'workflow-data' does not exist for pull_request event."
+          else
+            echo "json=$(jq -c '.' workflow-data.json)" >> $GITHUB_OUTPUT  # need to shrink to single line
+            echo "has-json=true" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: dorny/test-reporter@v1
+        if: steps.workflow-data.outputs.has-json == 'true'
+        with:
+          artifact: /^build-reports-test-(.*)/        # artifact name
           name: 'MVN Test Report $1'               # Name of the check run which will be created
           path: '**/target/**/TEST-*.xml'                     # Path to test results (inside artifact .zip)
           reporter: java-junit            # Format of test results
+          fail-on-error: false
+
+
+      - name: Post to a Slack channel
+        if: steps.workflow-data.outputs.has-json == 'true'
+        id: slack
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          # For posting a rich message using Block Kit
+          payload: |
+            {
+              "text": "Test report build result result: ${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status }}\n${{ fromJSON(steps.workflow-data.outputs.json).pull_request_url }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "GitHub Action build result: ${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status }}\n${{  fromJSON(steps.workflow-data.outputs.json).pull_request_url  }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.CORE_SLACK_WEBHOOK }}
