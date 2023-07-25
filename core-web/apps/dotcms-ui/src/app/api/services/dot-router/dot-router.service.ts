@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import {
@@ -22,6 +22,7 @@ export class DotRouterService {
     private _storedRedirectUrl: string;
     private _routeHistory: PortletNav = { url: '' };
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
+    private _routeCanBeDeactivated = new BehaviorSubject(true);
 
     constructor(private router: Router, private route: ActivatedRoute) {
         this._routeHistory.url = this.router.url;
@@ -70,6 +71,10 @@ export class DotRouterService {
         const nav = this.router.getCurrentNavigation();
 
         return nav ? nav.finalUrl.queryParams : this.route.snapshot.queryParams;
+    }
+
+    get canDeactivateRoute$(): Observable<boolean> {
+        return this._routeCanBeDeactivated.asObservable();
     }
 
     /**
@@ -359,6 +364,22 @@ export class DotRouterService {
             queryParams: params,
             queryParamsHandling: 'merge'
         });
+    }
+
+    /**
+     * Only takes effect if component subscribes to canDeactivateRoute
+     * @memberof DotRouterService
+     */
+    allowRouteDeactivation() {
+        this._routeCanBeDeactivated.next(true);
+    }
+
+    /**
+     * Only takes effect if component subscribes to canDeactivateRoute
+     * @memberof DotRouterService
+     */
+    forbidRouteDeactivation() {
+        this._routeCanBeDeactivated.next(false);
     }
 
     private redirectMain(): Promise<boolean> {

@@ -5,7 +5,8 @@ import { CanDeactivate } from '@angular/router';
 
 import { filter } from 'rxjs/operators';
 
-import { DotEditLayoutService } from '../dot-edit-layout/dot-edit-layout.service';
+import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 /**
  *
@@ -25,7 +26,10 @@ export interface CanDeactivateGuarded {
  */
 @Injectable()
 export class LayoutEditorCanDeactivateGuardService implements CanDeactivate<CanDeactivateGuarded> {
-    constructor(private dotEditLayoutService: DotEditLayoutService) {}
+    constructor(
+        private dotEditLayoutService: DotEditLayoutService,
+        private dotRouterService: DotRouterService
+    ) {}
 
     /**
      *
@@ -34,7 +38,7 @@ export class LayoutEditorCanDeactivateGuardService implements CanDeactivate<CanD
      * @memberof LayoutEditorCanDeactivateGuardService
      */
     canDeactivate(): Observable<boolean> {
-        return this.dotEditLayoutService.canBeDesactivated$.pipe(
+        return this.dotRouterService.canDeactivateRoute$.pipe(
             filter((res) => {
                 if (!res) {
                     this.dotEditLayoutService.changeCloseEditLayoutState(!res);

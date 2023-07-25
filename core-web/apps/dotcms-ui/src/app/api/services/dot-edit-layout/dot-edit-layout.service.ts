@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
@@ -28,7 +28,6 @@ export class DotEditLayoutService {
     private _addGridBox: Subject<boolean> = new Subject();
 
     private _closeEditLayout: Subject<boolean> = new Subject();
-    private _canBeDesactivated = new BehaviorSubject(true);
 
     constructor(private templateContainersCacheService: DotTemplateContainersCacheService) {}
 
@@ -39,24 +38,6 @@ export class DotEditLayoutService {
      */
     get closeEditLayout$() {
         return this._closeEditLayout;
-    }
-
-    /**
-     *
-     * @readonly
-     * @memberof DotEditLayoutService
-     */
-    get canBeDesactivated$() {
-        return this._canBeDesactivated;
-    }
-
-    /**
-     *
-     * @param {boolean} next
-     * @memberof DotEditLayoutService
-     */
-    changeDesactivateState(next: boolean) {
-        this._canBeDesactivated.next(next);
     }
 
     /**
