@@ -416,7 +416,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     private fixGridstackNodeOnMouseLeave(el: Element): void {
         // So every time the mouse leaves the row, we set the initial values for the box
         el.addEventListener('mouseleave', () => {
-            if (this.addBoxIsDragging && this.addBox.nativeElement.gridstackNode?.w !== 1) {
+            if (this.addBoxIsDragging && this.addBox.nativeElement.gridstackNode?.w !== BOX_WIDTH) {
                 this.addBox.nativeElement.gridstackNode = {
                     ...this.addBox.nativeElement.gridstackNode,
                     ...this.boxOptions
