@@ -18,9 +18,9 @@ jobs:
       - name: Run api-data-model tests
         working-directory: ./tools/dotcms-cli/
         run: |
-          ./mvnw test api-data-model
+          ./mvnw test --project api-data-model
       - name: Run cli tests
         working-directory: ./tools/dotcms-cli/
         run: |
-          ./mvnw test cli --also-make-dependents
+          ./mvnw test --project cli --also-make-dependents
 
