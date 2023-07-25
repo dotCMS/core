@@ -7,6 +7,7 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
@@ -244,6 +245,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Experiment experimentStarted = APILocator.getExperimentsAPI()
                 .start(experiment.id().get(), APILocator.systemUser());
 
+        final RunningId firstRunningId = experimentStarted.runningIds().get(0);
+
         try {
             final Experiment experimentToRestart = Experiment.builder().from(experimentStarted)
                     .status(Status.DRAFT)
@@ -268,6 +271,10 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     .anyMatch(runningId -> runningId.endDate() == null));
 
             assertTrue(experimentAfterReStart.runningIds().get(0).id() != experimentAfterReStart.runningIds().get(1).id());
+
+            final RunningId currentRunningId = experimentAfterReStart.runningIds().getCurrent().orElseThrow();
+
+            assertNotEquals(firstRunningId.id(), currentRunningId.id());
         } finally {
             APILocator.getExperimentsAPI().end(experimentStarted.id().get(), APILocator.systemUser());
         }
@@ -572,7 +579,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
-        APILocator.getExperimentsAPI()
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
                 .start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
@@ -592,7 +599,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             final List<BrowserSession> browserSessions = experimentsAPIImpl.getEvents(
-                    experiment,
+                    experimentStarted,
                     APILocator.systemUser());
 
             mockHttpServer.validate();
@@ -698,14 +705,14 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
+        final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+        ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
+        final Experiment experimentStarted = ExperimentDataGen.start(experiment);
+
+        addCountQueryContext(experimentStarted, 0, mockhttpServer);
+
         try {
-
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-
-             addCountQueryContext(experiment, 0, mockhttpServer);
-
-            ExperimentDataGen.start(experiment);
 
             final String noDefaultVariantName = experiment.trafficProportion().variants().stream()
                     .map(experimentVariant -> experimentVariant.id())
@@ -732,7 +739,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final VariantResults controlResults = variants.get("DEFAULT");
             assertEquals(50f, controlResults.weight());
         } finally {
-            ExperimentDataGen.end(experiment);
+            ExperimentDataGen.end(experimentStarted);
             mockhttpServer.stop();
         }
     }
@@ -887,6 +894,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+
         int offset = 0;
         for (int i = 0; i < 9; i++) {
             final List<Map<String, String>> page = new ArrayList<>(
@@ -894,17 +906,12 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             final Map<String, List<Map<String, String>>> pageCubeJsQueryResult =  map("data", page);
 
-            final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment, 1000, offset);
+            final String cubeJSQueryExpected = getExpectedPageReachQuery(experimentStarted, 1000, offset);
 
             addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(pageCubeJsQueryResult));
 
             offset += 1000;
         }
-
-        APILocator.getExperimentsAPI()
-                .start(experiment.getIdentifier(), APILocator.systemUser());
-
-        IPUtils.disabledIpPrivateSubnet(true);
 
         final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
         final List<Map<String, Object>> totalPageViewsResponseExpected = list(
@@ -1020,6 +1027,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+
         int offset = 0;
         for (int i = 0; i < 5; i++) {
             final int totalItems = i ==4 ? 500 : 1000;
@@ -1028,17 +1040,12 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             final Map<String, List<Map<String, String>>> pageCubeJsQueryResult =  map("data", page);
 
-            final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment, 1000, offset);
+            final String cubeJSQueryExpected = getExpectedPageReachQuery(experimentStarted, 1000, offset);
 
             addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(pageCubeJsQueryResult));
 
             offset += 1000;
         }
-
-        APILocator.getExperimentsAPI()
-                .start(experiment.getIdentifier(), APILocator.systemUser());
-
-        IPUtils.disabledIpPrivateSubnet(true);
 
         final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
         final List<Map<String, Object>> totalPageViewsResponseExpected = list(
@@ -3521,106 +3528,148 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     private static String getExpectedPageReachQuery(Experiment experiment) {
-        final String cubeJSQueryExpected ="{"
-                +   "\"filters\":["
-                +       "{"
-                +           "\"values\":["
-                +               "\"pageview\""
-                +           "],"
-                +           "\"member\":\"Events.eventType\","
-                +           "\"operator\":\"equals\""
-                +       "},"
-                +       "{"
-                +           "\"values\":["
-                +               "\"" + experiment.getIdentifier() + "\""
-                +           "],"
-                +           "\"member\":\"Events.experiment\","
-                +           "\"operator\":\"equals\""
-                +       "}"
-                +   "],"
-                +   "\"dimensions\":["
-                +       "\"Events.referer\","
-                +       "\"Events.experiment\","
-                +       "\"Events.variant\","
-                +       "\"Events.utcTime\","
-                +       "\"Events.url\","
-                +       "\"Events.lookBackWindow\","
-                +       "\"Events.eventType\""
-                +   "],"
-                +   "\"order\":{"
-                +       "\"Events.lookBackWindow\":\"asc\","
-                +       "\"Events.utcTime\":\"asc\""
-                +   "}"
-                + "}";
-        return cubeJSQueryExpected;
+        try {
+            final Experiment experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.getIdentifier(), APILocator.systemUser())
+                    .orElseThrow();
+
+            final String cubeJSQueryExpected ="{"
+                    +   "\"filters\":["
+                    +       "{"
+                    +           "\"values\":["
+                    +               "\"pageview\""
+                    +           "],"
+                    +           "\"member\":\"Events.eventType\","
+                    +           "\"operator\":\"equals\""
+                    +       "},"
+                    +       "{"
+                    +           "\"values\":["
+                    +               "\"" + experiment.getIdentifier() + "\""
+                    +           "],"
+                    +           "\"member\":\"Events.experiment\","
+                    +           "\"operator\":\"equals\""
+                    +       "},"
+                    +       "{"
+                    +           "\"values\":["
+                    +               "\"" + experimentFromDB.runningIds().getCurrent().get().id() + "\""
+                    +           "],"
+                    +           "\"member\":\"Events.runningId\","
+                    +           "\"operator\":\"equals\""
+                    +       "}"
+                    +   "],"
+                    +   "\"dimensions\":["
+                    +       "\"Events.referer\","
+                    +       "\"Events.experiment\","
+                    +       "\"Events.variant\","
+                    +       "\"Events.utcTime\","
+                    +       "\"Events.url\","
+                    +       "\"Events.lookBackWindow\","
+                    +       "\"Events.eventType\","
+                    +       "\"Events.runningId\""
+                    +   "],"
+                    +   "\"order\":{"
+                    +       "\"Events.lookBackWindow\":\"asc\","
+                    +       "\"Events.utcTime\":\"asc\""
+                    +   "}"
+                    + "}";
+            return cubeJSQueryExpected;
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
     private static String getExpectedPageReachQuery(final Experiment experiment, final long limit,
             final long offset) {
-        final String cubeJSQueryExpected ="{"
-                +   "\"filters\":["
-                +       "{"
-                +           "\"values\":["
-                +               "\"pageview\""
-                +           "],"
-                +           "\"member\":\"Events.eventType\","
-                +           "\"operator\":\"equals\""
-                +       "},"
-                +       "{"
-                +           "\"values\":["
-                +               "\"" + experiment.getIdentifier() + "\""
-                +           "],"
-                +           "\"member\":\"Events.experiment\","
-                +           "\"operator\":\"equals\""
-                +       "}"
-                +   "],"
-                +   "\"dimensions\":["
-                +       "\"Events.referer\","
-                +       "\"Events.experiment\","
-                +       "\"Events.variant\","
-                +       "\"Events.utcTime\","
-                +       "\"Events.url\","
-                +       "\"Events.lookBackWindow\","
-                +       "\"Events.eventType\""
-                +   "],"
-                +   "\"order\":{"
-                +       "\"Events.lookBackWindow\":\"asc\","
-                +       "\"Events.utcTime\":\"asc\""
-                +   "},"
-                +   "\"limit\":" + limit + ","
-                +   "\"offset\":" + offset
-                + "}";
-        return cubeJSQueryExpected;
+        try {
+            final Experiment experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.getIdentifier(), APILocator.systemUser())
+                    .orElseThrow();
+
+            final String cubeJSQueryExpected ="{"
+                    +   "\"filters\":["
+                    +       "{"
+                    +           "\"values\":["
+                    +               "\"pageview\""
+                    +           "],"
+                    +           "\"member\":\"Events.eventType\","
+                    +           "\"operator\":\"equals\""
+                    +       "},"
+                    +       "{"
+                    +           "\"values\":["
+                    +               "\"" + experiment.getIdentifier() + "\""
+                    +           "],"
+                    +           "\"member\":\"Events.experiment\","
+                    +           "\"operator\":\"equals\""
+                    +       "},"
+                    +       "{"
+                    +           "\"values\":["
+                    +               "\"" + experimentFromDB.runningIds().getCurrent().get().id() + "\""
+                    +           "],"
+                    +           "\"member\":\"Events.runningId\","
+                    +           "\"operator\":\"equals\""
+                    +       "}"
+                    +   "],"
+                    +   "\"dimensions\":["
+                    +       "\"Events.referer\","
+                    +       "\"Events.experiment\","
+                    +       "\"Events.variant\","
+                    +       "\"Events.utcTime\","
+                    +       "\"Events.url\","
+                    +       "\"Events.lookBackWindow\","
+                    +       "\"Events.eventType\","
+                    +       "\"Events.runningId\""
+                    +   "],"
+                    +   "\"order\":{"
+                    +       "\"Events.lookBackWindow\":\"asc\","
+                    +       "\"Events.utcTime\":\"asc\""
+                    +   "},"
+                    +   "\"limit\":" + limit + ","
+                    +   "\"offset\":" + offset
+                    + "}";
+            return cubeJSQueryExpected;
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static String getCountExpectedPageReachQuery(final Experiment experiment) {
-        final String cubeJSQueryExpected ="{"
-                +   "\"filters\":["
-                +       "{"
-                +           "\"values\":["
-                +               "\"pageview\""
-                +           "],"
-                +           "\"member\":\"Events.eventType\","
-                +           "\"operator\":\"equals\""
-                +       "},"
-                +       "{"
-                +           "\"values\":["
-                +               "\"" + experiment.getIdentifier() + "\""
-                +           "],"
-                +           "\"member\":\"Events.experiment\","
-                +           "\"operator\":\"equals\""
-                +       "}"
-                +   "],"
-                +   "\"measures\":["
-                +       "\"Events.count\""
-                +   "],"
-                +   "\"order\":{"
-                +       "\"Events.lookBackWindow\":\"asc\","
-                +       "\"Events.utcTime\":\"asc\""
-                +   "}"
-                + "}";
-        return cubeJSQueryExpected;
+
+        try {
+            final Experiment experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.getIdentifier(), APILocator.systemUser())
+                    .orElseThrow();
+
+            final String cubeJSQueryExpected ="{"
+                    +   "\"filters\":["
+                    +       "{"
+                    +           "\"values\":["
+                    +               "\"pageview\""
+                    +           "],"
+                    +           "\"member\":\"Events.eventType\","
+                    +           "\"operator\":\"equals\""
+                    +       "},"
+                    +       "{"
+                    +           "\"values\":["
+                    +               "\"" + experimentFromDB.getIdentifier() + "\""
+                    +           "],"
+                    +           "\"member\":\"Events.experiment\","
+                    +           "\"operator\":\"equals\""
+                    +       "}"
+                    +   "],"
+                    +   "\"measures\":["
+                    +       "\"Events.count\""
+                    +   "],"
+                    +   "\"order\":{"
+                    +       "\"Events.lookBackWindow\":\"asc\","
+                    +       "\"Events.utcTime\":\"asc\""
+                    +   "}"
+                    + "}";
+            return cubeJSQueryExpected;
+
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static String getExpecteExitRateQuery(Experiment experiment) {

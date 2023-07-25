@@ -1,6 +1,5 @@
 package com.dotcms.analytics.metrics;
 
-
 import static com.dotcms.util.HttpRequestDataUtil.getQueryParams;
 
 import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
@@ -25,15 +24,10 @@ public class QueryParameterValuesGetter implements ParameterValueGetter<QueryPar
 
         final String urlValue = event.get("url").map(Object::toString).orElseThrow();
 
-        try {
-            URI uri = new URI(urlValue);
-            String query = uri.getQuery();
+        return getQueryParams(urlValue).entrySet().stream()
+                .map(entry -> new QueryParameter(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
 
-            return getQueryParams(query).entrySet().stream()
-                    .map(entry -> new QueryParameter(entry.getKey(), entry.getValue()))
-                    .collect(Collectors.toList());
-        } catch (URISyntaxException e) {
-            throw new DotRuntimeException(e);
-        }
     }
+
 }
