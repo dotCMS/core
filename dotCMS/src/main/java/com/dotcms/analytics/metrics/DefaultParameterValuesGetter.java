@@ -2,16 +2,8 @@ package com.dotcms.analytics.metrics;
 
 import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
 import com.dotcms.experiments.business.result.Event;
-
-import io.jsonwebtoken.lang.Collections;
-import java.util.Collection;
-
-import com.google.common.collect.ImmutableSet;
-import java.util.Collection;
-import java.util.Set;
 import java.util.Collection;
 import com.google.common.collect.ImmutableSet;
-
 
 
 /**

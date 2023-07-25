@@ -1,7 +1,5 @@
 package com.dotcms.analytics.metrics;
 
-import java.util.Collection;
-
 
 import java.util.Collection;
 import com.dotcms.experiments.business.result.Event;
