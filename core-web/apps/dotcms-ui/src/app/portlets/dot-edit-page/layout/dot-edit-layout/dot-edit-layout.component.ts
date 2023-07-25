@@ -114,7 +114,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             .subscribe(
                 (updatedPage: DotPageRender) => this.handleSuccessSaveTemplate(updatedPage),
                 (err: ResponseView) => this.handleErrorSaveTemplate(err),
-                () => this.canRouteBeDesativated(true)
+                () => this.dotRouterService.allowRouteDeactivation()
             );
     }
 
@@ -125,7 +125,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
      * @memberof DotEditLayoutComponent
      */
     nextUpdateTemplate(value: DotTemplateDesigner) {
-        this.canRouteBeDesativated(false);
+        this.dotRouterService.forbidRouteDeactivation();
         this.updateTemplate.next(value);
         this.lastLayout = value;
     }
@@ -159,7 +159,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
                             ...layout,
                             title: null
                         })
-                        .pipe(finalize(() => this.canRouteBeDesativated(true)));
+                        .pipe(finalize(() => this.dotRouterService.allowRouteDeactivation()));
                 })
             )
             .subscribe(
@@ -193,17 +193,6 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     private handleErrorSaveTemplate(err: ResponseView) {
         this.dotGlobalMessageService.error(err.response.statusText);
         this.dotHttpErrorManagerService.handle(new HttpErrorResponse(err.response)).subscribe();
-    }
-
-    /**
-     * Let the user leave the route only when changes have been saved.
-     *
-     * @private
-     * @param {boolean} value
-     * @memberof DotEditLayoutComponent
-     */
-    private canRouteBeDesativated(value: boolean): void {
-        this.dotEditLayoutService.changeDesactivateState(value);
     }
 
     private getRemappedContainers(containers: {
