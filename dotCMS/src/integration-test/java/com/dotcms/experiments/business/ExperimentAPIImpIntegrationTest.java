@@ -1731,11 +1731,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
-        APILocator.getExperimentsAPI()
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
                 .start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
-        final String cubeJSQueryExpected = getExpecteExitRateQuery(experiment);
+        final String cubeJSQueryExpected = getExpecteExitRateQuery(experimentStarted);
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
         addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
@@ -3369,11 +3369,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
-        APILocator.getExperimentsAPI()
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
                 .start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
-        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experimentStarted);
 
         final MockHttpServer mockhttpServer = new MockHttpServer(cubeServerIp, cubeJsServerPort);
 
@@ -3544,7 +3544,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     +       "},"
                     +       "{"
                     +           "\"values\":["
-                    +               "\"" + experiment.getIdentifier() + "\""
+                    +               "\"" + experimentFromDB.getIdentifier() + "\""
                     +           "],"
                     +           "\"member\":\"Events.experiment\","
                     +           "\"operator\":\"equals\""
@@ -3655,6 +3655,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     +           "],"
                     +           "\"member\":\"Events.experiment\","
                     +           "\"operator\":\"equals\""
+                    +       "},"
+                    +       "{"
+                    +           "\"values\":["
+                    +               "\"" + experimentFromDB.runningIds().getCurrent().get().id() + "\""
+                    +           "],"
+                    +           "\"member\":\"Events.runningId\","
+                    +           "\"operator\":\"equals\""
                     +       "}"
                     +   "],"
                     +   "\"measures\":["
@@ -3666,44 +3673,59 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     +   "}"
                     + "}";
             return cubeJSQueryExpected;
-
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
     }
 
     private static String getExpecteExitRateQuery(Experiment experiment) {
-        final String cubeJSQueryExpected ="{"
-                +   "\"filters\":["
-                +       "{"
-                +           "\"values\":["
-                +               "\"pageview\""
-                +           "],"
-                +           "\"member\":\"Events.eventType\","
-                +           "\"operator\":\"equals\""
-                +       "},"
-                +       "{"
-                +           "\"values\":["
-                +               "\"" + experiment.getIdentifier() + "\""
-                +           "],"
-                +           "\"member\":\"Events.experiment\","
-                +           "\"operator\":\"equals\""
-                +       "}"
-                +   "],"
-                +   "\"dimensions\":["
-                +       "\"Events.experiment\","
-                +       "\"Events.variant\","
-                +       "\"Events.utcTime\","
-                +       "\"Events.url\","
-                +       "\"Events.lookBackWindow\","
-                +       "\"Events.eventType\""
-                +   "],"
-                +   "\"order\":{"
-                +       "\"Events.lookBackWindow\":\"asc\","
-                +       "\"Events.utcTime\":\"asc\""
-                +   "}"
-                + "}";
-        return cubeJSQueryExpected;
+        try {
+            final Experiment experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.getIdentifier(), APILocator.systemUser())
+                    .orElseThrow();
+
+            final String cubeJSQueryExpected ="{"
+                    +   "\"filters\":["
+                    +       "{"
+                    +           "\"values\":["
+                    +               "\"pageview\""
+                    +           "],"
+                    +           "\"member\":\"Events.eventType\","
+                    +           "\"operator\":\"equals\""
+                    +       "},"
+                    +       "{"
+                    +           "\"values\":["
+                    +               "\"" + experiment.getIdentifier() + "\""
+                    +           "],"
+                    +           "\"member\":\"Events.experiment\","
+                    +           "\"operator\":\"equals\""
+                    +       "},"
+                    +       "{"
+                    +           "\"values\":["
+                    +               "\"" + experimentFromDB.runningIds().getCurrent().get().id() + "\""
+                    +           "],"
+                    +           "\"member\":\"Events.runningId\","
+                    +           "\"operator\":\"equals\""
+                    +       "}"
+                    +   "],"
+                    +   "\"dimensions\":["
+                    +       "\"Events.experiment\","
+                    +       "\"Events.variant\","
+                    +       "\"Events.utcTime\","
+                    +       "\"Events.url\","
+                    +       "\"Events.lookBackWindow\","
+                    +       "\"Events.eventType\","
+                    +       "\"Events.runningId\""
+                    +   "],"
+                    +   "\"order\":{"
+                    +       "\"Events.lookBackWindow\":\"asc\","
+                    +       "\"Events.utcTime\":\"asc\""
+                    +   "}"
+                    + "}";
+            return cubeJSQueryExpected;
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static AnalyticsHelper mockAnalyticsHelper() throws DotDataException, DotSecurityException {
