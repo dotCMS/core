@@ -130,8 +130,8 @@ jobs:
                       "text": "*👣 Failure Module:*\n${{ steps.workflow-data.outputs.first_fail_module }}"
                     },
                     {
-                      "type": "mrkdwn",
-                      "text": "*💬 Failure Message:*\n${{ steps.workflow-data.outputs.first_fail_error }}"
+                      "type": "plain_text",
+                      "text": "*💬 Failure Message:*\nError Placeholder"
                     }
                   ]
                 },
