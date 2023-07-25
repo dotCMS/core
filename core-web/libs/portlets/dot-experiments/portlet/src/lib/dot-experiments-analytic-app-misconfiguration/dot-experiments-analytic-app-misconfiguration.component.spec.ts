@@ -1,11 +1,13 @@
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
 
+import { Router } from '@angular/router';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotEmptyContainerComponent } from '@dotcms/ui';
 
 import { DotExperimentsAnalyticAppMisconfigurationComponent } from './dot-experiments-analytic-app-misconfiguration.component';
+
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
-import { Router } from '@angular/router';
 
 describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
     let spectator: Spectator<DotExperimentsAnalyticAppMisconfigurationComponent>;
