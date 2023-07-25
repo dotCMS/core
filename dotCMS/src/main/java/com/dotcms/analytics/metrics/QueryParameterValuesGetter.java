@@ -1,5 +1,8 @@
 package com.dotcms.analytics.metrics;
 
+
+import static com.dotcms.util.HttpRequestDataUtil.getQueryParams;
+
 import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
 import com.dotcms.experiments.business.result.Event;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -11,6 +14,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * {@link ParameterValueGetter} to get the Query Parameters from the Event's Url.
+ */
 public class QueryParameterValuesGetter implements ParameterValueGetter<QueryParameter> {
     @Override
     public Collection<QueryParameter> getValuesFromEvent(
@@ -29,33 +35,5 @@ public class QueryParameterValuesGetter implements ParameterValueGetter<QueryPar
         } catch (URISyntaxException e) {
             throw new DotRuntimeException(e);
         }
-    }
-
-    private static Map<String, String> getQueryParams(String query) {
-        Map<String, String> queryParams = new HashMap<>();
-
-        if (query != null) {
-            String[] params = query.split("&");
-
-            for (String param : params) {
-                String[] keyValue = param.split("=");
-                if (keyValue.length == 2) {
-                    String key = decodeURL(keyValue[0]);
-                    String value = decodeURL(keyValue[1]);
-                    queryParams.put(key, value);
-                }
-            }
-        }
-
-        return queryParams;
-    }
-
-    private static String decodeURL(String url) {
-        try {
-            return URLDecoder.decode(url, "UTF-8");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
     }
 }

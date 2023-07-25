@@ -30,8 +30,12 @@ public enum MetricType {
             )
             .availableOperators(Operator.EQUALS, Operator.CONTAINS)),
     EXIT_RATE(new Builder()
-            .label("Exit Rate")
+            .label("Exit Rate")),
+
+    BOUNCE_RATE(new Builder()
+            .label("Bounce Rate")
             .optionalParameters(Parameter.builder().name("url").build())),
+
     URL_PARAMETER(new Builder()
             .label("Url Parameter")
             .allRequiredParameters(

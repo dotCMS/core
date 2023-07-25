@@ -958,9 +958,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
             "The Experiment must be RUNNING or ENDED to get results");
 
-        final List<BrowserSession> events = getEvents(experiment, user);
+        final List<BrowserSession> events = getEvents(experimentFromDataBase, user);
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
-            experiment, events);
+                experimentFromDataBase, events);
 
         experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
 

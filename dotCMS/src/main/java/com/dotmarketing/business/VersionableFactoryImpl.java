@@ -614,6 +614,13 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		this.icache.removeContentletVersionInfoToCache(id, lang);
 	}
 
+	@Override
+	protected void deleteContentletVersionInfo(String id, long lang, final String variantId) throws DotDataException {
+		new DotConnect().setSQL("DELETE FROM contentlet_version_info WHERE identifier=? AND lang=? AND variant_id=?")
+				.addParam(id).addParam(lang).addParam(variantId).loadResult();
+		this.icache.removeContentletVersionInfoToCache(id, lang);
+	}
+
 	/**
 	 * Returns the set of dotCMS objects whose information can be looked up via
 	 * APIs before performing a database lookup. This approach allows the

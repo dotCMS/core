@@ -58,6 +58,7 @@ public enum ExperimentAnalyzerUtil {
         return map(
                 MetricType.REACH_PAGE, new AfterLandOnPageExperimentAnalyzer(),
                 MetricType.EXIT_RATE, new ExitRateExperimentAnalyzer(),
+                MetricType.BOUNCE_RATE, new BounceRateExperimentAnalyzer(),
                 MetricType.URL_PARAMETER, new AfterLandOnPageExperimentAnalyzer()
         );
     }
