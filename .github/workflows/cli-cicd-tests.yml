@@ -13,14 +13,23 @@ jobs:
     name: CLI tests
     runs-on: ubuntu-latest
     steps:
+      - name: Environment settings
+        run: |
+          mvn -version
+          free -mh
       - name: Checkout core
         uses: actions/checkout@v3
-      - name: Run api-data-model tests
-        working-directory: ./tools/dotcms-cli/
-        run: |
-          ./mvnw test --projects api-data-model
       - name: Run cli tests
         working-directory: ./tools/dotcms-cli/
         run: |
-          ./mvnw test --projects cli --also-make-dependents
+          ./mvnw test  
+
+#      - name: Run api-data-model tests
+#        working-directory: ./tools/dotcms-cli/
+#        run: |
+#          ./mvnw test --projects api-data-model
+#      - name: Run cli tests
+#        working-directory: ./tools/dotcms-cli/
+#        run: |
+#          ./mvnw test --projects cli --also-make-dependents
 
