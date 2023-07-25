@@ -58,14 +58,83 @@ jobs:
           # For posting a rich message using Block Kit
           payload: |
             {
-              "text": "Test report build result result: ${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status }}\n${{ fromJSON(steps.workflow-data.outputs.json).pull_request_url }}",
               "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status == 'SUCCESS' ? '✅' : '❌' }} Github Actions Build Notification",
+                    "emoji": true
+                  }
+                },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "GitHub Action build result: ${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status }}\n${{  fromJSON(steps.workflow-data.outputs.json).pull_request_url  }}"
+                    "text": "The build for PR #${{ fromJSON(steps.workflow-data.outputs.json).pr_number }}  by ${{ fromJSON(steps.workflow-data.outputs.json).pr_author }} is *${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status }} ${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status == 'SUCCESS' ? '✅' : '❌' }}*."
                   }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*🔗 Action Run:*\n<https://github.com/${{ fromJSON(steps.workflow-data.outputs.json).source_repository }}/actions/runs/${{ fromJSON(steps.workflow-data.outputs.json).run_id }} | ${{ fromJSON(steps.workflow-data.outputs.json).run_id }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*👣 Failure Step:*\n${{ fromJSON(steps.workflow-data.outputs.json).first_fail_step || 'None'}}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*👣 Failure Module:*\n${{ fromJSON(steps.workflow-data.outputs.json).first_fail_module || 'None'}}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*💬 Failure Message:*\n${{ fromJSON(steps.workflow-data.outputs.json).first_fail_error || 'None}}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*👤 PR Author:*\n${{ fromJSON(steps.workflow-data.outputs.json).pr_author }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*📝 PR Name:*\n${{ fromJSON(steps.workflow-data.outputs.json).pr_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*🔢 PR Number:*\n<https://github.com/${{ fromJSON(steps.workflow-data.outputs.json).source_repository }}/pull/${{ fromJSON(steps.workflow-data.outputs.json).pr_number }}|#${{ fromJSON(steps.workflow-data.outputs.json).pr_number }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*🌿 Branch Name:*\n<https://github.com/${{ fromJSON(steps.workflow-data.outputs.json).source_repository }}/tree/${{ fromJSON(steps.workflow-data.outputs.json).branch }}|${{ fromJSON(steps.workflow-data.outputs.json).branch }}>"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*🔢 Commit ID:*\n<https://github.com/${{ fromJSON(steps.workflow-data.outputs.json).source_repository }}/pull/${{ fromJSON(steps.workflow-data.outputs.json).pr_number }}//commits/${{ fromJSON(steps.workflow-data.outputs.json).head_sha }}|#${{ fromJSON(steps.workflow-data.outputs.json).head_sha }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*👤 Commit Author:*\n${{ fromJSON(steps.workflow-data.outputs.json).head_author }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*📝 Commit Name:*\n${{ fromJSON(steps.workflow-data.outputs.json).head_name }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "divider"
                 }
               ]
             }

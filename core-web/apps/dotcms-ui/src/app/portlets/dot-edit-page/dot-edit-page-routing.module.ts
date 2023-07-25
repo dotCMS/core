@@ -15,11 +15,14 @@ const dotEditPage: Routes = [
         path: '',
         resolve: {
             content: DotEditPageResolver,
-            featuredFlag: DotFeatureFlagResolver,
+            featuredFlags: DotFeatureFlagResolver,
             experiment: DotExperimentExperimentResolver
         },
         data: {
-            featuredFlagToCheck: FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
+            featuredFlagsToCheck: [
+                FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS,
+                FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS
+            ]
         },
         // needed to allow navigation from the page menu in the edit mode. See https://github.com/dotCMS/core/pull/25509
         runGuardsAndResolvers: 'always',
