@@ -49,7 +49,50 @@ jobs:
           reporter: java-junit            # Format of test results
           fail-on-error: false
 
-
+      - name: Set status info
+        id: status-info
+        run: |
+          json=$(jq -c '.' workflow-data.json)
+          status=$(echo $json | jq -r '.aggregate_status // "null"')
+          pr_number=$(echo $json | jq -r '.pr_number // "null"')
+          pr_author=$(echo $json | jq -r '.pr_author // "null"')
+          run_id=$(echo $json | jq -r '.run_id // "null"')
+          first_fail_step=$(echo $json | jq -r '.first_fail_step // "None"')
+          first_fail_module=$(echo $json | jq -r '.first_fail_module // "None"')
+          first_fail_error=$(echo $json | jq -r '.first_fail_error // "None"')
+          pr_name=$(echo $json | jq -r '.pr_name // "null"')
+          branch=$(echo $json | jq -r '.branch // "null"')
+          head_sha=$(echo $json | jq -r '.head_sha // "null"')
+          head_author=$(echo $json | jq -r '.head_author // "null"')
+          head_name=$(echo $json | jq -r '.head_name // "null"')
+          source_repository=$(echo $json | jq -r '.source_repository // "null"')
+          action_run_url="https://github.com/$source_repository/actions/runs/$run_id"
+          pr_number_url="https://github.com/$source_repository/pull/$pr_number"
+          branch_url="https://github.com/$source_repository/tree/$branch"
+          commit_id_url="https://github.com/$source_repository/pull/$pr_number/commits/$head_sha"
+          if [[ "$status" == "SUCCESS" ]]; then
+            echo "status_icon=✅" >> $GITHUB_OUTPUT
+          else
+            echo "status_icon=❌" >> $GITHUB_OUTPUT
+          fi
+          echo "status=$status" >> $GITHUB_OUTPUT
+          echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
+          echo "pr_author=$pr_author" >> $GITHUB_OUTPUT
+          echo "run_id=$run_id" >> $GITHUB_OUTPUT
+          echo "first_fail_step=$first_fail_step" >> $GITHUB_OUTPUT
+          echo "first_fail_module=$first_fail_module" >> $GITHUB_OUTPUT
+          echo "first_fail_error=$first_fail_error" >> $GITHUB_OUTPUT
+          echo "pr_name=$pr_name" >> $GITHUB_OUTPUT
+          echo "branch=$branch" >> $GITHUB_OUTPUT
+          echo "head_sha=$head_sha" >> $GITHUB_OUTPUT
+          echo "head_author=$head_author" >> $GITHUB_OUTPUT
+          echo "head_name=$head_name" >> $GITHUB_OUTPUT
+          echo "source_repository=$source_repository" >> $GITHUB_OUTPUT
+          echo "action_run_url=$action_run_url" >> $GITHUB_OUTPUT
+          echo "pr_number_url=$pr_number_url" >> $GITHUB_OUTPUT
+          echo "branch_url=$branch_url" >> $GITHUB_OUTPUT
+          echo "commit_id_url=$commit_id_url" >> $GITHUB_OUTPUT
+          
       - name: Post to a Slack channel
         if: steps.workflow-data.outputs.has-json == 'true'
         id: slack
@@ -58,14 +101,83 @@ jobs:
           # For posting a rich message using Block Kit
           payload: |
             {
-              "text": "Test report build result result: ${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status }}\n${{ fromJSON(steps.workflow-data.outputs.json).pull_request_url }}",
               "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "${{ steps.status-info.outputs.status_icon }} Github Actions Build Notification",
+                    "emoji": true
+                  }
+                },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "GitHub Action build result: ${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status }}\n${{  fromJSON(steps.workflow-data.outputs.json).pull_request_url  }}"
+                    "text": "The build for PR #${{ steps.status-info.outputs.pr_number }} by ${{ steps.status-info.outputs.pr_author }} is *${{ steps.status-info.outputs.status }} ${{ steps.status-info.outputs.status_icon }}*."
                   }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*🔗 Action Run:*\n<${{ steps.status-info.outputs.action_run_url }} | ${{ steps.status-info.outputs.run_id }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*👣 Failure Step:*\n${{ steps.status-info.outputs.first_fail_step }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*👣 Failure Module:*\n${{ steps.status-info.outputs.first_fail_module }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*💬 Failure Message:*\n${{ steps.status-info.outputs.first_fail_error }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*👤 PR Author:*\n${{ steps.status-info.outputs.pr_author }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*📝 PR Name:*\n${{ steps.status-info.outputs.pr_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*🔢 PR Number:*\n<${{ steps.status-info.outputs.pr_number_url }}|#${{ steps.status-info.outputs.pr_number }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*🌿 Branch Name:*\n<${{ steps.status-info.outputs.branch_url }}|${{ steps.status-info.outputs.branch }}>"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*🔢 Commit ID:*\n<${{ steps.status-info.outputs.commit_id_url }}|#${{ steps.status-info.outputs.head_sha }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*👤 Commit Author:*\n${{ steps.status-info.outputs.head_author }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*📝 Commit Name:*\n${{ steps.status-info.outputs.head_name }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "divider"
                 }
               ]
             }
