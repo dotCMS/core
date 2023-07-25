@@ -1,16 +1,25 @@
+import { ChartData } from 'chart.js';
+import * as jStat from 'jstat';
+
 import { formatPercent } from '@angular/common';
 
 import {
+    BayesianStatusResponse,
     ComponentStatus,
     DEFAULT_VARIANT_ID,
     DotBayesianVariantResult,
     DotCreditabilityInterval,
     DotExperiment,
+    DotExperimentResults,
+    DotExperimentStatus,
     DotResultDate,
     ExperimentChartDatasetColorsVariants,
+    ExperimentLinearChartDatasetDefaultProperties,
     ExperimentSteps,
     LineChartColorsProperties,
     PROP_NOT_FOUND,
+    ReportSummaryLegendByBayesianStatus,
+    SummaryLegend,
     TIME_14_DAYS,
     TIME_90_DAYS
 } from '@dotcms/dotcms-models';
@@ -106,3 +115,73 @@ export const isPromotedVariant = (experiment: DotExperiment, variantName: string
 };
 
 export const getRandomUUID = () => self.crypto.randomUUID();
+
+export const getSuggestedWinner = (
+    experiment: DotExperiment,
+    results: DotExperimentResults
+): SummaryLegend => {
+    const { bayesianResult, sessions } = results;
+
+    const hasSessions = sessions.total > 0;
+    const isATieBayesianSuggestionWinner =
+        bayesianResult.suggestedWinner === BayesianStatusResponse.TIE;
+    const isNoneBayesianSuggestionWinner =
+        bayesianResult.suggestedWinner === BayesianStatusResponse.NONE;
+
+    if (!hasSessions || isNoneBayesianSuggestionWinner) {
+        return experiment.status === DotExperimentStatus.ENDED
+            ? ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
+            : ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS;
+    }
+
+    if (isATieBayesianSuggestionWinner) {
+        return { ...ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND };
+    }
+
+    return experiment.status === DotExperimentStatus.ENDED
+        ? { ...ReportSummaryLegendByBayesianStatus.WINNER }
+        : { ...ReportSummaryLegendByBayesianStatus.PRELIMINARY_WINNER };
+};
+
+/**
+ * Generate the data to use in the Bayesian chart
+ * @param results
+ */
+export const getBayesianDatasets = (
+    results: DotExperimentResults
+): ChartData<'line'>['datasets'] => {
+    const { variants } = results.goals.primary;
+    const { sessions } = results;
+    const datasets = [];
+    let colorIndex = 0;
+
+    Object.entries(variants).forEach(([variantId, variant]) => {
+        const success = variant.uniqueBySession.count;
+        const failure = sessions.variants[variantId] - variant.uniqueBySession.count;
+        const label = variant.variantDescription;
+
+        const data: number[] = generateProbabilityDensityData(success, failure);
+
+        datasets.push({
+            label,
+            data,
+            ...getPropertyColors(colorIndex++),
+            ...ExperimentLinearChartDatasetDefaultProperties
+        });
+    });
+
+    return datasets;
+};
+
+const generateProbabilityDensityData = (success: number, failure: number) => {
+    const STEP = 0.01;
+    const betaDistribution = new jStat.beta(success, failure);
+    const data = [];
+    for (let i = 0; i <= 1; i += STEP) {
+        const x = i;
+        const y = betaDistribution.pdf(x);
+        data.push({ x, y });
+    }
+
+    return data;
+};

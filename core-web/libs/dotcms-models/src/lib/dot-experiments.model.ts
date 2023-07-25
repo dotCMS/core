@@ -183,32 +183,35 @@ export const ConditionDefaultByTypeOfGoal: Partial<Record<GOAL_TYPES, GOAL_PARAM
     [GOAL_TYPES.CLICK_ON_ELEMENT]: GOAL_PARAMETERS.URL
 };
 
+//Todo: Update the missing one with the new colors
 export const ChartColors = {
+    // Variants colors
+    default: {
+        line: 'rgb(66,194,240)',
+        fill: 'rgba(66,194,240,0.15)'
+    },
     primary: {
-        rgb: 'rgb(66,107,240)',
-        rgba_10: 'rgba(66,107,240,0.1)'
+        fill: getComputedStyle(document.body).getPropertyValue('--color-palette-primary-op-10'),
+        line: getComputedStyle(document.body).getPropertyValue('--color-palette-primary-op-70')
     },
     secondary: {
-        rgb: 'rgb(177,117,255)',
-        rgba_10: 'rgba(177,117,255,0.1)'
+        fill: getComputedStyle(document.body).getPropertyValue('--color-palette-secondary-op-10'),
+        line: getComputedStyle(document.body).getPropertyValue('--color-palette-secondary-op-70')
     },
-    accent: {
-        rgb: 'rgb(65,219,247)',
-        rgba_10: 'rgba(65,219,247,0.1)'
+    // Chart colors
+    xAxis: {
+        border: getComputedStyle(document.body).getPropertyValue('--color-palette-black-op-20'),
+        gridLine: getComputedStyle(document.body).getPropertyValue('--color-palette-black-op-30')
     },
-    xAxis: { gridLine: '#AFB3C0' },
-    yAxis: { gridLine: '#3D404D' },
+    yAxis: {
+        border: getComputedStyle(document.body).getPropertyValue('--color-palette-black-op-20'),
+        gridLine: getComputedStyle(document.body).getPropertyValue('--color-palette-black-op-50')
+    },
     ticks: {
-        hex: '#524E5C'
-    },
-    gridXLine: {
-        hex: '#AFB3C0'
-    },
-    gridYLine: {
-        hex: '#3D404D'
+        color: getComputedStyle(document.body).getPropertyValue('--color-palette-black-op-70')
     },
     white: '#FFFFFF',
-    black: '#000000'
+    black: '#14151a'
 };
 
 export type LineChartColorsProperties = Pick<
@@ -218,19 +221,19 @@ export type LineChartColorsProperties = Pick<
 
 export const ExperimentChartDatasetColorsVariants: Array<LineChartColorsProperties> = [
     {
-        borderColor: ChartColors.primary.rgb,
-        pointBackgroundColor: ChartColors.primary.rgb,
-        backgroundColor: ChartColors.primary.rgba_10
+        borderColor: ChartColors.default.line,
+        pointBackgroundColor: ChartColors.default.line,
+        backgroundColor: ChartColors.default.fill
     },
     {
-        borderColor: ChartColors.secondary.rgb,
-        pointBackgroundColor: ChartColors.secondary.rgb,
-        backgroundColor: ChartColors.secondary.rgba_10
+        borderColor: ChartColors.primary.line,
+        pointBackgroundColor: ChartColors.primary.line,
+        backgroundColor: ChartColors.primary.fill
     },
     {
-        borderColor: ChartColors.accent.rgb,
-        pointBackgroundColor: ChartColors.accent.rgb,
-        backgroundColor: ChartColors.accent.rgba_10
+        borderColor: ChartColors.secondary.line,
+        pointBackgroundColor: ChartColors.secondary.line,
+        backgroundColor: ChartColors.secondary.fill
     }
 ];
 
@@ -241,6 +244,12 @@ export const ExperimentLineChartDatasetDefaultProperties: Partial<ChartDataset<'
     fill: true,
     cubicInterpolationMode: 'monotone',
     borderWidth: 1.5
+};
+
+export const ExperimentLinearChartDatasetDefaultProperties: Partial<ChartDataset<'line'>> = {
+    ...ExperimentLineChartDatasetDefaultProperties,
+    pointRadius: 0,
+    pointHoverRadius: 2.5
 };
 
 export type GoalConditionsControlsNames = 'parameter' | 'operator' | 'value';

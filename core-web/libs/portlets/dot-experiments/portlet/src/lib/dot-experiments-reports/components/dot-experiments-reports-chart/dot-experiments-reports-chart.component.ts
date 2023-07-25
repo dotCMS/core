@@ -30,27 +30,35 @@ import { getRandomUUID } from '../../../shared/dot-experiment.utils';
 })
 export class DotExperimentsReportsChartComponent implements OnChanges {
     @ViewChild('chart') chart: UIChart;
-    options;
+
     @Input()
     isEmpty = true;
+
     @Input()
     isLoading = true;
+
     @Input()
     config: { xAxisLabel: string; yAxisLabel: string };
+
     @Input()
     data: ChartData<'line'>;
 
-    protected chartId = `chart-` + getRandomUUID();
+    @Input()
+    isLinearAxis = false;
 
+    options;
+    protected chartId = `chart-` + getRandomUUID();
     protected readonly plugins = [htmlLegendPlugin];
 
     ngOnChanges(changes: SimpleChanges): void {
         const { config, data } = changes;
+
         if (config?.currentValue && data.currentValue) {
             this.options = generateDotExperimentLineChartJsOptions({
                 legendId: this.chartId,
                 xAxisLabel: config.currentValue.xAxisLabel,
-                yAxisLabel: config.currentValue.yAxisLabel
+                yAxisLabel: config.currentValue.yAxisLabel,
+                isLinearAxis: this.isLinearAxis
             });
         }
     }
