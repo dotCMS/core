@@ -35,6 +35,9 @@ describe('DotTemplateBuilderStore', () => {
     let containerMap$: Observable<DotContainerMap>;
     let initialState: DotGridStackWidget[];
     const mockContainer = containersMock[0];
+    const minDataMockContainer = {
+        identifier: mockContainer.identifier
+    };
 
     const addContainer = () => {
         const parentRow = initialState[0];
@@ -423,20 +426,27 @@ describe('DotTemplateBuilderStore', () => {
         expect.assertions(1);
         service.addSidebarContainer(mockContainer);
         service.vm$.subscribe(({ layoutProperties }) => {
-            expect(layoutProperties.sidebar.containers).toContain(mockContainer);
+            expect(layoutProperties.sidebar.containers[0]).toEqual(minDataMockContainer);
+            done();
         });
-        done();
+    });
+
+    it('should add a container to container map when adding it to sidebar', (done) => {
+        expect.assertions(1);
+        service.addSidebarContainer(mockContainer);
+        service.vm$.subscribe(({ containerMap }) => {
+            expect(containerMap[mockContainer.identifier]).toEqual(mockContainer);
+            done();
+        });
     });
 
     it('should delete a container from the sidebar', (done) => {
         expect.assertions(2);
         service.addSidebarContainer(mockContainer);
         service.vm$.pipe(take(1)).subscribe(({ layoutProperties }) => {
-            expect(layoutProperties.sidebar.containers).toContainEqual({
-                identifier: mockContainer.identifier
-            });
+            expect(layoutProperties.sidebar.containers).toContainEqual(minDataMockContainer);
             service.deleteSidebarContainer(0);
-            expect(layoutProperties.sidebar.containers).not.toContain(mockContainer);
+            expect(layoutProperties.sidebar.containers).not.toContain(minDataMockContainer);
             done();
         });
     });
@@ -447,9 +457,7 @@ describe('DotTemplateBuilderStore', () => {
 
         rows$.subscribe((items) => {
             const row = items.find((item) => item.id === initialState[0].id);
-            expect(row?.subGridOpts?.children[0]?.containers).toContainEqual({
-                identifier: mockContainer.identifier
-            });
+            expect(row?.subGridOpts?.children[0]?.containers).toContainEqual(minDataMockContainer);
             done();
         });
     });
