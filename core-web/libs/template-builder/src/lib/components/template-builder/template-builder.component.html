@@ -6,17 +6,18 @@
         <dotcms-add-widget
             [label]="'dot.template.builder.add.row' | dm"
             [icon]="rowIcon"
+            [gridstackOptions]="rowOptions"
             data-widget-type="row"
-            gs-w="12"
-            gs-h="1"
             data-testId="add-row"
         ></dotcms-add-widget>
         <dotcms-add-widget
+            id="box-picker"
+            #addBox
             [label]="'dot.template.builder.add.box' | dm"
+            [gridstackOptions]="boxOptions"
+            [attr.gs-w]="boxWidth"
             [icon]="colIcon"
             data-widget-type="col"
-            gs-w="3"
-            gs-h="1"
             data-testId="add-box"
         ></dotcms-add-widget>
         <p-divider layout="vertical"></p-divider>
@@ -50,7 +51,7 @@
             <dotcms-template-builder-row
                 class="grid-stack-item"
                 #rowElement
-                *ngFor="let row of vm.items; trackBy: identify"
+                *ngFor="let row of vm.rows; trackBy: identify"
                 [attr.gs-id]="row.id"
                 [attr.gs-x]="row.x"
                 [attr.gs-y]="row.y"
@@ -58,6 +59,10 @@
                 [attr.gs-h]="row.h"
                 [row]="row"
                 [isResizing]="vm.resizingRowID === row.id"
+                [ngClass]="{
+                    'template-builder-row--wont-fit': addBoxIsDragging && !row.willBoxFit
+                }"
+                [attr.data-wont-fit]="'dot.template.builder.row.box.wont.fit' | dm"
                 data-testId="row"
             >
                 <div class="grid-stack-item-content grid-stack">
