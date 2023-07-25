@@ -170,7 +170,8 @@ function execCommand({
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
         },
         image: () => editor.commands.openAssetForm({ type: 'image' }),
-        video: () => editor.commands.openAssetForm({ type: 'video' })
+        video: () => editor.commands.openAssetForm({ type: 'video' }),
+        customNode: () => editor.commands?.addHelloWorld() // Triggers block custom command
     };
 
     getCustomActions(customBlocks).forEach((option) => {

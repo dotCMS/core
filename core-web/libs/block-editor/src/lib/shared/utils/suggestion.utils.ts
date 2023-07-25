@@ -88,6 +88,11 @@ const block: DotMenuItem[] = [
         label: 'Horizontal Line',
         icon: sanitizeUrl(lineIcon),
         id: 'horizontalRule'
+    },
+    {
+        label: 'Custom Node',
+        icon: 'bolt',
+        id: 'customNode'
     }
 ];
 

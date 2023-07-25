@@ -50,7 +50,7 @@ import {
     DotComands
 } from '../../extensions';
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
-import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
+import { ContentletBlock, ImageNode, VideoNode, CustomNode } from '../../nodes';
 import {
     formatHTML,
     removeInvalidNodes,
@@ -105,6 +105,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     private _customNodes: Map<string, AnyExtension> = new Map([
         ['dotContent', ContentletBlock(this.injector)],
         ['image', ImageNode],
+        ['customNode', CustomNode],
         ['video', VideoNode],
         ['table', DotTableExtension()]
     ]);
