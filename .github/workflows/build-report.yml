@@ -119,20 +119,19 @@ jobs:
                   "fields":[
                     {
                       "type":"mrkdwn",
-                      "text":"*🔗 Action Run:*\n<${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}>"
+                      "text":"*Action Run:*\n<${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}>"
                     },
                     {
                       "type":"mrkdwn",
-                      "text":"*👣 Failure Step:*\n${{ steps.workflow-data.outputs.first_fail_step }}"
+                      "text":"*Failure Step:*\n${{ steps.workflow-data.outputs.first_fail_step }}"
                     },
                     {
                       "type":"mrkdwn",
-                      "text":"*👣 Failure Module:*\n${{ steps.workflow-data.outputs.first_fail_module }}"
+                      "text":"*Failure Module:*\n${{ steps.workflow-data.outputs.first_fail_module }}"
                     },
                     {
-                      "type":"plain_text",
-                      "text":"*💬 Failure Message:*\n${{ steps.workflow-data.outputs.first_fail_error }}",
-                      "emoji":true
+                      "type":"mrkdwn",
+                      "text":"*Failure Message:*\n"
                     }
                   ]
                 },
@@ -141,19 +140,19 @@ jobs:
                   "fields":[
                     {
                       "type":"mrkdwn",
-                      "text":"*👤 PR Author:*\n${{ steps.workflow-data.outputs.pr_author }}"
+                      "text":"*PR Author:*\n${{ steps.workflow-data.outputs.pr_author }}"
                     },
                     {
                       "type":"mrkdwn",
-                      "text":"*📝 PR Name:*\n${{ steps.workflow-data.outputs.pr_name }}"
+                      "text":"*PR Name:*\n${{ steps.workflow-data.outputs.pr_name }}"
                     },
                     {
                       "type":"mrkdwn",
-                      "text":"*🔢 PR Number:*\n<${{ steps.workflow-data.outputs.pr_number_url }}|#${{ steps.workflow-data.outputs.pr_number }}>"
+                      "text":"*PR Number:*\n<${{ steps.workflow-data.outputs.pr_number_url }}|#${{ steps.workflow-data.outputs.pr_number }}>"
                     },
                     {
                       "type":"mrkdwn",
-                      "text":"*🌿 Branch Name:*\n<${{ steps.workflow-data.outputs.branch_url }}|${{ steps.workflow-data.outputs.branch }}>"
+                      "text":"*Branch Name:*\n<${{ steps.workflow-data.outputs.branch_url }}|${{ steps.workflow-data.outputs.branch }}>"
                     }
                   ]
                 },
@@ -162,15 +161,15 @@ jobs:
                   "fields":[
                     {
                       "type":"mrkdwn",
-                      "text":"*🔢 Commit ID:*\n<${{ steps.workflow-data.outputs.commit_id_url }}|#${{ steps.workflow-data.outputs.head_sha }}>"
+                      "text":"*Commit ID:*\n<${{ steps.workflow-data.outputs.commit_id_url }}|#${{ steps.workflow-data.outputs.head_sha }}>"
                     },
                     {
                       "type":"mrkdwn",
-                      "text":"*👤 Commit Author:*\n${{ steps.workflow-data.outputs.head_author }}"
+                      "text":"*Commit Author:*\n${{ steps.workflow-data.outputs.head_author }}"
                     },
                     {
                       "type":"mrkdwn",
-                      "text":"*📝 Commit Name:*\n${{ steps.workflow-data.outputs.head_name }}"
+                      "text":"*Commit Name:*\n${{ steps.workflow-data.outputs.head_name }}"
                     }
                   ]
                 }
