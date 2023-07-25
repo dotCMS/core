@@ -23,6 +23,7 @@ export class DotRouterService {
     private _routeHistory: PortletNav = { url: '' };
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
     private _routeCanBeDeactivated = new BehaviorSubject(true);
+    private _pageLeaveRequest = new Subject<void>();
 
     constructor(private router: Router, private route: ActivatedRoute) {
         this._routeHistory.url = this.router.url;
@@ -75,6 +76,10 @@ export class DotRouterService {
 
     get canDeactivateRoute$(): Observable<boolean> {
         return this._routeCanBeDeactivated.asObservable();
+    }
+
+    get pageLeaveRequest$() {
+        return this._pageLeaveRequest.asObservable();
     }
 
     /**
@@ -380,6 +385,10 @@ export class DotRouterService {
      */
     forbidRouteDeactivation() {
         this._routeCanBeDeactivated.next(false);
+    }
+
+    requestPageLeave() {
+        this._pageLeaveRequest.next();
     }
 
     private redirectMain(): Promise<boolean> {

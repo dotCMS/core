@@ -27,27 +27,7 @@ import {
 export class DotEditLayoutService {
     private _addGridBox: Subject<boolean> = new Subject();
 
-    private _closeEditLayout: Subject<boolean> = new Subject();
-
     constructor(private templateContainersCacheService: DotTemplateContainersCacheService) {}
-
-    /**
-     *
-     * @readonly
-     * @memberof DotEditLayoutService
-     */
-    get closeEditLayout$() {
-        return this._closeEditLayout;
-    }
-
-    /**
-     *
-     * @param {boolean} next
-     * @memberof DotEditLayoutService
-     */
-    changeCloseEditLayoutState(next: boolean) {
-        this._closeEditLayout.next(next);
-    }
 
     /**
      * Take an DotPageView and return an array of DotLayoutGridBox

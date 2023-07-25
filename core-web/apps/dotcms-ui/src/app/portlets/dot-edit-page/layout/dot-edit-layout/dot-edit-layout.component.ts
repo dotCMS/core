@@ -218,12 +218,8 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
      * @memberof DotEditLayoutComponent
      */
     private subscribeOnChangeBeforeLeaveHandler(): void {
-        this.dotEditLayoutService.closeEditLayout$
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((res) => {
-                if (res) {
-                    this.onSave(this.lastLayout);
-                }
-            });
+        this.dotRouterService.pageLeaveRequest$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.onSave(this.lastLayout);
+        });
     }
 }

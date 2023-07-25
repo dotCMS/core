@@ -25,6 +25,7 @@ export interface CanDeactivateGuarded {
  * @implements {CanDeactivate<CanDeactivateGuarded>}
  */
 @Injectable()
+// todo consider renaming
 export class LayoutEditorCanDeactivateGuardService implements CanDeactivate<CanDeactivateGuarded> {
     constructor(
         private dotEditLayoutService: DotEditLayoutService,
@@ -41,7 +42,7 @@ export class LayoutEditorCanDeactivateGuardService implements CanDeactivate<CanD
         return this.dotRouterService.canDeactivateRoute$.pipe(
             filter((res) => {
                 if (!res) {
-                    this.dotEditLayoutService.changeCloseEditLayoutState(!res);
+                    this.dotRouterService.requestPageLeave();
                 }
 
                 return res;
