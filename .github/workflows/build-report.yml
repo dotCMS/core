@@ -98,13 +98,12 @@ jobs:
           # For posting a rich message using Block Kit
           payload: |
             {
-              "text": "${{ steps.workflow-data.outputs.status_icon }} Github Actions Build Notification",
               "blocks": [
                 {
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "${{ steps.workflow-data.outputs.status_icon }} Github Actions Build <${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}>",
+                    "text": "${{ steps.workflow-data.outputs.status_icon }} ${{ steps.workflow-data.outputs.run_id }}",
                     "emoji": true
                   }
                 },
@@ -173,9 +172,6 @@ jobs:
                       "text": "*📝 Commit Name:*\n${{ steps.workflow-data.outputs.head_name }}"
                     }
                   ]
-                },
-                {
-                  "type": "divider"
                 }
               ]
             }
