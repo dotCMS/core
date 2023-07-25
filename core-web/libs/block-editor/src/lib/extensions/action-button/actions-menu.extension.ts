@@ -170,6 +170,8 @@ function execCommand({
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
         },
         image: () => editor.commands.openAssetForm({ type: 'image' }),
+        subscript: () => editor.chain().setSubscript().focus().run(),
+        superscript: () => editor.chain().setSuperscript().focus().run(),
         video: () => editor.commands.openAssetForm({ type: 'video' })
     };
 
@@ -183,8 +185,8 @@ function execCommand({
         };
     });
 
-    whatToDo[props.type.name]
-        ? whatToDo[props.type.name]()
+    whatToDo[type.name]
+        ? whatToDo[type.name]()
         : editor.chain().setTextSelection(range).focus().run();
 }
 
