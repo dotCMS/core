@@ -32,6 +32,7 @@ jobs:
         run: |
           BUILD_ID=$(basename "${{ github.ref }}")
           BUILD_HASH=$(git log -1 --pretty=%h)
+          BUILD_HASH=${BUILD_HASH::7}
           
           echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
           echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
@@ -65,6 +66,7 @@ jobs:
         run: |
           BUILD_ID=$(basename "${{ github.ref }}")
           BUILD_HASH=$(git log -1 --pretty=%h)
+          BUILD_HASH=${BUILD_HASH::7}
           
           if [[ "${{ github.event.inputs.dry_run }}" == 'false' ]]; then
             PLATFORMS='linux/amd64,linux/arm64'
