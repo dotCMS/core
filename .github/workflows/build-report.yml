@@ -98,7 +98,7 @@ jobs:
           # For posting a rich message using Block Kit
           payload: |
             {
-              "text", "${{ steps.workflow-data.outputs.status_icon }} Github Actions Build Notification",
+              "text": "${{ steps.workflow-data.outputs.status_icon }} Github Actions Build Notification",
               "blocks": [
                 {
                   "type": "header",
