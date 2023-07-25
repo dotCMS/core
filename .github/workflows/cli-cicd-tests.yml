@@ -12,22 +12,15 @@ jobs:
   cli_tests:
     name: CLI tests
     runs-on: ubuntu-latest
-#    runs-on: macos-13
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
       - name: Run api-data-model tests
         working-directory: ./tools/dotcms-cli/
         run: |
-#          pwd
-#          java -version
-#          ./mvnw -version
           ./mvnw test api-data-model
       - name: Run cli tests
         working-directory: ./tools/dotcms-cli/
         run: |
-#          pwd
-#          java -version
-#          ./mvnw -version
           ./mvnw test cli --also-make-dependents
-# --projects api-data-model,cli --also-make-dependents
+
