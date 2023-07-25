@@ -92,8 +92,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.contenttype.FieldVariableResourceTest.class,
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.class,
         Chainable4040StorageCacheTest.class,
-        FileStorageAPITest.class
-
+        FileStorageAPITest.class,
+        com.dotcms.analytics.metrics.QueryParameterValuesGetterTest.class,
+        com.dotcms.analytics.metrics.QueryParameterValuesTransformerTest.class
 })
 
 public class MainSuite1b {

@@ -101,7 +101,6 @@ import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
-import com.dotcms.security.ContentSecurityPolicyUtilTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.security.multipart.BoundedBufferedReaderTest;
@@ -153,7 +152,6 @@ import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
-import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -214,13 +212,11 @@ import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByCo
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
-import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.TestConfig;
 import com.dotmarketing.util.UtilMethodsITest;
-import com.dotmarketing.util.ZipUtilTest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.felix.framework.OSGIUtilTest;
@@ -467,7 +463,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ContainerFactoryImplTest.class,
         TemplateFactoryImplTest.class,
         TestConfig.class,
-        ConfigTest.class,
         FolderTest.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
@@ -568,7 +563,6 @@ import org.junit.runners.Suite.SuiteClasses;
         CategoryFactoryTest.class,
         Task210805DropUserProxyTableTest.class,
         Task210816DeInodeRelationshipTest.class,
-        WorkflowEmailUtilTest.class,
         ConfigurationHelperTest.class,
         CSVManifestReaderTest.class,
         Task210901UpdateDateTimezonesTest.class,
@@ -589,7 +583,6 @@ import org.junit.runners.Suite.SuiteClasses;
         StoryBlockMapTest.class,
         HandlerUtilTest.class,
         Task211103RenameHostNameLabelTest.class,
-        ContentSecurityPolicyUtilTest.class,
         MessageToolTest.class,
         XmlToolTest.class,
         LanguageFolderTest.class,
@@ -643,7 +636,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
         HashedLocalFileRepositoryManagerTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class,
         Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class,
         BrowserAjaxTest.class,
         PopulateContentletAsJSONUtilTest.class,

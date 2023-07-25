@@ -27,7 +27,10 @@
         (click)="item.selectItem(item, index)"
         data-testId="dot-options-item-header"
     >
-        <h2>{{ item.title }}</h2>
-        <p>{{ item.detail }}</p>
+        <i *ngIf="item.icon" [class]="'pi ' + item.icon"></i>
+        <div>
+            <h2>{{ item.title }}</h2>
+            <p>{{ item.detail }}</p>
+        </div>
     </header>
 </ng-template>

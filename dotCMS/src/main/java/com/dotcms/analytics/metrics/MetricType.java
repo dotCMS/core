@@ -1,9 +1,11 @@
 package com.dotcms.analytics.metrics;
 
 
+import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -29,7 +31,17 @@ public enum MetricType {
             .availableOperators(Operator.EQUALS, Operator.CONTAINS)),
     BOUNCE_RATE(new Builder()
             .label("Bounce Rate")
-            .optionalParameters(Parameter.builder().name("url").build()));
+            .optionalParameters(Parameter.builder().name("url").build())),
+    URL_PARAMETER(new Builder()
+            .label("Url Parameter")
+            .allRequiredParameters(
+                    Parameter.builder().name("queryParameter")
+                        .valueGetter(new QueryParameterValuesGetter())
+                        .type(AbstractParameter.Type.QUERY_PARAMETER)
+                        .build()
+            )
+            .optionalParameters(Parameter.builder().name("visitBefore").validate(false).build())
+    );
 
     private final String label;
 
@@ -106,5 +118,13 @@ public enum MetricType {
         availableParameters.addAll(optionalParameters);
         availableParameters.addAll(anyRequiredParameters);
         return availableParameters;
+    }
+
+    @JsonIgnore
+    public Optional<Parameter> getParameter(final String parameterName) {
+        return availableParameters().stream()
+                .filter(parameter -> parameter.name().equals(parameterName))
+                .limit(1)
+                .findFirst();
     }
 }
