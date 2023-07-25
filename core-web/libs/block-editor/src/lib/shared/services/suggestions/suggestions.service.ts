@@ -60,10 +60,10 @@ export class SuggestionsService {
      * @return {*}  {Observable<DotCMSContentlet[]>}
      * @memberof SuggestionsService
      */
-    getContentletsByLink({ link }): Observable<DotCMSContentlet[]> {
+    getContentletsByLink({ link }: { link: string }): Observable<DotCMSContentlet[]> {
         return this.http
             .post('/api/content/_search', {
-                query: `+deleted:false +working:true +(urlmap:*${link}* OR +(basetype:5 AND path:*${link}*))`,
+                query: `+deleted:false +working:true +(urlmap:*${link}* OR (contentType:(dotAsset OR htmlpageasset OR fileAsset) AND +path:*${link}*))`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 40
