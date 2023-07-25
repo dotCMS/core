@@ -37,7 +37,7 @@ describe('DotExperimentsReportDailyDetailsComponent', () => {
         store = spectator.inject(DotExperimentsReportsStore, true);
     });
 
-    it('should create', () => {
+    it('should DotExperimentsDetailsTableComponent exist', () => {
         expect(spectator.query(DotExperimentsDetailsTableComponent)).toExist();
     });
 

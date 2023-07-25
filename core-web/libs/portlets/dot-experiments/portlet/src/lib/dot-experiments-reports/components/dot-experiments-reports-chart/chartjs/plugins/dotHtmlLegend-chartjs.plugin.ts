@@ -1,4 +1,6 @@
-const COLOR_PALETTE_GRAY_100 = '#fafafb';
+const COLOR_PALETTE_GRAY_100 = getComputedStyle(document.body).getPropertyValue(
+    '--color-palette-black-op-10'
+);
 
 const getOrCreateLegendList = (chart) => {
     const legendContainer = document
