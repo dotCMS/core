@@ -36,6 +36,7 @@ import {
     getConversionRate,
     getConversionRateRage,
     getParsedChartData,
+    getPreviousDay,
     getProbabilityToBeBest,
     getPropertyColors,
     isPromotedVariant,
@@ -306,7 +307,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     }
 
     private parseDaysLabels(labels: Array<string>): string[] {
-        return labels.map((item) => {
+        return [getPreviousDay(labels[0]), ...labels].map((item) => {
             const date = new Date(item);
             const day = date.getDate();
             const monthTranslated = this.dotMessageService.get(MonthsOfTheYear[date.getMonth()]);
