@@ -13,7 +13,11 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
+import {
+    MockDotMessageService,
+    MockDotRouterService,
+    mockResponseView
+} from '@dotcms/utils-testing';
 
 import { DotTemplateItem, DotTemplateStore } from './dot-template.store';
 
@@ -108,10 +112,7 @@ const BASIC_PROVIDERS = [
     },
     {
         provide: DotRouterService,
-        useValue: {
-            goToEditTemplate: jasmine.createSpy(),
-            gotoPortlet: jasmine.createSpy()
-        }
+        useValue: new MockDotRouterService()
     },
     {
         provide: DotTemplateContainersCacheService,
@@ -140,7 +141,6 @@ describe('DotTemplateStore', () => {
     let dotTemplatesService: DotTemplatesService;
     let dotGlobalMessageService: DotGlobalMessageService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
-    let dotEditLayoutService: DotEditLayoutService;
 
     afterEach(() => {
         cacheSetSpy.calls.reset();
@@ -170,7 +170,6 @@ describe('DotTemplateStore', () => {
             dotRouterService = TestBed.inject(DotRouterService);
             dotTemplatesService = TestBed.inject(DotTemplatesService);
             dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-            dotEditLayoutService = TestBed.inject(DotEditLayoutService);
             dotTemplatesService.update = jasmine.createSpy().and.returnValue(
                 of(
                     getTemplate({
@@ -272,7 +271,6 @@ describe('DotTemplateStore', () => {
             dotTemplatesService = TestBed.inject(DotTemplatesService);
             dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
             dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-            dotEditLayoutService = TestBed.inject(DotEditLayoutService);
             dotTemplatesService.update = jasmine.createSpy().and.returnValue(
                 of(
                     getTemplate({
@@ -638,7 +636,7 @@ describe('DotTemplateStore', () => {
                 expect(service.saveTemplateDebounce).not.toHaveBeenCalled();
             });
 
-            it('should handler error on update template', (done) => {
+            it('should handle error on update template', (done) => {
                 const error = throwError(new HttpErrorResponse(mockResponseView(400)));
                 dotTemplatesService.update = jasmine.createSpy().and.returnValue(error);
                 service.saveTemplate({
@@ -649,7 +647,7 @@ describe('DotTemplateStore', () => {
                 });
                 expect(dotGlobalMessageService.error).toHaveBeenCalledWith('Unknown Error');
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-                dotEditLayoutService.canBeDesactivated$.subscribe((resp) => {
+                dotRouterService.canDeactivateRoute$.subscribe((resp) => {
                     expect(resp).toBeTruthy();
                     done();
                 });

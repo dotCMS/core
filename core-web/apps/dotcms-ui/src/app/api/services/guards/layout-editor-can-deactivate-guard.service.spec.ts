@@ -1,27 +1,29 @@
 import { TestBed } from '@angular/core/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { CanDeactivateGuardService } from './can-deactivate-guard.service';
 
-import { DotEditLayoutService } from '../dot-edit-layout/dot-edit-layout.service';
-
-describe('LayoutEditorCanDeactivateGuardService', () => {
+describe('CanDeactivateGuardService', () => {
     let service: CanDeactivateGuardService;
-    let dotEditLayoutService: DotEditLayoutService;
+    let dotRouterService: DotRouterService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [CanDeactivateGuardService, DotEditLayoutService]
+            imports: [RouterTestingModule],
+            providers: [CanDeactivateGuardService, DotRouterService]
         });
         service = TestBed.inject(CanDeactivateGuardService);
-        dotEditLayoutService = TestBed.inject(DotEditLayoutService);
+        dotRouterService = TestBed.inject(DotRouterService);
     });
 
     it('should be created', () => {
         expect(service).toBeTruthy();
     });
 
-    it('should le the user left the route when _canBeDesactivated is true', (done) => {
-        dotEditLayoutService.changeDesactivateState(true);
+    it('should let the user leave the route when allowRouteDeactivation has been called', (done) => {
+        dotRouterService.allowRouteDeactivation();
         service.canDeactivate().subscribe((deactivate) => {
             expect(deactivate).toBeTruthy();
             done();
@@ -29,18 +31,17 @@ describe('LayoutEditorCanDeactivateGuardService', () => {
     });
 
     it('canBeDesactivated should be false', () => {
-        dotEditLayoutService.changeDesactivateState(false);
+        dotRouterService.forbidRouteDeactivation();
         service.canDeactivate().subscribe(() => {
             fail('Should not be called if canBeDesactivated is false');
         });
     });
 
-    it('should set _closeEditLayout when canBeDesactivated is false', (done) => {
-        dotEditLayoutService.closeEditLayout$.subscribe((resp) => {
-            expect(resp).toBeTruthy();
+    it('should set request a page leave', (done) => {
+        dotRouterService.pageLeaveRequest$.subscribe(() => {
             done();
         });
-        dotEditLayoutService.changeDesactivateState(false);
+        dotRouterService.forbidRouteDeactivation();
         service.canDeactivate().subscribe(() => {
             fail('Should not be called if canBeDesactivated is false');
         });

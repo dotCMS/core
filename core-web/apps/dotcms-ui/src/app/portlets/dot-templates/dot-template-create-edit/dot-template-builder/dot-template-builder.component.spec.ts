@@ -24,7 +24,8 @@ import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-s
 import { DotEventsService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import {
     AUTOSAVE_DEBOUNCE_TIME,
@@ -36,6 +37,7 @@ import {
     EMPTY_TEMPLATE_ADVANCED,
     EMPTY_TEMPLATE_DESIGN
 } from '../store/dot-template.store';
+import { RouterTestingModule } from '@angular/router/testing';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
@@ -165,7 +167,8 @@ describe('DotTemplateBuilderComponent', () => {
                 DotPortletBoxModule,
                 DotShowHideFeatureDirective,
                 ButtonModule,
-                DotIconModule
+                DotIconModule,
+                RouterTestingModule
             ],
             providers: [
                 {
@@ -181,7 +184,11 @@ describe('DotTemplateBuilderComponent', () => {
                         getKey: () => of('false')
                     }
                 },
-                DotEventsService
+                DotEventsService,
+                {
+                    provide: DotRouterService,
+                    useValue: new MockDotRouterService()
+                }
             ]
         }).compileComponents();
     });
