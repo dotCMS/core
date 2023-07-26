@@ -2,7 +2,7 @@ name: CICD Reports
 run-name: Reports - ${{ github.event.workflow_run.name }}
 on:
   workflow_run:
-    workflows: ['Maven CICD Pipeline']
+    workflows: ['Maven CICD Pipeline'] 
     types: [completed]
 
 permissions:
@@ -29,8 +29,6 @@ jobs:
 
       - name: Get Workflow Data
         id: workflow-data
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [[ ! -e "workflow-data.json" ]]
           then
@@ -44,7 +42,7 @@ jobs:
             first_fail_step=$(echo $json | jq -r '.first_fail_step // "None"')
             first_fail_module=$(echo $json | jq -r '.first_fail_module // "None"')
             first_fail_error=$(echo $json | jq -r '.first_fail_error // "None"')
-            pr_name=$(echo $json | jq -r '.pr_name // "null"')
+            pr_title=$(echo $json | jq -r '.pr_title // "null"')
             branch=$(echo $json | jq -r '.branch // "null"')
             head_sha=$(echo $json | jq -r '.head_sha // "null"')
             head_author=$(echo $json | jq -r '.head_author // "null"')
@@ -54,6 +52,7 @@ jobs:
             pr_number_url="https://github.com/$source_repository/pull/$pr_number"
             branch_url="https://github.com/$source_repository/tree/$branch"
             commit_id_url="https://github.com/$source_repository/pull/$pr_number/commits/$head_sha"
+            test_results_url="https://github.com/$source_repository/pull/${pr_number}/checks"
             if [[ "$status" == "SUCCESS" ]]; then
               echo "status_icon=✅" >> $GITHUB_OUTPUT
             else
@@ -68,7 +67,7 @@ jobs:
             echo "first_fail_step=$first_fail_step" >> $GITHUB_OUTPUT
             echo "first_fail_module=$first_fail_module" >> $GITHUB_OUTPUT
             echo "first_fail_error=$first_fail_error" >> $GITHUB_OUTPUT
-            echo "pr_name=$pr_name" >> $GITHUB_OUTPUT
+            echo "pr_title=$pr_title" >> $GITHUB_OUTPUT
             echo "branch=$branch" >> $GITHUB_OUTPUT
             echo "head_sha=$head_sha" >> $GITHUB_OUTPUT
             echo "head_author=$head_author" >> $GITHUB_OUTPUT
@@ -78,9 +77,11 @@ jobs:
             echo "pr_number_url=$pr_number_url" >> $GITHUB_OUTPUT
             echo "branch_url=$branch_url" >> $GITHUB_OUTPUT
             echo "commit_id_url=$commit_id_url" >> $GITHUB_OUTPUT
+            echo "test_results_url=$test_results_url" >> $GITHUB_OUTPUT
           fi
 
       - uses: dorny/test-reporter@v1
+        id: test-reporter
         if: steps.workflow-data.outputs.has-json == 'true'
         with:
           artifact: /^build-reports-test-(.*)/        # artifact name
@@ -95,56 +96,54 @@ jobs:
         id: slack
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          # For posting a rich message using Block Kit
+          channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
           payload: |
             {
+              "text":"Github Action ${{ steps.workflow-data.outputs.status }} for run PR #${{ steps.workflow-data.outputs.pr_number }}",
+
               "blocks": [
                 {
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "${{ steps.workflow-data.outputs.status_icon }} ${{ steps.workflow-data.outputs.run_id }}",
+                    "text": "📊 Github Action ${{ steps.workflow-data.outputs.status }} for run PR #${{ steps.workflow-data.outputs.pr_number }}",
                     "emoji": true
                   }
                 },
                 {
                   "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "The build for PR #${{ steps.workflow-data.outputs.pr_number }} by ${{ steps.workflow-data.outputs.pr_author }} is *${{ steps.workflow-data.outputs.status }} ${{ steps.workflow-data.outputs.status_icon }}*."
-                  }
-                },
-                {
-                  "type": "section",
                   "fields": [
                     {
                       "type": "mrkdwn",
-                      "text": "*🔗 Action Run:*\n<${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}>"
+                      "text": "*🏃‍♂️ Action Run:*\n<${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}>"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*👣 Failure Step:*\n${{ steps.workflow-data.outputs.first_fail_step }}"
+                      "text": "*❌ Failure Step:*\n${{ steps.workflow-data.outputs.first_fail_step }}"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*👣 Failure Module:*\n${{ steps.workflow-data.outputs.first_fail_module }}"
+                      "text": "*📦 Failure Module:*\n${{ steps.workflow-data.outputs.first_fail_module }}"
                     },
                     {
-                      "type": "plain_text",
+                      "type": "mrkdwn",
                       "text": "*💬 Failure Message:*\n${{ steps.workflow-data.outputs.first_fail_error }}"
                     }
                   ]
                 },
                 {
+                  "type": "divider"
+                },
+                {
                   "type": "section",
                   "fields": [
                     {
                       "type": "mrkdwn",
-                      "text": "*👤 PR Author:*\n${{ steps.workflow-data.outputs.pr_author }}"
+                      "text": "*👩‍💻 PR Author:*\n${{ steps.workflow-data.outputs.pr_author }}"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*📝 PR Name:*\n${{ steps.workflow-data.outputs.pr_name }}"
+                      "text": "*📝 PR Name:*\n${{ steps.workflow-data.outputs.pr_title }}"
                     },
                     {
                       "type": "mrkdwn",
@@ -152,28 +151,56 @@ jobs:
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*🌿 Branch Name:*\n<${{ steps.workflow-data.outputs.branch_url }}|${{ steps.workflow-data.outputs.branch }}>"
+                      "text": "*🌳 Branch Name:*\n<${{ steps.workflow-data.outputs.branch_url }}|${{ steps.workflow-data.outputs.branch }}>"
                     }
                   ]
+                },
+                {
+                  "type": "divider"
                 },
                 {
                   "type": "section",
                   "fields": [
                     {
                       "type": "mrkdwn",
-                      "text": "*🔢 Commit ID:*\n<${{ steps.workflow-data.outputs.commit_id_url }}|#${{ steps.workflow-data.outputs.head_sha }}>"
+                      "text": "*💾 Commit ID:*\n<${{ steps.workflow-data.outputs.commit_id_url }}|#${{ steps.workflow-data.outputs.head_sha }}>"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*👤 Commit Author:*\n${{ steps.workflow-data.outputs.head_author }}"
+                      "text": "*🧑‍💻 Commit Author:*\n${{ steps.workflow-data.outputs.head_author }}"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*📝 Commit Name:*\n${{ steps.workflow-data.outputs.head_name }}"
+                      "text": "*📜 Commit Name:*\n${{ steps.workflow-data.outputs.head_name }}"
                     }
                   ]
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🧪 Tests - ${{ steps.test-reporter.outputs.conclusion }}",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ *Passed*:${{ steps.test-reporter.outputs.passed }}  ❌ *Failed*:${{ steps.test-reporter.outputs.failed}}   ⏭️ *Skipped*:${{ steps.test-reporter.outputs.skipped }}    ⏱️ *Elapsed*:${{ steps.test-reporter.outputs.time }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🔍 <${{ steps.workflow-data.outputs.test_result_url }} |View Results>"
+                  }
                 }
               ]
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.CORE_SLACK_WEBHOOK }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
