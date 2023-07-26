@@ -18,7 +18,7 @@ public class ContainerResource implements QuarkusTestResourceLifecycleManager {
     private static final int ELASTICSEARCH_SERVICE_PORT = 9200;
     private static final int DOTCMS_SERVICE_PORT = 8080;
     private static final int STARTUP_TIMEOUT = 150;
-    private static final boolean LOCAL_COMPOSE = false; // need to be false to run on macOS
+    private static final boolean LOCAL_COMPOSE = true; // need to be false to run on macOS
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ContainerResource.class);
 
