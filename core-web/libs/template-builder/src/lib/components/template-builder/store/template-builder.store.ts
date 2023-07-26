@@ -325,6 +325,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      */
     readonly updateLayoutProperties = this.updater(
         (state, layoutProperties: DotTemplateLayoutProperties) => {
+            console.log('updateLayoutProperties');
             return {
                 ...state,
                 layoutProperties: {
@@ -346,6 +347,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly updateSidebarWidth = this.updater((state, width: string) => {
+        console.log('updateSidebarWidth');
         const { layoutProperties } = state;
 
         return {
@@ -366,6 +368,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly addSidebarContainer = this.updater((state, container: DotContainer) => {
+        console.log('addSidebarContainer');
         const { layoutProperties } = state;
 
         if (!container) return state;
@@ -394,6 +397,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly deleteSidebarContainer = this.updater((state, index: number) => {
+        console.log('deleteSidebarContainer');
         const { layoutProperties } = state;
 
         return {

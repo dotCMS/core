@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { LayoutEditorCanDeactivateGuardService } from '@dotcms/app/api/services/guards/layout-editor-can-deactivate-guard.service';
+import { CanDeactivateGuardService } from '@services/guards/can-deactivate-guard.service';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotExperimentExperimentResolver } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
@@ -45,7 +45,7 @@ const dotEditPage: Routes = [
                     import('@portlets/dot-edit-page/layout/dot-edit-layout.module').then(
                         (m) => m.DotEditLayoutModule
                     ),
-                canDeactivate: [LayoutEditorCanDeactivateGuardService]
+                canDeactivate: [CanDeactivateGuardService]
             },
             {
                 path: 'rules/:pageId',

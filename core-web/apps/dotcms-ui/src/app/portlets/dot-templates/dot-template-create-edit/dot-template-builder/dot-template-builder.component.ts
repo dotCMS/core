@@ -15,6 +15,7 @@ import { debounceTime, map, takeUntil } from 'rxjs/operators';
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 
@@ -42,13 +43,18 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
         .pipe(map((result) => result && result === 'true'));
     templateUpdate$ = new Subject<DotTemplateItem>();
     destroy$: Subject<boolean> = new Subject<boolean>();
+    lastTemplate: DotTemplateItem;
 
-    constructor(private propertiesService: DotPropertiesService) {}
+    constructor(
+        private propertiesService: DotPropertiesService,
+        private dotRouterService: DotRouterService
+    ) {}
 
     ngOnInit() {
         this.permissionsUrl = `/html/templates/permissions.jsp?templateId=${this.item.identifier}&popup=true`;
         this.historyUrl = `/html/templates/push_history.jsp?templateId=${this.item.identifier}&popup=true`;
         this.saveTemplateDebounce();
+        this.subscribeOnChangeBeforeLeaveHandler();
     }
 
     ngOnDestroy() {
@@ -62,11 +68,15 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
      * @param {DotTemplateItem} item
      * @memberof DotTemplateBuilderComponent
      */
-    onTemplateItemChange(item: DotTemplateItem) {
+    onTemplateItemChange(item: DotTemplateItem, type: string) {
+        console.log('onTemplateItemChange', type);
         this.updateTemplate.emit(item);
         if (this.historyIframe) {
             this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
         }
+
+        this.dotRouterService.forbidRouteDeactivation();
+        this.lastTemplate = item;
 
         this.templateUpdate$.next(item);
     }
@@ -76,7 +86,15 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
         this.templateUpdate$
             .pipe(debounceTime(AUTOSAVE_DEBOUNCE_TIME), takeUntil(this.destroy$))
             .subscribe((templateItem) => {
+                console.log('templateUpdate$');
                 this.saveAndPublish.emit(templateItem);
             });
+    }
+
+    private subscribeOnChangeBeforeLeaveHandler(): void {
+        this.dotRouterService.pageLeaveRequest$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            console.log('pageLeaveRequest$');
+            this.saveAndPublish.emit(this.lastTemplate);
+        });
     }
 }

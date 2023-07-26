@@ -148,6 +148,8 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 this.dotGlobalMessageService.success(
                     this.dotMessageService.get('message.template.published')
                 );
+                console.log('will allowRouteDeactivation');
+                this.dotRouterService.allowRouteDeactivation();
                 this.updateTemplateState(template);
             }),
             catchError((err: HttpErrorResponse) => {
