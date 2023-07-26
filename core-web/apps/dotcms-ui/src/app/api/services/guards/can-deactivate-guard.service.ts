@@ -36,7 +36,6 @@ export class CanDeactivateGuardService implements CanDeactivate<CanDeactivateGua
     canDeactivate(): Observable<boolean> {
         return this.dotRouterService.canDeactivateRoute$.pipe(
             filter((res) => {
-                console.log('can deactivate route', res);
                 if (!res) {
                     this.dotRouterService.requestPageLeave();
                 }
