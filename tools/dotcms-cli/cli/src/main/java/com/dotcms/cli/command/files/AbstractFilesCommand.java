@@ -8,9 +8,13 @@ import java.util.Set;
 import java.util.concurrent.CompletionException;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
+import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
 public abstract class AbstractFilesCommand {
+
+    @Inject
+    Logger logger;
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
@@ -30,7 +34,8 @@ public abstract class AbstractFilesCommand {
      */
     protected int handleFolderTraversalExceptions(String folderPath, Throwable throwable) {
 
-        throwable.printStackTrace();
+        logger.debug(String.format("Error occurred while processing: [%s] with message: [%s].",
+                folderPath, throwable.getMessage()), throwable);
 
         if (throwable instanceof CompletionException) {
 
