@@ -68,8 +68,7 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
      * @param {DotTemplateItem} item
      * @memberof DotTemplateBuilderComponent
      */
-    onTemplateItemChange(item: DotTemplateItem, type: string) {
-        console.log('onTemplateItemChange', type);
+    onTemplateItemChange(item: DotTemplateItem) {
         this.updateTemplate.emit(item);
         if (this.historyIframe) {
             this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
@@ -86,14 +85,12 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
         this.templateUpdate$
             .pipe(debounceTime(AUTOSAVE_DEBOUNCE_TIME), takeUntil(this.destroy$))
             .subscribe((templateItem) => {
-                console.log('templateUpdate$');
                 this.saveAndPublish.emit(templateItem);
             });
     }
 
     private subscribeOnChangeBeforeLeaveHandler(): void {
         this.dotRouterService.pageLeaveRequest$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            console.log('pageLeaveRequest$');
             this.saveAndPublish.emit(this.lastTemplate);
         });
     }

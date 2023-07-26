@@ -147,7 +147,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                     width: this.layout?.width ?? ''
                 };
 
-                console.log('first emit', rows, layoutProperties);
                 this.templateChange.emit({
                     themeId: this.themeId,
                     layout: { ...this.dotLayout }
@@ -393,7 +392,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             .subscribe(
                 (theme: DotTheme) => {
                     this.themeId = theme.identifier;
-                    console.log('second emit');
                     this.templateChange.emit({
                         themeId: this.themeId,
                         layout: { ...this.dotLayout }

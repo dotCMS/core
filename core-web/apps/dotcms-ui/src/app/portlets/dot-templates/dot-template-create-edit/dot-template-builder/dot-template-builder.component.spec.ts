@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -37,7 +38,6 @@ import {
     EMPTY_TEMPLATE_ADVANCED,
     EMPTY_TEMPLATE_DESIGN
 } from '../store/dot-template.store';
-import { RouterTestingModule } from '@angular/router/testing';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector

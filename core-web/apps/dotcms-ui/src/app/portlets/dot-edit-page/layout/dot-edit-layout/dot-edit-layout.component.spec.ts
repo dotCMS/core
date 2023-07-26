@@ -25,7 +25,6 @@ import { DotLayout, DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-mo
 import {
     MockDotMessageService,
     mockDotRenderedPage,
-    MockDotRouterService,
     mockResponseView,
     processedContainers
 } from '@dotcms/utils-testing';
