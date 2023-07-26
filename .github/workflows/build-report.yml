@@ -202,7 +202,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "✅ *Passed*:${{ steps.workflow-datar.outputs.test_passed }}  ❌ *Failed*:${{ steps.workflow-data.outputs.test_failed}}   ⏭️ *Skipped*:${{ steps.workflow-data.outputs.test_skipped }}    ⏱️ *Elapsed*:${{ steps.test-reporter.outputs.workflow-data.test_elapsed }}"
+                    "text": "✅ *Passed*:${{ steps.workflow-data.outputs.test_passed }}  ❌ *Failed*:${{ steps.workflow-data.outputs.test_failed}}   ⏭️ *Skipped*:${{ steps.workflow-data.outputs.test_skipped }}    ⏱️ *Elapsed*:${{ steps.workflow-data.outputs.test_elapsed }}"
                   }
                 },
                 {
