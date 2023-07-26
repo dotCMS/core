@@ -64,11 +64,20 @@ jobs:
             branch_url="https://github.com/$source_repository/tree/$branch"
             commit_id_url="https://github.com/$source_repository/pull/$pr_number/commits/$head_sha"
             test_results_url="https://github.com/$source_repository/pull/${pr_number}/checks"
-            test_conclusion=${{ steps.test-reporter.outputs.conclusion:-none }}
-            test_passed=${{ steps.test-reporter.outputs.passed:-0 }}
-            test_failed=${{ steps.test-reporter.outputs.failed:-0 }}
-            test_skipped=${{ steps.test-reporter.outputs.skipped:-0 }}
-            test_elapsed=${{ steps.test-reporter.outputs.time:-0 }}
+            if [[ -z "${{ steps.test-reporter.outputs.conclusion }}" ]]; then
+              test_conclusion="Not Run"
+              test_passed=0
+              test_failed=0
+              test_skipped=9
+              test_elapsed=0
+            else
+              test_conclusion=${{ steps.test-reporter.outputs.conclusion }}
+              test_passed=${{ steps.test-reporter.outputs.passed }}
+              test_failed=${{ steps.test-reporter.outputs.failed }}
+              test_skipped=${{ steps.test-reporter.outputs.skipped }}
+              test_elapsed=${{ steps.test-reporter.outputs.time }}
+            fi
+            
             
             if [[ "$status" == "SUCCESS" ]]; then
               echo "status_icon=✅" >> $GITHUB_OUTPUT
@@ -161,7 +170,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "🧪 Test Results",
+                    "text": "🧪 Test Results = ${{ steps.workflow-data.outputs.test_conclusion }}",
                     "emoji": true
                   }
                 },
