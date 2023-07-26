@@ -65,10 +65,11 @@ import {
 } from './utils/gridstack-utils';
 
 @Component({
-    selector: 'dotcms-template-builder',
+    selector: 'dotcms-template-builder-lib',
     templateUrl: './template-builder.component.html',
     styleUrls: ['./template-builder.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [DotTemplateBuilderStore]
 })
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
     @Input()
@@ -132,28 +133,26 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         combineLatest([this.rows$, this.store.layoutProperties$])
             .pipe(
                 startWith([]),
-                filter(([rows, layoutProperties]) => !!rows && !!layoutProperties),
-                skip(1), // Skip the init of the store
-                tap(([rows, layoutProperties]) => {
-                    this.dotLayout = {
-                        ...this.layout,
-                        sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
-                            ? layoutProperties.sidebar
-                            : null,
-                        body: rows,
-                        title: this.layout?.title ?? '',
-                        width: this.layout?.width ?? ''
-                    };
-
-                    console.log('first emit', items, layoutProperties);
-                    this.templateChange.emit({
-                        themeId: this.themeId,
-                        layout: { ...this.dotLayout }
-                    });
-                }),
+                filter(([items, layoutProperties]) => !!items && !!layoutProperties),
                 takeUntil(this.destroy$)
             )
-            .subscribe();
+            .subscribe(([rows, layoutProperties]) => {
+                this.dotLayout = {
+                    ...this.layout,
+                    sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
+                        ? layoutProperties.sidebar
+                        : null,
+                    body: rows,
+                    title: this.layout?.title ?? '',
+                    width: this.layout?.width ?? ''
+                };
+
+                console.log('first emit', rows, layoutProperties);
+                this.templateChange.emit({
+                    themeId: this.themeId,
+                    layout: { ...this.dotLayout }
+                });
+            });
     }
 
     ngOnInit(): void {

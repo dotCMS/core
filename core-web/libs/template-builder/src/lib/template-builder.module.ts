@@ -29,7 +29,6 @@ import { TemplateBuilderComponent } from './components/template-builder/template
     ],
     declarations: [TemplateBuilderComponent],
     providers: [
-        DotTemplateBuilderStore,
         DialogService,
         DynamicDialogRef,
         DotAddStyleClassesDialogStore,
