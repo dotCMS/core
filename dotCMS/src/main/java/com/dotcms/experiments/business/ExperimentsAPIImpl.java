@@ -594,8 +594,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     private void publishExperimentPage(final Experiment experiment, final User user)
             throws DotDataException, DotSecurityException {
+
         final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(contentletAPI
-                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false));
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), DEFAULT_VARIANT.name()));
 
         if(htmlPageAsset.isLive()) {
             return;
