@@ -27,8 +27,8 @@ public class ContainerResource implements QuarkusTestResourceLifecycleManager {
         DockerComposeContainer dockerComposeContainer = new DockerComposeContainer("dotcms-env", new File("src/test/resources/docker-compose.yaml"));
         dockerComposeContainer.withExposedService("postgres", POSTGRES_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)));
         dockerComposeContainer.withExposedService("elasticsearch", ELASTICSEARCH_SERVICE_PORT, Wait.forHttp("/").forPort(ELASTICSEARCH_SERVICE_PORT).forStatusCode(200));
-//        dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)));
-        dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forHttp("/dotAdmin").forPort(DOTCMS_SERVICE_PORT).forStatusCode(200));
+        dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)));
+//        dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forHttp("/dotAdmin").forPort(DOTCMS_SERVICE_PORT).forStatusCode(200));
         dockerComposeContainer.withLogConsumer("dotcms", new Slf4jLogConsumer(LOGGER));
         dockerComposeContainer.withEnv("DOTCMS_IMAGE", "dotcms/dotcms:master_1bc0c86_SNAPSHOT");
         dockerComposeContainer.withLocalCompose(LOCAL_COMPOSE);//
