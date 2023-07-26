@@ -372,7 +372,7 @@ export class DotRouterService {
     }
 
     /**
-     * Only takes effect if component subscribes to canDeactivateRoute
+     * Only relevant for components that depend on CanDeactivateGuardService
      * @memberof DotRouterService
      */
     allowRouteDeactivation() {
@@ -380,13 +380,17 @@ export class DotRouterService {
     }
 
     /**
-     * Only takes effect if component subscribes to canDeactivateRoute
+     * Only relevant for components that depend on CanDeactivateGuardService
      * @memberof DotRouterService
      */
     forbidRouteDeactivation() {
         this._routeCanBeDeactivated.next(false);
     }
 
+    /**
+     * Only relevant for components that depend on CanDeactivateGuardService
+     * @memberof DotRouterService
+     */
     requestPageLeave() {
         this._pageLeaveRequest.next();
     }
