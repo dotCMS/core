@@ -36,7 +36,7 @@ services:
       - dotcms-net
 
   dotcms:
-    image: dotcms/dotcms:master_1bc0c86_SNAPSHOT # it must be the same version built in the previous step
+    image: ${DOTCMS_IMAGE} # it must be the same version built in the previous step
     environment:
       CMS_JAVA_OPTS: '-Xmx1g '
       LANG: 'C.UTF-8'

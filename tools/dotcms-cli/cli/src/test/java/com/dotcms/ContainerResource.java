@@ -31,7 +31,8 @@ public class ContainerResource implements QuarkusTestResourceLifecycleManager {
         dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)));
 //        dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forHttp("/dotAdmin").forPort(DOTCMS_SERVICE_PORT).forStatusCode(200));
 //        dockerComposeContainer.withLogConsumer("dotcms", new Slf4jLogConsumer(LOGGER));
-        dockerComposeContainer.withLocalCompose(LOCAL_COMPOSE);//
+        dockerComposeContainer.withEnv("DOTCMS_IMAGE", "dotcms/dotcms:master_1bc0c86_SNAPSHOT");
+        dockerComposeContainer.withLocalCompose(LOCAL_COMPOSE);
         COMPOSE_CONTAINER = dockerComposeContainer;
     }
     @Override

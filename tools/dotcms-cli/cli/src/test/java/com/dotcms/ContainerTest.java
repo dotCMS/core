@@ -30,7 +30,7 @@ public class ContainerTest {
 //                .then().log().all()
 //                .statusCode(STATUS_CODE_OK);
 //    }
-
+//
 //    @Test
 //    void test_elasticsearch_container_up() {
 //        LOGGER.info("test_elasticsearch_container_up");

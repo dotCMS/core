@@ -17,10 +17,10 @@ public class ContainerTest {
 //    private static final String ELASTICSEARCH_PORT = "9200";
 //
 //    private static final int STATUS_CODE_OK = 200;
-
-    /*
-     * TODO: Parameterize
-     * */
+//
+//    /*
+//     * TODO: Parameterize
+//     * */
 //    @Test
 //    void test_dotcms_container_up() {
 //        LOGGER.info("test_dotcms_container_up");
@@ -30,7 +30,7 @@ public class ContainerTest {
 //                .then().log().all()
 //                .statusCode(STATUS_CODE_OK);
 //    }
-
+//
 //    @Test
 //    void test_elasticsearch_container_up() {
 //        LOGGER.info("test_elasticsearch_container_up");
