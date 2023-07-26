@@ -81,7 +81,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
     private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ? and personalization = ? and variant_id = ?";
     private static final String DELETE_SQL_PERSONALIZATION_PER_PAGE = "delete from multi_tree where parent1=? and personalization = ?";
-    private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
+    private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ? AND variant_id = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION = "delete from multi_tree where parent1=? AND relation_type != ? and personalization = ? and variant_id = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL =
             "delete from multi_tree where variant_id = ? and relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and " +
@@ -803,7 +803,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      */
     @Override
     @WrapInTransaction
-    public void saveMultiTrees(final String pageId, final List<MultiTree> mTrees) throws DotDataException {
+    public void saveMultiTrees(final String pageId, final String variantName, final List<MultiTree> mTrees) throws DotDataException {
+
+        DotPreconditions.isTrue(mTrees.stream().filter(mTree -> !mTree.getVariantId().equals(variantName)).count() == 1,
+                () -> "All the MultiTree must have the variantName: " + variantName);
+
         Logger.debug(this, () -> String
                 .format("Saving MultiTrees: pageId -> %s multiTrees-> %s", pageId, mTrees));
         if (mTrees == null) {
@@ -813,9 +817,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", mTrees));
         final Set<String> originalContents = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE);
         final DotConnect db = new DotConnect();
-        db.setSQL(DELETE_ALL_MULTI_TREE_SQL).addParam(pageId).addParam(ContainerUUID.UUID_DEFAULT_VALUE).loadResult();
-
-        final Set<String> variants = new TreeSet();
+        db.setSQL(DELETE_ALL_MULTI_TREE_SQL)
+                .addParam(pageId)
+                .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
+                .addParam(variantName)
+                .loadResult();
 
         if (!mTrees.isEmpty()) {
             final List<Params> insertParams = Lists.newArrayList();
@@ -823,20 +829,18 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 insertParams
                         .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
                                 tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId()));
-                variants.add(tree.getVariantId());
             }
 
             db.executeBatch(INSERT_SQL, insertParams);
         }
-        this.refreshContentletReferenceCount(originalContents, mTrees);
-        for (String variantId : variants) {
-            updateHTMLPageVersionTS(pageId, variantId);
-            refreshPageInCache(pageId,variantId );
-        }
 
-        if (!variants.contains(VariantAPI.DEFAULT_VARIANT.name())) {
-            updateHTMLPageVersionTS(pageId, VariantAPI.DEFAULT_VARIANT.name());
-            refreshPageInCache(pageId, VariantAPI.DEFAULT_VARIANT.name() );
+        this.refreshContentletReferenceCount(originalContents, mTrees);
+        updateHTMLPageVersionTS(pageId, variantName);
+
+        if (VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
+            refreshPageInCache(pageId);
+        } else {
+            refreshPageInCache(pageId, variantName);
         }
     }
 
@@ -907,6 +911,17 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         for (Variant variant : variants) {
             updateHTMLPageVersionTS(pageId, variant.name());
         }
+    }
+
+    private void refreshPageInCache(final String pageIdentifier) {
+        CacheLocator.getMultiTreeCache().getVariantsInCache(pageIdentifier).stream()
+                .forEach(variantName -> {
+                    try {
+                        refreshPageInCache(pageIdentifier, variantName);
+                    } catch (DotDataException e) {
+                        Logger.error(this, e.getMessage(), e);
+                    }
+                });
     }
 
     private void refreshPageInCache(final String pageIdentifier, final String variantName) throws DotDataException {

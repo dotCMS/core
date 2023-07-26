@@ -11,10 +11,12 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.Table;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Provides the data structres used for caching Multi-Tree information in dotCMS.
@@ -149,4 +151,10 @@ public class MultiTreeCache implements Cachable {
         this.cache.remove(contentletId, CONTENTLET_REFERENCES_GROUP);
     }
 
+    public Collection<String> getVariantsInCache(final String pageId) {
+        return Arrays.stream(getGroups())
+                .flatMap(group -> getMultiTreeMap(pageId, group).stream())
+                .flatMap(map -> map.keySet().stream())
+                .collect(Collectors.toSet());
+    }
 }

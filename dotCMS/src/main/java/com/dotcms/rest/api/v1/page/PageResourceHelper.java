@@ -365,6 +365,7 @@ public class PageResourceHelper implements Serializable {
     @WrapInTransaction
     protected void updateMultiTrees(final IHTMLPage page, final PageForm pageForm) throws DotDataException, DotSecurityException {
 
+        final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
         final Table<String, String, Set<PersonalizedContentlet>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
         final String pageIdentifier = page.getIdentifier();
         APILocator.getMultiTreeAPI().deleteMultiTreeByParent(pageIdentifier);
@@ -381,11 +382,14 @@ public class PageResourceHelper implements Serializable {
                     final String newUUID = getNewUUID(pageForm, containerId, uniqueId);
 
                     for (final PersonalizedContentlet identifierPersonalization : contents) {
-                        final MultiTree multiTree = MultiTree.personalized(new MultiTree().setContainer(containerId)
-                                .setContentlet(identifierPersonalization.getContentletId())
-                                .setInstanceId(newUUID)
-                                .setTreeOrder(treeOrder++)
-                                .setHtmlPage(pageIdentifier), identifierPersonalization.getPersonalization());
+                        final MultiTree multiTree = MultiTree.personalized(
+                                new MultiTree().setContainer(containerId)
+                                    .setContentlet(identifierPersonalization.getContentletId())
+                                    .setInstanceId(newUUID)
+                                    .setTreeOrder(treeOrder++)
+                                    .setHtmlPage(pageIdentifier)
+                                    .setVariantId(currentVariantId),
+                                identifierPersonalization.getPersonalization());
 
                         multiTrees.add(multiTree);
                     }
@@ -393,7 +397,7 @@ public class PageResourceHelper implements Serializable {
             }
         }
 
-        multiTreeAPI.saveMultiTrees(pageIdentifier, multiTrees);
+        multiTreeAPI.saveMultiTrees(pageIdentifier, currentVariantId, multiTrees);
     }
 
     private String getNewUUID(final PageForm pageForm, final String containerId,
