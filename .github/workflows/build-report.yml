@@ -209,7 +209,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "🔍 <${{ steps.workflow-data.outputs.test_result_url }} |View Results>"
+                    "text": "🔍 <${{ steps.workflow-data.outputs.test_results_url }} |View Results>"
                   }
                 }
               ]
