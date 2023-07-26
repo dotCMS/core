@@ -19,6 +19,7 @@ public class PayloadDeserializer extends JsonDeserializer<Payload> {
     public static final String TYPE = "type";
     public static final String DATA = "data";
 
+    public static final String VISIBILITY = "visibility";
     public static final String VISIBILITY_VALUE = "visibilityValue";
     public static final String VISIBILITY_TYPE = "visibilityType";
 
@@ -34,7 +35,7 @@ public class PayloadDeserializer extends JsonDeserializer<Payload> {
 
         Object visibilityValue = null;
 
-        final Visibility visibility = Try.of(()->  Visibility.valueOf(node.get(VISIBILITY_VALUE).asText())).getOrElse(Visibility.GLOBAL);
+        final Visibility visibility = Try.of(()->  Visibility.valueOf(node.get(VISIBILITY).asText())).getOrElse(Visibility.GLOBAL);
         final String visibilityType = Try.of(()-> node.get(VISIBILITY_TYPE).asText()).getOrNull();
         if(null != visibilityType) {
             final Class<?> visibilityClazz = getClassFor(visibilityType);

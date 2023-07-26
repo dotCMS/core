@@ -468,8 +468,8 @@ public class RoleAPIImpl implements RoleAPI {
 		roleFactory.removeRoleFromUser(roleFromDb, user);
 
 		Logger.debug(this,"Calling update to menu from RoleAPI.removeRoleFromUser");
-		final HttpServletRequest request   = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(Visibility.USER, WebAPILocator.getUserWebAPI().getUser(request).getUserId()));
+		//final HttpServletRequest request   = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(Visibility.USER, user.getUserId()));
 	}
 
 	@Override
@@ -481,8 +481,8 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 
 		Logger.debug(this,"Calling update to menu from RoleAPI.removeAllRolesFromUser");
-		final HttpServletRequest request   = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(Visibility.USER, WebAPILocator.getUserWebAPI().getUser(request).getUserId()));
+		//final HttpServletRequest request   = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(Visibility.USER, user.getUserId()));
 	}
 
 	@WrapInTransaction
