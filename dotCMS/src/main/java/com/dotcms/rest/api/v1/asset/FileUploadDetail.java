@@ -13,7 +13,7 @@ public class FileUploadDetail {
     @JsonCreator
     public FileUploadDetail(@JsonProperty("assetPath") final String assetPath,
             @JsonProperty("language") final String language,
-            @JsonProperty("status") final Boolean live) {
+            @JsonProperty("status") final boolean live) {
         this.assetPath = assetPath;
         this.language = language;
         this.live = live;
@@ -26,7 +26,7 @@ public class FileUploadDetail {
     private String language;
 
     @JsonProperty("live")
-    private Boolean live;
+    private boolean live = false;
 
     public String getAssetPath() {
         return assetPath;
@@ -44,7 +44,7 @@ public class FileUploadDetail {
         this.language = language;
     }
 
-    public Boolean getLive() {
+    public Boolean isLive() {
         return live;
     }
 
