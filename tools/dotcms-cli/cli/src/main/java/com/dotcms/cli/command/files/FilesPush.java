@@ -9,6 +9,8 @@ import picocli.CommandLine;
 
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -28,9 +30,9 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
     static final String NAME = "push";
 
-    @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "source",
+    @CommandLine.Parameters(index = "0", arity = "0..1", paramLabel = "source",
             description = "local directory or file to push")
-    String source;
+    File source;
 
     @CommandLine.Option(names = {"-rf", "--removeFolders"}, defaultValue = "false",
             description =
@@ -57,12 +59,17 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Integer call() throws Exception {
 
+        // If the source is not specified, we use the current directory
+        if (source == null) {
+            source = Paths.get("").toAbsolutePath().normalize().toFile();
+        }
+
         try {
 
             CompletableFuture<List<Pair<AssetsUtils.LocalPathStructure, TreeNode>>> folderTraversalFuture = CompletableFuture.supplyAsync(
                     () -> {
                         // Service to handle the traversal of the folder
-                        return pushService.traverseLocalFolders(output, workspacePath, source,
+                        return pushService.traverseLocalFolders(output, workspace, source,
                                 removeAssets, removeFolders, true);
                     });
 
@@ -159,7 +166,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     // ---
                     // Pushing the tree
                     if (!dryRun) {
-                        pushService.processTreeNodes(output, workspacePath, localPathStructure, treeNode,
+                        pushService.processTreeNodes(output, workspace, localPathStructure, treeNode,
                                 treeNodePushInfo);
                     }
 
@@ -170,7 +177,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
             }
 
         } catch (Exception e) {
-            return handleFolderTraversalExceptions(source, e);
+            return handleFolderTraversalExceptions(source.getAbsolutePath(), e);
         }
 
         return CommandLine.ExitCode.OK;

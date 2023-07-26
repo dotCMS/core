@@ -39,8 +39,8 @@ public class PushServiceImpl implements PushService {
      * Each folder is represented as a pair of its local path structure and the corresponding tree node.
      *
      * @param output             the output option mixin
-     * @param workspace          the workspace path
-     * @param source             the source path to traverse
+     * @param workspace          the project workspace
+     * @param source             the source to traverse
      * @param removeAssets       true to allow remove assets, false otherwise
      * @param removeFolders      true to allow remove folders, false otherwise
      * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
@@ -51,19 +51,16 @@ public class PushServiceImpl implements PushService {
     @ActivateRequestContext
     @Override
     public List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(
-            OutputOptionMixin output, final String workspace, final String source, final boolean removeAssets,
+            OutputOptionMixin output, final File workspace, final File source, final boolean removeAssets,
             final boolean removeFolders, final boolean ignoreEmptyFolders) {
 
-        var workspaceFile = new File(workspace);
-        var sourceFile = new File(source);
-
         // Validating the source is a valid path
-        validateSource(workspaceFile, sourceFile);
+        validateSource(workspace, source);
 
         var traversalResult = new ArrayList<Pair<AssetsUtils.LocalPathStructure, TreeNode>>();
 
         // Parsing the source in order to get the root or roots for the traversal
-        var roots = AssetsUtils.ParseRootPaths(workspaceFile, sourceFile);
+        var roots = AssetsUtils.ParseRootPaths(workspace, source);
         for (var root : roots) {
 
             // Traversing the local folder
@@ -136,29 +133,33 @@ public class PushServiceImpl implements PushService {
     /**
      * Validates the source path and workspace path.
      *
-     * @param workspaceFile the workspace file
-     * @param sourceFile    the source file
+     * @param workspace the workspace file
+     * @param source    the source file
      * @throws IllegalArgumentException if the source path does not exist, the workspace path does not exist,
      *                                  or the source path is outside the workspace
      */
-    private void validateSource(File workspaceFile, File sourceFile) {
+    private void validateSource(File workspace, File source) {
 
-        if (!sourceFile.exists()) {
-            throw new IllegalArgumentException(String.format("Source path [%s] does not exist", sourceFile.getAbsolutePath()));
+        if (!source.exists()) {
+            throw new IllegalArgumentException(String.format("Source path [%s] does not exist", source.getAbsolutePath()));
         }
 
-        if (!workspaceFile.exists()) {
-            throw new IllegalArgumentException(String.format("Workspace path [%s] does not exist", workspaceFile.getAbsolutePath()));
+        if (!workspace.exists()) {
+            throw new IllegalArgumentException(String.format("Workspace path [%s] does not exist", workspace.getAbsolutePath()));
         }
 
         // Validating the source is within the workspace
-        var workspaceFilePath = workspaceFile.toPath();
-        var sourceFilePath = sourceFile.toPath();
+        var workspacePath = workspace.toPath().normalize().toAbsolutePath();
+        var sourcePath = source.toPath().normalize().toAbsolutePath();
 
-        var workspaceCount = workspaceFilePath.getNameCount();
-        var sourceCount = sourceFilePath.getNameCount();
+        var workspaceCount = workspacePath.getNameCount();
+        var sourceCount = sourcePath.getNameCount();
 
         if (sourceCount < workspaceCount) {
+            throw new IllegalArgumentException("Source path cannot be outside of the workspace");
+        }
+
+        if (!sourcePath.startsWith(workspacePath)) {
             throw new IllegalArgumentException("Source path cannot be outside of the workspace");
         }
     }

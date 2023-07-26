@@ -46,7 +46,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
      * if there are any differences between the local and remote file system.
      *
      * @param output             the output option mixin
-     * @param workspacePath      the workspace path
+     * @param workspace          the project workspace
      * @param source             local the source file or directory
      * @param removeAssets       true to allow remove assets, false otherwise
      * @param removeFolders      true to allow remove folders, false otherwise
@@ -56,13 +56,14 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
     @ActivateRequestContext
     @Override
     public Pair<AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(
-            OutputOptionMixin output, final String workspacePath, final String source,
+            OutputOptionMixin output, final File workspace, final String source,
             final boolean removeAssets, final boolean removeFolders,
             final boolean ignoreEmptyFolders) {
 
-        logger.debug(String.format("Traversing file system folder: %s - in workspace: %s", source, workspacePath));
+        logger.debug(String.format("Traversing file system folder: %s - in workspace: %s",
+                source, workspace.getAbsolutePath()));
 
-        final var localPathStructure = ParseLocalPath(new File(workspacePath), new File(source));
+        final var localPathStructure = ParseLocalPath(workspace, new File(source));
 
         // Initial check to see if the site exist
         var siteExists = true;
@@ -95,7 +96,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 retriever,
                 siteExists,
                 source,
-                workspacePath,
+                workspace,
                 removeAssets,
                 removeFolders,
                 ignoreEmptyFolders

@@ -27,7 +27,7 @@ public abstract class AbstractFilesCommand {
     Logger logger;
 
     /**
-     * Handles exceptions thrown during the execution of the "tree" and "ls" commands.
+     * Handles exceptions thrown during the execution of the files commands.
      *
      * @param folderPath the path of the folder that was being pulled
      * @param throwable  the exception that was thrown

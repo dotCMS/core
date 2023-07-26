@@ -6,6 +6,7 @@ import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.io.File;
 import java.util.List;
 
 public interface PushService {
@@ -16,8 +17,8 @@ public interface PushService {
      * Each folder is represented as a pair of its local path structure and the corresponding tree node.
      *
      * @param output             the output option mixin
-     * @param source             the source path to traverse
-     * @param workspace          the workspace path
+     * @param source             the source to traverse
+     * @param workspace          the project workspace
      * @param removeAssets       true to allow remove assets, false otherwise
      * @param removeFolders      true to allow remove folders, false otherwise
      * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
@@ -26,7 +27,7 @@ public interface PushService {
      *                                  outside the workspace
      */
     List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(
-            OutputOptionMixin output, String workspace, String source, boolean removeAssets, boolean removeFolders,
+            OutputOptionMixin output, File workspace, File source, boolean removeAssets, boolean removeFolders,
             boolean ignoreEmptyFolders);
 
     /**

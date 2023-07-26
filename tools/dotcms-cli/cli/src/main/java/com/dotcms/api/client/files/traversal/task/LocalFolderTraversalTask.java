@@ -37,7 +37,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
 
     private final boolean siteExists;
     private final String sourcePath;
-    private final String workspacePath;
+    private final File workspace;
     private final boolean ignoreEmptyFolders;
     private final boolean removeAssets;
     private final boolean removeFolders;
@@ -49,14 +49,14 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
      * @param retriever     the retriever used for REST calls and other operations.
      * @param siteExists    whether the site exists on the remote server
      * @param sourcePath    the source path to traverse
-     * @param workspacePath the workspace path
+     * @param workspace     the project workspace
      */
     public LocalFolderTraversalTask(
             final Logger logger,
             final Retriever retriever,
             final boolean siteExists,
             final String sourcePath,
-            final String workspacePath,
+            final File workspace,
             final boolean removeAssets,
             final boolean removeFolders,
             final boolean ignoreEmptyFolders) {
@@ -65,7 +65,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
         this.retriever = retriever;
         this.siteExists = siteExists;
         this.sourcePath = sourcePath;
-        this.workspacePath = workspacePath;
+        this.workspace = workspace;
         this.removeAssets = removeAssets;
         this.removeFolders = removeFolders;
         this.ignoreEmptyFolders = ignoreEmptyFolders;
@@ -82,10 +82,9 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
     protected TreeNode compute() {
 
         File folderOrFile = new File(sourcePath);
-        File workspaceFile = new File(workspacePath);
 
-        final var localPathStructure = ParseLocalPath(workspaceFile, folderOrFile);
-        TreeNode currentNode = gatherSyncInformation(workspaceFile, folderOrFile, localPathStructure);
+        final var localPathStructure = ParseLocalPath(this.workspace, folderOrFile);
+        TreeNode currentNode = gatherSyncInformation(this.workspace, folderOrFile, localPathStructure);
 
         if (folderOrFile.isDirectory()) {
 
@@ -104,7 +103,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
                                 this.retriever,
                                 this.siteExists,
                                 file.getAbsolutePath(),
-                                this.workspacePath,
+                                this.workspace,
                                 this.removeAssets,
                                 this.removeFolders,
                                 this.ignoreEmptyFolders
