@@ -46,7 +46,7 @@ export const generateDotExperimentLineChartJsOptions = ({
                         return {
                             borderColor: context.dataset.borderColor,
                             backgroundColor: context.dataset.borderColor,
-                            borderWidth: 2.4,
+                            borderWidth: 2.5,
                             borderRadius: 5
                         };
                     },
@@ -57,7 +57,7 @@ export const generateDotExperimentLineChartJsOptions = ({
             }
         },
         interaction: {
-            mode: 'index',
+            mode: 'nearest',
             intersect: false
         },
 
@@ -86,7 +86,8 @@ export const generateDotExperimentLineChartJsOptions = ({
                 grid: {
                     color: ChartColors.xAxis.gridLine,
                     lineWidth: 0.8
-                }
+                },
+                begingAtZero: true
             },
             y: {
                 title: {

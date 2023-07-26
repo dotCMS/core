@@ -21,10 +21,11 @@
                     <p-tabPanel header="{{ 'experiments.reports.chart.title' | dm }}">
                         <div class="flex flex-column gap-2 content">
                             <dot-experiments-reports-chart
-                                [config]="axisLabelsProabilityChart"
+                                [config]="axisLabelsProbabilityChart"
                                 [data]="vm.dailyChartData"
                                 [isEmpty]="!vm.hasEnoughSessions"
                                 [isLoading]="vm.isLoading"
+                                data-testId="daily-chart"
                             />
 
                             <dot-experiments-report-daily-details
@@ -44,6 +45,7 @@
                                 [isEmpty]="!vm.hasEnoughSessions"
                                 [isLinearAxis]="true"
                                 [isLoading]="vm.isLoading"
+                                data-testId="bayesian-chart"
                             />
                         </div>
                     </p-tabPanel>

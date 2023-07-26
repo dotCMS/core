@@ -1,16 +1,9 @@
 import { ChartData } from 'chart.js';
 
 import { NgIf } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    Input,
-    OnChanges,
-    SimpleChanges,
-    ViewChild
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 
-import { ChartModule, UIChart } from 'primeng/chart';
+import { ChartModule } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessagePipe } from '@dotcms/ui';
@@ -29,8 +22,6 @@ import { getRandomUUID } from '../../../shared/dot-experiment.utils';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportsChartComponent implements OnChanges {
-    @ViewChild('chart') chart: UIChart;
-
     @Input()
     isEmpty = true;
 

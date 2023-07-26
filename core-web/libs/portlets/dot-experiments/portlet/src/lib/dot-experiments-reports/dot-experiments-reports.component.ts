@@ -69,7 +69,7 @@ export class DotExperimentsReportsComponent implements OnInit {
 
     private dotMessageService = inject(DotMessageService);
 
-    readonly axisLabelsProabilityChart: { xAxisLabel: string; yAxisLabel: string } = {
+    readonly axisLabelsProbabilityChart: { xAxisLabel: string; yAxisLabel: string } = {
         xAxisLabel: this.dotMessageService.get('experiments.chart.xAxisLabel'),
         yAxisLabel: this.dotMessageService.get('experiments.chart.yAxisLabel')
     };

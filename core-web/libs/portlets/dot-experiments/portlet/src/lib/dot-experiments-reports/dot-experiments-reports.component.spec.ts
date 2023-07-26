@@ -5,10 +5,9 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { ChartData } from 'chart.js';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { Component, Input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -23,7 +22,8 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
-    CHARTJS_DATA_MOCK_WITH_DATA,
+    BAYESIAN_CHARTJS_DATA_MOCK_WITH_DATA,
+    DAILY_CHARTJS_DATA_MOCK_WITH_DATA,
     getExperimentMock,
     getExperimentResultsMock,
     MockDotMessageService
@@ -56,7 +56,8 @@ const EXPERIMENT_RESULTS_MOCK = getExperimentResultsMock(0);
 const defaultVmMock: VmReportExperiment = {
     experiment: EXPERIMENT_MOCK_3,
     results: EXPERIMENT_RESULTS_MOCK,
-    chartData: CHARTJS_DATA_MOCK_WITH_DATA,
+    dailyChartData: DAILY_CHARTJS_DATA_MOCK_WITH_DATA,
+    bayesianChartData: BAYESIAN_CHARTJS_DATA_MOCK_WITH_DATA,
     detailData: [],
     isLoading: false,
     hasEnoughSessions: false,
@@ -73,24 +74,6 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'xx'
 });
 
-// TODO: Use ng-mocks to mock the component automatically
-@Component({
-    standalone: true,
-    selector: 'dot-experiments-reports-chart',
-    template: 'chart - mocked component'
-})
-class MockDotExperimentsReportsChartComponent {
-    options;
-    @Input()
-    isEmpty = true;
-    @Input()
-    isLoading = true;
-    @Input()
-    config: { xAxisLabel: string; yAxisLabel: string; title: string };
-    @Input()
-    data: ChartData<'line'>;
-}
-
 describe('DotExperimentsReportsComponent', () => {
     let spectator: Spectator<DotExperimentsReportsComponent>;
     let router: SpyObject<Router>;
@@ -105,7 +88,7 @@ describe('DotExperimentsReportsComponent', () => {
                 DotExperimentsReportsComponent,
                 {
                     remove: { imports: [DotExperimentsReportsChartComponent] },
-                    add: { imports: [MockDotExperimentsReportsChartComponent] }
+                    add: { imports: [MockComponent(DotExperimentsReportsChartComponent)] }
                 }
             ]
         ],
@@ -162,7 +145,17 @@ describe('DotExperimentsReportsComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.query(TabView)).toExist();
-        expect(spectator.query(MockDotExperimentsReportsChartComponent)).toExist();
+        expect(spectator.query(DotExperimentsReportsChartComponent)).toExist();
+        expect(spectator.query(DotExperimentsReportDailyDetailsComponent)).toExist();
+    });
+
+    it('should have a Daily Report and a Bayesian Report', () => {
+        spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
+        spectator.detectChanges();
+
+        expect(spectator.query(TabView)).toExist();
+        expect(spectator.query(byTestId('daily-chart'))).toExist();
+        expect(spectator.query(byTestId('bayesian-chart'))).toExist();
         expect(spectator.query(DotExperimentsReportDailyDetailsComponent)).toExist();
     });
 

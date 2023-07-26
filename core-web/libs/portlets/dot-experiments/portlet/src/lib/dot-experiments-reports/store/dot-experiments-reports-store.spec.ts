@@ -526,5 +526,24 @@ describe('DotExperimentsReportsStore', () => {
                 done();
             });
         });
+
+        it('should generate the Pdfs data to render the Bayesian chart', (done) => {
+            const EXPECTED_BAYESIAN_DATA_QTY = 100;
+            const expectedLabel = [
+                EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'].variantDescription,
+                EXPERIMENT_MOCK_RESULTS.goals.primary.variants.DEFAULT.variantDescription
+            ];
+
+            store.getBayesianChartData$.subscribe(({ datasets }) => {
+                datasets.forEach((dataset, index) => {
+                    const { label, data } = dataset;
+
+                    expect(data.length).toEqual(EXPECTED_BAYESIAN_DATA_QTY);
+                    expect(label).toEqual(expectedLabel[index]);
+                });
+
+                done();
+            });
+        });
     });
 });
