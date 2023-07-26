@@ -15,8 +15,10 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { getDotExperimentLineChartJsOptions } from './chartjs/options/dotExperiments-chartjs.options';
+import { generateDotExperimentLineChartJsOptions } from './chartjs/options/dotExperiments-chartjs.options';
 import { htmlLegendPlugin } from './chartjs/plugins/dotHtmlLegend-chartjs.plugin';
+
+import { getRandomUUID } from '../../../shared/dot-experiment.utils';
 
 @Component({
     standalone: true,
@@ -34,16 +36,18 @@ export class DotExperimentsReportsChartComponent implements OnChanges {
     @Input()
     isLoading = true;
     @Input()
-    config: { xAxisLabel: string; yAxisLabel: string; title: string };
+    config: { xAxisLabel: string; yAxisLabel: string };
     @Input()
     data: ChartData<'line'>;
+
+    protected chartId = `chart-` + getRandomUUID();
 
     protected readonly plugins = [htmlLegendPlugin];
 
     ngOnChanges(changes: SimpleChanges): void {
         const { config, data } = changes;
         if (config?.currentValue && data.currentValue) {
-            this.options = getDotExperimentLineChartJsOptions({
+            this.options = generateDotExperimentLineChartJsOptions({
                 xAxisLabel: config.currentValue.xAxisLabel,
                 yAxisLabel: config.currentValue.yAxisLabel
             });

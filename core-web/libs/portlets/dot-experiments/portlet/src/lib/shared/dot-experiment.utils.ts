@@ -104,3 +104,5 @@ export const getProbabilityToBeBest = (probability: number, noDataLabel: string)
 export const isPromotedVariant = (experiment: DotExperiment, variantName: string): boolean => {
     return !!experiment.trafficProportion.variants.find(({ id }) => id === variantName)?.promoted;
 };
+
+export const getRandomUUID = () => self.crypto.randomUUID();
