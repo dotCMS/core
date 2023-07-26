@@ -29,8 +29,6 @@ jobs:
 
       - name: Get Workflow Data
         id: workflow-data
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [[ ! -e "workflow-data.json" ]]
           then
@@ -95,6 +93,7 @@ jobs:
         id: slack
         uses: slackapi/slack-github-action@v1.24.0
         with:
+          channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
           payload: |
             {
               "text":"Github Action ${{ steps.workflow-data.outputs.status }} for run PR #${{ steps.workflow-data.outputs.pr_number }}",
@@ -176,4 +175,4 @@ jobs:
               ]
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.CORE_SLACK_WEBHOOK }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

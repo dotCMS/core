@@ -14,6 +14,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { TabViewModule } from 'primeng/tabview';
 import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -22,6 +23,7 @@ import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
+import { DotExperimentsReportDailyDetailsComponent } from './components/dot-experiments-report-daily-details/dot-experiments-report-daily-details.component';
 import { DotExperimentsReportsChartComponent } from './components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsReportsSkeletonComponent } from './components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
 import {
@@ -56,7 +58,9 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         TitleCasePipe,
         DotIconModule,
         ConfirmPopupModule,
-        DotMessagePipe
+        DotMessagePipe,
+        TabViewModule,
+        DotExperimentsReportDailyDetailsComponent
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],
@@ -65,14 +69,12 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
 })
 export class DotExperimentsReportsComponent implements OnInit {
     vm$: Observable<VmReportExperiment> = this.store.vm$;
-    dotMessageService = inject(DotMessageService);
-    readonly chartConfig: { xAxisLabel: string; yAxisLabel: string; title: string } = {
-        xAxisLabel: this.dotMessageService.get('experiments.chart.xAxisLabel'),
-        yAxisLabel: this.dotMessageService.get('experiments.chart.yAxisLabel'),
-        title: this.dotMessageService.get('experiments.reports.chart.title')
-    };
-
     protected readonly defaultVariantId = DEFAULT_VARIANT_ID;
+    private dotMessageService = inject(DotMessageService);
+    readonly chartConfig: { xAxisLabel: string; yAxisLabel: string } = {
+        xAxisLabel: this.dotMessageService.get('experiments.chart.xAxisLabel'),
+        yAxisLabel: this.dotMessageService.get('experiments.chart.yAxisLabel')
+    };
 
     constructor(
         private readonly store: DotExperimentsReportsStore,
@@ -105,7 +107,8 @@ export class DotExperimentsReportsComponent implements OnInit {
     /**
      * Promote Variant
      * @param {MouseEvent} $event
-     * @param {DotExperiment} experiment
+     * @param experimentId
+     * @param variant
      * @returns void
      * @memberof DotExperimentsReportsComponent
      */
