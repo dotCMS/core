@@ -99,6 +99,12 @@ public class RoleFactoryImpl extends RoleFactory {
 			List<Role> roles = new ArrayList<>();
 			List<UserRoleCacheHelper> helpers = rc.getRoleIdsForUser(userId);
 			if(helpers != null){
+
+				if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
+					Logger.info(this, "Roles for user " + userId + " are only " + helpers.size());
+					Logger.info(this, "Roles = " + helpers);
+				}
+
 				for (UserRoleCacheHelper h : helpers) {
 					if(includeImplicitRoles || !h.isInherited()){
 						Role r = getRoleById(h.getRoleId());
@@ -144,6 +150,10 @@ public class RoleFactoryImpl extends RoleFactory {
 						}
 				}
 				rc.addRoleListForUser(helpers, userId);
+			}
+
+			if ("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) {
+				Logger.info(this, "Roles retrieved from DB [ " + roles.size() +" ]: " + roles);
 			}
 
 			return roles;

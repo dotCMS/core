@@ -511,6 +511,10 @@ public class UserResource implements Serializable {
 		final HttpSession session = req.getSession();
 		final User user = this.userAPI.loadUserById(userID);
 		final String currentSiteID = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		if (UtilMethods.isNotSet(currentSiteID)) {
+			final String errorMsg = "ERROR!!! The CMS_SELECTED_HOST_ID attribute is not present in the current Session: " + session.getId();
+			Logger.error(this, errorMsg);
+		}
 		Host currentSite;
 		try {
 			currentSite = this.siteAPI.find(currentSiteID, user, false);

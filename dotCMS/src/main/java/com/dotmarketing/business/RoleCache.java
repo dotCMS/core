@@ -68,5 +68,10 @@ public abstract class RoleCache implements Cachable{
 		protected boolean isInherited() {
 			return inherited;
 		}
+
+		public String toString(){
+			return "- roleId: " + roleId + " / inherited: " + inherited;
+		}
+
 	}
 }
