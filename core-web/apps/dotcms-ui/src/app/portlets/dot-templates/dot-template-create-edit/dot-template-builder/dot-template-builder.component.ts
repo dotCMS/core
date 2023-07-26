@@ -19,7 +19,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 
-export const AUTOSAVE_DEBOUNCE_TIME = 1000;
+export const AUTOSAVE_DEBOUNCE_TIME = 5000;
 
 @Component({
     selector: 'dot-template-builder',

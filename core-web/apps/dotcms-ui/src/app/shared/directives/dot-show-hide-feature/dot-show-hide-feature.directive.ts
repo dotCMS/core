@@ -69,8 +69,6 @@ export class DotShowHideFeatureDirective implements OnInit {
             .getKey(this._featureFlag)
             .pipe(take(1))
             .subscribe((value) => {
-                console.log('feature flag value: ', value);
-
                 const isEnabled = value && value === 'true';
                 this.viewContainer.clear();
 

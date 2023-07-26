@@ -1,6 +1,6 @@
 <!--Advance template support was removed on commit https://github.com/dotCMS/core-web/pull/589-->
 <ng-template #enabledComponent>
-    <dotcms-template-builder
+    <dotcms-template-builder-lib
         [layout]="pageState.layout"
         [themeId]="pageState.template.theme"
         [containerMap]="pageState.containerMap"
@@ -8,7 +8,7 @@
         data-testId="new-template-builder"
     >
         <dot-global-message toolbar-left></dot-global-message>
-    </dotcms-template-builder>
+    </dotcms-template-builder-lib>
 </ng-template>
 
 <ng-template #disabledComponent>

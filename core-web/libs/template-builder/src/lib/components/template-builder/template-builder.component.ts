@@ -26,7 +26,7 @@ import {
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, startWith, take, tap, map, skip, takeUntil } from 'rxjs/operators';
+import { filter, take, map, skip, takeUntil } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -132,7 +132,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
         combineLatest([this.rows$, this.store.layoutProperties$])
             .pipe(
-                startWith([]),
                 filter(([items, layoutProperties]) => !!items && !!layoutProperties),
                 takeUntil(this.destroy$)
             )
@@ -155,7 +154,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     ngOnInit(): void {
-        this.store.init({
+        this.store.setState({
             rows: parseFromDotObjectToGridStack(this.layout.body),
             layoutProperties: this.layoutProperties,
             resizingRowID: '',
