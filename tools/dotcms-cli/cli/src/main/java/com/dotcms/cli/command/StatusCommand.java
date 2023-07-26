@@ -30,7 +30,7 @@ import java.util.concurrent.Callable;
                 " and which user is logged in.",
                 "" // empty line left here on purpose to make room at the end
         })
-public class StatusCommand implements Callable<Integer> {
+public class StatusCommand implements Callable<Integer>, Command {
 
     static final String NAME = "status";
 
@@ -94,9 +94,7 @@ public class StatusCommand implements Callable<Integer> {
                             output.info(String.format("You're currently logged in as %s.", user.email()));
                             return ExitCode.OK;
                         } catch (Exception wae) {
-                            output.error(
-                                    "Unable to get current user from API. Token could have expired. Please login again!",
-                                    wae);
+                            return output.handleCommandException(wae, "Unable to get current user from API. Token could have expired. Please login again!");
                         }
                     }
                 }
@@ -105,4 +103,13 @@ public class StatusCommand implements Callable<Integer> {
         return ExitCode.SOFTWARE;
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return this.output;
+    }
 }

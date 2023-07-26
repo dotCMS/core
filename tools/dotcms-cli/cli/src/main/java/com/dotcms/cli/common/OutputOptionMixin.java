@@ -1,17 +1,15 @@
 package com.dotcms.cli.common;
 
+import static io.quarkus.devtools.messagewriter.MessageIcons.ERROR_ICON;
+import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
 import io.quarkus.devtools.messagewriter.MessageWriter;
-import picocli.CommandLine;
-import picocli.CommandLine.Help.ColorScheme;
-import picocli.CommandLine.Model.CommandSpec;
-
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-
-import static io.quarkus.devtools.messagewriter.MessageIcons.ERROR_ICON;
-import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
+import picocli.CommandLine;
+import picocli.CommandLine.Help.ColorScheme;
+import picocli.CommandLine.Model.CommandSpec;
 
 public class OutputOptionMixin implements MessageWriter {
 

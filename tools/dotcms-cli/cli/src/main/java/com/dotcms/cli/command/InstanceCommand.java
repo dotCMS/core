@@ -102,8 +102,7 @@ public class InstanceCommand implements Callable<Integer> {
                         serviceManager.persist(serviceBean);
                         output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active one.", activate));
                     } catch (IOException e) {
-                        output.error("Unable to persist the new selected service ",e);
-                        return ExitCode.SOFTWARE;
+                        return output.handleCommandException(e,"Unable to persist the new selected service ");
                     }
                 }
             }

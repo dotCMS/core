@@ -25,8 +25,11 @@ public class SiteUnarchive extends AbstractSiteCommand implements Callable<Integ
 
     @Override
     public Integer call() {
-
-        return unarchive();
+      try{
+            return unarchive();
+        }catch (Exception e){
+            return output.handleCommandException(e,"Error while restoring archived site. ");
+        }
     }
 
     private int unarchive() {

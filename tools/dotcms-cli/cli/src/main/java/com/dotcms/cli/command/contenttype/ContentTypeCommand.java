@@ -43,6 +43,7 @@ public class ContentTypeCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
 
+        output.throwIfUnmatchedArguments(spec.commandLine());
         // If no default action is desired do this:
         /*
         spec.commandLine().usage(output.out());

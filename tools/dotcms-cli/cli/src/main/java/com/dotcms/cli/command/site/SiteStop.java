@@ -26,8 +26,11 @@ public class SiteStop extends AbstractSiteCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-
-        return unpublish();
+       try{
+          return unpublish();
+       } catch (Exception e){
+           return output.handleCommandException(e,"Error while stopping site. ");
+       }
     }
 
     private int unpublish() {

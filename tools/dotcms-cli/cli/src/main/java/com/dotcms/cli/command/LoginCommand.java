@@ -48,10 +48,9 @@ public class LoginCommand implements Callable<Integer> {
         try {
             authenticationContext.login(user, password);
             output.info(String.format("@|bold,green Successfully logged-in as |@[@|bold,blue %s|@]", user));
-            return ExitCode.OK;
         }catch (Exception wae){
-            output.error("Unable to login. ", wae);
+            return output.handleCommandException(wae,"Unable to login. ");
         }
-        return ExitCode.SOFTWARE;
+        return ExitCode.OK;
     }
 }
