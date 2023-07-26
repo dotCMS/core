@@ -31,7 +31,7 @@ export class DotAssetCardComponent implements OnInit {
      * @memberof DotAssetCardComponent
      */
     getImage(inode: string): string {
-        return `/dA/${inode}/500w/20q`;
+        return `/dA/${inode}/500w/50q`;
     }
 
     /**

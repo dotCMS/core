@@ -16,6 +16,9 @@ import org.immutables.value.Value;
 @JsonInclude(Include.NON_EMPTY)
 public interface AbstractAssetVersionsView extends WebAssetView {
 
+    String identifier();
+    boolean archived();
+
     List<AssetView> versions();
 
 }

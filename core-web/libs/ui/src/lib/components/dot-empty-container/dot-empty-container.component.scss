@@ -1,0 +1,30 @@
+@use "variables" as *;
+
+.message__title,
+.message__subtitle {
+    margin: 0;
+    text-align: center;
+    line-height: 140%;
+}
+.message__title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $black;
+}
+.message__subtitle {
+    font-size: $font-size-md;
+    font-weight: $font-weight-regular-bold;
+    color: $color-palette-gray-700;
+}
+
+.message__icon {
+    font-size: $font-size-xxxl;
+    padding: $spacing-2;
+    color: $color-palette-gray-700;
+}
+.message__external-link {
+    color: $black;
+    text-align: center;
+    font-size: $font-size-md;
+    font-weight: $font-weight-regular-bold;
+}
