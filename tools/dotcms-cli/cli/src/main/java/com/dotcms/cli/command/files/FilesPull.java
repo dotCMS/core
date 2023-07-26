@@ -12,6 +12,8 @@ import picocli.CommandLine;
 
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
@@ -33,9 +35,9 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                     + "- Format: //{site}/{folder} or //{site}/{folder}/{file}")
     String source;
 
-    @CommandLine.Parameters(index = "1", arity = "1", paramLabel = "destination", defaultValue = ".",
+    @CommandLine.Parameters(index = "1", arity = "0..1", paramLabel = "destination",
             description = "Local root directory of the CLI project.")
-    String destination;
+    File destination;
 
     @CommandLine.Option(names = {"-r", "--recursive"}, defaultValue = "true",
             description = "Pulls directories and their contents recursively.")
@@ -84,6 +86,11 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Integer call() throws Exception {
 
+        // If the destination is not specified, we use the current directory
+        if (destination == null) {
+            destination = Paths.get("").toAbsolutePath().normalize().toFile();
+        }
+
         try {
 
             if (LocationUtils.URLIsFolder(source)) {
@@ -129,7 +136,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
                 // ---
                 // Now we need to pull the contents based on the tree we found
-                pullAssetsService.pullTree(output, result, destination, override, includeEmptyFolders);
+                pullAssetsService.pullTree(output, result, destination.getAbsolutePath(), override, includeEmptyFolders);
 
             } else {
 
@@ -159,7 +166,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 }
 
                 // Handle the pull of a single file
-                pullAssetsService.pullFile(output, result, source, destination, override);
+                pullAssetsService.pullFile(output, result, source, destination.getAbsolutePath(), override);
             }
 
             output.info("\n\nPull process finished successfully.");
