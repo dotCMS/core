@@ -36,17 +36,6 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
     public vm$ = this.select((state) => state);
 
-    // Init store
-
-    readonly init = this.updater(
-        (state, { items, layoutProperties, containerMap }: DotTemplateBuilderState) => ({
-            ...state,
-            items,
-            layoutProperties,
-            containerMap
-        })
-    );
-
     // Rows Updaters
 
     /**
@@ -298,7 +287,6 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      */
     readonly updateLayoutProperties = this.updater(
         (state, layoutProperties: DotTemplateLayoutProperties) => {
-
             return {
                 ...state,
                 layoutProperties: {

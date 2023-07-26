@@ -1,4 +1,4 @@
-import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
+import { AsyncPipe, JsonPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
 import { NgModule } from '@angular/core';
 
 import { DividerModule } from 'primeng/divider';
