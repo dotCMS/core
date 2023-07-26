@@ -114,13 +114,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         private dialogService: DialogService,
         private dotMessage: DotMessageService
     ) {
-        console.log('constructor');
         this.items$ = this.store.items$.pipe(map((items) => parseFromGridStackToDotObject(items)));
-        this.vm$.subscribe((i) => console.log('vm$ emitted', JSON.stringify(i)));
-        // this.items$.subscribe((i) => {
-        //     console.log('items emitted', i)
-        // });
-        // this.store.layoutProperties$.subscribe((i) => console.log('layoutProperties$ emitted', i));
 
         combineLatest([this.items$, this.store.layoutProperties$])
             .pipe(
@@ -139,7 +133,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                     width: this.layout?.width ?? ''
                 };
 
-                console.log('first emit', items, layoutProperties);
                 this.templateChange.emit({
                     themeId: this.themeId,
                     layout: { ...this.dotLayout }
@@ -370,7 +363,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             .subscribe(
                 (theme: DotTheme) => {
                     this.themeId = theme.identifier;
-                    console.log('second emit');
                     this.templateChange.emit({
                         themeId: this.themeId,
                         layout: { ...this.dotLayout }
