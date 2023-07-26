@@ -71,7 +71,7 @@ describe('TemplateBuilderComponent', () => {
     });
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder [containerMap]="containerMap" [layout]="layout" [themeId]="themeId" ></dotcms-template-builder>`,
+            `<dotcms-template-builder-lib [containerMap]="containerMap" [layout]="layout" [themeId]="themeId" ></dotcms-template-builder-lib>`,
             {
                 hostProps: {
                     layout: {
@@ -219,7 +219,7 @@ describe('TemplateBuilderComponent', () => {
 
             spectator.detectChanges();
 
-            store.init({
+            store.setState({
                 rows: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
                 layoutProperties: {
                     header: true,

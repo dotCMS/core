@@ -59,7 +59,7 @@ describe('DotTemplateBuilderStore', () => {
         containerMap$ = service.vm$.pipe(pluck('containerMap'));
 
         // Reset the state because is manipulated by reference
-        service.init({
+        service.setState({
             rows: GRIDSTACK_DATA_MOCK,
             layoutProperties: {
                 header: true,
