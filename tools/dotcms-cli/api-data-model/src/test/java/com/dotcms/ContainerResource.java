@@ -18,7 +18,7 @@ public class ContainerResource implements QuarkusTestResourceLifecycleManager {
     private static final int ELASTICSEARCH_SERVICE_PORT = 9200;
     private static final int DOTCMS_SERVICE_PORT = 8080;
     private static final int STARTUP_TIMEOUT = 150;
-    private static final boolean LOCAL_COMPOSE = true; // need to be false to run on macOS
+    private static final boolean LOCAL_COMPOSE = false; // need to be false to run on macOS
     private static final Logger LOGGER = LoggerFactory.getLogger(ContainerResource.class);
 
     static DockerComposeContainer<?> COMPOSE_CONTAINER; // need to be false to run on macOS
@@ -27,9 +27,9 @@ public class ContainerResource implements QuarkusTestResourceLifecycleManager {
         DockerComposeContainer dockerComposeContainer = new DockerComposeContainer("dotcms-env", new File("src/test/resources/docker-compose.yaml"));
         dockerComposeContainer.withExposedService("postgres", POSTGRES_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)));
         dockerComposeContainer.withExposedService("elasticsearch", ELASTICSEARCH_SERVICE_PORT, Wait.forHttp("/").forPort(ELASTICSEARCH_SERVICE_PORT).forStatusCode(200));
-        dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)));
-//        dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forHttp("/dotAdmin").forPort(DOTCMS_SERVICE_PORT).forStatusCode(200));
-//        dockerComposeContainer.withLogConsumer("dotcms", new Slf4jLogConsumer(LOGGER));
+//        dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT)));
+        dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forHttp("/dotAdmin").forPort(DOTCMS_SERVICE_PORT).forStatusCode(200));
+        dockerComposeContainer.withLogConsumer("dotcms", new Slf4jLogConsumer(LOGGER));
         dockerComposeContainer.withEnv("DOTCMS_IMAGE", "dotcms/dotcms:master_1bc0c86_SNAPSHOT");
         dockerComposeContainer.withLocalCompose(LOCAL_COMPOSE);//
         COMPOSE_CONTAINER = dockerComposeContainer;
