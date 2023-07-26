@@ -363,7 +363,7 @@ jobs:
                 length=$(jq '.projectReports | length' "$build_report")
                 for (( i=0; i<$length; i++ )); do
                 status=$(jq -r ".projectReports[$i].status" "$build_report")
-                if [[ "$status" != "SUCCESS" ]]; then
+                if [[ "$status" == "FAILURE" ]]; then
                   AGGREGATE_STATUS="FAILURE"
                   FIRST_FAIL_STEP="$step_name"
                   FIRST_FAIL_MODULE="$(jq -r ".projectReports[$i].name" "$build_report")"
