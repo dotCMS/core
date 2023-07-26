@@ -246,6 +246,21 @@ describe('DotRouterService', () => {
         });
     });
 
+    it('Should set _canBeDesactivated to true', (done) => {
+        service.allowRouteDeactivation();
+        service.canDeactivateRoute$.subscribe((resp) => {
+            expect(resp).toBeTruthy();
+            done();
+        });
+    });
+
+    it('trigger pageLeaveRequest observable stream when a page leave is requested', (done) => {
+        service.pageLeaveRequest$.subscribe(() => {
+            done();
+        });
+        service.requestPageLeave();
+    });
+
     describe('go to login', () => {
         beforeEach(() => {
             const mockDate = new Date(1466424490000);
