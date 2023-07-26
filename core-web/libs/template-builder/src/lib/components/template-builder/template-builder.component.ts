@@ -188,7 +188,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         Array.from(this.grid.el.querySelectorAll('.grid-stack')).forEach((el) => {
             const subgrid = GridStack.addGrid(el as HTMLElement, subGridOptions);
 
-            this.fixGridstackNodeOnMouseLeave(el);
+            this.listenToRowMouseEvents(el);
 
             subgrid.on('change', (_: Event, nodes: GridStackNode[]) => {
                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
@@ -238,7 +238,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 if (row && row.el) {
                     if (isNew) {
                         const newGridElement = row.el.querySelector('.grid-stack') as HTMLElement;
-                        this.fixGridstackNodeOnMouseLeave(ref.nativeElement);
+
+                        this.listenToRowMouseEvents(ref.nativeElement);
 
                         // Adding subgrids on drop row
                         GridStack.addGrid(newGridElement, subGridOptions)
@@ -406,22 +407,35 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     /**
-     * @description This method sets the box initial values everytime a mouse leaves a row
+     * @description This method sets the box initial values everytime a mouse leaves or moves in a row
      * so that way we always have the correct value setted and overriding the behavior of gridstack
      *
      * @private
      * @param {Element} el
      * @memberof TemplateBuilderComponent
      */
-    private fixGridstackNodeOnMouseLeave(el: Element): void {
-        // So every time the mouse leaves the row, we set the initial values for the box
-        el.addEventListener('mouseleave', () => {
-            if (this.addBoxIsDragging && this.addBox.nativeElement.gridstackNode?.w !== BOX_WIDTH) {
-                this.addBox.nativeElement.gridstackNode = {
-                    ...this.addBox.nativeElement.gridstackNode,
-                    ...this.boxOptions
-                };
-            }
+    private listenToRowMouseEvents(el: Element): void {
+        // So every time the mouse leaves or moves in the row, we set the initial values for the box
+
+        ['mouseleave', 'mousemove'].forEach((eventName) => {
+            el.addEventListener(eventName, () => {
+                this.fixGridStackNodeOptions();
+            });
         });
+    }
+
+    /**
+     * @description This method sets the box initial values of gridstack when gridstack changes it
+     *
+     * @private
+     * @memberof TemplateBuilderComponent
+     */
+    private fixGridStackNodeOptions() {
+        if (this.addBoxIsDragging && this.addBox.nativeElement.gridstackNode?.w !== BOX_WIDTH) {
+            this.addBox.nativeElement.gridstackNode = {
+                ...this.addBox.nativeElement.gridstackNode,
+                ...this.boxOptions
+            };
+        }
     }
 }
