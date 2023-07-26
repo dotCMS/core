@@ -221,6 +221,12 @@ const imageOptions: Array<BubbleMenuItem> = [
     {
         text: 'Properties',
         markAction: 'properties',
+        active: false,
+        divider: true
+    },
+    {
+        icon: 'delete',
+        markAction: 'deleteNode',
         active: false
     }
 ];
