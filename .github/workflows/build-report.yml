@@ -40,6 +40,7 @@ jobs:
           
       - name: Get Workflow Data
         id: workflow-data
+        if: success() || failure()
         run: |
           if [[ ! -e "workflow-data.json" ]]
           then
