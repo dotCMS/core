@@ -93,7 +93,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
         try {
 
-            if (LocationUtils.URLIsFolder(source)) {
+            if (LocationUtils.URLIsFolder(source)) { // Handling folders
 
                 var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
                 var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);
@@ -138,7 +138,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 // Now we need to pull the contents based on the tree we found
                 pullAssetsService.pullTree(output, result, destination.getAbsolutePath(), override, includeEmptyFolders);
 
-            } else {
+            } else { // Handling single files
 
                 CompletableFuture<AssetVersionsView> assetInformationFuture = CompletableFuture.supplyAsync(
                         () -> retrieveAssetInformation(source)
