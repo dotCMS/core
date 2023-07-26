@@ -9,7 +9,7 @@
             <dot-template-advanced
                 [didTemplateChanged]="didTemplateChanged"
                 [body]="item.body"
-                (updateTemplate)="onTemplateItemChange($event)"
+                (updateTemplate)="onTemplateItemChange($event, item.type)"
                 (save)="save.emit($event)"
                 (cancel)="cancel.emit()"
             ></dot-template-advanced>
@@ -20,7 +20,7 @@
                     [layout]="item.layout"
                     [themeId]="item.theme"
                     [containerMap]="item.containers"
-                    (templateChange)="onTemplateItemChange($event)"
+                    (templateChange)="onTemplateItemChange($event, 'second')"
                     data-testId="new-template-builder"
                 >
                     <dot-global-message toolbar-left></dot-global-message>
@@ -32,7 +32,7 @@
                     [disablePublish]="item.live"
                     [layout]="item.layout"
                     (saveAndPublish)="saveAndPublish.emit($event)"
-                    (updateTemplate)="onTemplateItemChange($event)"
+                    (updateTemplate)="onTemplateItemChange($event, 'third')"
                     (save)="save.emit($event)"
                 ></dot-edit-layout-designer>
             </ng-template>

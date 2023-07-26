@@ -125,6 +125,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
      * @memberof DotEditLayoutComponent
      */
     nextUpdateTemplate(value: DotTemplateDesigner) {
+        console.log('nextUpdateTemplate');
         this.dotRouterService.forbidRouteDeactivation();
         this.updateTemplate.next(value);
         this.lastLayout = value;

@@ -5,7 +5,6 @@ import { CanDeactivate } from '@angular/router';
 
 import { filter } from 'rxjs/operators';
 
-import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 /**
@@ -13,7 +12,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
  * @export
  * @interface CanDeactivateGuarded
  */
-export interface CanDeactivateGuarded {
+interface CanDeactivateGuard {
     canDeactivate: () => Observable<boolean>;
 }
 
@@ -21,26 +20,23 @@ export interface CanDeactivateGuarded {
  *
  * Allows to set whether a route can be deactivated.
  * @export
- * @class LayoutEditorCanDeactivateGuardService
- * @implements {CanDeactivate<CanDeactivateGuarded>}
+ * @class CanDeactivateGuardService
+ * @implements {CanDeactivate<CanDeactivateGuard>}
  */
 @Injectable()
-// todo consider renaming
-export class LayoutEditorCanDeactivateGuardService implements CanDeactivate<CanDeactivateGuarded> {
-    constructor(
-        private dotEditLayoutService: DotEditLayoutService,
-        private dotRouterService: DotRouterService
-    ) {}
+export class CanDeactivateGuardService implements CanDeactivate<CanDeactivateGuard> {
+    constructor(private dotRouterService: DotRouterService) {}
 
     /**
      *
      * Make sure the changes have been saved before leaving the route.
      * @return {*}  {Observable<boolean>}
-     * @memberof LayoutEditorCanDeactivateGuardService
+     * @memberof CanDeactivateGuardService
      */
     canDeactivate(): Observable<boolean> {
         return this.dotRouterService.canDeactivateRoute$.pipe(
             filter((res) => {
+                console.log('can deactivate route', res);
                 if (!res) {
                     this.dotRouterService.requestPageLeave();
                 }
