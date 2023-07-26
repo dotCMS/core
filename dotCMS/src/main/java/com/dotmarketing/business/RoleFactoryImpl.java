@@ -133,7 +133,7 @@ public class RoleFactoryImpl extends RoleFactory {
 				}
 
 				if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
-					Logger.info(this, "DB query results [ " + rolesToProcess.size() + " ] =");
+					Logger.info(this, "DB query results for user '" + userId + "' [ " + rolesToProcess.size() + " ] =");
 					rolesToProcess.forEach(roleData -> Logger.info(this, "- " + roleData.getId()));
 				}
 
@@ -149,13 +149,13 @@ public class RoleFactoryImpl extends RoleFactory {
 					if(includeImplicitRoles || roleIdsFromDb.contains(r.getId())){
 
 						if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
-							Logger.info(this, "Implicit role contained in 'roleIdsFromDb' = " + r);
+							Logger.info(this, "Implicit role for user '" + userId + "' contained in 'roleIdsFromDb' = " + r);
 						}
 
 						roles.add(r);
 					} else {
 						if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
-							Logger.info(this, "Implicit roles NOT present");
+							Logger.info(this, "Implicit roles for user '" + userId + "' NOT present");
 						}
 					}
 
@@ -163,14 +163,14 @@ public class RoleFactoryImpl extends RoleFactory {
 						for (String roleId : r.getRoleChildren()) {
 
 							if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
-								Logger.info(this, "Including children of role '" + r.getId() + "' = " + roleId);
+								Logger.info(this, "Including children of role '" + r.getId() + "' for user '" + userId + "' = " + roleId);
 							}
 
 							rolesToProcess.add(getRoleById(roleId));
 						}
 					} else {
 						if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
-							Logger.info(this, "Role children NOT present");
+							Logger.info(this, "Role children for user '" + userId + "' NOT present");
 						}
 					}
 				}
@@ -178,7 +178,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			}
 
 			if ("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) {
-				Logger.info(this, "Final Role list [ " + roles.size() +" ] =");
+				Logger.info(this, "Final Role list for user '" + userId + "' [ " + roles.size() +" ] =");
 				roles.forEach(roleData -> Logger.info(this, "- " + roleData.getId()));
 			}
 
