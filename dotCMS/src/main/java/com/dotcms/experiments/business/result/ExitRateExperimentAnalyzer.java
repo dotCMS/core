@@ -10,16 +10,16 @@ import java.util.stream.Collectors;
 
 /**
  * Analyze  a set of {@link BrowserSession} to get the total or partial {@link Experiment} result
- * when the {@link Experiment} is using a BOUNCE_RATE {@link com.dotcms.experiments.model.Goals}.
+ * when the {@link Experiment} is using a EXIT_RATE {@link com.dotcms.experiments.model.Goals}.
  *
  */
-public class BounceRateExperimentAnalyzer implements MetricExperimentAnalyzer  {
+public class ExitRateExperimentAnalyzer implements MetricExperimentAnalyzer  {
 
     /**
      * Iterate through the {@link BrowserSession} and check if the last {@link EventType#PAGE_VIEW}
-     * events was in the url set as parameters if it is then it is count as a BOUNCE_RATE.
+     * events was in the url set as parameters if it is then it is count as a EXIT_RATE.
      *
-     * @see com.dotcms.analytics.metrics.MetricType#BOUNCE_RATE
+     * @see com.dotcms.analytics.metrics.MetricType#EXIT_RATE
      * @see MetricExperimentAnalyzer
      * @param metric
      * @param browserSession
