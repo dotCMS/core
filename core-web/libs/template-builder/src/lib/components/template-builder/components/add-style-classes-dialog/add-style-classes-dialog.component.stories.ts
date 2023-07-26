@@ -1,17 +1,17 @@
-import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 import { of } from 'rxjs';
 
-import { NgIf, AsyncPipe } from '@angular/common';
+import { AsyncPipe, NgIf } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
 import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
@@ -31,7 +31,7 @@ export default {
                 AutoCompleteModule,
                 FormsModule,
                 ButtonModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 NgIf,
                 AsyncPipe,
                 HttpClientModule,

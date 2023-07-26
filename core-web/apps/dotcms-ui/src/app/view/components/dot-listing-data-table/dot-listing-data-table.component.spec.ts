@@ -20,7 +20,7 @@ import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-butto
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
@@ -143,6 +143,7 @@ describe('DotListingDataTableComponent', () => {
                 UiDotIconButtonModule,
                 HttpClientTestingModule,
                 DotPipesModule,
+                DotMessagePipe,
                 FormsModule,
                 ContextMenuModule
             ],

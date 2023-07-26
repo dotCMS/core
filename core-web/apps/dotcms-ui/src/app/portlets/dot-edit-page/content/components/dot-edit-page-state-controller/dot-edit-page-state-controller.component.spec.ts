@@ -19,12 +19,13 @@ import {
 } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_NAME,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     dotcmsContentletMock,
     DotPageStateServiceMock,
@@ -120,7 +121,13 @@ describe('DotEditPageStateControllerComponent', () => {
                 },
                 DotAlertConfirmService
             ],
-            imports: [InputSwitchModule, SelectButtonModule, TooltipModule, DotPipesModule]
+            imports: [
+                InputSwitchModule,
+                SelectButtonModule,
+                TooltipModule,
+                DotPipesModule,
+                DotMessagePipe
+            ]
         });
     }));
 
@@ -268,7 +275,7 @@ describe('DotEditPageStateControllerComponent', () => {
             it('should show only the preview tab when experiment is not Draft', async () => {
                 componentHost.variant = {
                     ...dotVariantDataMock,
-                    experimentStatus: DotExperimentStatusList.RUNNING
+                    experimentStatus: DotExperimentStatus.RUNNING
                 };
                 fixtureHost.detectChanges();
 

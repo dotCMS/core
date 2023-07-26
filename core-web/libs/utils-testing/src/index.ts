@@ -36,3 +36,4 @@ export * from './lib/clean-up-dialog';
 export * from './lib/dot-roles.mock';
 export * from './lib/dot-experiments.mock';
 export * from './lib/match-media.mock';
+export * from './lib/dot-page-tools.mock';

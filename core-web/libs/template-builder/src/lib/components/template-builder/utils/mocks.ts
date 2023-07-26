@@ -3,7 +3,39 @@ import { v4 as uuid } from 'uuid';
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { containersMapMock, MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotGridStackWidget, DotTemplateBuilderContainer } from '../models/models';
+import {
+    DotGridStackWidget,
+    DotTemplateBuilderContainer,
+    SYSTEM_CONTAINER_IDENTIFIER
+} from '../models/models';
+
+export const EMPTY_ROWS_VALUE = [
+    {
+        w: 12,
+        h: 1,
+        x: 0,
+        y: 0,
+        subGridOpts: {
+            children: [
+                {
+                    w: 3,
+                    h: 1,
+                    y: 0,
+                    x: 0,
+                    id: uuid(),
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: SYSTEM_CONTAINER_IDENTIFIER
+                        }
+                    ]
+                }
+            ]
+        },
+        id: uuid(),
+        styleClass: []
+    }
+];
 
 export const GRIDSTACK_DATA_MOCK: DotGridStackWidget[] = [
     { x: 0, y: 0, w: 12, id: uuid() },
@@ -253,7 +285,8 @@ export const MESSAGES_MOCK = {
     'dot.common.apply': 'Apply',
     'editpage.layout.theme.search': 'Search',
     'dot.template.builder.classes.dialog.update.button': 'Update',
-    'dot.template.builder.sidebar.header.title': 'Sidebar'
+    'dot.template.builder.sidebar.header.title': 'Sidebar',
+    'dot.template.builder.row.box.wont.fit': 'Minimum 1 column needed for box drop.'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
@@ -264,6 +297,15 @@ export const MOCK_SELECTED_STYLE_CLASSES = [
     'd-flex',
     'flex-column',
     'justify-content-center',
+    'align-items-center',
+    'justify-content-start',
+    'justify-content-end',
+    'justify-content-center',
+    'justify-content-between',
+    'justify-content-around',
+    'justify-content-evenly',
+    'align-items-start',
+    'align-items-end',
     'align-items-center'
 ];
 
@@ -377,3 +419,219 @@ export const SIDEBAR_MOCK = {
 };
 
 export const STYLE_CLASS_MOCK = ['test', 'mock-class'];
+
+export const CLASS_NAME_MOCK = 'custom-class';
+
+export const ROWS_MOCK = [
+    {
+        w: 12,
+        h: 1,
+        x: 0,
+        y: 0,
+        subGridOpts: {
+            children: [
+                {
+                    w: 7,
+                    h: 1,
+                    y: 0,
+                    x: 0,
+                    id: '59c16004-8fac-4627-a013-04086bf6d0e3',
+                    styleClass: ['banner-tall'],
+                    containers: [
+                        {
+                            identifier: '//demo.dotcms.com/application/containers/banner/',
+                            uuid: '1'
+                        }
+                    ]
+                }
+            ]
+        },
+        id: 'a9b994e9-3bb8-4f47-91ce-5d0f0afed894',
+        styleClass: ['p-0', 'banner-tall']
+    },
+    {
+        w: 12,
+        h: 1,
+        x: 0,
+        y: 1,
+        subGridOpts: {
+            children: [
+                {
+                    w: 7,
+                    h: 1,
+                    y: 0,
+                    x: 0,
+                    id: 'd15fc2a1-e5c9-48bf-abcd-aea213d48bea',
+                    styleClass: ['mt-70', 'booking-form'],
+                    containers: [
+                        {
+                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            uuid: '1'
+                        }
+                    ]
+                },
+                {
+                    w: 3,
+                    h: 1,
+                    y: 0,
+                    x: 9,
+                    id: '8dea0760-3f1f-4f06-b14b-34fcdd86e4c1',
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: 'SYSTEM_CONTAINER'
+                        }
+                    ]
+                }
+            ]
+        },
+        id: '74a97ec0-a406-458e-be83-b32b3e33f689',
+        styleClass: []
+    },
+    {
+        w: 12,
+        h: 1,
+        x: 0,
+        y: 2,
+        subGridOpts: {
+            children: [
+                {
+                    w: 3,
+                    h: 1,
+                    y: 0,
+                    x: 0,
+                    id: '27b7b133-e5dc-4b41-99b0-bbe18ae59387',
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            uuid: '2'
+                        }
+                    ]
+                },
+                {
+                    w: 4,
+                    h: 1,
+                    y: 0,
+                    x: 3,
+                    id: 'ef8a4b38-336c-4c9b-bf94-1bc87f7a74ea',
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            uuid: '3'
+                        }
+                    ]
+                },
+                {
+                    w: 2,
+                    h: 1,
+                    y: 0,
+                    x: 7,
+                    id: 'ef8a4b38-336c-4c9b-bf94-1bc87f7a74ea',
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            uuid: '3'
+                        }
+                    ]
+                },
+                {
+                    w: 4,
+                    h: 1,
+                    y: 0,
+                    x: 9,
+                    id: '11f7745a-16fa-4236-b3c1-fdb182a59315',
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: 'SYSTEM_CONTAINER'
+                        }
+                    ]
+                }
+            ]
+        },
+        id: '1d66ecec-e39c-4d37-8344-a02a321336fe',
+        styleClass: []
+    },
+    {
+        w: 12,
+        h: 1,
+        x: 0,
+        y: 3,
+        subGridOpts: {
+            children: [
+                {
+                    w: 3,
+                    h: 1,
+                    y: 0,
+                    x: 0,
+                    id: 'b1c628b2-d748-4c36-90a5-449a138330fd',
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            uuid: '6'
+                        }
+                    ]
+                },
+                {
+                    w: 5,
+                    h: 1,
+                    y: 0,
+                    x: 4,
+                    id: '95d2cc1c-64c4-4d10-a88a-7c654947a51a',
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            uuid: '7'
+                        }
+                    ]
+                },
+                {
+                    w: 4,
+                    h: 1,
+                    y: 0,
+                    x: 9,
+                    id: 'd6428ef2-fb43-47cb-b65d-3920162acdf9',
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            uuid: '8'
+                        }
+                    ]
+                }
+            ]
+        },
+        id: '60c2f2e0-9017-4469-bf22-c2d30f514392',
+        styleClass: []
+    },
+    {
+        w: 12,
+        h: 1,
+        x: 0,
+        y: 4,
+        subGridOpts: {
+            children: []
+        },
+        id: '60c2f2e0-9017-4439-bf22-c2d30f514392'
+    }
+];
+
+export const BOX_MOCK = {
+    w: 3,
+    h: 1,
+    y: 0,
+    x: 9,
+    id: 'd6428ef2-fb43-47cb-b65d-3920162acdf9',
+    styleClass: [],
+    containers: [
+        {
+            identifier: '//demo.dotcms.com/application/containers/default/',
+            uuid: '8'
+        }
+    ]
+};

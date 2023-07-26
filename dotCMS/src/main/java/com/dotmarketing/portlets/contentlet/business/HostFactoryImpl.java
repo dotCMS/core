@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
@@ -74,61 +75,69 @@ public class HostFactoryImpl implements HostFactory {
     private final String AND = " AND ";
     private final String ORDER_BY = " ORDER BY ? ";
 
-    private static final StringBuilder SELECT_SYSTEM_HOST = new StringBuilder()
-            .append("SELECT id FROM identifier WHERE id = '").append(Host.SYSTEM_HOST).append("' ");
+    private static final String SELECT_SYSTEM_HOST = "SELECT id FROM identifier WHERE id = '"+ Host.SYSTEM_HOST+"' ";
 
-    private static final StringBuilder FROM_JOINED_TABLES = new StringBuilder()
-            .append("INNER JOIN identifier i ")
-            .append("ON c.identifier = i.id AND i.asset_subtype = '").append(Host.HOST_VELOCITY_VAR_NAME).append("' ")
-            .append("INNER JOIN contentlet_version_info cvi ")
-            .append("ON c.inode = cvi.working_inode ");
+    private static final String FROM_JOINED_TABLES = "INNER JOIN identifier i " +
+            "ON c.identifier = i.id AND i.asset_subtype = '" + Host.HOST_VELOCITY_VAR_NAME + "' " +
+            "INNER JOIN contentlet_version_info cvi " +
+            "ON c.inode = cvi.working_inode ";
 
-    private static final StringBuilder SELECT_SITE_INODE = new StringBuilder().append("SELECT c.inode FROM contentlet" +
-            " c ").append(FROM_JOINED_TABLES);
+    private static final String SELECT_SITE_INODE = "SELECT c.inode FROM contentlet" +
+            " c " +
+            FROM_JOINED_TABLES;
+    private static final String SELECT_SITE_INODE_AND_ALIASES = "SELECT c.inode, %s" +
+            " AS aliases FROM contentlet c " +
+            FROM_JOINED_TABLES;
 
-    private static final StringBuilder SELECT_SITE_INODE_AND_ALIASES = new StringBuilder().append("SELECT c.inode, %s" +
-            " AS aliases FROM contentlet c ").append(FROM_JOINED_TABLES);
+    private static final String POSTGRES_ALIASES_COLUMN = ContentletJsonAPI
+            .CONTENTLET_AS_JSON +
+            "->'fields'->'" + Host.ALIASES_KEY + "'->>'value' ";
 
-    private static final StringBuilder POSTGRES_ALIASES_COLUMN = new StringBuilder(ContentletJsonAPI
-            .CONTENTLET_AS_JSON).append("->'fields'->'").append(Host.ALIASES_KEY).append("'->>'value' ");
+    private static final String MSSQL_ALIASES_COLUMN = "JSON_VALUE(c." +
+            ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.fields." + Host.ALIASES_KEY + ".value') ";
+    private static final String ALIASES_COLUMN = "c.text_area1";
 
-    private static final StringBuilder MSSQL_ALIASES_COLUMN = new StringBuilder("JSON_VALUE(c.").append
-            (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append(Host.ALIASES_KEY).append(".value') ");
+    private static final String SITE_NAME_LIKE = "LOWER(%s) LIKE ? ";
 
-    private static final StringBuilder ALIASES_COLUMN = new StringBuilder("c.text_area1");
+    private static final String SITE_NAME_EQUALS ="LOWER(%s) = ? ";
 
-    private static final StringBuilder SITE_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
+    private static final String POSTGRES_SITENAME_COLUMN = ContentletJsonAPI
+            .CONTENTLET_AS_JSON +
+            "->'fields'->'" + Host.HOST_NAME_KEY + "'->>'value' ";
 
-    private static final StringBuilder SITE_NAME_EQUALS = new StringBuilder().append("LOWER(%s) = ? ");
+    private static final String MSSQL_SITENAME_COLUMN = "JSON_VALUE(c." +
+            ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.fields." + Host.HOST_NAME_KEY + ".value')" +
+            " ";
 
-    private static final StringBuilder POSTGRES_SITENAME_COLUMN = new StringBuilder(ContentletJsonAPI
-            .CONTENTLET_AS_JSON).append("->'fields'->'").append(Host.HOST_NAME_KEY).append("'->>'value' ");
+    private static final String SITENAME_COLUMN = "c.text1";
 
-    private static final StringBuilder MSSQL_SITENAME_COLUMN = new StringBuilder("JSON_VALUE(c.").append
-            (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append(Host.HOST_NAME_KEY).append(".value')" +
-            " ");
+    private static final String ALIAS_LIKE = "LOWER(%s) LIKE ? ";
 
-    private static final StringBuilder SITENAME_COLUMN = new StringBuilder("c.text1");
+    private static final String EXCLUDE_SYSTEM_HOST = "i.id <> '" + Host
+            .SYSTEM_HOST +
+            "' ";
 
-    private static final StringBuilder ALIAS_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
+    private static final String SITE_IS_LIVE = "cvi.live_inode IS NOT NULL";
+    @VisibleForTesting
+    protected static final String SITE_IS_LIVE_OR_STOPPED = "cvi.live_inode IS NOT null or " +
+            "(cvi.live_inode IS NULL AND cvi.deleted = false )";
+    private static final String SITE_IS_STOPPED = "cvi.live_inode IS NULL AND cvi" +
+            ".deleted = " +
+            getDBFalse();
 
-    private static final StringBuilder EXCLUDE_SYSTEM_HOST = new StringBuilder().append("i.id <> '").append(Host
-            .SYSTEM_HOST).append("' ");
+    private static final String SITE_IS_STOPPED_OR_ARCHIVED = "cvi.live_inode IS NULL";
 
-    private static final StringBuilder SITE_IS_LIVE = new StringBuilder().append("cvi.live_inode IS NOT NULL");
-    private static final StringBuilder SITE_IS_LIVE_OR_STOPPED = new StringBuilder().append("cvi.live_inode IS NOT null or " +
-            "(cvi.live_inode IS NULL AND cvi.deleted = false )");
-    private static final StringBuilder SITE_IS_STOPPED = new StringBuilder().append("cvi.live_inode IS NULL AND cvi" +
-            ".deleted = ").append(getDBFalse());
+    private static final String SITE_IS_ARCHIVED = "cvi.live_inode IS NULL AND cvi" +
+            ".deleted = " +
+            getDBTrue();
 
-    private static final StringBuilder SITE_IS_STOPPED_OR_ARCHIVED = new StringBuilder().append("cvi.live_inode IS NULL");
+    private static final String SELECT_SITE_COUNT = "SELECT COUNT(cvi.working_inode) " +
+            "FROM contentlet_version_info cvi, identifier i " + "WHERE i.asset_subtype = '" +
+            Host.HOST_VELOCITY_VAR_NAME + "' " + " AND cvi.identifier = i.id ";
 
-    private static final StringBuilder SITE_IS_ARCHIVED = new StringBuilder().append("cvi.live_inode IS NULL AND cvi" +
-            ".deleted = ").append(getDBTrue());
-
-    private static final StringBuilder SELECT_SITE_COUNT = new StringBuilder().append("SELECT COUNT(cvi.working_inode) ")
-            .append("FROM contentlet_version_info cvi, identifier i ").append("WHERE i.asset_subtype = '")
-            .append(Host.HOST_VELOCITY_VAR_NAME).append("' ").append(" AND cvi.identifier = i.id ");
+    // query that Exact matches should be at the top of the search results.
+    private static final String PRIORITIZE_EXACT_MATCHES =
+            "ORDER BY CASE WHEN LOWER(%s) = ? THEN 0 ELSE 1 END";
 
     /**
      * Default class constructor.
@@ -170,7 +179,7 @@ public class HostFactoryImpl implements HostFactory {
             final DotConnect dc = new DotConnect();
             final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE)
                     .append(WHERE);
-            sqlQuery.append(getSiteNameColumn(SITE_NAME_EQUALS.toString()));
+            sqlQuery.append(getSiteNameColumn(SITE_NAME_EQUALS));
             dc.setSQL(sqlQuery.toString());
             dc.addParam(siteName.toLowerCase());
             try {
@@ -212,9 +221,9 @@ public class HostFactoryImpl implements HostFactory {
             String sql = sqlQuery.toString();
             if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
                 if (DbConnectionFactory.isPostgres()) {
-                    sql = String.format(sql, POSTGRES_ALIASES_COLUMN.toString(), POSTGRES_ALIASES_COLUMN.toString());
+                    sql = String.format(sql, POSTGRES_ALIASES_COLUMN, POSTGRES_ALIASES_COLUMN);
                 } else {
-                    sql = String.format(sql, MSSQL_ALIASES_COLUMN.toString(), MSSQL_ALIASES_COLUMN.toString());
+                    sql = String.format(sql, MSSQL_ALIASES_COLUMN, MSSQL_ALIASES_COLUMN);
                 }
             } else {
                 sql = String.format(sql, ALIASES_COLUMN, ALIASES_COLUMN);
@@ -637,7 +646,7 @@ public class HostFactoryImpl implements HostFactory {
     @Override
     public Optional<List<Host>> findLiveSites(final String siteNameFilter, final int limit, final int offset,
                                               final boolean showSystemHost, final User user, final boolean respectFrontendRoles) {
-        return search(siteNameFilter, SITE_IS_LIVE.toString(), showSystemHost, limit, offset, user,
+        return search(siteNameFilter, SITE_IS_LIVE, showSystemHost, limit, offset, user,
                 respectFrontendRoles);
     }
 
@@ -646,7 +655,7 @@ public class HostFactoryImpl implements HostFactory {
                                                  final int limit, final int offset, final boolean showSystemHost,
                                                  final User user, final boolean respectFrontendRoles) {
         final String condition =
-                includeArchivedSites ? SITE_IS_STOPPED_OR_ARCHIVED.toString() : SITE_IS_STOPPED.toString();
+                includeArchivedSites ? SITE_IS_STOPPED_OR_ARCHIVED : SITE_IS_STOPPED;
         return search(siteNameFilter, condition, showSystemHost, limit, offset, user, respectFrontendRoles);
     }
 
@@ -669,14 +678,14 @@ public class HostFactoryImpl implements HostFactory {
     public Optional<List<Host>> findArchivedSites(final String siteNameFilter, final int limit, final int offset,
                                                   final boolean showSystemHost, final User user,
                                                   final boolean respectFrontendRoles) {
-        return search(siteNameFilter, SITE_IS_ARCHIVED.toString(), showSystemHost, limit, offset, user,
+        return search(siteNameFilter, SITE_IS_ARCHIVED, showSystemHost, limit, offset, user,
                 respectFrontendRoles);
     }
 
     @Override
     public long count() throws DotDataException {
         final DotConnect dc = new DotConnect();
-        dc.setSQL(SELECT_SITE_COUNT.toString());
+        dc.setSQL(SELECT_SITE_COUNT);
         final List<Map<String, String>> dbResults = dc.loadResults();
         final String total = dbResults.get(0).get("count");
         return ConversionUtils.toLong(total, 0L);
@@ -706,7 +715,8 @@ public class HostFactoryImpl implements HostFactory {
      *
      * @return The list of {@link Host} objects that match the specified search criteria.
      */
-    private Optional<List<Host>> search(final String siteNameFilter, final String condition, final boolean
+    @VisibleForTesting
+    protected Optional<List<Host>> search(final String siteNameFilter, final String condition, final boolean
             showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles) {
         final DotConnect dc = new DotConnect();
         final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE);
@@ -714,7 +724,7 @@ public class HostFactoryImpl implements HostFactory {
         sqlQuery.append("cvi.identifier = i.id");
         if (UtilMethods.isSet(siteNameFilter)) {
             sqlQuery.append(AND);
-            sqlQuery.append(getSiteNameColumn(SITE_NAME_LIKE.toString()));
+            sqlQuery.append(getSiteNameColumn(SITE_NAME_LIKE));
         }
         if (UtilMethods.isSet(condition)) {
             sqlQuery.append(AND);
@@ -724,9 +734,16 @@ public class HostFactoryImpl implements HostFactory {
             sqlQuery.append(AND);
             sqlQuery.append(EXCLUDE_SYSTEM_HOST);
         }
+        if (UtilMethods.isSet(siteNameFilter)) {
+            sqlQuery.append(getSiteNameColumn(PRIORITIZE_EXACT_MATCHES));
+        }
+
         dc.setSQL(sqlQuery.toString());
         if (UtilMethods.isSet(siteNameFilter)) {
+            // Add the site name filter parameter
             dc.addParam("%" + siteNameFilter.trim() + "%");
+            // Add the site name filter parameter again, but this time for the exact match
+            dc.addParam(siteNameFilter.trim().replace("%", ""));
         }
         if (limit > 0) {
             dc.setMaxRows(limit);

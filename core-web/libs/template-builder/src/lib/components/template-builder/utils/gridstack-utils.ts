@@ -2,12 +2,19 @@ import { v4 as uuid } from 'uuid';
 
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 
+import { EMPTY_ROWS_VALUE } from './mocks';
+
 import {
+    BOX_WIDTH,
     DotGridStackNode,
     DotGridStackWidget,
     SYSTEM_CONTAINER_IDENTIFIER,
     TemplateBuilderBoxSize
 } from '../models/models';
+
+const emptyChar = '_';
+const boxChar = '#';
+const currentBoxChar = '*';
 
 /**
  * @description This function parses the oldNode and newNode to a DotGridStackWidget array
@@ -113,8 +120,8 @@ export function removeColumnByID(row: DotGridStackWidget, columnID: string): Dot
 export function parseFromDotObjectToGridStack(
     body: DotLayoutBody | undefined
 ): DotGridStackWidget[] {
-    if (!body) {
-        return [];
+    if (!body || !body.rows?.length) {
+        return EMPTY_ROWS_VALUE;
     }
 
     return body.rows.map((row, i) => ({
@@ -189,9 +196,73 @@ export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): D
  * @return {*}  {TemplateBuilderBoxSize}
  */
 export function getBoxVariantByWidth(width: number): TemplateBuilderBoxSize {
-    if (width <= 1) return TemplateBuilderBoxSize.small;
+    if (width <= 1) {
+        return TemplateBuilderBoxSize.small;
+    }
 
-    if (width <= 3) return TemplateBuilderBoxSize.medium;
+    if (width <= 3) {
+        return TemplateBuilderBoxSize.medium;
+    }
 
     return TemplateBuilderBoxSize.large;
+}
+
+/**
+ * @description This function returns if a box will fit in a row
+ *
+ * @export
+ * @param {DotGridStackWidget[]} boxes
+ * @return {*} boolean
+ */
+export function willBoxFitInRow(boxes: DotGridStackWidget[]): boolean {
+    const validSpaceRegex = new RegExp(emptyChar.repeat(BOX_WIDTH), 'g');
+
+    const rowSpace = simulateRowSpace(boxes); // Simulate the row with the current box
+
+    return validSpaceRegex.test(rowSpace.join('')); // If there are sufficient consecutive empty spaces then we can drop one more box
+}
+
+/**
+ *  @description This function returns the remaining space for a box in a row
+ *
+ * @export
+ * @param {DotGridStackWidget[]} [boxes=[]]
+ * @param {DotGridStackWidget} newBox
+ * @return {*}  {number}
+ */
+export function getRemainingSpaceForBox(
+    boxes: DotGridStackWidget[] = [],
+    newBox: DotGridStackWidget
+): number {
+    const remainingSpaceRegex = new RegExp(`${'\\' + currentBoxChar}+${emptyChar}{1,2}`, 'g');
+    const newBoxRegex = new RegExp(`${'\\' + currentBoxChar}`, 'g');
+
+    const rowSpace = simulateRowSpace(boxes, newBox); // Simulate the row with the current box
+
+    const result = rowSpace.join('').match(remainingSpaceRegex); // Get the section of the currentBox
+
+    return result ? result[0].replace(newBoxRegex, '').length : 0; // If there's space return it
+}
+
+/**
+ * @description This function returns an array simulating the row pushing the new box in the row
+ *
+ * @param {DotGridStackWidget} boxes
+ * @param {DotGridStackWidget} [newBox]
+ * @return {*}
+ */
+function simulateRowSpace(boxes: DotGridStackWidget[] = [], newBox?: DotGridStackWidget): string[] {
+    const rowSpace = Array.from({ length: 12 }, () => emptyChar); // Array with 12 empty spaces
+
+    if (newBox) {
+        boxes.push(newBox);
+    }
+
+    boxes.forEach(({ x, w, id }) => {
+        const currentChar = id === newBox?.id ? currentBoxChar : boxChar;
+
+        rowSpace.splice(x, w, ...currentChar.repeat(w).split('')); // Fill needed empty spaces with # or *
+    });
+
+    return rowSpace;
 }

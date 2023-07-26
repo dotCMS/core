@@ -4,7 +4,7 @@ import { Button, ButtonModule } from 'primeng/button';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsEmptyExperimentsComponent } from './dot-experiments-empty-experiments.component';
@@ -18,7 +18,7 @@ describe('DotExperimentsEmptyExperimentsComponent', () => {
     let pButton: Button | null;
 
     const createComponent = createComponentFactory({
-        imports: [ButtonModule, DotMessagePipeModule],
+        imports: [ButtonModule, DotMessagePipe],
         component: DotExperimentsEmptyExperimentsComponent,
         providers: [
             mockProvider(CoreWebService),

@@ -11,7 +11,7 @@ import {
     SimpleChanges
 } from '@angular/core';
 
-import { filter, flatMap, map, take, toArray } from 'rxjs/operators';
+import { filter, map, flatMap, take, toArray } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice } from '@dotcms/dotcms-models';

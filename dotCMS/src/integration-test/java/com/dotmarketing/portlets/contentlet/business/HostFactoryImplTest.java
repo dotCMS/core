@@ -18,6 +18,8 @@ import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static com.dotmarketing.portlets.contentlet.business.HostFactoryImpl.SITE_IS_LIVE_OR_STOPPED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -82,6 +84,45 @@ public class HostFactoryImplTest extends IntegrationTestBase {
             assertTrue(hostsList.isPresent());
         }
 
+    }
+
+    /**
+     * Method to test: {@link HostFactoryImpl#search(String, String, boolean, int, int, User, boolean)}
+     * Given Scenario: Create many (20+) sites that have the same text in them
+     * example1.test.com, example2.test.com..., then just test.com
+     * ExpectedResult: Exact matches should be at the top of the search results.
+     *
+     */
+    @Test
+    public void test_search_shouldReturnExactMatchesFirst() throws DotDataException, DotSecurityException {
+        // Initialization
+        final int limit = 15;
+        final int offset = 0;
+        final HostFactoryImpl hostFactory = new HostFactoryImpl();
+        final long systemMilis = System.currentTimeMillis();
+
+        final String baseName = "test.com";
+
+        // generate 20 sites with the name test.com
+        for (int i = 0; i < 20; i++) {
+            new SiteDataGen().name("example"+i+"-"+systemMilis+"."+baseName).nextPersisted(true);
+        }
+
+        //get the site with the name test.com
+        Host testSite = APILocator.getHostAPI().findByName(baseName, APILocator.systemUser(), false);
+
+        //validate if the site is null
+        //if is null create a new site with the name test.com
+        if (testSite == null) {
+            testSite = new SiteDataGen().name(baseName).nextPersisted(true);
+        }
+
+        // test the method search at class HostFactoryImpl where the filter is "test.com" and should return it first in list
+        final Optional<List<Host>> hostsList =  hostFactory.search(baseName, SITE_IS_LIVE_OR_STOPPED,false ,limit, offset, APILocator.systemUser(), false);
+
+        //validations
+        assertTrue( "Test site is not contained in list", hostsList.get().contains(testSite));
+        assertEquals("Test site is not the first in the list", testSite, hostsList.get().get(0));
     }
 }
 

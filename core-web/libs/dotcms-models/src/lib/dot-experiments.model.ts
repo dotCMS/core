@@ -1,9 +1,11 @@
 import { ChartDataset } from 'chart.js';
 
+import { MenuItem } from 'primeng/api';
+
 import {
     BayesianStatusResponse,
     ComponentStatus,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 
@@ -13,7 +15,7 @@ export interface DotExperiment {
     pageId: string;
     name: string;
     description: string;
-    status: DotExperimentStatusList;
+    status: DotExperimentStatus;
     readyToStart: boolean;
     archived: boolean;
     trafficProportion: TrafficProportion;
@@ -23,6 +25,8 @@ export interface DotExperiment {
     modDate: Date;
     goals: Goals | null;
 }
+
+export type DotExperimentsWithActions = DotExperiment & { actionsItemsMenu: MenuItem[] };
 
 export interface DotExperimentResults {
     bayesianResult: DotResultBayesian;
@@ -127,8 +131,8 @@ export interface RangeOfDateAndTime {
 }
 
 export type GroupedExperimentByStatus = {
-    status: DotExperimentStatusList;
-    experiments: DotExperiment[];
+    status: DotExperimentStatus;
+    experiments: DotExperimentsWithActions[];
 };
 
 export interface SidebarStatus {

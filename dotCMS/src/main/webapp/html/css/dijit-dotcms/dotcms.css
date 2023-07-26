@@ -11382,10 +11382,6 @@ a.category_higlighted, a.tag_higlighted {
   font-weight: bolder;
 }
 
-.related-content-dialog {
-  height: 90%;
-  width: 90%;
-}
 .related-content-dialog .dijitDialogPaneContent {
   padding: 0;
 }
@@ -11846,4 +11842,14 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.listingThumbDiv{
+  height: 60px;
+  width: 80px;
+  position: relative;
+  border-radius: 5px;
+  overflow: hidden;
+  cursor: pointer;
+
 }

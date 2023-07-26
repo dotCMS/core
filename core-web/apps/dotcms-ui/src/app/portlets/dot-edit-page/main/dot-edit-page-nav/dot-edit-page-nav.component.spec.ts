@@ -10,8 +10,8 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
-import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotPageRender, DotPageRenderState, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
     getExperimentMock,
     MockDotMessageService,
@@ -32,7 +32,12 @@ class ActivatedRouteMock {
                     }
                 ]
             },
-            data: { featuredFlagExperiment: true },
+            data: {
+                featuredFlags: {
+                    [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: false,
+                    [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: false
+                }
+            },
             queryParams: { experimentId: EXPERIMENT_MOCK.id }
         };
     }
@@ -84,12 +89,19 @@ describe('DotEditPageNavComponent', () => {
         'editpage.toolbar.nav.code': 'Code',
         'editpage.toolbar.nav.license.enterprise.only': 'Enterprise only',
         'editpage.toolbar.nav.layout.advance.disabled': 'Can’t edit advanced template',
-        'editpage.toolbar.nav.experiments': 'Experiments'
+        'editpage.toolbar.nav.experiments': 'Experiments',
+        'editpage.toolbar.nav.page.tools': 'Page Tools'
     });
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule, TooltipModule, DotIconModule, DotPipesModule],
+            imports: [
+                RouterTestingModule,
+                TooltipModule,
+                DotIconModule,
+                DotPipesModule,
+                DotMessagePipe
+            ],
             declarations: [DotEditPageNavComponent, TestHostComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -351,7 +363,11 @@ describe('DotEditPageNavComponent', () => {
                         }
                     ]
                 },
-                data: { featuredFlag: true }
+                data: {
+                    featuredFlags: {
+                        [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: true
+                    }
+                }
             });
             fixture.detectChanges();
 
@@ -378,7 +394,45 @@ describe('DotEditPageNavComponent', () => {
                         }
                     ]
                 },
-                data: { featuredFlag: false }
+                data: { featuredFlags: { [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: false } }
+            });
+            fixture.detectChanges();
+
+            const menuListItems = de.queryAll(By.css('.edit-page-nav__item'));
+            expect(menuListItems.length).toEqual(4);
+        });
+    });
+
+    describe('Page tools feature flag', () => {
+        it('Should has Page Tools item', () => {
+            // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+            spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
+                firstChild: {
+                    url: [
+                        {
+                            path: 'content'
+                        }
+                    ]
+                },
+                data: { featuredFlags: { [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: true } }
+            });
+            fixture.detectChanges();
+
+            const menuListItems = de.queryAll(By.css('.edit-page-nav__item'));
+            expect(menuListItems.length).toEqual(5);
+        });
+
+        it('Should not have Page Tools item', () => {
+            // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+            spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
+                firstChild: {
+                    url: [
+                        {
+                            path: 'content'
+                        }
+                    ]
+                },
+                data: { featuredFlags: { [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: false } }
             });
             fixture.detectChanges();
 

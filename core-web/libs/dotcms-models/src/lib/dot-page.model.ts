@@ -1,5 +1,5 @@
 import { DotCMSContentType } from './dot-content-types.model';
-import { DotExperimentStatusList } from './dot-experiments-constants';
+import { DotExperimentStatus } from './dot-experiments-constants';
 import { DotPageMode } from './dot-page-mode.enum';
 
 // TODO: we need to see why the endpoints are returning different "Pages" objects.
@@ -15,6 +15,7 @@ export interface DotPage {
     folder?: string;
     friendlyName: string;
     host: string;
+    hostName?: string;
     htmlpage?: boolean;
     httpsRequired?: boolean;
     identifier: string;
@@ -84,7 +85,7 @@ export interface DotVariantData {
     };
     pageId: string;
     experimentId: string;
-    experimentStatus: DotExperimentStatusList;
+    experimentStatus: DotExperimentStatus;
     experimentName: string;
     mode: DotPageMode;
 }

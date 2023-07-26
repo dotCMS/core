@@ -127,13 +127,14 @@ describe('DotTemplateCreateEditComponent', () => {
         await TestBed.configureTestingModule({
             declarations: [
                 DotApiLinkMockComponent,
-                DotMessagePipe,
+
                 DotPortletBaseMockComponent,
                 DotPortletToolbarMockComponent,
                 DotTemplateBuilderMockComponent,
                 DotTemplateCreateEditComponent
             ],
             imports: [
+                DotMessagePipe,
                 FormsModule,
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
@@ -158,11 +159,11 @@ describe('DotTemplateCreateEditComponent', () => {
                     useValue: messageServiceMock
                 },
                 /*
-                    DotTempFileUploadService, DotWorkflowActionsFireService and DotCrudService:
-                    This three are from DotTemplateThumbnailFieldComponent and because
-                    I had to import DotTemplatePropsModule so I can click the real dialog that
-                    gets append to the body.
-                */
+            DotTempFileUploadService, DotWorkflowActionsFireService and DotCrudService:
+            This three are from DotTemplateThumbnailFieldComponent and because
+            I had to import DotTemplatePropsModule so I can click the real dialog that
+            gets append to the body.
+        */
                 {
                     provide: DotTempFileUploadService,
                     useValue: {
@@ -200,11 +201,11 @@ describe('DotTemplateCreateEditComponent', () => {
                     }
                 },
                 /*
-                    PaginatorService, SiteService and DotThemesService:
-                    This three are from DotThemeSelectorDropdownComponent and because
-                    I had to import DotTemplatePropsModule so I can click the real dialog that
-                    gets append to the body.
-                */
+            PaginatorService, SiteService and DotThemesService:
+            This three are from DotThemeSelectorDropdownComponent and because
+            I had to import DotTemplatePropsModule so I can click the real dialog that
+            gets append to the body.
+        */
                 {
                     provide: PaginatorService,
                     useValue: {
@@ -253,7 +254,10 @@ describe('DotTemplateCreateEditComponent', () => {
             goToEditTemplate: jasmine.createSpy(),
             goToTemplateList: jasmine.createSpy(),
             saveTemplate: jasmine.createSpy(),
-            saveWorkingTemplate: jasmine.createSpy()
+            saveWorkingTemplate: jasmine.createSpy(),
+            saveAndPublishTemplate: jasmine.createSpy(),
+            updateTemplate: jasmine.createSpy(),
+            updateWorkingTemplate: jasmine.createSpy()
         };
     });
 
@@ -508,7 +512,6 @@ describe('DotTemplateCreateEditComponent', () => {
                         },
                         themeId: '123'
                     });
-
                     expect(store.saveTemplate).toHaveBeenCalledWith({
                         type: 'design',
                         title: 'Some template',
@@ -529,7 +532,7 @@ describe('DotTemplateCreateEditComponent', () => {
                     });
                 });
 
-                it('should call saveWorkingTemplate when updateTemplate', () => {
+                it('should call updateWorkingTemplate from store when updateTemplate', () => {
                     const builder = de.query(By.css('dot-template-builder'));
                     builder.triggerEventHandler('updateTemplate', {
                         layout: {
@@ -564,7 +567,7 @@ describe('DotTemplateCreateEditComponent', () => {
                         image: ''
                     };
 
-                    expect(store.saveWorkingTemplate).toHaveBeenCalledWith(template);
+                    expect(store.updateWorkingTemplate).toHaveBeenCalledWith(template);
                 });
 
                 it('should saveAndPublishTemplate', () => {
@@ -695,13 +698,13 @@ describe('DotTemplateCreateEditComponent', () => {
             });
 
             describe('edit layout', () => {
-                it('should save', () => {
+                it('should save and publish', () => {
                     const builder = de.query(By.css('dot-template-builder'));
-                    builder.triggerEventHandler('save', {
+                    builder.triggerEventHandler('saveAndPublish', {
                         body: `<h1>##Container and stuff</h1>`
                     });
 
-                    expect(store.saveTemplate).toHaveBeenCalledWith({
+                    expect(store.saveAndPublishTemplate).toHaveBeenCalledWith({
                         type: 'advanced',
                         title: 'Some template',
                         body: '<h1>##Container and stuff</h1>',
@@ -711,13 +714,13 @@ describe('DotTemplateCreateEditComponent', () => {
                     });
                 });
 
-                it('should call saveWorkingTemplate when updateTemplate', () => {
+                it('should call updateWorkingTemplate from store when updateTemplate', () => {
                     const builder = de.query(By.css('dot-template-builder'));
                     builder.triggerEventHandler('updateTemplate', {
                         body: `<h1>##Container and stuff</h1>`
                     });
 
-                    expect(store.saveWorkingTemplate).toHaveBeenCalledWith({
+                    expect(store.updateWorkingTemplate).toHaveBeenCalledWith({
                         type: 'advanced',
                         title: 'Some template',
                         body: '<h1>##Container and stuff</h1>',

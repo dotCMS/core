@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -10,11 +10,12 @@ import { ButtonModule } from 'primeng/button';
 import { DataViewModule } from 'primeng/dataview';
 import { DropdownModule } from 'primeng/dropdown';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { DotEventsService, DotThemesService, PaginatorService } from '@dotcms/data-access';
-import { CoreWebService, SiteService, mockSites } from '@dotcms/dotcms-js';
-import { DotMessagePipeModule, DotSiteSelectorDirective } from '@dotcms/ui';
-import { CoreWebServiceMock, SiteServiceMock, mockDotThemes } from '@dotcms/utils-testing';
+import { CoreWebService, mockSites, SiteService } from '@dotcms/dotcms-js';
+import { DotMessagePipe, DotSiteSelectorDirective } from '@dotcms/ui';
+import { CoreWebServiceMock, mockDotThemes, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderThemeSelectorComponent } from './template-builder-theme-selector.component';
 
@@ -29,8 +30,9 @@ describe('TemplateBuilderThemeSelectorComponent', () => {
             CommonModule,
             ButtonModule,
             DropdownModule,
+            InputTextModule,
             DataViewModule,
-            DotMessagePipeModule,
+            DotMessagePipe,
             DotSiteSelectorDirective,
             HttpClientTestingModule
         ],

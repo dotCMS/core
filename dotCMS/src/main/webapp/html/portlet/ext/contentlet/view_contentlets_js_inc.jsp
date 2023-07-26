@@ -2062,9 +2062,49 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     var hasTitleImage = (cellData.hasTitleImage ==='true');
 
                     var modDate = cellData.modDateMilis;
-                    cell.innerHTML = (hasTitleImage)
-                        ? '<img draggable="false" style="width:64px;height: 64px;object-fit: contain;" class="listingTitleImg" onError="replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w/20q?r=' + modDate +'" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >'
-                        : '<dot-contentlet-icon icon="' + iconName +'" size="48px" />';
+
+
+
+                    let holderDiv = document.createElement("div");
+                    holderDiv.className="listingThumbDiv";
+
+
+                    let cardThumbnail = document.createElement("dot-contentlet-thumbnail");
+
+                    cardThumbnail.iconSize="48px";
+                    cardThumbnail.cover="true";
+                    cardThumbnail.contentlet=cellData;
+
+                    holderDiv.appendChild(cardThumbnail);
+                    cell.appendChild(holderDiv);
+                    live = cellData["live"] == "true"?true:false;
+                    working = cellData["working"] == "true"?true:false;
+                    deleted = cellData["deleted"] == "true"?true:false;
+                    locked = cellData["locked"] == "true"?true:false;
+                    liveSt = live?"1":"0";
+                    workingSt = working?"1":"0";
+                    permissions = cellData["permissions"];
+                    read = userHasReadPermission (cellData, userId)?"1":"0";
+                    write = userHasWritePermission (cellData, userId)?"1":"0";
+                    publish = userHasPublishPermission (cellData, userId)?"1":"0";
+                    contentStructureType = cellData["contentStructureType"];
+                    structure_id = cellData["structureInode"];
+                    hasLiveVersion = cellData["hasLiveVersion"];
+                    holderDiv.setAttribute('data-inode', cellData["inode"]);
+                    holderDiv.setAttribute('data-live', liveSt);
+                    holderDiv.setAttribute('data-working', workingSt);
+                    holderDiv.setAttribute('data-write', write);
+                    holderDiv.addEventListener('click', function(e){
+                        let dataSet =  e.currentTarget.dataset;
+                        editContentlet(dataSet["inode"],'<%= user.getUserId() %>','<%= referer %>', dataSet["live"] , dataSet["working"] , dataSet["write"] );
+                    }, false);
+
+
+
+
+
+
+
 
                     cell.setAttribute("style","height: 85px; text-align: center;");
 
@@ -2125,20 +2165,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                     var cell = row.insertCell (row.cells.length);
                     cell.innerHTML = '<span class=\"dijitIcon actionIcon content-search__action-item\" id=\"touchAction' + i + '\"></span>';
-
-                    live = cellData["live"] == "true"?true:false;
-                    working = cellData["working"] == "true"?true:false;
-                    deleted = cellData["deleted"] == "true"?true:false;
-                    locked = cellData["locked"] == "true"?true:false;
-                    liveSt = live?"1":"0";
-                    workingSt = working?"1":"0";
-                    permissions = cellData["permissions"];
-                    read = userHasReadPermission (cellData, userId)?"1":"0";
-                    write = userHasWritePermission (cellData, userId)?"1":"0";
-                    publish = userHasPublishPermission (cellData, userId)?"1":"0";
-                    contentStructureType = cellData["contentStructureType"];
-                    structure_id = cellData["structureInode"];
-                    hasLiveVersion = cellData["hasLiveVersion"];
 
                     contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(cellData.identifier,cellData.inode,cellData.languageId);
 

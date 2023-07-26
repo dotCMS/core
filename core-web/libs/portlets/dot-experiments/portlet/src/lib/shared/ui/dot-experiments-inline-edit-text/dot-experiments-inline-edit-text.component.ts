@@ -24,7 +24,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { MAX_INPUT_DESCRIPTIVE_LENGTH } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 type InplaceInputSize = 'small' | 'large';
 const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; input: string }> = {
@@ -45,7 +45,7 @@ const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; inp
     imports: [
         NgIf,
         ReactiveFormsModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotAutofocusModule,
         DotFieldValidationMessageModule,
         InplaceModule,
@@ -100,6 +100,12 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
     required: boolean;
 
     /**
+     * Flag to hide the error message
+     */
+    @Input()
+    showErrorMsg = true;
+
+    /**
      * Emitted when the text is changed and valid
      */
     @Output()
@@ -125,7 +131,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
         }
 
         if (isLoading && isLoading.previousValue === true && isLoading.currentValue === false) {
-            this.inplace.deactivate();
+            this.deactivateInplace();
         }
 
         if (maxCharacterLength && maxCharacterLength.currentValue) {
@@ -150,7 +156,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
      */
     saveAction(): void {
         if (this.textControl.valid) {
-            this.textChanged.emit(this.textControl.value);
+            this.textChanged.emit(this.textControl.value.trim());
         }
     }
 

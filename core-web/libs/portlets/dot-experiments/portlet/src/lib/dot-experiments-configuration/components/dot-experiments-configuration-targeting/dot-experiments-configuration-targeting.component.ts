@@ -10,14 +10,14 @@ import { TooltipModule } from 'primeng/tooltip';
 import { tap } from 'rxjs/operators';
 
 import { StepStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
 @Component({
     selector: 'dot-experiments-configuration-targeting',
     standalone: true,
-    imports: [CommonModule, CardModule, DotMessagePipeModule, ButtonModule, TooltipModule],
+    imports: [CommonModule, CardModule, DotMessagePipe, ButtonModule, TooltipModule],
     templateUrl: './dot-experiments-configuration-targeting.component.html',
     styleUrls: ['./dot-experiments-configuration-targeting.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

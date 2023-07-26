@@ -26,6 +26,8 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
+export const DEBOUNCE_TIME = 5000;
+
 @Component({
     selector: 'dot-edit-layout',
     templateUrl: './dot-edit-layout.component.html',
@@ -40,6 +42,8 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
 
     @HostBinding('style.minWidth') width = '100%';
+
+    private lastLayout: DotTemplateDesigner;
 
     constructor(
         private route: ActivatedRoute,
@@ -69,6 +73,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
 
         this.saveTemplateDebounce();
         this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
+        this.subscribeOnChangeBeforeLeaveHandler();
     }
 
     ngOnDestroy() {
@@ -122,6 +127,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     nextUpdateTemplate(value: DotTemplateDesigner) {
         this.canRouteBeDesativated(false);
         this.updateTemplate.next(value);
+        this.lastLayout = value;
     }
 
     /**
@@ -141,7 +147,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             .pipe(
                 // debounceTime should be before takeUntil to avoid calling the observable after unsubscribe.
                 // More information: https://stackoverflow.com/questions/58974320/how-is-it-possible-to-stop-a-debounced-rxjs-observable
-                debounceTime(10000),
+                debounceTime(DEBOUNCE_TIME),
                 takeUntil(this.destroy$),
                 switchMap((layout: DotTemplateDesigner) => {
                     this.dotGlobalMessageService.loading(
@@ -214,5 +220,21 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             },
             {}
         );
+    }
+
+    /**
+     * Handle save changes before leave
+     *
+     * @private
+     * @memberof DotEditLayoutComponent
+     */
+    private subscribeOnChangeBeforeLeaveHandler(): void {
+        this.dotEditLayoutService.closeEditLayout$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((res) => {
+                if (res) {
+                    this.onSave(this.lastLayout);
+                }
+            });
     }
 }

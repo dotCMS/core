@@ -4,6 +4,7 @@
         [filter]="true"
         [showClear]="true"
         [showClear]="false"
+        [style]="{ width: '12rem' }"
         (onChange)="siteChange($event.value)"
         dotSiteSelector
         optionLabel="name"
@@ -56,6 +57,7 @@
                     />
                 </svg>
                 <img
+                    class="item__image"
                     *ngIf="theme?.themeThumbnail"
                     [src]="
                         theme.identifier === 'SYSTEM_THEME'
@@ -65,7 +67,7 @@
                     alt="theme image"
                     data-testId="themeImage"
                 />
-                <h5>{{ theme.name }}</h5>
+                <h5 class="item__title">{{ theme.name }}</h5>
             </div>
         </ng-template>
     </p-dataView>

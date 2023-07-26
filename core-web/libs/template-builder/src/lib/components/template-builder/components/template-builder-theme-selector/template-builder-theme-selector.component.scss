@@ -7,13 +7,6 @@
 
 .theme-header__search-box {
     position: relative;
-
-    input {
-        font-size: $font-size-lg;
-        border: 1px solid $color-palette-gray-500;
-        padding: $spacing-3;
-        border-radius: $spacing-1;
-    }
 }
 
 .theme__header {
@@ -34,10 +27,21 @@
     margin: $spacing-3 $spacing-1 0;
     padding: $spacing-4 $spacing-3;
     transition: background-color 0.15s ease-in;
+    justify-content: space-between;
 
     &.theme__item--active {
         box-shadow: 0 10px 10px #0003;
         background: $white;
+    }
+
+    .item__image {
+        border-radius: $border-radius-sm;
+        width: 9.28rem; // 148px
+        height: 9.28rem; // 148px
+    }
+
+    .item__title {
+        margin: 0;
     }
 }
 

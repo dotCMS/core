@@ -7,37 +7,18 @@
     >
         <div class="flex flex-grow-0 align-items-center justify-content-between">
             <button
-                class="p-button-outlined"
-                *ngIf="vm.isExperimentADraft"
-                [disabled]="vm.disabledStartExperiment"
-                [label]="vm.runExperimentBtnLabel"
-                [loading]="vm.isSaving"
-                (click)="runExperiment(vm.experiment)"
-                data-testId="start-experiment-button"
+                class="p-button-rounded"
+                (click)="menu.toggle($event)"
+                data-testId="experiment-button-menu"
+                icon="pi pi-ellipsis-v"
                 pButton
-                type="button"
             ></button>
-            <button
-                class="p-button-outlined"
-                *ngIf="vm.experimentStatus === experimentStatus.SCHEDULED"
-                [loading]="vm.isSaving"
-                (click)="cancelScheduleExperiment($event, vm.experiment)"
-                data-testId="cancel-schedule-experiment-button"
-                label="{{ 'experiments.configure.scheduling.cancel' | dm }}"
-                pButton
-                type="button"
-            ></button>
-            <button
-                class="p-button-outlined"
-                *ngIf="vm.experimentStatus === experimentStatus.RUNNING"
-                [disabled]="vm.disabledStartExperiment"
-                [loading]="vm.isSaving"
-                (click)="stopExperiment($event, vm.experiment)"
-                data-testId="stop-experiment-button"
-                label="{{ 'experiments.action.end-experiment' | dm }}"
-                pButton
-                type="button"
-            ></button>
+            <p-menu
+                #menu
+                [model]="vm.menuItems"
+                [popup]="true"
+                data-testId="experiment-menu"
+            ></p-menu>
         </div>
     </dot-experiments-header>
 
@@ -56,13 +37,20 @@
             <dot-experiments-configuration-variants />
             <dot-experiments-configuration-goals />
             <!--Hide until is implemented-->
-            <!--<dot-experiments-configuration-targeting />-->
+            <!--      <dot-experiments-configuration-targeting />-->
             <dot-experiments-configuration-traffic />
             <dot-experiments-configuration-scheduling />
         </ng-container>
     </div>
-</ng-container>
 
+    <dot-add-to-bundle
+        *ngIf="vm.addToBundleContentId"
+        [assetIdentifier]="vm.addToBundleContentId"
+        (cancel)="vm.addToBundleContentId = null"
+    />
+</ng-container>
 <ng-template #loadingTpl>
     <dot-experiments-configuration-skeleton />
 </ng-template>
+
+<p-confirmDialog [key]="confirmDialogKey" />

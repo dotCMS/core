@@ -18,6 +18,7 @@ import {
     DotPushPublishFilter,
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -93,7 +94,7 @@ describe('DotDownloadBundleDialogComponent', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [DotDownloadBundleDialogComponent],
-            imports: [DotDialogModule, SelectButtonModule, DropdownModule],
+            imports: [DotDialogModule, SelectButtonModule, DropdownModule, DotMessagePipe],
             providers: [
                 DotDownloadBundleDialogService,
                 DotPushPublishFiltersService,

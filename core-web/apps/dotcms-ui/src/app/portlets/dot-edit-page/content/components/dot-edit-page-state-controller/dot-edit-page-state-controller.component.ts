@@ -20,7 +20,7 @@ import {
     DotPersonalizeService
 } from '@dotcms/data-access';
 import {
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageMode,
     DotPageRenderOptions,
     DotPageRenderState,
@@ -59,15 +59,17 @@ export class DotEditPageStateControllerComponent implements OnChanges {
     ) {}
 
     ngOnChanges(changes: SimpleChanges) {
-        const pageState = changes.pageState.currentValue;
-        this.options = this.getStateModeOptions(pageState);
-        /*
-When the page is lock but the page is being load from an user that can lock the page
-we want to show the lock off so the new user can steal the lock
-*/
-        this.lock = this.isLocked(pageState);
-        this.lockWarn = this.shouldWarnLock(pageState);
-        this.mode = pageState.state.mode;
+        const pageState = changes.pageState?.currentValue;
+        if (pageState) {
+            this.options = this.getStateModeOptions(pageState);
+            /*
+    When the page is lock but the page is being load from an user that can lock the page
+    we want to show the lock off so the new user can steal the lock
+    */
+            this.lock = this.isLocked(pageState);
+            this.lockWarn = this.shouldWarnLock(pageState);
+            this.mode = pageState.state.mode;
+        }
     }
 
     /**
@@ -178,7 +180,7 @@ we want to show the lock off so the new user can steal the lock
     private canEditVariant(): boolean {
         return (
             !this.variant.variant.isOriginal &&
-            this.variant.experimentStatus === DotExperimentStatusList.DRAFT
+            this.variant.experimentStatus === DotExperimentStatus.DRAFT
         );
     }
 

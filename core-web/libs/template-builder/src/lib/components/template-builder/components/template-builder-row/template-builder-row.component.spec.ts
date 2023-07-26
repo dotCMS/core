@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 
 import { NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -11,7 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { TemplateBuilderRowComponent } from './template-builder-row.component';
 
@@ -30,7 +30,8 @@ import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-b
 class HostComponent {
     isResizing = false;
     row = {
-        id: '1'
+        id: '1',
+        willBoxFit: false
     };
 }
 
@@ -47,7 +48,7 @@ describe('TemplateBuilderRowComponent', () => {
                 TemplateBuilderRowComponent,
                 RemoveConfirmDialogComponent,
                 NoopAnimationsModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 HttpClientTestingModule,
                 TemplateBuilderBackgroundColumnsComponent
             ],

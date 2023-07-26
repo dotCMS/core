@@ -1,4 +1,4 @@
-import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FormsModule } from '@angular/forms';
@@ -6,13 +6,13 @@ import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderSidebarComponent } from './template-builder-sidebar.component';
 
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
-import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
+import { DOT_MESSAGE_SERVICE_TB_MOCK, GRIDSTACK_DATA_MOCK } from '../../utils/mocks';
 import { TemplateBuilderBoxComponent } from '../template-builder-box/template-builder-box.component';
 
 describe('TemplateBuilderSidebarComponent', () => {
@@ -27,7 +27,7 @@ describe('TemplateBuilderSidebarComponent', () => {
             FormsModule,
             HttpClientTestingModule,
             TemplateBuilderBoxComponent,
-            DotMessagePipeModule
+            DotMessagePipe
         ],
         providers: [
             {
@@ -48,7 +48,7 @@ describe('TemplateBuilderSidebarComponent', () => {
             {
                 hostProps: {
                     sidebarProperties: {
-                        postion: 'left',
+                        location: 'left',
                         width: 'medium',
                         containers: []
                     }
@@ -59,6 +59,21 @@ describe('TemplateBuilderSidebarComponent', () => {
         store = spectator.inject(DotTemplateBuilderStore);
 
         boxComponent = spectator.query(TemplateBuilderBoxComponent);
+
+        store.init({
+            rows: GRIDSTACK_DATA_MOCK,
+            layoutProperties: {
+                header: true,
+                footer: true,
+                sidebar: {
+                    location: 'left',
+                    width: 'medium',
+                    containers: []
+                }
+            },
+            resizingRowID: '',
+            containerMap: {}
+        });
 
         spectator.detectChanges();
     });

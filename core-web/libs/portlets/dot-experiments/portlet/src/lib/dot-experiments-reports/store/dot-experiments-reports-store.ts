@@ -15,15 +15,15 @@ import {
     BayesianNoWinnerStatus,
     BayesianStatusResponse,
     ComponentStatus,
-    daysOfTheWeek,
     DEFAULT_VARIANT_ID,
     DotExperiment,
     DotExperimentResults,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotExperimentVariantDetail,
     DotResultGoal,
     DotResultVariant,
     ExperimentLineChartDatasetDefaultProperties,
+    MonthsOfTheYear,
     ReportSummaryLegendByBayesianStatus,
     SummaryLegend,
     Variant
@@ -120,9 +120,9 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
 
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
         Object.values([
-            DotExperimentStatusList.ENDED,
-            DotExperimentStatusList.RUNNING,
-            DotExperimentStatusList.ARCHIVED
+            DotExperimentStatus.ENDED,
+            DotExperimentStatus.RUNNING,
+            DotExperimentStatus.ARCHIVED
         ]).includes(experiment?.status)
     );
 
@@ -301,15 +301,17 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
 
     private getChartLabels(variants: DotResultGoal['variants']) {
         return variants[DEFAULT_VARIANT_ID].details
-            ? this.addWeekdayToDateLabels(Object.keys(variants[DEFAULT_VARIANT_ID].details))
+            ? this.parseDaysLabels(Object.keys(variants[DEFAULT_VARIANT_ID].details))
             : [];
     }
 
-    private addWeekdayToDateLabels(labels: Array<string>): string[][] {
+    private parseDaysLabels(labels: Array<string>): string[] {
         return labels.map((item) => {
-            const date = new Date(item).getDay();
+            const date = new Date(item);
+            const day = date.getDate();
+            const monthTranslated = this.dotMessageService.get(MonthsOfTheYear[date.getMonth()]);
 
-            return [this.dotMessageService.get(daysOfTheWeek[date]), item];
+            return `${monthTranslated}-${day}`;
         });
     }
 
@@ -326,7 +328,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             bayesianResult.suggestedWinner === BayesianStatusResponse.NONE;
 
         if (!hasSessions || isNoneBayesianSuggestionWinner) {
-            return experiment.status === DotExperimentStatusList.ENDED
+            return experiment.status === DotExperimentStatus.ENDED
                 ? ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
                 : ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS;
         }
@@ -335,7 +337,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             return { ...ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND };
         }
 
-        return experiment.status === DotExperimentStatusList.ENDED
+        return experiment.status === DotExperimentStatus.ENDED
             ? { ...ReportSummaryLegendByBayesianStatus.WINNER }
             : { ...ReportSummaryLegendByBayesianStatus.PRELIMINARY_WINNER };
     }

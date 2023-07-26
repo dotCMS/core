@@ -17,11 +17,11 @@ import { tap } from 'rxjs/operators';
 
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
-import { DotSessionStorageService } from '@dotcms/data-access';
+import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DEFAULT_VARIANT_NAME,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageMode,
     ExperimentSteps,
     MAX_INPUT_TITLE_LENGTH,
@@ -30,12 +30,7 @@ import {
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import {
-    DotIconModule,
-    DotMessagePipe,
-    DotMessagePipeModule,
-    UiDotIconButtonModule
-} from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsInlineEditTextComponent } from '../../../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
@@ -48,7 +43,7 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
     standalone: true,
     imports: [
         CommonModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotIconModule,
         UiDotIconButtonModule,
         UiDotIconButtonTooltipModule,
@@ -86,14 +81,14 @@ export class DotExperimentsConfigurationVariantsComponent {
     protected readonly maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     protected readonly defaultVariantName = DEFAULT_VARIANT_NAME;
     protected readonly maxInputTitleLength = MAX_INPUT_TITLE_LENGTH;
-    protected readonly DotExperimentStatusList = DotExperimentStatusList;
+    protected readonly DotExperimentStatusList = DotExperimentStatus;
     private componentRef: ComponentRef<DotExperimentsConfigurationVariantsAddComponent>;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
         private readonly confirmationService: ConfirmationService,
-        private readonly dotMessagePipe: DotMessagePipe,
         private readonly dotSessionStorageService: DotSessionStorageService,
+        private readonly dotMessageService: DotMessageService,
         private readonly router: Router,
         private readonly route: ActivatedRoute
     ) {}
@@ -143,10 +138,10 @@ export class DotExperimentsConfigurationVariantsComponent {
     deleteVariant(event: { $event: MouseEvent; variant: Variant }, experimentId: string) {
         this.confirmationService.confirm({
             target: event.$event.target,
-            message: this.dotMessagePipe.transform('experiments.configure.variant.delete.confirm'),
+            message: this.dotMessageService.get('experiments.configure.variant.delete.confirm'),
             icon: 'pi pi-exclamation-triangle',
-            acceptLabel: this.dotMessagePipe.transform('delete'),
-            rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
+            acceptLabel: this.dotMessageService.get('delete'),
+            rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
             accept: () => {
                 this.dotExperimentsConfigurationStore.deleteVariant({
                     experimentId,

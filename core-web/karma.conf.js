@@ -9,23 +9,24 @@ module.exports = () => {
         basePath: '',
         frameworks: ['jasmine', '@angular-devkit/build-angular'],
         plugins: [
-            require('karma-html-reporter'),
             require('karma-jasmine'),
             require('karma-chrome-launcher'),
-            require('karma-jasmine-html-reporter'),
             require('karma-coverage'),
-            require('@angular-devkit/build-angular/plugins/karma'),
-            require('karma-junit-reporter')
+            require('karma-spec-reporter'),
+            require('karma-junit-reporter'),
+            require('@angular-devkit/build-angular/plugins/karma')
         ],
         client: {
-            clearContext: false // leave Jasmine Spec Runner output visible in browser
+            clearContext: false, // leave Jasmine Spec Runner output visible in browser
+            captureConsole: false
         },
         coverageReporter: {
-            dir: join(__dirname, './coverage'),
+            dir: '../../target/core-web-reports',
             subdir: '.',
-            reporters: [{ type: 'html' }, { type: 'text-summary' }, { type: 'junit' }]
+            file: 'TEST-dotcms-ui.lcov',
+            reporters: [{ type: 'lcovonly' }]
         },
-        reporters: ['progress', 'kjhtml', 'html', 'junit'],
+        reporters: ['junit', 'spec'],
         port: 9876,
         colors: true,
         logLevel: constants.LOG_INFO,
@@ -37,13 +38,27 @@ module.exports = () => {
                 flags: ['--no-sandbox']
             }
         },
-        htmlReporter: {
-            namedFiles: true,
-            reportName: 'report'
-        },
         junitReporter: {
-            outputDir: join(__dirname, 'target', 'surefire-reports'), // results will be saved as $outputDir/$browserName.xml
-            outputFile: 'TEST-karma.xml'
+            subdir: '.',
+            useBrowserName: false,
+            outputDir: '../../target/core-web-reports',
+            outputFile: 'TEST-dotcms-ui.xml'
+        },
+        summaryReporter: {
+            // 'failed', 'skipped' or 'all'
+            show: 'failed',
+            // Limit the spec label to this length
+            specLength: 50,
+            // Show an 'all' column as a summary
+            overviewColumn: true,
+            // Show a list of test clients, 'always', 'never' or 'ifneeded'
+            browserList: 'always',
+            // Use custom symbols to indicate success and failure
+            symbols: { success: 'o', failure: 'x' }
+        },
+        specReporter: {
+            suppressPassed: true,
+            suppressSkipped: true
         },
         singleRun: true,
         browserDisconnectTimeout: 20000

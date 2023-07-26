@@ -214,6 +214,14 @@ public class PushPublisherConfig extends PublisherConfig {
 		return bundleAssets.getRules();
 	}
 
+	public Set<String> getExperiments() {
+		return bundleAssets.getExperiments();
+	}
+
+	public Set<String> getVariants() {
+		return bundleAssets.getVariants();
+	}
+
 	@SuppressWarnings("unchecked")
 	public Set<String> getRelationships() {
 		return bundleAssets.getRelationships();

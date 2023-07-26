@@ -23,7 +23,7 @@ import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotEventsService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
@@ -99,7 +99,9 @@ export class IframeMockComponent {
     selector: 'p-tabView',
     template: '<ng-content></ng-content>'
 })
-export class TabViewMockComponent {}
+export class TabViewMockComponent {
+    @Input() styleClass: string;
+}
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
@@ -128,6 +130,12 @@ class DotTestHostComponent {
     item: DotTemplateItem;
 }
 
+const ITEM_FOR_NEW_TEMPLATE_BUILDER = {
+    ...EMPTY_TEMPLATE_DESIGN,
+    theme: '123',
+    live: true
+};
+
 describe('DotTemplateBuilderComponent', () => {
     let component: DotTemplateBuilderComponent;
     let fixture: ComponentFixture<DotTemplateBuilderComponent>;
@@ -150,7 +158,7 @@ describe('DotTemplateBuilderComponent', () => {
                 DotGlobalMessageComponent
             ],
             imports: [
-                DotMessagePipeModule,
+                DotMessagePipe,
                 DotPortletBoxModule,
                 DotShowHideFeatureDirective,
                 ButtonModule,
@@ -188,11 +196,7 @@ describe('DotTemplateBuilderComponent', () => {
 
     describe('design', () => {
         beforeEach(() => {
-            component.item = {
-                ...EMPTY_TEMPLATE_DESIGN,
-                theme: '123',
-                live: true
-            };
+            component.item = ITEM_FOR_NEW_TEMPLATE_BUILDER;
             fixture.detectChanges();
         });
 
@@ -282,6 +286,17 @@ describe('DotTemplateBuilderComponent', () => {
 
             (btnsave.nativeElement as HTMLElement).click();
             expect(component.saveAndPublish.emit).toHaveBeenCalled();
+        });
+
+        it('should add style classes if new template builder feature flag is on', () => {
+            fixture = TestBed.createComponent(DotTemplateBuilderComponent); // new fixture as async pipe was running before function was replaced
+            fixture.componentInstance.item = ITEM_FOR_NEW_TEMPLATE_BUILDER;
+            fixture.detectChanges();
+            const tabView = fixture.debugElement.query(By.css('p-tabView'));
+            const tabViewComponent: TabViewMockComponent = tabView.componentInstance;
+            expect(tabViewComponent.styleClass).toEqual(
+                'dot-template-builder__new-template-builder'
+            );
         });
     });
 

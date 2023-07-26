@@ -22,6 +22,7 @@ import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPersona } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     cleanUpDialog,
     LoginServiceMock,
@@ -45,7 +46,9 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 })
 class HostTestComponent {
     @Input() disabled: boolean;
+
     selectedPersonaHandler(_$event) {}
+
     deletePersonaHandler(_$event) {}
 }
 
@@ -96,7 +99,8 @@ describe('DotPersonaSelectorComponent', () => {
                 DotPersonaSelectorOptionModule,
                 DotAddPersonaDialogModule,
                 TooltipModule,
-                DotPipesModule
+                DotPipesModule,
+                DotMessagePipe
             ],
             providers: [
                 IframeOverlayService,

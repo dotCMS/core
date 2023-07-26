@@ -30,7 +30,7 @@ export const MAX_INPUT_TITLE_LENGTH = 50;
 export const MAX_INPUT_DESCRIPTIVE_LENGTH = 255;
 
 // Keep the order of this enum is important to respect the order of the experiment listing.
-export enum DotExperimentStatusList {
+export enum DotExperimentStatus {
     RUNNING = 'RUNNING',
     SCHEDULED = 'SCHEDULED',
     DRAFT = 'DRAFT',
@@ -41,23 +41,23 @@ export enum DotExperimentStatusList {
 export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
         label: 'draft',
-        value: DotExperimentStatusList.DRAFT
+        value: DotExperimentStatus.DRAFT
     },
     {
         label: 'running',
-        value: DotExperimentStatusList.RUNNING
+        value: DotExperimentStatus.RUNNING
     },
     {
         label: 'ended',
-        value: DotExperimentStatusList.ENDED
+        value: DotExperimentStatus.ENDED
     },
     {
         label: 'archived',
-        value: DotExperimentStatusList.ARCHIVED
+        value: DotExperimentStatus.ARCHIVED
     },
     {
         label: 'scheduled',
-        value: DotExperimentStatusList.SCHEDULED
+        value: DotExperimentStatus.SCHEDULED
     }
 ];
 
@@ -134,26 +134,34 @@ export const DefaultGoalConfiguration: Goals = {
     }
 };
 
-export const GOALS_METADATA_MAP: Record<GOAL_TYPES, { label: string; description: string }> = {
+export const GOALS_METADATA_MAP: Record<
+    GOAL_TYPES,
+    { label: string; description: string; icon: string }
+> = {
     [GOAL_TYPES.REACH_PAGE]: {
         label: 'experiments.goal.reach_page.name',
-        description: 'experiments.goal.reach_page.description'
+        description: 'experiments.goal.reach_page.description',
+        icon: 'pi-file-excel'
     },
     [GOAL_TYPES.BOUNCE_RATE]: {
         label: 'experiments.goal.bounce_rate.name',
-        description: 'experiments.goal.bounce_rate.description'
+        description: 'experiments.goal.bounce_rate.description',
+        icon: 'pi-chart-pie'
     },
     [GOAL_TYPES.CLICK_ON_ELEMENT]: {
         label: 'experiments.goal.click_on_element.name',
-        description: 'experiments.goal.click_on_element.description'
+        description: 'experiments.goal.click_on_element.description',
+        icon: 'pi-check-square'
     },
     [GOAL_TYPES.URL_PARAMETER]: {
         label: 'experiments.goal.url_parameter.name',
-        description: 'experiments.goal.url_parameter.description'
+        description: 'experiments.goal.url_parameter.description',
+        icon: 'pi-paperclip'
     },
     [GOAL_TYPES.EXIT_RATE]: {
         label: 'experiments.goal.exit_rate.name',
-        description: 'experiments.goal.exit_rate.description'
+        description: 'experiments.goal.exit_rate.description',
+        icon: 'pi-sign-out'
     }
 };
 
@@ -165,6 +173,21 @@ export const daysOfTheWeek = [
     'Thursday',
     'Friday',
     'Saturday'
+];
+
+export const MonthsOfTheYear = [
+    'months.january.short',
+    'months.february.short',
+    'months.march.short',
+    'months.april.short',
+    'months.may.short',
+    'months.june.short',
+    'months.july.short',
+    'months.august.short',
+    'months.september.short',
+    'months.october.short',
+    'months.november.short',
+    'months.december.short'
 ];
 
 export type SummaryLegend = { icon: string; legend: string };
@@ -209,3 +232,38 @@ export const ReportSummaryLegendByBayesianStatus: Record<BayesianLegendStatus, S
         legend: 'experiments.summary.suggested-winner.no-enough-sessions'
     }
 };
+
+type DotExperimentListAction =
+    | 'delete'
+    | 'configuration'
+    | 'archive'
+    | 'addToBundle'
+    | 'pushPublish';
+export const AllowedActionsByExperimentStatus: Record<
+    DotExperimentListAction,
+    Array<DotExperimentStatus>
+> = {
+    ['delete']: [DotExperimentStatus.DRAFT, DotExperimentStatus.SCHEDULED],
+    ['configuration']: [
+        DotExperimentStatus.RUNNING,
+        DotExperimentStatus.ENDED,
+        DotExperimentStatus.ARCHIVED
+    ],
+    ['archive']: [DotExperimentStatus.ENDED],
+    ['addToBundle']: [
+        DotExperimentStatus.DRAFT,
+        DotExperimentStatus.RUNNING,
+        DotExperimentStatus.ENDED,
+        DotExperimentStatus.ARCHIVED,
+        DotExperimentStatus.SCHEDULED
+    ],
+    ['pushPublish']: [
+        DotExperimentStatus.DRAFT,
+        DotExperimentStatus.RUNNING,
+        DotExperimentStatus.ENDED,
+        DotExperimentStatus.ARCHIVED,
+        DotExperimentStatus.SCHEDULED
+    ]
+};
+
+export const CONFIGURATION_CONFIRM_DIALOG_KEY = 'confirmDialog';
