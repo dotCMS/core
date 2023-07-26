@@ -2,7 +2,7 @@ name: CICD Reports
 run-name: Reports - ${{ github.event.workflow_run.name }}
 on:
   workflow_run:
-    workflows: ['Maven CICD Pipeline']
+    workflows: ['Maven CICD Pipeline'] 
     types: [completed]
 
 permissions:
@@ -29,8 +29,6 @@ jobs:
 
       - name: Get Workflow Data
         id: workflow-data
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [[ ! -e "workflow-data.json" ]]
           then
@@ -95,85 +93,86 @@ jobs:
         id: slack
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          # For posting a rich message using Block Kit
+          channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
           payload: |
             {
-              "blocks": [
+              "text":"Github Action ${{ steps.workflow-data.outputs.status }} for run PR #${{ steps.workflow-data.outputs.pr_number }}",
+              "blocks":[
                 {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "${{ steps.workflow-data.outputs.status_icon }} ${{ steps.workflow-data.outputs.run_id }}",
-                    "emoji": true
+                  "type":"header",
+                  "text":{
+                    "type":"plain_text",
+                    "text":"${{ steps.workflow-data.outputs.status_icon }} ${{ steps.workflow-data.outputs.run_id }}",
+                    "emoji":true
                   }
                 },
                 {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "The build for PR #${{ steps.workflow-data.outputs.pr_number }} by ${{ steps.workflow-data.outputs.pr_author }} is *${{ steps.workflow-data.outputs.status }} ${{ steps.workflow-data.outputs.status_icon }}*."
+                  "type":"section",
+                  "text":{
+                    "type":"mrkdwn",
+                    "text":"The build for PR #${{ steps.workflow-data.outputs.pr_number }} by ${{ steps.workflow-data.outputs.pr_author }} is *${{ steps.workflow-data.outputs.status }} ${{ steps.workflow-data.outputs.status_icon }}*."
                   }
                 },
                 {
-                  "type": "section",
-                  "fields": [
+                  "type":"section",
+                  "fields":[
                     {
-                      "type": "mrkdwn",
-                      "text": "*🔗 Action Run:*\n<${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}>"
+                      "type":"mrkdwn",
+                      "text":"*Action Run:*\n<${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}>"
                     },
                     {
-                      "type": "mrkdwn",
-                      "text": "*👣 Failure Step:*\n${{ steps.workflow-data.outputs.first_fail_step }}"
+                      "type":"mrkdwn",
+                      "text":"*Failure Step:*\n${{ steps.workflow-data.outputs.first_fail_step }}"
                     },
                     {
-                      "type": "mrkdwn",
-                      "text": "*👣 Failure Module:*\n${{ steps.workflow-data.outputs.first_fail_module }}"
+                      "type":"mrkdwn",
+                      "text":"*Failure Module:*\n${{ steps.workflow-data.outputs.first_fail_module }}"
                     },
                     {
-                      "type": "plain_text",
-                      "text": "*💬 Failure Message:*\n${{ steps.workflow-data.outputs.first_fail_error }}"
+                      "type":"mrkdwn",
+                      "text":"*Failure Message:*\n"
                     }
                   ]
                 },
                 {
-                  "type": "section",
-                  "fields": [
+                  "type":"section",
+                  "fields":[
                     {
-                      "type": "mrkdwn",
-                      "text": "*👤 PR Author:*\n${{ steps.workflow-data.outputs.pr_author }}"
+                      "type":"mrkdwn",
+                      "text":"*PR Author:*\n${{ steps.workflow-data.outputs.pr_author }}"
                     },
                     {
-                      "type": "mrkdwn",
-                      "text": "*📝 PR Name:*\n${{ steps.workflow-data.outputs.pr_name }}"
+                      "type":"mrkdwn",
+                      "text":"*PR Name:*\n${{ steps.workflow-data.outputs.pr_name }}"
                     },
                     {
-                      "type": "mrkdwn",
-                      "text": "*🔢 PR Number:*\n<${{ steps.workflow-data.outputs.pr_number_url }}|#${{ steps.workflow-data.outputs.pr_number }}>"
+                      "type":"mrkdwn",
+                      "text":"*PR Number:*\n<${{ steps.workflow-data.outputs.pr_number_url }}|#${{ steps.workflow-data.outputs.pr_number }}>"
                     },
                     {
-                      "type": "mrkdwn",
-                      "text": "*🌿 Branch Name:*\n<${{ steps.workflow-data.outputs.branch_url }}|${{ steps.workflow-data.outputs.branch }}>"
+                      "type":"mrkdwn",
+                      "text":"*Branch Name:*\n<${{ steps.workflow-data.outputs.branch_url }}|${{ steps.workflow-data.outputs.branch }}>"
                     }
                   ]
                 },
                 {
-                  "type": "section",
-                  "fields": [
+                  "type":"section",
+                  "fields":[
                     {
-                      "type": "mrkdwn",
-                      "text": "*🔢 Commit ID:*\n<${{ steps.workflow-data.outputs.commit_id_url }}|#${{ steps.workflow-data.outputs.head_sha }}>"
+                      "type":"mrkdwn",
+                      "text":"*Commit ID:*\n<${{ steps.workflow-data.outputs.commit_id_url }}|#${{ steps.workflow-data.outputs.head_sha }}>"
                     },
                     {
-                      "type": "mrkdwn",
-                      "text": "*👤 Commit Author:*\n${{ steps.workflow-data.outputs.head_author }}"
+                      "type":"mrkdwn",
+                      "text":"*Commit Author:*\n${{ steps.workflow-data.outputs.head_author }}"
                     },
                     {
-                      "type": "mrkdwn",
-                      "text": "*📝 Commit Name:*\n${{ steps.workflow-data.outputs.head_name }}"
+                      "type":"mrkdwn",
+                      "text":"*Commit Name:*\n${{ steps.workflow-data.outputs.head_name }}"
                     }
                   ]
                 }
               ]
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.CORE_SLACK_WEBHOOK }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
