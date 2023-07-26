@@ -675,6 +675,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
         this.refreshContentletReferenceCount(originalContentletIds, multiTrees);
         updateHTMLPageVersionTS(pageId, variantId);
+
         refreshPageInCache(pageId, variantId);
     }
 
@@ -805,7 +806,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @WrapInTransaction
     public void saveMultiTrees(final String pageId, final String variantName, final List<MultiTree> mTrees) throws DotDataException {
 
-        DotPreconditions.isTrue(mTrees.stream().filter(mTree -> !mTree.getVariantId().equals(variantName)).count() == 1,
+        DotPreconditions.isTrue(mTrees.stream().filter(mTree -> !mTree.getVariantId().equals(variantName)).count() == 0,
                 () -> "All the MultiTree must have the variantName: " + variantName);
 
         Logger.debug(this, () -> String
@@ -837,11 +838,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         this.refreshContentletReferenceCount(originalContents, mTrees);
         updateHTMLPageVersionTS(pageId, variantName);
 
-        if (VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
-            refreshPageInCache(pageId);
-        } else {
-            refreshPageInCache(pageId, variantName);
-        }
+        refreshPageInCache(pageId, variantName);
     }
 
     @Override
@@ -917,7 +914,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         CacheLocator.getMultiTreeCache().getVariantsInCache(pageIdentifier).stream()
                 .forEach(variantName -> {
                     try {
-                        refreshPageInCache(pageIdentifier, variantName);
+                        refreshPageInCacheInner(pageIdentifier, variantName);
                     } catch (DotDataException e) {
                         Logger.error(this, e.getMessage(), e);
                     }
@@ -925,6 +922,16 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     private void refreshPageInCache(final String pageIdentifier, final String variantName) throws DotDataException {
+
+        if (VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
+            refreshPageInCache(pageIdentifier);
+        } else {
+            refreshPageInCacheInner(pageIdentifier, variantName);
+        }
+    }
+
+    private void refreshPageInCacheInner(final String pageIdentifier, final String variantName)
+            throws DotDataException {
 
         CacheLocator.getMultiTreeCache()
                 .removePageMultiTrees(pageIdentifier, variantName);
