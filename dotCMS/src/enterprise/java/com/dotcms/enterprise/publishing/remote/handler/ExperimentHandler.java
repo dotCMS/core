@@ -163,13 +163,10 @@ public class ExperimentHandler implements IHandler {
 						Experiment asDraft = Experiment.builder().from(experiment)
 								.status(Status.DRAFT).build();
 						if(experiment.status()==Status.RUNNING) {
-							final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
-							asDraft = asDraft.withScheduling(Scheduling.builder().startDate(now)
-									.endDate(asDraft.scheduling().orElseThrow().endDate())
-									.build());
+							asDraft = asDraft.withScheduling(Optional.empty());
 						}
 						experimentsAPI.save(asDraft, APILocator.systemUser());
-						experimentsAPI.forceStart(asDraft.id().orElseThrow(), APILocator.systemUser());
+						experimentsAPI.start(asDraft.id().orElseThrow(), APILocator.systemUser());
 					} else if(experiment.status()==Status.ENDED) {
 						experimentsAPI.save(experiment, APILocator.systemUser());
 						experimentsAPI.cacheRunningExperiments();
