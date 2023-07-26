@@ -20,6 +20,7 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
       - name: Download Worlfkow Data
+        id: data-download
         uses: dawidd6/action-download-artifact@v2
         with:
           name: 'workflow-data'
@@ -27,8 +28,19 @@ jobs:
           run_id: ${{ github.event.workflow_run.id }}
           if_no_artifact_found: warn
 
+      - uses: dorny/test-reporter@v1
+        id: test-reporter
+        if: steps.data-download.outputs.found_artifact
+        with:
+          artifact: /^build-reports-test-(.*)/        # artifact name
+          name: 'MVN Test Report $1'               # Name of the check run which will be created
+          path: '**/target/**/TEST-*.xml'                     # Path to test results (inside artifact .zip)
+          reporter: java-junit            # Format of test results
+          fail-on-error: false
+          
       - name: Get Workflow Data
         id: workflow-data
+        if: steps.data-download.outputs.found_artifact
         run: |
           if [[ ! -e "workflow-data.json" ]]
           then
@@ -53,6 +65,12 @@ jobs:
             branch_url="https://github.com/$source_repository/tree/$branch"
             commit_id_url="https://github.com/$source_repository/pull/$pr_number/commits/$head_sha"
             test_results_url="https://github.com/$source_repository/pull/${pr_number}/checks"
+            test_conclusion=${{ steps.test-reporter.outputs.conclusion }}
+            test_passed=${{ steps.test-reporter.outputs.passed }}
+            test_failed=${{ steps.test-reporter.outputs.failed}}
+            test_skipped=${{ steps.test-reporter.outputs.skipped }}
+            test_elapsed=${{ steps.test-reporter.outputs.time }}
+            
             if [[ "$status" == "SUCCESS" ]]; then
               echo "status_icon=✅" >> $GITHUB_OUTPUT
             else
@@ -77,18 +95,13 @@ jobs:
             echo "pr_number_url=$pr_number_url" >> $GITHUB_OUTPUT
             echo "branch_url=$branch_url" >> $GITHUB_OUTPUT
             echo "commit_id_url=$commit_id_url" >> $GITHUB_OUTPUT
+            echo "test_results_url=$test_results_url" >> $GITHUB_OUTPUT
+            echo "test_conclusion=$test_conclusion" >> $GITHUB_OUTPUT
+            echo "test_passed=$test_passed" >> $GITHUB_OUTPUT
+            echo "test_failed=$test_failed" >> $GITHUB_OUTPUT
+            echo "test_skipped=$test_skipped" >> $GITHUB_OUTPUT
+            echo "test_elapsed=$test_elapsed" >> $GITHUB_OUTPUT
           fi
-
-      - uses: dorny/test-reporter@v1
-        id: test-reporter
-        if: steps.workflow-data.outputs.has-json == 'true'
-        with:
-          artifact: /^build-reports-test-(.*)/        # artifact name
-          name: 'MVN Test Report $1'               # Name of the check run which will be created
-          path: '**/target/**/TEST-*.xml'                     # Path to test results (inside artifact .zip)
-          reporter: java-junit            # Format of test results
-          fail-on-error: false
-
           
       - name: Post to a Slack channel
         if: steps.workflow-data.outputs.has-json == 'true'
@@ -181,7 +194,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "🧪 Tests - ${{ steps.test-reporter.outputs.conclusion }}",
+                    "text": "🧪 Tests - ${{ steps.workflow-datar.outputs.test_conclusion }}",
                     "emoji": true
                   }
                 },
@@ -189,7 +202,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "✅ *Passed*:${{ steps.test-reporter.outputs.passed }}  ❌ *Failed*:${{ steps.test-reporter.outputs.failed}}   ⏭️ *Skipped*:${{ steps.test-reporter.outputs.skipped }}    ⏱️ *Elapsed*:${{ steps.test-reporter.outputs.time }}"
+                    "text": "✅ *Passed*:${{ steps.workflow-datar.outputs.test_passed }}  ❌ *Failed*:${{ steps.workflow-data.outputs.test_failed}}   ⏭️ *Skipped*:${{ steps.workflow-data.outputs.test_skipped }}    ⏱️ *Elapsed*:${{ steps.test-reporter.outputs.workflow-data.test_elapsed }}"
                   }
                 },
                 {
