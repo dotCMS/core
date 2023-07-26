@@ -59,10 +59,11 @@ import {
 } from './utils/gridstack-utils';
 
 @Component({
-    selector: 'dotcms-template-builder',
+    selector: 'dotcms-template-builder-lib',
     templateUrl: './template-builder.component.html',
     styleUrls: ['./template-builder.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [DotTemplateBuilderStore]
 })
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
     @Input()
@@ -113,39 +114,42 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         private dialogService: DialogService,
         private dotMessage: DotMessageService
     ) {
+        console.log('constructor');
         this.items$ = this.store.items$.pipe(map((items) => parseFromGridStackToDotObject(items)));
-        this.items$.subscribe((i) => console.log('items emitted'));
-        this.store.layoutProperties$.subscribe((i) => console.log('layoutProperties$ emitted'));
+        this.vm$.subscribe((i) => console.log('vm$ emitted', JSON.stringify(i)));
+        // this.items$.subscribe((i) => {
+        //     console.log('items emitted', i)
+        // });
+        // this.store.layoutProperties$.subscribe((i) => console.log('layoutProperties$ emitted', i));
 
         combineLatest([this.items$, this.store.layoutProperties$])
             .pipe(
                 startWith([]),
                 filter(([items, layoutProperties]) => !!items && !!layoutProperties),
-                skip(1), // Skip the init of the store
-                tap(([items, layoutProperties]) => {
-                    this.dotLayout = {
-                        ...this.layout,
-                        sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
-                            ? layoutProperties.sidebar
-                            : null,
-                        body: items,
-                        title: this.layout?.title ?? '',
-                        width: this.layout?.width ?? ''
-                    };
-
-                    console.log('first emit', items, layoutProperties);
-                    this.templateChange.emit({
-                        themeId: this.themeId,
-                        layout: { ...this.dotLayout }
-                    });
-                }),
                 takeUntil(this.destroy$)
             )
-            .subscribe();
+            .subscribe(([items, layoutProperties]) => {
+                this.dotLayout = {
+                    ...this.layout,
+                    sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
+                        ? layoutProperties.sidebar
+                        : null,
+                    body: items,
+                    title: this.layout?.title ?? '',
+                    width: this.layout?.width ?? ''
+                };
+
+                console.log('first emit', items, layoutProperties);
+                this.templateChange.emit({
+                    themeId: this.themeId,
+                    layout: { ...this.dotLayout }
+                });
+            });
     }
 
     ngOnInit(): void {
-        this.store.init({
+        console.log('ngOnInit');
+        this.store.setState({
             items: parseFromDotObjectToGridStack(this.layout.body),
             layoutProperties: this.layoutProperties,
             resizingRowID: '',
