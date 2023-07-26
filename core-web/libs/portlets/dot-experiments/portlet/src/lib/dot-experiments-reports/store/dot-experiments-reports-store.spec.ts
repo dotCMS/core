@@ -472,6 +472,7 @@ describe('DotExperimentsReportsStore', () => {
 
         it('should get all the xLabels', (done) => {
             const expectedXLabels = [
+                'Mar-31', // Day added manually when we parse the data
                 'Apr-1',
                 'Apr-2',
                 'Apr-3',
@@ -506,9 +507,10 @@ describe('DotExperimentsReportsStore', () => {
         });
 
         it('should has a label and data properly parsed for each dataset', (done) => {
+            // First data is added manually when we parse the data
             const expectedDataByDataset = [
-                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-                [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+                [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                [0, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
             ];
             const expectedLabel = [
                 EXPERIMENT_MOCK_RESULTS.goals.primary.variants.DEFAULT.variantDescription,
