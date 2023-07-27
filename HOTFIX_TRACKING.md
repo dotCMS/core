@@ -146,3 +146,5 @@ This maintenance release includes the following code fixes:
 123. https://github.com/dotCMS/core/issues/25037 : PP an existing bundle it doesn't consider Timezone #25037
 124. https://github.com/dotCMS/core/issues/24781 : Performance Optimization - don't force field invalidations for non-velocity fields #24781
 125. https://github.com/dotCMS/core/issues/25203 : getResizeUri Method Returns An Incorrect URL #25203
+
+**Release-22.03.8**
