@@ -66,7 +66,11 @@ public class SessionMonitor implements ServletRequestListener,
     }
     
     public void attributeAdded(HttpSessionBindingEvent event) {
-        // Not implemented
+        final String name = event.getName();
+        if ("CMS_SELECTED_HOST_ID".equals(name)) {
+            final String value = null != event.getValue() ? event.getValue().toString() : "- null -";
+            Logger.info(this, "The CMS_SELECTED_HOST_ID is being added to the session as '" + value + "'");
+        }
     }
     
     /**
