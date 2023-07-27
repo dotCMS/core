@@ -359,24 +359,43 @@ public class LoginServiceAPIFactory implements Serializable {
             try{
 
                 String domainName = request.getServerName();
+
+                Logger.info(this, "AUTH : Resolving '" + domainName + "' by hostname");
+
                 Host host = APILocator.getHostAPI().resolveHostName(domainName, user, false);
 
                 if (null == host || !UtilMethods.isSet(host.getInode())) {
+
+                    Logger.info(this, "AUTH : Not found! Resolving '" + domainName + "' by name");
+
                     host = APILocator.getHostAPI().findByName(domainName, user, false);
                 }
 
                 if(host == null || !UtilMethods.isSet(host.getInode())){
+
+                    Logger.info(this, "AUTH : Not found! Resolving '" + domainName + "' by alias");
+
                     host = APILocator.getHostAPI().findByAlias(domainName, user, false);
                 }
 
                 if(host != null && UtilMethods.isSet(host.getInode())) {
+
+                    Logger.info(this, "AUTH : It was found! The '" + domainName + "' site has the ID '" + host.getIdentifier() + "'");
+
                     request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
                 } else {
-                    request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
+
+                    final String siteId = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier();
+                    Logger.info(this, "AUTH : [FINAL] Not found! Fall back to '" + domainName + "' treated as the default site '" + siteId + "'");
+
+                    request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, siteId);
                 }
             } catch (DotSecurityException se) {
 
-                request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
+                final String siteId = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier();
+                Logger.info(this, "AUTH : [EXCEPTION] Not found! Fall back to the default site '" + siteId + "'");
+
+                request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, siteId);
             }
 
             session.removeAttribute("_failedLoginName");

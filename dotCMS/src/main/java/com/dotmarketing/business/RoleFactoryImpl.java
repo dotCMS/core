@@ -96,6 +96,9 @@ public class RoleFactoryImpl extends RoleFactory {
 	@Override
 	protected List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles) throws DotDataException {
 		try {
+
+			Logger.info(this, "===============================================================");
+
 			List<Role> roles = new ArrayList<>();
 			List<UserRoleCacheHelper> helpers = rc.getRoleIdsForUser(userId);
 			if(helpers != null){
@@ -181,6 +184,8 @@ public class RoleFactoryImpl extends RoleFactory {
 				Logger.info(this, "Final Role list for user '" + userId + "' [ " + roles.size() +" ] =");
 				roles.forEach(roleData -> Logger.info(this, "- " + roleData.getId()));
 			}
+
+			Logger.info(this, "***************************************************************");
 
 			return roles;
 		} catch (Exception e) {
