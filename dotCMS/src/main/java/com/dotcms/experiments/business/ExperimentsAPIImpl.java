@@ -228,13 +228,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
             final Builder builder) {
 
-        if (goals.primary().getMetric().type() == MetricType.EXIT_RATE &&
-                !hasCondition(goals, "url")) {
+        if (isExitOrBounceRate(goals) && !hasCondition(goals, "url")) {
             addUrlCondition(page, builder, goals);
         } else if (goals.primary().getMetric().type() == MetricType.URL_PARAMETER &&
                 !hasCondition(goals, "visitBefore")) {
             addVisitBeforeCondition(page, builder, goals);
         }
+    }
+
+    private static boolean isExitOrBounceRate(Goals goals) {
+        final MetricType metricType = goals.primary().getMetric().type();
+        return metricType == MetricType.EXIT_RATE || metricType == MetricType.BOUNCE_RATE;
     }
 
     private void addVisitBeforeCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
