@@ -279,6 +279,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly removeColumn = this.updater((state, columnToDelete: DotGridStackWidget) => {
+        console.log('removeColumn, removeColumn');
         const { rows } = state;
 
         return {
