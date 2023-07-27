@@ -34,12 +34,20 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends bash zip unzip wget libtcnative-1\
     tzdata tini ca-certificates openssl libapr1 libpq-dev curl gnupg\
     lsb-release vim libarchive-tools
+
+
 RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 
 RUN wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null \
   && apt-get update -y \
   && apt-get upgrade -y \
   && apt-get install -y postgresql-$PG_VERSION
+
+
+# Cleanup
+RUN apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 
 COPY --from=opensearchproject/opensearch:1.3.11 --chown=$USER_NAME:$USER_GROUP /usr/share/opensearch /usr/share/opensearch
