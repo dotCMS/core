@@ -150,3 +150,4 @@ This maintenance release includes the following code fixes:
 **Release-22.03.8**
 
 126. https://github.com/dotCMS/core/issues/25258 : WYSIWYG not adding images when it's not default lang #25258
+127. https://github.com/dotCMS/core/issues/25224 : PP - Integrity Checker, fixing conflicts is setting up identifier columns as null #25224

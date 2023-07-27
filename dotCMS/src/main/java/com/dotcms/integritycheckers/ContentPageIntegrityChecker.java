@@ -676,8 +676,8 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
         dc.addParam(newHtmlPageIdentifier);
         List<Map<String, Object>> results = dc.loadObjectResults();
         if (results == null || results.size() == 0) {
-            dc.setSQL("INSERT INTO identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
-                    + "SELECT ? , parent_path, 'TEMP_CONTENTPAGE_NAME', host_inode, asset_type, syspublish_date, sysexpire_date FROM identifier WHERE id = ?");
+			dc.setSQL("INSERT INTO identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date, asset_subtype, create_date, owner) "
+					+ "SELECT ? , parent_path, 'TEMP_CONTENTPAGE_NAME', host_inode, asset_type, syspublish_date, sysexpire_date, asset_subtype, create_date, owner FROM identifier WHERE id = ?");
             dc.addParam(newHtmlPageIdentifier);
             dc.addParam(oldHtmlPageIdentifier);
             dc.loadResult();

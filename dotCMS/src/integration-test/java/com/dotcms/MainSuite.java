@@ -37,6 +37,7 @@ import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrat
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.FolderIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
@@ -472,6 +473,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211012AddCompanyDefaultLanguageTest.class,
         StaticPublisherIntegrationTest.class,
         HostIntegrityCheckerTest.class,
+        FolderIntegrityCheckerTest.class,
         MetaWebInterceptorTest.class,
         BrowserUtilTest.class,
         Task211101AddContentletAsJsonColumnTest.class,
