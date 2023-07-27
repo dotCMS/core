@@ -186,17 +186,17 @@ export const ConditionDefaultByTypeOfGoal: Partial<Record<GOAL_TYPES, GOAL_PARAM
 //Todo: Update the missing one with the new colors
 export const ChartColors = {
     // Variants colors
-    default: {
+    original: {
         line: 'rgb(66,194,240)',
-        fill: 'rgba(66,194,240,0.15)'
+        fill: 'rgba(66,194,240,0.40)'
     },
-    primary: {
-        fill: getComputedStyle(document.body).getPropertyValue('--color-palette-primary-op-10'),
-        line: getComputedStyle(document.body).getPropertyValue('--color-palette-primary-op-70')
+    variant_1: {
+        line: 'rgb(195,54,229)',
+        fill: 'rgba(195,54,229,0.40)'
     },
-    secondary: {
-        fill: getComputedStyle(document.body).getPropertyValue('--color-palette-secondary-op-10'),
-        line: getComputedStyle(document.body).getPropertyValue('--color-palette-secondary-op-70')
+    variant_2: {
+        line: 'rgb(255, 180, 68)',
+        fill: 'rgba(255, 180, 68,0.40)'
     },
     // Chart colors
     xAxis: {
@@ -221,19 +221,19 @@ export type LineChartColorsProperties = Pick<
 
 export const ExperimentChartDatasetColorsVariants: Array<LineChartColorsProperties> = [
     {
-        borderColor: ChartColors.default.line,
-        pointBackgroundColor: ChartColors.default.line,
-        backgroundColor: ChartColors.default.fill
+        borderColor: ChartColors.original.line,
+        pointBackgroundColor: ChartColors.original.line,
+        backgroundColor: ChartColors.original.fill
     },
     {
-        borderColor: ChartColors.primary.line,
-        pointBackgroundColor: ChartColors.primary.line,
-        backgroundColor: ChartColors.primary.fill
+        borderColor: ChartColors.variant_1.line,
+        pointBackgroundColor: ChartColors.variant_1.line,
+        backgroundColor: ChartColors.variant_1.fill
     },
     {
-        borderColor: ChartColors.secondary.line,
-        pointBackgroundColor: ChartColors.secondary.line,
-        backgroundColor: ChartColors.secondary.fill
+        borderColor: ChartColors.variant_2.line,
+        pointBackgroundColor: ChartColors.variant_2.line,
+        backgroundColor: ChartColors.variant_2.fill
     }
 ];
 
@@ -243,7 +243,7 @@ export const ExperimentLineChartDatasetDefaultProperties: Partial<ChartDataset<'
     pointHoverRadius: 6,
     fill: true,
     cubicInterpolationMode: 'monotone',
-    borderWidth: 1.5
+    borderWidth: 2
 };
 
 export const ExperimentLinearChartDatasetDefaultProperties: Partial<ChartDataset<'line'>> = {

@@ -152,36 +152,52 @@ export const getBayesianDatasets = (
 ): ChartData<'line'>['datasets'] => {
     const { variants } = results.goals.primary;
     const { sessions } = results;
-    const datasets = [];
-    let colorIndex = 0;
 
-    Object.entries(variants).forEach(([variantId, variant]) => {
+    // Iterate through all the variants
+    return Object.entries(variants).map(([variantId, variant], index) => {
+        // Calculate the number of successes and failures
         const success = variant.uniqueBySession.count;
         const failure = sessions.variants[variantId] - variant.uniqueBySession.count;
         const label = variant.variantDescription;
 
-        const data: number[] = generateProbabilityDensityData(success, failure);
+        // Generate the data for the chart
+        const data: { x: number; y: number }[] = generateProbabilityDensityData(success, failure);
 
-        datasets.push({
+        // Create the dataset
+        return {
             label,
             data,
-            ...getPropertyColors(colorIndex++),
+            ...getPropertyColors(index),
             ...ExperimentLinearChartDatasetDefaultProperties
-        });
+        };
     });
-
-    return datasets;
 };
 
-const generateProbabilityDensityData = (success: number, failure: number) => {
+/**
+ * Generates the data for the probability density function of a beta distribution.
+ * @param {number} alpha - The alpha parameter of the beta distribution.
+ * @param {number} beta - The beta parameter of the beta distribution.
+ * @returns {object[]} An array of objects with x and y values.
+ */
+const generateProbabilityDensityData = (
+    alpha: number,
+    beta: number
+): { x: number; y: number }[] => {
     const STEP = 0.01;
-    const betaDistribution = new jStat.beta(success, failure);
+    // Create a beta distribution object using the alpha and beta parameters.
+    const betaDist = new jStat.beta(alpha, beta);
+
     const data = [];
+    // Loop through the x values from 0 to 1.
     for (let i = 0; i <= 1; i += STEP) {
+        // Set the x value to the current value of i.
         const x = i;
-        const y = betaDistribution.pdf(x);
+        // Set the y value to the value of the pdf at the current value of i.
+        const y = betaDist.pdf(x);
+        // Add the x and y values to the data array.
         data.push({ x, y });
     }
 
+    // Return the data array.
     return data;
 };
