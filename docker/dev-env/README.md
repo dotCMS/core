@@ -4,12 +4,12 @@ This image, intended for development, runs Ubuntu 22.04 and contains dotCMS, Pos
 Opensearch 1.x. All dotCMS, db and es index data is stored in the `/data` directory, which 
 should be mapped in if you want your environment to persist.  The beauty of this 
 image that it can be used to CLONE an existing dotCMS instance.  To do this, 
-you start the image up and pass it a DOTCMS_SOURCE_ENVIRONMENT and either 
-an DOTCMS_API_TOKEN Token or DOTCMS_USERNAME_PASSWORD.  On startup, the image will try to reach out and
+you start the image up and pass it a `DOTCMS_SOURCE_ENVIRONMENT` and either 
+an `DOTCMS_API_TOKEN` or `DOTCMS_USERNAME_PASSWORD`.  On startup, the image will try to reach out and
 download the database and assets from the specified dotCMS instance, load the 
-db and assets and start the dotCMS in debug mode.  
+db and assets and start dotCMS in debug mode.  
 
-## Cloning an Existing Environment
+## Cloning an Environment
 When running this image, if you specify a `DOTCMS_SOURCE_ENVIRONMENT` and a username/password or token, this 
 image will attempt to pull the assets and db from the source environment. 
 
@@ -18,8 +18,8 @@ To get around this, you can pull the assets and db yourself (outside of docker) 
 
 ### Downloading your environments assets and db outside of Docker
 dotCMS offers two endpoints to download your data and your assets
-- /api/v1/maintenance/_downloadAssets
-- /api/v1/maintenance/_downloadDb
+- `/api/v1/maintenance/_downloadAssets`
+- `/api/v1/maintenance/_downloadDb`
 
 When downloading assets, you can specify `?oldAssets=false`, and dotCMS will only include the assets for live and working versions of your content, thus hopefully generating a MUCH smaller download
 
@@ -34,13 +34,13 @@ wget --header="$AUTH_HEADER" -t 1 -O dotcms_db.sql.gz $DOTCMS_SOURCE_ENVIRONMENT
 
 ```
 
-## Running the dotcms/dev Docker image
+## Running Development Image
 This image takes all the normal dotCMS config switches plus a few new ones.
 
 - `DOTCMS_SOURCE_ENVIRONMENT` : the url for the environment you wish to clone, e.g. https://demo.dotcms.com .
 - `DOTCMS_API_TOKEN` : A valid dotCMS API Token from an admin user in the source environment.
 - `DOTCMS_USERNAME_PASSWORD` :  The username:password for an admin user in the source environment.
-- `DOTCMS_DEBUG` :  Run dotCMS in debug mode and listen for a remote debugger on port 8000 defaults to `true`.
+- `DOTCMS_DEBUG` :  Run dotCMS in debug mode and listen for a remote debugger on port 8000 defaults to `false`.
 
 
 
@@ -48,19 +48,19 @@ This image takes all the normal dotCMS config switches plus a few new ones.
 ```
 export TOK=XXXXXXXXXXXXXXXXXXXXXXXX.eXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-docker run -it \
+docker run --rm \
 -p 8000:8000 \
 -p 8443:8443 \
 -v $PWD/data:/data \
 -e DOTCMS_SOURCE_ENVIRONMENT=https://demo.dotcms.com \
 -e DOTCMS_API_TOKEN=$TOK \
+-e DOTCMS_DEBUG=true \
  dotcms/dev:latest
 ```
 
 ### Clone demo with UserID/Password
 ```
-docker run -it \
--p 8000:8000 \
+docker run \
 -p 8443:8443 \
 -v $PWD/data:/data \
 -e DOTCMS_SOURCE_ENVIRONMENT=https://demo.dotcms.com \
@@ -70,17 +70,14 @@ docker run -it \
 
 ### Run with Postgres port exposed
 ```
-export TOK=XXXXXXXXXXXXXXXXXXXXXXXX.eXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
-docker run -it \
--p 8000:8000 \
+docker run \
 -p 8443:8443 \
 -p 5432:5432 \
 -v $PWD/data:/data \
  dotcms/dev:latest
 ```
-## Building the dotcms/dev Docker Image
-You can specify the dotCMS version you want to include in your dev instance by passing the build-arg `DOTCMS_DOCKER_TAG` to indicate which dotCMS image tag to use to build,  e.g.
+## Building this Image
+By default, this image is built from the `dotcms/dotcms:latest` tegged version of dotCMS.  You can specify another dotCMS version you want use for your dev instance by passing the build-arg `DOTCMS_DOCKER_TAG` to indicate which dotCMS image tag to use to build,  e.g.
 `--build-arg DOTCMS_DOCKER_TAG=latest` or `--build-arg DOTCMS_DOCKER_TAG=23.07`
 
 ```
@@ -88,10 +85,10 @@ docker build --pull --build-arg DOTCMS_DOCKER_TAG=latest  . -t dotcms/dev
 ```
 or
 ```
-docker buildx build --platform linux/amd64,linux/arm64 --pull --push -t dotcms/dev .
+docker buildx build --build-arg DOTCMS_DOCKER_TAG=master_latest_SNAPSHOT --platform linux/amd64,linux/arm64 --pull --push -t dotcms/dev:master_latest_SNAPSHOT .
 ```
 
-You can specify the version of dotCMS that you want to include in this image by changing the 
+
 
 
 
@@ -108,7 +105,7 @@ Running https on
 
 ### Postgres 15
 Running on port 5432 and using the dotCMS defaults:
-- db:d otcms
+- db: dotcms
 - user: dotcmsdbuser
 - pass: password
 

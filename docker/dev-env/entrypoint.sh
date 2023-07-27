@@ -129,7 +129,7 @@ unpack_assets(){
 start_dotcms () {
 
 
-    export DOTCMS_DEBUG=${DOTCMS_DEBUG:-"true"}
+    export DOTCMS_DEBUG=${DOTCMS_DEBUG:-"false"}
 
     if [ $DOTCMS_DEBUG == "true" ];then
       echo "Setting java debug port to 8000.  To turn debugging off, pass an env variable DOTCMS_DEBUG=false"
