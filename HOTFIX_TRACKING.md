@@ -148,3 +148,5 @@ This maintenance release includes the following code fixes:
 125. https://github.com/dotCMS/core/issues/25203 : getResizeUri Method Returns An Incorrect URL #25203
 
 **Release-22.03.8**
+
+126. https://github.com/dotCMS/core/issues/25258 : WYSIWYG not adding images when it's not default lang #25258
