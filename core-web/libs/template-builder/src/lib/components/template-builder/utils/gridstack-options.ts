@@ -72,6 +72,7 @@ export const gridOptions: GridStackOptions = {
     acceptWidgets: isARowWidget,
     draggable: {
         handle: '.row__drag-container'
+        // scroll: true
     },
     disableOneColumnMode: true
 };

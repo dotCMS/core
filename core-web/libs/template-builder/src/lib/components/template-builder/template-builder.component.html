@@ -4,19 +4,23 @@
     </div>
     <div class="p-toolbar-group-end">
         <dotcms-add-widget
+            [dragClass]="'ui-draggable-dragging'"
             [label]="'dot.template.builder.add.row' | dm"
             [icon]="rowIcon"
             [gridstackOptions]="rowOptions"
+            dotcmsItemDragScroll
             data-widget-type="row"
             data-testId="add-row"
         ></dotcms-add-widget>
         <dotcms-add-widget
             id="box-picker"
             #addBox
+            [dragClass]="'ui-draggable-dragging'"
             [label]="'dot.template.builder.add.box' | dm"
             [gridstackOptions]="boxOptions"
             [attr.gs-w]="boxWidth"
             [icon]="colIcon"
+            dotcmsItemDragScroll
             data-widget-type="col"
             data-testId="add-box"
         ></dotcms-add-widget>
@@ -52,6 +56,7 @@
                 class="grid-stack-item"
                 #rowElement
                 *ngFor="let row of vm.rows; trackBy: identify"
+                [dragClass]="'ui-draggable-dragging'"
                 [attr.gs-id]="row.id"
                 [attr.gs-x]="row.x"
                 [attr.gs-y]="row.y"
@@ -63,6 +68,7 @@
                     'template-builder-row--wont-fit': addBoxIsDragging && !row.willBoxFit
                 }"
                 [attr.data-wont-fit]="'dot.template.builder.row.box.wont.fit' | dm"
+                dotcmsItemDragScroll
                 data-testId="row"
             >
                 <div class="grid-stack-item-content grid-stack">
@@ -70,12 +76,14 @@
                         class="grid-stack-item sub"
                         #boxElement
                         *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
+                        [dragClass]="'ui-draggable-dragging'"
                         [attr.gs-id]="box.id"
                         [attr.gs-auto]="true"
                         [attr.gs-x]="box.x"
                         [attr.gs-y]="box.y"
                         [attr.gs-w]="box.w"
                         [attr.gs-h]="box.h"
+                        dotcmsItemDragScroll
                         data-testId="box"
                     >
                         <dotcms-template-builder-box

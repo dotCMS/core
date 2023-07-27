@@ -27,6 +27,7 @@ import {
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
+import { DotItemDragScrollDirective } from './directives/dot-item-drag-scroll/dot-item-drag-scroll.directive';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import {
@@ -54,7 +55,8 @@ export default {
                 ButtonModule,
                 ToolbarModule,
                 DividerModule,
-                DropdownModule
+                DropdownModule,
+                DotItemDragScrollDirective
             ],
             providers: [
                 DotTemplateBuilderStore,

@@ -15,6 +15,9 @@
     border: 1px solid $color-palette-primary;
     border-radius: $border-radius-md;
     z-index: -2;
+    &:active {
+        box-shadow: $md-shadow-2;
+    }
 }
 
 dotcms-template-builder-background-columns {
