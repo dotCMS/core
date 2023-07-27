@@ -107,8 +107,8 @@ public class BrowserAjax {
     private static String SELECTED_BROWSER_PATH_OBJECT = "SELECTED_BROWSER_PATH_OBJECT";
 	Set<String> openFolders = new LinkedHashSet<>();
 
-    String lastSortBy = "name";
-    boolean lastSortDirectionDesc = false;
+    String lastSortBy = "modDate";
+    boolean lastSortDirectionDesc = true;
 
 	final static private Comparator<Map> nameComparator = new Comparator<Map>() {
 		public int compare(Map o1, Map o2) {
@@ -323,9 +323,8 @@ public class BrowserAjax {
 
         activeFolderInode = null != siteBrowserActiveFolderInode?siteBrowserActiveFolderInode:parentInode;
 
-		this.lastSortBy = sortBy;
-
 		if (sortBy != null && UtilMethods.isSet(sortBy)) {
+			this.lastSortBy = sortBy;
 			if (sortBy.equals(lastSortBy)) {
 				this.lastSortDirectionDesc = !this.lastSortDirectionDesc;
 			}
