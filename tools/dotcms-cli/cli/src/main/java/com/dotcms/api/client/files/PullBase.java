@@ -60,7 +60,6 @@ public class PullBase {
 
             // Make sure we have a valid destination
             var rootPath = checkBaseStructure(destination);
-            System.out.println("rootPath: " + rootPath);
             // Preparing the languages for the tree
             var treeLanguages = prepareLanguages(treeNodeInfo);
 
