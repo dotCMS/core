@@ -149,7 +149,7 @@ describe('DotExperimentsReportsComponent', () => {
         expect(spectator.query(DotExperimentsReportDailyDetailsComponent)).toExist();
     });
 
-    it('should have a Daily Report and a Bayesian Report', () => {
+    it('should have a Daily Report and a Bayesian Report', (done) => {
         spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
         spectator.detectChanges();
 
@@ -157,6 +157,23 @@ describe('DotExperimentsReportsComponent', () => {
         expect(spectator.query(byTestId('daily-chart'))).toExist();
         expect(spectator.query(byTestId('bayesian-chart'))).toExist();
         expect(spectator.query(DotExperimentsReportDailyDetailsComponent)).toExist();
+
+        spectator.component.vm$.subscribe((vm) => {
+            expect(spectator.query(DotExperimentsReportsChartComponent).data).toEqual(
+                vm.dailyChartData
+            );
+            expect(spectator.query(DotExperimentsReportsChartComponent).isLinearAxis).toEqual(
+                false
+            );
+
+            expect(spectator.queryLast(DotExperimentsReportsChartComponent).data).toEqual(
+                vm.bayesianChartData
+            );
+            expect(spectator.queryLast(DotExperimentsReportsChartComponent).isLinearAxis).toEqual(
+                true
+            );
+            done();
+        });
     });
 
     it('should show the SummaryComponent', () => {
