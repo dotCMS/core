@@ -32,6 +32,10 @@
     font-weight: $font-weight-semi-bold;
     line-height: $line-height;
     margin-bottom: $spacing-1;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .page-tools-list__chips {

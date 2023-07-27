@@ -4,6 +4,7 @@
     [position]="'right'"
     [closable]="false"
     [draggable]="false"
+    [dismissableMask]="true"
     header="{{ 'editpage.toolbar.nav.page.tools' | dm }}"
 >
     <div class="page-tools">
@@ -21,7 +22,13 @@
                 >
                     <img src="{{ tool.icon }}" alt="{{ tool.title }}" width="42" height="42" />
                     <div class="page-tools-list__content">
-                        <span class="page-tools-list__title">{{ tool.title }}</span>
+                        <span class="page-tools-list__title"
+                            >{{ tool.title }}
+                            <i
+                                class="pi pi-external-link"
+                                style="color: 'var(--color-palette-primary-500)'"
+                            ></i>
+                        </span>
                         <p class="page-tools-list__description">
                             {{ tool.description }}
                         </p>

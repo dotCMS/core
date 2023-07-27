@@ -40,12 +40,17 @@ describe('DotPageToolsSeoComponent', () => {
         spectator = createHost(
             `<dot-page-tools-seo
                 [visible]="visible"
-                [currentPageUrl]="currentPageUrl">
+                [currentPageUrlParams]="currentPageUrlParams">
              </dot-page-tools-seo>`,
             {
                 hostProps: {
                     visible: true,
-                    currentPageUrl: 'blogTest'
+                    currentPageUrlParams: {
+                        currentUrl: '/blogTest',
+                        requestHostName: 'localhost',
+                        siteId: '123',
+                        languageId: 1
+                    }
                 }
             }
         );

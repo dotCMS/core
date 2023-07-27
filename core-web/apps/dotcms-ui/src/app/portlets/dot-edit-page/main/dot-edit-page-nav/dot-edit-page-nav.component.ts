@@ -1,6 +1,7 @@
 import { Observable, of as observableOf } from 'rxjs';
 
-import { Component, Input, OnChanges } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, Inject, Input, OnChanges } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -10,6 +11,7 @@ import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     DotPageRender,
     DotPageRenderState,
+    DotPageToolUrlParams,
     DotTemplate,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
@@ -43,7 +45,8 @@ export class DotEditPageNavComponent implements OnChanges {
         private dotLicenseService: DotLicenseService,
         private dotContentletEditorService: DotContentletEditorService,
         private dotMessageService: DotMessageService,
-        private readonly route: ActivatedRoute
+        private readonly route: ActivatedRoute,
+        @Inject(DOCUMENT) private document: Document
     ) {}
 
     ngOnChanges(): void {
@@ -191,9 +194,15 @@ export class DotEditPageNavComponent implements OnChanges {
      * @returns string
      * @memberof DotEditPageMainComponent
      * */
-    public getCurrentURL(): string {
+    public getCurrentURLParams(): DotPageToolUrlParams {
         const page = this.pageState.page;
+        const site = this.pageState.page;
 
-        return `${page?.hostName}${page?.pageURI}?language_id=${page?.languageId}`;
+        return {
+            requestHostName: this.document.defaultView.location.host,
+            currentUrl: page.pageURI,
+            siteId: site?.identifier,
+            languageId: page.languageId
+        };
     }
 }
