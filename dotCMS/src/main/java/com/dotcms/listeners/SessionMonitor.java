@@ -64,12 +64,12 @@ public class SessionMonitor implements ServletRequestListener,
     public Map<String, String> getSysUsersAddress() {
         return sysUsersAddress;
     }
-    
+
     public void attributeAdded(HttpSessionBindingEvent event) {
         final String name = event.getName();
         if ("CMS_SELECTED_HOST_ID".equals(name)) {
             final String value = null != event.getValue() ? event.getValue().toString() : "- null -";
-            Logger.info(this, "The CMS_SELECTED_HOST_ID is being added to the session as '" + value + "'");
+            Logger.info(this, "The CMS_SELECTED_HOST_ID is being added to the session '" + event.getSession().getId() + "' with value: '" + value + "'");
         }
     }
     
