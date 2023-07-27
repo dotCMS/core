@@ -166,8 +166,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     // ---
                     // Pushing the tree
                     if (!dryRun) {
-                        pushService.processTreeNodes(output, workspace, localPathStructure, treeNode,
-                                treeNodePushInfo);
+                        pushService.processTreeNodes(output, workspace.getAbsolutePath(), localPathStructure,
+                                treeNode, treeNodePushInfo);
                     }
 
                 } else {
