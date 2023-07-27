@@ -5,7 +5,7 @@ DB_BACKUP_FILE=/data/dotcms_db.sql.gz
 
 export JAVA_HOME=/usr/share/opensearch/jdk
 export PATH=$PATH:$JAVA_HOME/bin:/usr/local/pgsql/bin
-
+export ES_JAVA_OPTS=${ES_JAVA_OPTS:-"-Xmx512m"}
 
 
 setup_postgres () {
@@ -55,7 +55,7 @@ setup_opensearch () {
 
     echo "Starting OPENSEARCH"
     # Start up Elasticsearch
-    su -c "ES_JAVA_OPTS=-Xmx1G /usr/share/opensearch/bin/opensearch 1> /dev/null" dotcms &
+    su -c "/usr/share/opensearch/bin/opensearch 1> /dev/null" dotcms &
 }
 
 
@@ -92,10 +92,7 @@ pull_dotcms_backups () {
     if [ ! -f "$ASSETS_BACKUP_FILE" ]; then
         echo "- Deleting ASSETS tmp file: $ASSETS_BACKUP_FILE.tmp"
         su -c "rm -rf $ASSETS_BACKUP_FILE.tmp"
-
         echo "- Downloading ASSETS"
-        #su -c "curl --http1.1 --keepalive-time 2 -k -H\"$AUTH_HEADER\" $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadAssets | bsdtar -xvf- -C /data/shared/" dotcms
-        #su -c "wget --header=\"$AUTH_HEADER\" -t 1 -O - $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadAssets | bsdtar -xvkf- -C /data/shared/" dotcms
         su -c "wget --no-check-certificate --header=\"$AUTH_HEADER\" -t 1 -O $ASSETS_BACKUP_FILE.tmp  $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadAssets\?oldAssets=${ALL_ASSETS:-"false"} " dotcms
         su -c "mv $ASSETS_BACKUP_FILE.tmp $ASSETS_BACKUP_FILE"
     fi
@@ -103,7 +100,6 @@ pull_dotcms_backups () {
     if [ ! -f "$DB_BACKUP_FILE" ]; then
         echo "- Downloading database"
         su -c "rm -rf $DB_BACKUP_FILE.tmp"
-        #su -c "wget --header=\"$AUTH_HEADER\" -t 1 -O - $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadDb | gzip -d | PGPASSWORD=password psql -h 127.0.0.1 -Udotcmsdbuser dotcms" dotcms
         su -c "wget --no-check-certificate --header=\"$AUTH_HEADER\" -t 1 -O $DB_BACKUP_FILE.tmp $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadDb" dotcms
         su -c "mv $DB_BACKUP_FILE.tmp $DB_BACKUP_FILE"
     fi
@@ -135,13 +131,13 @@ start_dotcms () {
       export CMS_JAVA_OPTS="$CMS_JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=*:8000"
     fi
 
-
     export DB_BASE_URL=${DB_BASE_URL:-"jdbc:postgresql://127.0.0.1/dotcms"}
     export DOT_ES_ENDPOINTS=${DOT_ES_ENDPOINTS:-"https://127.0.0.1:9200"}
     export DOT_DOTCMS_CLUSTER_ID=${DOT_DOTCMS_CLUSTER_ID:-"dotcms_dev"}
 
-    echo "Starting dotCMS"
+    echo "Starting dotCMS using"
     echo " - CMS_JAVA_OPTS: $CMS_JAVA_OPTS"
+    echo " - ES_JAVA_OPTS: $ES_JAVA_OPTS"
     echo " - DB_BASE_URL: $DB_BASE_URL"
     echo " - DOT_ES_ENDPOINTS: $DOT_ES_ENDPOINTS"
     echo " - DOT_DOTCMS_CLUSTER_ID: $DOT_DOTCMS_CLUSTER_ID"
@@ -150,12 +146,8 @@ start_dotcms () {
 }
 
 
-pull_dotcms_backups
-echo ""
-setup_postgres
-echo ""
-unpack_assets
-echo ""
-  setup_opensearch
-echo ""
+pull_dotcms_backups && echo ""
+setup_postgres && echo ""
+unpack_assets && echo ""
+setup_opensearch && echo ""
 start_dotcms

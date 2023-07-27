@@ -1,5 +1,5 @@
 # dotCMS Development Docker Image
-### All in one dockerimage including Postgres and Opensearch
+### All in one docker image including Postgres and Opensearch
 This image, intended for development, runs Ubuntu 22.04 and contains dotCMS, Postgres 15 and Opensearch 1.x. All dotCMS, db and es index data is stored in the `/data` directory, which should be mapped in if you want your environment to persist.  The beauty of this image that it can be used to CLONE an existing dotCMS instance.  
 
 ## Cloning a dotCMS Environment
