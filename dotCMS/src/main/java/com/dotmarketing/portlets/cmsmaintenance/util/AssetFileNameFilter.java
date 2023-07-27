@@ -30,7 +30,7 @@ public class AssetFileNameFilter implements FileFilter {
 	private final BloomFilter<String> bloomFilter;
 
 
-    private static final String[] EXCLUDE_FOLDERS_LIST = { "license", "bundles", "tmp_upload","messages",
+    private static final String[] EXCLUDE_FOLDERS_LIST = { "license", "bundles", "tmp_upload",
                     "timemachine", "integrity", "server", "dotGenerated", "monitor"};
 
 	private static final String[] EXCLUDE_FILE_LIST = {"license.zip", ".DS_Store", "license_pack.zip"};
@@ -66,10 +66,19 @@ public class AssetFileNameFilter implements FileFilter {
 		if(dir.isFile() && Set.of(this.excludeFiles.get()).stream().anyMatch(f->pathName.contains(f  ))){
 			return false;
 		}
-		// if no bloomFilter, ok
+
+
+		// if no bloomFilter, everything else is a go
 		if(bloomFilter==null){
 			return true;
 		}
+
+		//Always allow messages (language property files)
+		if(pathName.startsWith("/messages")){
+			return true;
+		}
+
+
 
 		// if bloomFilter, make sure the inode is in the path
 		List<RegExMatch> matches = RegEX.find(pathName, "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}");
