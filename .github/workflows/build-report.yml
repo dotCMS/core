@@ -20,6 +20,7 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
       - name: Download Worlfkow Data
+        id: data-download
         uses: dawidd6/action-download-artifact@v2
         with:
           name: 'workflow-data'
@@ -27,6 +28,17 @@ jobs:
           run_id: ${{ github.event.workflow_run.id }}
           if_no_artifact_found: warn
 
+      - uses: dorny/test-reporter@v1
+        id: test-reporter
+        if: steps.data-download.outputs.found_artifact == 'true'
+        continue-on-error: true
+        with:
+          artifact: /^build-reports-test-(.*)/        # artifact name
+          name: 'MVN Test Report $1'               # Name of the check run which will be created
+          path: '**/target/**/TEST-*.xml'                     # Path to test results (inside artifact .zip)
+          reporter: java-junit            # Format of test results
+          fail-on-error: false
+          
       - name: Get Workflow Data
         id: workflow-data
         run: |
@@ -53,6 +65,21 @@ jobs:
             branch_url="https://github.com/$source_repository/tree/$branch"
             commit_id_url="https://github.com/$source_repository/pull/$pr_number/commits/$head_sha"
             test_results_url="https://github.com/$source_repository/pull/${pr_number}/checks"
+            if [[ -z "${{ steps.test-reporter.outputs.conclusion }}" ]]; then
+              test_conclusion="Not Run"
+              test_passed=0
+              test_failed=0
+              test_skipped=9
+              test_elapsed=0
+            else
+              test_conclusion=${{ steps.test-reporter.outputs.conclusion }}
+              test_passed=${{ steps.test-reporter.outputs.passed }}
+              test_failed=${{ steps.test-reporter.outputs.failed }}
+              test_skipped=${{ steps.test-reporter.outputs.skipped }}
+              test_elapsed=${{ steps.test-reporter.outputs.time }}
+            fi
+            
+            
             if [[ "$status" == "SUCCESS" ]]; then
               echo "status_icon=✅" >> $GITHUB_OUTPUT
             else
@@ -78,18 +105,12 @@ jobs:
             echo "branch_url=$branch_url" >> $GITHUB_OUTPUT
             echo "commit_id_url=$commit_id_url" >> $GITHUB_OUTPUT
             echo "test_results_url=$test_results_url" >> $GITHUB_OUTPUT
+            echo "test_conclusion=$test_conclusion" >> $GITHUB_OUTPUT
+            echo "test_passed=$test_passed" >> $GITHUB_OUTPUT
+            echo "test_failed=$test_failed" >> $GITHUB_OUTPUT
+            echo "test_skipped=$test_skipped" >> $GITHUB_OUTPUT
+            echo "test_elapsed=$test_elapsed" >> $GITHUB_OUTPUT
           fi
-
-      - uses: dorny/test-reporter@v1
-        id: test-reporter
-        if: steps.workflow-data.outputs.has-json == 'true'
-        with:
-          artifact: /^build-reports-test-(.*)/        # artifact name
-          name: 'MVN Test Report $1'               # Name of the check run which will be created
-          path: '**/target/**/TEST-*.xml'                     # Path to test results (inside artifact .zip)
-          reporter: java-junit            # Format of test results
-          fail-on-error: false
-
           
       - name: Post to a Slack channel
         if: steps.workflow-data.outputs.has-json == 'true'
@@ -99,81 +120,49 @@ jobs:
           channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
           payload: |
             {
-              "text":"Github Action ${{ steps.workflow-data.outputs.status }} for run PR #${{ steps.workflow-data.outputs.pr_number }}",
-
+              "text": "Github Action ${{ steps.workflow-data.outputs.status }} for run PR #${{ steps.workflow-data.outputs.pr_number }}",
               "blocks": [
                 {
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "📊 Github Action ${{ steps.workflow-data.outputs.status }} for run PR #${{ steps.workflow-data.outputs.pr_number }}",
+                    "text": "${{ steps.workflow-data.outputs.status_icon }} Github Action ${{ steps.workflow-data.outputs.status }} for PR #${{ steps.workflow-data.outputs.pr_number }}",
                     "emoji": true
                   }
                 },
                 {
                   "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*🏃‍♂️ Action Run:*\n<${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}>"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*❌ Failure Step:*\n${{ steps.workflow-data.outputs.first_fail_step }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*📦 Failure Module:*\n${{ steps.workflow-data.outputs.first_fail_module }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*💬 Failure Message:*\n${{ steps.workflow-data.outputs.first_fail_error }}"
-                    }
-                  ]
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Action Run ID:* <${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}> \n*Failure Step:* ${{ steps.workflow-data.outputs.first_fail_step }} \n*Failure Module:* ${{ steps.workflow-data.outputs.first_fail_module }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Failure Message:* ${{ steps.workflow-data.outputs.first_fail_error }}"
+                  }
                 },
                 {
                   "type": "divider"
                 },
                 {
                   "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*👩‍💻 PR Author:*\n${{ steps.workflow-data.outputs.pr_author }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*📝 PR Name:*\n${{ steps.workflow-data.outputs.pr_title }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*🔢 PR Number:*\n<${{ steps.workflow-data.outputs.pr_number_url }}|#${{ steps.workflow-data.outputs.pr_number }}>"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*🌳 Branch Name:*\n<${{ steps.workflow-data.outputs.branch_url }}|${{ steps.workflow-data.outputs.branch }}>"
-                    }
-                  ]
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*PR Details:* \nAuthor: ${{ steps.workflow-data.outputs.pr_author }} \nName: <${{ steps.workflow-data.outputs.pr_number_url }} | ${{ steps.workflow-data.outputs.pr_title }}> \nNumber: #${{ steps.workflow-data.outputs.pr_number }} \nBranch: <${{ steps.workflow-data.outputs.branch_url }} | ${{ steps.workflow-data.outputs.branch }}>"
+                  }
                 },
                 {
                   "type": "divider"
                 },
                 {
                   "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*💾 Commit ID:*\n<${{ steps.workflow-data.outputs.commit_id_url }}|#${{ steps.workflow-data.outputs.head_sha }}>"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*🧑‍💻 Commit Author:*\n${{ steps.workflow-data.outputs.head_author }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*📜 Commit Name:*\n${{ steps.workflow-data.outputs.head_name }}"
-                    }
-                  ]
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Commit Details:* \nID: <${{ steps.workflow-data.outputs.commit_id_url }} | #${{ steps.workflow-data.outputs.head_sha }}> \nAuthor: ${{ steps.workflow-data.outputs.head_author }} \nName: ${{ steps.workflow-data.outputs.head_name }}"
+                  }
                 },
                 {
                   "type": "divider"
@@ -182,7 +171,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "🧪 Tests - ${{ steps.test-reporter.outputs.conclusion }}",
+                    "text": "🧪 Test Results = ${{ steps.workflow-data.outputs.test_conclusion }}",
                     "emoji": true
                   }
                 },
@@ -190,14 +179,14 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "✅ *Passed*:${{ steps.test-reporter.outputs.passed }}  ❌ *Failed*:${{ steps.test-reporter.outputs.failed}}   ⏭️ *Skipped*:${{ steps.test-reporter.outputs.skipped }}    ⏱️ *Elapsed*:${{ steps.test-reporter.outputs.time }}"
+                    "text": "*Passed:* ${{ steps.workflow-data.outputs.test_passed }} \n*Failed:* ${{ steps.workflow-data.outputs.test_failed }} \n*Skipped:* ${{ steps.workflow-data.outputs.test_skipped }} \n*Elapsed Time:* ${{ steps.workflow-data.outputs.test_elapsed }}"
                   }
                 },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "🔍 <${{ steps.workflow-data.outputs.test_result_url }} |View Results>"
+                    "text": "🔍 <${{ steps.workflow-data.outputs.test_results_url }} | View Test Results>"
                   }
                 }
               ]
