@@ -61,7 +61,17 @@ setup_opensearch () {
 
 pull_dotcms_backups () {
 
+
+    if [ ! -s $ASSETS_BACKUP_FILE ] ; then
+        rm -rf $ASSETS_BACKUP_FILE
+    fi
+
+    if [ ! -s $DB_BACKUP_FILE ] ; then
+        rm -rf $DB_BACKUP_FILE
+    fi
+
     if [ -f "$ASSETS_BACKUP_FILE" ] && [ -f $DB_BACKUP_FILE ]; then
+
         echo "- DB and Assets backups exist, skipping"
         echo "- Delete $ASSETS_BACKUP_FILE and $DB_BACKUP_FILE to force a re-download"
         return 0
@@ -90,18 +100,29 @@ pull_dotcms_backups () {
     chown -R dotcms.dotcms /data/shared
 
     if [ ! -f "$ASSETS_BACKUP_FILE" ]; then
-        echo "- Deleting ASSETS tmp file: $ASSETS_BACKUP_FILE.tmp"
         su -c "rm -rf $ASSETS_BACKUP_FILE.tmp"
         echo "- Downloading ASSETS"
         su -c "wget --no-check-certificate --header=\"$AUTH_HEADER\" -t 1 -O $ASSETS_BACKUP_FILE.tmp  $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadAssets\?oldAssets=${ALL_ASSETS:-"false"} " dotcms
-        su -c "mv $ASSETS_BACKUP_FILE.tmp $ASSETS_BACKUP_FILE"
+        if [ -s $ASSETS_BACKUP_FILE.tmp ]; then
+          su -c "mv $ASSETS_BACKUP_FILE.tmp $ASSETS_BACKUP_FILE"
+        else
+          su -c "rm -rf $ASSETS_BACKUP_FILE.tmp"
+          echo "asset download failed, please check your credentials and try again"
+          exit 1
+        fi
     fi
 
     if [ ! -f "$DB_BACKUP_FILE" ]; then
         echo "- Downloading database"
         su -c "rm -rf $DB_BACKUP_FILE.tmp"
         su -c "wget --no-check-certificate --header=\"$AUTH_HEADER\" -t 1 -O $DB_BACKUP_FILE.tmp $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadDb" dotcms
-        su -c "mv $DB_BACKUP_FILE.tmp $DB_BACKUP_FILE"
+        if [ -s $DB_BACKUP_FILE.tmp ]; then
+          su -c "mv $DB_BACKUP_FILE.tmp $DB_BACKUP_FILE"
+        else
+          su -c "rm -rf $DB_BACKUP_FILE.tmp"
+          echo "database download failed, please check your credentials and try again"
+          exit 1
+        fi
     fi
 
 }
