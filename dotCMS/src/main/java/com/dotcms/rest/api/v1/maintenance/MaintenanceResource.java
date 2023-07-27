@@ -18,6 +18,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.starter.ExportStarterUtil;
+import com.google.common.hash.BloomFilter;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
@@ -260,16 +261,19 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadAssets(@Context final HttpServletRequest request,
-                                         @Context final HttpServletResponse response) {
+                                         @Context final HttpServletResponse response,
+                                         @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets) {
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveAssetsFileName();
         Logger.info(this, String.format("User '%s' is generating compressed Assets file '%s'", user.getUserId(),
                 zipName));
 
+
+
         final StreamingOutput stream = output -> {
 
-            exportStarterUtil.streamCompressedAssets(output);
+            exportStarterUtil.streamCompressedAssets(output, oldAssets);
             output.flush();
             output.close();
             Logger.info(this, String.format("Compressed Assets file '%s' has been generated successfully!", zipName));
