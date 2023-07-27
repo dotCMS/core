@@ -61,7 +61,7 @@ setup_opensearch () {
 
 pull_dotcms_backups () {
 
-
+    # If these are 0 length files, delete them
     if [ ! -s $ASSETS_BACKUP_FILE ] ; then
         rm -rf $ASSETS_BACKUP_FILE
     fi
@@ -129,10 +129,10 @@ pull_dotcms_backups () {
 
 unpack_assets(){
   if [ -d "/data/shared/assets/1" ]; then
-    echo "Assets Already Unpacked, skipping.  If you would like to unpack them again, please delete the /assets folder"
+    echo "Assets Already Unpacked, skipping.  If you would like to unpack them again, please delete the /data/shared/assets folder"
     return 0
   fi
-  if [ ! -f "$ASSETS_BACKUP_FILE" ]; then
+  if [ ! -s "$ASSETS_BACKUP_FILE" ]; then
     return 0
   fi
 
@@ -165,6 +165,9 @@ start_dotcms () {
 
     . /srv/entrypoint.sh
 }
+
+
+
 
 
 pull_dotcms_backups && echo ""
