@@ -6,6 +6,8 @@ import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
@@ -28,7 +30,9 @@ import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -375,6 +379,23 @@ public class PublisherTest extends IntegrationTestBase {
         final PublishingEndPoint endPoint = PublisherTestUtil.createEndpoint(environment);
 
         return new PPBean(environment, endPoint);
+    }
+
+    @Test
+    //this is a test for push publish a folder with nothing inside
+    public void testPushPublishFolderWithNothingInside() throws Exception {
+
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        final Folder folderPage = PublisherTestUtil.createFolder("testPushPublishFolderWithNothingInside");
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+
+        final PPBean ppBean = createPushPublishEnv(limitedUser);
+        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        final Bundle bundle = PublisherTestUtil.createBundle("testPPFolder", limitedUser, ppBean.environment);
+        Map<String, Object> response = publisherAPI.addContentsToPublish(Arrays.asList(folderPage.getIdentifier()), bundle.getId(), new Date(), limitedUser);
+        assertTrue(response.size() > 0);
+        assertEquals(0, response.get("errors"));
     }
 
     private PushResult pushFolderPage(final String bundleName, final FolderPage folderPage, final User user, final PPBean ppBean)

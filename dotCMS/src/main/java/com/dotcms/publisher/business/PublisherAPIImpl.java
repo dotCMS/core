@@ -285,7 +285,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 									}
                               }
                           } else {
-                              if ( !strPerAPI.doesUserHavePermission( iden, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
+							  if ( !iden.getAssetType().equalsIgnoreCase("folder") && !strPerAPI.doesUserHavePermission( iden, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
                                   //Generate and append the error message
                                   appendError( errorsList, ErrorType.PERMISSION, user, iden.getAssetType(), null, iden.getId() );
                                   continue;
