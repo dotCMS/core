@@ -41,7 +41,7 @@ import {
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
-    selector: 'dotcms-template-builder',
+    selector: 'dotcms-template-builder-lib',
     template: ` <ng-content select="[toolbar-left]"></ng-content>
         <ng-content select="[toolbar-actions-right]"></ng-content>`
 })

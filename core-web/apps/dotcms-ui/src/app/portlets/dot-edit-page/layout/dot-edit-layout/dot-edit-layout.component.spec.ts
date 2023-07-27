@@ -33,7 +33,7 @@ import { DEBOUNCE_TIME, DotEditLayoutComponent } from './dot-edit-layout.compone
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
-    selector: 'dotcms-template-builder',
+    selector: 'dotcms-template-builder-lib',
     template: ''
 })
 export class MockTemplateBuilderComponent {

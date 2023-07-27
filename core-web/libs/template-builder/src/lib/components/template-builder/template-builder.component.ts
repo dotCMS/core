@@ -315,6 +315,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      * @param {DotContainer} container
      */
     addContainer(box: DotGridStackWidget, rowId: numberOrString, container: DotContainer) {
+        console.log('addContainer');
         this.store.addContainer({
             affectedColumn: { ...box, parentId: rowId as string },
             container
