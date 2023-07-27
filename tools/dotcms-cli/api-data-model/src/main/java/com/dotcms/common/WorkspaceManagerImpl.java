@@ -13,6 +13,8 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import org.jboss.logging.Logger;
 @DefaultBean
 @ApplicationScoped
 public class WorkspaceManagerImpl implements WorkspaceManager {
@@ -20,6 +22,9 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     public static final String DOT_WORKSPACE_YML = ".dot-workspace.yml";
 
     private static final ObjectMapper mapper = new YAMLMapperSupplier().get();
+
+    @Inject
+    Logger logger;
 
     Workspace persist(final Workspace workspace) throws IOException {
         final Path files = workspace.files();
@@ -65,15 +70,20 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     }
 
     Optional<Path> findProjectRoot(Path currentPath) {
+
         if (Files.exists(currentPath.resolve(DOT_WORKSPACE_YML))) {
+            logger.debug("Found workspace at: " + currentPath.toAbsolutePath());
             return Optional.of(currentPath);
         } else {
             Path parent;
-            while ((parent = currentPath.getParent()) != null) {
+            Path workingPath = currentPath.toAbsolutePath();
+            logger.debug("looking up workspace, current path is : " + workingPath + " and parent is " + workingPath.getParent());
+            while ((parent = workingPath.getParent()) != null) {
                 if (Files.exists(parent.resolve(DOT_WORKSPACE_YML))) {
+                    logger.debug("Found workspace at: " + currentPath.toAbsolutePath());
                     return Optional.of(parent);
                 }
-                currentPath = parent;
+                workingPath = parent;
             }
         }
         return Optional.empty();
@@ -83,8 +93,10 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     public Workspace getOrCreate(Path currentPath) throws IOException {
         final Optional<Workspace> workspace = findWorkspace(currentPath);
         if (workspace.isPresent()) {
-            //calling persist to make sure all the directories are created
-            return persist(workspace.get());
+            //calling persist to make sure all the directories were not removed
+            return persist(
+                 workspace.get()
+            );
         } else {
             //No workspace found, create one
             return persist(

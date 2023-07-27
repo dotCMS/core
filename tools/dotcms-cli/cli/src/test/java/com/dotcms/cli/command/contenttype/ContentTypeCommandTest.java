@@ -227,7 +227,7 @@ public class ContentTypeCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final String contentTypeVarName = "Blog";
+            final String contentTypeVarName = "Image";
             for (int i=0; i<= 5; i++) {
                 int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
                 contentTypeVarName, "--workspace", workspace.root().toString());

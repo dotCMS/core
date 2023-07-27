@@ -60,7 +60,7 @@ public class PullBase {
 
             // Make sure we have a valid destination
             var rootPath = checkBaseStructure(destination);
-
+            System.out.println("rootPath: " + rootPath);
             // Preparing the languages for the tree
             var treeLanguages = prepareLanguages(treeNodeInfo);
 
@@ -99,7 +99,7 @@ public class PullBase {
      */
     @ActivateRequestContext
     protected void processTreeByStatus(boolean isLive, List<String> sortedLanguages, TreeNode rootNode,
-                                       final String destination, final boolean overwrite,
+                                       final Path destination, final boolean overwrite,
                                        final boolean generateEmptyFolders, final ConsoleProgressBar progressBar) {
 
         if (sortedLanguages.isEmpty()) {
@@ -111,7 +111,7 @@ public class PullBase {
             // Filter the tree by status and language
             TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, lang, generateEmptyFolders);
 
-            var rootPath = Paths.get(destination, FilesUtils.StatusToString(isLive), lang, rootNode.folder().host());
+            var rootPath = Paths.get(destination.toString(), FilesUtils.StatusToString(isLive), lang, rootNode.folder().host());
 
             // ---
             var forkJoinPool = ForkJoinPool.commonPool();
@@ -119,7 +119,7 @@ public class PullBase {
                     logger,
                     downloader,
                     filteredRoot,
-                    rootPath.toString(),
+                    rootPath,
                     overwrite,
                     generateEmptyFolders,
                     lang,
@@ -136,11 +136,10 @@ public class PullBase {
      * @return the root path for storing the files
      * @throws IOException if an I/O error occurs while creating directories
      */
-    protected String checkBaseStructure(final String destination) throws IOException {
-
+    protected Path checkBaseStructure(final String destination) throws IOException {
         final Path path = Paths.get(destination);
         final Workspace workspace = workspaceManager.getOrCreate(path);
-        return workspace.files().toString();
+        return workspace.files();
     }
 
     /**
