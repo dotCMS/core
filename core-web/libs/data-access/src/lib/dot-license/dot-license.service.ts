@@ -1,8 +1,8 @@
-import { Observable, Subject, BehaviorSubject } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { pluck, map, take } from 'rxjs/operators';
+import { pluck, map, take, tap } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
@@ -80,6 +80,8 @@ export class DotLicenseService {
     });
     private licenseURL: string;
 
+    private license?: DotLicense;
+
     constructor(private coreWebService: CoreWebService) {
         this.licenseURL = 'v1/appconfiguration';
     }
@@ -124,10 +126,27 @@ export class DotLicenseService {
     }
 
     private getLicense(): Observable<DotLicense> {
+        if (this.license) return of(this.license);
+
         return this.coreWebService
             .requestView({
                 url: this.licenseURL
             })
-            .pipe(pluck('entity', 'config', 'license'));
+            .pipe(
+                pluck('entity', 'config', 'license'),
+                tap((license) => {
+                    this.setLicense(license);
+                })
+            );
+    }
+
+    /**
+     * Set cached license
+     *
+     * @param {DotLicense} license
+     * @memberof DotLicenseService
+     */
+    public setLicense(license: DotLicense): void {
+        this.license = { ...license };
     }
 }

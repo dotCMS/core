@@ -135,6 +135,21 @@ describe('DotLicenseService', () => {
         });
     });
 
+    it('should not make any request if license is setted', () => {
+        dotLicenseService.setLicense({
+            displayServerId: 'test',
+            isCommunity: false,
+            level: 300,
+            levelName: 'test level'
+        });
+
+        dotLicenseService.isEnterprise().subscribe((result) => {
+            expect(result).toBe(true);
+        });
+
+        httpMock.expectNone('v1/appconfiguration');
+    });
+
     afterEach(() => {
         httpMock.verify();
     });

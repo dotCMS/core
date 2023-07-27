@@ -9,7 +9,7 @@ import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     CoreWebService,
     CoreWebServiceMock,
@@ -27,6 +27,7 @@ describe('AppComponent', () => {
     let dotCmsConfigService: DotcmsConfigService;
     let dotUiColorsService: DotUiColorsService;
     let dotMessageService: DotMessageService;
+    let dotLicenseService: DotLicenseService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -38,7 +39,8 @@ describe('AppComponent', () => {
                 DotNavLogoService,
                 DotcmsConfigService,
                 LoggerService,
-                StringUtils
+                StringUtils,
+                DotLicenseService
             ]
         });
 
@@ -48,6 +50,7 @@ describe('AppComponent', () => {
         dotCmsConfigService = de.injector.get(DotcmsConfigService);
         dotUiColorsService = de.injector.get(DotUiColorsService);
         dotMessageService = de.injector.get(DotMessageService);
+        dotLicenseService = de.injector.get(DotLicenseService);
 
         spyOn<any>(dotCmsConfigService, 'getConfig').and.returnValue(
             of({
@@ -58,11 +61,18 @@ describe('AppComponent', () => {
                 },
                 releaseInfo: {
                     buildDate: 'Jan 1, 2022'
+                },
+                license: {
+                    displayServerId: 'test',
+                    isCommunity: false,
+                    level: 200,
+                    levelName: 'test level'
                 }
             })
         );
         spyOn(dotUiColorsService, 'setColors');
         spyOn(dotMessageService, 'init');
+        spyOn(dotLicenseService, 'setLicense');
     });
 
     it('should init message service', () => {
@@ -81,6 +91,15 @@ describe('AppComponent', () => {
             primary: '#123',
             secondary: '#456',
             background: '#789'
+        });
+    });
+    it('should set license', () => {
+        fixture.detectChanges();
+        expect(dotLicenseService.setLicense).toHaveBeenCalledWith({
+            displayServerId: 'test',
+            isCommunity: false,
+            level: 200,
+            levelName: 'test level'
         });
     });
 });
