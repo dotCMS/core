@@ -183,35 +183,59 @@ export const ConditionDefaultByTypeOfGoal: Partial<Record<GOAL_TYPES, GOAL_PARAM
     [GOAL_TYPES.CLICK_ON_ELEMENT]: GOAL_PARAMETERS.URL
 };
 
-//Todo: Update the missing one with the new colors
+const dotCMSThemeColors = {
+    black: '#14151a',
+    white: '#FFFFFF',
+    accentTurquoise: 'rgb(66,194,240)',
+    accentTurquoiseOp40: 'rgba(66,194,240,0.40)',
+
+    accentFuchsia: 'rgb(195,54,229)',
+    accentFuchsiaOp40: 'rgba(195,54,229,0.40)',
+
+    accentYellow: 'rgb(255, 180, 68)',
+    accentYellowOp40: 'rgba(255, 180, 68,0.40)',
+
+    colorPaletteBlackOp20: getComputedStyle(document.body).getPropertyValue(
+        '--color-palette-black-op-20'
+    ),
+    colorPaletteBlackOp30: getComputedStyle(document.body).getPropertyValue(
+        '--color-palette-black-op-30'
+    ),
+    colorPaletteBlackOp50: getComputedStyle(document.body).getPropertyValue(
+        '--color-palette-black-op-50'
+    ),
+    colorPaletteBlackOp70: getComputedStyle(document.body).getPropertyValue(
+        '--color-palette-black-op-70'
+    )
+};
+
 export const ChartColors = {
-    // Variants colors
     original: {
-        line: 'rgb(66,194,240)',
-        fill: 'rgba(66,194,240,0.40)'
+        line: dotCMSThemeColors.accentTurquoise,
+        fill: dotCMSThemeColors.accentTurquoiseOp40
     },
     variant_1: {
-        line: 'rgb(195,54,229)',
-        fill: 'rgba(195,54,229,0.40)'
+        line: dotCMSThemeColors.accentFuchsia,
+        fill: dotCMSThemeColors.accentFuchsiaOp40
     },
     variant_2: {
-        line: 'rgb(255, 180, 68)',
-        fill: 'rgba(255, 180, 68,0.40)'
+        line: dotCMSThemeColors.accentYellow,
+        fill: dotCMSThemeColors.accentYellowOp40
     },
     // Chart colors
     xAxis: {
-        border: getComputedStyle(document.body).getPropertyValue('--color-palette-black-op-20'),
-        gridLine: getComputedStyle(document.body).getPropertyValue('--color-palette-black-op-30')
+        border: dotCMSThemeColors.colorPaletteBlackOp20,
+        gridLine: dotCMSThemeColors.colorPaletteBlackOp30
     },
     yAxis: {
-        border: getComputedStyle(document.body).getPropertyValue('--color-palette-black-op-20'),
-        gridLine: getComputedStyle(document.body).getPropertyValue('--color-palette-black-op-50')
+        border: dotCMSThemeColors.colorPaletteBlackOp20,
+        gridLine: dotCMSThemeColors.colorPaletteBlackOp50
     },
     ticks: {
-        color: getComputedStyle(document.body).getPropertyValue('--color-palette-black-op-70')
+        color: dotCMSThemeColors.colorPaletteBlackOp70
     },
-    white: '#FFFFFF',
-    black: '#14151a'
+    white: dotCMSThemeColors.white,
+    black: dotCMSThemeColors.black
 };
 
 export type LineChartColorsProperties = Pick<

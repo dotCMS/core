@@ -1,5 +1,5 @@
 import { ChartData } from 'chart.js';
-import * as jStat from 'jstat';
+import { jStat } from 'jstat';
 
 import { formatPercent } from '@angular/common';
 

@@ -37,7 +37,7 @@ export class DotExperimentsReportsChartComponent implements OnChanges {
     @Input()
     isLinearAxis = false;
 
-    options;
+    options: unknown;
     protected chartId = `chart-` + getRandomUUID();
     protected readonly plugins = [htmlLegendPlugin];
 
