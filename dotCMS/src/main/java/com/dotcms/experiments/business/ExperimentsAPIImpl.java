@@ -228,9 +228,28 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
             final Builder builder) {
 
-        if (goals.primary().getMetric().type() == MetricType.BOUNCE_RATE &&
+        if (goals.primary().getMetric().type() == MetricType.EXIT_RATE &&
                 !hasCondition(goals, "url")) {
             addUrlCondition(page, builder, goals);
+        } else if (goals.primary().getMetric().type() == MetricType.URL_PARAMETER &&
+                !hasCondition(goals, "visitBefore")) {
+            addVisitBeforeCondition(page, builder, goals);
+        }
+    }
+
+    private void addVisitBeforeCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
+
+        try {
+            final com.dotcms.analytics.metrics.Condition visitBefore = com.dotcms.analytics.metrics.Condition.builder()
+                    .parameter("visitBefore")
+                    .operator(Operator.CONTAINS)
+                    .value(page.getURI())
+                    .build();
+
+            final Goals newGoal = createNewGoals(goals, visitBefore);
+            builder.goals(newGoal);
+        } catch (DotDataException e) {
+            throw new DotRuntimeException(e);
         }
     }
 

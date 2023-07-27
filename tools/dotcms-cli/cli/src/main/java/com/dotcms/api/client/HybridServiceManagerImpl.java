@@ -46,7 +46,7 @@ public class HybridServiceManagerImpl implements ServiceManager {
                 ServiceBean strippedCredentialsBean = ServiceBean.builder().from(service).credentials(strippedTokenBean).build();
                 defaultManager.persist(strippedCredentialsBean);
             } catch (KeytarException e) {
-                logger.warn(String.format("Unable to persist credentials for service [%s] using the Key-Chain. access credentials will be stored as plain text.", service.name()), e);
+                logger.error(String.format("Unable to persist credentials for service [%s] using the Key-Chain. access credentials will be stored as plain text.", service.name()), e);
             }
             return this;
         }

@@ -10,6 +10,8 @@ import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserAPIImpl;
+import com.dotcms.business.SystemAPI;
+import com.dotcms.business.SystemAPIImpl;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -1129,6 +1131,14 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
+	 * Returns the System Facade API
+	 * @return SystemAPI
+	 */
+	public static SystemAPI getSystemAPI() {
+		return (SystemAPI) getInstance(APIIndex.SYSTEM_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1280,7 +1290,9 @@ enum APIIndex
 	EXPERIMENTS_API,
 	BAYESIAN_API,
 	ANALYTICS_API,
-	CONTENT_TYPE_DESTROY_API;
+	CONTENT_TYPE_DESTROY_API,
+
+	SYSTEM_API;
 
 	Object create() {
 		switch(this) {
@@ -1370,6 +1382,7 @@ enum APIIndex
 			case BAYESIAN_API: return new BayesianAPIImpl();
 			case ANALYTICS_API: return new AnalyticsAPIImpl();
 			case CONTENT_TYPE_DESTROY_API: return new ContentTypeDestroyAPIImpl();
+			case SYSTEM_API: return new SystemAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

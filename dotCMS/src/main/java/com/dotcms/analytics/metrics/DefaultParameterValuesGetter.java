@@ -2,9 +2,9 @@ package com.dotcms.analytics.metrics;
 
 import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
 import com.dotcms.experiments.business.result.Event;
-import com.google.common.collect.ImmutableSet;
 import java.util.Collection;
-import java.util.Set;
+import com.google.common.collect.ImmutableSet;
+
 
 /**
  * Take the value from the {@link Event}'s attribute that has the same name that the {@link Parameter#name()}
