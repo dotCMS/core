@@ -55,6 +55,10 @@
     line-height: $line-height;
 }
 
+.page-tools-external-link {
+    color: $color-palette-primary-500;
+}
+
 ::ng-deep {
     .page-tools-dialog {
         &.p-dialog-right {
