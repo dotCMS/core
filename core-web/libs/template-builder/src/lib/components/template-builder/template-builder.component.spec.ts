@@ -21,7 +21,12 @@ import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
-import { CONTAINER_MAP_MOCK, DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
+import {
+    CONTAINER_MAP_MOCK,
+    DOT_MESSAGE_SERVICE_TB_MOCK,
+    FULL_DATA_MOCK,
+    ROWS_MOCK
+} from './utils/mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -125,7 +130,7 @@ describe('TemplateBuilderComponent', () => {
         let rowId: string;
         let elementToDelete: GridItemHTMLElement;
 
-        store.state$.pipe(take(1)).subscribe(({ items }) => {
+        store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
             widgetToDelete = items[0].subGridOpts.children[0];
             rowId = items[0].id as string;
             elementToDelete = document.createElement('div');
@@ -143,7 +148,7 @@ describe('TemplateBuilderComponent', () => {
         let widgetToAddContainer: DotGridStackWidget;
         let rowId: string;
 
-        store.state$.pipe(take(1)).subscribe(({ items }) => {
+        store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
             widgetToAddContainer = items[0].subGridOpts.children[0];
             rowId = items[0].id as string;
 
@@ -160,7 +165,7 @@ describe('TemplateBuilderComponent', () => {
         let widgetToDeleteContainer: DotGridStackWidget;
         let rowId: string;
 
-        store.state$.pipe(take(1)).subscribe(({ items }) => {
+        store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
             widgetToDeleteContainer = items[0].subGridOpts.children[0];
             rowId = items[0].id as string;
 
@@ -195,6 +200,19 @@ describe('TemplateBuilderComponent', () => {
         expect(spectator.query(byTestId('template-layout-properties-panel'))).toBeTruthy();
     });
 
+    it('should have a row with class "template-builder-row--wont-fit" when a box wont fit in the row and the Add Box button is dragging', () => {
+        spectator.component.addBoxIsDragging = true;
+
+        store.setState((state) => ({
+            ...state,
+            rows: ROWS_MOCK
+        }));
+
+        spectator.detectChanges();
+
+        expect(spectator.queryAll('.template-builder-row--wont-fit').length).toBe(1);
+    });
+
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
@@ -202,7 +220,7 @@ describe('TemplateBuilderComponent', () => {
             spectator.detectChanges();
 
             store.init({
-                items: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
+                rows: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
                 layoutProperties: {
                     header: true,
                     footer: true,

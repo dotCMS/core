@@ -236,6 +236,7 @@ import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByCo
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTables;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentlet;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentField;
+import com.dotmarketing.startup.runonce.Task230707CreateSystemTable;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSize;
 import com.google.common.collect.ImmutableList;
 
@@ -547,6 +548,7 @@ public class TaskLocatorUtil {
 		.add(Task230523CreateVariantFieldInContentlet.class)
 		.add(Task230630CreateRunningIdsExperimentField.class)
 		.add(Task230701AddHashIndicesToWorkflowTables.class)
+		.add(Task230707CreateSystemTable.class)
 		.add(Task230713IncreaseDisabledWysiwygColumnSize.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

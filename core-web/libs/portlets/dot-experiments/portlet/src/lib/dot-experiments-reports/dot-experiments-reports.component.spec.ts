@@ -13,6 +13,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup } from 'primeng/confirmpopup';
+import { TabView } from 'primeng/tabview';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -29,6 +30,7 @@ import {
 } from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
+import { DotExperimentsReportDailyDetailsComponent } from './components/dot-experiments-report-daily-details/dot-experiments-report-daily-details.component';
 import { DotExperimentsReportsChartComponent } from './components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsReportsSkeletonComponent } from './components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
 import { DotExperimentsReportsComponent } from './dot-experiments-reports.component';
@@ -158,7 +160,10 @@ describe('DotExperimentsReportsComponent', () => {
     it('should show DotExperimentsReportsChartComponent when no loading', () => {
         spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
         spectator.detectChanges();
+
+        expect(spectator.query(TabView)).toExist();
         expect(spectator.query(MockDotExperimentsReportsChartComponent)).toExist();
+        expect(spectator.query(DotExperimentsReportDailyDetailsComponent)).toExist();
     });
 
     it('should show the SummaryComponent', () => {
