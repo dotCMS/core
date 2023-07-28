@@ -26,7 +26,7 @@ import {
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, take, map, takeUntil } from 'rxjs/operators';
+import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -123,7 +123,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     addBoxIsDragging = false;
 
     constructor(
-        private store: DotTemplateBuilderStore,
+        public store: DotTemplateBuilderStore,
         private dialogService: DialogService,
         private dotMessage: DotMessageService,
         private cd: ChangeDetectorRef
@@ -133,6 +133,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         combineLatest([this.rows$, this.store.layoutProperties$])
             .pipe(
                 filter(([items, layoutProperties]) => !!items && !!layoutProperties),
+                skip(1),
                 takeUntil(this.destroy$)
             )
             .subscribe(([rows, layoutProperties]) => {
@@ -304,8 +305,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         // So we need to delete the node from the GridStack Model
         this.grid.engine.nodes.find((node) => node.id === rowID).subGrid?.removeWidget(element);
 
-        console.log('are we being called?');
-
         this.store.removeColumn({ ...column, parentId: rowID as string });
     }
 
@@ -317,7 +316,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      * @param {DotContainer} container
      */
     addContainer(box: DotGridStackWidget, rowId: numberOrString, container: DotContainer) {
-        console.log('addContainer');
         this.store.addContainer({
             affectedColumn: { ...box, parentId: rowId as string },
             container

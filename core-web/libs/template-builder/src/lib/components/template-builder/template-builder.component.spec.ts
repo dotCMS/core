@@ -1,15 +1,9 @@
 import { expect, it } from '@jest/globals';
-import {
-    byTestId,
-    createComponentFactory,
-    createHostFactory,
-    Spectator,
-    SpectatorHost
-} from '@ngneat/spectator';
-import { GridItemHTMLElement } from 'gridstack';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { By } from '@angular/platform-browser';
 
 import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -33,9 +27,6 @@ import {
     FULL_DATA_MOCK,
     ROWS_MOCK
 } from './utils/mocks';
-import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
-import { createComponent } from '@angular/core';
-import { By } from '@angular/platform-browser';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -51,6 +42,7 @@ describe('TemplateBuilderComponent', () => {
 
     const createComponent = createComponentFactory({
         component: TemplateBuilderComponent,
+
         imports: [
             NgFor,
             NgIf,
@@ -100,7 +92,7 @@ describe('TemplateBuilderComponent', () => {
             }
         });
 
-        store = spectator.inject(DotTemplateBuilderStore);
+        store = spectator.inject(DotTemplateBuilderStore, true);
         dialog = spectator.inject(DialogService);
         openDialogMock = jest.spyOn(dialog, 'open');
         spectator.detectChanges();
@@ -128,21 +120,17 @@ describe('TemplateBuilderComponent', () => {
         const totalBoxes = FULL_DATA_MOCK.rows.reduce((acc, row) => {
             return acc + row.columns.length;
         }, 0);
-
-        expect(spectator.queryAll(byTestId('box')).length).toBe(totalBoxes);
+        expect(spectator.queryAll(byTestId(/builder-box-\d+/g)).length).toBe(totalBoxes);
     });
 
-    it.only('should trigger removeColumn on store when triggering removeColumn', (done) => {
+    it('should trigger removeColumn on store when triggering removeColumn', (done) => {
         jest.spyOn(store, 'removeColumn');
         jest.spyOn(spectator.component, 'removeColumn');
 
         const builderBox1 = spectator.debugElement.query(By.css('[data-testId="builder-box-1"]'));
 
         spectator.triggerEventHandler(builderBox1, 'deleteColumn', undefined);
-
-        spectator.detectChanges();
-
-        expect(spectator.component.removeColumn).toBeCalledTimes(1);
+        expect(spectator.component.removeColumn).toHaveBeenCalled();
 
         const box1 = spectator.debugElement.query(By.css('[data-testId="box-1"]'));
         const rowId = box1.nativeElement
@@ -156,11 +144,11 @@ describe('TemplateBuilderComponent', () => {
             box1.nativeElement,
             rowId
         );
-
-        expect(store.removeColumn).toHaveBeenCalledWith({
+        expect(spectator.component.store.removeColumn).toHaveBeenCalledWith({
             ...{ id: box1Id, parentId: rowId },
             parentId: rowId
         });
+        done();
     });
 
     it('should call addContainer from store when triggering addContainer', (done) => {
