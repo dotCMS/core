@@ -42,11 +42,9 @@ export function generateDotFavoritePageUrl(params: {
  * @returns
  */
 export function getQueryParameterSeparator(url: string): string {
-    if (url.indexOf('?') === -1) {
-        return '?';
-    }
+    const regex = /[?&]/;
 
-    return '&';
+    return url.match(regex) ? '&' : '?';
 }
 
 /**
@@ -57,16 +55,14 @@ export function getQueryParameterSeparator(url: string): string {
 export function getRunnableLink(url: string, currentPageUrlParams: DotPageToolUrlParams): string {
     const { currentUrl, requestHostName, siteId, languageId } = currentPageUrlParams;
 
-    url = url.replace('{requestHostName}', requestHostName ?? '');
-    url = url.replace('{currentUrl}', currentUrl ?? '');
-    url = url.replace(
-        '{siteId}',
-        siteId ? `${getQueryParameterSeparator(url)}host_id=${siteId}` : ''
-    );
-    url = url.replace(
-        '{languageId}',
-        languageId ? `${getQueryParameterSeparator(url)}language_id=${String(languageId)}` : ''
-    );
+    url = url
+        .replace('{requestHostName}', requestHostName ?? '')
+        .replace('{currentUrl}', currentUrl ?? '')
+        .replace('{siteId}', siteId ? `${getQueryParameterSeparator(url)}host_id=${siteId}` : '')
+        .replace(
+            '{languageId}',
+            languageId ? `${getQueryParameterSeparator(url)}language_id=${String(languageId)}` : ''
+        );
 
     return url;
 }
