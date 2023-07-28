@@ -2,7 +2,7 @@ name: CICD Reports
 run-name: Reports - ${{ github.event.workflow_run.name }}
 on:
   workflow_run:
-    workflows: ['Maven CICD Pipeline']
+    workflows: ['Maven CICD Pipeline'] 
     types: [completed]
 
 permissions:
@@ -20,6 +20,7 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
       - name: Download Worlfkow Data
+        id: data-download
         uses: dawidd6/action-download-artifact@v2
         with:
           name: 'workflow-data'
@@ -27,43 +28,105 @@ jobs:
           run_id: ${{ github.event.workflow_run.id }}
           if_no_artifact_found: warn
 
-      - name: Get Workflow Data
-        id: workflow-data
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [[ ! -e "workflow-data.json" ]]
-          then
-            echo "::warn title=Artifact 'workflow-data' missing::Expected artifact 'workflow-data' does not exist for pull_request event."
-          else
-            echo "json=$(jq -c '.' workflow-data.json)" >> $GITHUB_OUTPUT  # need to shrink to single line
-            echo "has-json=true" >> $GITHUB_OUTPUT
-          fi
-
       - uses: dorny/test-reporter@v1
-        if: steps.workflow-data.outputs.has-json == 'true'
+        id: test-reporter
+        if: steps.data-download.outputs.found_artifact == 'true'
+        continue-on-error: true
         with:
           artifact: /^build-reports-test-(.*)/        # artifact name
           name: 'MVN Test Report $1'               # Name of the check run which will be created
           path: '**/target/**/TEST-*.xml'                     # Path to test results (inside artifact .zip)
           reporter: java-junit            # Format of test results
           fail-on-error: false
-
-
+          
+      - name: Get Workflow Data
+        id: workflow-data
+        run: |
+          if [[ ! -e "workflow-data.json" ]]
+          then
+            echo "::warn title=Artifact 'workflow-data' missing::Expected artifact 'workflow-data' does not exist for pull_request event."
+          else
+            json=$(jq -c '.' workflow-data.json)
+            status=$(echo $json | jq -r '.aggregate_status // "null"')
+            pr_number=$(echo $json | jq -r '.pr_number // "null"')
+            pr_author=$(echo $json | jq -r '.pr_author // "null"')
+            run_id=$(echo $json | jq -r '.run_id // "null"')
+            first_fail_step=$(echo $json | jq -r '.first_fail_step // "None"')
+            first_fail_module=$(echo $json | jq -r '.first_fail_module // "None"')
+            first_fail_error=$(echo $json | jq -r '.first_fail_error // "None"')
+            pr_title=$(echo $json | jq -r '.pr_title // "null"')
+            branch=$(echo $json | jq -r '.branch // "null"')
+            head_sha=$(echo $json | jq -r '.head_sha // "null"')
+            head_author=$(echo $json | jq -r '.head_author // "null"')
+            head_name=$(echo $json | jq -r '.head_name // "null"')
+            source_repository=$(echo $json | jq -r '.source_repository // "null"')
+            action_run_url="https://github.com/$source_repository/actions/runs/$run_id"
+            pr_number_url="https://github.com/$source_repository/pull/$pr_number"
+            branch_url="https://github.com/$source_repository/tree/$branch"
+            commit_id_url="https://github.com/$source_repository/pull/$pr_number/commits/$head_sha"
+            test_results_url="https://github.com/$source_repository/pull/${pr_number}/checks"
+            if [[ -z "${{ steps.test-reporter.outputs.conclusion }}" ]]; then
+              test_conclusion="Not Run"
+              test_passed=0
+              test_failed=0
+              test_skipped=9
+              test_elapsed=0
+            else
+              test_conclusion=${{ steps.test-reporter.outputs.conclusion }}
+              test_passed=${{ steps.test-reporter.outputs.passed }}
+              test_failed=${{ steps.test-reporter.outputs.failed }}
+              test_skipped=${{ steps.test-reporter.outputs.skipped }}
+              test_elapsed=${{ steps.test-reporter.outputs.time }}
+            fi
+            
+            
+            if [[ "$status" == "SUCCESS" ]]; then
+              echo "status_icon=✅" >> $GITHUB_OUTPUT
+            else
+              echo "status_icon=❌" >> $GITHUB_OUTPUT
+            fi
+            echo "json=$json" >> $GITHUB_OUTPUT
+            echo "has-json=true" >> $GITHUB_OUTPUT
+            echo "status=$status" >> $GITHUB_OUTPUT
+            echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
+            echo "pr_author=$pr_author" >> $GITHUB_OUTPUT
+            echo "run_id=$run_id" >> $GITHUB_OUTPUT
+            echo "first_fail_step=$first_fail_step" >> $GITHUB_OUTPUT
+            echo "first_fail_module=$first_fail_module" >> $GITHUB_OUTPUT
+            echo "first_fail_error=$first_fail_error" >> $GITHUB_OUTPUT
+            echo "pr_title=$pr_title" >> $GITHUB_OUTPUT
+            echo "branch=$branch" >> $GITHUB_OUTPUT
+            echo "head_sha=$head_sha" >> $GITHUB_OUTPUT
+            echo "head_author=$head_author" >> $GITHUB_OUTPUT
+            echo "head_name=$head_name" >> $GITHUB_OUTPUT
+            echo "source_repository=$source_repository" >> $GITHUB_OUTPUT
+            echo "action_run_url=$action_run_url" >> $GITHUB_OUTPUT
+            echo "pr_number_url=$pr_number_url" >> $GITHUB_OUTPUT
+            echo "branch_url=$branch_url" >> $GITHUB_OUTPUT
+            echo "commit_id_url=$commit_id_url" >> $GITHUB_OUTPUT
+            echo "test_results_url=$test_results_url" >> $GITHUB_OUTPUT
+            echo "test_conclusion=$test_conclusion" >> $GITHUB_OUTPUT
+            echo "test_passed=$test_passed" >> $GITHUB_OUTPUT
+            echo "test_failed=$test_failed" >> $GITHUB_OUTPUT
+            echo "test_skipped=$test_skipped" >> $GITHUB_OUTPUT
+            echo "test_elapsed=$test_elapsed" >> $GITHUB_OUTPUT
+          fi
+          
       - name: Post to a Slack channel
         if: steps.workflow-data.outputs.has-json == 'true'
         id: slack
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          # For posting a rich message using Block Kit
+          channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
           payload: |
             {
+              "text": "Github Action ${{ steps.workflow-data.outputs.status }} for run PR #${{ steps.workflow-data.outputs.pr_number }}",
               "blocks": [
                 {
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status == 'SUCCESS' ? '✅' : '❌' }} Github Actions Build Notification",
+                    "text": "${{ steps.workflow-data.outputs.status_icon }} Github Action ${{ steps.workflow-data.outputs.status }} for PR #${{ steps.workflow-data.outputs.pr_number }}",
                     "emoji": true
                   }
                 },
@@ -71,72 +134,62 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "The build for PR #${{ fromJSON(steps.workflow-data.outputs.json).pr_number }}  by ${{ fromJSON(steps.workflow-data.outputs.json).pr_author }} is *${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status }} ${{ fromJSON(steps.workflow-data.outputs.json).aggregate_status == 'SUCCESS' ? '✅' : '❌' }}*."
+                    "text": "*Action Run ID:* <${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}> \n*Failure Step:* ${{ steps.workflow-data.outputs.first_fail_step }} \n*Failure Module:* ${{ steps.workflow-data.outputs.first_fail_module }}"
                   }
                 },
                 {
                   "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*🔗 Action Run:*\n<https://github.com/${{ fromJSON(steps.workflow-data.outputs.json).source_repository }}/actions/runs/${{ fromJSON(steps.workflow-data.outputs.json).run_id }} | ${{ fromJSON(steps.workflow-data.outputs.json).run_id }}>"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*👣 Failure Step:*\n${{ fromJSON(steps.workflow-data.outputs.json).first_fail_step || 'None'}}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*👣 Failure Module:*\n${{ fromJSON(steps.workflow-data.outputs.json).first_fail_module || 'None'}}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*💬 Failure Message:*\n${{ fromJSON(steps.workflow-data.outputs.json).first_fail_error || 'None}}"
-                    }
-                  ]
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*👤 PR Author:*\n${{ fromJSON(steps.workflow-data.outputs.json).pr_author }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*📝 PR Name:*\n${{ fromJSON(steps.workflow-data.outputs.json).pr_name }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*🔢 PR Number:*\n<https://github.com/${{ fromJSON(steps.workflow-data.outputs.json).source_repository }}/pull/${{ fromJSON(steps.workflow-data.outputs.json).pr_number }}|#${{ fromJSON(steps.workflow-data.outputs.json).pr_number }}>"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*🌿 Branch Name:*\n<https://github.com/${{ fromJSON(steps.workflow-data.outputs.json).source_repository }}/tree/${{ fromJSON(steps.workflow-data.outputs.json).branch }}|${{ fromJSON(steps.workflow-data.outputs.json).branch }}>"
-                    }
-                  ]
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*🔢 Commit ID:*\n<https://github.com/${{ fromJSON(steps.workflow-data.outputs.json).source_repository }}/pull/${{ fromJSON(steps.workflow-data.outputs.json).pr_number }}//commits/${{ fromJSON(steps.workflow-data.outputs.json).head_sha }}|#${{ fromJSON(steps.workflow-data.outputs.json).head_sha }}>"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*👤 Commit Author:*\n${{ fromJSON(steps.workflow-data.outputs.json).head_author }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*📝 Commit Name:*\n${{ fromJSON(steps.workflow-data.outputs.json).head_name }}"
-                    }
-                  ]
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Failure Message:* ${{ steps.workflow-data.outputs.first_fail_error }}"
+                  }
                 },
                 {
                   "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*PR Details:* \nAuthor: ${{ steps.workflow-data.outputs.pr_author }} \nName: <${{ steps.workflow-data.outputs.pr_number_url }} | ${{ steps.workflow-data.outputs.pr_title }}> \nNumber: #${{ steps.workflow-data.outputs.pr_number }} \nBranch: <${{ steps.workflow-data.outputs.branch_url }} | ${{ steps.workflow-data.outputs.branch }}>"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Commit Details:* \nID: <${{ steps.workflow-data.outputs.commit_id_url }} | #${{ steps.workflow-data.outputs.head_sha }}> \nAuthor: ${{ steps.workflow-data.outputs.head_author }} \nName: ${{ steps.workflow-data.outputs.head_name }}"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🧪 Test Results = ${{ steps.workflow-data.outputs.test_conclusion }}",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Passed:* ${{ steps.workflow-data.outputs.test_passed }} \n*Failed:* ${{ steps.workflow-data.outputs.test_failed }} \n*Skipped:* ${{ steps.workflow-data.outputs.test_skipped }} \n*Elapsed Time:* ${{ steps.workflow-data.outputs.test_elapsed }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🔍 <${{ steps.workflow-data.outputs.test_results_url }} | View Test Results>"
+                  }
                 }
               ]
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.CORE_SLACK_WEBHOOK }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
