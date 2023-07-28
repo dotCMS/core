@@ -103,8 +103,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jaxb-api', version:'2.2.7_4'
     compile group: 'com.dotcms.lib', name: 'dot.jaxb-core', version:'2.2.7_4'
     compile group: 'com.dotcms.lib', name: 'dot.jaxb-impl', version:'2.2.7_4'
-    compile group: 'com.dotcms.lib', name: 'dot.jaxws-api', version:'2.2.9_2'
-    compile group: 'com.dotcms.lib', name: 'dot.jaxws-rt', version:'2.2.8_2'
 
     compile group: 'com.dotcms.lib', name: 'dot.jazzy-core', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.jempbox', version:'1.6.0_2'
@@ -602,7 +600,6 @@ dependencies {
     compile 'com.jayway.jsonpath:json-path:2.4.0'
     compile 'com.sun.activation:javax.activation:1.2.0'
     compile 'jakarta.xml.bind:jakarta.xml.bind-api:2.3.3'
-    compile 'com.sun.xml.ws:jaxws-ri:2.3.2'
 
     //https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html
     providedCompile (group: 'com.oracle.jdbc', name: 'ojdbc8', version: '19.3') {

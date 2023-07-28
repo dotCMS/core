@@ -152,3 +152,4 @@ This maintenance release includes the following code fixes:
 126. https://github.com/dotCMS/core/issues/25258 : WYSIWYG not adding images when it's not default lang #25258
 127. https://github.com/dotCMS/core/issues/25224 : PP - Integrity Checker, fixing conflicts is setting up identifier columns as null #25224
 128. https://github.com/dotCMS/core/issues/25136 : Site Browser is not sorting items by default #25136
+129. https://github.com/dotCMS/core/issues/24843 : Remove jaxws libraries #24843
