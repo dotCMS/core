@@ -443,6 +443,8 @@ public interface HostAPI {
 	 */
 	public Optional<Host> resolveHostNameWithoutDefault(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException ;
 
+	Optional<Host> resolveSiteByServerName(final String serverName, final User user, final boolean fallbackToDefault) throws DotDataException, DotSecurityException;
+
     /**
      * Returns the list of Sites – with pagination capabilities – that match the specified search criteria. This method
      * allows users to specify three search parameters:

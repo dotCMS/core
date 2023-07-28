@@ -35,6 +35,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
 import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
@@ -50,8 +51,10 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -510,11 +513,7 @@ public class UserResource implements Serializable {
 	private void setImpersonatedUserSite(final HttpServletRequest req, final String userID) throws DotDataException, DotSecurityException {
 		final HttpSession session = req.getSession();
 		final User user = this.userAPI.loadUserById(userID);
-		final String currentSiteID = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-		if (UtilMethods.isNotSet(currentSiteID)) {
-			final String errorMsg = "ERROR!!! The CMS_SELECTED_HOST_ID attribute is not present in the current Session: " + session.getId();
-			Logger.error(this, errorMsg);
-		}
+		final String currentSiteID = this.getSelectedSiteId(req, session, user);
 		Host currentSite;
 		try {
 			currentSite = this.siteAPI.find(currentSiteID, user, false);
@@ -528,6 +527,30 @@ public class UserResource implements Serializable {
 			currentSite =  sites.get(0);
 		}
 		session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, currentSite.getIdentifier());
+	}
+
+	/**
+	 *
+	 * @param request
+	 * @param session
+	 * @param user
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@NotNull
+	private String getSelectedSiteId(final HttpServletRequest request, final HttpSession session, final User user) throws DotDataException, DotSecurityException {
+		String currentSiteID = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		if (UtilMethods.isNotSet(currentSiteID)) {
+			final String errorMsg = "ERROR!!! The CMS_SELECTED_HOST_ID attribute is not present in the current " +
+					"Session: " + session.getId() + " . Retrieve it again!";
+			Logger.error(this, errorMsg);
+			final Optional<Host> optSite = this.siteAPI.resolveSiteByServerName(request.getServerName(), user, false);
+			currentSiteID = optSite.map(Contentlet::getIdentifier).orElse(StringPool.BLANK);
+			session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, currentSiteID);
+			Logger.error(this, "Setting selected host id to: " + currentSiteID + " for session: " + session.getId());
+		}
+		return currentSiteID;
 	}
 
 	/**
