@@ -85,6 +85,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     @Output() fullyLoaded = new EventEmitter<void>();
 
+    @ViewChild('templateContainerRef')
+    templateContainerRef!: ElementRef<HTMLDivElement>;
+
     @ViewChildren('rowElement', {
         emitDistinctChangesOnly: true
     })
@@ -122,6 +125,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     grid!: GridStack;
     addBoxIsDragging = false;
+
+    get templateContaniner(): HTMLElement {
+        return this.templateContainerRef.nativeElement;
+    }
 
     constructor(
         private store: DotTemplateBuilderStore,

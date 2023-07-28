@@ -19,38 +19,39 @@ export class DotItemDragScrollDirective implements OnInit {
     private isDragging = false;
     private scrollInterval;
     private scrollDirection: DIRECTION = DIRECTION.NONE;
+    private container: HTMLElement;
 
     @HostListener('window:mousemove', ['$event'])
     onMouseMove() {
         if (this.isDragging) {
-            const windowHeight = window.innerHeight;
+            const containerRect = this.container.getBoundingClientRect();
+            const elementRect = this.currentElement.getBoundingClientRect();
             const scrollSpeed = 10;
-            const scrollThreshold = 50;
+            const scrollThreshold = 80;
 
-            const { top, bottom } = this.currentElement.getBoundingClientRect();
+            const scrollUp = elementRect.top - containerRect.top - scrollThreshold < 0;
+            const scrollDown = elementRect.bottom - containerRect.bottom + scrollThreshold > 0;
 
-            const scrollUp = top - scrollThreshold < 0;
-            const scrollDown = bottom + scrollThreshold > windowHeight;
+            if (scrollUp || scrollDown) {
+                const direction = scrollUp ? DIRECTION.UP : DIRECTION.DOWN;
 
-            if (scrollUp) {
                 // Prevents multiple intervals from being created
-                if (this.scrollDirection === DIRECTION.UP) {
+                if (this.scrollDirection === direction) {
                     return;
                 }
 
-                this.scrollDirection = DIRECTION.UP;
-                this.scrollInterval = setInterval(() => window.scrollBy(0, -scrollSpeed), 10);
-            } else if (scrollDown) {
-                // Prevents multiple intervals from being created
-                if (this.scrollDirection === DIRECTION.DOWN) {
-                    return;
-                }
+                this.scrollDirection = direction;
+                const scrollStep = () => {
+                    const distance = direction === DIRECTION.UP ? -scrollSpeed : scrollSpeed;
+                    this.container.scrollBy(0, distance);
+                    if (this.scrollDirection === direction) {
+                        requestAnimationFrame(scrollStep);
+                    }
+                };
 
-                this.scrollDirection = DIRECTION.DOWN;
-                this.scrollInterval = setInterval(() => window.scrollBy(0, scrollSpeed), 10);
+                requestAnimationFrame(scrollStep);
             } else {
                 this.scrollDirection = DIRECTION.NONE;
-                clearInterval(this.scrollInterval);
             }
         }
     }
@@ -68,6 +69,7 @@ export class DotItemDragScrollDirective implements OnInit {
 
     ngOnInit() {
         this.parentComponent?.fullyLoaded.pipe(take(1)).subscribe(() => {
+            this.container = this.parentComponent.templateContaniner;
             this.listenDragEvents();
         });
     }
