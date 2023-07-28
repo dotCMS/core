@@ -139,7 +139,7 @@ dependencies {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
     implementation (group: 'com.graphql-java', name: 'java-dataloader', version: '2.1.1'){}
-    implementation (group: 'com.h2database', name: 'h2', version: '1.3.176'){}
+    implementation (group: 'com.h2database', name: 'h2', version: '2.1.214'){}
     implementation (group: 'com.hazelcast', name: 'hazelcast-all', version: '3.12.13'){}
     implementation (group: 'com.hazelcast', name: 'hazelcast-kubernetes', version: '1.2.2') {
         exclude group: 'com.hazelcast', module: 'hazelcast'
