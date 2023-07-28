@@ -450,14 +450,29 @@ public class PublishFactoryTest extends IntegrationTestBase {
     @Test
     public void test_getUnpublishedRelatedAssets() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
-        final Folder folder = new FolderDataGen().site(host).nextPersisted();
-        final Link link = new LinkDataGen(folder).nextPersisted(false);
+
+        final Folder mainFolder = new FolderDataGen().site(host).nextPersisted();
+
+        final Link link = new LinkDataGen().parent(mainFolder).nextPersisted(false);
+        Template templateDataGen = new TemplateDataGen().nextPersisted();
+        ContentType page = new HTMLPageDataGen(mainFolder, templateDataGen).nextPersisted().getContentType();
+        final Folder subFolder = new FolderDataGen().parent(mainFolder).nextPersisted();
 
         final User systemUser = APILocator.systemUser();
-        final List<Contentlet> relatedNotPublished = new ArrayList<>();
-         PublishFactory.getUnpublishedRelatedAssets(folder,relatedNotPublished, systemUser, false);
-         relatedNotPublished.contains(link);
-        Assert.assertTrue(relatedNotPublished.contains(link));
+        final List<Object> relatedNotPublished = new ArrayList<>();
+         PublishFactory.getUnpublishedRelatedAssets(mainFolder,relatedNotPublished, systemUser, false);
+
+         //iterate the response list. Folder is not retrieved because it is not published
+        for(Object obj : relatedNotPublished) {
+        	if(obj instanceof Contentlet) {
+        		Contentlet contentlet = (Contentlet) obj;
+        		Assert.assertEquals(page.id(), contentlet.getContentTypeId());
+        	}
+            if(obj instanceof Link) {
+                //assert that the link is the one created above
+                Assert.assertEquals(link, obj);
+            }
+        }
     }
 
     /***
