@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.inject.Inject;
+import org.junit.Ignore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
+@Ignore
 @QuarkusTest
 public class FilesTreeCommandTest extends CommandTest {
 

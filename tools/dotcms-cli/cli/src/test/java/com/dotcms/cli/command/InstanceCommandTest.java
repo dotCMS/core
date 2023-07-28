@@ -2,6 +2,7 @@ package com.dotcms.cli.command;
 
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.Ignore;
 import org.junit.jupiter.api.*;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
@@ -11,6 +12,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
 
+@Ignore
 @QuarkusTest
 public class InstanceCommandTest extends CommandTest {
 

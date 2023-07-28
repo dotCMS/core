@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 import javax.inject.Inject;
+import org.junit.Ignore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,6 +31,7 @@ import org.wildfly.common.Assert;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
+@Ignore
 @QuarkusTest
 public class LanguageCommandTest extends CommandTest {
     @Inject

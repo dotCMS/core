@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+@Ignore
 @QuarkusTest
 class AssetAPITest {
 

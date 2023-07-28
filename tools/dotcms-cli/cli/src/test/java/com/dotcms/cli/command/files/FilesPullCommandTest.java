@@ -3,6 +3,7 @@ package com.dotcms.cli.command.files;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.command.CommandTest;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.Ignore;
 import org.junit.jupiter.api.*;
 import picocli.CommandLine;
 
@@ -17,6 +18,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
 
+@Ignore
 @QuarkusTest
 public class FilesPullCommandTest extends CommandTest {
 

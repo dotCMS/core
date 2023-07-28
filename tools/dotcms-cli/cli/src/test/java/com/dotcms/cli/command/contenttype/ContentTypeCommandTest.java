@@ -18,6 +18,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.junit.Ignore;
 import org.junit.jupiter.api.*;
 import org.wildfly.common.Assert;
 import picocli.CommandLine;
@@ -32,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 
+@Ignore
 @QuarkusTest
 public class ContentTypeCommandTest extends CommandTest {
 

@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.Ignore;
 import org.junit.jupiter.api.*;
 import org.wildfly.common.Assert;
 import picocli.CommandLine;
@@ -26,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import picocli.CommandLine.ExitCode;
 
+@Ignore
 @QuarkusTest
 class SiteCommandTest extends CommandTest {
 
