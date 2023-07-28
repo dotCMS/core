@@ -150,6 +150,22 @@ describe('DotLicenseService', () => {
         httpMock.expectNone('v1/appconfiguration');
     });
 
+    it('should fetch the license when calling updateLicense', () => {
+        dotLicenseService.updateLicense();
+
+        const req = httpMock.expectOne('v1/appconfiguration');
+        expect(req.request.method).toBe('GET');
+        req.flush({
+            entity: {
+                config: {
+                    license: {
+                        level: 400
+                    }
+                }
+            }
+        });
+    });
+
     afterEach(() => {
         httpMock.verify();
     });

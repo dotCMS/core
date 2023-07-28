@@ -141,6 +141,22 @@ export class DotLicenseService {
     }
 
     /**
+     * Update cached license
+     *
+     * @memberof DotLicenseService
+     */
+    public updateLicense(): void {
+        this.coreWebService
+            .requestView({
+                url: this.licenseURL
+            })
+            .pipe(pluck('entity', 'config', 'license'))
+            .subscribe((license) => {
+                this.setLicense(license);
+            });
+    }
+
+    /**
      * Set cached license
      *
      * @param {DotLicense} license
