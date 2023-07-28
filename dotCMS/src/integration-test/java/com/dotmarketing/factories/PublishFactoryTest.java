@@ -485,6 +485,9 @@ public class PublishFactoryTest extends IntegrationTestBase {
         final Host host = new SiteDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
         final Link link = new LinkDataGen(folder).nextPersisted(false);
+        Template templateDataGen = new TemplateDataGen().nextPersisted();
+        ContentType page = new HTMLPageDataGen(folder, templateDataGen).nextPersisted().getContentType();
+        final Folder subFolder = new FolderDataGen().parent(folder).nextPersisted();
         final boolean response = PublishFactory.publishAsset(folder, systemUser, false, false);
         Assert.assertTrue(response);
     }
