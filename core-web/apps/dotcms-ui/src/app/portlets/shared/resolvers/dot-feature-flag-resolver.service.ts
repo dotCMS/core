@@ -12,7 +12,7 @@ import { DotPropertiesService } from '@dotcms/data-access';
  *
  * @export
  * @class DotFeatureFlagResolver
- * @implements {Resolve<Observable<boolean>>}
+ * @implements {Observable<Record<string, boolean>>}
  *
  * Need set in data the feature flag with the index name featuredFlag and the FeatureFlag needed
  * @example
@@ -21,14 +21,28 @@ import { DotPropertiesService } from '@dotcms/data-access';
  *  }
  */
 @Injectable()
-export class DotFeatureFlagResolver implements Resolve<Observable<boolean>> {
+export class DotFeatureFlagResolver implements Resolve<Observable<Record<string, boolean>>> {
     constructor(private readonly dotConfigurationService: DotPropertiesService) {}
 
     resolve(route: ActivatedRouteSnapshot) {
-        if (route.data.featuredFlagToCheck) {
-            return this.dotConfigurationService
-                .getKey(route.data.featuredFlagToCheck)
-                .pipe(map((result) => result && result === 'true'));
+        if (route.data.featuredFlagsToCheck) {
+            return this.dotConfigurationService.getKeys(route.data.featuredFlagsToCheck).pipe(
+                map((result) =>
+                    route.data.featuredFlagsToCheck.reduce(
+                        (
+                            acc: {
+                                [key: string]: boolean;
+                            },
+                            key: string
+                        ) => {
+                            acc[key] = result && result[key] === 'true';
+
+                            return acc;
+                        },
+                        {}
+                    )
+                )
+            );
         }
 
         return of(false);

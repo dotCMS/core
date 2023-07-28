@@ -115,3 +115,6 @@ export const getPreviousDay = (givenDate: string) => {
 
     return `${month}/${day}/${year}`;
 };
+
+export const getRandomUUID = () => self.crypto.randomUUID();
+

@@ -5,7 +5,14 @@ interface DotExperimentsChartjsOptions {
     yAxisLabel: string;
 }
 
-export const getDotExperimentLineChartJsOptions = ({
+/**
+ * Generate the options to use in a line ChartJS with the
+ * x-axis and y-axis translated
+ *
+ * @param xAxisLabel
+ * @param yAxisLabel
+ */
+export const generateDotExperimentLineChartJsOptions = ({
     xAxisLabel,
     yAxisLabel
 }: DotExperimentsChartjsOptions) => {
@@ -15,9 +22,7 @@ export const getDotExperimentLineChartJsOptions = ({
             title: {
                 display: false
             },
-            dotHtmlLegend: {
-                containerID: 'legend-container'
-            },
+
             legend: {
                 display: false
             },

@@ -144,7 +144,7 @@ public class ExperimentResultsQueryFactoryIntegrationTest {
 
     /**
      * Method to test: {@link ExperimentResultsQueryFactory#create(Experiment)}
-     * When: Try to get the {@link CubeJSQuery} to a Experiment with a BOUNCE_RATE GOal
+     * When: Try to get the {@link CubeJSQuery} to a Experiment with a EXIT_RATE GOal
      * Should: get the follow query:
      *
      * <code>
@@ -187,7 +187,7 @@ public class ExperimentResultsQueryFactoryIntegrationTest {
 
         final Metric metric = Metric.builder()
                 .name("Testing Bounce Rate Metric")
-                .type(MetricType.BOUNCE_RATE)
+                .type(MetricType.EXIT_RATE)
                 .addConditions(getUrlCondition(bounceRatePage.getPageUrl()))
                 .build();
 

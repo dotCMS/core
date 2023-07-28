@@ -11,21 +11,15 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
 @Component({
     standalone: true,
     selector: 'dot-experiments-shell',
-    imports: [
-        RouterModule,
-        DotExperimentsUiHeaderComponent,
-        // PrimeNg
-        ToastModule
-    ],
+    imports: [RouterModule, DotExperimentsUiHeaderComponent, ToastModule],
     providers: [MessageService, DotExperimentsStore],
     templateUrl: 'dot-experiments-shell.component.html',
     styleUrls: ['./dot-experiments-shell.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsShellComponent implements OnInit {
-    store = inject(DotExperimentsStore);
-
-    constructor(private readonly router: Router) {}
+    private store = inject(DotExperimentsStore);
+    private router = inject(Router);
 
     ngOnInit() {
         this.removeVariantQueryParams();
