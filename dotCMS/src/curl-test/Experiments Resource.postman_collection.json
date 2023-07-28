@@ -949,6 +949,144 @@
 			"name": "Variants",
 			"item": [
 				{
+					"name": "Set Bounce_Rate Goal",
+					"item": [
+						{
+							"name": "Create Experiment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.collectionVariables.set(\"bounceRateExperimentId\", jsonData.entity.id);",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"Bounce Rate experiment\",\n    \"description\": \"Bounce Rate experiment description\" \n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "setExperimentGoal_shoudSucceed",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Experiment should have the expected values\", function () {",
+											"    pm.expect(jsonData.entity.goals.primary.type).equal(\"BOUNCE_RATE\");",
+											"    pm.expect(jsonData.entity.goals.primary.name).equal(\"Bounce rate Goal\");",
+											"  ",
+											"",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Bounce rate Goal\",\n            \"type\": \"BOUNCE_RATE\"\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{bounceRateExperimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{bounceRateExperimentId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
 					"name": "pre_ImportBundleWithPage",
 					"event": [
 						{
@@ -3591,144 +3729,6 @@
 										"v1",
 										"experiments",
 										"{{urlParameterExperimentId}}"
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "Set Bounce_Rate Goal",
-					"item": [
-						{
-							"name": "Create Experiment",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"var jsonData = pm.response.json();",
-											"",
-											"",
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.collectionVariables.set(\"bounceRateExperimentId\", jsonData.entity.id);",
-											"",
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"Bounce Rate experiment\",\n    \"description\": \"Bounce Rate experiment description\" \n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/experiments/",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"experiments",
-										""
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "setExperimentGoal_shoudSucceed",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"var jsonData = pm.response.json();",
-											"",
-											"",
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Experiment should have the expected values\", function () {",
-											"    pm.expect(jsonData.entity.goals.primary.type).equal(\"BOUNCE_RATE\");",
-											"    pm.expect(jsonData.entity.goals.primary.name).equal(\"Bounce rate Goal\");",
-											"  ",
-											"",
-											"});",
-											"",
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
-								"method": "PATCH",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Bounce rate Goal\",\n            \"type\": \"BOUNCE_RATE\"\n        }\n    }\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/experiments/{{bounceRateExperimentId}}",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"experiments",
-										"{{bounceRateExperimentId}}"
 									]
 								}
 							},
@@ -9182,10 +9182,6 @@
 					]
 				}
 			]
-		},
-		{
-			"name": "New Folder",
-			"item": []
 		}
 	],
 	"variable": [
@@ -9303,6 +9299,50 @@
 		},
 		{
 			"key": "bounceRateExperimentId",
+			"value": ""
+		},
+		{
+			"key": "contentTypeId",
+			"value": ""
+		},
+		{
+			"key": "keep_content_container_id",
+			"value": ""
+		},
+		{
+			"key": "add_content_container_id",
+			"value": ""
+		},
+		{
+			"key": "add_contentlet_default_specific_variant_container_id",
+			"value": ""
+		},
+		{
+			"key": "add_contentlet_default_specific_variant_template",
+			"value": ""
+		},
+		{
+			"key": "add_contentlet_default_specific_variant_page_id",
+			"value": ""
+		},
+		{
+			"key": "content1_id",
+			"value": ""
+		},
+		{
+			"key": "content2_id",
+			"value": ""
+		},
+		{
+			"key": "experimentShortId",
+			"value": ""
+		},
+		{
+			"key": "keep_contents_template_id",
+			"value": ""
+		},
+		{
+			"key": "page_version_keep_contentlet",
 			"value": ""
 		}
 	]
