@@ -12,12 +12,10 @@ import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-@Ignore
 @QuarkusTest
 class FolderAPITest {
 

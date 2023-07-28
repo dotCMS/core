@@ -4,8 +4,6 @@ import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
-import com.dotcms.cli.command.contenttype.ContentTypeCommand;
-import com.dotcms.cli.command.contenttype.ContentTypePull;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
@@ -21,7 +19,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 import javax.inject.Inject;
-import org.junit.Ignore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,7 +28,6 @@ import org.wildfly.common.Assert;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
-@Ignore
 @QuarkusTest
 public class LanguageCommandTest extends CommandTest {
     @Inject
@@ -300,7 +296,7 @@ public class LanguageCommandTest extends CommandTest {
 
             final String fileName = String.format("%s.json", lang);
             final Path path = Path.of(workspace.languages().toString(), fileName);
-            Assert.assertTrue(Files.exists(path));
+            Assertions.assertTrue(Files.exists(path),String.format("The file [%s] should exist", path));
 
             try (Stream<Path> walk = Files.walk(workspace.languages())) {
                 long count = walk.filter(p -> Files.isRegularFile(p) && p.getFileName().toString()

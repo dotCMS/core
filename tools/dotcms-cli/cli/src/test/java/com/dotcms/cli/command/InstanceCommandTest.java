@@ -2,17 +2,19 @@ package com.dotcms.cli.command;
 
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.Ignore;
-import org.junit.jupiter.api.*;
-import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
-@Ignore
 @QuarkusTest
 public class InstanceCommandTest extends CommandTest {
 

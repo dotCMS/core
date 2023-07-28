@@ -3,11 +3,6 @@ package com.dotcms.cli.command.files;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.command.CommandTest;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.Ignore;
-import org.junit.jupiter.api.*;
-import picocli.CommandLine;
-
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -17,8 +12,14 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
+import javax.inject.Inject;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import picocli.CommandLine;
 
-@Ignore
 @QuarkusTest
 public class FilesPullCommandTest extends CommandTest {
 

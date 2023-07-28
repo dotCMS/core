@@ -12,12 +12,10 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.impl.jose.JWT;
 import java.io.IOException;
 import javax.inject.Inject;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-@Ignore
 @QuarkusTest
 class RestClientFactoryTest {
 

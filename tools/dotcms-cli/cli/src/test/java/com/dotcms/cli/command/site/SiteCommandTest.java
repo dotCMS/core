@@ -2,32 +2,26 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.command.CommandTest;
-import com.dotcms.cli.command.contenttype.ContentTypeCommand;
-import com.dotcms.cli.command.contenttype.ContentTypePull;
-import com.dotcms.cli.command.language.LanguageCommand;
-import com.dotcms.cli.command.language.LanguagePull;
-import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import io.quarkus.test.junit.QuarkusTest;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.Ignore;
-import org.junit.jupiter.api.*;
-import org.wildfly.common.Assert;
-import picocli.CommandLine;
-
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
+import javax.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.wildfly.common.Assert;
+import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
-@Ignore
 @QuarkusTest
 class SiteCommandTest extends CommandTest {
 

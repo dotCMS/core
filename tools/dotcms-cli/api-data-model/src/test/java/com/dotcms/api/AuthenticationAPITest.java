@@ -4,16 +4,13 @@ package com.dotcms.api;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.Ignore;
+import java.io.IOException;
+import java.util.Optional;
+import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.inject.Inject;
-import java.io.IOException;
-import java.util.Optional;
-
-@Ignore
 @QuarkusTest
 public class AuthenticationAPITest {
 
