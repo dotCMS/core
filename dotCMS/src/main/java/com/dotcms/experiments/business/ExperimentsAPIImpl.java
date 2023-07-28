@@ -488,20 +488,18 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
                 + "have the Goal set.");
 
-        final List<Experiment> runningExperimentsOnPage = list(ExperimentFilter.builder()
-                .pageId(persistedExperiment.pageId())
-                .statuses(Set.of(RUNNING))
-                .build(), user);
+        Optional<Experiment> runningExperimentOnPage = getRunningExperimentsOnPage(
+                user, persistedExperiment);
 
-        if(!runningExperimentsOnPage.isEmpty()) {
+        if(runningExperimentOnPage.isPresent()) {
             final boolean meantToRunNow = persistedExperiment.scheduling().isEmpty();
 
             if(meantToRunNow) {
                 throw new DotStateException("There is a running Experiment on the same page. Name: "
-                        + runningExperimentsOnPage.get(0).name());
+                        + runningExperimentOnPage.get().name());
             }
 
-            final Experiment runningExperiment = runningExperimentsOnPage.get(0);
+            final Experiment runningExperiment = runningExperimentOnPage.get();
             DotPreconditions.isTrue(runningExperiment.scheduling().orElseThrow().endDate()
                     .orElseThrow().isBefore(persistedExperiment.scheduling().orElseThrow().startDate().orElseThrow()),
                     ()-> "Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. "
@@ -556,19 +554,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
                 + "have the Goal set.");
 
-        final List<Experiment> runningExperimentsOnPage = list(ExperimentFilter.builder()
-                .pageId(persistedExperiment.pageId())
-                .statuses(Set.of(RUNNING))
-                .build(), user);
+        final Optional<Experiment> runningExperimentOnPage = getRunningExperimentsOnPage(
+                user, persistedExperiment);
 
-        if(!runningExperimentsOnPage.isEmpty()) {
+        if(runningExperimentOnPage.isPresent()) {
             final boolean meantToRunNow = persistedExperiment.scheduling().isEmpty();
 
             if(meantToRunNow) {
-                end(runningExperimentsOnPage.get(0).id().orElseThrow(), user);
+                end(runningExperimentOnPage.get().id().orElseThrow(), user);
             }
 
-            final Experiment runningExperiment = runningExperimentsOnPage.get(0);
+            final Experiment runningExperiment = runningExperimentOnPage.get();
             if(conflictingStartOrEndDate(runningExperiment.scheduling().orElseThrow(),
                     persistedExperiment.scheduling().orElseThrow())) {
                 end(runningExperiment.id().orElseThrow(), user);
@@ -590,6 +586,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return toReturn;
+    }
+
+    private Optional<Experiment> getRunningExperimentsOnPage(User user, Experiment persistedExperiment)
+            throws DotDataException {
+        final List<Experiment> runningExperimentsOnPage = list(ExperimentFilter.builder()
+                .pageId(persistedExperiment.pageId())
+                .statuses(Set.of(RUNNING))
+                .build(), user);
+
+        return runningExperimentsOnPage.isEmpty() ? Optional.empty() : Optional.of(runningExperimentsOnPage.get(0));
     }
 
     private void publishExperimentPage(final Experiment experiment, final User user)

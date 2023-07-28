@@ -9,7 +9,6 @@ import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
@@ -195,7 +194,6 @@ public interface ExperimentsAPI {
     ExperimentResults getResults(final Experiment experiment, User user)
             throws DotDataException, DotSecurityException;
 
-    @CloseDBIfOpened
     List<Experiment> cacheRunningExperiments() throws DotDataException;
 
     /**
