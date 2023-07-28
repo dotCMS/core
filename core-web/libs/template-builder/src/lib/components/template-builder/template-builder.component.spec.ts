@@ -144,7 +144,7 @@ describe('TemplateBuilderComponent', () => {
             box1.nativeElement,
             rowId
         );
-        expect(spectator.component.store.removeColumn).toHaveBeenCalledWith({
+        expect(store.removeColumn).toHaveBeenCalledWith({
             ...{ id: box1Id, parentId: rowId },
             parentId: rowId
         });

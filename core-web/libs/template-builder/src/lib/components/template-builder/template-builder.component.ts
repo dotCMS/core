@@ -123,7 +123,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     addBoxIsDragging = false;
 
     constructor(
-        public store: DotTemplateBuilderStore,
+        private store: DotTemplateBuilderStore,
         private dialogService: DialogService,
         private dotMessage: DotMessageService,
         private cd: ChangeDetectorRef
