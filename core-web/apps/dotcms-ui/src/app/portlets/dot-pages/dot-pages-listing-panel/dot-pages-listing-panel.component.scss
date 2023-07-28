@@ -31,6 +31,10 @@
     .p-datatable .p-datatable-tbody tr td.dot-pages-listing__empty-content {
         text-align: center;
     }
+
+    .p-autocomplete-loader {
+        margin-right: $spacing-5;
+    }
 }
 
 .dot-pages-listing-header__inputs {
