@@ -400,6 +400,7 @@ public class LoginServiceAPIFactory implements Serializable {
 
             session.removeAttribute("_failedLoginName");
 
+            Logger.info(this, "Calling the preventSessionFixation method");
             this.preventSessionFixation(request);
 
             //JWT we crT always b/c in the future we want to use it not only for the remember me, but also for restful authentication.

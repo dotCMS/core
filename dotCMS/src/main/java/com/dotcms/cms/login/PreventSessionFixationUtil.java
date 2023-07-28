@@ -42,7 +42,7 @@ public class PreventSessionFixationUtil {
         if(Config.getBooleanProperty("PREVENT_SESSION_FIXATION_ON_LOGIN", true)) {
 
             Logger.debug(this, ()-> "Preventing the session fixation");
-            Logger.info(this, ()-> "========== Preventing the session fixation ==========");
+            Logger.info(this, "========== Preventing the session fixation ==========");
 
             final Map<String, Object> sessionMap  = new HashMap<>();
             final HttpSession oldSession          = session;
@@ -51,7 +51,7 @@ public class PreventSessionFixationUtil {
 
                 final Enumeration<String> keys = oldSession.getAttributeNames();
 
-                Logger.info(this, ()-> "-> Original Session params [ " + oldSession.getId() + " ]:");
+                Logger.info(this, "-> Original Session params [ " + oldSession.getId() + " ]:");
 
                 while (keys.hasMoreElements()) {
 
@@ -66,7 +66,7 @@ public class PreventSessionFixationUtil {
 
                 final HttpSession newSession = request.getSession();
 
-                Logger.info(this, ()-> "-> New Session params [ " + newSession.getId() + " ]:");
+                Logger.info(this, "-> New Session params [ " + newSession.getId() + " ]:");
 
                 for (final Map.Entry<String, Object> entry : sessionMap.entrySet()) {
                     newSession.setAttribute(entry.getKey(), entry.getValue());
