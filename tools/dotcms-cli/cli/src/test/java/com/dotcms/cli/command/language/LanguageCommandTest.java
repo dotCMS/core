@@ -287,7 +287,7 @@ public class LanguageCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final String lang = "en-US";
+            final String lang = "en-US".toLowerCase();
             for (int i=0; i<= 5; i++) {
                 final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, lang, "--workspace", workspace.root().toString());
                 Assertions.assertEquals(CommandLine.ExitCode.OK, status);
