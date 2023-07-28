@@ -1,7 +1,14 @@
 import { Observable, of } from 'rxjs';
 
 import { AsyncPipe, NgForOf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    Input,
+    OnChanges,
+    OnInit,
+    SimpleChanges
+} from '@angular/core';
 
 import { ChipModule } from 'primeng/chip';
 import { DialogModule } from 'primeng/dialog';
@@ -11,6 +18,7 @@ import { switchMap } from 'rxjs/operators';
 import { DotPageToolsService } from '@dotcms/data-access';
 import { DotPageTool, DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+import { getRunnableLink } from '@dotcms/utils';
 
 @Component({
     selector: 'dot-page-tools-seo',
@@ -21,7 +29,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     styleUrls: ['./dot-page-tools-seo.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotPageToolsSeoComponent implements OnInit {
+export class DotPageToolsSeoComponent implements OnInit, OnChanges {
     @Input() visible: boolean;
     @Input() currentPageUrlParams: DotPageToolUrlParams;
     dialogHeader: string;
@@ -30,12 +38,26 @@ export class DotPageToolsSeoComponent implements OnInit {
     constructor(private dotPageToolsService: DotPageToolsService) {}
 
     ngOnInit() {
-        this.tools$ = this.dotPageToolsService.get().pipe(
+        this.tools$ = this.getTools();
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes.currentPageUrlParams && !changes.currentPageUrlParams.firstChange) {
+            const prevParams: DotPageToolUrlParams = changes.currentPageUrlParams.previousValue;
+            const currParams: DotPageToolUrlParams = changes.currentPageUrlParams.currentValue;
+            if (prevParams.currentUrl !== currParams.currentUrl) {
+                this.tools$ = this.getTools();
+            }
+        }
+    }
+
+    private getTools(): Observable<DotPageTool[]> {
+        return this.dotPageToolsService.get().pipe(
             switchMap((tools) => {
                 const updatedTools = tools.map((tool) => {
                     return {
                         ...tool,
-                        runnableLink: this.getRunnableLink(tool.runnableLink)
+                        runnableLink: getRunnableLink(tool.runnableLink, this.currentPageUrlParams)
                     };
                 });
 
@@ -44,35 +66,7 @@ export class DotPageToolsSeoComponent implements OnInit {
         );
     }
 
-    private getQueryParameterSeparator(url: string): string {
-        if (url.indexOf('?') === -1) {
-            return '?';
-        }
-
-        return '&';
-    }
-
-    /**
-     * This method is used to get the runnable link for the tool
-     * @param url
-     * @returns
-     */
-    private getRunnableLink(url: string): string {
-        const { currentUrl, requestHostName, siteId, languageId } = this.currentPageUrlParams;
-
-        url = url.replace('{requestHostName}', requestHostName ?? '');
-        url = url.replace('{currentUrl}', currentUrl ?? '');
-        url = url.replace(
-            '{siteId}',
-            siteId ? `${this.getQueryParameterSeparator(url)}host_id=${siteId}` : ''
-        );
-        url = url.replace(
-            '{languageId}',
-            languageId
-                ? `${this.getQueryParameterSeparator(url)}language_id=${String(languageId)}`
-                : ''
-        );
-
-        return url;
+    public toggleDialog(): void {
+        this.visible = !this.visible;
     }
 }

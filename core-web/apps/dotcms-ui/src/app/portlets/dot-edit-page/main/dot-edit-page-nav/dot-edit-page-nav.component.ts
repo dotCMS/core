@@ -196,7 +196,7 @@ export class DotEditPageNavComponent implements OnChanges {
      * */
     public getCurrentURLParams(): DotPageToolUrlParams {
         const page = this.pageState.page;
-        const site = this.pageState.page;
+        const site = this.pageState.site;
 
         return {
             requestHostName: this.document.defaultView.location.host,

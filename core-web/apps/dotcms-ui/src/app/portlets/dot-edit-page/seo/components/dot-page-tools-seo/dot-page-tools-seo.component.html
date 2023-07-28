@@ -1,10 +1,13 @@
 <p-dialog
-    class="page-tools-dialog"
     [(visible)]="visible"
+    [maskStyleClass]="'page-tools-dialog'"
     [position]="'right'"
     [closable]="false"
     [draggable]="false"
+    [modal]="true"
     [dismissableMask]="true"
+    [closable]="true"
+    [appendTo]="'body'"
     header="{{ 'editpage.toolbar.nav.page.tools' | dm }}"
 >
     <div class="page-tools">
@@ -16,6 +19,7 @@
             >
                 <a
                     class="page-tools-list__link"
+                    (click)="toggleDialog()"
                     data-testId="page-tools-list-link"
                     href="{{ tool.runnableLink }}"
                     target="_blank"

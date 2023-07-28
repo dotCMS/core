@@ -1,3 +1,5 @@
+import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
+
 /**
  * Generate an anchor element with a Blob file to eventually be click to force a download
  * This approach is needed because FF do not hear WS events while waiting for a request.
@@ -32,4 +34,39 @@ export function generateDotFavoritePageUrl(params: {
         `&language_id=${languageId}` +
         (deviceInode ? `&device_inode=${deviceInode}` : '&device_inode=')
     );
+}
+
+/**
+ * Get the query parameter separator
+ * @param url
+ * @returns
+ */
+export function getQueryParameterSeparator(url: string): string {
+    if (url.indexOf('?') === -1) {
+        return '?';
+    }
+
+    return '&';
+}
+
+/**
+ * This method is used to get the runnable link for the tool
+ * @param url
+ * @returns
+ */
+export function getRunnableLink(url: string, currentPageUrlParams: DotPageToolUrlParams): string {
+    const { currentUrl, requestHostName, siteId, languageId } = currentPageUrlParams;
+
+    url = url.replace('{requestHostName}', requestHostName ?? '');
+    url = url.replace('{currentUrl}', currentUrl ?? '');
+    url = url.replace(
+        '{siteId}',
+        siteId ? `${getQueryParameterSeparator(url)}host_id=${siteId}` : ''
+    );
+    url = url.replace(
+        '{languageId}',
+        languageId ? `${getQueryParameterSeparator(url)}language_id=${String(languageId)}` : ''
+    );
+
+    return url;
 }
