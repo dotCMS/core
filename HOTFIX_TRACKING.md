@@ -153,3 +153,4 @@ This maintenance release includes the following code fixes:
 127. https://github.com/dotCMS/core/issues/25224 : PP - Integrity Checker, fixing conflicts is setting up identifier columns as null #25224
 128. https://github.com/dotCMS/core/issues/25136 : Site Browser is not sorting items by default #25136
 129. https://github.com/dotCMS/core/issues/24843 : Remove jaxws libraries #24843
+130. https://github.com/dotCMS/core/issues/24415 : Related content doesn't match with Content Language #24415
