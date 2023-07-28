@@ -57,6 +57,16 @@
 
 <script type="text/javascript">
 
+    function emitLicenseChangedEvent(){
+        var customEvent = new CustomEvent("ng-event", {
+            detail: {
+                name: "license-changed",
+            }
+        });
+
+        document.dispatchEvent(customEvent);
+    }
+
     dojo.declare("dotcms.dijit.cmsconfig.LicenseAdmin", null, {
 
         isCommunity     :"<%=isCommunity%>",
@@ -75,15 +85,7 @@
                 handleAs: "text",
                 postData: data,
                 load: function(message) {
-
-                     var customEvent = new CustomEvent("ng-event", {
-                        detail: {
-                        name: "license-changed",
-                        }
-                    });
-
-                    document.dispatchEvent(customEvent);
-
+                    emitLicenseChangedEvent()
                     licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-reset")) %>')
                 },
                 error: function(error){
@@ -131,13 +133,7 @@
                 load: function(message) {
 
                     if(! message ){
-                        var customEvent = new CustomEvent("ng-event", {
-                            detail: {
-                                name: "license-changed",
-                            }
-                        });
-
-                        document.dispatchEvent(customEvent);
+                        emitLicenseChangedEvent()
                         licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-applied")) %>');
                     }
                     else{
@@ -325,15 +321,7 @@
             xhr.open("POST", "/api/license/upload/");
 
             xhr.onload = function(event){
-                var customEvent = new CustomEvent("ng-event", {
-                    detail: {
-                        name: "license-changed",
-                    }
-
-                });
-                document.dispatchEvent(customEvent);
-
-
+                emitLicenseChangedEvent()
                 licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "licenses-uploaded") )%>');
             };
             var formData = new FormData(document.getElementById("uploadPackForm"));
