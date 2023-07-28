@@ -651,6 +651,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 DotStateException.class);
     }
 
+    /**
+     * It checks whether there are conflicts between the scheduling of the experimentToCheck and already scheduled Experiments,
+     * and if so, it will proceed to cancel the conflicting scheduled Experiments.
+     * @param experimentToCheck the Experiment to check for conflicts
+     * @param user the User
+     * @throws DotDataException
+     */
     private void cancelScheduledExperimentsUponConflicts(final Experiment experimentToCheck,
             final User user) throws DotDataException {
 
