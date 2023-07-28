@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -116,21 +117,35 @@ public class WebAssetHelper {
      */
     public WebAssetView getAssetInfo(final String path, final User user)
             throws DotDataException, DotSecurityException {
-
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
                 .resolve(path, user);
+        return getAssetInfo(assetAndPath,false, user);
+    }
+
+    /**
+     * Entry point here it is determined if the path is a folder or an asset.
+     * If it is a folder it will return a FolderView, if it is an asset it will return an AssetView
+     * @param assetAndPath resolved asset and path
+     * @param user current user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    WebAssetView getAssetInfo(final ResolvedAssetAndPath assetAndPath, final boolean showArchived, final User user)
+            throws DotDataException, DotSecurityException {
+
         final Host host = assetAndPath.resolvedHost();
         final Folder folder = assetAndPath.resolvedFolder();
         final String assetName = assetAndPath.asset();
 
-        final List<Treeable> assets;
+        final List<Contentlet> assets;
 
         final Builder builder = BrowserQuery.builder();
         builder.showDotAssets(false)
                 .withUser(user)
                 .showFiles(true)
                 .showFolders(true)
-                .showArchived(false)
+                .showArchived(showArchived)
                 .showLinks(false)
                 .showDotAssets(false)
                 .showImages(true)
@@ -152,14 +167,18 @@ public class WebAssetHelper {
             //We're requesting an asset specifically therefore we need to find it and  build the response
             builder.withFileName(assetName);
 
-            final List<Treeable> folderContent = sortByIdentifier(
+            final List<Contentlet> folderContent = sortByIdentifier(
                     collectAllVersions(builder)
             );
-            assets = folderContent.stream().filter(Contentlet.class::isInstance).collect(Collectors.toList());
+            assets = folderContent.stream().filter(Objects::nonNull).map(
+                    Contentlet.class::cast).collect(Collectors.toList());
             if (assets.isEmpty()) {
                 throw new NotFoundInDbException(String.format(" Asset [%s] not found", assetName));
             }
+            final Contentlet asset = assets.get(0);
             return AssetVersionsView.builder()
+                    .identifier(asset.getIdentifier())
+                    .archived(asset.isArchived())
                     .versions(toAssets(assets))
                     .build();
         } else {
@@ -177,6 +196,17 @@ public class WebAssetHelper {
                    contentletAPI.findLiveOrWorkingVersions(identifiers, user, false)
            );
 
+           AssetVersionsView versionsView = null;
+           if(!assets.isEmpty()){
+               //We're looking at a non-empty folder
+               final Contentlet asset = assets.get(0);
+               versionsView =
+                       AssetVersionsView.builder()
+                               .identifier(asset.getIdentifier())
+                               .archived(asset.isArchived())
+                               .versions(toAssets(assets)).build();
+           }
+
             return FolderView.builder()
                     .sortOrder(folder.getSortOrder())
                     .filesMasks(folder.getFilesMasks())
@@ -188,9 +218,7 @@ public class WebAssetHelper {
                     .identifier(folder.getIdentifier())
                     .inode(folder.getInode())
                     .subFolders(toAssetFolders(subFolders))
-                    .assets(
-                            AssetVersionsView.builder().versions(toAssets(assets)).build()
-                    )
+                    .assets(versionsView)
                     .build();
         }
     }
@@ -201,7 +229,7 @@ public class WebAssetHelper {
      * @param contentlets
      * @return
      */
-    List<Treeable> sortByIdentifier(Collection<Contentlet> contentlets) {
+    List<Contentlet> sortByIdentifier(Collection<Contentlet> contentlets) {
         return contentlets.stream()
                 .sorted(Comparator.comparing(Contentlet::getIdentifier))
                 .collect(Collectors.toList());
@@ -236,7 +264,7 @@ public class WebAssetHelper {
      * @param assets folders to convert
      * @return list of {@link FolderView}
      */
-    Iterable<AssetView> toAssets(final Collection<Treeable> assets) {
+    Iterable<AssetView> toAssets(final Collection<? extends Treeable> assets) {
 
         return assets.stream().filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
                 .filter(Contentlet::isFileAsset)
@@ -405,11 +433,11 @@ public class WebAssetHelper {
         final InputStream fileInputStream = form.getFileInputStream();
         final FileUploadDetail detail = form.getDetail();
         final String assetPath = detail.getAssetPath();
-        final boolean live = detail.getLive();
+        final boolean live = detail.isLive();
         final Optional<Language> lang = parseLang(detail.getLanguage(), true);
 
-        if(lang.isEmpty()){
-            throw new IllegalArgumentException("Unable to determine what language for asset.");
+        if (lang.isEmpty()) {
+            throw new IllegalArgumentException("Unable to determine language for asset.");
         }
 
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
@@ -420,77 +448,64 @@ public class WebAssetHelper {
         final String assetName = null != assetAndPath.asset() ? assetAndPath.asset() : fileName;
 
         if (null == fileInputStream) {
+            //if no FileInputStream  is present we return the folder info
+            //because we support creating folders by just specifying the path
             return toAssetsFolder(folder);
         }
 
         final DotTempFile tempFile = tempFileAPI.createTempFile(assetName, request,
                 fileInputStream);
         try {
-
-            final Builder builder = BrowserQuery.builder();
-            builder.showDotAssets(false)
-                    .withUser(user)
-                    .showFiles(true)
-                    .showFolders(true)
-                    .showArchived(true) // yes we need to take into account archived assets here
-                    .showWorking(!live)
-                    .showLinks(false)
-                    .showDotAssets(false)
-                    .showImages(true)
-                    .showContent(true)
-                    .withLanguageId(lang.get().getId())
-                    .sortBy(SORT_BY)
-                    .sortByDesc(true)
-            ;
-
-            if (folder.isSystemFolder()) {
-                builder.withHostOrFolderId(host.getIdentifier());
-            } else {
-                builder.withHostOrFolderId(folder.getInode());
-            }
-
-            builder.withFileName(assetName);
-            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
-            final List<Contentlet> assets = folderContent.stream()
-                    .filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
-                    .collect(Collectors.toList());
-
+            final WebAssetView assetView = Try.of(() -> getAssetInfo(assetAndPath, true, user))
+                    .getOrNull();
             Contentlet savedAsset = null;
 
-            if (assets.isEmpty()) {
-                //The file does not exist
-                final Contentlet contentlet = makeFileAsset(tempFile.file, folder, lang.get());
-                savedAsset = checkinOrPublish(contentlet, user, live);
+            if (assetView instanceof AssetVersionsView) {
+
+                final AssetVersionsView versionsView = (AssetVersionsView) assetView;
+                //so we have an asset version. We need to update it or create a new version of it probably in a different language
+
+                final List<AssetView> versions = versionsView.versions();
+                // We trust that the asset we're getting here is working and or live which is the inode we need to do the checkout
+                final AssetView asset = versions.get(0);
+
+                if(versionsView.archived()){
+                    contentletAPI.findLiveOrWorkingVersions(Set.of(asset.identifier()), user, false)
+                            .forEach(contentlet -> handleArchivedContent(contentlet, user));
+                }
+
+                //now checkout and create a new version of the asset in the given language
+                final Contentlet checkout = contentletAPI.checkout(asset.inode(), user, false);
+                updateFileAsset(tempFile.file, host, folder, lang.get(), checkout);
+                savedAsset = checkinOrPublish(checkout, user, live);
 
             } else {
-
-                final Optional<Contentlet> found = assets.stream()
-                        .filter(contentlet -> lang.get().getId() == contentlet.getLanguageId())
-                        .findFirst();
-
-                if (found.isEmpty()) {
-                    //We're required to create a new version in a different language
-                    final Contentlet contentlet = makeFileAsset(tempFile.file, folder, lang.get());
-                    savedAsset = checkinOrPublish(contentlet, user, live);
-
-                } else {
-                    final Contentlet asset = found.get();
-
-                    if(asset.isArchived()){
-                        contentletAPI.unarchive(asset, user, false);
-                    }
-
-                    final Contentlet checkout = contentletAPI.checkout(asset.getInode(), user, false);
-
-                    updateFileAsset(tempFile.file, folder, lang.get(), checkout);
-                    savedAsset = checkinOrPublish(checkout, user, live);
-                }
+                //asset does not exist. So create new one
+                final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder,
+                        lang.get());
+                savedAsset = checkinOrPublish(contentlet, user, live);
             }
-
             final FileAsset fileAsset = fileAssetAPI.fromContentlet(savedAsset);
             return toAsset(fileAsset);
         } finally {
             disposeTempFile(tempFile);
+        }
+    }
+
+    /**
+     * Handles archived content
+     * @param contentlet the contentlet to handle
+     * @param user the user performing the action
+     */
+    private void handleArchivedContent(final Contentlet contentlet, final User user) {
+        try {
+            if (contentlet.isArchived()) {
+                contentletAPI.unarchive(contentlet, user, false);
+            }
+        } catch (DotSecurityException | DotDataException e) {
+            Logger.warn(WebAssetHelper.class, String.format(
+                    "An error occurred handling archived piece of content with id [%s]. ",
+                    contentlet.getIdentifier()), e);
         }
     }
 
@@ -543,11 +558,11 @@ public class WebAssetHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Contentlet makeFileAsset(final File file, final Folder folder, Language lang)
+    Contentlet makeFileAsset(final File file, final Host host, final Folder folder, Language lang)
             throws DotDataException, DotSecurityException {
         final Contentlet contentlet = new Contentlet();
         contentlet.setContentTypeId(contentTypeAPI.find("FileAsset").id());
-        return updateFileAsset(file, folder, lang, contentlet);
+        return updateFileAsset(file, host, folder, lang, contentlet);
     }
 
 
@@ -559,12 +574,16 @@ public class WebAssetHelper {
      * @param contentlet
      * @return
      */
-    Contentlet updateFileAsset(final File file, final Folder folder, final Language lang, final Contentlet contentlet){
+    Contentlet updateFileAsset(final File file, final Host host, final Folder folder, final Language lang, final Contentlet contentlet){
         final String name = file.getName();
         contentlet.setProperty(FileAssetAPI.TITLE_FIELD, name);
         contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, name);
         contentlet.setProperty(FileAssetAPI.BINARY_FIELD, file);
-        contentlet.setFolder(folder.getInode());
+        if(!folder.isSystemFolder()){
+            contentlet.setFolder(folder.getInode());
+        } else {
+            contentlet.setHost(host.getIdentifier());
+        }
         contentlet.setLanguageId(lang.getId());
         return contentlet;
     }

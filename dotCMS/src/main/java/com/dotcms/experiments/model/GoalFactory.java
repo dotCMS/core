@@ -17,6 +17,7 @@ import java.util.function.Function;
 public class GoalFactory {
 
     private static final Map<MetricType, Function<Metric, Goal>> builder = map(
+            MetricType.EXIT_RATE,  metric -> new Goal(metric, GoalType.MINIMIZE),
             MetricType.BOUNCE_RATE,  metric -> new Goal(metric, GoalType.MINIMIZE),
             MetricType.REACH_PAGE, metric -> new Goal(metric, GoalType.MAXIMIZE),
             MetricType.CLICK_ON_ELEMENT, metric -> new Goal(metric, GoalType.MAXIMIZE),
