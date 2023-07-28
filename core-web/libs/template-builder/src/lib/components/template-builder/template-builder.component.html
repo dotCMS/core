@@ -4,7 +4,6 @@
     </div>
     <div class="p-toolbar-group-end">
         <dotcms-add-widget
-            [dragClass]="'ui-draggable-dragging'"
             [label]="'dot.template.builder.add.row' | dm"
             [icon]="rowIcon"
             [gridstackOptions]="rowOptions"
@@ -15,7 +14,6 @@
         <dotcms-add-widget
             id="box-picker"
             #addBox
-            [dragClass]="'ui-draggable-dragging'"
             [label]="'dot.template.builder.add.box' | dm"
             [gridstackOptions]="boxOptions"
             [attr.gs-w]="boxWidth"
@@ -56,7 +54,6 @@
                 class="grid-stack-item"
                 #rowElement
                 *ngFor="let row of vm.rows; trackBy: identify"
-                [dragClass]="'ui-draggable-dragging'"
                 [attr.gs-id]="row.id"
                 [attr.gs-x]="row.x"
                 [attr.gs-y]="row.y"
@@ -76,7 +73,6 @@
                         class="grid-stack-item sub"
                         #boxElement
                         *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
-                        [dragClass]="'ui-draggable-dragging'"
                         [attr.gs-id]="box.id"
                         [attr.gs-auto]="true"
                         [attr.gs-x]="box.x"
