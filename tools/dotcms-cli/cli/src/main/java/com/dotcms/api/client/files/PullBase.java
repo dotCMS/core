@@ -7,6 +7,8 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodeInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.FilesUtils;
+import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.Workspace;
 import com.dotcms.model.language.Language;
 import org.jboss.logging.Logger;
 
@@ -19,8 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
-import static com.dotcms.common.LocationUtils.LOCATION_FILES;
+import java.util.concurrent.ForkJoinPool;
 
 public class PullBase {
 
@@ -32,6 +33,9 @@ public class PullBase {
 
     @Inject
     protected RestClientFactory clientFactory;
+
+    @Inject
+    protected WorkspaceManager workspaceManager;
 
     /**
      * Processes the file tree by retrieving languages, checking the base structure,
@@ -125,23 +129,10 @@ public class PullBase {
      * @return the root path for storing the files
      * @throws IOException if an I/O error occurs while creating directories
      */
-    protected String checkBaseStructure(final String destination) {
-
-        // For the pull of files, everything will be stored in a folder called "files"
-        var filesFolder = Paths.get(destination, LOCATION_FILES);
-
-        // Create the folder if it does not exist
-        if (!Files.exists(filesFolder)) {
-            try {
-                Files.createDirectories(filesFolder);
-            } catch (IOException e) {
-                var message = String.format("Error creating directory [%s]", filesFolder.toAbsolutePath());
-                logger.debug(message, e);
-                throw new RuntimeException(message, e);
-            }
-        }
-
-        return filesFolder.toString();
+    protected Path checkBaseStructure(final String destination) throws IOException {
+        final Path path = Paths.get(destination);
+        final Workspace workspace = workspaceManager.getOrCreate(path);
+        return workspace.files();
     }
 
     /**

@@ -2,10 +2,17 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.command.CommandTest;
+import com.dotcms.cli.command.contenttype.ContentTypeCommand;
+import com.dotcms.cli.command.contenttype.ContentTypePull;
+import com.dotcms.cli.command.language.LanguageCommand;
+import com.dotcms.cli.command.language.LanguagePull;
 import com.dotcms.cli.common.InputOutputFormat;
+import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.Workspace;
 import io.quarkus.test.junit.QuarkusTest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.*;
 import org.wildfly.common.Assert;
@@ -27,6 +34,9 @@ class SiteCommandTest extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;
+
+    @Inject
+    WorkspaceManager workspaceManager;
 
     @BeforeAll
     public static void beforeAll() {
@@ -105,6 +115,7 @@ class SiteCommandTest extends CommandTest {
     @Test
     void Test_Command_Site_Push_Publish_UnPublish_Then_Archive() throws IOException {
 
+        final Workspace workspace = workspaceManager.getOrCreate();
         final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
@@ -125,11 +136,11 @@ class SiteCommandTest extends CommandTest {
             status = commandLine.execute(SiteCommand.NAME, SiteUnarchive.NAME, newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName, "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
         } finally {
-            Files.deleteIfExists(Path.of(".", String.format("%s.%s", newSiteName, InputOutputFormat.defaultFormat().getExtension())));
+            workspaceManager.destroy(workspace);
         }
     }
 
@@ -157,7 +168,7 @@ class SiteCommandTest extends CommandTest {
      */
     @Test
     void Test_Command_Create_Then_Pull_Then_Push() throws IOException {
-
+        final Workspace workspace = workspaceManager.getOrCreate();
         final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
@@ -168,7 +179,7 @@ class SiteCommandTest extends CommandTest {
             int status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName, "-saveTo="+newSiteName );
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName);
 
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
@@ -180,7 +191,7 @@ class SiteCommandTest extends CommandTest {
 
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName, "-saveTo="+newSiteName );
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName, "--workspace", workspace.root().toString());
 
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
 
@@ -191,10 +202,15 @@ class SiteCommandTest extends CommandTest {
             Assertions.assertTrue(output.contains("Failed pulling Site:"));
 
         } finally {
-            Files.deleteIfExists(Path.of(".", String.format("%s.%s", newSiteName, InputOutputFormat.defaultFormat().getExtension())));
+            workspaceManager.destroy(workspace);
         }
     }
 
+    /**
+     * Given scenario: Create a new site, pull it, push it, and pull it again.
+     * Expected Results: The site should be created. Pulled so we can test push.
+     * @throws IOException
+     */
     @Test
     void Test_Create_From_File_via_Push() throws IOException {
         final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
@@ -219,6 +235,39 @@ class SiteCommandTest extends CommandTest {
 
             status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+        }
+    }
+
+    /**
+     * Given scenario: Despite the number of times the same Site gets pulled, it should only be created once locally
+     * Expected result: The WorkspaceManager should be able to create and destroy a workspace
+     * @throws IOException
+     */
+    @Test
+    void Test_Pull_Same_Site_Multiple_Times() throws IOException {
+        final Workspace workspace = workspaceManager.getOrCreate();
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            for (int i=0; i<= 5; i++) {
+                int status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, siteName, "--workspace", workspace.root().toString());
+                Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+                System.out.println("Site Pulled: " + i);
+            }
+
+            final String fileName = String.format("%s.json", siteName);
+            final Path path = Path.of(workspace.sites().toString(), fileName);
+            Assert.assertTrue(Files.exists(path));
+
+            try (Stream<Path> walk = Files.walk(workspace.sites())) {
+                long count = walk.filter(p -> Files.isRegularFile(p) && p.getFileName().toString()
+                        .startsWith(siteName.toLowerCase())).count();
+                Assertions.assertEquals(1, count);
+            }
+
+        } finally {
+            workspaceManager.destroy(workspace);
         }
     }
 

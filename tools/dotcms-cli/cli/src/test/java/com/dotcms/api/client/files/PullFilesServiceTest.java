@@ -7,12 +7,14 @@ import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.common.WorkspaceManagerImpl;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
+import java.util.stream.Stream;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +31,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @QuarkusTest
-public class PullFilesServiceTest {
+class PullFilesServiceTest {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;
@@ -95,10 +97,15 @@ public class PullFilesServiceTest {
             //Validating the file system
             // ============================
             // Get the list of folders created inside the temporal folder
-            List<String> existingFolders = new ArrayList<>();
-            Files.walk(tempFolder)
-                    .filter(Files::isDirectory)
-                    .forEach(path -> existingFolders.add(tempFolder.relativize(path).toString()));
+            List<String> collectedFolders = new ArrayList<>();
+
+            try(final Stream<Path> walk = Files.walk(tempFolder)){
+                walk.filter(Files::isDirectory)
+                .forEach(path -> collectedFolders.add(tempFolder.relativize(path).toString()));
+            }
+            //Let's remove the workspace folder from the list
+            List<String> existingFolders = collectedFolders.stream().map(folder -> folder.replaceAll(
+                    "^dot-workspace-\\d+/","")).collect(Collectors.toList());
 
             var basePath = "files/live/en-us/" + testSiteName;
             // Expected folder structure based on the treeNode object
