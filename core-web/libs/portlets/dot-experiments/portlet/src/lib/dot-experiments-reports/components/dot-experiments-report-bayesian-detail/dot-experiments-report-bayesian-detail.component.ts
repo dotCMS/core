@@ -9,7 +9,7 @@ import { TagModule } from 'primeng/tag';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_ID,
-    DotExperimentVariantDailyDetail,
+    DotExperimentVariantBayesianDetail,
     Variant
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -18,25 +18,25 @@ import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-expe
 import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-store';
 
 @Component({
-    selector: 'dot-experiments-report-daily-details',
+    selector: 'dot-experiments-report-bayesian-detail',
     standalone: true,
+    templateUrl: './dot-experiments-report-bayesian-detail.component.html',
+    styleUrls: ['./dot-experiments-report-bayesian-detail.component.scss'],
     imports: [
-        NgIf,
-        NgClass,
-        TitleCasePipe,
         DotExperimentsDetailsTableComponent,
-        DotMessagePipe,
-        TagModule,
         ButtonModule,
-        ConfirmPopupModule
+        ConfirmPopupModule,
+        DotMessagePipe,
+        NgIf,
+        TagModule,
+        TitleCasePipe,
+        NgClass
     ],
-    templateUrl: './dot-experiments-report-daily-details.component.html',
-    styleUrls: ['./dot-experiments-report-daily-details.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsReportDailyDetailsComponent {
+export class DotExperimentsReportBayesianDetailComponent {
     @Input()
-    detailData: DotExperimentVariantDailyDetail[] = [];
+    detailData: DotExperimentVariantBayesianDetail[] = [];
     @Input()
     hasEnoughSessions: boolean;
     @Input()
@@ -61,7 +61,7 @@ export class DotExperimentsReportDailyDetailsComponent {
     promoteVariant(
         $event: MouseEvent,
         experimentId: string,
-        variant: DotExperimentVariantDailyDetail
+        variant: DotExperimentVariantBayesianDetail
     ) {
         this.confirmationService.confirm({
             target: $event.target,

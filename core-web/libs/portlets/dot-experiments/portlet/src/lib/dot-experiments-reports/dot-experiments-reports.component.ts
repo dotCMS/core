@@ -18,11 +18,12 @@ import { TabViewModule } from 'primeng/tabview';
 import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperimentVariantDetail } from '@dotcms/dotcms-models';
+import { DotExperimentVariantDailyDetail } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
+import { DotExperimentsReportBayesianDetailComponent } from './components/dot-experiments-report-bayesian-detail/dot-experiments-report-bayesian-detail.component';
 import { DotExperimentsReportDailyDetailsComponent } from './components/dot-experiments-report-daily-details/dot-experiments-report-daily-details.component';
 import { DotExperimentsReportsChartComponent } from './components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsReportsSkeletonComponent } from './components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
@@ -57,7 +58,8 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         ButtonModule,
         TitleCasePipe,
         ConfirmPopupModule,
-        TabViewModule
+        TabViewModule,
+        DotExperimentsReportBayesianDetailComponent
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],
@@ -115,7 +117,11 @@ export class DotExperimentsReportsComponent implements OnInit {
      * @returns void
      * @memberof DotExperimentsReportsComponent
      */
-    promoteVariant($event: MouseEvent, experimentId: string, variant: DotExperimentVariantDetail) {
+    promoteVariant(
+        $event: MouseEvent,
+        experimentId: string,
+        variant: DotExperimentVariantDailyDetail
+    ) {
         this.confirmationService.confirm({
             target: $event.target,
             message: this.dotMessageService.get('experiment.reports.promote.warning'),

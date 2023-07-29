@@ -18,7 +18,8 @@ import {
     DotExperiment,
     DotExperimentResults,
     DotExperimentStatus,
-    DotExperimentVariantDetail,
+    DotExperimentVariantBayesianDetail,
+    DotExperimentVariantDailyDetail,
     DotResultGoal,
     DotResultVariant,
     ExperimentLineChartDatasetDefaultProperties,
@@ -61,7 +62,8 @@ export interface VmReportExperiment {
     results: DotExperimentResults;
     dailyChartData: ChartData<'line'> | null;
     bayesianChartData: ChartData<'line'> | null;
-    detailData: DotExperimentVariantDetail[];
+    dailyDetailData: DotExperimentVariantDailyDetail[];
+    bayesianDetailData: DotExperimentVariantBayesianDetail[];
     isLoading: boolean;
     hasEnoughSessions: boolean;
     status: ComponentStatus;
@@ -141,13 +143,30 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         results ? { datasets: getBayesianDatasets(results) } : null
     );
 
-    readonly getDetailData$: Observable<DotExperimentVariantDetail[]> = this.select(
+    readonly getDailyDetailData$: Observable<DotExperimentVariantDailyDetail[]> = this.select(
         ({ experiment, results }) => {
             const noData = this.dotMessageService.get(NOT_ENOUGH_DATA_LABEL);
 
             return results
                 ? Object.values(results.goals.primary.variants).map((variant) => {
-                      return this.getDotExperimentVariantDetail(
+                      return this.getDotExperimentVariantDailyDetail(
+                          experiment,
+                          results,
+                          variant,
+                          noData
+                      );
+                  })
+                : [];
+        }
+    );
+
+    readonly getBayesianDetailData$: Observable<DotExperimentVariantBayesianDetail[]> = this.select(
+        ({ experiment, results }) => {
+            const noData = this.dotMessageService.get(NOT_ENOUGH_DATA_LABEL);
+
+            return results
+                ? Object.values(results.goals.primary.variants).map((variant) => {
+                      return this.getDotExperimentVariantBayesianDetail(
                           experiment,
                           results,
                           variant,
@@ -204,7 +223,12 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     );
 
     readonly promoteVariant = this.effect(
-        (variant$: Observable<{ experimentId: string; variant: DotExperimentVariantDetail }>) => {
+        (
+            variant$: Observable<{
+                experimentId: string;
+                variant: DotExperimentVariantDailyDetail | DotExperimentVariantBayesianDetail;
+            }>
+        ) => {
             return variant$.pipe(
                 switchMap((variantToPromote) => {
                     const { experimentId, variant } = variantToPromote;
@@ -242,7 +266,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         this.getBayesianChartData$,
         this.summaryWinnerLegend$,
         this.getSuggestedWinner$,
-        this.getDetailData$,
+        this.getDailyDetailData$,
+        this.getBayesianDetailData$,
         this.getPromotedVariant$,
         (
             { experiment, status, results },
@@ -253,7 +278,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             bayesianChartData,
             winnerLegendSummary,
             suggestedWinner,
-            detailData,
+            dailyDetailData,
+            bayesianDetailData,
             promotedVariant
         ) => ({
             experiment,
@@ -272,7 +298,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                 )
             },
             suggestedWinner,
-            detailData,
+            dailyDetailData,
+            bayesianDetailData,
             promotedVariant
         })
     );
@@ -326,12 +353,12 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         });
     }
 
-    private getDotExperimentVariantDetail(
+    private getDotExperimentVariantDailyDetail(
         experiment: DotExperiment,
         results: DotExperimentResults,
         variant: DotResultVariant,
         noDataLabel: string
-    ): DotExperimentVariantDetail {
+    ): DotExperimentVariantDailyDetail {
         const variantBayesianResult = getBayesianVariantResult(
             variant.variantName,
             results.bayesianResult.results
@@ -354,6 +381,29 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                 variantBayesianResult?.probability,
                 noDataLabel
             ),
+            isWinner: results.bayesianResult.suggestedWinner === variant.variantName,
+            isPromoted: isPromotedVariant(experiment, variant.variantName)
+        };
+    }
+
+    private getDotExperimentVariantBayesianDetail(
+        experiment: DotExperiment,
+        results: DotExperimentResults,
+        variant: DotResultVariant,
+        _noDataLabel: string
+    ): DotExperimentVariantBayesianDetail {
+        // const variantBayesianResult = getBayesianVariantResult(
+        //     variant.variantName,
+        //     results.bayesianResult.results
+        // );
+
+        return {
+            id: variant.variantName,
+            name: variant.variantDescription,
+            success: variant.uniqueBySession.count,
+            failures: 1,
+            risk: 1,
+            credibilityInterval: 1,
             isWinner: results.bayesianResult.suggestedWinner === variant.variantName,
             isPromoted: isPromotedVariant(experiment, variant.variantName)
         };

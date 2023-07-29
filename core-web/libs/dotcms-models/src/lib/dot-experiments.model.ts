@@ -88,7 +88,7 @@ export interface TrafficProportion {
     variants: Array<Variant>;
 }
 
-export interface DotExperimentVariantDetail {
+export interface DotExperimentVariantDailyDetail {
     id: string;
     name: string;
     conversions: number;
@@ -96,6 +96,17 @@ export interface DotExperimentVariantDetail {
     conversionRateRange: string;
     sessions: number;
     probabilityToBeBest: string;
+    isWinner: boolean;
+    isPromoted: boolean;
+}
+
+export interface DotExperimentVariantBayesianDetail {
+    id: string;
+    name: string;
+    success: number;
+    failures: number;
+    risk: number;
+    credibilityInterval: number;
     isWinner: boolean;
     isPromoted: boolean;
 }

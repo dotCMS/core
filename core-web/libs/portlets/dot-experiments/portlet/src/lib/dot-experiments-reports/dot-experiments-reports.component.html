@@ -29,7 +29,7 @@
                             />
 
                             <dot-experiments-report-daily-details
-                                [detailData]="vm.detailData"
+                                [detailData]="vm.dailyDetailData"
                                 [experimentId]="vm.experiment.id"
                                 [hasEnoughSessions]="vm.hasEnoughSessions"
                                 [promotedVariantId]="vm.promotedVariant"
@@ -46,6 +46,13 @@
                                 [isLinearAxis]="true"
                                 [isLoading]="vm.isLoading"
                                 data-testId="bayesian-chart"
+                            />
+
+                            <dot-experiments-report-bayesian-detail
+                                [detailData]="vm.bayesianDetailData"
+                                [experimentId]="vm.experiment.id"
+                                [hasEnoughSessions]="vm.hasEnoughSessions"
+                                [promotedVariantId]="vm.promotedVariant"
                             />
                         </div>
                     </p-tabPanel>
