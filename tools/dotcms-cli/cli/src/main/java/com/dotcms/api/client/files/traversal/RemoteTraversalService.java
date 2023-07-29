@@ -3,7 +3,9 @@ package com.dotcms.api.client.files.traversal;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.common.AssetsUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -20,15 +22,18 @@ public interface RemoteTraversalService {
      * @param path                  The remote path to the directory to traverse.
      * @param depth                 The maximum depth to traverse the directory tree. If null, the
      *                              traversal will go all the way down to the bottom of the tree.
+     * @param failFast              true to fail fast, false to continue on error
      * @param includeFolderPatterns The glob patterns for folders to include in the traversal.
      * @param includeAssetPatterns  The glob patterns for assets to include in the traversal.
      * @param excludeFolderPatterns The glob patterns for folders to exclude from the traversal.
      * @param excludeAssetPatterns  The glob patterns for assets to exclude from the traversal.
-     * @return A TreeNode representing the directory tree rooted at the specified path.
+     * @return A Pair object containing a list of exceptions encountered during traversal and the resulting
+     * TreeNode representing the directory tree rooted at the specified path.
      */
-    TreeNode traverseRemoteFolder(
+    Pair<List<Exception>, TreeNode> traverseRemoteFolder(
             final String path,
             final Integer depth,
+            final boolean failFast,
             final Set<String> includeFolderPatterns,
             final Set<String> includeAssetPatterns,
             final Set<String> excludeFolderPatterns,
@@ -44,9 +49,11 @@ public interface RemoteTraversalService {
      * @param localPathStructure the local path structure of the folder being pushed
      * @param treeNode           the tree node representing the folder and its contents with all the push
      *                           information for each file and folder
+     * @param failFast           true to fail fast, false to continue on error
      * @param progressBar        the console progress bar to track and display the push progress
+     * @return A list of exceptions encountered during the push process.
      */
-    void pushTreeNode(String workspace, AssetsUtils.LocalPathStructure localPathStructure, TreeNode treeNode,
-                      ConsoleProgressBar progressBar);
+    List<Exception> pushTreeNode(String workspace, AssetsUtils.LocalPathStructure localPathStructure, TreeNode treeNode,
+                                 final boolean failFast, ConsoleProgressBar progressBar);
 
 }

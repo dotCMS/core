@@ -4,7 +4,7 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.io.File;
 import java.util.List;
@@ -22,13 +22,15 @@ public interface PushService {
      * @param removeAssets       true to allow remove assets, false otherwise
      * @param removeFolders      true to allow remove folders, false otherwise
      * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
-     * @return a list of pairs, where each pair represents a folder's local path structure and its corresponding tree node
+     * @param failFast           true to fail fast, false to continue on error
+     * @return a list of Triple, where each Triple contains a list of exceptions, the folder's local path structure
+     * and its corresponding root node of the hierarchical tree
      * @throws IllegalArgumentException if the source path or workspace path does not exist, or if the source path is
      *                                  outside the workspace
      */
-    List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(
+    List<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(
             OutputOptionMixin output, File workspace, File source, boolean removeAssets, boolean removeFolders,
-            boolean ignoreEmptyFolders);
+            boolean ignoreEmptyFolders, final boolean failFast);
 
     /**
      * Processes the tree nodes by pushing their contents to the remote server. It initiates the push operation
@@ -40,9 +42,11 @@ public interface PushService {
      * @param treeNode           the tree node representing the folder and its contents with all the push information
      *                           for each file and folder
      * @param treeNodePushInfo   the push information summary associated with the tree node
+     * @param failFast           true to fail fast, false to continue on error
      * @throws RuntimeException if an error occurs during the push process
      */
-    void processTreeNodes(OutputOptionMixin output, String workspace, AssetsUtils.LocalPathStructure localPathStructure,
-                          TreeNode treeNode, TreeNodePushInfo treeNodePushInfo);
+    List<Exception> processTreeNodes(OutputOptionMixin output, String workspace,
+                                     AssetsUtils.LocalPathStructure localPathStructure, TreeNode treeNode,
+                                     TreeNodePushInfo treeNodePushInfo, final boolean failFast);
 
 }

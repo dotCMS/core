@@ -30,12 +30,13 @@ public class PullServiceImpl implements PullService {
      * @param destination          the destination path to save the pulled files
      * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
+     * @param failFast             true to fail fast, false to continue on error
      */
     @ActivateRequestContext
     @Override
     public void pullTree(OutputOptionMixin output, final TreeNode tree, final String destination,
-                         final boolean overwrite, final boolean generateEmptyFolders) {
-        pullFolder.pull(output, tree, destination, overwrite, generateEmptyFolders);
+                         final boolean overwrite, final boolean generateEmptyFolders, final boolean failFast) {
+        pullFolder.pull(output, tree, destination, overwrite, generateEmptyFolders, failFast);
     }
 
     /**
@@ -46,12 +47,13 @@ public class PullServiceImpl implements PullService {
      * @param source      the remote source path for the file to pull
      * @param destination the destination path to save the pulled files
      * @param overwrite   true to overwrite existing files, false otherwise
+     * @param failFast    true to fail fast, false to continue on error
      */
     @ActivateRequestContext
     @Override
-    public void pullFile(OutputOptionMixin output, final AssetVersionsView assetInfo,
-                         final String source, final String destination, final boolean overwrite) {
-        pullFile.pull(output, assetInfo, source, destination, overwrite);
+    public void pullFile(OutputOptionMixin output, final AssetVersionsView assetInfo, final String source,
+                         final String destination, final boolean overwrite, final boolean failFast) {
+        pullFile.pull(output, assetInfo, source, destination, overwrite, failFast);
     }
 
 }

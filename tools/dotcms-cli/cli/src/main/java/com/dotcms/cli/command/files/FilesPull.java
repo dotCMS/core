@@ -8,12 +8,14 @@ import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.common.LocationUtils;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
+import org.apache.commons.lang3.tuple.Pair;
 import picocli.CommandLine;
 
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
@@ -52,6 +54,12 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                     "When this option is enabled, the pull process will not create empty folders. "
                             + "By default, this option is disabled, and empty folders will not be created.")
     boolean includeEmptyFolders;
+
+    @CommandLine.Option(names = {"-ff", "--fail-fast"}, defaultValue = "false",
+            description =
+                    "Stop at first failure and exit the command. By default, this option is disabled, "
+                            + "and the command will continue on error.")
+    boolean failFast;
 
     @CommandLine.Option(names = {"-ef", "--excludeFolder"},
             paramLabel = "patterns",
@@ -100,12 +108,13 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 var excludeFolderPatterns = parsePatternOption(excludeFolderPatternsOption);
                 var excludeAssetPatterns = parsePatternOption(excludeAssetPatternsOption);
 
-                CompletableFuture<TreeNode> folderTraversalFuture = CompletableFuture.supplyAsync(
+                CompletableFuture<Pair<List<Exception>, TreeNode>> folderTraversalFuture = CompletableFuture.supplyAsync(
                         () -> {
                             // Service to handle the traversal of the folder
                             return remoteTraversalService.traverseRemoteFolder(
                                     source,
                                     recursive ? null : 0,
+                                    true,
                                     includeFolderPatterns,
                                     includeAssetPatterns,
                                     excludeFolderPatterns,
@@ -136,7 +145,8 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
                 // ---
                 // Now we need to pull the contents based on the tree we found
-                pullAssetsService.pullTree(output, result, destination.getAbsolutePath(), override, includeEmptyFolders);
+                pullAssetsService.pullTree(output, result.getRight(), destination.getAbsolutePath(),
+                        override, includeEmptyFolders, failFast);
 
             } else { // Handling single files
 
@@ -166,7 +176,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 }
 
                 // Handle the pull of a single file
-                pullAssetsService.pullFile(output, result, source, destination.getAbsolutePath(), override);
+                pullAssetsService.pullFile(output, result, source, destination.getAbsolutePath(), override, failFast);
             }
 
             output.info("\n\nPull process finished successfully.");

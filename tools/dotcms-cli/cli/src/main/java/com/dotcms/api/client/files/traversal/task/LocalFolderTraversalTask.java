@@ -8,6 +8,7 @@ import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.security.Utils;
 import com.google.common.base.Strings;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jboss.logging.Logger;
 
 import javax.ws.rs.NotFoundException;
@@ -30,7 +31,7 @@ import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
  * This task is used to split the traversal into smaller sub-tasks
  * that can be executed in parallel, allowing for faster traversal of large directory structures.
  */
-public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
+public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>, TreeNode>> {
 
     private final Retriever retriever;
     private final Logger logger;
@@ -41,15 +42,20 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
     private final boolean ignoreEmptyFolders;
     private final boolean removeAssets;
     private final boolean removeFolders;
+    private final boolean failFast;
 
     /**
      * Constructs a new LocalFolderTraversalTask instance.
      *
-     * @param logger        the logger
-     * @param retriever     the retriever used for REST calls and other operations.
-     * @param siteExists    whether the site exists on the remote server
-     * @param sourcePath    the source path to traverse
-     * @param workspace     the project workspace
+     * @param logger             the logger
+     * @param retriever          the retriever used for REST calls and other operations.
+     * @param siteExists         whether the site exists on the remote server
+     * @param sourcePath         the source path to traverse
+     * @param workspace          the project workspace
+     * @param removeAssets       whether to remove assets
+     * @param removeFolders      whether to remove folders
+     * @param ignoreEmptyFolders whether to ignore empty folders
+     * @param failFast           true to fail fast, false to continue on error
      */
     public LocalFolderTraversalTask(
             final Logger logger,
@@ -59,7 +65,8 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
             final File workspace,
             final boolean removeAssets,
             final boolean removeFolders,
-            final boolean ignoreEmptyFolders) {
+            final boolean ignoreEmptyFolders,
+            final boolean failFast) {
 
         this.logger = logger;
         this.retriever = retriever;
@@ -69,6 +76,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
         this.removeAssets = removeAssets;
         this.removeFolders = removeFolders;
         this.ignoreEmptyFolders = ignoreEmptyFolders;
+        this.failFast = failFast;
     }
 
     /**
@@ -79,12 +87,23 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
      * constructor.
      */
     @Override
-    protected TreeNode compute() {
+    protected Pair<List<Exception>, TreeNode> compute() {
+
+        var errors = new ArrayList<Exception>();
 
         File folderOrFile = new File(sourcePath);
 
-        final var localPathStructure = ParseLocalPath(this.workspace, folderOrFile);
-        TreeNode currentNode = gatherSyncInformation(this.workspace, folderOrFile, localPathStructure);
+        TreeNode currentNode = null;
+        try {
+            final var localPathStructure = ParseLocalPath(this.workspace, folderOrFile);
+            currentNode = gatherSyncInformation(this.workspace, folderOrFile, localPathStructure);
+        } catch (Exception e) {
+            if (failFast) {
+                throw e;
+            } else {
+                errors.add(e);
+            }
+        }
 
         if (folderOrFile.isDirectory()) {
 
@@ -106,7 +125,8 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
                                 this.workspace,
                                 this.removeAssets,
                                 this.removeFolders,
-                                this.ignoreEmptyFolders
+                                this.ignoreEmptyFolders,
+                                this.failFast
                         );
                         forks.add(subTask);
                         subTask.fork();
@@ -114,13 +134,14 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
                 }
 
                 for (LocalFolderTraversalTask task : forks) {
-                    TreeNode subNode = task.join();
-                    currentNode.addChild(subNode);
+                    var taskResult = task.join();
+                    errors.addAll(taskResult.getLeft());
+                    currentNode.addChild(taskResult.getRight());
                 }
             }
         }
 
-        return currentNode;
+        return Pair.of(errors, currentNode);
     }
 
     /**
@@ -144,24 +165,30 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
 
             File[] files = folderOrFile.listFiles(new HiddenFileFilter());
 
-            // First, retrieving the folder from the remote server
-            FolderView remoteFolder = retrieveFolder(localPathStructure);
+            try {
+                // First, retrieving the folder from the remote server
+                FolderView remoteFolder = retrieveFolder(localPathStructure);
 
-            // ---
-            // Checking if we need to push this folder
-            checkFolderToPush(parentFolderViewBuilder, remoteFolder, files);
+                // ---
+                // Checking if we need to push this folder
+                checkFolderToPush(parentFolderViewBuilder, remoteFolder, files);
 
-            // ---
-            // Checking if we need to remove folders
-            checkFoldersToRemove(live, lang, parentFolderViewBuilder, files, remoteFolder);
+                // ---
+                // Checking if we need to remove folders
+                checkFoldersToRemove(live, lang, parentFolderViewBuilder, files, remoteFolder);
 
-            // ---
-            // Checking if we need to remove files
-            checkAssetsToRemove(live, lang, parentFolderAssetVersionsViewBuilder, files, remoteFolder);
+                // ---
+                // Checking if we need to remove files
+                checkAssetsToRemove(live, lang, parentFolderAssetVersionsViewBuilder, files, remoteFolder);
 
-            // ---
-            // Checking if we need to push files
-            checkAssetsToPush(workspaceFile, live, lang, parentFolderAssetVersionsViewBuilder, files, remoteFolder);
+                // ---
+                // Checking if we need to push files
+                checkAssetsToPush(workspaceFile, live, lang, parentFolderAssetVersionsViewBuilder, files, remoteFolder);
+            } catch (Exception e) {
+                var message = String.format("Error processing folder [%s]", folderOrFile.getAbsolutePath());
+                logger.debug(message, e);
+                throw new RuntimeException(message, e);
+            }
 
             parentFolderViewBuilder.assets(parentFolderAssetVersionsViewBuilder.build());
             var parentFolderView = parentFolderViewBuilder.build();
@@ -181,28 +208,34 @@ public class LocalFolderTraversalTask extends RecursiveTask<TreeNode> {
             var parentFolderViewBuilder = folderViewFromFile(parentLocalPathStructure);
             var parentFolderAssetVersionsViewBuilder = AssetVersionsView.builder();
 
-            // First, retrieving the asset from the remote server
-            AssetVersionsView remoteAsset = retrieveAsset(localPathStructure);
+            try {
+                // First, retrieving the asset from the remote server
+                AssetVersionsView remoteAsset = retrieveAsset(localPathStructure);
 
-            // Checking if we need to push the file
-            var pushInfo = shouldPushFile(live, lang, folderOrFile, remoteAsset);
-            if (pushInfo.push()) {
+                // Checking if we need to push the file
+                var pushInfo = shouldPushFile(live, lang, folderOrFile, remoteAsset);
+                if (pushInfo.push()) {
 
-                logger.debug(String.format("Marking file [%s] - live [%b] - lang [%s] for push " +
-                                "- New [%b] - Modified [%b].",
-                        localPathStructure.filePath(), live, lang, pushInfo.isNew(), pushInfo.isModified()));
+                    logger.debug(String.format("Marking file [%s] - live [%b] - lang [%s] for push " +
+                                    "- New [%b] - Modified [%b].",
+                            localPathStructure.filePath(), live, lang, pushInfo.isNew(), pushInfo.isModified()));
 
-                var asset = assetViewFromFile(localPathStructure);
-                asset.markForPush(true).
-                        pushTypeNew(pushInfo.isNew()).
-                        pushTypeModified(pushInfo.isModified());
+                    var asset = assetViewFromFile(localPathStructure);
+                    asset.markForPush(true).
+                            pushTypeNew(pushInfo.isNew()).
+                            pushTypeModified(pushInfo.isModified());
 
-                parentFolderAssetVersionsViewBuilder.addVersions(
-                        asset.build()
-                );
-            } else {
-                logger.debug(String.format("File [%s] - live [%b] - lang [%s] - already exist in the server.",
-                        localPathStructure.filePath(), live, lang));
+                    parentFolderAssetVersionsViewBuilder.addVersions(
+                            asset.build()
+                    );
+                } else {
+                    logger.debug(String.format("File [%s] - live [%b] - lang [%s] - already exist in the server.",
+                            localPathStructure.filePath(), live, lang));
+                }
+            } catch (Exception e) {
+                var message = String.format("Error processing file [%s]", folderOrFile.getAbsolutePath());
+                logger.debug(message, e);
+                throw new RuntimeException(message, e);
             }
 
             parentFolderViewBuilder.assets(parentFolderAssetVersionsViewBuilder.build());

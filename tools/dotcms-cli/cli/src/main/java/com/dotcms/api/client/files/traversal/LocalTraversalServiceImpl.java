@@ -9,7 +9,7 @@ import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
 import io.quarkus.arc.DefaultBean;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.Dependent;
@@ -18,6 +18,7 @@ import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 import static com.dotcms.common.AssetsUtils.ParseLocalPath;
@@ -51,14 +52,16 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
      * @param removeAssets       true to allow remove assets, false otherwise
      * @param removeFolders      true to allow remove folders, false otherwise
      * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
-     * @return a pair representing a folder's local path structure and its corresponding root node of the hierarchical tree
+     * @param failFast           true to fail fast, false to continue on error
+     * @return a Triple containing a list of exceptions, the folder's local path structure and its corresponding
+     * root node of the hierarchical tree
      */
     @ActivateRequestContext
     @Override
-    public Pair<AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(
+    public Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(
             OutputOptionMixin output, final File workspace, final String source,
             final boolean removeAssets, final boolean removeFolders,
-            final boolean ignoreEmptyFolders) {
+            final boolean ignoreEmptyFolders, final boolean failFast) {
 
         logger.debug(String.format("Traversing file system folder: %s - in workspace: %s",
                 source, workspace.getAbsolutePath()));
@@ -99,10 +102,12 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 workspace,
                 removeAssets,
                 removeFolders,
-                ignoreEmptyFolders
+                ignoreEmptyFolders,
+                failFast
         );
+        var result = forkJoinPool.invoke(task);
 
-        return Pair.of(localPathStructure, forkJoinPool.invoke(task));
+        return Triple.of(result.getLeft(), localPathStructure, result.getRight());
     }
 
     /**
@@ -115,11 +120,13 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
      * @param language             the language to process
      * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
+     * @param failFast             true to fail fast, false to continue on error
      * @param progressBar          the progress bar for tracking the pull progress
+     * @return a list of exceptions that occurred during the pull
      */
-    public void buildFileSystemTree(final TreeNode rootNode, final String destination, final boolean isLive,
+    public List<Exception> buildFileSystemTree(final TreeNode rootNode, final String destination, final boolean isLive,
                                     final String language, final boolean overwrite, final boolean generateEmptyFolders,
-                                    ConsoleProgressBar progressBar) {
+                                               final boolean failFast, ConsoleProgressBar progressBar) {
 
         // Filter the tree by status and language
         TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, language, generateEmptyFolders, false);
@@ -135,9 +142,10 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 rootPath.toString(),
                 overwrite,
                 generateEmptyFolders,
+                failFast,
                 language,
                 progressBar);
-        forkJoinPool.invoke(task);
+        return forkJoinPool.invoke(task);
     }
 
 }

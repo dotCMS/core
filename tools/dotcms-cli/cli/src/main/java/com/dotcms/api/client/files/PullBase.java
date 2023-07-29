@@ -42,44 +42,47 @@ public class PullBase {
      * @param destination          the destination path to save the pulled files
      * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
+     * @param failFast             true to fail fast, false to continue on error
      * @param progressBar          the progress bar for tracking the pull progress
      */
     @ActivateRequestContext
-    protected void processTree(final TreeNode tree,
-                               final TreeNodeInfo treeNodeInfo,
-                               final String destination,
-                               final boolean overwrite,
-                               final boolean generateEmptyFolders,
-                               final ConsoleProgressBar progressBar) {
+    protected List<Exception> processTree(final TreeNode tree,
+                                          final TreeNodeInfo treeNodeInfo,
+                                          final String destination,
+                                          final boolean overwrite,
+                                          final boolean generateEmptyFolders,
+                                          final boolean failFast,
+                                          final ConsoleProgressBar progressBar) {
 
-        try {
+        // Make sure we have a valid destination
+        var rootPath = checkBaseStructure(destination);
 
-            // Make sure we have a valid destination
-            var rootPath = checkBaseStructure(destination);
+        // Preparing the languages for the tree
+        var treeLanguages = prepareLanguages(treeNodeInfo);
 
-            // Preparing the languages for the tree
-            var treeLanguages = prepareLanguages(treeNodeInfo);
+        // Calculating the total number of steps
+        progressBar.setTotalSteps(
+                treeNodeInfo.assetsCount()
+        );
 
-            // Calculating the total number of steps
-            progressBar.setTotalSteps(
-                    treeNodeInfo.assetsCount()
-            );
+        // Sort the sets and convert them into lists
+        List<String> sortedLiveLanguages = new ArrayList<>(treeLanguages.liveLanguages);
+        Collections.sort(sortedLiveLanguages);
 
-            // Sort the sets and convert them into lists
-            List<String> sortedLiveLanguages = new ArrayList<>(treeLanguages.liveLanguages);
-            Collections.sort(sortedLiveLanguages);
+        List<String> sortedWorkingLanguages = new ArrayList<>(treeLanguages.workingLanguages);
+        Collections.sort(sortedWorkingLanguages);
 
-            List<String> sortedWorkingLanguages = new ArrayList<>(treeLanguages.workingLanguages);
-            Collections.sort(sortedWorkingLanguages);
+        // Process the live tree
+        var errors = processTreeByStatus(true, sortedLiveLanguages, tree, rootPath,
+                overwrite, generateEmptyFolders, failFast, progressBar);
+        var foundErrors = new ArrayList<>(errors);
 
-            // Process the live tree
-            processTreeByStatus(true, sortedLiveLanguages, tree, rootPath, overwrite, generateEmptyFolders, progressBar);
-            // Process the working tree
-            processTreeByStatus(false, sortedWorkingLanguages, tree, rootPath, overwrite, generateEmptyFolders, progressBar);
+        // Process the working tree
+        errors = processTreeByStatus(false, sortedWorkingLanguages, tree, rootPath,
+                overwrite, generateEmptyFolders, failFast, progressBar);
+        foundErrors.addAll(errors);
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return foundErrors;
     }
 
     /**
@@ -91,21 +94,28 @@ public class PullBase {
      * @param destination          the destination path to save the pulled files
      * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
+     * @param failFast             true to fail fast, false to continue on error
      * @param progressBar          the progress bar for tracking the pull progress
      */
     @ActivateRequestContext
-    protected void processTreeByStatus(boolean isLive, List<String> languages, TreeNode rootNode,
-                                       final String destination, final boolean overwrite,
-                                       final boolean generateEmptyFolders, final ConsoleProgressBar progressBar) {
+    protected List<Exception> processTreeByStatus(boolean isLive, List<String> languages, TreeNode rootNode,
+                                                  final String destination, final boolean overwrite,
+                                                  final boolean generateEmptyFolders, final boolean failFast,
+                                                  final ConsoleProgressBar progressBar) {
+
+        var foundErrors = new ArrayList<Exception>();
 
         if (languages.isEmpty()) {
-            return;
+            return foundErrors;
         }
 
         for (String lang : languages) {
-            traversalService.buildFileSystemTree(rootNode, destination, isLive, lang, overwrite,
-                    generateEmptyFolders, progressBar);
+            var errors = traversalService.buildFileSystemTree(rootNode, destination, isLive, lang, overwrite,
+                    generateEmptyFolders, failFast, progressBar);
+            foundErrors.addAll(errors);
         }
+
+        return foundErrors;
     }
 
     /**
@@ -115,14 +125,20 @@ public class PullBase {
      * @return the root path for storing the files
      * @throws IOException if an I/O error occurs while creating directories
      */
-    protected String checkBaseStructure(final String destination) throws IOException {
+    protected String checkBaseStructure(final String destination) {
 
         // For the pull of files, everything will be stored in a folder called "files"
         var filesFolder = Paths.get(destination, LOCATION_FILES);
 
         // Create the folder if it does not exist
         if (!Files.exists(filesFolder)) {
-            Files.createDirectories(filesFolder);
+            try {
+                Files.createDirectories(filesFolder);
+            } catch (IOException e) {
+                var message = String.format("Error creating directory [%s]", filesFolder.toAbsolutePath());
+                logger.debug(message, e);
+                throw new RuntimeException(message, e);
+            }
         }
 
         return filesFolder.toString();

@@ -66,6 +66,7 @@ public class FolderTraversalServiceTest {
             remoteTraversalService.traverseRemoteFolder(
                     folderPath,
                     0,
+                    true,
                     parsePatternOption(null),
                     parsePatternOption(null),
                     parsePatternOption(null),
@@ -86,14 +87,16 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = remoteTraversalService.traverseRemoteFolder(
+        var result = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
+                true,
                 parsePatternOption(null),
                 parsePatternOption(null),
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
+        var treeNode = result.getRight();
 
         // ============================
         //Validating the tree
@@ -131,14 +134,16 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = remoteTraversalService.traverseRemoteFolder(
+        var result = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 0,
+                true,
                 parsePatternOption(null),
                 parsePatternOption(null),
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
+        var treeNode = result.getRight();
 
         // ============================
         //Validating the tree
@@ -161,14 +166,16 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = remoteTraversalService.traverseRemoteFolder(
+        var result = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
+                true,
                 parsePatternOption("**/subFolder1-1/**"),
                 parsePatternOption(null),
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
+        var treeNode = result.getRight();
 
         // ============================
         //Validating the tree
@@ -227,14 +234,16 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = remoteTraversalService.traverseRemoteFolder(
+        var result = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
+                true,
                 parsePatternOption("**/subFolder1-1"),
                 parsePatternOption(null),
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
+        var treeNode = result.getRight();
 
         // ============================
         //Validating the tree
@@ -297,14 +306,16 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = remoteTraversalService.traverseRemoteFolder(
+        var result = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
+                true,
                 parsePatternOption("**/folder1,**/folder3"),
                 parsePatternOption(null),
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
+        var treeNode = result.getRight();
 
         // ============================
         //Validating the tree
@@ -340,14 +351,16 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = remoteTraversalService.traverseRemoteFolder(
+        var result = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
+                true,
                 parsePatternOption(null),
                 parsePatternOption(null),
                 parsePatternOption("**/subFolder1-1/**"),
                 parsePatternOption(null)
         );
+        var treeNode = result.getRight();
 
         // ============================
         //Validating the tree
@@ -406,14 +419,16 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = remoteTraversalService.traverseRemoteFolder(
+        var result = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
+                true,
                 parsePatternOption(null),
                 parsePatternOption(null),
                 parsePatternOption("**/subFolder1-1"),
                 parsePatternOption(null)
         );
+        var treeNode = result.getRight();
 
         // ============================
         //Validating the tree
@@ -476,14 +491,16 @@ public class FolderTraversalServiceTest {
 
         final var folderPath = String.format("//%s", testSiteName);
 
-        var treeNode = remoteTraversalService.traverseRemoteFolder(
+        var result = remoteTraversalService.traverseRemoteFolder(
                 folderPath,
                 null,
+                true,
                 parsePatternOption(null),
                 parsePatternOption(null),
                 parsePatternOption("**/folder1,**/folder3"),
                 parsePatternOption(null)
         );
+        var treeNode = result.getRight();
 
         // ============================
         //Validating the tree

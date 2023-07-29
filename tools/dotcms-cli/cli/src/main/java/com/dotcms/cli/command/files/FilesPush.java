@@ -4,7 +4,7 @@ import com.dotcms.api.client.files.PushService;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.common.AssetsUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import picocli.CommandLine;
 
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -53,6 +53,12 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                             + "By default, this option is disabled, and the changes will be applied to the remote server.")
     boolean dryRun;
 
+    @CommandLine.Option(names = {"-ff", "--fail-fast"}, defaultValue = "false",
+            description =
+                    "Stop at first failure and exit the command. By default, this option is disabled, "
+                            + "and the command will continue on error.")
+    boolean failFast;
+
     @Inject
     PushService pushService;
 
@@ -66,11 +72,12 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
         try {
 
-            CompletableFuture<List<Pair<AssetsUtils.LocalPathStructure, TreeNode>>> folderTraversalFuture = CompletableFuture.supplyAsync(
+            CompletableFuture<List<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>>>
+                    folderTraversalFuture = CompletableFuture.supplyAsync(
                     () -> {
                         // Service to handle the traversal of the folder
                         return pushService.traverseLocalFolders(output, workspace, source,
-                                removeAssets, removeFolders, true);
+                                removeAssets, removeFolders, true, true);
                     });
 
             // ConsoleLoadingAnimation instance to handle the waiting "animation"
@@ -97,8 +104,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
             // Let's try to print these tree with some order
             result.sort((o1, o2) -> {
-                var left = o1.getLeft();
-                var right = o2.getLeft();
+                var left = o1.getMiddle();
+                var right = o2.getMiddle();
                 return left.filePath().compareTo(right.filePath());
             });
 
@@ -106,18 +113,18 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
             for (var treeNodeData : result) {
 
+                var localPathStructure = treeNodeData.getMiddle();
+                var treeNode = treeNodeData.getRight();
+
                 StringBuilder sb = new StringBuilder();
 
                 sb.append(count++ == 0 ? "\r\n" : "\n\n").
                         append(" ------\n").
                         append(String.format(" @|bold Folder [%s]|@ --- Site: [%s] - Status [%s] - Language [%s] \n",
-                                treeNodeData.getLeft().filePath(),
-                                treeNodeData.getLeft().site(),
-                                treeNodeData.getLeft().status(),
-                                treeNodeData.getLeft().language()));
-
-                var localPathStructure = treeNodeData.getLeft();
-                var treeNode = treeNodeData.getRight();
+                                localPathStructure.filePath(),
+                                localPathStructure.site(),
+                                localPathStructure.status(),
+                                localPathStructure.language()));
 
                 var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
 
@@ -166,8 +173,14 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     // ---
                     // Pushing the tree
                     if (!dryRun) {
-                        pushService.processTreeNodes(output, workspace.getAbsolutePath(), localPathStructure,
-                                treeNode, treeNodePushInfo);
+                        var errors = pushService.processTreeNodes(output, workspace.getAbsolutePath(),
+                                localPathStructure, treeNode, treeNodePushInfo, failFast);
+                        if (!errors.isEmpty()) {
+                            output.info("Errors found during the push process:");
+                            for (var error : errors) {
+                                output.error(error.getMessage());
+                            }
+                        }
                     }
 
                 } else {

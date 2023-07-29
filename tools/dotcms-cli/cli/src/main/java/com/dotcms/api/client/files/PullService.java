@@ -17,9 +17,10 @@ public interface PullService {
      * @param destination          the destination path to save the pulled files
      * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
+     * @param failFast             true to fail fast, false to continue on error
      */
     void pullTree(OutputOptionMixin output, TreeNode tree, String destination, boolean overwrite,
-                  boolean generateEmptyFolders);
+                  boolean generateEmptyFolders, final boolean failFast);
 
     /**
      * Pulls a file from the server and saves it to the specified destination.
@@ -29,8 +30,9 @@ public interface PullService {
      * @param source      the remote source path for the file to pull
      * @param destination the destination path to save the pulled files
      * @param overwrite   true to overwrite existing files, false otherwise
+     * @param failFast    true to fail fast, false to continue on error
      */
-    void pullFile(OutputOptionMixin output, AssetVersionsView assetInfo,
-                  String source, String destination, boolean overwrite);
+    void pullFile(OutputOptionMixin output, AssetVersionsView assetInfo, String source, String destination,
+                  boolean overwrite, final boolean failFast);
 
 }

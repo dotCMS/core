@@ -9,13 +9,12 @@ import com.dotcms.model.asset.FolderView;
 import com.dotcms.security.Utils;
 import org.jboss.logging.Logger;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.RecursiveTask;
 
 import static com.dotcms.common.AssetsUtils.BuildRemoteAssetURL;
 import static com.dotcms.common.AssetsUtils.BuildRemoteURL;
@@ -24,12 +23,13 @@ import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 /**
  * Recursive task for building the file system tree.
  */
-public class LocalFoldersTreeBuilderTask extends RecursiveAction {
+public class LocalFoldersTreeBuilderTask extends RecursiveTask<List<Exception>> {
 
     private final TreeNode rootNode;
     private final String destination;
     private final boolean overwrite;
     private final boolean generateEmptyFolders;
+    private final boolean failFast;
     private final String language;
 
     private final Downloader downloader;
@@ -48,6 +48,7 @@ public class LocalFoldersTreeBuilderTask extends RecursiveAction {
      * @param destination          the destination path to save the pulled files
      * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
+     * @param failFast             true to fail fast, false to continue on error
      * @param language             the language of the assets
      * @param progressBar          the progress bar for tracking the pull progress
      */
@@ -57,6 +58,7 @@ public class LocalFoldersTreeBuilderTask extends RecursiveAction {
                                        final String destination,
                                        final boolean overwrite,
                                        final boolean generateEmptyFolders,
+                                       final boolean failFast,
                                        final String language,
                                        final ConsoleProgressBar progressBar) {
         this.logger = logger;
@@ -65,19 +67,38 @@ public class LocalFoldersTreeBuilderTask extends RecursiveAction {
         this.overwrite = overwrite;
         this.destination = destination;
         this.generateEmptyFolders = generateEmptyFolders;
+        this.failFast = failFast;
         this.language = language;
         this.progressBar = progressBar;
     }
 
     @Override
-    protected void compute() {
+    protected List<Exception> compute() {
+
+        var errors = new ArrayList<Exception>();
 
         // Create the folder for the current node
-        createFolderInFileSystem(destination, rootNode.folder());
+        try {
+            createFolderInFileSystem(destination, rootNode.folder());
+        } catch (Exception e) {
+            if (failFast) {
+                throw e;
+            } else {
+                errors.add(e);
+            }
+        }
 
         // Create files for the assets in the current node
         for (AssetView asset : rootNode.assets()) {
-            createFileInFileSystem(destination, rootNode.folder(), asset);
+            try {
+                createFileInFileSystem(destination, rootNode.folder(), asset);
+            } catch (Exception e) {
+                if (failFast) {
+                    throw e;
+                } else {
+                    errors.add(e);
+                }
+            }
         }
 
         // Recursively build the file system tree for the children nodes
@@ -92,6 +113,7 @@ public class LocalFoldersTreeBuilderTask extends RecursiveAction {
                         destination,
                         overwrite,
                         generateEmptyFolders,
+                        failFast,
                         language,
                         progressBar
                 );
@@ -100,10 +122,12 @@ public class LocalFoldersTreeBuilderTask extends RecursiveAction {
             }
 
             for (LocalFoldersTreeBuilderTask task : tasks) {
-                task.join();
+                var taskErrors = task.join();
+                errors.addAll(taskErrors);
             }
         }
 
+        return errors;
     }
 
     /**
@@ -127,7 +151,7 @@ public class LocalFoldersTreeBuilderTask extends RecursiveAction {
             } else {
                 logger.debug(String.format("Skipping folder [%s], it already exists in the file system", remoteFolderURL));
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             var message = String.format("Error creating folder [%s] to [%s]", remoteFolderURL, folderPath);
             logger.debug(message, e);
             throw new RuntimeException(message, e);
@@ -146,48 +170,52 @@ public class LocalFoldersTreeBuilderTask extends RecursiveAction {
         String remoteAssetURL = generateRemoteAssetURL(folder, asset.name());
         var assetFilePath = Paths.get(destination, folder.path(), asset.name());
 
-        // Remote SHA-256
-        final String remoteFileHash = (String) asset.metadata().get(SHA256_META_KEY.key());
+        try {
 
-        // Local SHA-256
-        String localFileHash = null;
-        if (Files.exists(assetFilePath)) {
+            // Remote SHA-256
+            final String remoteFileHash = (String) asset.metadata().get(SHA256_META_KEY.key());
 
-            if (overwrite) {
-                localFileHash = Utils.Sha256toUnixHash(assetFilePath);
+            // Local SHA-256
+            String localFileHash = null;
+            if (Files.exists(assetFilePath)) {
+
+                if (overwrite) {
+                    localFileHash = Utils.Sha256toUnixHash(assetFilePath);
+                } else {
+                    // If the file already exist, and we are not overwriting files, there is no point in downloading it
+                    localFileHash = remoteFileHash; // Fixing hashes so the download is skipped
+                }
+            }
+
+            // Verify if we need to download the file
+            if (localFileHash == null || !localFileHash.equals(remoteFileHash)) {
+
+                logger.debug("Downloading file: " + remoteAssetURL);
+
+                // Download the file
+                try (var inputStream = this.downloader.download(AssetRequest.builder().
+                        assetPath(remoteAssetURL).
+                        language(language).
+                        live(asset.live()).
+                        build())) {
+
+                    // Copy the contents of the InputStream to the target file
+                    Files.copy(inputStream, assetFilePath, StandardCopyOption.REPLACE_EXISTING);
+                    logger.debug(String.format("Downloaded file [%s] to [%s] ", remoteAssetURL, assetFilePath));
+                }
             } else {
-                // If the file already exist, and we are not overwriting files, there is no point in downloading it
-                localFileHash = remoteFileHash; // Fixing hashes so the download is skipped
+                logger.debug(String.format("Skipping file [%s], it already exists in the file system - Override flag [%b]",
+                        remoteAssetURL, overwrite));
             }
+        } catch (Exception e) {
+            var message = String.format("Error processing file [%s] to [%s] ", remoteAssetURL, assetFilePath);
+            logger.debug(message, e);
+            throw new RuntimeException(message, e);
+        } finally {
+            // File processed, updating the progress bar
+            progressBar.incrementStep();
         }
 
-        // Verify if we need to download the file
-        if (localFileHash == null || !localFileHash.equals(remoteFileHash)) {
-
-            logger.debug("Downloading file: " + remoteAssetURL);
-
-            // Download the file
-            try (var inputStream = this.downloader.download(AssetRequest.builder().
-                    assetPath(remoteAssetURL).
-                    language(language).
-                    live(asset.live()).
-                    build())) {
-
-                // Copy the contents of the InputStream to the target file
-                Files.copy(inputStream, assetFilePath, StandardCopyOption.REPLACE_EXISTING);
-                logger.debug(String.format("Downloaded file [%s] to [%s] ", remoteAssetURL, assetFilePath));
-            } catch (IOException e) {
-                var message = String.format("Error downloading file [%s] to [%s] ", remoteAssetURL, assetFilePath);
-                logger.debug(message, e);
-                throw new RuntimeException(message, e);
-            }
-        } else {
-            logger.debug(String.format("Skipping file [%s], it already exists in the file system - Override flag [%b]",
-                    remoteAssetURL, overwrite));
-        }
-
-        // Downloaded file, updating the progress bar
-        progressBar.incrementStep();
     }
 
     /**

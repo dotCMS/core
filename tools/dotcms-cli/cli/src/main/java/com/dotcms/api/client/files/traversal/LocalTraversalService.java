@@ -4,9 +4,10 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * Service for traversing a file system directory and building a hierarchical tree representation of
@@ -26,11 +27,13 @@ public interface LocalTraversalService {
      * @param removeAssets       true to allow remove assets, false otherwise
      * @param removeFolders      true to allow remove folders, false otherwise
      * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
-     * @return a pair representing a folder's local path structure and its corresponding root node of the hierarchical tree
+     * @param failFast           true to fail fast, false to continue on error
+     * @return a Triple containing a list of exceptions, the folder's local path structure and its corresponding
+     * root node of the hierarchical tree
      */
-    Pair<AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(
+    Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(
             OutputOptionMixin output, final File workspace, final String source,
-            boolean removeAssets, boolean removeFolders, boolean ignoreEmptyFolders);
+            boolean removeAssets, boolean removeFolders, boolean ignoreEmptyFolders, final boolean failFast);
 
     /**
      * Builds the file system tree from the specified root node. The tree is built using a ForkJoinPool, which allows
@@ -42,9 +45,12 @@ public interface LocalTraversalService {
      * @param language             the language to process
      * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
+     * @param failFast             true to fail fast, false to continue on error
      * @param progressBar          the progress bar for tracking the pull progress
+     * @return a list of exceptions that occurred during the pull
      */
-    void buildFileSystemTree(TreeNode rootNode, String destination, boolean isLive, String language, boolean overwrite,
-                             boolean generateEmptyFolders, ConsoleProgressBar progressBar);
+    List<Exception> buildFileSystemTree(TreeNode rootNode, String destination, boolean isLive, String language,
+                                        boolean overwrite, boolean generateEmptyFolders, final boolean failFast,
+                                        ConsoleProgressBar progressBar);
 
 }

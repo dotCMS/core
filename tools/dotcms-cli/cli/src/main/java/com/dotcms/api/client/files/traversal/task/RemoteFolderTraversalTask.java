@@ -4,7 +4,10 @@ import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.traversal.Filter;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.model.asset.FolderView;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jboss.logging.Logger;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
@@ -14,40 +17,48 @@ import java.util.concurrent.RecursiveTask;
  * representation of its contents. This task is used to split the traversal into smaller sub-tasks
  * that can be executed in parallel, allowing for faster traversal of large directory structures.
  */
-public class RemoteFolderTraversalTask extends RecursiveTask<TreeNode> {
+public class RemoteFolderTraversalTask extends RecursiveTask<Pair<List<Exception>, TreeNode>> {
 
+    private final Logger logger;
     private final Retriever retriever;
     private final Filter filter;
     private final String siteName;
     private final FolderView folder;
     private final boolean root;
     private final int depth;
+    private final boolean failFast;
 
     /**
      * Constructs a new RemoteFolderTraversalTask instance with the specified site name, folder, root
      * flag, and depth.
      *
+     * @param logger    the logger for logging debug information
      * @param retriever The retriever used for REST calls and other operations.
      * @param filter    The filter used to include or exclude folders and assets.
      * @param siteName  The name of the site containing the folder to traverse.
      * @param folder    The folder to traverse.
      * @param root      Whether this task is for the root folder.
      * @param depth     The maximum depth to traverse the directory tree.
+     * @param failFast  true to fail fast, false to continue on error
      */
     public RemoteFolderTraversalTask(
+            final Logger logger,
             Retriever retriever,
             Filter filter,
             final String siteName,
             final FolderView folder,
             final Boolean root,
-            final int depth) {
+            final int depth,
+            final boolean failFast) {
 
+        this.logger = logger;
         this.retriever = retriever;
         this.filter = filter;
         this.siteName = siteName;
         this.folder = folder;
         this.root = root;
         this.depth = depth;
+        this.failFast = failFast;
     }
 
     /**
@@ -58,66 +69,55 @@ public class RemoteFolderTraversalTask extends RecursiveTask<TreeNode> {
      * constructor.
      */
     @Override
-    protected TreeNode compute() {
+    protected Pair<List<Exception>, TreeNode> compute() {
 
-        TreeNode currentNode = new TreeNode(folder);
+        var errors = new ArrayList<Exception>();
+
+        var currentNode = new TreeNode(folder);
+        var currentFolder = folder;
 
         List<RemoteFolderTraversalTask> forks = new LinkedList<>();
 
         // Processing the very first level
         if (root) {
 
-            // Make a REST call to fetch the root folder
-            var fetchedFolder = this.restCall(
-                    this.siteName,
-                    folder.path(),
-                    folder.level(),
-                    folder.implicitGlobInclude(),
-                    folder.explicitGlobInclude(),
-                    folder.explicitGlobExclude()
-            );
+            try {
+                // Make a REST call to fetch the root folder
+                currentFolder = this.retrieveFolderInformation(
+                        this.siteName,
+                        folder.path(),
+                        folder.level(),
+                        folder.implicitGlobInclude(),
+                        folder.explicitGlobInclude(),
+                        folder.explicitGlobExclude()
+                );
 
-            // Using the values set by the filter in the root folder
-            var detailedFolder = folder.withImplicitGlobInclude(fetchedFolder.implicitGlobInclude());
-            detailedFolder = detailedFolder.withExplicitGlobInclude(fetchedFolder.explicitGlobInclude());
-            detailedFolder = detailedFolder.withExplicitGlobExclude(fetchedFolder.explicitGlobExclude());
-            currentNode = new TreeNode(detailedFolder);
+                // Using the values set by the filter in the root folder
+                var detailedFolder = folder.withImplicitGlobInclude(currentFolder.implicitGlobInclude());
+                detailedFolder = detailedFolder.withExplicitGlobInclude(currentFolder.explicitGlobInclude());
+                detailedFolder = detailedFolder.withExplicitGlobExclude(currentFolder.explicitGlobExclude());
+                currentNode = new TreeNode(detailedFolder);
 
-            // Process the fetched sub-folders
-            if (fetchedFolder.subFolders() != null) {
-                for (FolderView subFolder : fetchedFolder.subFolders()) {
-                    if (this.depth == 0) {
-                        currentNode.addChild(new TreeNode(subFolder));
-                    } else {
-
-                        // Create a new task to traverse the sub-folder and add it to the list of sub-tasks
-                        var task = searchForFolder(
-                                this.siteName,
-                                subFolder.path(),
-                                subFolder.level(),
-                                subFolder.implicitGlobInclude(),
-                                subFolder.explicitGlobInclude(),
-                                subFolder.explicitGlobExclude()
-                        );
-                        forks.add(task);
-                        task.fork();
-                    }
+                // Add the fetched files to the root folder
+                if (currentFolder.assets() != null) {
+                    currentNode.assets(currentFolder.assets().versions());
+                }
+            } catch (Exception e) {
+                if (failFast) {
+                    throw e;
+                } else {
+                    errors.add(e);
                 }
             }
+        }
 
-            // Add the fetched files to the root folder
-            if (fetchedFolder.assets() != null) {
-                currentNode.assets(fetchedFolder.assets().versions());
-            }
+        // Traverse all sub-folders of the current folder
+        if (currentFolder.subFolders() != null) {
+            for (FolderView subFolder : currentFolder.subFolders()) {
 
-        } else {
+                if (this.depth == -1 || subFolder.level() <= this.depth) {
 
-            // Traverse all sub-folders of the current folder
-            if (this.folder.subFolders() != null) {
-                for (FolderView subFolder : this.folder.subFolders()) {
-
-                    if (this.depth == -1 || subFolder.level() <= this.depth) {
-
+                    try {
                         // Create a new task to traverse the sub-folder and add it to the list of sub-tasks
                         var task = searchForFolder(
                                 this.siteName,
@@ -129,22 +129,29 @@ public class RemoteFolderTraversalTask extends RecursiveTask<TreeNode> {
                         );
                         forks.add(task);
                         task.fork();
-                    } else {
-
-                        // Add the sub-folder to the current node if we've reached the maximum traversal depth
-                        currentNode.addChild(new TreeNode(subFolder));
+                    } catch (Exception e) {
+                        if (failFast) {
+                            throw e;
+                        } else {
+                            errors.add(e);
+                        }
                     }
+                } else {
+
+                    // Add the sub-folder to the current node if we've reached the maximum traversal depth
+                    currentNode.addChild(new TreeNode(subFolder));
                 }
             }
         }
 
         // Join all sub-tasks and add their results to the current node
         for (RemoteFolderTraversalTask task : forks) {
-            TreeNode childNode = task.join();
-            currentNode.addChild(childNode);
+            var taskResult = task.join();
+            errors.addAll(taskResult.getLeft());
+            currentNode.addChild(taskResult.getRight());
         }
 
-        return currentNode;
+        return Pair.of(errors, currentNode);
     }
 
     /**
@@ -182,16 +189,18 @@ public class RemoteFolderTraversalTask extends RecursiveTask<TreeNode> {
             final Boolean explicitGlobExclude
     ) {
 
-        final var folder = this.restCall(siteName, folderPath, level,
+        final var folder = this.retrieveFolderInformation(siteName, folderPath, level,
                 implicitGlobInclude, explicitGlobInclude, explicitGlobExclude);
 
         return new RemoteFolderTraversalTask(
+                this.logger,
                 this.retriever,
                 this.filter,
                 siteName,
                 folder,
                 false,
-                this.depth);
+                this.depth,
+                this.failFast);
     }
 
     /**
@@ -219,21 +228,27 @@ public class RemoteFolderTraversalTask extends RecursiveTask<TreeNode> {
      *                            rules or patterns.
      * @return an {@code FolderView} object containing the metadata for the requested folder
      */
-    private FolderView restCall(final String siteName, final String folderPath, final int level,
+    private FolderView retrieveFolderInformation(final String siteName, final String folderPath, final int level,
                                 final boolean implicitGlobInclude,
                                 final Boolean explicitGlobInclude,
                                 final Boolean explicitGlobExclude) {
 
-        var foundFolder = this.retriever.retrieveFolderInformation(
-                siteName,
-                folderPath,
-                level,
-                implicitGlobInclude,
-                explicitGlobInclude,
-                explicitGlobExclude
-        );
+        try {
+            var foundFolder = this.retriever.retrieveFolderInformation(
+                    siteName,
+                    folderPath,
+                    level,
+                    implicitGlobInclude,
+                    explicitGlobInclude,
+                    explicitGlobExclude
+            );
 
-        return this.filter.apply(foundFolder);
+            return this.filter.apply(foundFolder);
+        } catch (Exception e) {
+            var message = String.format("Error retrieving folder information [%s]", folderPath);
+            logger.debug(message, e);
+            throw new RuntimeException(message, e);
+        }
     }
 
 }

@@ -8,7 +8,7 @@ import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
 import io.quarkus.arc.DefaultBean;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.Dependent;
@@ -44,20 +44,22 @@ public class PushServiceImpl implements PushService {
      * @param removeAssets       true to allow remove assets, false otherwise
      * @param removeFolders      true to allow remove folders, false otherwise
      * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
-     * @return a list of pairs, where each pair represents a folder's local path structure and its corresponding tree node
+     * @param failFast           true to fail fast, false to continue on error
+     * @return a list of Triple, where each Triple contains a list of exceptions, the folder's local path structure
+     * and its corresponding root node of the hierarchical tree
      * @throws IllegalArgumentException if the source path or workspace path does not exist, or if the source path is
      *                                  outside the workspace
      */
     @ActivateRequestContext
     @Override
-    public List<Pair<AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(
+    public List<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(
             OutputOptionMixin output, final File workspace, final File source, final boolean removeAssets,
-            final boolean removeFolders, final boolean ignoreEmptyFolders) {
+            final boolean removeFolders, final boolean ignoreEmptyFolders, final boolean failFast) {
 
         // Validating the source is a valid path
         validateSource(workspace, source);
 
-        var traversalResult = new ArrayList<Pair<AssetsUtils.LocalPathStructure, TreeNode>>();
+        var traversalResult = new ArrayList<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>>();
 
         // Parsing the source in order to get the root or roots for the traversal
         var roots = AssetsUtils.ParseRootPaths(workspace, source);
@@ -65,7 +67,7 @@ public class PushServiceImpl implements PushService {
 
             // Traversing the local folder
             var result = localTraversalService.traverseLocalFolder(output, workspace, root,
-                    removeAssets, removeFolders, ignoreEmptyFolders);
+                    removeAssets, removeFolders, ignoreEmptyFolders, failFast);
 
             traversalResult.add(
                     result
@@ -85,13 +87,14 @@ public class PushServiceImpl implements PushService {
      * @param treeNode           the tree node representing the folder and its contents with all the push information
      *                           for each file and folder
      * @param treeNodePushInfo   the push information summary associated with the tree node
+     * @param failFast           true to fail fast, false to continue on error
      * @throws RuntimeException if an error occurs during the push process
      */
     @ActivateRequestContext
     @Override
-    public void processTreeNodes(OutputOptionMixin output, final String workspace,
-                                 final AssetsUtils.LocalPathStructure localPathStructure,
-                                 final TreeNode treeNode, final TreeNodePushInfo treeNodePushInfo) {
+    public List<Exception> processTreeNodes(OutputOptionMixin output, final String workspace,
+                                            final AssetsUtils.LocalPathStructure localPathStructure, final TreeNode treeNode,
+                                            final TreeNodePushInfo treeNodePushInfo, final boolean failFast) {
 
         // ConsoleProgressBar instance to handle the push progress bar
         ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
@@ -103,13 +106,10 @@ public class PushServiceImpl implements PushService {
                         treeNodePushInfo.foldersToDeleteCount()
         );
 
-        CompletableFuture<Void> pushTreeFuture = CompletableFuture.supplyAsync(
-                () -> {
-                    remoteTraversalService.pushTreeNode(
-                            workspace, localPathStructure, treeNode, progressBar
-                    );
-                    return null;
-                });
+        CompletableFuture<List<Exception>> pushTreeFuture = CompletableFuture.supplyAsync(
+                () -> remoteTraversalService.pushTreeNode(
+                        workspace, localPathStructure, treeNode, failFast, progressBar
+                ));
         progressBar.setFuture(pushTreeFuture);
 
         CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
@@ -121,7 +121,7 @@ public class PushServiceImpl implements PushService {
         // (pushTreeFuture and animationFuture) have completed.
         CompletableFuture.allOf(pushTreeFuture, animationFuture).join();
         try {
-            pushTreeFuture.get();
+            return pushTreeFuture.get();
         } catch (InterruptedException | ExecutionException e) {
             var errorMessage = String.format("Error occurred while pushing contents: [%s].", e.getMessage());
             logger.debug(errorMessage, e);

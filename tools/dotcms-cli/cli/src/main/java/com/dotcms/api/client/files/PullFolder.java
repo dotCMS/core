@@ -7,6 +7,7 @@ import io.quarkus.arc.DefaultBean;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -22,10 +23,11 @@ public class PullFolder extends PullBase {
      * @param destination          the destination path to save the pulled files
      * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
+     * @param failFast             true to fail fast, false to continue on error
      */
     @ActivateRequestContext
     public void pull(OutputOptionMixin output, final TreeNode tree, final String destination,
-                     final boolean overwrite, final boolean generateEmptyFolders) {
+                     final boolean overwrite, final boolean generateEmptyFolders, final boolean failFast) {
 
         // Collect important information about the tree
         final var treeNodeInfo = tree.collectUniqueStatusesAndLanguages(generateEmptyFolders);
@@ -41,11 +43,10 @@ public class PullFolder extends PullBase {
         // ConsoleProgressBar instance to handle the download progress bar
         ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
 
-        CompletableFuture<Void> treeBuilderFuture = CompletableFuture.supplyAsync(
-                () -> {
-                    processTree(tree, treeNodeInfo, destination, overwrite, generateEmptyFolders, progressBar);
-                    return null;
-                });
+        CompletableFuture<List<Exception>> treeBuilderFuture = CompletableFuture.supplyAsync(
+                () -> processTree(
+                        tree, treeNodeInfo, destination, overwrite, generateEmptyFolders, failFast, progressBar
+                ));
 
         progressBar.setFuture(treeBuilderFuture);
 
@@ -58,7 +59,15 @@ public class PullFolder extends PullBase {
         // (treeBuilderFuture and animationFuture) have completed.
         CompletableFuture.allOf(treeBuilderFuture, animationFuture).join();
         try {
-            treeBuilderFuture.get();
+
+            var errors = treeBuilderFuture.get();
+            if (!errors.isEmpty()) {
+                output.info("Errors found during the pull process:");
+                for (var error : errors) {
+                    output.error(error.getMessage());
+                }
+            }
+
         } catch (InterruptedException | ExecutionException e) {
             var errorMessage = String.format("Error occurred while pulling assets: [%s].", e.getMessage());
             logger.debug(errorMessage, e);

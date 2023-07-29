@@ -10,6 +10,7 @@ import io.quarkus.arc.DefaultBean;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -25,10 +26,11 @@ public class PullFile extends PullBase {
      * @param source      the remote source path for the file to pull
      * @param destination the destination path to save the pulled files
      * @param overwrite   true to overwrite existing files, false otherwise
+     * @param failFast    true to fail fast, false to continue on error
      */
     @ActivateRequestContext
     public void pull(OutputOptionMixin output, final AssetVersionsView assetInfo,
-                     final String source, final String destination, final boolean overwrite) {
+                     final String source, final String destination, final boolean overwrite, final boolean failFast) {
 
         // Parsing and validating the given path
         var dotCMSPath = AssetsUtils.ParseRemotePath(source);
@@ -53,11 +55,10 @@ public class PullFile extends PullBase {
         // ConsoleProgressBar instance to handle the download progress bar
         ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
 
-        CompletableFuture<Void> processFileFuture = CompletableFuture.supplyAsync(
-                () -> {
-                    processTree(tree, treeNodeInfo, destination, overwrite, false, progressBar);
-                    return null;
-                });
+        CompletableFuture<List<Exception>> processFileFuture = CompletableFuture.supplyAsync(
+                () -> processTree(
+                        tree, treeNodeInfo, destination, overwrite, false, failFast, progressBar
+                ));
 
         progressBar.setFuture(processFileFuture);
 
@@ -70,7 +71,15 @@ public class PullFile extends PullBase {
         // (processFileFuture and animationFuture) have completed.
         CompletableFuture.allOf(processFileFuture, animationFuture).join();
         try {
-            processFileFuture.get();
+
+            var errors = processFileFuture.get();
+            if (!errors.isEmpty()) {
+                output.info("Errors found during the pull process:");
+                for (var error : errors) {
+                    output.error(error.getMessage());
+                }
+            }
+
         } catch (InterruptedException | ExecutionException e) {
             var errorMessage = String.format("Error occurred while pulling asset: [%s].", e.getMessage());
             logger.debug(errorMessage, e);

@@ -76,9 +76,10 @@ public class PullFilesServiceTest {
 
             final var folderPath = String.format("//%s", testSiteName);
 
-            var treeNode = remoteTraversalService.traverseRemoteFolder(
+            var result = remoteTraversalService.traverseRemoteFolder(
                     folderPath,
                     null,
+                    true,
                     parsePatternOption(null),
                     parsePatternOption(null),
                     parsePatternOption(null),
@@ -87,7 +88,8 @@ public class PullFilesServiceTest {
 
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
-            pullAssetsService.pullTree(outputOptions, treeNode, tempFolder.toAbsolutePath().toString(), true, true);
+            pullAssetsService.pullTree(outputOptions, result.getRight(), tempFolder.toAbsolutePath().toString(),
+                    true, true, true);
 
             // ============================
             //Validating the file system
