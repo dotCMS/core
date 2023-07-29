@@ -7,21 +7,16 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodeInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.FilesUtils;
-import com.dotcms.common.WorkspaceManager;
-import com.dotcms.model.config.Workspace;
 import com.dotcms.model.language.Language;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ForkJoinPool;
 
 public class PullBase {
 
@@ -33,9 +28,6 @@ public class PullBase {
 
     @Inject
     protected RestClientFactory clientFactory;
-
-    @Inject
-    protected WorkspaceManager workspaceManager;
 
     /**
      * Processes the file tree by retrieving languages, checking the base structure,
@@ -52,14 +44,11 @@ public class PullBase {
     @ActivateRequestContext
     protected List<Exception> processTree(final TreeNode tree,
                                           final TreeNodeInfo treeNodeInfo,
-                                          final String destination,
+                                          final File destination,
                                           final boolean overwrite,
                                           final boolean generateEmptyFolders,
                                           final boolean failFast,
                                           final ConsoleProgressBar progressBar) {
-
-        // Make sure we have a valid destination
-        var rootPath = checkBaseStructure(destination);
 
         // Preparing the languages for the tree
         var treeLanguages = prepareLanguages(treeNodeInfo);
@@ -77,12 +66,12 @@ public class PullBase {
         Collections.sort(sortedWorkingLanguages);
 
         // Process the live tree
-        var errors = processTreeByStatus(true, sortedLiveLanguages, tree, rootPath,
+        var errors = processTreeByStatus(true, sortedLiveLanguages, tree, destination.getAbsolutePath(),
                 overwrite, generateEmptyFolders, failFast, progressBar);
         var foundErrors = new ArrayList<>(errors);
 
         // Process the working tree
-        errors = processTreeByStatus(false, sortedWorkingLanguages, tree, rootPath,
+        errors = processTreeByStatus(false, sortedWorkingLanguages, tree, destination.getAbsolutePath(),
                 overwrite, generateEmptyFolders, failFast, progressBar);
         foundErrors.addAll(errors);
 
@@ -120,19 +109,6 @@ public class PullBase {
         }
 
         return foundErrors;
-    }
-
-    /**
-     * Checks the base structure of the destination path and creates the necessary directories.
-     *
-     * @param destination the destination path to save the pulled files
-     * @return the root path for storing the files
-     * @throws IOException if an I/O error occurs while creating directories
-     */
-    protected Path checkBaseStructure(final String destination) throws IOException {
-        final Path path = Paths.get(destination);
-        final Workspace workspace = workspaceManager.getOrCreate(path);
-        return workspace.files();
     }
 
     /**

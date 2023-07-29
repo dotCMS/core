@@ -10,6 +10,7 @@ import io.quarkus.arc.DefaultBean;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -24,13 +25,13 @@ public class PullFile extends PullBase {
      * @param output      the output option mixin for printing progress
      * @param assetInfo   the remote asset information
      * @param source      the remote source path for the file to pull
-     * @param destination the destination path to save the pulled files
+     * @param destination the destination to save the pulled files
      * @param overwrite   true to overwrite existing files, false otherwise
      * @param failFast    true to fail fast, false to continue on error
      */
     @ActivateRequestContext
     public void pull(OutputOptionMixin output, final AssetVersionsView assetInfo,
-                     final String source, final String destination, final boolean overwrite, final boolean failFast) {
+                     final String source, final File destination, final boolean overwrite, final boolean failFast) {
 
         // Parsing and validating the given path
         var dotCMSPath = AssetsUtils.ParseRemotePath(source);

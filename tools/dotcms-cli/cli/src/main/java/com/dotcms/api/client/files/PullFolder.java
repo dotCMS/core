@@ -7,6 +7,7 @@ import io.quarkus.arc.DefaultBean;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -20,13 +21,13 @@ public class PullFolder extends PullBase {
      *
      * @param output               the output option mixin for printing progress
      * @param tree                 the tree node representing the file structure
-     * @param destination          the destination path to save the pulled files
+     * @param destination          the destination to save the pulled files
      * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
      * @param failFast             true to fail fast, false to continue on error
      */
     @ActivateRequestContext
-    public void pull(OutputOptionMixin output, final TreeNode tree, final String destination,
+    public void pull(OutputOptionMixin output, final TreeNode tree, final File destination,
                      final boolean overwrite, final boolean generateEmptyFolders, final boolean failFast) {
 
         // Collect important information about the tree

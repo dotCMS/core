@@ -56,9 +56,6 @@ public class PushServiceImpl implements PushService {
             OutputOptionMixin output, final File workspace, final File source, final boolean removeAssets,
             final boolean removeFolders, final boolean ignoreEmptyFolders, final boolean failFast) {
 
-        // Validating the source is a valid path
-        validateSource(workspace, source);
-
         var traversalResult = new ArrayList<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>>();
 
         // Parsing the source in order to get the root or roots for the traversal
@@ -128,40 +125,6 @@ public class PushServiceImpl implements PushService {
             throw new RuntimeException(errorMessage, e);
         }
 
-    }
-
-    /**
-     * Validates the source path and workspace path.
-     *
-     * @param workspace the workspace file
-     * @param source    the source file
-     * @throws IllegalArgumentException if the source path does not exist, the workspace path does not exist,
-     *                                  or the source path is outside the workspace
-     */
-    private void validateSource(File workspace, File source) {
-
-        if (!source.exists()) {
-            throw new IllegalArgumentException(String.format("Source path [%s] does not exist", source.getAbsolutePath()));
-        }
-
-        if (!workspace.exists()) {
-            throw new IllegalArgumentException(String.format("Workspace path [%s] does not exist", workspace.getAbsolutePath()));
-        }
-
-        // Validating the source is within the workspace
-        var workspacePath = workspace.toPath().normalize().toAbsolutePath();
-        var sourcePath = source.toPath().normalize().toAbsolutePath();
-
-        var workspaceCount = workspacePath.getNameCount();
-        var sourceCount = sourcePath.getNameCount();
-
-        if (sourceCount < workspaceCount) {
-            throw new IllegalArgumentException("Source path cannot be outside of the workspace");
-        }
-
-        if (!sourcePath.startsWith(workspacePath)) {
-            throw new IllegalArgumentException("Source path cannot be outside of the workspace");
-        }
     }
 
 }

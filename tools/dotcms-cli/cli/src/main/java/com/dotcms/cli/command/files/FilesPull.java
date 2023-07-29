@@ -14,7 +14,6 @@ import picocli.CommandLine;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -37,9 +36,9 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                     + "- Format: //{site}/{folder} or //{site}/{folder}/{file}")
     String source;
 
-    @CommandLine.Parameters(index = "1", arity = "0..1", paramLabel = "destination",
-            description = "Local root directory of the CLI project.")
-    File destination;
+    @CommandLine.Parameters(index = "1", arity = "0..1", paramLabel = "workspace",
+            description = "Local directory withing the CLI project workspace.")
+    File workspace;
 
     @CommandLine.Option(names = {"-r", "--recursive"}, defaultValue = "true",
             description = "Pulls directories and their contents recursively.")
@@ -94,10 +93,8 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Integer call() throws Exception {
 
-        // If the destination is not specified, we use the current directory
-        if (destination == null) {
-            destination = Paths.get("").toAbsolutePath().normalize().toFile();
-        }
+        // Calculating the workspace path for files
+        var workspaceFilesFolder = getOrCreateWorkspaceFilesDirectory(workspace);
 
         try {
 
@@ -145,8 +142,8 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
                 // ---
                 // Now we need to pull the contents based on the tree we found
-                pullAssetsService.pullTree(output, result.getRight(), destination.getAbsolutePath(),
-                        override, includeEmptyFolders, failFast);
+                pullAssetsService.pullTree(output, result.getRight(), workspaceFilesFolder, override,
+                        includeEmptyFolders, failFast);
 
             } else { // Handling single files
 
@@ -176,7 +173,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 }
 
                 // Handle the pull of a single file
-                pullAssetsService.pullFile(output, result, source, destination.getAbsolutePath(), override, failFast);
+                pullAssetsService.pullFile(output, result, source, workspaceFilesFolder, override, failFast);
             }
 
             output.info("\n\nPull process finished successfully.");
