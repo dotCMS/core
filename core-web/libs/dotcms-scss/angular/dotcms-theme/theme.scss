@@ -6,7 +6,7 @@
 @use "components/avatar";
 @use "components/badge";
 @use "components/breadcrumb";
-@use "components/button";
+@use "components/buttons/button";
 @use "components/calendar";
 @use "components/checkbox";
 @use "components/chip";
@@ -33,7 +33,7 @@
 @use "components/progress-spinner";
 @use "components/radiobutton";
 @use "components/selectbutton";
-@use "components/splitbutton";
+@use "components/buttons/splitbutton";
 @use "components/tabview";
 @use "components/toast";
 @use "components/toolbar";

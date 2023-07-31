@@ -1,0 +1,124 @@
+@use "sass:math";
+@use "variables" as *;
+@import "mixins";
+@import "common";
+
+// Shared all buttons
+.p-button {
+    border: none;
+    color: $white;
+
+    .p-button-label {
+        color: inherit;
+        font-size: inherit;
+        text-transform: capitalize;
+    }
+
+    .p-button-icon,
+    .pi {
+        color: inherit;
+        font-size: $icon-md;
+    }
+
+    // Shared but not icon only
+    &:not(.p-button-icon-only) {
+        border-radius: $border-radius-md;
+        font-size: $font-size-md;
+        gap: $spacing-1;
+        height: $field-height-md;
+        padding: 0 $spacing-3;
+        text-transform: capitalize;
+
+        &.p-button-lg,
+        .p-button-lg & {
+            @extend #large;
+        }
+
+        &.p-button-sm,
+        .p-button-sm & {
+            @extend #small;
+        }
+    }
+}
+
+// Shared disabled styles
+.p-button:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
+    @extend #button-disabled;
+
+    &.p-button-outlined {
+        @extend #button-disabled-outlined;
+    }
+}
+
+// Severity for basic button
+.p-button:enabled {
+    @extend #main-primary-severity;
+
+    &.p-button-secondary {
+        @extend #main-secondary-severity;
+    }
+}
+
+// Severity for outlined button
+.p-button-outlined:enabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
+    @extend #outlined-primary-severity;
+
+    &.p-button-sm {
+        @extend #outlined-primary-severity-sm;
+    }
+
+    &.p-button-secondary {
+        @extend #outlined-secondary-severity;
+
+        &.p-button-sm {
+            @extend #outlined-secondary-severity-sm;
+        }
+    }
+}
+
+// Severity for text button
+.p-button-text:enabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
+a.p-button.p-button-text {
+    @extend #text-primary-severity;
+
+    &.p-button-secondary {
+        @extend #text-secondary-severity;
+    }
+
+    &.p-button-danger {
+        @extend #text-danger-severity;
+    }
+}
+
+// Icon Only Sizes
+.p-button-icon-only:not(.p-splitbutton-menubutton) {
+    height: $field-height-md;
+    width: $field-height-md;
+    border: none;
+
+    .p-button-icon,
+    .pi {
+        font-size: $icon-lg;
+    }
+
+    &.p-button-sm {
+        height: $field-height-sm;
+        width: $field-height-sm;
+
+        .p-button-icon {
+            font-size: $icon-md;
+        }
+    }
+}
+
+// Misc
+.p-button.p-button-vertical {
+    height: 100%;
+    gap: 0;
+    margin-bottom: 0;
+    padding: $spacing-1;
+}
+
+.p-button-rounded {
+    border-radius: 50%;
+}

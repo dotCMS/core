@@ -6,11 +6,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { SplitButtonModule } from 'primeng/splitbutton';
 
-import {
-    BasicSplitButtonTemplate,
-    OutlinedSplitButtonTemplate,
-    TextSplitButtonTemplate
-} from './templates';
+import { BasicSplitButtonTemplate, OutlinedSplitButtonTemplate } from './templates';
 
 export default {
     title: 'PrimeNG/Button/SplitButton',
@@ -92,22 +88,6 @@ Outlined.parameters = {
     docs: {
         source: {
             code: OutlinedSplitButtonTemplate
-        }
-    }
-};
-export const Text: Story = () => {
-    return {
-        template: TextSplitButtonTemplate,
-        props: {
-            items
-        }
-    };
-};
-
-Text.parameters = {
-    docs: {
-        source: {
-            code: TextSplitButtonTemplate
         }
     }
 };
