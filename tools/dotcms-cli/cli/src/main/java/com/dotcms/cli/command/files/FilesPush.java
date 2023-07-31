@@ -176,14 +176,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     // ---
                     // Pushing the tree
                     if (!dryRun) {
-                        var errors = pushService.processTreeNodes(output, workspaceFilesFolder.getAbsolutePath(),
+                        pushService.processTreeNodes(output, workspaceFilesFolder.getAbsolutePath(),
                                 localPathStructure, treeNode, treeNodePushInfo, failFast);
-                        if (!errors.isEmpty()) {
-                            output.info("Errors found during the push process:");
-                            for (var error : errors) {
-                                output.error(error.getMessage());
-                            }
-                        }
                     }
 
                 } else {

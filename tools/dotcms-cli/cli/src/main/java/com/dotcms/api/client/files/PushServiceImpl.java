@@ -89,7 +89,7 @@ public class PushServiceImpl implements PushService {
      */
     @ActivateRequestContext
     @Override
-    public List<Exception> processTreeNodes(OutputOptionMixin output, final String workspace,
+    public void processTreeNodes(OutputOptionMixin output, final String workspace,
                                             final AssetsUtils.LocalPathStructure localPathStructure, final TreeNode treeNode,
                                             final TreeNodePushInfo treeNodePushInfo, final boolean failFast) {
 
@@ -118,7 +118,15 @@ public class PushServiceImpl implements PushService {
         // (pushTreeFuture and animationFuture) have completed.
         CompletableFuture.allOf(pushTreeFuture, animationFuture).join();
         try {
-            return pushTreeFuture.get();
+
+            var errors = pushTreeFuture.get();
+            if (!errors.isEmpty()) {
+                output.info("Errors found during the push process:");
+                for (var error : errors) {
+                    output.error(error.getMessage());
+                }
+            }
+
         } catch (InterruptedException | ExecutionException e) {
             var errorMessage = String.format("Error occurred while pushing contents: [%s].", e.getMessage());
             logger.debug(errorMessage, e);

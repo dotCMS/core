@@ -166,7 +166,6 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 // (assetInformationFuture and animationFuture) have completed.
                 CompletableFuture.allOf(assetInformationFuture, animationFuture).join();
                 final var result = assetInformationFuture.get();
-
                 if (result == null) {
                     output.error(String.format("Error occurred while pulling asset info: [%s].", source));
                     return CommandLine.ExitCode.SOFTWARE;
@@ -176,7 +175,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 pullAssetsService.pullFile(output, result, source, workspaceFilesFolder, override, failFast);
             }
 
-            output.info("\n\nPull process finished successfully.");
+            output.info(String.format("\n\nOutput has been written to [%s]", workspaceFilesFolder.getAbsolutePath()));
 
         } catch (Exception e) {
             return handleFolderTraversalExceptions(source, e);

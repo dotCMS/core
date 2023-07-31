@@ -45,7 +45,7 @@ public interface PushService {
      * @param failFast           true to fail fast, false to continue on error
      * @throws RuntimeException if an error occurs during the push process
      */
-    List<Exception> processTreeNodes(OutputOptionMixin output, String workspace,
+    void processTreeNodes(OutputOptionMixin output, String workspace,
                                      AssetsUtils.LocalPathStructure localPathStructure, TreeNode treeNode,
                                      TreeNodePushInfo treeNodePushInfo, final boolean failFast);
 
