@@ -154,3 +154,4 @@ This maintenance release includes the following code fixes:
 128. https://github.com/dotCMS/core/issues/25136 : Site Browser is not sorting items by default #25136
 129. https://github.com/dotCMS/core/issues/24843 : Remove jaxws libraries #24843
 130. https://github.com/dotCMS/core/issues/24415 : Related content doesn't match with Content Language #24415
+131. https://github.com/dotCMS/core/issues/23276 : Content detailed page throwing 404 when URL contains a trailing slash. #23276
