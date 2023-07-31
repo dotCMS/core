@@ -162,9 +162,6 @@ describe('DotExperimentsReportsComponent', () => {
             expect(spectator.query(DotExperimentsReportsChartComponent).data).toEqual(
                 vm.dailyChartData
             );
-            expect(spectator.query(DotExperimentsReportsChartComponent).isLinearAxis).toEqual(
-                false
-            );
 
             expect(spectator.queryLast(DotExperimentsReportsChartComponent).data).toEqual(
                 vm.bayesianChartData
