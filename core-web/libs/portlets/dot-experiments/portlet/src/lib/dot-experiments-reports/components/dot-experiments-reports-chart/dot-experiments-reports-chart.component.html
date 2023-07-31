@@ -6,7 +6,6 @@
         <ng-container *ngIf="!isEmpty; else emptyStateTpl">
             <p-chart
                 id="{{ chartId }}"
-                #chart
                 [data]="data"
                 [options]="options"
                 [plugins]="plugins"
