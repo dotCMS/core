@@ -155,3 +155,4 @@ This maintenance release includes the following code fixes:
 129. https://github.com/dotCMS/core/issues/24843 : Remove jaxws libraries #24843
 130. https://github.com/dotCMS/core/issues/24415 : Related content doesn't match with Content Language #24415
 131. https://github.com/dotCMS/core/issues/23276 : Content detailed page throwing 404 when URL contains a trailing slash. #23276
+132. https://github.com/dotCMS/core/issues/21492 : Toggle to Code in WYSIWYG Makes UI Jump #21492
