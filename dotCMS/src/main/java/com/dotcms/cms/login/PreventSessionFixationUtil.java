@@ -2,9 +2,11 @@ package com.dotcms.cms.login;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import org.apache.commons.lang.SerializationUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,13 +64,16 @@ public class PreventSessionFixationUtil {
                     Logger.info(this, "- Attr '" + key + "' = " + value);
                 }
 
+                final Map<String, Object> newSessionMap = Map.copyOf(sessionMap);
+
                 oldSession.invalidate();
 
                 final HttpSession newSession = request.getSession();
 
                 Logger.info(this, "-> New Session params [ " + newSession.getId() + " ]:");
 
-                for (final Map.Entry<String, Object> entry : sessionMap.entrySet()) {
+                //for (final Map.Entry<String, Object> entry : sessionMap.entrySet()) {
+                for (final Map.Entry<String, Object> entry : newSessionMap.entrySet()) {
                     newSession.setAttribute(entry.getKey(), entry.getValue());
 
                     Logger.info(this, "- Attr '" + entry.getKey() + "' = " + entry.getValue());
