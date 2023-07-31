@@ -370,6 +370,11 @@
             <div id="acheck<%=field.getVelocityVarName()%>"></div>
 
         </div>
+        <style>
+            .editWYSIWYGField.aceText.aceTall {
+                height: 400px;
+            }
+        </style>
         <script type="text/javascript">
             dojo.addOnLoad(function () {
                 <% if (!wysiwygDisabled) { %>

@@ -461,6 +461,7 @@ var cmsfile=null;
 			  // Init instance callback to fix the pointer-events issue.
 			  tinyConf = {
 			    ...tinyConf,
+                  height: 332,
 			    init_instance_callback: (editor) => {
 			      let dropZone = document.getElementById(
 			        `dot-asset-drop-zone-${textAreaId}`
