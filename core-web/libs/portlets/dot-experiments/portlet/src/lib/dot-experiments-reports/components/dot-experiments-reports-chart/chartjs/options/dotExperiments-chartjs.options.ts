@@ -3,6 +3,7 @@ import { ChartColors } from '@dotcms/dotcms-models';
 interface DotExperimentsChartjsOptions {
     xAxisLabel: string;
     yAxisLabel: string;
+    isLinearAxis: boolean;
 }
 
 /**
@@ -11,12 +12,15 @@ interface DotExperimentsChartjsOptions {
  *
  * @param xAxisLabel
  * @param yAxisLabel
+ * @param isLinearAxis
  */
 export const generateDotExperimentLineChartJsOptions = ({
     xAxisLabel,
-    yAxisLabel
+    yAxisLabel,
+    isLinearAxis
 }: DotExperimentsChartjsOptions) => {
-    return {
+    // Default line chart options
+    const defaultOptions = {
         responsive: true,
         plugins: {
             title: {
@@ -42,7 +46,7 @@ export const generateDotExperimentLineChartJsOptions = ({
                         return {
                             borderColor: context.dataset.borderColor,
                             backgroundColor: context.dataset.borderColor,
-                            borderWidth: 2.4,
+                            borderWidth: 2.5,
                             borderRadius: 5
                         };
                     },
@@ -53,7 +57,7 @@ export const generateDotExperimentLineChartJsOptions = ({
             }
         },
         interaction: {
-            mode: 'index',
+            mode: 'nearest',
             intersect: false
         },
 
@@ -69,7 +73,7 @@ export const generateDotExperimentLineChartJsOptions = ({
                     padding: 5
                 },
                 ticks: {
-                    color: ChartColors.ticks.hex,
+                    color: ChartColors.ticks.color,
                     autoSkip: true,
 
                     padding: 10,
@@ -77,12 +81,13 @@ export const generateDotExperimentLineChartJsOptions = ({
                 },
                 border: {
                     display: true,
-                    color: ChartColors.xAxis.gridLine
+                    color: ChartColors.xAxis.border
                 },
                 grid: {
                     color: ChartColors.xAxis.gridLine,
                     lineWidth: 0.8
-                }
+                },
+                begingAtZero: true
             },
             y: {
                 title: {
@@ -95,16 +100,17 @@ export const generateDotExperimentLineChartJsOptions = ({
                     padding: 5
                 },
                 ticks: {
-                    color: ChartColors.ticks.hex,
+                    color: ChartColors.ticks.color,
                     precision: 0
                 },
                 border: {
                     display: true,
-                    dash: [6, 3]
+                    dash: [6, 3],
+                    color: ChartColors.yAxis.border
                 },
                 grid: {
                     color: ChartColors.yAxis.gridLine,
-                    lineWidth: [0.2],
+                    lineWidth: [0.3],
                     borderDash: [8, 4]
                 },
 
@@ -112,4 +118,64 @@ export const generateDotExperimentLineChartJsOptions = ({
             }
         }
     };
+
+    // Options to use in a linear a chart (x-axis max 0-1)
+    const linearChartOptions = {
+        plugins: {
+            title: {
+                display: false
+            },
+
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    title: function (context) {
+                        return Number(context[0].label) * 100 + '%';
+                    },
+                    label: function (context) {
+                        const label = context.dataset.label || '';
+
+                        return `${label}: ${context.parsed.y}`;
+                    },
+                    labelColor: function (context) {
+                        return {
+                            borderColor: context.dataset.borderColor,
+                            backgroundColor: context.dataset.borderColor,
+                            borderWidth: 2.5,
+                            borderRadius: 5
+                        };
+                    },
+                    labelTextColor: function () {
+                        return ChartColors.white;
+                    }
+                }
+            }
+        },
+        scales: {
+            ...defaultOptions.scales,
+            x: {
+                ...defaultOptions.scales.x,
+                type: 'linear',
+                position: 'bottom',
+                min: 0,
+                max: 1,
+                ticks: {
+                    ...defaultOptions.scales.x.ticks,
+                    callback: function (value) {
+                        return (value * 100).toFixed(0) + '%';
+                    }
+                }
+            },
+            y: { ...defaultOptions.scales.y, type: 'linear', position: 'left', min: 0 }
+        }
+    };
+
+    return isLinearAxis
+        ? {
+              ...defaultOptions,
+              ...linearChartOptions
+          }
+        : defaultOptions;
 };
