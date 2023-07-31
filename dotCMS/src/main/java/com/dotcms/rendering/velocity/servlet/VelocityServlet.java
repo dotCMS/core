@@ -69,13 +69,30 @@ public class VelocityServlet extends HttpServlet {
 
             return user.isFrontendUser()
                     ? PageMode.setPageMode(request, PageMode.LIVE)
-                    :  user.isBackendUser()
-                    ? PageMode.getWithNavigateMode(request)
+                    :  useNavigateMode(request, loginMode)
+                    ? PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE)
                     :  PageMode.setPageMode(request, PageMode.LIVE);
         }
 
-        return  LoginMode.FE == loginMode?
-                PageMode.setPageMode(request, PageMode.LIVE): PageMode.getWithNavigateMode(request);
+        return   useNavigateMode(request, loginMode) ?
+                PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE) : PageMode.setPageMode(request, PageMode.LIVE);
+    }
+
+    private static boolean useNavigateMode(final HttpServletRequest request, LoginMode loginMode) {
+
+
+        if (LoginMode.FE == loginMode) {
+            return false;
+        }
+
+        final boolean disabledNavigateMode = Boolean.parseBoolean(request.getParameter("disabledNavigateMode"));
+
+        if (disabledNavigateMode) {
+            return false;
+        }
+
+        final String referer = request.getHeader("referer");
+        return referer != null && referer.contains("/dotAdmin");
     }
 
     @Override
@@ -83,7 +100,6 @@ public class VelocityServlet extends HttpServlet {
     protected final void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
         final VelocityRequestWrapper request =VelocityRequestWrapper.wrapVelocityRequest(req);
         final String uri = CMSUrlUtil.getCurrentURI(request);
-        final boolean comeFromSomeWhere = request.getHeader("referer") != null;
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
         
         final User user = (userApi.getLoggedInUser(request)!=null)
@@ -104,12 +120,6 @@ public class VelocityServlet extends HttpServlet {
             return;
         }
         
-        // if you are a backend user, redirect you to the page edit screen
-        if (user!=null && user.hasConsoleAccess() && !isFrontendLogin(request) && !comeFromSomeWhere){
-            goToEditPage(uri,request, response);
-            return;
-        } 
-        
         // if you are not running ee
         if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level)
                         || (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < LicenseLevel.PRIME.level)
@@ -125,7 +135,6 @@ public class VelocityServlet extends HttpServlet {
             final String pageHtml = htmlPageAssetRenderedAPI.getPageHtml(
                     PageContextBuilder.builder()
                             .setPageUri(uri)
-                            .setPageMode(mode)
                             .setUser(user)
                             .setPageMode(mode)
                             .build(),

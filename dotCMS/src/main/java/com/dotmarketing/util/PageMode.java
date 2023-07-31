@@ -61,15 +61,6 @@ public enum PageMode {
 
     }
 
-    public static PageMode getWithNavigateMode(final HttpServletRequest req) {
-        HttpSession ses = req.getSession(false);
-        PageMode mode = PageMode.isPageModeSet(ses)
-                ? PageMode.getCurrentPageMode(ses)
-                : DEFAULT_PAGE_MODE;
-
-        return mode;
-    }
-
     public static PageMode get(final HttpServletRequest request) {
 
         if (request == null || null!= request.getHeader("X-Requested-With")) {
