@@ -13,7 +13,8 @@
         text-transform: capitalize;
     }
 
-    .p-button-icon.pi {
+    .p-button-icon,
+    .pi {
         color: inherit;
         font-size: $icon-md;
     }
@@ -36,7 +37,8 @@
                 font-size: inherit;
             }
 
-            .p-button-icon.pi {
+            .p-button-icon,
+            .pi {
                 font-size: $icon-lg;
             }
         }
@@ -52,7 +54,8 @@
                 font-size: inherit;
             }
 
-            .p-button-icon.pi {
+            .p-button-icon,
+            .pi {
                 font-size: $icon-sm;
             }
         }
@@ -165,7 +168,8 @@ a.p-button.p-button-text {
         @include truncate-text;
     }
 
-    .p-button-icon.pi {
+    .p-button-icon,
+    .pi {
         color: $color-palette-primary;
     }
 
@@ -190,7 +194,8 @@ a.p-button.p-button-text {
             color: inherit;
         }
 
-        .p-button-icon.pi {
+        .p-button-icon,
+        .pi {
             color: $color-palette-secondary;
         }
 
@@ -225,7 +230,8 @@ a.p-button.p-button-text {
             @include field-focus;
         }
 
-        .p-button-icon.pi {
+        .p-button-icon,
+        .pi {
             color: inherit;
         }
     }
@@ -237,7 +243,8 @@ a.p-button.p-button-text {
     width: $field-height-md;
     border: none;
 
-    .p-button-icon.pi {
+    .p-button-icon,
+    .pi {
         font-size: $icon-lg;
     }
 
