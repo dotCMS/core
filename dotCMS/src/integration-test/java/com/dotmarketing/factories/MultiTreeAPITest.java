@@ -504,7 +504,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         .setInstanceId("1")
         .setTreeOrder( 2 );
 
-        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1, multiTree2) );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, VariantAPI.DEFAULT_VARIANT.name(),
+                list(multiTree1, multiTree2) );
 
         List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(parent1);
 
@@ -535,8 +536,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         multiTree1.setInstanceId("1");
         multiTree1.setTreeOrder( 1 );
 
-        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1) );
-        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list() );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, VariantAPI.DEFAULT_VARIANT.name(), list(multiTree1) );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, VariantAPI.DEFAULT_VARIANT.name(), list() );
 
         List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(parent1);
 
@@ -699,8 +700,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         multiTree3.setInstanceId("-1");
         multiTree3.setTreeOrder( 3 );
 
-        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1, multiTree2, multiTree3) );
-        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1) );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, VariantAPI.DEFAULT_VARIANT.name(), list(multiTree1, multiTree2, multiTree3) );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, VariantAPI.DEFAULT_VARIANT.name(), list(multiTree1) );
 
         List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(parent1);
 
