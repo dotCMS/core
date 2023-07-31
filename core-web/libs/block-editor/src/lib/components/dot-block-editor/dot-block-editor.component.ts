@@ -376,7 +376,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             Superscript,
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
-            BubbleLinkFormExtension(this.viewContainerRef),
+            BubbleLinkFormExtension(this.viewContainerRef, this.lang),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
