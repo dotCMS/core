@@ -37,7 +37,8 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     String source;
 
     @CommandLine.Parameters(index = "1", arity = "0..1", paramLabel = "workspace",
-            description = "Local directory withing the CLI project workspace.")
+            description = "Local directory withing the CLI project workspace. " +
+                    "Defaults to the current directory.")
     File workspace;
 
     @CommandLine.Option(names = {"-r", "--recursive"}, defaultValue = "true",

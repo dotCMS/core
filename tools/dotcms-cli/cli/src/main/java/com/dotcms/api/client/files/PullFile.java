@@ -75,7 +75,7 @@ public class PullFile extends PullBase {
 
             var errors = processFileFuture.get();
             if (!errors.isEmpty()) {
-                output.info("Errors found during the pull process:");
+                output.info("\n\nErrors found during the pull process:");
                 for (var error : errors) {
                     output.error(error.getMessage());
                 }

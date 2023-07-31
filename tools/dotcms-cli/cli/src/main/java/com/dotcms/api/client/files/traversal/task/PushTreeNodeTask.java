@@ -1,6 +1,7 @@
 package com.dotcms.api.client.files.traversal.task;
 
 import com.dotcms.api.client.files.traversal.data.Pusher;
+import com.dotcms.api.client.files.traversal.exception.SiteCreationException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.common.AssetsUtils;
@@ -70,10 +71,16 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
         try {
             processFolder(rootNode.folder());
         } catch (Exception e) {
+
             if (failFast) {
                 throw e;
             } else {
                 errors.add(e);
+            }
+
+            // If we failed to create the site there is not point in continuing
+            if (e instanceof SiteCreationException) {
+                return errors;
             }
         }
 
@@ -134,7 +141,8 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                     pusher.deleteFolder(folder.host(), folder.path());
                     logger.debug(String.format("Folder [%s] deleted", folder.path()));
                 } catch (Exception e) {
-                    var message = String.format("Error deleting folder [%s]", folder.path());
+                    var message = String.format("Error deleting folder [%s] --- %s",
+                            folder.path(), e.getMessage());
                     logger.debug(message, e);
                     throw new RuntimeException(message, e);
                 } finally {
@@ -159,11 +167,16 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                         logger.debug(String.format("Folder [%s] created", folder.path()));
                     }
                 } catch (Exception e) {
-                    var message = String.format("Error creating %s [%s]",
+                    var message = String.format("Error creating %s [%s] --- %s",
                             isSite ? "site" : "folder",
-                            isSite ? folder.host() : folder.path());
+                            isSite ? folder.host() : folder.path(),
+                            e.getMessage());
                     logger.debug(message, e);
-                    throw new RuntimeException(message, e);
+                    if (isSite) {
+                        throw new SiteCreationException(message, e);
+                    } else {
+                        throw new RuntimeException(message, e);
+                    }
                 } finally {
                     // Folder processed, updating the progress bar
                     this.progressBar.incrementStep();
@@ -198,7 +211,8 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                         logger.debug(String.format("Asset [%s] deleted", asset.name()));
                     }
                 } catch (Exception e) {
-                    var message = String.format("Error deleting asset [%s%s]", folder.path(), asset.name());
+                    var message = String.format("Error deleting asset [%s%s] --- %s",
+                            folder.path(), asset.name(), e.getMessage());
                     logger.debug(message, e);
                     throw new RuntimeException(message, e);
                 } finally {
@@ -214,7 +228,8 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                             localPathStructure.site(), folder.path(), asset.name());
                     logger.debug(String.format("Asset [%s%s] pushed", folder.path(), asset.name()));
                 } catch (Exception e) {
-                    var message = String.format("Error pushing asset [%s%s]", folder.path(), asset.name());
+                    var message = String.format("Error pushing asset [%s%s] --- %s",
+                            folder.path(), asset.name(), e.getMessage());
                     logger.debug(message, e);
                     throw new RuntimeException(message, e);
                 } finally {

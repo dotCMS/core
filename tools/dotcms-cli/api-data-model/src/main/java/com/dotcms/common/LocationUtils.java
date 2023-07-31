@@ -1,13 +1,13 @@
 package com.dotcms.common;
 
+import com.dotcms.model.config.Workspace;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class LocationUtils {
-
-    public static final String LOCATION_FILES = "files";
 
     private LocationUtils() {
         //Hide public constructor
@@ -65,7 +65,7 @@ public class LocationUtils {
     public static Path LocalPathFromAssetData(final String workspace, final String status, final String language,
                                               final String siteName, String folderPath, final String assetName) {
 
-        return Paths.get(workspace, LOCATION_FILES, status.toLowerCase(), language.toLowerCase(),
+        return Paths.get(workspace, Workspace.FILES_NAMESPACE, status.toLowerCase(), language.toLowerCase(),
                 siteName, folderPath, assetName);
     }
 

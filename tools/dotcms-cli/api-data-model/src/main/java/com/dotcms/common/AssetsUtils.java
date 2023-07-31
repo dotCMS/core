@@ -1,5 +1,6 @@
 package com.dotcms.common;
 
+import com.dotcms.model.config.Workspace;
 import com.google.common.base.Strings;
 
 import java.io.File;
@@ -10,8 +11,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.dotcms.common.LocationUtils.LOCATION_FILES;
 
 public class AssetsUtils {
 
@@ -155,7 +154,7 @@ public class AssetsUtils {
      * Parses the root paths based on the workspace and source files.
      *
      * @param workspace the workspace directory
-     * @param source    the source file or directory
+     * @param source               the source file or directory
      * @return a list of root paths
      * @throws IllegalArgumentException if the source path is outside the workspace or does not follow the required
      *                                  structure
@@ -175,13 +174,13 @@ public class AssetsUtils {
         // Check if we are inside the workspace but also inside the files folder
         if (sourceCount > workspaceCount + 1) {
             if (!source.getAbsolutePath().startsWith(
-                    workspace.getAbsolutePath() + File.separator + LOCATION_FILES + File.separator
+                    workspace.getAbsolutePath() + File.separator + Workspace.FILES_NAMESPACE + File.separator
             )) {
                 throw new IllegalArgumentException("Invalid source path. Source path must be inside the files folder or " +
                         "at the root of the workspace");
             }
         } else if (sourceCount == workspaceCount + 1) {
-            if (!source.getName().equals(LOCATION_FILES)) {
+            if (!source.getName().equals(Workspace.FILES_NAMESPACE)) {
                 throw new IllegalArgumentException("Invalid source path. Source path must be inside the files folder or " +
                         "at the root of the workspace");
             }
@@ -223,7 +222,7 @@ public class AssetsUtils {
      * @return a list of root paths
      */
     private static List<String> fromRootFolder(File source) {
-        return fromFilesFolder(new File(source, LOCATION_FILES));
+        return fromFilesFolder(new File(source, Workspace.FILES_NAMESPACE));
     }
 
     /**
@@ -348,7 +347,7 @@ public class AssetsUtils {
 
         // Finding the files section
         var sourcePart = sourcePath.getName(workspaceCount);
-        if (sourcePart.getFileName().toString().equals(LOCATION_FILES)) {
+        if (sourcePart.getFileName().toString().equals(Workspace.FILES_NAMESPACE)) {
 
             // Finding the status section
             var statusPart = sourcePath.getName(++workspaceCount);

@@ -108,7 +108,7 @@ public abstract class AbstractFilesCommand {
      * Returns the directory where workspace files are stored. If the directory does not exist,
      * it will be created.
      *
-     * @param fromFile the file object representing the workspace directory, or null if not specified
+     * @param fromFile the file object representing a directory within the workspace, or null if not specified
      * @return the workspace files directory
      * @throws IOException if an I/O error occurs while creating the directory
      */
@@ -128,13 +128,13 @@ public abstract class AbstractFilesCommand {
     }
 
     /**
-     * Returns the directory where workspace files are stored.
+     * Returns the directory where the workspace is.
      *
-     * @param fromFile the file object representing the workspace directory, or null if not specified
+     * @param fromFile the file object representing a directory within the workspace, or null if not specified
      * @return the workspace files directory
      * @throws IllegalArgumentException if a valid workspace is not found from the provided path
      */
-    protected File getWorkspaceFilesDirectory(final File fromFile) {
+    protected File getWorkspaceDirectory(final File fromFile) {
 
         String fromPath;
         if (fromFile == null) {
@@ -148,7 +148,7 @@ public abstract class AbstractFilesCommand {
         final var workspace = workspaceManager.findWorkspace(path);
 
         if (workspace.isPresent()) {
-            return workspace.get().files().toFile();
+            return workspace.get().root().toFile();
         }
 
         throw new IllegalArgumentException(String.format("Not valid workspace found from path: [%s]", fromPath));

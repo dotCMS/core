@@ -65,8 +65,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Integer call() throws Exception {
 
-        // Calculating the workspace path for files
-        var workspaceFilesFolder = getWorkspaceFilesDirectory(source);
+        // Getting the workspace
+        var workspace = getWorkspaceDirectory(source);
 
         // If the source is not specified, we use the current directory
         if (source == null) {
@@ -79,7 +79,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     folderTraversalFuture = CompletableFuture.supplyAsync(
                     () -> {
                         // Service to handle the traversal of the folder
-                        return pushService.traverseLocalFolders(output, workspaceFilesFolder, source,
+                        return pushService.traverseLocalFolders(output, workspace, source,
                                 removeAssets, removeFolders, true, true);
                     });
 
@@ -176,7 +176,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     // ---
                     // Pushing the tree
                     if (!dryRun) {
-                        pushService.processTreeNodes(output, workspaceFilesFolder.getAbsolutePath(),
+                        pushService.processTreeNodes(output, workspace.getAbsolutePath(),
                                 localPathStructure, treeNode, treeNodePushInfo, failFast);
                     }
 

@@ -121,7 +121,7 @@ public class PushServiceImpl implements PushService {
 
             var errors = pushTreeFuture.get();
             if (!errors.isEmpty()) {
-                output.info("Errors found during the push process:");
+                output.info("\n\nErrors found during the push process:");
                 for (var error : errors) {
                     output.error(error.getMessage());
                 }
