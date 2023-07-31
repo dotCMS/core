@@ -2,18 +2,10 @@
 @use "variables" as *;
 @import "mixins";
 
-// Main buttons
-
-// Main Buttons sizes
-.p-button:not(.p-button-icon-only, .p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
-    gap: $spacing-1;
-    padding: 0 $spacing-3;
-    height: $field-height-md;
-    border-radius: $border-radius-md;
+// Shared all buttons
+.p-button:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     border: none;
     color: $white;
-    font-size: $font-size-md;
-    text-transform: capitalize;
 
     .p-button-label {
         color: inherit;
@@ -21,46 +13,64 @@
         text-transform: capitalize;
     }
 
-    .p-button-icon,
-    .pi {
-        color: $white;
-        font-size: $font-size-lg;
+    .p-button-icon.pi {
+        color: inherit;
+        font-size: $icon-md;
     }
 
-    &.p-button-lg {
-        height: $field-height-lg;
-        border-radius: $border-radius-lg;
-        font-size: $font-size-lg;
+    // Shared but not icon only
+    &:not(.p-button-icon-only) {
+        border-radius: $border-radius-md;
+        font-size: $font-size-md;
+        gap: $spacing-1;
+        height: $field-height-md;
+        padding: 0 $spacing-3;
+        text-transform: capitalize;
 
-        .p-button-label {
-            font-size: inherit;
+        &.p-button-lg {
+            height: $field-height-lg;
+            border-radius: $border-radius-lg;
+            font-size: $font-size-lg;
+
+            .p-button-label {
+                font-size: inherit;
+            }
+
+            .p-button-icon.pi {
+                font-size: $icon-lg;
+            }
         }
 
-        .p-button-icon,
-        .pi {
-            font-size: $font-size-xl;
-        }
-    }
+        &.p-button-sm {
+            border-radius: $border-radius-sm;
+            font-size: $font-size-sm;
+            gap: $spacing-0;
+            height: $field-height-sm;
+            padding: 0 $spacing-1;
 
-    &.p-button-sm {
-        height: $field-height-sm;
-        gap: $spacing-0;
-        padding: 0 $spacing-1;
-        border-radius: $border-radius-sm;
-        font-size: $font-size-sm;
+            .p-button-label {
+                font-size: inherit;
+            }
 
-        .p-button-label {
-            font-size: inherit;
-        }
-
-        .p-button-icon,
-        .pi {
-            font-size: $font-size-md;
+            .p-button-icon.pi {
+                font-size: $icon-sm;
+            }
         }
     }
 }
 
-// Severity colors for main basic button
+// Shared disabled styles
+.p-button:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
+    background-color: $color-palette-gray-op-20;
+    color: $color-palette-gray-500;
+    opacity: 1; // Override opacity from primeng
+
+    &.p-button-outlined {
+        border: 1.5px solid $color-palette-gray-300;
+    }
+}
+
+// Severity for basic button
 .p-button:enabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     background-color: $color-palette-primary;
 
@@ -101,27 +111,21 @@
     border: 1.5px solid $color-palette-primary;
     color: $color-palette-primary;
 
-    &.p-button-sm {
-        border: 1px solid $color-palette-primary;
-    }
-
-    .p-button-label,
-    .p-button-icon,
-    .pi {
-        color: inherit;
-    }
-
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: $color-palette-primary-op-10;
     }
 
     &:active {
-        background-color: $color-palette-primary-200;
+        background-color: $color-palette-primary-op-20;
     }
 
     &:focus {
         background-color: transparent;
         @include field-focus;
+    }
+
+    &.p-button-sm {
+        border: 1px solid $color-palette-primary;
     }
 
     &.p-button-secondary {
@@ -133,18 +137,12 @@
             border: 1px solid $color-palette-secondary;
         }
 
-        .p-button-label,
-        .p-button-icon,
-        .pi {
-            color: inherit;
-        }
-
         &:hover {
-            background-color: $color-palette-secondary-100;
+            background-color: $color-palette-secondary-op-10;
         }
 
         &:active {
-            background-color: $color-palette-secondary-200;
+            background-color: $color-palette-secondary-op-20;
         }
 
         &:focus {
@@ -166,13 +164,13 @@ a.p-button.p-button-text {
         color: inherit;
         @include truncate-text;
     }
-    .p-button-icon,
-    .pi {
+
+    .p-button-icon.pi {
         color: $color-palette-primary;
     }
 
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: $color-palette-primary-op-10;
     }
 
     &:active {
@@ -192,13 +190,12 @@ a.p-button.p-button-text {
             color: inherit;
         }
 
-        .p-button-icon,
-        .pi {
+        .p-button-icon.pi {
             color: $color-palette-secondary;
         }
 
         &:hover {
-            background-color: $color-palette-secondary-100;
+            background-color: $color-palette-secondary-op-10;
         }
 
         &:active {
@@ -215,56 +212,33 @@ a.p-button.p-button-text {
         background-color: transparent;
         color: $color-accessible-text-red;
 
-        .p-button-label,
-        .p-button-icon,
-        .pi {
-            color: inherit;
-        }
-
         &:hover {
-            background-color: rgb($color-accessible-text-red, 0.08);
+            background-color: $color-accessible-text-red-op-10;
         }
 
         &:active {
-            background-color: rgb($color-accessible-text-red, 0.15);
+            background-color: $color-accessible-text-red-op-20;
         }
 
         &:focus {
             background-color: transparent;
             @include field-focus;
         }
+
+        .p-button-icon.pi {
+            color: inherit;
+        }
     }
 }
 
-// Buttons disabled styles
-.p-button:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
-    background-color: $color-palette-gray-200;
-    color: $color-palette-gray-500;
-    opacity: 1;
-
-    .p-button-label,
-    .p-button-icon {
-        color: inherit;
-    }
-
-    &.p-button-outlined {
-        border: 1.5px solid $color-palette-gray-300;
-    }
-
-    &.p-button-text {
-        background-color: $white;
-    }
-}
-
-// Icon Only Buttons Sizes
+// Icon Only Sizes
 .p-button-icon-only:not(.p-splitbutton-menubutton) {
     height: $field-height-md;
     width: $field-height-md;
     border: none;
 
-    .p-button-icon {
-        color: $white;
-        font-size: $font-size-lg;
+    .p-button-icon.pi {
+        font-size: $icon-lg;
     }
 
     &.p-button-sm {
@@ -272,7 +246,7 @@ a.p-button.p-button-text {
         width: $field-height-sm;
 
         .p-button-icon {
-            font-size: $font-size-md;
+            font-size: $icon-md;
         }
     }
 }
