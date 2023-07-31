@@ -31,6 +31,7 @@ jobs:
       - uses: dorny/test-reporter@v1
         id: test-reporter
         if: steps.data-download.outputs.found_artifact == 'true'
+        continue-on-error: true
         with:
           artifact: /^build-reports-test-(.*)/        # artifact name
           name: 'MVN Test Report $1'               # Name of the check run which will be created
@@ -40,7 +41,6 @@ jobs:
           
       - name: Get Workflow Data
         id: workflow-data
-        if: success() || failure()
         run: |
           if [[ ! -e "workflow-data.json" ]]
           then

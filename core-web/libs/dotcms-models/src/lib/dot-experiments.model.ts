@@ -182,32 +182,59 @@ export const ConditionDefaultByTypeOfGoal: Partial<Record<GOAL_TYPES, GOAL_PARAM
     [GOAL_TYPES.CLICK_ON_ELEMENT]: GOAL_PARAMETERS.URL
 };
 
-export const ChartColors = {
-    primary: {
-        rgb: 'rgb(66,107,240)',
-        rgba_10: 'rgba(66,107,240,0.1)'
-    },
-    secondary: {
-        rgb: 'rgb(177,117,255)',
-        rgba_10: 'rgba(177,117,255,0.1)'
-    },
-    accent: {
-        rgb: 'rgb(65,219,247)',
-        rgba_10: 'rgba(65,219,247,0.1)'
-    },
-    xAxis: { gridLine: '#AFB3C0' },
-    yAxis: { gridLine: '#3D404D' },
-    ticks: {
-        hex: '#524E5C'
-    },
-    gridXLine: {
-        hex: '#AFB3C0'
-    },
-    gridYLine: {
-        hex: '#3D404D'
-    },
+const dotCMSThemeColors = {
+    black: '#14151a',
     white: '#FFFFFF',
-    black: '#000000'
+    accentTurquoise: 'rgb(66,194,240)',
+    accentTurquoiseOp40: 'rgba(66,194,240,0.40)',
+
+    accentFuchsia: 'rgb(195,54,229)',
+    accentFuchsiaOp40: 'rgba(195,54,229,0.40)',
+
+    accentYellow: 'rgb(255, 180, 68)',
+    accentYellowOp40: 'rgba(255, 180, 68,0.40)',
+
+    colorPaletteBlackOp20: getComputedStyle(document.body).getPropertyValue(
+        '--color-palette-black-op-20'
+    ),
+    colorPaletteBlackOp30: getComputedStyle(document.body).getPropertyValue(
+        '--color-palette-black-op-30'
+    ),
+    colorPaletteBlackOp50: getComputedStyle(document.body).getPropertyValue(
+        '--color-palette-black-op-50'
+    ),
+    colorPaletteBlackOp70: getComputedStyle(document.body).getPropertyValue(
+        '--color-palette-black-op-70'
+    )
+};
+
+export const ChartColors = {
+    original: {
+        line: dotCMSThemeColors.accentTurquoise,
+        fill: dotCMSThemeColors.accentTurquoiseOp40
+    },
+    variant_1: {
+        line: dotCMSThemeColors.accentFuchsia,
+        fill: dotCMSThemeColors.accentFuchsiaOp40
+    },
+    variant_2: {
+        line: dotCMSThemeColors.accentYellow,
+        fill: dotCMSThemeColors.accentYellowOp40
+    },
+    // Chart colors
+    xAxis: {
+        border: dotCMSThemeColors.colorPaletteBlackOp20,
+        gridLine: dotCMSThemeColors.colorPaletteBlackOp30
+    },
+    yAxis: {
+        border: dotCMSThemeColors.colorPaletteBlackOp20,
+        gridLine: dotCMSThemeColors.colorPaletteBlackOp50
+    },
+    ticks: {
+        color: dotCMSThemeColors.colorPaletteBlackOp70
+    },
+    white: dotCMSThemeColors.white,
+    black: dotCMSThemeColors.black
 };
 
 export type LineChartColorsProperties = Pick<
@@ -217,19 +244,19 @@ export type LineChartColorsProperties = Pick<
 
 export const ExperimentChartDatasetColorsVariants: Array<LineChartColorsProperties> = [
     {
-        borderColor: ChartColors.primary.rgb,
-        pointBackgroundColor: ChartColors.primary.rgb,
-        backgroundColor: ChartColors.primary.rgba_10
+        borderColor: ChartColors.original.line,
+        pointBackgroundColor: ChartColors.original.line,
+        backgroundColor: ChartColors.original.fill
     },
     {
-        borderColor: ChartColors.secondary.rgb,
-        pointBackgroundColor: ChartColors.secondary.rgb,
-        backgroundColor: ChartColors.secondary.rgba_10
+        borderColor: ChartColors.variant_1.line,
+        pointBackgroundColor: ChartColors.variant_1.line,
+        backgroundColor: ChartColors.variant_1.fill
     },
     {
-        borderColor: ChartColors.accent.rgb,
-        pointBackgroundColor: ChartColors.accent.rgb,
-        backgroundColor: ChartColors.accent.rgba_10
+        borderColor: ChartColors.variant_2.line,
+        pointBackgroundColor: ChartColors.variant_2.line,
+        backgroundColor: ChartColors.variant_2.fill
     }
 ];
 
@@ -239,7 +266,13 @@ export const ExperimentLineChartDatasetDefaultProperties: Partial<ChartDataset<'
     pointHoverRadius: 6,
     fill: true,
     cubicInterpolationMode: 'monotone',
-    borderWidth: 1.5
+    borderWidth: 2
+};
+
+export const ExperimentLinearChartDatasetDefaultProperties: Partial<ChartDataset<'line'>> = {
+    ...ExperimentLineChartDatasetDefaultProperties,
+    pointRadius: 0,
+    pointHoverRadius: 2.5
 };
 
 export type GoalConditionsControlsNames = 'parameter' | 'operator' | 'value';

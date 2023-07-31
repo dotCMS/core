@@ -361,7 +361,7 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
     }
 ];
 
-export const CHARTJS_DATA_MOCK_WITH_DATA: ChartData<'line'> = {
+export const DAILY_CHARTJS_DATA_MOCK_WITH_DATA: ChartData<'line'> = {
     labels: [
         ['Thursday', '04/01/2023'],
         ['Friday', '04/02/2023'],
@@ -372,6 +372,20 @@ export const CHARTJS_DATA_MOCK_WITH_DATA: ChartData<'line'> = {
         {
             label: DEFAULT_VARIANT_NAME,
             data: [1, 2, 3, 4],
+            ...ExperimentLineChartDatasetDefaultProperties
+        }
+    ]
+};
+
+export const BAYESIAN_CHARTJS_DATA_MOCK_WITH_DATA: ChartData<'line'> = {
+    datasets: [
+        {
+            label: DEFAULT_VARIANT_NAME,
+            data: [
+                { x: 1, y: 1 },
+                { x: 2, y: 2 },
+                { x: 3, y: 3 }
+            ],
             ...ExperimentLineChartDatasetDefaultProperties
         }
     ]
