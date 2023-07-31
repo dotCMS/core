@@ -49,7 +49,7 @@ public interface LocalTraversalService {
      * @param progressBar          the progress bar for tracking the pull progress
      * @return a list of exceptions that occurred during the pull
      */
-    List<Exception> buildFileSystemTree(TreeNode rootNode, String destination, boolean isLive, String language,
+    List<Exception> pullTreeNode(TreeNode rootNode, String destination, boolean isLive, String language,
                                         boolean overwrite, boolean generateEmptyFolders, final boolean failFast,
                                         ConsoleProgressBar progressBar);
 

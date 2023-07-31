@@ -3,7 +3,7 @@ package com.dotcms.api.client.files.traversal;
 import com.dotcms.api.client.files.traversal.data.Downloader;
 import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTask;
-import com.dotcms.api.client.files.traversal.task.LocalFoldersTreeBuilderTask;
+import com.dotcms.api.client.files.traversal.task.PullTreeNodeTask;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
@@ -124,7 +124,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
      * @param progressBar          the progress bar for tracking the pull progress
      * @return a list of exceptions that occurred during the pull
      */
-    public List<Exception> buildFileSystemTree(final TreeNode rootNode, final String destination, final boolean isLive,
+    public List<Exception> pullTreeNode(final TreeNode rootNode, final String destination, final boolean isLive,
                                     final String language, final boolean overwrite, final boolean generateEmptyFolders,
                                                final boolean failFast, ConsoleProgressBar progressBar) {
 
@@ -135,7 +135,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
 
         // ---
         var forkJoinPool = ForkJoinPool.commonPool();
-        var task = new LocalFoldersTreeBuilderTask(
+        var task = new PullTreeNodeTask(
                 logger,
                 downloader,
                 filteredRoot,

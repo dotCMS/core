@@ -103,7 +103,7 @@ public class PullBase {
         }
 
         for (String lang : languages) {
-            var errors = traversalService.buildFileSystemTree(rootNode, destination, isLive, lang, overwrite,
+            var errors = traversalService.pullTreeNode(rootNode, destination, isLive, lang, overwrite,
                     generateEmptyFolders, failFast, progressBar);
             foundErrors.addAll(errors);
         }

@@ -21,9 +21,9 @@ import static com.dotcms.common.AssetsUtils.BuildRemoteURL;
 import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 
 /**
- * Recursive task for building the file system tree.
+ * Recursive task for pulling the contents of a tree node from a remote server.
  */
-public class LocalFoldersTreeBuilderTask extends RecursiveTask<List<Exception>> {
+public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
 
     private final TreeNode rootNode;
     private final String destination;
@@ -39,7 +39,7 @@ public class LocalFoldersTreeBuilderTask extends RecursiveTask<List<Exception>> 
     private Logger logger;
 
     /**
-     * Constructs a new FileSystemTreeBuilderTask.
+     * Constructs a new PullTreeNodeTask.
      *
      * @param logger               logger for logging messages
      * @param downloader           class responsible for handling the downloading of assets
@@ -52,15 +52,15 @@ public class LocalFoldersTreeBuilderTask extends RecursiveTask<List<Exception>> 
      * @param language             the language of the assets
      * @param progressBar          the progress bar for tracking the pull progress
      */
-    public LocalFoldersTreeBuilderTask(final Logger logger,
-                                       final Downloader downloader,
-                                       final TreeNode rootNode,
-                                       final String destination,
-                                       final boolean overwrite,
-                                       final boolean generateEmptyFolders,
-                                       final boolean failFast,
-                                       final String language,
-                                       final ConsoleProgressBar progressBar) {
+    public PullTreeNodeTask(final Logger logger,
+                            final Downloader downloader,
+                            final TreeNode rootNode,
+                            final String destination,
+                            final boolean overwrite,
+                            final boolean generateEmptyFolders,
+                            final boolean failFast,
+                            final String language,
+                            final ConsoleProgressBar progressBar) {
         this.logger = logger;
         this.downloader = downloader;
         this.rootNode = rootNode;
@@ -104,9 +104,9 @@ public class LocalFoldersTreeBuilderTask extends RecursiveTask<List<Exception>> 
         // Recursively build the file system tree for the children nodes
         if (rootNode.children() != null && !rootNode.children().isEmpty()) {
 
-            List<LocalFoldersTreeBuilderTask> tasks = new ArrayList<>();
+            List<PullTreeNodeTask> tasks = new ArrayList<>();
             for (TreeNode child : rootNode.children()) {
-                var task = new LocalFoldersTreeBuilderTask(
+                var task = new PullTreeNodeTask(
                         logger,
                         downloader,
                         child,
@@ -121,7 +121,7 @@ public class LocalFoldersTreeBuilderTask extends RecursiveTask<List<Exception>> 
                 tasks.add(task);
             }
 
-            for (LocalFoldersTreeBuilderTask task : tasks) {
+            for (PullTreeNodeTask task : tasks) {
                 var taskErrors = task.join();
                 errors.addAll(taskErrors);
             }
