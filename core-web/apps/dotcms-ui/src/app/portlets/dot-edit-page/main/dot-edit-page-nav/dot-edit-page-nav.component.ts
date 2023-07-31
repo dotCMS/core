@@ -36,6 +36,7 @@ export class DotEditPageNavComponent implements OnChanges {
     togglePageTools: boolean;
     isEnterpriseLicense: boolean;
     model: Observable<DotEditPageNavItem[]>;
+    currentUrlParams: DotPageToolUrlParams;
 
     queryParams: Params;
 
@@ -53,6 +54,8 @@ export class DotEditPageNavComponent implements OnChanges {
         this.model = !this.model
             ? this.loadNavItems()
             : observableOf(this.getNavItems(this.pageState, this.isEnterpriseLicense));
+
+        this.currentUrlParams = this.getCurrentURLParams();
     }
 
     private loadNavItems(): Observable<DotEditPageNavItem[]> {
@@ -194,9 +197,8 @@ export class DotEditPageNavComponent implements OnChanges {
      * @returns string
      * @memberof DotEditPageMainComponent
      * */
-    public getCurrentURLParams(): DotPageToolUrlParams {
-        const page = this.pageState.page;
-        const site = this.pageState.site;
+    private getCurrentURLParams(): DotPageToolUrlParams {
+        const { page, site } = this.pageState;
 
         return {
             requestHostName: this.document.defaultView.location.host,

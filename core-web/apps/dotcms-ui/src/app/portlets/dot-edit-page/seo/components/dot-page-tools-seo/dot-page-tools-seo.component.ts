@@ -1,69 +1,36 @@
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgForOf } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    Input,
-    OnChanges,
-    OnInit,
-    SimpleChanges
-} from '@angular/core';
+import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
 
 import { ChipModule } from 'primeng/chip';
 import { DialogModule } from 'primeng/dialog';
 
-import { switchMap } from 'rxjs/operators';
-
 import { DotPageToolsService } from '@dotcms/data-access';
-import { DotPageTool, DotPageToolUrlParams } from '@dotcms/dotcms-models';
+import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-import { getRunnableLink } from '@dotcms/utils';
+
+import { DotPageToolsSeoState, DotPageToolsSeoStore } from './store/dot-page-tools-seo.store';
 
 @Component({
     selector: 'dot-page-tools-seo',
-    standalone: true,
-    providers: [DotPageToolsService],
-    imports: [NgForOf, AsyncPipe, DialogModule, DotMessagePipe, ChipModule],
+    providers: [DotPageToolsService, DotPageToolsSeoStore],
+    imports: [NgForOf, AsyncPipe, DialogModule, DotMessagePipe, ChipModule, NgIf],
     templateUrl: './dot-page-tools-seo.component.html',
     styleUrls: ['./dot-page-tools-seo.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true
 })
-export class DotPageToolsSeoComponent implements OnInit, OnChanges {
+export class DotPageToolsSeoComponent implements OnChanges {
     @Input() visible: boolean;
     @Input() currentPageUrlParams: DotPageToolUrlParams;
     dialogHeader: string;
-    tools$: Observable<DotPageTool[]>;
+    tools$: Observable<DotPageToolsSeoState> = this.dotPageToolsSeoStore.tools$;
 
-    constructor(private dotPageToolsService: DotPageToolsService) {}
+    constructor(private dotPageToolsSeoStore: DotPageToolsSeoStore) {}
 
-    ngOnInit() {
-        this.tools$ = this.getTools();
-    }
-
-    ngOnChanges(changes: SimpleChanges) {
-        if (changes.currentPageUrlParams && !changes.currentPageUrlParams.firstChange) {
-            const prevParams: DotPageToolUrlParams = changes.currentPageUrlParams.previousValue;
-            const currParams: DotPageToolUrlParams = changes.currentPageUrlParams.currentValue;
-            if (prevParams.currentUrl !== currParams.currentUrl) {
-                this.tools$ = this.getTools();
-            }
-        }
-    }
-
-    private getTools(): Observable<DotPageTool[]> {
-        return this.dotPageToolsService.get().pipe(
-            switchMap((tools) => {
-                const updatedTools = tools.map((tool) => {
-                    return {
-                        ...tool,
-                        runnableLink: getRunnableLink(tool.runnableLink, this.currentPageUrlParams)
-                    };
-                });
-
-                return of(updatedTools);
-            })
-        );
+    ngOnChanges() {
+        this.dotPageToolsSeoStore.getTools(this.currentPageUrlParams);
     }
 
     public toggleDialog(): void {

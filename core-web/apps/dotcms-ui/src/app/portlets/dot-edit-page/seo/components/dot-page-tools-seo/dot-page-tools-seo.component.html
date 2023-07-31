@@ -1,6 +1,5 @@
 <p-dialog
     [(visible)]="visible"
-    [maskStyleClass]="'page-tools-dialog'"
     [position]="'right'"
     [closable]="false"
     [draggable]="false"
@@ -8,13 +7,14 @@
     [dismissableMask]="true"
     [closable]="true"
     [appendTo]="'body'"
+    maskStyleClass="page-tools-dialog"
     header="{{ 'editpage.toolbar.nav.page.tools' | dm }}"
 >
-    <div class="page-tools">
+    <div class="page-tools" *ngIf="tools$ | async as tools">
         <ul class="page-tools-list">
             <li
                 class="page-tools-list__item"
-                *ngFor="let tool of tools$ | async"
+                *ngFor="let tool of tools.pageTools"
                 data-testId="page-tools-list-item"
             >
                 <a
