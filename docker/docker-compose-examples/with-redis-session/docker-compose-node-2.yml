@@ -1,0 +1,42 @@
+version: '3.5'
+
+networks:
+  with-redis-session_db_net:
+    external: true
+  with-redis-session_opensearch-net:
+    external: true
+  with-redis-session_redis_net:
+    external: true
+
+volumes:
+  cms-shared:
+
+services:
+  dotcms-node-2:
+    image: dotcms/dotcms:latest
+    environment:
+        CMS_JAVA_OPTS: '-Xmx1g '
+        LANG: 'C.UTF-8'
+        TZ: 'UTC'
+        TOMCAT_REDIS_SESSION_ENABLED: 'true'
+        TOMCAT_REDIS_SESSION_HOST: 'redis'
+        TOMCAT_REDIS_SESSION_PORT: '6379'
+        TOMCAT_REDIS_SESSION_PASSWORD: 'MY_SECRET_P4SS'
+        TOMCAT_REDIS_SESSION_SSL_ENABLED: 'false'
+        TOMCAT_REDIS_SESSION_PERSISTENT_POLICIES: 'DEFAULT'
+        DB_BASE_URL: "jdbc:postgresql://db/dotcms"
+        DB_USERNAME: 'dotcmsdbuser'
+        DB_PASSWORD: 'password'
+        DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
+        DOT_ES_ENDPOINTS: 'https://opensearch:9200'
+        DOT_DOTCMS_CLUSTER_ID: 'dotcms-redis-cluster'
+    volumes:
+      - { local_data_path }:/data/shared
+      - {license_local_path}:/data/shared/assets/license.zip
+    networks:
+      - with-redis-session_db_net
+      - with-redis-session_opensearch-net
+      - with-redis-session_redis_net
+    ports:
+      - "8081:8082"
+      - "8444:8443"
