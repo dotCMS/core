@@ -28,7 +28,7 @@
         <ng-content select="[toolbar-actions-right]"></ng-content>
     </div>
 </p-toolbar>
-<div class="template-builder__main" *ngIf="vm$ | async as vm">
+<div class="template-builder__main" #main *ngIf="vm$ | async as vm">
     <dotcms-template-builder-section *ngIf="vm.layoutProperties.header">{{
         'dot.template.builder.header' | dm
     }}</dotcms-template-builder-section>
