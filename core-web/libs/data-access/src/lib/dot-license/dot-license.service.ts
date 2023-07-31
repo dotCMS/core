@@ -145,7 +145,7 @@ export class DotLicenseService {
      *
      * @memberof DotLicenseService
      */
-    public updateLicense(): void {
+    updateLicense(): void {
         this.coreWebService
             .requestView({
                 url: this.licenseURL
@@ -162,7 +162,7 @@ export class DotLicenseService {
      * @param {DotLicense} license
      * @memberof DotLicenseService
      */
-    public setLicense(license: DotLicense): void {
+    setLicense(license: DotLicense): void {
         this.license = { ...license };
     }
 }
