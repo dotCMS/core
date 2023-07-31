@@ -4,7 +4,7 @@ import { take } from 'rxjs/operators';
 
 import { TemplateBuilderComponent } from '../../template-builder.component';
 
-enum DIRECTION {
+export enum DIRECTION {
     UP = 'UP',
     DOWN = 'DOWN',
     NONE = 'NONE'
@@ -16,10 +16,11 @@ enum DIRECTION {
 })
 export class DotItemDragScrollDirective implements OnInit {
     private currentElement: HTMLElement;
-    private isDragging = false;
     private scrollInterval;
-    private scrollDirection: DIRECTION = DIRECTION.NONE;
-    private container: HTMLElement;
+
+    isDragging = false;
+    container: HTMLElement;
+    scrollDirection: DIRECTION = DIRECTION.NONE;
 
     @HostListener('window:mousemove', ['$event'])
     onMouseMove() {
@@ -57,8 +58,8 @@ export class DotItemDragScrollDirective implements OnInit {
     }
 
     constructor(
-        private el: ElementRef,
-        @Optional() @Host() private parentComponent: TemplateBuilderComponent
+        public el: ElementRef,
+        @Optional() @Host() public parentComponent: TemplateBuilderComponent
     ) {
         if (!this.parentComponent) {
             console.warn(
