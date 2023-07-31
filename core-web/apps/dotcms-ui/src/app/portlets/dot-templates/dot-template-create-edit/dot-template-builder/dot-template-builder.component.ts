@@ -80,7 +80,7 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
         this.templateUpdate$.next(item);
     }
 
-    saveTemplateDebounce() {
+    private saveTemplateDebounce() {
         // Approach based on DotEditLayoutComponent, see that component for more info
         this.templateUpdate$
             .pipe(debounceTime(AUTOSAVE_DEBOUNCE_TIME), takeUntil(this.destroy$))

@@ -33,7 +33,6 @@ global.structuredClone = jest.fn((val) => {
 });
 
 describe('TemplateBuilderComponent', () => {
-    // let spectator: SpectatorHost<TemplateBuilderComponent>;
     let spectator: Spectator<TemplateBuilderComponent>;
     let store: DotTemplateBuilderStore;
     const mockContainer = containersMock[0];
