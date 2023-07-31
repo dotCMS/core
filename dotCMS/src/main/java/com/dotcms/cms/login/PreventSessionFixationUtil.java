@@ -2,6 +2,7 @@ package com.dotcms.cms.login;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import io.vavr.control.Try;
 import org.apache.commons.lang.SerializationUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -65,6 +66,15 @@ public class PreventSessionFixationUtil {
                 }
 
                 final Map<String, Object> newSessionMap = Map.copyOf(sessionMap);
+
+                Logger.info(this, "-> New Session params size = " + newSessionMap.size());
+
+                try {
+                    Logger.info(this, "... Sleeping for 3 seconds ...");
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
 
                 oldSession.invalidate();
 
