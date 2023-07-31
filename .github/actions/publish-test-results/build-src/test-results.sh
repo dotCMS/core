@@ -129,7 +129,7 @@ function distResults {
   local target_folder=$(resolveResultsPath ${results_path})
   executeCmd "mkdir -p ${target_folder}"
   echo "Adding test results path ${OUTPUT_FOLDER} to: ${target_folder}"
-  executeCmd "mv ${OUTPUT_FOLDER}/* ${target_folder}"
+  executeCmd "cp -R ${OUTPUT_FOLDER}/* ${target_folder}"
 }
 
 # Resolves possible conflicts by checking out ours
