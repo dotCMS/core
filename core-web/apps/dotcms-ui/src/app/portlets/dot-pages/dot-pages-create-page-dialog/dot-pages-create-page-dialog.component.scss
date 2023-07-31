@@ -21,6 +21,7 @@
     border-radius: $border-radius-sm;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    overflow: hidden;
 
     ::ng-deep dot-icon i {
         color: $color-palette-primary-500;
@@ -31,18 +32,13 @@
     }
 
     .dot-pages-create-page-dialog__page-item {
-        border-left: 1px solid $color-palette-gray-300;
+        box-shadow: 1px 0 0 0 $color-palette-gray-300;
         cursor: pointer;
         display: flex;
         padding: $spacing-3;
 
         &:hover {
             background-color: $color-palette-gray-200;
-        }
-
-        &:first-child,
-        &:nth-child(3n + 1) {
-            border-left: none;
         }
     }
 }
