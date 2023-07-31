@@ -1,14 +1,11 @@
 <ng-container *ngIf="!isLoading; else loadingStateTpl">
-    <div class="flex flex-column gap-3">
-        <div class="flex flex-row justify-content-between header">
-            <h1 class="header-title" data-testId="chart-title">
-                {{ config.title }}
-            </h1>
-            <div id="legend-container" data-testId="chart-legends"></div>
+    <div class="flex flex-column gap-2">
+        <div class="flex flex-row justify-content-end chart__header">
+            <div class="legend-wrapper" data-testId="chart-legends"></div>
         </div>
         <ng-container *ngIf="!isEmpty; else emptyStateTpl">
             <p-chart
-                #chart
+                id="{{ chartId }}"
                 [data]="data"
                 [options]="options"
                 [plugins]="plugins"
@@ -32,7 +29,7 @@
 
 <ng-template #emptyStateTpl>
     <div
-        class="empty flex justify-content-center align-items-center flex-column"
+        class="empty__wrapper flex justify-content-center align-items-center flex-column"
         data-testId="empty-data-msg"
     >
         <i class="empty__icon pi pi-chart-line mb-2"></i>

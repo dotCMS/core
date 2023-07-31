@@ -1,45 +1,27 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { MockModule } from 'ng-mocks';
 
-import { Component, Input, NgModule } from '@angular/core';
-
-import { ChartModule } from 'primeng/chart';
+import { ChartModule, UIChart } from 'primeng/chart';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
     CHARTJS_DATA_MOCK_EMPTY,
-    CHARTJS_DATA_MOCK_WITH_DATA,
+    DAILY_CHARTJS_DATA_MOCK_WITH_DATA,
     MockDotMessageService
 } from '@dotcms/utils-testing';
+import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsReportsChartComponent } from './dot-experiments-reports-chart.component';
 
+import * as Utilities from '../../../shared/dot-experiment.utils';
+
 const messageServiceMock = new MockDotMessageService({
-    'experiments.reports.chart.title': 'title',
     'experiments.reports.chart.empty.title': 'x axis label',
     'experiments.reports.chart.empty.description': 'y axis label'
 });
 
-// TODO: Use ng-mocks to mock the component automatically
-@Component({
-    // eslint-disable-next-line @angular-eslint/component-selector
-    selector: 'p-chart',
-    template: 'chart - mocked component'
-})
-// eslint-disable-next-line @angular-eslint/component-class-suffix
-class MockUIChart {
-    @Input()
-    data: unknown;
-    @Input()
-    options: unknown;
-    @Input()
-    plugins: unknown;
-}
-
-@NgModule({
-    declarations: [MockUIChart],
-    exports: [MockUIChart]
-})
-export class MockChartModule {}
+// spyOn an exported function with Jest
+jest.spyOn(Utilities, 'getRandomUUID').mockReturnValue('1234');
 
 describe('DotExperimentsReportsChartComponent', () => {
     let spectator: Spectator<DotExperimentsReportsChartComponent>;
@@ -51,10 +33,11 @@ describe('DotExperimentsReportsChartComponent', () => {
                 DotExperimentsReportsChartComponent,
                 {
                     remove: { imports: [ChartModule] },
-                    add: { imports: [MockChartModule] }
+                    add: { imports: [MockModule(ChartModule)] }
                 }
             ]
         ],
+        imports: [DotMessagePipe],
         providers: [
             {
                 provide: DotMessageService,
@@ -73,17 +56,15 @@ describe('DotExperimentsReportsChartComponent', () => {
         spectator.setInput({
             isLoading: false,
             isEmpty: false,
-            data: CHARTJS_DATA_MOCK_WITH_DATA,
+            data: DAILY_CHARTJS_DATA_MOCK_WITH_DATA,
             config: {
                 xAxisLabel: 'experiments.chart.xAxisLabel',
-                yAxisLabel: 'experiments.chart.yAxisLabel',
-                title: 'experiments.reports.chart.title'
+                yAxisLabel: 'experiments.chart.yAxisLabel'
             }
         });
 
-        expect(spectator.query(byTestId('chart-title'))).toContainText('title');
         expect(spectator.query(byTestId('chart-legends'))).toExist();
-        expect(spectator.query(MockUIChart)).toExist();
+        expect(spectator.query(UIChart)).toExist();
     });
 
     it('should show the loading state', () => {
@@ -98,8 +79,7 @@ describe('DotExperimentsReportsChartComponent', () => {
             data: CHARTJS_DATA_MOCK_EMPTY,
             config: {
                 xAxisLabel: 'experiments.chart.xAxisLabel',
-                yAxisLabel: 'experiments.chart.yAxisLabel',
-                title: 'experiments.reports.chart.title'
+                yAxisLabel: 'experiments.chart.yAxisLabel'
             }
         });
 
