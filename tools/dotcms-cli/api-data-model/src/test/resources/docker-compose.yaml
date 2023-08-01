@@ -54,9 +54,9 @@ services:
       - postgres
     volumes:
       - dotcms-shared:/data/shared
-      - type: bind
-        source: ./license/license.dat
-        target: /data/local/dotsecure/license/license.dat
+#      - type: bind
+#        source: ./license/license.dat
+#        target: /data/local/dotsecure/license/license.dat
     networks:
       - dotcms-net
     ports:
