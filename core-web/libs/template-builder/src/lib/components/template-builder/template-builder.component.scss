@@ -58,13 +58,9 @@ p-divider {
         gap: $spacing-1;
     }
 
-    .layout-toolbar {
-        border-color: $color-palette-gray-300;
-        padding: $spacing-2 $spacing-5;
-        padding-top: 0;
-    }
     .p-toolbar {
-        border-color: $color-palette-black-op-10;
+        border-color: $color-palette-gray-300;
+        padding: $spacing-1 $spacing-5;
     }
 
     .p-divider {
