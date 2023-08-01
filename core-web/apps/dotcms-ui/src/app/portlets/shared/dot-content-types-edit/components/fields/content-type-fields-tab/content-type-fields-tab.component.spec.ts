@@ -2,7 +2,9 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
+
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
@@ -51,7 +53,7 @@ describe('ContentTypeFieldsTabComponent', () => {
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypeFieldsTabComponent, DotTestHostComponent],
-            imports: [UiDotIconButtonTooltipModule, DotMessagePipe],
+            imports: [TooltipModule, ButtonModule, DotMessagePipe],
             providers: [
                 DotAlertConfirmService,
                 {
@@ -75,10 +77,10 @@ describe('ContentTypeFieldsTabComponent', () => {
     });
 
     it('should render component', () => {
-        const deleteBtn = de.query(By.css('dot-icon-button-tooltip')).componentInstance;
+        const deleteBtn = de.query(By.css('p-button')).componentInstance;
         const labelInput = de.query(By.css('div')).nativeElement;
 
-        expect(deleteBtn.tooltipText).toBe('delete text');
+        expect(deleteBtn).toBeTruthy();
         expect(labelInput.outerHTML).toContain(tabField.name);
     });
 
@@ -123,7 +125,7 @@ describe('ContentTypeFieldsTabComponent', () => {
             conf.accept();
         });
         spyOn(comp.removeTab, 'emit');
-        const deleteButton = de.query(By.css('dot-icon-button-tooltip')).nativeElement;
+        const deleteButton = de.query(By.css('p-button')).nativeElement;
         deleteButton.click();
         expect(comp.removeTab.emit).toHaveBeenCalledWith(mockFieldTab);
     });

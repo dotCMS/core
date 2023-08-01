@@ -4,9 +4,9 @@
             <h2 class="flex align-items-center gap-1 uppercase" data-testId="scheduling-card-name">
                 <dot-icon
                     [ngClass]="{ isDone: !!vm.scheduling?.endDate || !!vm.scheduling?.startDate }"
+                    [size]="16"
                     data-testId="schedule-step-done"
                     name="check_circle"
-                    size="16"
                 ></dot-icon>
 
                 {{ 'experiments.configure.scheduling.name' | dm }}
@@ -28,7 +28,7 @@
                     tooltipPosition="bottom"
                 >
                     <button
-                        class="p-button-sm p-button-link"
+                        class="p-button-sm p-button-text"
                         [disabled]="!vm.isExperimentADraft"
                         (click)="setupSchedule()"
                         data-testId="scheduling-setup-button"

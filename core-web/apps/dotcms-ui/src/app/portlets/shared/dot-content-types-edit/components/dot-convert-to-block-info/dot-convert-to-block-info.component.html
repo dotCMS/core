@@ -4,10 +4,10 @@
 ></span>
 
 <button
+    class="p-button-outlined p-button-sm"
     *ngIf="currentField?.id; else learnMore"
-    pButton
-    class="p-button-secondary p-button-sm"
     (click)="action.emit($event)"
+    pButton
     data-testId="button"
 >
     {{ 'contenttypes.field.properties.wysiwyg.info.button' | dm }}
@@ -15,8 +15,8 @@
 
 <ng-template #learnMore
     ><a
+        class="p-element p-button-outlined p-button-sm p-button p-component"
         [ngStyle]="{ 'text-decoration': 'none' }"
-        class="p-element p-button-secondary p-button-sm p-button p-component"
         href="https://www.dotcms.com/docs/latest/block-editor"
         rel="noopener"
         target="_blank"

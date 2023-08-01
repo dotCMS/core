@@ -30,6 +30,8 @@ export class DotSiteSelectorFieldComponent implements ControlValueAccessor {
     live: boolean;
     @Input()
     system: boolean;
+    @Input()
+    width: string;
 
     value: string;
 

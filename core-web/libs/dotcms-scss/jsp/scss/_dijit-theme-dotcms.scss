@@ -48,22 +48,22 @@ $field-error-border: solid 1px $error;
 $button-padding: $field-padding * 2;
 $button-normal-bgcolor: $white;
 $button-normal-textcolor: $color-palette-primary;
-$button-normal-border: solid 1px $color-palette-primary;
+$button-normal-border: solid 1.5px $color-palette-primary;
 $button-normal-shadow: 0;
 
 $button-hover-bgcolor: $color-palette-primary-100;
 $button-hover-textcolor: $color-palette-primary;
-$button-hover-border: solid 1px $color-palette-primary;
+$button-hover-border: solid 1.5px $color-palette-primary;
 $button-hover-shadow: 0;
 
-$button-active-bgcolor: $color-palette-primary-200;
+$button-active-bgcolor: $white;
 $button-active-textcolor: $color-palette-primary;
-$button-active-border: solid 1px $color-palette-primary;
+$button-active-border: solid 1.5px $color-palette-primary;
 $button-active-shadow: 0;
 
 $button-disabled-bgcolor: $color-palette-gray-200;
 $button-disabled-textcolor: $color-palette-gray-500;
-$button-disabled-border: solid 1px $color-palette-gray-200;
+$button-disabled-border: solid 1.5px $color-palette-gray-300;
 $button-disabled-shadow: $button-normal-shadow;
 
 // Only for Drodown and ComboButton

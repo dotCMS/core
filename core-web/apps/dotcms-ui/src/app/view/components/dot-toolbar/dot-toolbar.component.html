@@ -2,12 +2,15 @@
     <div class="p-toolbar-group-left">
         <div class="toolbar__dot-wrapper">
             <div class="toolbar__button-wrapper">
-                <dot-icon-button
-                    [icon]="(dotNavigationService.collapsed$ | async) ? 'menu' : 'arrow_back'"
+                <p-button
+                    [icon]="
+                        (dotNavigationService.collapsed$ | async)
+                            ? 'pi pi-bars'
+                            : 'pi pi-arrow-left'
+                    "
                     (click)="handleMainButtonClick()"
-                    big
-                    inverted
-                ></dot-icon-button>
+                    styleClass="p-button-rounded p-button-text"
+                ></p-button>
             </div>
             <div
                 class="toolbar__logo-wrapper"

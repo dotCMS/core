@@ -5,20 +5,20 @@
             <span>{{ apps.sites[0].name }}</span>
             <div class="dot-apps-configuration-detail-actions">
                 <button
-                    pButton
-                    class="p-button-secondary"
-                    data-testid="cancelBtn"
-                    type="button"
+                    class="p-button-outlined"
                     [label]="'Cancel' | dm"
                     (click)="goToApps(apps.key)"
+                    pButton
+                    data-testid="cancelBtn"
+                    type="button"
                 ></button>
                 <button
+                    [label]="'Save' | dm"
+                    [disabled]="!formValid"
+                    (click)="onSubmit()"
                     pButton
                     data-testid="saveBtn"
                     type="button"
-                    (click)="onSubmit()"
-                    [label]="'Save' | dm"
-                    [disabled]="!formValid"
                 ></button>
             </div>
         </div>

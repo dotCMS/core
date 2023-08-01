@@ -4,12 +4,13 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { ButtonModule } from 'primeng/button';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.component';
@@ -36,7 +37,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
             imports: [
                 TooltipModule,
                 BrowserAnimationsModule,
-                UiDotIconButtonModule,
+                ButtonModule,
                 SplitButtonModule,
                 RouterTestingModule,
                 DotMessagePipe
@@ -121,7 +122,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     it('should display add row when close button has been clicked', () => {
         comp.rowState = 'select';
         fixture.detectChanges();
-        const closeButton = de.query(By.css('dot-icon-button'));
+        const closeButton = de.query(By.css('p-button'));
         closeButton.nativeElement.click();
         fixture.detectChanges();
         expect(comp.rowState).toBe('add');

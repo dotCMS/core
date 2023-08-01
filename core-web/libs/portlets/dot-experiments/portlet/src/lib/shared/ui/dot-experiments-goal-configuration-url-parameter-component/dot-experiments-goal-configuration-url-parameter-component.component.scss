@@ -6,7 +6,7 @@
 
 h3 {
     font-size: $font-size-md;
-    margin: $spacing-0;
+    margin: 0;
     margin-bottom: $spacing-1;
     font-weight: $font-weight-bold;
 }
@@ -15,6 +15,6 @@ h3 {
     gap: $spacing-3;
 
     .field {
-        margin: $spacing-0;
+        margin: 0;
     }
 }

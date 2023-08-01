@@ -14,7 +14,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
-import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.component';
 
@@ -32,7 +32,6 @@ import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.compone
         SkeletonModule,
         TableModule,
         TooltipModule,
-        UiDotIconButtonModule,
         RouterModule,
         ContextMenuModule
     ],

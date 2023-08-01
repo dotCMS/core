@@ -4,13 +4,14 @@
         *ngFor="let rowClass of rowClass; let i = index"
         [ngStyle]="{ 'top.px': i ? (206 + 8) * i : 0 }"
     >
-        <dot-icon-button-tooltip
-            [tooltipText]="'editpage.layout.css.class.add.to.row' | dm"
+        <p-button
+            [pTooltip]="'editpage.layout.css.class.add.to.row' | dm"
             (click)="addRowClass(i)"
+            icon="pi pi-ellipsis-h"
             tooltipPosition="left"
-            icon="more_horiz"
+            styleClass="p-button-rounded p-button-sm p-button-text"
         >
-        </dot-icon-button-tooltip>
+        </p-button>
     </div>
 
     <div
@@ -26,17 +27,21 @@
         >
         </dot-container-selector-layout>
         <div class="box__actions">
-            <dot-icon-button-tooltip
+            <p-button
                 class="box__add-box-class-button"
-                [tooltipText]="'editpage.layout.css.class.add.to.box' | dm"
+                [pTooltip]="'editpage.layout.css.class.add.to.box' | dm"
                 (click)="addColumnClass(i)"
-                icon="more_horiz"
-            ></dot-icon-button-tooltip>
-            <dot-icon-button-tooltip
-                [tooltipText]="'editpage.action.delete' | dm"
+                styleClass="p-button-rounded p-button-text p-button-sm"
+                icon="pi pi-ellipsis-h"
+            >
+            </p-button>
+            <p-button
+                [pTooltip]="'editpage.action.delete' | dm"
                 (click)="onRemoveContainer(i)"
-                icon="close"
-            ></dot-icon-button-tooltip>
+                styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"
+                icon="pi pi-times"
+            >
+            </p-button>
         </div>
     </div>
 </div>

@@ -62,3 +62,7 @@
         box-shadow: $shadow;
     }
 }
+
+@mixin field-focus {
+    outline: 2.8px solid $color-palette-primary-op-20;
+}

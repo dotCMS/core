@@ -21,6 +21,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
@@ -40,7 +41,7 @@ import {
     DotCMSContentTypeLayoutRow,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,
@@ -207,7 +208,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 DotContentTypeFieldsVariablesModule,
                 DotDialogModule,
                 DotActionButtonModule,
-                UiDotIconButtonModule,
+                ButtonModule,
                 DotIconModule,
                 DragulaModule,
                 TableModule,
@@ -491,7 +492,7 @@ describe('Load fields and drag and drop', () => {
                 BrowserAnimationsModule,
                 DotActionButtonModule,
                 DotIconModule,
-                UiDotIconButtonModule,
+                ButtonModule,
                 TableModule,
                 ContentTypeFieldsAddRowModule,
                 DotDialogModule,

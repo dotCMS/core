@@ -12,9 +12,9 @@
 </div>
 
 <button
-    pButton
-    class="dot-apps-configuration-list__show-more p-button-secondary"
+    class="dot-apps-configuration-list__show-more p-button-outlined"
     *ngIf="!hideLoadDataButton"
     [label]="'apps.configurations.show.more' | dm"
     (click)="loadNext()"
+    pButton
 ></button>
