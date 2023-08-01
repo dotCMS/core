@@ -26,9 +26,13 @@
         }
     }
 
-    ::ng-deep .p-button {
+    ::ng-deep .p-button:enabled {
+        justify-content: space-between;
+        text-align: left;
+
         .p-button-label {
             text-transform: none;
+            color: $black;
         }
     }
 }
