@@ -7,14 +7,15 @@
             formArrayName="conditions"
         >
             <div class="condition flex" [formGroupName]="i">
-                <div class="field flex-grow-1 flex flex-column w-15rem">
+                <div class="field flex-grow-1 flex flex-column w-15rem" formGroupName="value">
                     <label dotFieldRequired for="value">{{
                         'experiments.goal.url_parameter.form.conditions.parameter.label' | dm
                     }}</label>
                     <input
-                        id="parameter"
+                        id="name"
                         data-testId="parameter-input"
-                        formControlName="parameter"
+                        dotAutofocus
+                        formControlName="name"
                         name="value"
                         pInputText
                         placeholder="{{
@@ -49,7 +50,7 @@
                     ></dot-field-validation-message>
                 </div>
 
-                <div class="field flex-grow-1 flex flex-column">
+                <div class="field flex-grow-1 flex flex-column" formGroupName="value">
                     <label dotFieldRequired for="value">{{
                         'experiments.goal.url_parameter.form.conditions.value.label' | dm
                     }}</label>
