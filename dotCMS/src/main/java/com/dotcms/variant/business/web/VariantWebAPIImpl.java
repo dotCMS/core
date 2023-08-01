@@ -117,9 +117,9 @@ public class VariantWebAPIImpl implements VariantWebAPI{
      * then look for a version of the {@link Contentlet} in the {@link VariantAPI#DEFAULT_VARIANT}
      * and <code>tryingLang</code> if it exists then return the {@link VariantAPI#DEFAULT_VARIANT}  and <code>tryingLang</code>.
      * - If it does not exist then look for a version of the {@link Contentlet} in the Current Variant
-     * and the Default Language if it exists then return the Current Variant and Default Language.
+     * and the Default Language if it exists then return the Current Variant and Default Language, if the fallback language is allowed.
      * - If it does not exist then look for a version of the {@link Contentlet} in the {@link VariantAPI#DEFAULT_VARIANT}
-     * and the Default Language if it exists then return the {@link VariantAPI#DEFAULT_VARIANT}  and Default Language.
+     * and the Default Language if it exists then return the {@link VariantAPI#DEFAULT_VARIANT}  and Default Language, if the fallback language is allowed.
      *
      * @param tryingLang Language to try if not exists any version for this lang try with default
      * @param identifier {@link com.dotcms.content.model.Contentlet}'s identifier
@@ -138,11 +138,45 @@ public class VariantWebAPIImpl implements VariantWebAPI{
                 contentletVersionInfoByFallback.getLang());
     }
 
+    /**
+     * Return the specific {@link Variant} and {@link Language} with a {@link Contentlet} should be render.
+     * this method follow this rules:
+     *
+     * - First look for a version of the {@link Contentlet} in the current variant and <code>tryingLang</code>
+     * if exists then return the Current Variant and <code>tryingLang</code> .
+     * - If it does not exist and the current variant is different that the {@link VariantAPI#DEFAULT_VARIANT}
+     * then look for a version of the {@link Contentlet} in the {@link VariantAPI#DEFAULT_VARIANT}
+     * and <code>tryingLang</code> if it exists then return the {@link VariantAPI#DEFAULT_VARIANT}  and <code>tryingLang</code>.
+     * - If it does not exist then look for a version of the {@link Contentlet} in the Current Variant
+     * and the Default Language if it exists then return the Current Variant and Default Language.
+     * - If it does not exist then look for a version of the {@link Contentlet} in the {@link VariantAPI#DEFAULT_VARIANT}
+     * and the Default Language if it exists then return the {@link VariantAPI#DEFAULT_VARIANT}  and Default Language.
+     *
+     * @param tryingLang Language to try if not exists any version for this lang try with default
+     * @param identifier {@link com.dotcms.content.model.Contentlet}'s identifier
+     * @param pageMode page mode to render
+     * @param user to check {@link com.dotmarketing.beans.Permission}
+     * @return
+     */
+    @Override
+    public RenderContext getRenderContextForceLangFallback(final long tryingLang, final String identifier,
+            final PageMode pageMode, final User user) {
 
+        final ContentletVersionInfo contentletVersionInfoByFallback = getContentletVersionInfoByFallback(
+                tryingLang, identifier, pageMode, user, true);
+
+        return new RenderContext(contentletVersionInfoByFallback.getVariant(),
+                contentletVersionInfoByFallback.getLang());
+    }
 
     @Override
     public ContentletVersionInfo getContentletVersionInfoByFallback(final long tryingLang, final String identifier,
             final PageMode pageMode, final User user) {
+        return getContentletVersionInfoByFallback(tryingLang, identifier, pageMode, user, false);
+    }
+
+    public ContentletVersionInfo getContentletVersionInfoByFallback(final long tryingLang, final String identifier,
+        final PageMode pageMode, final User user, final boolean forceLangFallback) {
 
         final String currentVariantName = currentVariantId();
         Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI()
@@ -171,8 +205,8 @@ public class VariantWebAPIImpl implements VariantWebAPI{
                         .getContentletVersionInfo(identifier, defaultLanguage.getId(),
                                 currentVariantName);
 
-                if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
-                        contentletVersionInfo.get(), pageMode, user)) {
+                if (contentletVersionInfo.isPresent() &&
+                        (forceLangFallback || shouldFallbackByLang(contentletVersionInfo.get(), pageMode, user))) {
                     return contentletVersionInfo.get();
                 }
 
@@ -182,8 +216,8 @@ public class VariantWebAPIImpl implements VariantWebAPI{
                             .getContentletVersionInfo(identifier, defaultLanguage.getId(),
                                     VariantAPI.DEFAULT_VARIANT.name());
 
-                    if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
-                            contentletVersionInfo.get(), pageMode, user)) {
+                    if (contentletVersionInfo.isPresent() &&
+                            (forceLangFallback || shouldFallbackByLang(contentletVersionInfo.get(), pageMode, user))) {
                         return contentletVersionInfo.get();
                     }
                 }
