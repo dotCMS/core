@@ -381,6 +381,12 @@ public class PublisherTest extends IntegrationTestBase {
         return new PPBean(environment, endPoint);
     }
 
+    /**
+     * Method to test: PublisherAPI.addContentsToPublish()
+     * Given Scenario: Limited users should be able to PP folder successfully if they have the correct permissions.
+     * ExpectedResult: The response of the method should not return any errors.
+     *
+     */
     @Test
     //this is a test for push publish a folder with nothing inside
     public void testPushPublishFolderWithNothingInside() throws Exception {
