@@ -24,6 +24,7 @@
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <skip.surefire.tests>false</skip.surefire.tests>
+        <skip.failsafe.tests>false</skip.failsafe.tests>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -150,6 +151,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
+                <configuration>
+                    <skipTests>${skip.failsafe.tests}</skipTests>
+                    <includes>
+                        <include>**/*IntegrationTest.java</include>
+                    </includes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>

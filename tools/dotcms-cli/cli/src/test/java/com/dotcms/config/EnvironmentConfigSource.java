@@ -7,19 +7,24 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.Set;
 
+/**
+ * This class is used to load the properties from the application.properties file.
+ * It is need it to inject the properties into a static block.
+ */
 public class EnvironmentConfigSource implements ConfigSource {
-
     private Properties properties;
 
     public EnvironmentConfigSource() {
         loadPropertiesFromFile();
     }
 
+    /**
+     * Load the properties from the application.properties file.
+     */
     private void loadPropertiesFromFile() {
         properties = new Properties();
         try (InputStream inputStream = getClass().getResourceAsStream("/application.properties")) {
             properties.load(inputStream);
-            // properties.stringPropertyNames().forEach(property -> System.out.println(property + " = " + properties.getProperty(property)));
         } catch (IOException e) {
             // Handle the exception or log the error
         }

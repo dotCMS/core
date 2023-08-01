@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
 
 @QuarkusTest
-class SiteAPIIT {
+class SiteAPIIntegrationTest {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;
