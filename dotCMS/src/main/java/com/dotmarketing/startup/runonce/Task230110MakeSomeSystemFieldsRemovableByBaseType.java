@@ -16,11 +16,6 @@ import static com.dotmarketing.db.DbConnectionFactory.isMsSql;
 import static com.dotmarketing.db.DbConnectionFactory.isPostgres;
 
 /**
- * <p>
- *     <b>NOTE: This Upgrade Task does the same work done by {@link Task220825MakeSomeSystemFieldsRemovable}. However,
- *     this one uses the Velocity Variable Name of the affected Content Types instead of their IDs to find and update
- *     them.</b>
- * </p>
  * There are several System fields that should be removable. Even though they should be present in the Base Content Type
  * automatically -- and some of them have already been taken care of -- they should be removable if users choose to. This
  * Upgrade Task changes the status of such fields so that they can be deleted via the UI. The affected base types are
