@@ -17,6 +17,7 @@ import {
     DotCurrentUserService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotLicenseService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -60,6 +61,7 @@ describe('DotCustomEventHandlerService', () => {
     let dotDownloadBundleDialogService: DotDownloadBundleDialogService;
     let dotWorkflowEventHandlerService: DotWorkflowEventHandlerService;
     let dotEventsService: DotEventsService;
+    let dotLicenseService: DotLicenseService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -97,7 +99,8 @@ describe('DotCustomEventHandlerService', () => {
                 DotIframeService,
                 DotDownloadBundleDialogService,
                 DotGenerateSecurePasswordService,
-                LoginService
+                LoginService,
+                DotLicenseService
             ],
             imports: [RouterTestingModule, HttpClientTestingModule]
         });
@@ -112,6 +115,7 @@ describe('DotCustomEventHandlerService', () => {
         dotDownloadBundleDialogService = TestBed.inject(DotDownloadBundleDialogService);
         dotWorkflowEventHandlerService = TestBed.inject(DotWorkflowEventHandlerService);
         dotEventsService = TestBed.inject(DotEventsService);
+        dotLicenseService = TestBed.inject(DotLicenseService);
     });
 
     it('should show loading indicator and go to edit page when event is emited by iframe', () => {
@@ -286,5 +290,18 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect<any>(dotEventsService.notify).toHaveBeenCalledWith('compare-contentlet', 'testData');
+    });
+
+    it("should update license when 'license-changed' event is received", () => {
+        spyOn(dotLicenseService, 'updateLicense');
+
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'license-changed'
+                }
+            })
+        );
+        expect(dotLicenseService.updateLicense).toHaveBeenCalled();
     });
 });

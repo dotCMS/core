@@ -4,7 +4,11 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
 import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotEventsService, DotGenerateSecurePasswordService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotGenerateSecurePasswordService,
+    DotLicenseService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
@@ -36,7 +40,8 @@ export class DotCustomEventHandlerService {
         private dotDownloadBundleDialogService: DotDownloadBundleDialogService,
         private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService,
         private dotGenerateSecurePasswordService: DotGenerateSecurePasswordService,
-        private dotEventsService: DotEventsService
+        private dotEventsService: DotEventsService,
+        private dotLicenseService: DotLicenseService
     ) {
         if (!this.handlers) {
             this.handlers = {
@@ -49,7 +54,8 @@ export class DotCustomEventHandlerService {
                 'download-bundle': this.downloadBundleDialog.bind(this),
                 'workflow-wizard': this.executeWorkflowWizard.bind(this),
                 'generate-secure-password': this.generateSecurePassword.bind(this),
-                'compare-contentlet': this.openCompareDialog.bind(this)
+                'compare-contentlet': this.openCompareDialog.bind(this),
+                'license-changed': this.updateLicense.bind(this)
             };
         }
     }
@@ -122,5 +128,15 @@ export class DotCustomEventHandlerService {
             COMPARE_CUSTOM_EVENT,
             $event.detail.data
         );
+    }
+
+    /**
+     * Update license
+     *
+     * @private
+     * @memberof DotCustomEventHandlerService
+     */
+    private updateLicense(): void {
+        this.dotLicenseService.updateLicense();
     }
 }
