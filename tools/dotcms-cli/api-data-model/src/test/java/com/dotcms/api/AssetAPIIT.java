@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 @QuarkusTest
-class AssetAPITest {
+class AssetAPIIT {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;

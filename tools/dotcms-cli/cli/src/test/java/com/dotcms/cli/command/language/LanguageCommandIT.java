@@ -24,12 +24,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.wildfly.common.Assert;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-public class LanguageCommandTest extends CommandTest {
+public class LanguageCommandIT extends CommandTest {
     @Inject
     AuthenticationContext authenticationContext;
     @Inject

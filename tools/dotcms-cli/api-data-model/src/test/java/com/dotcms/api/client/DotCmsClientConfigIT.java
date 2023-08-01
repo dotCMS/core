@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class DotCmsClientConfigTest {
+class DotCmsClientConfigIT {
 
     @Inject
     DotCmsClientConfig config;

@@ -23,7 +23,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-class SiteCommandTest extends CommandTest {
+class SiteCommandIT extends CommandTest {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;

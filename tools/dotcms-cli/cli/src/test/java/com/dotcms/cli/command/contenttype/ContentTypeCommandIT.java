@@ -34,7 +34,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-public class ContentTypeCommandTest extends CommandTest {
+public class ContentTypeCommandIT extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;

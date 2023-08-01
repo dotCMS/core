@@ -10,7 +10,7 @@ import javax.enterprise.inject.Alternative;
 @Alternative
 @Priority(1)
 @ApplicationScoped
-public class MockUnsupportedSecurePasswordStoreImpl implements SecurePasswordStore{
+public class MockUnsupportedSecurePasswordStoreImpl implements SecurePasswordStore {
 
         @Override
         public void setPassword(String service, String account, String password) throws StoreSecureException {

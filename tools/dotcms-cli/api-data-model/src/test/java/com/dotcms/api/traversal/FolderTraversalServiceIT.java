@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 @QuarkusTest
-public class FolderTraversalServiceTest {
+public class FolderTraversalServiceIT {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;
