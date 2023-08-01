@@ -1,5 +1,9 @@
 @use "variables" as *;
 
+::ng-deep body:has(.ui-draggable-dragging) {
+    cursor: grabbing;
+}
+
 :host {
     position: relative;
 }
