@@ -222,7 +222,6 @@ import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletName;
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTable;
 import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariant;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantField;
-import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovable;
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTable;
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuProperty;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperiment;
@@ -532,7 +531,6 @@ public class TaskLocatorUtil {
 		.add(Task220512UpdateNoHTMLRegexValue.class)
 		.add(Task220606UpdatePushNowActionletName.class)
 		.add(Task220822CreateVariantTable.class)
-		.add(Task220825MakeSomeSystemFieldsRemovable.class)
     	.add(Task220822CreateVariantTable.class)
 		.add(Task220829CreateExperimentsTable.class)
 		.add(Task220912UpdateCorrectShowOnMenuProperty.class)
