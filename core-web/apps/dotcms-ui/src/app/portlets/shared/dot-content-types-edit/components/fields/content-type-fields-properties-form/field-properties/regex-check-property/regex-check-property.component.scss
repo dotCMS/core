@@ -1,9 +1,11 @@
+@use "variables" as *;
+
 .form__validation-input-container {
     display: flex;
+    gap: $spacing-2;
 
     .p-inputtext {
-        max-width: 70%;
-        margin-right: 5%;
+        flex-grow: 1;
     }
 
     p-dropdown {
