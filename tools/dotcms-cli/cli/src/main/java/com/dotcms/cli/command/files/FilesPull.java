@@ -61,6 +61,12 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                             + "and the command will continue on error.")
     boolean failFast;
 
+    @CommandLine.Option(names = {"--retry-attempts"}, defaultValue = "0",
+            description =
+                    "Number of retry attempts on errors. By default, this option is disabled, "
+                            + "and the command will not retry on error.")
+    int retryAttempts;
+
     @CommandLine.Option(names = {"-ef", "--excludeFolder"},
             paramLabel = "patterns",
             description = "Exclude directories matching the given glob patterns. Multiple "
@@ -94,10 +100,10 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Integer call() throws Exception {
 
-        // Calculating the workspace path for files
-        var workspaceFilesFolder = getOrCreateWorkspaceFilesDirectory(workspace);
-
         try {
+
+            // Calculating the workspace path for files
+            var workspaceFilesFolder = getOrCreateWorkspaceFilesDirectory(workspace);
 
             if (LocationUtils.URLIsFolder(source)) { // Handling folders
 
@@ -144,7 +150,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 // ---
                 // Now we need to pull the contents based on the tree we found
                 pullAssetsService.pullTree(output, result.getRight(), workspaceFilesFolder, override,
-                        includeEmptyFolders, failFast);
+                        includeEmptyFolders, failFast, retryAttempts);
 
             } else { // Handling single files
 
@@ -173,7 +179,8 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 }
 
                 // Handle the pull of a single file
-                pullAssetsService.pullFile(output, result, source, workspaceFilesFolder, override, failFast);
+                pullAssetsService.pullFile(output, result, source, workspaceFilesFolder, override,
+                        failFast, retryAttempts);
             }
 
             output.info(String.format("\n\nOutput has been written to [%s]", workspaceFilesFolder.getAbsolutePath()));

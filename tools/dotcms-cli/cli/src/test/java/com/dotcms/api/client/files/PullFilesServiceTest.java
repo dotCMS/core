@@ -90,7 +90,7 @@ class PullFilesServiceTest {
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
             pullAssetsService.pullTree(outputOptions, result.getRight(), tempFolder.toAbsolutePath().toFile(),
-                    true, true, true);
+                    true, true, true, 0);
 
             // ============================
             //Validating the file system

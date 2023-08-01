@@ -85,53 +85,80 @@ public class PushServiceImpl implements PushService {
      *                           for each file and folder
      * @param treeNodePushInfo   the push information summary associated with the tree node
      * @param failFast           true to fail fast, false to continue on error
+     * @param maxRetryAttempts   the maximum number of retry attempts in case of error
      * @throws RuntimeException if an error occurs during the push process
      */
     @ActivateRequestContext
     @Override
     public void processTreeNodes(OutputOptionMixin output, final String workspace,
-                                            final AssetsUtils.LocalPathStructure localPathStructure, final TreeNode treeNode,
-                                            final TreeNodePushInfo treeNodePushInfo, final boolean failFast) {
+                                 final AssetsUtils.LocalPathStructure localPathStructure, final TreeNode treeNode,
+                                 final TreeNodePushInfo treeNodePushInfo, final boolean failFast,
+                                 final int maxRetryAttempts) {
 
-        // ConsoleProgressBar instance to handle the push progress bar
-        ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
-        // Calculating the total number of steps
-        progressBar.setTotalSteps(
-                treeNodePushInfo.assetsToPushCount() +
-                        treeNodePushInfo.assetsToDeleteCount() +
-                        treeNodePushInfo.foldersToPushCount() +
-                        treeNodePushInfo.foldersToDeleteCount()
-        );
+        var retryAttempts = 0;
+        var failed = false;
 
-        CompletableFuture<List<Exception>> pushTreeFuture = CompletableFuture.supplyAsync(
-                () -> remoteTraversalService.pushTreeNode(
-                        workspace, localPathStructure, treeNode, failFast, progressBar
-                ));
-        progressBar.setFuture(pushTreeFuture);
+        do {
 
-        CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
-                progressBar
-        );
-
-        // Waits for the completion of both the file push tree process and console progress bar animation tasks.
-        // This line blocks the current thread until both CompletableFuture instances
-        // (pushTreeFuture and animationFuture) have completed.
-        CompletableFuture.allOf(pushTreeFuture, animationFuture).join();
-        try {
-
-            var errors = pushTreeFuture.get();
-            if (!errors.isEmpty()) {
-                output.info("\n\nErrors found during the push process:");
-                for (var error : errors) {
-                    output.error(error.getMessage());
-                }
+            if (retryAttempts > 0) {
+                output.info(String.format("\n↺ Retrying push process [%d of %d]...", retryAttempts, maxRetryAttempts));
             }
 
-        } catch (InterruptedException | ExecutionException e) {
-            var errorMessage = String.format("Error occurred while pushing contents: [%s].", e.getMessage());
-            logger.debug(errorMessage, e);
-            throw new RuntimeException(errorMessage, e);
-        }
+            // ConsoleProgressBar instance to handle the push progress bar
+            ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
+            // Calculating the total number of steps
+            progressBar.setTotalSteps(
+                    treeNodePushInfo.assetsToPushCount() +
+                            treeNodePushInfo.assetsToDeleteCount() +
+                            treeNodePushInfo.foldersToPushCount() +
+                            treeNodePushInfo.foldersToDeleteCount()
+            );
+
+            var isRetry = retryAttempts > 0;
+            CompletableFuture<List<Exception>> pushTreeFuture = CompletableFuture.supplyAsync(
+                    () -> remoteTraversalService.pushTreeNode(
+                            workspace, localPathStructure, treeNode, failFast, isRetry, progressBar
+                    ));
+            progressBar.setFuture(pushTreeFuture);
+
+            CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+                    progressBar
+            );
+
+
+            try {
+
+                // Waits for the completion of both the file push tree process and console progress bar animation tasks.
+                // This line blocks the current thread until both CompletableFuture instances
+                // (pushTreeFuture and animationFuture) have completed.
+                CompletableFuture.allOf(pushTreeFuture, animationFuture).join();
+
+                var errors = pushTreeFuture.get();
+                if (!errors.isEmpty()) {
+                    failed = true;
+                    output.info(String.format("\n\nFound [@|bold,red %s|@] errors during the push process:",
+                            errors.size()));
+                    for (var error : errors) {
+                        output.error(error.getMessage());
+                    }
+                }
+
+            } catch (InterruptedException | ExecutionException e) {
+
+                var errorMessage = String.format("Error occurred while pushing contents: [%s].", e.getMessage());
+                logger.debug(errorMessage, e);
+                throw new RuntimeException(errorMessage, e);
+            } catch (Exception e) {// Fail fast
+
+                failed = true;
+                if (retryAttempts + 1 <= maxRetryAttempts) {
+                    output.info("\n\nFound errors during the push process:");
+                    output.error(e.getMessage());
+                } else {
+                    throw e;
+                }
+            }
+        } while (failed && retryAttempts++ < maxRetryAttempts);
 
     }
 

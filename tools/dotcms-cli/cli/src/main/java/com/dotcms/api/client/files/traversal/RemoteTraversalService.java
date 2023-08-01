@@ -50,10 +50,11 @@ public interface RemoteTraversalService {
      * @param treeNode           the tree node representing the folder and its contents with all the push
      *                           information for each file and folder
      * @param failFast           true to fail fast, false to continue on error
+     * @param isRetry            true if this is a retry attempt, false otherwise
      * @param progressBar        the console progress bar to track and display the push progress
      * @return A list of exceptions encountered during the push process.
      */
     List<Exception> pushTreeNode(String workspace, AssetsUtils.LocalPathStructure localPathStructure, TreeNode treeNode,
-                                 final boolean failFast, ConsoleProgressBar progressBar);
+                                 final boolean failFast, final boolean isRetry, ConsoleProgressBar progressBar);
 
 }

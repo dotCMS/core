@@ -59,21 +59,27 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                             + "and the command will continue on error.")
     boolean failFast;
 
+    @CommandLine.Option(names = {"--retry-attempts"}, defaultValue = "0",
+            description =
+                    "Number of retry attempts on errors. By default, this option is disabled, "
+                            + "and the command will not retry on error.")
+    int retryAttempts;
+
     @Inject
     PushService pushService;
 
     @Override
     public Integer call() throws Exception {
 
-        // Getting the workspace
-        var workspace = getWorkspaceDirectory(source);
-
-        // If the source is not specified, we use the current directory
-        if (source == null) {
-            source = Paths.get("").toAbsolutePath().normalize().toFile();
-        }
-
         try {
+            
+            // Getting the workspace
+            var workspace = getWorkspaceDirectory(source);
+
+            // If the source is not specified, we use the current directory
+            if (source == null) {
+                source = Paths.get("").toAbsolutePath().normalize().toFile();
+            }
 
             CompletableFuture<List<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>>>
                     folderTraversalFuture = CompletableFuture.supplyAsync(
@@ -122,7 +128,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                 StringBuilder sb = new StringBuilder();
 
                 sb.append(count++ == 0 ? "\r\n" : "\n\n").
-                        append(" ------\n").
+                        append(" ──────\n").
                         append(String.format(" @|bold Folder [%s]|@ --- Site: [%s] - Status [%s] - Language [%s] \n",
                                 localPathStructure.filePath(),
                                 localPathStructure.site(),
@@ -177,7 +183,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     // Pushing the tree
                     if (!dryRun) {
                         pushService.processTreeNodes(output, workspace.getAbsolutePath(),
-                                localPathStructure, treeNode, treeNodePushInfo, failFast);
+                                localPathStructure, treeNode, treeNodePushInfo, failFast, retryAttempts);
                     }
 
                 } else {

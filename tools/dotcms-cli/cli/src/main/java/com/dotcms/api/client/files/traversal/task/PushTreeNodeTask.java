@@ -9,6 +9,8 @@ import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import org.jboss.logging.Logger;
 
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.WebApplicationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +30,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
     private final TreeNode rootNode;
 
     private final boolean failFast;
+    private final boolean isRetry;
 
     private final ConsoleProgressBar progressBar;
 
@@ -41,6 +44,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
      * @param rootNode           the tree node representing the folder and its contents with all the push
      *                           information for each file and folder
      * @param failFast           true to fail fast, false to continue on error
+     * @param isRetry            true if this is a retry, false otherwise
      * @param logger             the logger for logging debug information
      * @param pusher             the pusher for pushing assets and folders
      * @param progressBar        the console progress bar to track and display the push progress
@@ -49,6 +53,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                             AssetsUtils.LocalPathStructure localPathStructure,
                             TreeNode rootNode,
                             final boolean failFast,
+                            final boolean isRetry,
                             final Logger logger,
                             final Pusher pusher,
                             final ConsoleProgressBar progressBar) {
@@ -57,6 +62,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
         this.localPathStructure = localPathStructure;
         this.rootNode = rootNode;
         this.failFast = failFast;
+        this.isRetry = isRetry;
         this.pusher = pusher;
         this.logger = logger;
         this.progressBar = progressBar;
@@ -108,6 +114,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                         this.localPathStructure,
                         child,
                         this.failFast,
+                        this.isRetry,
                         this.logger,
                         this.pusher,
                         this.progressBar
@@ -141,10 +148,16 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                     pusher.deleteFolder(folder.host(), folder.path());
                     logger.debug(String.format("Folder [%s] deleted", folder.path()));
                 } catch (Exception e) {
-                    var message = String.format("Error deleting folder [%s] --- %s",
-                            folder.path(), e.getMessage());
-                    logger.debug(message, e);
-                    throw new RuntimeException(message, e);
+
+                    // If we are trying to delete a folder that does not exist anymore we could ignore the error on retries
+                    if (!this.isRetry || !(e instanceof NotFoundException)) {
+
+                        var message = String.format("Error deleting folder [%s] --- %s",
+                                folder.path(), e.getMessage());
+                        logger.debug(message, e);
+                        throw new RuntimeException(message, e);
+                    }
+
                 } finally {
                     // Folder processed, updating the progress bar
                     this.progressBar.incrementStep();
@@ -173,9 +186,23 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                             e.getMessage());
                     logger.debug(message, e);
                     if (isSite) {
-                        throw new SiteCreationException(message, e);
+
+                        // Using the exception to check if the site already exist
+                        var alreadyExist = checkIfSiteAlreadyExist(e);
+
+                        // If we are trying to create a site that already exist we could ignore the error on retries
+                        if (!this.isRetry || !alreadyExist) {
+                            throw new SiteCreationException(message, e);
+                        }
                     } else {
-                        throw new RuntimeException(message, e);
+
+                        // Using the exception to check if the folder already exist
+                        var alreadyExist = checkIfAssetOrFolderAlreadyExist(e);
+
+                        // If we are trying to create a folder that already exist we could ignore the error on retries
+                        if (!this.isRetry || !alreadyExist) {
+                            throw new RuntimeException(message, e);
+                        }
                     }
                 } finally {
                     // Folder processed, updating the progress bar
@@ -211,10 +238,16 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                         logger.debug(String.format("Asset [%s] deleted", asset.name()));
                     }
                 } catch (Exception e) {
-                    var message = String.format("Error deleting asset [%s%s] --- %s",
-                            folder.path(), asset.name(), e.getMessage());
-                    logger.debug(message, e);
-                    throw new RuntimeException(message, e);
+
+                    // If we are trying to delete an asset that does not exist anymore we could ignore the error on retries
+                    if (!this.isRetry || !(e instanceof NotFoundException)) {
+
+                        var message = String.format("Error deleting asset [%s%s] --- %s",
+                                folder.path(), asset.name(), e.getMessage());
+                        logger.debug(message, e);
+                        throw new RuntimeException(message, e);
+                    }
+
                 } finally {
                     // Asset processed, updating the progress bar
                     this.progressBar.incrementStep();
@@ -228,10 +261,18 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                             localPathStructure.site(), folder.path(), asset.name());
                     logger.debug(String.format("Asset [%s%s] pushed", folder.path(), asset.name()));
                 } catch (Exception e) {
-                    var message = String.format("Error pushing asset [%s%s] --- %s",
-                            folder.path(), asset.name(), e.getMessage());
-                    logger.debug(message, e);
-                    throw new RuntimeException(message, e);
+
+                    // Using the exception to check if the asset already exist
+                    var alreadyExist = checkIfAssetOrFolderAlreadyExist(e);
+
+                    // If we are trying to push an asset that already exist we could ignore the error on retries
+                    if (!this.isRetry || !alreadyExist) {
+                        var message = String.format("Error pushing asset [%s%s] --- %s",
+                                folder.path(), asset.name(), e.getMessage());
+                        logger.debug(message, e);
+                        throw new RuntimeException(message, e);
+                    }
+
                 } finally {
                     // Asset processed, updating the progress bar
                     this.progressBar.incrementStep();
@@ -239,6 +280,48 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
 
             }
         }
+    }
+
+    /**
+     * Checks if the exception indicates that the site already exists.
+     *
+     * @param e the exception to check
+     * @return true if the site or folder already exists, false otherwise
+     */
+    private boolean checkIfSiteAlreadyExist(Exception e) {
+
+        var alreadyExist = false;
+        if (e instanceof WebApplicationException) {
+            var webApplicationException = (WebApplicationException) e;
+            var status = webApplicationException.getResponse().getStatus();
+            var responseMessage = e.getMessage();
+
+            if (status == 400 && responseMessage.contains("already exists")) {
+                alreadyExist = true;
+            }
+        }
+        return alreadyExist;
+    }
+
+    /**
+     * Checks if the exception indicates that the asset or folder already exists.
+     *
+     * @param e the exception to check
+     * @return true if the asset already exists, false otherwise
+     */
+    private boolean checkIfAssetOrFolderAlreadyExist(Exception e) {
+
+        var alreadyExist = false;
+        if (e instanceof WebApplicationException) {
+            var webApplicationException = (WebApplicationException) e;
+            var status = webApplicationException.getResponse().getStatus();
+            var responseMessage = e.getMessage();
+
+            if (status == 400 && responseMessage.contains("duplicate key")) {
+                alreadyExist = true;
+            }
+        }
+        return alreadyExist;
     }
 
 }

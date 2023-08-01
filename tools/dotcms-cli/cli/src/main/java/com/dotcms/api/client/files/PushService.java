@@ -43,10 +43,11 @@ public interface PushService {
      *                           for each file and folder
      * @param treeNodePushInfo   the push information summary associated with the tree node
      * @param failFast           true to fail fast, false to continue on error
+     * @param maxRetryAttempts   the maximum number of retry attempts in case of error
      * @throws RuntimeException if an error occurs during the push process
      */
     void processTreeNodes(OutputOptionMixin output, String workspace,
-                                     AssetsUtils.LocalPathStructure localPathStructure, TreeNode treeNode,
-                                     TreeNodePushInfo treeNodePushInfo, final boolean failFast);
+                          AssetsUtils.LocalPathStructure localPathStructure, TreeNode treeNode,
+                          TreeNodePushInfo treeNodePushInfo, final boolean failFast, final int maxRetryAttempts);
 
 }

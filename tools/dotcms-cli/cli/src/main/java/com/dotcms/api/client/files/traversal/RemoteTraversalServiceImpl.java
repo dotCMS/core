@@ -115,11 +115,13 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
      * @param treeNode           the tree node representing the folder and its contents with all the push
      *                           information for each file and folder
      * @param failFast           true to fail fast, false to continue on error
+     * @param isRetry            true if this is a retry attempt, false otherwise
      * @param progressBar        the console progress bar to track and display the push progress
      * @return A list of exceptions encountered during the push process.
      */
     public List<Exception> pushTreeNode(final String workspace, final AssetsUtils.LocalPathStructure localPathStructure,
-                                        final TreeNode treeNode, final boolean failFast, ConsoleProgressBar progressBar) {
+                                        final TreeNode treeNode, final boolean failFast, final boolean isRetry,
+                                        ConsoleProgressBar progressBar) {
 
         // If the language does not exist we need to create it
         if (!localPathStructure.languageExists()) {
@@ -133,6 +135,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 localPathStructure,
                 treeNode,
                 failFast,
+                isRetry,
                 logger,
                 pusher,
                 progressBar);
