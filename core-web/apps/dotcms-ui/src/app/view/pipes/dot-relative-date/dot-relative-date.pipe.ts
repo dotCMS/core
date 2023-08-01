@@ -11,9 +11,7 @@ export class DotRelativeDatePipe implements PipeTransform {
 
     transform(value: string, formatedInMilliseconds = false): string {
         return this.dotFormatDateService.getRelative(
-            formatedInMilliseconds ? value : new Date(value).getTime().toString(),
-            // The backend returns the date in UTC, so we need to convert the system date to UTC date to have the correct time difference
-            new Date(new Date().toUTCString().slice(0, -4)) // This deletes the GMT from the date, so it can be parsed correctly
+            formatedInMilliseconds ? value : new Date(value).getTime().toString()
         );
     }
 }
