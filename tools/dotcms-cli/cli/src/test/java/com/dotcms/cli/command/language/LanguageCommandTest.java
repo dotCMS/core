@@ -4,8 +4,6 @@ import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
-import com.dotcms.cli.command.contenttype.ContentTypeCommand;
-import com.dotcms.cli.command.contenttype.ContentTypePull;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
@@ -289,7 +287,7 @@ public class LanguageCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final String lang = "en-US";
+            final String lang = "en-US".toLowerCase();
             for (int i=0; i<= 5; i++) {
                 final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, lang, "--workspace", workspace.root().toString());
                 Assertions.assertEquals(CommandLine.ExitCode.OK, status);
@@ -298,7 +296,7 @@ public class LanguageCommandTest extends CommandTest {
 
             final String fileName = String.format("%s.json", lang);
             final Path path = Path.of(workspace.languages().toString(), fileName);
-            Assert.assertTrue(Files.exists(path));
+            Assertions.assertTrue(Files.exists(path),String.format("The file [%s] should exist", path));
 
             try (Stream<Path> walk = Files.walk(workspace.languages())) {
                 long count = walk.filter(p -> Files.isRegularFile(p) && p.getFileName().toString()

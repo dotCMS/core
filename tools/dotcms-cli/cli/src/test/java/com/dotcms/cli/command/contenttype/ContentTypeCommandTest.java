@@ -15,15 +15,6 @@ import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.model.config.Workspace;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.junit.jupiter.api.*;
-import org.wildfly.common.Assert;
-import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
-
-import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -31,6 +22,16 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
+import java.util.stream.Stream;
+import javax.inject.Inject;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.wildfly.common.Assert;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
 public class ContentTypeCommandTest extends CommandTest {
