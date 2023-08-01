@@ -15,11 +15,11 @@ export enum DIRECTION {
     standalone: true
 })
 export class DotItemDragScrollDirective implements OnInit {
-    private currentElement: HTMLElement;
     private scrollInterval;
 
     isDragging = false;
     container: HTMLElement;
+    currentElement: HTMLElement;
     scrollDirection: DIRECTION = DIRECTION.NONE;
 
     @HostListener('window:mousemove', ['$event'])
@@ -28,7 +28,7 @@ export class DotItemDragScrollDirective implements OnInit {
             const containerRect = this.container.getBoundingClientRect();
             const elementRect = this.currentElement.getBoundingClientRect();
             const scrollSpeed = 10;
-            const scrollThreshold = 80;
+            const scrollThreshold = 100;
 
             const scrollUp = elementRect.top - containerRect.top - scrollThreshold < 0;
             const scrollDown = elementRect.bottom - containerRect.bottom + scrollThreshold > 0;
