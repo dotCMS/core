@@ -9,7 +9,6 @@ import { DialogModule } from 'primeng/dialog';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-import { getRunnableLink } from '@dotcms/utils';
 import { MockDotMessageService, mockPageTools } from '@dotcms/utils-testing';
 
 import { DotPageToolsSeoComponent } from './dot-page-tools-seo.component';
@@ -64,12 +63,7 @@ describe('DotPageToolsSeoComponent', () => {
     });
 
     it('should have correct href values in links', () => {
-        const tools = mockPageTools.pageTools.map((tool) => {
-            return {
-                ...tool,
-                runnableLink: getRunnableLink(tool.runnableLink, pageToolUrlParamsTest)
-            };
-        });
+        const tools = mockPageTools.pageTools;
         spectator.detectChanges();
 
         const anchorElements = spectator.queryAll(byTestId('page-tools-list-link'));
