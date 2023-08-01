@@ -643,7 +643,7 @@ public class ContentUtils {
 					final List<Contentlet> filteredList = relatedContent.stream().filter(c->results.contains(c.getIdentifier()))
 							.collect(Collectors.toList());
                     
-                    return filteredList.subList(offset>=0?offset:0, (limit > 0 && limit <= filteredList.size())? limit: filteredList.size());
+                    return filteredList.subList(offset>=0?offset:0, (limit > 0 && offset+limit <= filteredList.size() )? offset+limit: filteredList.size());
                 } 
                 
                 //pulling parents
