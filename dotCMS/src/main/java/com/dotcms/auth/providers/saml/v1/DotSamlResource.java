@@ -133,6 +133,13 @@ public class DotSamlResource implements Serializable {
 		throw new DotSamlException(message);
 	}
 
+	private String mapSAMLConfigId(final String idpConfigId) {
+
+		final SiteConfigSAMLMapping siteConfigSAMLMapping = OldSAMLConfigToSiteSAMLConfigMapping.getInstance();
+		final String siteId = siteConfigSAMLMapping.apply(idpConfigId, this.identityProviderConfigurationFactory);
+		return siteId;
+	}
+
 	/**
 	 * processLogin handles the callback from the IDP when the user gets successfully login, it will retrieve the user information from the assertion and based on that proceed to get login into dotcms
 	 * @param idpConfigId           {@link String} identifier config (here the host id)
@@ -145,11 +152,13 @@ public class DotSamlResource implements Serializable {
 	@Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_FORM_URLENCODED})
 	@Produces( { MediaType.APPLICATION_XML, "text/html" } )
 	@NoCache
-	public void processLogin(@PathParam("idpConfigId") final String idpConfigId,
+	public void processLogin(@PathParam("idpConfigId")  final String paramIdpConfigId,
 							 @Context final HttpServletRequest httpServletRequest,
 							 @Context final HttpServletResponse httpServletResponse) throws IOException {
 
 		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
+
+			final String idpConfigId = this.mapSAMLConfigId(paramIdpConfigId);
 
 			final IdentityProviderConfiguration identityProviderConfiguration =
 					this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
