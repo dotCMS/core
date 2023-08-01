@@ -49,6 +49,11 @@ export const Default = () => ({
     component: DotPageToolsSeoComponent,
     props: {
         visible: true,
-        currentPageUrl: 'https://demo.dotcms.com'
+        currentPageUrlParams: {
+            currentUrl: '/index',
+            requestHostName: 'demo.dotcms.com',
+            siteId: '123',
+            languageId: 1
+        }
     }
 });
