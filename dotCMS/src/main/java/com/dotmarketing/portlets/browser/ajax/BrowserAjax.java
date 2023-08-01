@@ -114,8 +114,8 @@ public class BrowserAjax {
 
     private static final String SELECTED_BROWSER_PATH_OBJECT = "SELECTED_BROWSER_PATH_OBJECT";
 
-    String lastSortBy = "name";
-    boolean lastSortDirectionDesc = false;
+    String lastSortBy = "modDate";
+    boolean lastSortDirectionDesc = true;
 	private final String imageMimetype = "image";
 
 	final static private Comparator<Map> nameComparator = new Comparator<Map>() {
@@ -279,8 +279,8 @@ public class BrowserAjax {
 													   final boolean showArchived, final long languageId) throws
 			DotSecurityException, DotDataException {
 		DwrUtil.getSession().setAttribute(ACTIVE_FOLDER_ID, parentId);
-		this.lastSortBy = sortBy;
 		if (UtilMethods.isSet(sortBy)) {
+			this.lastSortBy = sortBy;
 			if (sortBy.equals(lastSortBy)) {
 				this.lastSortDirectionDesc = !this.lastSortDirectionDesc;
 			}

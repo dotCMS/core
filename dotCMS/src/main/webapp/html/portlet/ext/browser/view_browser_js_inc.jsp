@@ -745,32 +745,16 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         contentDraggables = new Array();
     }
 
-    function sortContentByNameAndDate(unsortedArray){
-        // First, separate folders and files into separate arrays
-        const folders = unsortedArray.filter(item => item.type === 'folder');
-        const files = unsortedArray.filter(item => item.type !== 'folder');
-
-        // Sort folders by name
-        folders.sort((a, b) => (a.name > b.name) ? 1 : -1);
-
-        // Sort files by date
-        files.sort((a, b) => (a.modDate > b.modDate) ? 1 : -1);
-        // Merge the sorted arrays back into one array
-        return [...folders, ...files];
-    }
-
     //AJAX callback to load the left hand side of the browser
     function selectFolderContentCallBack (content) {
-
-        const filteredContent = sortContentByNameAndDate(content)
 
         var subFoldersCount = 0;
 
         //Loading the contents table at the rigth hand side
         var table = $('assetListBody');
-        for (var i = 0; i < filteredContent.length; i++) {
+        for (var i = 0; i < content.length; i++) {
 
-            var asset = filteredContent[i];
+            var asset = content[i];
             inodes[asset.inode] = asset;
 
             contentInodes[contentInodes.length] = asset;
