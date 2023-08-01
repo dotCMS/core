@@ -112,10 +112,21 @@ export class DotFormatDateService {
      * @returns {string}
      * @memberof DotFormatDateService
      */
-    getRelative(time: string, baseDate = new Date()): string {
+    getRelative(time: string, baseDate = this.getUTCNow()): string {
         return formatDistanceStrict(new Date(parseInt(time, 10)), baseDate, {
             ...this.localeOptions,
             addSuffix: true
         });
+    }
+
+    /**
+     * Get the current date in UTC
+     *
+     * @private
+     * @return {*}  {Date}
+     * @memberof DotFormatDateService
+     */
+    private getUTCNow(): Date {
+        return new Date(new Date().toUTCString().slice(0, -4));
     }
 }
