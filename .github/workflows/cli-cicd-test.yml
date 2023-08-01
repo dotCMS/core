@@ -1,0 +1,21 @@
+name: CLI tests
+on:
+  pull_request:
+    paths:
+      - 'tools/dotcms-cli/**'
+  push:
+    branches:
+      - 22706-configure-gha-and-it-for-cli
+      - master
+      - release-*
+jobs:
+  cli_tests:
+    name: CLI tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v3
+      - name: Run cli tests
+        working-directory: ./tools/dotcms-cli/
+        run: |
+          ./mvnw clean verify
