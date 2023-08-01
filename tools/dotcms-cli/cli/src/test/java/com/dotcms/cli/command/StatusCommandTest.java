@@ -1,16 +1,9 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.api.AuthenticationContext;
-import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
-import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.test.junit.QuarkusTest;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Optional;
-import javax.inject.Inject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -18,6 +11,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Optional;
 
 
 @QuarkusTest
