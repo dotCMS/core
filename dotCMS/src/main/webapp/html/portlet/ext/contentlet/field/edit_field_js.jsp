@@ -350,8 +350,8 @@ var cmsfile=null;
 	}
 
 	function insertAssetInEditor(dotAssets) {
-        const languageQuery = asset.languageId ? `&language=${asset.languageId}` : "";
 		dotAssets.forEach(async (asset) => {
+            const languageQuery = asset.languageId ? `&language=${asset.languageId}` : "";
 			let results = await fetch(
                 `/api/v1/content/resourcelinks?identifier=${asset.identifier}${languageQuery}`
 			);
