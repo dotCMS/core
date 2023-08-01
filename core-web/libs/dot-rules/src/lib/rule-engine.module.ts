@@ -76,7 +76,8 @@ import { MenuModule } from 'primeng/menu';
         HttpClientModule,
         DotAutofocusModule,
         DotUnlicenseModule,
-        MenuModule
+        MenuModule,
+        TooltipModule
     ],
     declarations: [
         AddToBundleDialogComponent,
