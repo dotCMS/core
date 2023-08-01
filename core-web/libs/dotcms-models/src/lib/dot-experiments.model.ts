@@ -11,7 +11,6 @@ import {
 
 export interface DotExperiment {
     id: string;
-    identifier: string;
     pageId: string;
     name: string;
     description: string;
