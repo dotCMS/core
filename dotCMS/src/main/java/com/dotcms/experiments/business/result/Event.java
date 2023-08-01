@@ -28,6 +28,13 @@ public class Event {
         return Optional.ofNullable(eventAttributes.get(key));
     }
 
+    public String getUrl() {
+        return  get("url")
+                .map(variantObject -> variantObject.toString())
+                .map(url -> url.toLowerCase())
+                .orElseThrow();
+    }
+
     public EventType getType() {
         return type;
     }

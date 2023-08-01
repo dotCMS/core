@@ -9,7 +9,7 @@ import com.google.common.collect.ImmutableSet;
 /**
  * Take the value from the {@link Event}'s attribute that has the same name that the {@link Parameter#name()}
  */
-public class DefaultParameterValuesGetter implements ParameterValueGetter<String> {
+public class EventAttributeParameterValuesGetter implements ParameterValueGetter<String> {
 
     @Override
     public Collection<String> getValuesFromEvent(final AbstractParameter parameter, final Event event) {

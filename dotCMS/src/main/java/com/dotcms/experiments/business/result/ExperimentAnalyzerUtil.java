@@ -131,7 +131,7 @@ public enum ExperimentAnalyzerUtil {
         for (final BrowserSession browserSession : browserSessions) {
 
             final boolean isIntoExperiment = browserSession.getEvents().stream()
-                    .map(event -> event.get("url").map(Object::toString).orElse(StringPool.BLANK))
+                    .map(event -> event.getUrl())
                     .anyMatch(url -> url.matches(urlRegexPattern));
 
             if (isIntoExperiment) {
