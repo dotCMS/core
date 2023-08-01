@@ -19,7 +19,6 @@ import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
 import com.dotmarketing.quartz.job.TrashCleanupJob;
 import com.dotmarketing.quartz.job.UsersToDeleteThread;
-import com.dotmarketing.quartz.job.WebDavCleanupJob;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
