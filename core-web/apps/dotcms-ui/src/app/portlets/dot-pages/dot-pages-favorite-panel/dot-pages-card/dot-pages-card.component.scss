@@ -14,10 +14,6 @@
         display: flex;
     }
 
-    .dot-favorite-page-highlight ::ng-deep i {
-        color: $color-palette-primary;
-    }
-
     .dot-pages-favorite-card-content__image {
         background-position: center;
         background-repeat: no-repeat;
@@ -33,7 +29,7 @@
     }
 
     .dot-pages-favorite-card-content__container {
-        margin-left: $spacing-1;
+        margin: 0 $spacing-1;
         min-width: 0;
     }
 

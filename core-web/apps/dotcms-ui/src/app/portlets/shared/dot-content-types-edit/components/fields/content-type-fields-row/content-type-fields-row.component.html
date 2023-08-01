@@ -10,15 +10,14 @@
         data-drag-type="target"
         dragula="fields-bag"
     >
-        <dot-icon-button-tooltip
+        <p-button
             class="row-header__remove"
             *ngIf="!column.fields.length"
-            [tooltipText]="'contenttypes.action.delete' | dm"
+            [pTooltip]="'contenttypes.action.delete' | dm"
             (click)="remove(i)"
-            tiny
-            icon="delete"
-        >
-        </dot-icon-button-tooltip>
+            icon="pi pi-trash"
+            styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"
+        ></p-button>
 
         <dot-content-type-field-dragabble-item
             *ngFor="let field of column.fields"

@@ -4,11 +4,12 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCopyLinkModule } from '@dotcms/app/view/components/dot-copy-link/dot-copy-link.module';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -54,11 +55,10 @@ describe('DotAppsConfigurationItemComponent', () => {
             imports: [
                 CommonModule,
                 DotCopyLinkModule,
-                UiDotIconButtonModule,
-                DotIconModule,
                 TooltipModule,
                 HttpClientTestingModule,
                 DotPipesModule,
+                ButtonModule,
                 DotMessagePipe
             ],
             declarations: [DotAppsConfigurationItemComponent],
@@ -94,11 +94,11 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should have 3 icon buttons for export, delete and edit', () => {
-            const buttons = fixture.debugElement.queryAll(By.css('dot-icon-button'));
+            const buttons = fixture.debugElement.queryAll(By.css('p-button'));
             expect(buttons.length).toBe(3);
-            expect(buttons[0].componentInstance.icon).toBe('vertical_align_bottom');
-            expect(buttons[1].componentInstance.icon).toBe('delete_outline');
-            expect(buttons[2].componentInstance.icon).toBe('edit');
+            expect(buttons[0].componentInstance.icon).toBe('pi pi-download');
+            expect(buttons[1].componentInstance.icon).toBe('pi pi-pencil');
+            expect(buttons[2].componentInstance.icon).toBe('pi pi-trash');
         });
 
         it('should DotCopy with right properties', () => {
@@ -110,18 +110,11 @@ describe('DotAppsConfigurationItemComponent', () => {
         it('should have warning icon', () => {
             const warningIcon = fixture.debugElement.query(By.css('[data-testId="warning"]'));
             expect(warningIcon).toBeTruthy();
-            expect(warningIcon.attributes['name']).toBe('warning');
-            expect(warningIcon.attributes['size']).toBe('18');
-            expect(warningIcon.attributes['ng-reflect-text']).toBe(
-                `${component.site.secretsWithWarnings} ${messageServiceMock.get(
-                    'apps.invalid.secrets'
-                )}`
-            );
         });
 
         it('should emit export action with a site', () => {
             const stopPropagationSpy = jasmine.createSpy('spy');
-            const exportBtn = fixture.debugElement.queryAll(By.css('dot-icon-button'))[0];
+            const exportBtn = fixture.debugElement.query(By.css('[data-testId="export"]'));
 
             spyOn(component.export, 'emit');
 
@@ -135,7 +128,7 @@ describe('DotAppsConfigurationItemComponent', () => {
 
         it('should emit delete action', () => {
             const stopPropagationSpy = jasmine.createSpy('spy');
-            const deleteBtn = fixture.debugElement.queryAll(By.css('dot-icon-button'))[1];
+            const deleteBtn = fixture.debugElement.query(By.css('[data-testId="delete"]'));
 
             spyOn(dialogService, 'confirm').and.callFake((conf) => {
                 conf.accept();
@@ -154,7 +147,7 @@ describe('DotAppsConfigurationItemComponent', () => {
 
         it('should emit edit action with a site', () => {
             const stopPropagationSpy = jasmine.createSpy('spy');
-            const editBtn = fixture.debugElement.queryAll(By.css('dot-icon-button'))[2];
+            const editBtn = fixture.debugElement.query(By.css('[data-testId="edit"]'));
 
             spyOn(component.edit, 'emit');
 
@@ -190,20 +183,17 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should have 1 icon button for create', () => {
-            const buttons = fixture.debugElement.queryAll(By.css('dot-icon-button'));
-            expect(buttons.length).toBe(1);
-            expect(buttons[0].componentInstance.icon).toBe('add_circle');
+            const button = fixture.debugElement.query(By.css('[data-testId="add"]'));
+            expect(button).toBeTruthy();
         });
 
         it('should not have warning icon', () => {
-            expect(fixture.debugElement.query(By.css('dot-icon')).attributes['name']).not.toBe(
-                'warning'
-            );
+            expect(fixture.debugElement.query(By.css('[data-testId="warning"]'))).toBeFalsy();
         });
 
         it('should emit edit action with No site', () => {
             const stopPropagationSpy = jasmine.createSpy('spy');
-            const createBtn = fixture.debugElement.queryAll(By.css('dot-icon-button'))[0];
+            const createBtn = fixture.debugElement.query(By.css('[data-testId="add"]'));
 
             spyOn(component.edit, 'emit');
 

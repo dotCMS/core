@@ -79,7 +79,7 @@ h2 {
 }
 
 .spacer {
-    background-color: rgba(81, 86, 103, 0.15);
+    background-color: var(--color-palette-black-op-10);
     border: none;
     height: 1px;
     margin: 20px 0;

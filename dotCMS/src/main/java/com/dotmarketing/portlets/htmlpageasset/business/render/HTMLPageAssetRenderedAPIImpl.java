@@ -469,7 +469,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final Language language = request != null ? this.getCurrentLanguage(request) : this.languageAPI.getDefaultLanguage();
 
         final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
-                .getRenderContext(language.getId(), id, mode, userAPI.getSystemUser());
+                .getRenderContextForceLangFallback(language.getId(), id, mode, userAPI.getSystemUser());
 
         final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
                 .getContentletVersionInfo(id, renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey())

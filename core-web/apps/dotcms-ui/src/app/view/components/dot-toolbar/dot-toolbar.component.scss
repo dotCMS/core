@@ -9,6 +9,21 @@
                 @include truncate-text;
             }
         }
+
+        .toolbar__button-wrapper {
+            .p-button-icon-only.p-button {
+                .p-button-icon.pi {
+                    color: $white;
+                }
+                &:hover {
+                    background-color: $color-palette-white-op-30;
+                }
+
+                &:focus {
+                    outline: none;
+                }
+            }
+        }
     }
 }
 
@@ -29,8 +44,7 @@ p-toolbar::ng-deep {
     }
 }
 
-dot-toolbar-user,
-dot-toolbar-notifications {
+dot-toolbar-user {
     width: 32px;
 }
 

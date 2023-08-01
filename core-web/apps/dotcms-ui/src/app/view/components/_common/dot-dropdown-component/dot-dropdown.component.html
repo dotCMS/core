@@ -1,6 +1,12 @@
-<dot-icon-button *ngIf="icon" [icon]="icon" [attr.disabled]="disabled" (click)="onToggle()" big>
-    <ng-content select=".badge"></ng-content>
-</dot-icon-button>
+<button
+    class="p-button-rounded p-button-text"
+    *ngIf="icon"
+    [disabled]="disabled"
+    [icon]="icon"
+    (click)="onToggle()"
+    pButton
+    data-testid="icon-button"
+></button>
 
 <button
     *ngIf="title"
@@ -10,6 +16,7 @@
     pButton
     icon="pi pi-chevron-down"
     iconPos="right"
+    data-testid="title-button"
 ></button>
 
 <div

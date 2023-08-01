@@ -1,9 +1,9 @@
 import { expect, it } from '@jest/globals';
-import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
-import { GridItemHTMLElement } from 'gridstack';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { By } from '@angular/platform-browser';
 
 import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -33,14 +33,15 @@ global.structuredClone = jest.fn((val) => {
 });
 
 describe('TemplateBuilderComponent', () => {
-    let spectator: SpectatorHost<TemplateBuilderComponent>;
+    let spectator: Spectator<TemplateBuilderComponent>;
     let store: DotTemplateBuilderStore;
     const mockContainer = containersMock[0];
     let dialog: DialogService;
     let openDialogMock: jest.SpyInstance;
 
-    const createHost = createHostFactory({
+    const createComponent = createComponentFactory({
         component: TemplateBuilderComponent,
+
         imports: [
             NgFor,
             NgIf,
@@ -69,34 +70,33 @@ describe('TemplateBuilderComponent', () => {
             }
         ]
     });
-    beforeEach(() => {
-        spectator = createHost(
-            `<dotcms-template-builder [containerMap]="containerMap" [layout]="layout" [themeId]="themeId" ></dotcms-template-builder>`,
-            {
-                hostProps: {
-                    layout: {
-                        body: FULL_DATA_MOCK,
-                        header: true,
-                        footer: true,
-                        sidebar: {
-                            location: 'left',
-                            width: 'small',
-                            containers: []
-                        },
-                        width: 'Mobile',
-                        title: 'Test Title'
-                    },
-                    themeId: '123',
-                    containerMap: CONTAINER_MAP_MOCK
-                }
-            }
-        );
 
-        store = spectator.inject(DotTemplateBuilderStore);
+    beforeEach(() => {
+        spectator = createComponent({
+            props: {
+                layout: {
+                    body: FULL_DATA_MOCK,
+                    header: true,
+                    footer: true,
+                    sidebar: {
+                        location: 'left',
+                        width: 'small',
+                        containers: []
+                    },
+                    width: 'Mobile',
+                    title: 'Test Title'
+                },
+                themeId: '123',
+                containerMap: CONTAINER_MAP_MOCK
+            }
+        });
+
+        store = spectator.inject(DotTemplateBuilderStore, true);
         dialog = spectator.inject(DialogService);
         openDialogMock = jest.spyOn(dialog, 'open');
         spectator.detectChanges();
     });
+
     it('should not trigger a template change when store is initialized', () => {
         // Store init is called on init
         const changeMock = jest.spyOn(spectator.component.templateChange, 'emit');
@@ -119,27 +119,35 @@ describe('TemplateBuilderComponent', () => {
         const totalBoxes = FULL_DATA_MOCK.rows.reduce((acc, row) => {
             return acc + row.columns.length;
         }, 0);
-
-        expect(spectator.queryAll(byTestId('box')).length).toBe(totalBoxes);
+        expect(spectator.queryAll(byTestId(/builder-box-\d+/g)).length).toBe(totalBoxes);
     });
 
     it('should trigger removeColumn on store when triggering removeColumn', (done) => {
-        const removeColMock = jest.spyOn(store, 'removeColumn');
+        jest.spyOn(store, 'removeColumn');
+        jest.spyOn(spectator.component, 'removeColumn');
 
-        let widgetToDelete: DotGridStackWidget;
-        let rowId: string;
-        let elementToDelete: GridItemHTMLElement;
+        const builderBox1 = spectator.debugElement.query(By.css('[data-testId="builder-box-1"]'));
 
-        store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
-            widgetToDelete = items[0].subGridOpts.children[0];
-            rowId = items[0].id as string;
-            elementToDelete = document.createElement('div');
+        spectator.triggerEventHandler(builderBox1, 'deleteColumn', undefined);
+        expect(spectator.component.removeColumn).toHaveBeenCalled();
 
-            spectator.component.removeColumn(widgetToDelete, elementToDelete, rowId);
+        const box1 = spectator.debugElement.query(By.css('[data-testId="box-1"]'));
+        const rowId = box1.nativeElement
+            .closest('dotcms-template-builder-row')
+            .getAttribute('gs-id');
 
-            expect(removeColMock).toHaveBeenCalledWith({ ...widgetToDelete, parentId: rowId });
-            done();
+        const box1Id = box1.nativeElement.getAttribute('gs-id');
+
+        spectator.component.removeColumn(
+            { id: box1Id, parentId: rowId },
+            box1.nativeElement,
+            rowId
+        );
+        expect(store.removeColumn).toHaveBeenCalledWith({
+            ...{ id: box1Id, parentId: rowId },
+            parentId: rowId
         });
+        done();
     });
 
     it('should call addContainer from store when triggering addContainer', (done) => {
@@ -219,7 +227,7 @@ describe('TemplateBuilderComponent', () => {
 
             spectator.detectChanges();
 
-            store.init({
+            store.setState({
                 rows: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
                 layoutProperties: {
                     header: true,

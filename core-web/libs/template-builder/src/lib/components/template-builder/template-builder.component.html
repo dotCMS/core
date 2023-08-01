@@ -1,4 +1,4 @@
-<p-toolbar styleClass="layout-toolbar">
+<p-toolbar>
     <div class="p-toolbar-group-start">
         <ng-content select="[toolbar-left]"></ng-content>
     </div>
@@ -72,18 +72,23 @@
                     <div
                         class="grid-stack-item sub"
                         #boxElement
-                        *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
+                        *ngFor="
+                            let box of row.subGridOpts?.children;
+                            trackBy: identify;
+                            let i = index
+                        "
                         [attr.gs-id]="box.id"
                         [attr.gs-auto]="true"
                         [attr.gs-x]="box.x"
                         [attr.gs-y]="box.y"
                         [attr.gs-w]="box.w"
                         [attr.gs-h]="box.h"
+                        [attr.data-testId]="'box-' + i"
                         dotcmsItemDragScroll
-                        data-testId="box"
                     >
                         <dotcms-template-builder-box
                             class="grid-stack-item-content"
+                            [attr.data-testId]="'builder-box-' + i"
                             [containerMap]="vm.containerMap"
                             [items]="box.containers"
                             [width]="box.w"

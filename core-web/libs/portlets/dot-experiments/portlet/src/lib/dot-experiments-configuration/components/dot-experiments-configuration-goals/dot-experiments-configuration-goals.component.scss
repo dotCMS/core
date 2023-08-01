@@ -2,7 +2,7 @@
 
 h2,
 h3 {
-    margin: $spacing-0;
+    margin: 0;
 }
 
 h2 {
@@ -21,7 +21,7 @@ h3 {
     color: $black;
     font-size: $font-size-md;
     font-weight: $font-weight-bold;
-    margin: $spacing-0;
+    margin: 0;
 }
 
 :host ::ng-deep {
@@ -31,13 +31,5 @@ h3 {
         &.isDone {
             color: $color-accessible-text-green;
         }
-    }
-
-    p-card .p-card-footer .p-button-link {
-        padding: $spacing-0;
-    }
-
-    button.p-button-rounded.p-button-icon-only {
-        color: $color-palette-primary-500;
     }
 }

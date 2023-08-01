@@ -148,12 +148,13 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 this.dotGlobalMessageService.success(
                     this.dotMessageService.get('message.template.published')
                 );
+                this.dotRouterService.allowRouteDeactivation();
                 this.updateTemplateState(template);
             }),
             catchError((err: HttpErrorResponse) => {
                 this.dotGlobalMessageService.error(err.statusText);
                 this.dotHttpErrorManagerService.handle(err).subscribe(() => {
-                    this.dotEditLayoutService.changeDesactivateState(true);
+                    this.dotRouterService.allowRouteDeactivation();
                 });
 
                 return of(null);
@@ -335,7 +336,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
     private onSaveTemplateError(err: HttpErrorResponse) {
         this.dotGlobalMessageService.error(err.statusText);
         this.dotHttpErrorManagerService.handle(err).subscribe(() => {
-            this.dotEditLayoutService.changeDesactivateState(true);
+            this.dotRouterService.forbidRouteDeactivation();
         });
 
         return of(null);
@@ -393,9 +394,13 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
      * @memberof DotTemplateStore
      */
     private canRouteBeDesativated(): void {
-        this.didTemplateChanged$.subscribe((didTemplateChanged: boolean) =>
-            this.dotEditLayoutService.changeDesactivateState(!didTemplateChanged)
-        );
+        this.didTemplateChanged$.subscribe((didTemplateChanged: boolean) => {
+            if (didTemplateChanged) {
+                this.dotRouterService.forbidRouteDeactivation();
+            } else {
+                this.dotRouterService.allowRouteDeactivation();
+            }
+        });
     }
 
     /**

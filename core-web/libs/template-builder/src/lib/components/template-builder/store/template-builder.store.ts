@@ -45,26 +45,6 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         }))
     }));
 
-    constructor() {
-        super({
-            rows: [],
-            layoutProperties: undefined,
-            resizingRowID: '',
-            containerMap: {}
-        });
-    }
-
-    // Init store
-
-    readonly init = this.updater(
-        (state, { rows, layoutProperties, containerMap }: DotTemplateBuilderState) => ({
-            ...state,
-            rows,
-            layoutProperties,
-            containerMap
-        })
-    );
-
     // Rows Updaters
 
     /**

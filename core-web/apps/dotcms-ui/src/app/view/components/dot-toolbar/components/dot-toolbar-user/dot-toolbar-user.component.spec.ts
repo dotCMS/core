@@ -40,7 +40,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -94,7 +94,6 @@ describe('DotToolbarUserComponent', () => {
             imports: [
                 BrowserAnimationsModule,
                 DotDialogModule,
-                UiDotIconButtonModule,
                 DotIconModule,
                 SearchableDropDownModule,
                 RouterTestingModule,

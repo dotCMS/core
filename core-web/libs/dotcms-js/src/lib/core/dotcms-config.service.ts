@@ -1,7 +1,10 @@
-import { CoreWebService } from './core-web.service';
-import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
 import { pluck, filter, map, take } from 'rxjs/operators';
+
+import { CoreWebService } from './core-web.service';
 import { LoggerService } from './logger.service';
 import { Menu } from './routing.service';
 
@@ -134,9 +137,11 @@ export class DotcmsConfigService {
                         if (a.label > b.label) {
                             return 1;
                         }
+
                         if (a.label < b.label) {
                             return -1;
                         }
+
                         // a must be equal to b
                         return 0;
                     });

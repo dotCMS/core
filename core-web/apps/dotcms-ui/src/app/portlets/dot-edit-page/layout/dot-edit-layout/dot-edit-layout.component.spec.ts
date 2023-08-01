@@ -33,7 +33,7 @@ import { DEBOUNCE_TIME, DotEditLayoutComponent } from './dot-edit-layout.compone
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
-    selector: 'dotcms-template-builder',
+    selector: 'dotcms-template-builder-lib',
     template: ''
 })
 export class MockTemplateBuilderComponent {
@@ -86,9 +86,9 @@ describe('DotEditLayoutComponent', () => {
     let dotTemplateContainersCacheService: DotTemplateContainersCacheService;
     let fakeLayout: DotLayout;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
-    let dotEditLayoutService: DotEditLayoutService;
     let dotSessionStorageService: DotSessionStorageService;
     let dotPropertiesService: DotPropertiesService;
+    let dotRouterService: DotRouterService;
     let router: Router;
 
     beforeEach(waitForAsync(() => {
@@ -98,11 +98,12 @@ describe('DotEditLayoutComponent', () => {
                 DotEditLayoutComponent,
                 MockTemplateBuilderComponent
             ],
-            imports: [DotShowHideFeatureDirective],
+            imports: [DotShowHideFeatureDirective, RouterTestingModule],
             providers: [
                 RouterTestingModule,
                 DotSessionStorageService,
                 DotEditLayoutService,
+                DotRouterService,
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
@@ -136,12 +137,6 @@ describe('DotEditLayoutComponent', () => {
                     }
                 },
                 {
-                    provide: DotRouterService,
-                    useValue: {
-                        goToEditPage: jasmine.createSpy()
-                    }
-                },
-                {
                     provide: ActivatedRoute,
                     useValue: {
                         parent: {
@@ -171,9 +166,9 @@ describe('DotEditLayoutComponent', () => {
         dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
         dotTemplateContainersCacheService = TestBed.inject(DotTemplateContainersCacheService);
         dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-        dotEditLayoutService = TestBed.inject(DotEditLayoutService);
         dotSessionStorageService = TestBed.inject(DotSessionStorageService);
         dotPropertiesService = TestBed.inject(DotPropertiesService);
+        dotRouterService = TestBed.inject(DotRouterService);
         router = TestBed.inject(Router);
     });
 
@@ -276,7 +271,7 @@ describe('DotEditLayoutComponent', () => {
                     title: null
                 });
 
-                dotEditLayoutService.changeCloseEditLayoutState(true);
+                dotRouterService.requestPageLeave();
 
                 expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('Saving');
                 expect(dotGlobalMessageService.success).toHaveBeenCalledWith('Saved');
@@ -326,7 +321,7 @@ describe('DotEditLayoutComponent', () => {
                 layoutDesignerDe.triggerEventHandler('save', fakeLayout);
                 expect(dotGlobalMessageService.error).toHaveBeenCalledWith('Unknown Error');
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-                dotEditLayoutService.canBeDesactivated$.subscribe((resp) => {
+                dotRouterService.canDeactivateRoute$.subscribe((resp) => {
                     expect(resp).toBeTruthy();
                     done();
                 });

@@ -216,7 +216,7 @@ describe('DotPersonaSelectorComponent', () => {
 
         it('should toggle Overlay Panel, pass the search as name if present and open add form', () => {
             openOverlay();
-            const addPersonaIcon = dropdown.query(By.css('dot-icon-button'));
+            const addPersonaIcon = dropdown.query(By.css('p-button'));
 
             spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
 

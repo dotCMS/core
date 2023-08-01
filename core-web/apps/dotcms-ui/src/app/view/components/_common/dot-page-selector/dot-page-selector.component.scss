@@ -22,9 +22,10 @@
 
     dot-field-helper {
         @include dot-field-helper-on-input;
+        top: 0.4rem;
     }
 
-    .p-info{
+    .p-info {
         margin-top: $spacing-1;
     }
 }

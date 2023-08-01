@@ -11,7 +11,6 @@ import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component'
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { LoginService } from '@dotcms/dotcms-js';
-import { UiDotIconButtonModule } from '@dotcms/ui';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
@@ -29,13 +28,7 @@ let dotIframeComponent: IframeComponent;
 
 const getTestConfig = (hostComponent) => {
     return {
-        imports: [
-            DotDialogModule,
-            BrowserAnimationsModule,
-            IFrameModule,
-            RouterTestingModule,
-            UiDotIconButtonModule
-        ],
+        imports: [DotDialogModule, BrowserAnimationsModule, IFrameModule, RouterTestingModule],
         providers: [
             {
                 provide: LoginService,
