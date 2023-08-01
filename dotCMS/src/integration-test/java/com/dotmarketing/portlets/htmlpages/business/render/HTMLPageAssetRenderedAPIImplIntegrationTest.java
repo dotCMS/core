@@ -4,6 +4,7 @@ import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParse
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -43,11 +44,13 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -68,6 +71,7 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 
 
@@ -75,6 +79,7 @@ import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -2279,6 +2284,95 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         final HttpServletRequest mockRequest = new MockAttributeRequest(
                 createHttpServletRequest(language, host, VariantAPI.DEFAULT_VARIANT, page));
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(urlMapPatterPrefix + "/test")
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        Assert.assertEquals("<div>Testing URLMap: test</div>", html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When:
+     * - You create a Widget with the code: <code>Testing URLMap: $URLMapContent.title</code>
+     * - You create a Page with the Widget and publish both.
+     * - You create a {@link ContentType} and set as detailPage the newly created page and as URL Map Pattern: <code>/testing-urlmap/$title</code>
+     * - You create a Contentlet with  title equals to 'test'
+     * - Try to render the page using the URL: <code>/testing-urlmap/test</code>
+     * Should: render: <code>Testing URLMap: test</code>
+     */
+    @Test
+    public void renderUrlMapByLangFallbackInPage()
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final Language contentletLanguage = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType widgetContentType = new ContentTypeDataGen()
+                .createWidgetContentType("Testing URLMap: $URLMapContent.title")
+                .nextPersisted();
+
+        final Contentlet widget = new ContentletDataGen(widgetContentType)
+                .host(host)
+                .languageId(contentletLanguage.getId())
+                .setProperty("widgetTitle", "Testing URLMap")
+                .nextPersistedAndPublish();
+
+        final Container container = new ContainerDataGen()
+                .site(host)
+                .nextPersisted();
+
+        ContainerDataGen.publish(container);
+
+        final Template template = new TemplateDataGen().withContainer(container.getIdentifier())
+                .nextPersisted();
+
+        TemplateDataGen.publish(template);
+
+        final HTMLPageAsset detailPage = (HTMLPageAsset) new HTMLPageDataGen(host, template)
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .nextPersistedAndPublish();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(detailPage)
+                .setContentlet(widget)
+                .nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .type(TextField.class)
+                .next();
+
+        final String urlMapPatterPrefix =
+                "/testing-urlmap" + System.currentTimeMillis();
+
+        final String urlMapPatter = urlMapPatterPrefix + "/{title}";
+
+        final ContentType urlMapContentType = new ContentTypeDataGen()
+                .detailPage(detailPage.getIdentifier())
+                .urlMapPattern(urlMapPatter)
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(urlMapContentType.id())
+                .languageId(contentletLanguage.getId())
+                .host(host)
+                .setProperty("title", "test")
+                .nextPersistedAndPublish();
+
+        final HttpServletRequest mockRequest = new MockAttributeRequest(
+                createHttpServletRequest(contentletLanguage, host, VariantAPI.DEFAULT_VARIANT, detailPage));
 
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         final HttpSession session = createHttpSession(mockRequest);

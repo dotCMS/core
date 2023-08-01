@@ -1,55 +1,39 @@
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgForOf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
 
 import { ChipModule } from 'primeng/chip';
 import { DialogModule } from 'primeng/dialog';
 
-import { switchMap } from 'rxjs/operators';
-
 import { DotPageToolsService } from '@dotcms/data-access';
-import { DotPageTool } from '@dotcms/dotcms-models';
+import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotPageToolsSeoState, DotPageToolsSeoStore } from './store/dot-page-tools-seo.store';
 
 @Component({
     selector: 'dot-page-tools-seo',
-    standalone: true,
-    providers: [DotPageToolsService],
-    imports: [NgForOf, AsyncPipe, DialogModule, DotMessagePipe, ChipModule],
+    providers: [DotPageToolsService, DotPageToolsSeoStore],
+    imports: [NgForOf, AsyncPipe, DialogModule, DotMessagePipe, ChipModule, NgIf],
     templateUrl: './dot-page-tools-seo.component.html',
     styleUrls: ['./dot-page-tools-seo.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true
 })
-export class DotPageToolsSeoComponent implements OnInit {
+export class DotPageToolsSeoComponent implements OnChanges {
     @Input() visible: boolean;
-    @Input() currentPageUrl: string;
+    @Input() currentPageUrlParams: DotPageToolUrlParams;
     dialogHeader: string;
-    tools$: Observable<DotPageTool[]>;
+    tools$: Observable<DotPageToolsSeoState> = this.dotPageToolsSeoStore.tools$;
 
-    constructor(private dotPageToolsService: DotPageToolsService) {}
+    constructor(private dotPageToolsSeoStore: DotPageToolsSeoStore) {}
 
-    ngOnInit() {
-        this.tools$ = this.dotPageToolsService.get().pipe(
-            switchMap((tools) => {
-                const updatedTools = tools.map((tool) => {
-                    return {
-                        ...tool,
-                        runnableLink: this.getRunnableLink(tool.runnableLink)
-                    };
-                });
-
-                return of(updatedTools);
-            })
-        );
+    ngOnChanges() {
+        this.dotPageToolsSeoStore.getTools(this.currentPageUrlParams);
     }
 
-    /**
-     * This method is used to get the runnable link for the tool
-     * @param url
-     * @returns
-     */
-    private getRunnableLink(url: string): string {
-        return url.replace('{currentPageUrl}', this.currentPageUrl);
+    public toggleDialog(): void {
+        this.visible = !this.visible;
     }
 }
