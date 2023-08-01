@@ -88,27 +88,6 @@ public class FileMetadataAPITest {
             assertTrue(fileAssetContent.get(FileAssetAPI.META_DATA_FIELD) instanceof Map);
     }
 
-    /**
-     * <b>Method to test:</b> {@link FileMetadataAPI#getFullMetadataNoCache(File, Supplier)}<br>
-     * <b>Given scenario:</b> Getting metadata from a urlMap<br>
-     * <b>Expected Result:</b> Some keywords must be present in the metadata
-     * @throws Exception
-     */
-    @Test
-    public void Test_Generate_Metadata_From_HtmlPage_Should_Resolve_ExtendedMetadata() throws Exception {
-        prepareIfNecessary();
-        final List<String> extendedMetadata = CollectionsUtils.list("metaKeyword", "keywords", "dcSubject",
-                "title", "dcTitle", "description", "copyright", "ogTitle", "language", "ogUrl", "ogImage");
-        Metadata metadata = fileMetadataAPI.getFullMetadataNoCache(new
-                        File(FileMetadataAPITest.class.getResource("5-snow-sports-to-try-this-winter").getFile()),
-                null);
-        assertNotNull(metadata);
-        assertTrue(metadata.getMap().keySet().containsAll(extendedMetadata));
-        assertEquals("5 Snow Sports to Try This Winter", metadata.getMap().get("dcTitle"));
-        assertEquals("5 Snow Sports to Try This Winter", metadata.getMap().get("title"));
-
-    }
-
 
     /**
      * This test evaluates both basic vs full MD

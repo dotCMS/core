@@ -144,10 +144,16 @@ dependencies {
         transitive = false
     }
 
-    felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.35'
-    felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.35'
+    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
+        transitive = false
+    }
+    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
+        transitive = false
+    }
 
-    felix group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '2.7.0'
+    felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
+    felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
+    felix group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
 
     felix group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/

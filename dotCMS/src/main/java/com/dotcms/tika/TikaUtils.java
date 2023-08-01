@@ -6,7 +6,6 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.osgi.OSGIConstants;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.storage.model.ExtendedMetadataFields;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -397,8 +396,6 @@ public class TikaUtils {
             metaMap.putAll(this.buildMetaDataMap());
             metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
 
-            //Adding missing keys that were excluded in Tika 2.0
-            includeMissingKeys(metaMap);
         } catch (IOException ioExc) {
             if (this.isZeroByteFileException(ioExc.getCause())) {
                 logWarning(binFile, ioExc.getCause());
@@ -416,19 +413,6 @@ public class TikaUtils {
         }
 
         return metaMap;
-    }
-
-    /**
-     * This method adds missing keys from Tika 1.x that were excluded in Tika 2.0. For example: keywords and title
-     * For further details, please visit https://cwiki.apache.org/confluence/display/TIKA/Migrating+to+Tika+2.0.0
-     * @param metaMap
-     */
-    private static void includeMissingKeys(Map<String, Object> metaMap) {
-        ExtendedMetadataFields.keyMap().forEach((key, value) -> {
-            if(metaMap.containsKey(key)){
-                value.forEach(v -> metaMap.putIfAbsent(v, metaMap.get(key)));
-            }
-        });
     }
 
     private void parseFallbackAsPlainText(final File binFile, final Map<String, Object> metaMap, final IOException ioExc) {

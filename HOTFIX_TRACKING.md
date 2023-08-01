@@ -157,4 +157,3 @@ This maintenance release includes the following code fixes:
 131. https://github.com/dotCMS/core/issues/23276 : Content detailed page throwing 404 when URL contains a trailing slash. #23276
 132. https://github.com/dotCMS/core/issues/21492 : Toggle to Code in WYSIWYG Makes UI Jump #21492
 133. https://github.com/dotCMS/core/issues/23948 : Stop redirecting all BE page traffic to edit mode #23948
-134. https://github.com/dotCMS/core/issues/23934 : Old Tika Version Pulling Wrong Width from Image for Metadata #23934
