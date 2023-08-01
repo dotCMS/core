@@ -24,6 +24,7 @@ import {
     DotAlertConfirmService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotLicenseService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -112,6 +113,7 @@ describe('MainLegacyComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotMenuService,
                 DotCustomEventHandlerService,
+                DotLicenseService,
                 DotIframeService,
                 DotFormatDateService,
                 DotAlertConfirmService,
