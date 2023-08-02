@@ -1152,7 +1152,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\t\t\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":\"\",\n                    \"columns\":[\n                        {\n                            \"styleClass\":\"\",\n                            \"leftOffset\":1,\n                            \"width\":12,\n                            \"containers\":[\n                                {\"identifier\":\"{{keep_content_container_id}}\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }    \n    },\n    \"friendlyName\": \"\",\n    \"title\": \"page_version_keep_containers_template\",\n    \"theme\": \"SYSTEM_THEME\"\n}",
+									"raw": "{\t\t\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":\"\",\n                    \"columns\":[\n                        {\n                            \"styleClass\":\"\",\n                            \"leftOffset\":1,\n                            \"width\":12,\n                            \"containers\":[\n                                {\"identifier\":\"{{keep_content_container_id}}\", \"uuid\": \"1\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }    \n    },\n    \"friendlyName\": \"\",\n    \"title\": \"page_version_keep_containers_template\",\n    \"theme\": \"SYSTEM_THEME\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1876,7 +1876,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\t\t\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":\"\",\n                    \"columns\":[\n                        {\n                            \"styleClass\":\"\",\n                            \"leftOffset\":1,\n                            \"width\":1,\n                            \"containers\":[\n                                {\"identifier\":\"{{keep_content_container_id}}\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }    \n    },\n    \"themeId\": \"SYSTEM_THEME\"\n}",
+									"raw": "{\t\t\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":\"\",\n                    \"columns\":[\n                        {\n                            \"styleClass\":\"\",\n                            \"leftOffset\":1,\n                            \"width\":1,\n                            \"containers\":[\n                                {\"identifier\":\"{{keep_content_container_id}}\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }    \n    },\n    \"themeId\": \"SYSTEM_THEME\",\n    \"title\": \"pageversionkeepcontainerstemplate\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
