@@ -18,6 +18,10 @@
 }
 
 :host {
+    .dot-secondary-toolbar__main {
+        height: 3.75rem;
+        align-items: center;
+    }
     @media only screen and (max-width: $screen-device-container-max) {
         .lower-toolbar-right {
             flex-flow: row;

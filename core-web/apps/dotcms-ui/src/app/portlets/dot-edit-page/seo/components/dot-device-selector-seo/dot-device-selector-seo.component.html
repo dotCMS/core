@@ -59,7 +59,7 @@
                         *ngFor="let tile of socialMediaTiles"
                     >
                         <i [class]="tile.icon"></i>
-                        {{ tile.label }}
+                        <span class="device-list-item__name">{{ tile.label }}</span>
                     </li>
                 </ul>
             </div>
@@ -75,7 +75,7 @@
                 <ul class="device-list">
                     <li class="device-list-item device-list-item-media">
                         <i class="pi pi-google"></i>
-                        Google
+                        <span class="device-list-item__name">Google</span>
                     </li>
                 </ul>
             </div>
