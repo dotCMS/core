@@ -17,12 +17,6 @@
     cursor: pointer;
 }
 
-::ng-deep {
-    .dot-favorite-page-highlight i {
-        color: $color-palette-primary;
-    }
-}
-
 :host {
     @media only screen and (max-width: $screen-device-container-max) {
         .lower-toolbar-right {
