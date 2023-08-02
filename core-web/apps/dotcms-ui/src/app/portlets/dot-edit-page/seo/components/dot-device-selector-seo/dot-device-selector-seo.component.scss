@@ -3,6 +3,11 @@
 @import "dotcms-theme/utils/extends";
 @import "mixins";
 
+$device-list-item-height: 3.625rem;
+$device-selector-grid-width: 31.49rem;
+$device-list-item-media-height: 2.5rem;
+$device-selector-height: 2.625rem;
+
 .dot-device-selector__panel {
     border-radius: $border-radius-md;
     border: 1px solid $color-palette-gray-300;
@@ -10,7 +15,7 @@
 
 .dot-device-selector__header {
     display: flex;
-    height: $device-selector-header-height;
+    height: $device-selector-height;
     padding: $spacing-1 $spacing-3;
     justify-content: space-between;
     align-items: center;
@@ -18,7 +23,7 @@
 }
 
 .dot-device-selector__header-title {
-    font-size: 1.25rem;
+    font-size: $font-size-lg;
     font-style: normal;
     line-height: 140%;
     color: $black;
@@ -69,12 +74,12 @@
 
 .device-list-item__dimensions {
     color: $color-palette-gray-600;
-    font-size: 0.875rem;
+    font-size: $font-size-sm;
     font-weight: 400;
 }
 
 .device-list-item__name {
-    margin-bottom: 6px;
+    margin-bottom: $device-selector-height;
 }
 
 .device-list-item.device-list-item-media {
