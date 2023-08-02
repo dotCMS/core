@@ -2,16 +2,23 @@ package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.WorkspaceMixin;
+import com.dotcms.common.WorkspaceManager;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.config.Workspace;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.file.Path;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -37,26 +44,41 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOptionMixin;
 
+    @CommandLine.Mixin(name = "workspace")
+    WorkspaceMixin workspaceMixin;
+
+    @Inject
+    WorkspaceManager workspaceManager;
+
     @CommandLine.Parameters(index = "0", arity = "1", description = "The json/yml formatted content-type descriptor file to be pushed. ")
     File file;
 
     @Override
     public Integer call() throws Exception {
-        final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
 
-
-        if (!file.exists() || !file.canRead()) {
-            output.error(String.format(
-                    "Unable to read the input file [%s] check that it does exist and that you have read permissions on it.",
-                    file.getAbsolutePath()));
-            return CommandLine.ExitCode.SOFTWARE;
+        File inputFile = this.file;
+        if (null == inputFile) {
+            output.error("The input file is required.");
+            return ExitCode.USAGE;
+        } else {
+            final Optional<Workspace> workspace = workspaceManager.findWorkspace(workspaceMixin.workspace());
+            if (workspace.isPresent() && (!inputFile.isAbsolute())) {
+                inputFile = Path.of(workspace.get().contentTypes().toString(), inputFile.getName()).toFile();
+                output.info("Using workspace [%s] as base path for input file.", workspace.get().contentTypes());
+            }
+            if (!inputFile.exists() || !inputFile.canRead()) {
+                output.error(String.format(
+                        "Unable to read the input file [%s] check that it does exist and that you have read permissions on it.",
+                        inputFile));
+                return ExitCode.SOFTWARE;
+            }
         }
 
-        final ObjectMapper objectMapper = formatOptionMixin.objectMapper(file);
-
+        final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
+        final ObjectMapper objectMapper = formatOptionMixin.objectMapper(inputFile);
         try {
             final ContentType contentType = objectMapper
-                    .readValue(file, ContentType.class);
+                    .readValue(inputFile, ContentType.class);
             final String varNameOrId =
                     StringUtils.isNotEmpty(contentType.variable()) ? contentType.variable()
                             : contentType.id();

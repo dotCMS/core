@@ -7,10 +7,10 @@
     margin-bottom: $spacing-3;
     position: relative;
 
-    dot-icon-button-tooltip {
+    .field__actions-delete {
         position: absolute;
         right: 0;
-        top: $spacing-1;
+        top: 0;
     }
 
     hr {

@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPagesCardComponent } from './dot-pages-card.component';
@@ -16,7 +16,7 @@ import { DotPagesFavoritePageEmptySkeletonComponent } from '../../dot-pages-favo
         CommonModule,
         CardModule,
         DotPagesFavoritePageEmptySkeletonComponent,
-        UiDotIconButtonModule,
+        ButtonModule,
         TooltipModule,
         DotPipesModule
     ],

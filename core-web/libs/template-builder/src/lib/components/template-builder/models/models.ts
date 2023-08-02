@@ -4,6 +4,8 @@ import { DotContainerMap, DotLayoutSideBar } from '@dotcms/dotcms-models';
 
 export const SYSTEM_CONTAINER_IDENTIFIER = 'SYSTEM_CONTAINER';
 
+export const BOX_WIDTH = 1; // THE Box initial width is 3 columns
+
 /**
  * @description This is the model for using custom data on the GridStackOptions
  *
@@ -38,6 +40,7 @@ export interface DotGridStackWidget extends GridStackWidget {
     styleClass?: string[]; // We can join the classes in the parser, might be easier to work with
     subGridOpts?: DotGridStackOptions;
     parentId?: string;
+    willBoxFit?: boolean;
 }
 
 /**
@@ -52,6 +55,7 @@ export interface DotGridStackNode extends GridStackNode {
     styleClass?: string[]; // We can join the classes in the parser, might be easier to work with
     subGridOpts?: DotGridStackOptions;
     parentId?: string;
+    willBoxFit?: boolean;
 }
 
 /**
@@ -61,7 +65,7 @@ export interface DotGridStackNode extends GridStackNode {
  * @interface DotTemplateBuilderState
  */
 export interface DotTemplateBuilderState {
-    items: DotGridStackWidget[];
+    rows: DotGridStackWidget[];
     containerMap: DotContainerMap;
     layoutProperties: DotTemplateLayoutProperties;
     resizingRowID: string;

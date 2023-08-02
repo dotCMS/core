@@ -5,7 +5,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
-    HostBinding,
     Input,
     OnInit,
     Output
@@ -47,7 +46,6 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
-    @HostBinding('class.disabled') disabled: boolean;
 
     options$: Observable<DotDevice[]>;
     socialMediaTiles = [

@@ -1,5 +1,7 @@
 import { GridStackOptions } from 'gridstack';
 
+import { BOX_WIDTH } from '../models/models';
+
 export const WIDGET_TYPE_ATTRIBUTE = 'data-widget-type';
 
 // Pixel values remember to change if you change the values in the scss
@@ -72,4 +74,16 @@ export const gridOptions: GridStackOptions = {
         handle: '.row__drag-container'
     },
     disableOneColumnMode: true
+};
+
+export const rowInitialOptions = {
+    w: 12,
+    h: 1,
+    _isExternal: true
+};
+
+export const boxInitialOptions = {
+    w: BOX_WIDTH,
+    h: 1,
+    _isExternal: true
 };

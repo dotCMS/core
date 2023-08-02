@@ -13,7 +13,6 @@ import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     BayesianNoWinnerStatus,
-    BayesianStatusResponse,
     ComponentStatus,
     DEFAULT_VARIANT_ID,
     DotExperiment,
@@ -32,12 +31,15 @@ import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-acc
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import {
+    getBayesianDatasets,
     getBayesianVariantResult,
     getConversionRate,
     getConversionRateRage,
     getParsedChartData,
+    getPreviousDay,
     getProbabilityToBeBest,
     getPropertyColors,
+    getSuggestedWinner,
     isPromotedVariant,
     orderVariants
 } from '../../shared/dot-experiment.utils';
@@ -58,7 +60,8 @@ const initialState: DotExperimentsReportsState = {
 export interface VmReportExperiment {
     experiment: DotExperiment;
     results: DotExperimentResults;
-    chartData: ChartData<'line'> | null;
+    dailyChartData: ChartData<'line'> | null;
+    bayesianChartData: ChartData<'line'> | null;
     detailData: DotExperimentVariantDetail[];
     isLoading: boolean;
     hasEnoughSessions: boolean;
@@ -80,7 +83,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     readonly summaryWinnerLegend$: Observable<{ icon: string; legend: string }> = this.select(
         ({ experiment, results }) => {
             if (experiment != null && results != null) {
-                return this.getSuggestedWinner(experiment, results);
+                return getSuggestedWinner(experiment, results);
             }
 
             return { ...ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS };
@@ -126,13 +129,17 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         ]).includes(experiment?.status)
     );
 
-    readonly getChartData$: Observable<ChartData<'line'>> = this.select(({ results }) =>
+    readonly getDailyChartData$: Observable<ChartData<'line'>> = this.select(({ results }) =>
         results
             ? {
-                  labels: this.getChartLabels(results.goals.primary.variants),
-                  datasets: this.getChartDatasets(results.goals.primary.variants)
+                  labels: this.getDailyChartLabels(results.goals.primary.variants),
+                  datasets: this.getDailyChartDatasets(results.goals.primary.variants)
               }
             : null
+    );
+
+    readonly getBayesianChartData$ = this.select(({ results }) =>
+        results ? { datasets: getBayesianDatasets(results) } : null
     );
 
     readonly getDetailData$: Observable<DotExperimentVariantDetail[]> = this.select(
@@ -232,7 +239,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         this.isLoading$,
         this.hasEnoughSessions$,
         this.showExperimentSummary$,
-        this.getChartData$,
+        this.getDailyChartData$,
+        this.getBayesianChartData$,
         this.summaryWinnerLegend$,
         this.getSuggestedWinner$,
         this.getDetailData$,
@@ -242,7 +250,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             isLoading,
             hasEnoughSessions,
             showSummary,
-            chartData,
+            dailyChartData,
+            bayesianChartData,
             winnerLegendSummary,
             suggestedWinner,
             detailData,
@@ -254,7 +263,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             isLoading,
             hasEnoughSessions,
             showSummary,
-            chartData,
+            dailyChartData,
+            bayesianChartData,
             winnerLegendSummary: {
                 ...winnerLegendSummary,
                 legend: this.dotMessageService.get(
@@ -282,7 +292,9 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
     }
 
-    private getChartDatasets(result: DotResultGoal['variants']): ChartData<'line'>['datasets'] {
+    private getDailyChartDatasets(
+        result: DotResultGoal['variants']
+    ): ChartData<'line'>['datasets'] {
         const variantsOrdered = orderVariants(Object.keys(result));
 
         let colorIndex = 0;
@@ -299,47 +311,20 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         });
     }
 
-    private getChartLabels(variants: DotResultGoal['variants']) {
+    private getDailyChartLabels(variants: DotResultGoal['variants']) {
         return variants[DEFAULT_VARIANT_ID].details
             ? this.parseDaysLabels(Object.keys(variants[DEFAULT_VARIANT_ID].details))
             : [];
     }
 
     private parseDaysLabels(labels: Array<string>): string[] {
-        return labels.map((item) => {
+        return [getPreviousDay(labels[0]), ...labels].map((item) => {
             const date = new Date(item);
             const day = date.getDate();
             const monthTranslated = this.dotMessageService.get(MonthsOfTheYear[date.getMonth()]);
 
             return `${monthTranslated}-${day}`;
         });
-    }
-
-    private getSuggestedWinner(
-        experiment: DotExperiment,
-        results: DotExperimentResults
-    ): SummaryLegend {
-        const { bayesianResult, sessions } = results;
-
-        const hasSessions = sessions.total > 0;
-        const isATieBayesianSuggestionWinner =
-            bayesianResult.suggestedWinner === BayesianStatusResponse.TIE;
-        const isNoneBayesianSuggestionWinner =
-            bayesianResult.suggestedWinner === BayesianStatusResponse.NONE;
-
-        if (!hasSessions || isNoneBayesianSuggestionWinner) {
-            return experiment.status === DotExperimentStatus.ENDED
-                ? ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
-                : ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS;
-        }
-
-        if (isATieBayesianSuggestionWinner) {
-            return { ...ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND };
-        }
-
-        return experiment.status === DotExperimentStatus.ENDED
-            ? { ...ReportSummaryLegendByBayesianStatus.WINNER }
-            : { ...ReportSummaryLegendByBayesianStatus.PRELIMINARY_WINNER };
     }
 
     private getDotExperimentVariantDetail(

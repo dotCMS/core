@@ -12,15 +12,16 @@ import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, SharedModule } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ContextMenuModule } from 'primeng/contextmenu';
 import { MenuModule } from 'primeng/menu';
 import { TableModule } from 'primeng/table';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
@@ -135,17 +136,17 @@ describe('DotListingDataTableComponent', () => {
                 RouterTestingModule.withRoutes([
                     { path: 'test', component: DotListingDataTableComponent }
                 ]),
-                UiDotIconButtonTooltipModule,
                 MenuModule,
                 DotMenuModule,
                 DotIconModule,
                 DotRelativeDatePipe,
-                UiDotIconButtonModule,
                 HttpClientTestingModule,
                 DotPipesModule,
                 DotMessagePipe,
                 FormsModule,
-                ContextMenuModule
+                ContextMenuModule,
+                ButtonModule,
+                TooltipModule
             ],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },

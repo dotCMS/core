@@ -497,7 +497,7 @@ export class DotExperimentsListStore
                 visible: hasEnterpriseLicense && !!pushPublishEnvironments.length,
                 command: () =>
                     this.dotPushPublishDialogService.open({
-                        assetIdentifier: experiment.identifier,
+                        assetIdentifier: experiment.id,
                         title: this.dotMessageService.get('contenttypes.content.push_publish')
                     })
             },
@@ -507,9 +507,7 @@ export class DotExperimentsListStore
                 id: 'dot-experiments-add-to-bundle',
                 label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
                 visible: hasEnterpriseLicense,
-                command: () => {
-                    this.showAddToBundle(experiment.id);
-                }
+                command: () => this.showAddToBundle(experiment.id)
             }
         ];
     }

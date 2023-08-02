@@ -6,6 +6,7 @@ import com.dotcms.model.asset.AssetRequest;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.security.Utils;
+import java.nio.file.Path;
 import org.jboss.logging.Logger;
 
 import java.io.IOException;
@@ -26,7 +27,7 @@ import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 public class FileSystemTreeBuilderTask extends RecursiveAction {
 
     private final TreeNode rootNode;
-    private final String destination;
+    private final Path destination;
     private final boolean overwrite;
     private final boolean generateEmptyFolders;
     private final String language;
@@ -53,7 +54,7 @@ public class FileSystemTreeBuilderTask extends RecursiveAction {
     public FileSystemTreeBuilderTask(final Logger logger,
                                      final Downloader downloader,
                                      final TreeNode rootNode,
-                                     final String destination,
+                                     final Path destination,
                                      final boolean overwrite,
                                      final boolean generateEmptyFolders,
                                      final String language,
@@ -111,12 +112,12 @@ public class FileSystemTreeBuilderTask extends RecursiveAction {
      * @param destination the destination path to save the pulled files
      * @param folder      the folder view representing the folder
      */
-    private void createFolderInFileSystem(final String destination, final FolderView folder) {
+    private void createFolderInFileSystem(final Path destination, final FolderView folder) {
 
         String remoteFolderURL = generateRemoteFolderURL(folder);
 
         // Create the corresponding folder in the file system
-        var folderPath = Paths.get(destination, folder.path());
+        var folderPath = Paths.get(destination.toString(), folder.path());
 
         try {
             if (!Files.exists(folderPath)) {
@@ -140,10 +141,10 @@ public class FileSystemTreeBuilderTask extends RecursiveAction {
      * @param folder      the folder view representing the parent folder
      * @param asset       the asset view representing the asset
      */
-    private void createFileInFileSystem(final String destination, final FolderView folder, final AssetView asset) {
+    private void createFileInFileSystem(final Path destination, final FolderView folder, final AssetView asset) {
 
         String remoteAssetURL = generateRemoteAssetURL(folder, asset.name());
-        var assetFilePath = Paths.get(destination, folder.path(), asset.name());
+        var assetFilePath = Paths.get(destination.toString(), folder.path(), asset.name());
 
         // Remote SHA-256
         final String remoteFileHash = (String) asset.metadata().get(SHA256_META_KEY.key());

@@ -5,9 +5,9 @@
                 <dot-icon
                     class="inline-flex"
                     [ngClass]="{ isDone: vm.trafficAllocation }"
+                    [size]="16"
                     data-testId="traffic-step-done"
                     name="check_circle"
-                    size="16"
                 ></dot-icon>
                 {{ 'experiments.configure.traffic.name' | dm }}
             </h2>
@@ -27,7 +27,7 @@
                     tooltipPosition="bottom"
                 >
                     <button
-                        class="p-button-sm p-button-link"
+                        class="p-button-sm p-button-text"
                         [disabled]="!vm.isExperimentADraft"
                         (click)="changeTrafficAllocation()"
                         data-testId="traffic-allocation-button"

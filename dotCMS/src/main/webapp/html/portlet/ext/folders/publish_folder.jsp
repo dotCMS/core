@@ -55,7 +55,7 @@ function cancel() {
 
 									<td width="20">
 										<% if(con != null && con.getTitleImage().isPresent()){ %>
-                                            <img src="/dA/<%=con.getInode()%>/<%=con.getTitleImage().get().variable()%>/75h/25q" >
+                                            <img src="/dA/<%=con.getInode()%>/<%=con.getTitleImage().get().variable()%>/500w/20q" >
                                         <%}else if(con !=null){ %>
 											<%= com.dotmarketing.util.UtilHTML.getAssetIcon(con) %>&nbsp;
 										<%}else{ %>
@@ -112,5 +112,3 @@ function cancel() {
             
             
 				</form>
-
-

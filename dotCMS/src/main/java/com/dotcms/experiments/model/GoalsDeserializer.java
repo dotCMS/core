@@ -5,6 +5,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.JsonUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -44,12 +45,14 @@ public class GoalsDeserializer extends JsonDeserializer<Goals> {
     private static void transformConditionValuesToString(Map goalAsMap) throws IOException {
         final Collection<Map> conditionsAsMap = (Collection) goalAsMap.get("conditions");
 
-        for (final Map condition : conditionsAsMap) {
-            final Object value = condition.get("value");
+        if (UtilMethods.isSet(conditionsAsMap)) {
+            for (final Map condition : conditionsAsMap) {
+                final Object value = condition.get("value");
 
-            if (value instanceof Map) {
-                final String valueAsJsonString = JsonUtil.getJsonAsString((Map) value);
-                condition.put("value", valueAsJsonString);
+                if (value instanceof Map) {
+                    final String valueAsJsonString = JsonUtil.getJsonAsString((Map) value);
+                    condition.put("value", valueAsJsonString);
+                }
             }
         }
     }

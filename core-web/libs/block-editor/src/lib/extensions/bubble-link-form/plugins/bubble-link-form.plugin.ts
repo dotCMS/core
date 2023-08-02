@@ -28,6 +28,7 @@ export interface BubbleLinkFormProps {
     element: HTMLElement;
     tippyOptions?: Partial<Props>;
     component?: ComponentRef<BubbleLinkFormComponent>;
+    languageId: number;
 }
 
 export type BubbleLinkFormViewProps = BubbleLinkFormProps & {
@@ -49,6 +50,8 @@ export class BubbleLinkFormView {
 
     public component?: ComponentRef<BubbleLinkFormComponent>;
 
+    public languageId: number;
+
     private scrollElementMap = {
         'editor-suggestion-list': true,
         'editor-input-link': true,
@@ -63,11 +66,14 @@ export class BubbleLinkFormView {
         view,
         tippyOptions = {},
         pluginKey,
-        component
+        component,
+        languageId
     }: BubbleLinkFormViewProps) {
         this.editor = editor;
         this.element = element;
         this.view = view;
+
+        this.languageId = languageId;
 
         this.tippyOptions = tippyOptions;
 
@@ -208,6 +214,7 @@ export class BubbleLinkFormView {
     setInputValues() {
         const values = this.getLinkProps();
         this.component.instance.initialValues = values;
+        this.component.instance.languageId = this.languageId;
         this.component.instance.setFormValue(values.link ? values : { link: this.getLinkSelect() });
     }
 

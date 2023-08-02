@@ -8,19 +8,20 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodeInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.FilesUtils;
+import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.Workspace;
 import com.dotcms.model.language.Language;
-import org.jboss.logging.Logger;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import org.jboss.logging.Logger;
 
 public class PullBase {
 
@@ -32,6 +33,9 @@ public class PullBase {
 
     @Inject
     protected RestClientFactory clientFactory;
+
+    @Inject
+    protected WorkspaceManager workspaceManager;
 
     /**
      * Processes the file tree by retrieving languages, checking the base structure,
@@ -56,7 +60,6 @@ public class PullBase {
 
             // Make sure we have a valid destination
             var rootPath = checkBaseStructure(destination);
-
             // Preparing the languages for the tree
             var treeLanguages = prepareLanguages(treeNodeInfo);
 
@@ -95,7 +98,7 @@ public class PullBase {
      */
     @ActivateRequestContext
     protected void processTreeByStatus(boolean isLive, List<String> sortedLanguages, TreeNode rootNode,
-                                       final String destination, final boolean overwrite,
+                                       final Path destination, final boolean overwrite,
                                        final boolean generateEmptyFolders, final ConsoleProgressBar progressBar) {
 
         if (sortedLanguages.isEmpty()) {
@@ -107,7 +110,7 @@ public class PullBase {
             // Filter the tree by status and language
             TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, lang, generateEmptyFolders);
 
-            var rootPath = Paths.get(destination, FilesUtils.StatusToString(isLive), lang, rootNode.folder().host());
+            var rootPath = Paths.get(destination.toString(), FilesUtils.StatusToString(isLive), lang, rootNode.folder().host());
 
             // ---
             var forkJoinPool = ForkJoinPool.commonPool();
@@ -115,7 +118,7 @@ public class PullBase {
                     logger,
                     downloader,
                     filteredRoot,
-                    rootPath.toString(),
+                    rootPath,
                     overwrite,
                     generateEmptyFolders,
                     lang,
@@ -132,17 +135,10 @@ public class PullBase {
      * @return the root path for storing the files
      * @throws IOException if an I/O error occurs while creating directories
      */
-    protected String checkBaseStructure(final String destination) throws IOException {
-
-        // For the pull of files, everything will be stored in a folder called "files"
-        var filesFolder = Paths.get(destination, "files");
-
-        // Create the folder if it does not exist
-        if (!Files.exists(filesFolder)) {
-            Files.createDirectories(filesFolder);
-        }
-
-        return filesFolder.toString();
+    protected Path checkBaseStructure(final String destination) throws IOException {
+        final Path path = Paths.get(destination);
+        final Workspace workspace = workspaceManager.getOrCreate(path);
+        return workspace.files();
     }
 
     /**

@@ -2,16 +2,22 @@ package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.WorkspaceMixin;
+import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.config.Workspace;
 import com.dotcms.model.language.Language;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -34,6 +40,12 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOption;
 
+    @CommandLine.Mixin(name = "workspace")
+    WorkspaceMixin workspaceMixin;
+
+    @Inject
+    WorkspaceManager workspaceManager;
+
     @CommandLine.Option(names = {"--byIso"}, description = "Code to be used to create a new language. Used when no file is specified. For example: en-us")
     String languageIso;
 
@@ -44,24 +56,30 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     public Integer call() throws Exception {
         final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
 
-        if (null == file && StringUtils.isEmpty(languageIso)) {
+        File inputFile = this.file;
+
+        if (null == inputFile && StringUtils.isEmpty(languageIso)) {
             output.error("You must specify an iso code or file to create a new language.");
-            return CommandLine.ExitCode.SOFTWARE;
+            return ExitCode.USAGE;
         }
 
-
-        ObjectMapper objectMapper = formatOption.objectMapper(file);
+        final ObjectMapper objectMapper = formatOption.objectMapper(inputFile);
 
         ResponseEntityView<Language> responseEntityView;
-        if (null != file) {
-            if (!file.exists() || !file.canRead()) {
+        if (null != inputFile) {
+            final Optional<Workspace> workspace = workspaceManager.findWorkspace(workspaceMixin.workspace());
+            if(workspace.isPresent() && !inputFile.isAbsolute()){
+                inputFile = Path.of(workspace.get().languages().toString(), inputFile.getName()).toFile();
+                output.info("Using workspace [%s] as base path for input file.", workspace.get().languages());
+            }
+            if (!inputFile.exists() || !inputFile.canRead()) {
                 output.error(String.format(
                         "Unable to read the input file [%s] check that it does exist and that you have read permissions on it.",
                         file.getAbsolutePath()));
                 return CommandLine.ExitCode.SOFTWARE;
             }
             try{
-                final Language language = objectMapper.readValue(file, Language.class);
+                final Language language = objectMapper.readValue(inputFile, Language.class);
                 responseEntityView = pushLanguageByFile(languageAPI, language);
             } catch (IOException e) {
                 output.error("Unable to parse the input file. Please check that it is a valid JSON or YML file.");

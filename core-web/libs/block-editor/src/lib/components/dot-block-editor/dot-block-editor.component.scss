@@ -287,6 +287,12 @@
                 width: auto;
                 max-height: 300px;
                 max-width: 50%;
+                padding: $spacing-1;
+            }
+            &.ProseMirror-selectednode {
+                img {
+                    outline: 1px solid $color-palette-primary;
+                }
             }
         }
     }
