@@ -2,13 +2,8 @@ import { Directive, ElementRef, Host, HostListener, OnInit, Optional } from '@an
 
 import { take } from 'rxjs/operators';
 
+import { SCROLL_DIRECTION } from '../../models/models';
 import { TemplateBuilderComponent } from '../../template-builder.component';
-
-export enum DIRECTION {
-    UP = 'UP',
-    DOWN = 'DOWN',
-    NONE = 'NONE'
-}
 
 @Directive({
     selector: '[dotcmsItemDragScroll]',
@@ -20,7 +15,7 @@ export class DotItemDragScrollDirective implements OnInit {
     isDragging = false;
     container: HTMLElement;
     currentElement: HTMLElement;
-    scrollDirection: DIRECTION = DIRECTION.NONE;
+    scrollDirection: SCROLL_DIRECTION = SCROLL_DIRECTION.NONE;
 
     @HostListener('window:mousemove', ['$event'])
     onMouseMove() {
@@ -34,7 +29,7 @@ export class DotItemDragScrollDirective implements OnInit {
             const scrollDown = elementRect.bottom - containerRect.bottom + scrollThreshold > 0;
 
             if (scrollUp || scrollDown) {
-                const direction = scrollUp ? DIRECTION.UP : DIRECTION.DOWN;
+                const direction = scrollUp ? SCROLL_DIRECTION.UP : SCROLL_DIRECTION.DOWN;
 
                 // Prevents multiple intervals from being created
                 if (this.scrollDirection === direction) {
@@ -43,7 +38,7 @@ export class DotItemDragScrollDirective implements OnInit {
 
                 this.scrollDirection = direction;
                 const scrollStep = () => {
-                    const distance = direction === DIRECTION.UP ? -scrollSpeed : scrollSpeed;
+                    const distance = direction === SCROLL_DIRECTION.UP ? -scrollSpeed : scrollSpeed;
                     this.container.scrollBy(0, distance);
                     if (this.scrollDirection === direction) {
                         requestAnimationFrame(scrollStep);
@@ -52,7 +47,7 @@ export class DotItemDragScrollDirective implements OnInit {
 
                 requestAnimationFrame(scrollStep);
             } else {
-                this.scrollDirection = DIRECTION.NONE;
+                this.scrollDirection = SCROLL_DIRECTION.NONE;
             }
         }
     }
@@ -83,7 +78,7 @@ export class DotItemDragScrollDirective implements OnInit {
 
         this.el.nativeElement?.ddElement.on('dragstop', () => {
             this.isDragging = false;
-            this.scrollDirection = DIRECTION.NONE;
+            this.scrollDirection = SCROLL_DIRECTION.NONE;
             clearInterval(this.scrollInterval);
         });
     }

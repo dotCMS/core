@@ -97,7 +97,7 @@ export default {
 const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponent) => ({
     props: args,
     template: `
-        <dotcms-template-builder
+        <dotcms-template-builder-lib
             [layout]="layout"
             [themeId]="themeId"
             [containerMap]="containerMap"
@@ -108,7 +108,7 @@ const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponen
                 type="button"
                 pButton
             ></button>
-        </dotcms-template-builder>
+        </dotcms-template-builder-lib>
     `
 });
 

@@ -65,6 +65,7 @@ export const subGridOptions: GridStackOptions = {
     }
 };
 
+// TODO: Enable scroll when we have a better way to handle the scroll. See https://github.com/gridstack/gridstack.js/issues/2032
 export const gridOptions: GridStackOptions = {
     disableResize: true,
     cellHeight: GRID_STACK_ROW_HEIGHT,
@@ -72,7 +73,6 @@ export const gridOptions: GridStackOptions = {
     acceptWidgets: isARowWidget,
     draggable: {
         handle: '.row__drag-container'
-        // scroll: true
     },
     disableOneColumnMode: true
 };
