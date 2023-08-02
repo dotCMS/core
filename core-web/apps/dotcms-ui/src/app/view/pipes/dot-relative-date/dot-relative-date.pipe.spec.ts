@@ -7,6 +7,16 @@ class DotFormatDateServiceMock {
     getRelative() {
         return '6 hours ago';
     }
+
+    getUTC(time: Date = new Date()): Date {
+        const utcTime = new Date(time.getTime() + time.getTimezoneOffset() * 60000);
+
+        return utcTime;
+    }
+
+    differenceInCalendarDays(_dateLeft: Date, _dateRight: Date): number {
+        return 1;
+    }
 }
 
 import { DotRelativeDatePipe } from './dot-relative-date.pipe';

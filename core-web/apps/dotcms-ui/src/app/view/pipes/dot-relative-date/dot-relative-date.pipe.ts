@@ -9,7 +9,11 @@ import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-s
 export class DotRelativeDatePipe implements PipeTransform {
     constructor(private dotFormatDateService: DotFormatDateService) {}
 
-    transform(time: string | number, daysLimit: number = 7, format: string = 'MM/dd/yyyy'): string {
+    transform(
+        time: string | number,
+        daysLimit: number = 7,
+        format: string = 'MM/dd/yyyy - hh:mm aa'
+    ): string {
         // Sometimes the time is a string with this format 2/8/2023 - 10:08 PM
         // We need to get rid of that dash
         const cleanTime = typeof time === 'string' ? time.replace('- ', '') : time;
