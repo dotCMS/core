@@ -96,9 +96,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @ViewChild('addBox')
     addBox: AddWidgetComponent;
 
-    @ViewChild('main')
-    main: ElementRef<HTMLElement>;
-
     get layoutProperties(): DotTemplateLayoutProperties {
         return {
             header: this.layout.header,
@@ -186,8 +183,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             this.addBoxIsDragging = false;
             this.cd.detectChanges();
         });
-
-        this.listenToGridMouseMove();
 
         // Adding subgrids on load
         Array.from(this.grid.el.querySelectorAll('.grid-stack')).forEach((el) => {
@@ -278,10 +273,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
         this.addBox.nativeElement.ddElement.off('dragstart');
         this.addBox.nativeElement.ddElement.off('dragstop');
-        this.main.nativeElement.removeEventListener(
-            'mousemove',
-            this.fixGridStackNodeOptions.bind(this)
-        );
     }
 
     /**
@@ -412,27 +403,12 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     /**
-     * @description This method sets the box initial values everytime a mouse moves in the grid
-     * so that way we always have the correct value setted and overriding the behavior of gridstack
-     *
-     * @private
-     * @memberof TemplateBuilderComponent
-     */
-    private listenToGridMouseMove(): void {
-        // So every time the mouse moves in the grid, we set the initial values for the box
-        this.main.nativeElement.addEventListener(
-            'mousemove',
-            this.fixGridStackNodeOptions.bind(this)
-        );
-    }
-
-    /**
      * @description This method sets the box initial values of gridstack when gridstack changes it
      *
      * @private
      * @memberof TemplateBuilderComponent
      */
-    private fixGridStackNodeOptions() {
+    fixGridStackNodeOptions() {
         if (this.addBoxIsDragging && this.addBox.nativeElement.gridstackNode?.w !== BOX_WIDTH) {
             this.addBox.nativeElement.gridstackNode = {
                 ...this.addBox.nativeElement.gridstackNode,
