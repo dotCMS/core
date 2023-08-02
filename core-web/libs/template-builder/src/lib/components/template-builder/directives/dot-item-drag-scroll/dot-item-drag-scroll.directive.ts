@@ -79,7 +79,6 @@ export class DotItemDragScrollDirective implements OnInit {
         this.el.nativeElement?.ddElement.on('dragstop', () => {
             this.isDragging = false;
             this.scrollDirection = SCROLL_DIRECTION.NONE;
-            clearInterval(this.scrollInterval);
         });
     }
 }
