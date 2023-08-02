@@ -6,7 +6,3 @@ h2 {
     font-weight: $font-weight-bold;
     text-transform: uppercase;
 }
-
-:host ::ng-deep p-card .p-card-footer .p-button-link {
-    padding: $spacing-0;
-}
