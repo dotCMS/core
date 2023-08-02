@@ -1,0 +1,14 @@
+form {
+    display: flex;
+    width: 100%;
+}
+
+input {
+    flex-grow: 1;
+    margin-right: 10px;
+    width: 100%;
+}
+
+button {
+    padding: 5px 10px;
+}

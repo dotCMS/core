@@ -76,8 +76,8 @@ const list: DotMenuItem[] = [
 const block: DotMenuItem[] = [
     {
         label: 'AI Content',
-        icon: 'bolt', // Material Icon
-        id: 'aiContent'
+        icon: 'bolt',
+        id: 'aiContentPrompt'
     },
     {
         label: 'Blockquote',

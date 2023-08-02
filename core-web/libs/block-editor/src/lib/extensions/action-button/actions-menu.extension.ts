@@ -173,7 +173,7 @@ function execCommand({
         subscript: () => editor.chain().setSubscript().focus().run(),
         superscript: () => editor.chain().setSuperscript().focus().run(),
         video: () => editor.commands.openAssetForm({ type: 'video' }),
-        aiContent: () => editor.commands?.addHelloWorld()
+        aiContentPrompt: () => editor.commands.openAIPrompt()
     };
 
     getCustomActions(customBlocks).forEach((option) => {

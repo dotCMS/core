@@ -49,10 +49,11 @@ import {
     FreezeScroll,
     FREEZE_SCROLL_KEY,
     AssetUploader,
-    DotComands
+    DotComands,
+    AIContentPromptExtension
 } from '../../extensions';
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
-import { ContentletBlock, ImageNode, VideoNode, AIContent } from '../../nodes';
+import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import {
     formatHTML,
     removeInvalidNodes,
@@ -60,7 +61,6 @@ import {
     DotMarketingConfigService,
     RestoreDefaultDOMAttrs
 } from '../../shared';
-
 @Component({
     selector: 'dot-block-editor',
     templateUrl: './dot-block-editor.component.html',
@@ -107,7 +107,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     private _customNodes: Map<string, AnyExtension> = new Map([
         ['dotContent', ContentletBlock(this.injector)],
         ['image', ImageNode],
-        ['aiContent', AIContent],
         ['video', VideoNode],
         ['table', DotTableExtension()]
     ]);
@@ -380,6 +379,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             BubbleLinkFormExtension(this.viewContainerRef),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
+            AIContentPromptExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
