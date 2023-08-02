@@ -11,8 +11,6 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { Sidebar } from 'primeng/sidebar';
 
-import { UiDotIconButtonModule } from '@dotcms/ui';
-
 /**
  * Used to add a header bar to Sidebar (PrimeNg)
  * show a title, close icon and an optional button or action
@@ -24,7 +22,7 @@ import { UiDotIconButtonModule } from '@dotcms/ui';
 @Component({
     selector: 'dot-sidebar-header',
     standalone: true,
-    imports: [CommonModule, UiDotIconButtonModule, ButtonModule],
+    imports: [CommonModule, ButtonModule],
     templateUrl: './dot-sidebar-header.component.html',
     styleUrls: ['./dot-sidebar-header.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

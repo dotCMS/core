@@ -12,8 +12,9 @@ import {
     TemplateRef,
     ViewChild
 } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -24,9 +25,13 @@ import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-s
 import { DotEventsService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
-import { DotTemplateBuilderComponent } from './dot-template-builder.component';
+import {
+    AUTOSAVE_DEBOUNCE_TIME,
+    DotTemplateBuilderComponent
+} from './dot-template-builder.component';
 
 import {
     DotTemplateItem,
@@ -36,7 +41,7 @@ import {
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
-    selector: 'dotcms-template-builder',
+    selector: 'dotcms-template-builder-lib',
     template: ` <ng-content select="[toolbar-left]"></ng-content>
         <ng-content select="[toolbar-actions-right]"></ng-content>`
 })
@@ -162,7 +167,8 @@ describe('DotTemplateBuilderComponent', () => {
                 DotPortletBoxModule,
                 DotShowHideFeatureDirective,
                 ButtonModule,
-                DotIconModule
+                DotIconModule,
+                RouterTestingModule
             ],
             providers: [
                 {
@@ -178,7 +184,11 @@ describe('DotTemplateBuilderComponent', () => {
                         getKey: () => of('false')
                     }
                 },
-                DotEventsService
+                DotEventsService,
+                {
+                    provide: DotRouterService,
+                    useValue: new MockDotRouterService()
+                }
             ]
         }).compileComponents();
     });
@@ -236,11 +246,14 @@ describe('DotTemplateBuilderComponent', () => {
             expect(component.updateTemplate.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
         });
 
-        it('should emit save and publish event from dot-edit-layout-designer', () => {
-            spyOn(component.saveAndPublish, 'emit');
-            const builder = de.query(By.css('dot-edit-layout-designer'));
-            builder.triggerEventHandler('saveAndPublish', EMPTY_TEMPLATE_DESIGN);
-            expect(component.saveAndPublish.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
+        it('should emit save and publish event from dot-edit-layout-designer automatically on template updates', () => {
+            fakeAsync(() => {
+                spyOn(component.saveAndPublish, 'emit');
+                const builder = de.query(By.css('dot-edit-layout-designer'));
+                builder.triggerEventHandler('saveAndPublish', EMPTY_TEMPLATE_DESIGN);
+                tick(AUTOSAVE_DEBOUNCE_TIME);
+                expect(component.saveAndPublish.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
+            });
         });
     });
 
@@ -277,15 +290,6 @@ describe('DotTemplateBuilderComponent', () => {
 
             templateBuilder.triggerEventHandler('templateChange', template);
             expect(component.updateTemplate.emit).toHaveBeenCalled();
-        });
-
-        it('should emit events from new-template-builder when click on save button', () => {
-            const btnsave = de.query(By.css('[data-testId="save-and-publish-btn"]'));
-            spyOn(component.saveAndPublish, 'emit');
-            btnsave.triggerEventHandler('click', component.item);
-
-            (btnsave.nativeElement as HTMLElement).click();
-            expect(component.saveAndPublish.emit).toHaveBeenCalled();
         });
 
         it('should add style classes if new template builder feature flag is on', () => {

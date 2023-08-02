@@ -1,9 +1,18 @@
 $border-radius-xs: 0.125rem;
 $border-radius-sm: 0.25rem;
-$border-radius-md: 0.5rem;
+$border-radius-md: 0.375rem;
+$border-radius-lg: 0.5rem;
 $border-radius-xl: 1rem;
 
 $field-border-radius: $border-radius-md;
 
 // TODO: convert to rem but breaks math calcs around
 $field-height: 40px;
+
+$field-height-sm: 2rem;
+$field-height-md: 2.5rem;
+$field-height-lg: 3rem;
+
+$icon-sm: 14px;
+$icon-md: 16px;
+$icon-lg: 18px;

@@ -26,17 +26,10 @@ a {
 }
 
 .notification-item__close {
-    color: $color-palette-gray-700;
-    height: $notification-icon-size;
     position: absolute;
     right: 0;
     top: 1rem;
-    width: $notification-icon-size;
     z-index: 1;
-
-    &.p-state-hover {
-        background: none;
-    }
 }
 
 .notification-item__icon {

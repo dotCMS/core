@@ -1,7 +1,9 @@
-<dot-icon-button
-    icon="help_outline"
+<p-button
     (click)="hint.toggle($event); $event.preventDefault()"
-></dot-icon-button>
-<p-overlayPanel [dismissable]="true" appendTo="body" #hint [style]="{ width: '350px' }">
+    icon="pi pi-question-circle"
+    styleClass="p-button-rounded p-button-sm p-button-text"
+>
+</p-button>
+<p-overlayPanel #hint [dismissable]="true" [style]="{ width: '350px' }" appendTo="body">
     <div [innerHTML]="message"></div>
 </p-overlayPanel>

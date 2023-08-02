@@ -5,9 +5,9 @@
                 <h2 class="flex align-items-center gap-1 uppercase">
                     <dot-icon
                         [ngClass]="{ isDone: vm.goals }"
+                        [size]="16"
                         data-testId="goal-title-step-done"
                         name="check_circle"
-                        size="16"
                     ></dot-icon>
                     <span class="p-label-input-required" data-testId="goals-card-name">{{
                         'experiments.configure.goals.name' | dm
@@ -79,7 +79,7 @@
                 tooltipPosition="bottom"
             >
                 <button
-                    class="p-button-sm p-button-link"
+                    class="p-button-sm p-button-outlined"
                     [disabled]="!!vm.goals || !vm.isExperimentADraft"
                     (click)="openSelectGoalSidebar()"
                     data-testId="goals-add-button"
@@ -106,7 +106,7 @@
                 tooltipPosition="bottom"
             >
                 <button
-                    class="p-button-rounded p-button-text"
+                    class="p-button-rounded p-button-text p-button-danger"
                     [disabled]="!vm.isExperimentADraft"
                     (click)="deleteGoal($event, 'primary', vm.experimentId)"
                     data-testId="goal-delete-button"
