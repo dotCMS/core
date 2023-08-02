@@ -1,14 +1,14 @@
-<span *ngIf="notificationsUnreadCount" class="badge" id="dot-toolbar-notifications-badge">{{
+<span class="badge" id="dot-toolbar-notifications-badge" *ngIf="notificationsUnreadCount">{{
     notificationsUnreadCount
 }}</span>
 
 <dot-dropdown-component
+    id="dot-toolbar-notifications"
+    [disabled]="!notifications.length"
     (shutdown)="iframeOverlayService.hide()"
     (wasOpen)="iframeOverlayService.show()"
     (toggle)="toggleNotifications()"
-    [disabled]="!notifications.length"
-    icon="notifications"
-    id="dot-toolbar-notifications"
+    icon="pi pi-bell"
     position="right"
 >
     <div class="toolbar-notifications">
@@ -16,11 +16,12 @@
             <h3 class="toolbar-notifications__title" id="dot-toolbar-notifications-title">
                 {{ 'notifications_title' | dm }}
             </h3>
-            <dot-icon-button
-                icon="delete"
+            <p-button
                 id="dot-toolbar-notifications-button-dismiss-all"
                 (click)="dismissAllNotifications()"
-            ></dot-icon-button>
+                icon="pi pi-trash"
+                styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"
+            ></p-button>
         </div>
         <div class="toolbar-notifications__content" id="dot-toolbar-notifications-content">
             <dot-notifications-list
@@ -31,12 +32,12 @@
         </div>
         <div class="toolbar-notifications__footer" id="dot-toolbar-notifications-footer">
             <button
-                riple
-                pButton
-                class="p-button-secondary"
+                class="p-button-outlined"
                 id="dot-toolbar-notifications-button-load-more"
                 *ngIf="existsMoreToLoad"
                 (click)="loadMore()"
+                riple
+                pButton
                 label="{{ 'notifications_load_more' | dm }}"
             ></button>
         </div>

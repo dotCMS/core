@@ -1,5 +1,5 @@
 :host {
-    dotcms-template-builder {
+    dotcms-template-builder-lib {
         display: block;
         height: 100%;
         overflow: auto;
@@ -9,7 +9,7 @@
 }
 
 ::ng-deep {
-    dotcms-template-builder {
+    dotcms-template-builder-lib {
         .layout-toolbar.p-toolbar {
             padding-right: 0;
         }

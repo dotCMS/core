@@ -472,6 +472,7 @@ describe('DotExperimentsReportsStore', () => {
 
         it('should get all the xLabels', (done) => {
             const expectedXLabels = [
+                'Mar-31', // Day added manually when we parse the data
                 'Apr-1',
                 'Apr-2',
                 'Apr-3',
@@ -489,7 +490,7 @@ describe('DotExperimentsReportsStore', () => {
                 'Apr-15'
             ];
 
-            store.getChartData$.subscribe(({ labels }) => {
+            store.getDailyChartData$.subscribe(({ labels }) => {
                 expect(labels.length).toEqual(expectedXLabels.length);
                 expect(labels).toEqual(expectedXLabels);
                 done();
@@ -497,7 +498,7 @@ describe('DotExperimentsReportsStore', () => {
         });
 
         it('should has 2 datasets', (done) => {
-            store.getChartData$.subscribe(({ datasets }) => {
+            store.getDailyChartData$.subscribe(({ datasets }) => {
                 expect(datasets.length).toEqual(
                     Object.keys(EXPERIMENT_MOCK_RESULTS.goals.primary.variants).length
                 );
@@ -506,20 +507,40 @@ describe('DotExperimentsReportsStore', () => {
         });
 
         it('should has a label and data properly parsed for each dataset', (done) => {
+            // First data is added manually when we parse the data
             const expectedDataByDataset = [
-                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-                [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+                [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                [0, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
             ];
             const expectedLabel = [
                 EXPERIMENT_MOCK_RESULTS.goals.primary.variants.DEFAULT.variantDescription,
                 EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'].variantDescription
             ];
 
-            store.getChartData$.subscribe(({ datasets }) => {
+            store.getDailyChartData$.subscribe(({ datasets }) => {
                 datasets.forEach((dataset, index) => {
                     const { label, data } = dataset;
 
                     expect(data).toEqual(expectedDataByDataset[index]);
+                    expect(label).toEqual(expectedLabel[index]);
+                });
+
+                done();
+            });
+        });
+
+        it('should generate the Pdfs data to render the Bayesian chart', (done) => {
+            const EXPECTED_BAYESIAN_DATA_QTY = 100;
+            const expectedLabel = [
+                EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'].variantDescription,
+                EXPERIMENT_MOCK_RESULTS.goals.primary.variants.DEFAULT.variantDescription
+            ];
+
+            store.getBayesianChartData$.subscribe(({ datasets }) => {
+                datasets.forEach((dataset, index) => {
+                    const { label, data } = dataset;
+
+                    expect(data.length).toEqual(EXPECTED_BAYESIAN_DATA_QTY);
                     expect(label).toEqual(expectedLabel[index]);
                 });
 

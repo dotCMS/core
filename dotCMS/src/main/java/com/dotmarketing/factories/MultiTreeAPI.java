@@ -37,7 +37,7 @@ public interface MultiTreeAPI {
      * @param mTrees
      * @throws DotDataException
      */
-    void saveMultiTrees(String pageId, List<MultiTree> mTrees) throws DotDataException;
+    void saveMultiTrees(String pageId, String variantName, List<MultiTree> mTrees) throws DotDataException;
 
     /**
      * Saves a specific MultiTree as it comes
