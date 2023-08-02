@@ -19,16 +19,15 @@ jobs:
         env:
           DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         run: |
-          DOTCMS_LICENSE_PATH=./license
+          DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/license
           mkdir -p ${DOTCMS_LICENSE_PATH}
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
+          echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
       - name: Run cli tests
         working-directory: ./tools/dotcms-cli/
         run: |
-          export DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/license
-          export DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat
-          pwd
           env | grep DOTCMS_LICENSE
+          pwd
           ls -la
           ./mvnw clean verify
 
