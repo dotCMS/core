@@ -7,14 +7,15 @@ import {
     EventEmitter,
     Input,
     OnInit,
-    Output
+    Output,
+    ViewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
 import { DropdownModule } from 'primeng/dropdown';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
 
 import { filter, mergeMap, take, toArray } from 'rxjs/operators';
@@ -46,6 +47,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
+    @ViewChild('op') overlayPanel: OverlayPanel;
 
     options$: Observable<DotDevice[]>;
     socialMediaTiles = [
@@ -119,6 +121,10 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
      */
     change(device: DotDevice) {
         this.selected.emit(device);
+    }
+
+    public openMenu(event: Event) {
+        this.overlayPanel.toggle(event);
     }
 
     /**

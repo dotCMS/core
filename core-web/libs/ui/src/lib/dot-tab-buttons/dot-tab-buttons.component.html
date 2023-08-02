@@ -1,0 +1,30 @@
+<div class="dot-tab-buttons">
+    <div style="position: relative">
+        <button
+            class="dot-tab-button"
+            [ngClass]="{ 'dot-tab-button-hover': mode === pageMode.EDIT }"
+            [value]="pageMode.EDIT"
+            (click)="onChangeState($event)"
+        >
+            Edit
+        </button>
+        <div class="dot-tab-buttons-select" *ngIf="mode === pageMode.EDIT"></div>
+    </div>
+
+    <div style="position: relative">
+        <div
+            class="dot-button-dropdown"
+            [ngClass]="{ 'dot-tab-button-hover': mode === pageMode.PREVIEW }"
+            (click)="onChangeState($event)"
+        >
+            <button class="dot-tab-button__right" [value]="pageMode.PREVIEW">Preview</button>
+            <button
+                class="dot-tab-dropdown"
+                [ngClass]="{ 'dot-tab-button-hover-dropdown': mode === pageMode.PREVIEW }"
+            >
+                <i [class]="icon"></i>
+            </button>
+        </div>
+        <div class="dot-tab-buttons-select" *ngIf="mode === pageMode.PREVIEW"></div>
+    </div>
+</div>

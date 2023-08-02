@@ -19,6 +19,8 @@
     flex-wrap: wrap;
     background-color: $white;
     border-bottom: solid 1px $color-palette-gray-300;
+    height: 60px;
+    align-items: center;
 }
 
 ::ng-deep {

@@ -76,6 +76,10 @@ export class DotPageStateService {
         }
 
         this.requestPage(options).subscribe((pageState: DotPageRenderState) => {
+            if (!pageState.viewAs.device) {
+                pageState.viewAs.device = options.viewAs?.device;
+            }
+
             this.setState(pageState);
         });
     }

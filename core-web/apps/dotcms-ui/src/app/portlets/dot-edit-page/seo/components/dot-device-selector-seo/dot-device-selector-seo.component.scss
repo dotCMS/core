@@ -18,10 +18,10 @@
 }
 
 .dot-device-selector__header-title {
-    font-size: $font-size-lg;
+    font-size: 1.25rem;
     font-style: normal;
-    font-weight: 500;
     line-height: 140%;
+    color: $black;
 }
 
 .dot-device-selector__column {
@@ -68,10 +68,12 @@
 
 .device-list-item__dimensions {
     color: $color-palette-gray-600;
+    font-size: 0.875rem;
+    font-weight: 400;
 }
 
 .device-list-item__name {
-    line-height: 1;
+    margin-bottom: 6px;
 }
 
 .device-list-item.device-list-item-media {
@@ -88,6 +90,10 @@
     a {
         text-decoration: underline;
     }
+}
+
+.device-list-item__icon {
+    color: $color-palette-gray-600;
 }
 
 ::ng-deep {

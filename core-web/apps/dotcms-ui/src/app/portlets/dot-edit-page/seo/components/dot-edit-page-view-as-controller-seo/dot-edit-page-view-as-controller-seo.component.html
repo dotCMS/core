@@ -16,6 +16,14 @@
         (delete)="deletePersonalization($event)"
         (selected)="changePersonaHandler($event)"
     ></dot-persona-selector>
+
+    <p-checkbox
+        class="flex w-7 dot-edit__what-changed-button"
+        *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
+        [binary]="true"
+        [label]="'dot.common.whats.changed' | dm"
+        (onChange)="whatschange.emit($event.checked)"
+    ></p-checkbox>
 </ng-container>
 
 <ng-template #language>

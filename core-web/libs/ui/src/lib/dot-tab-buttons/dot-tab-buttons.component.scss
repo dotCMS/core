@@ -1,0 +1,62 @@
+@use "variables" as *;
+
+.dot-tab-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 0.25rem;
+    margin-right: 2rem;
+}
+
+.dot-tab-button {
+    border: 1.5px solid $color-palette-gray-200;
+    color: $color-palette-primary-500;
+    background-color: transparent;
+    padding: 0.5rem $spacing-3;
+    border-radius: 0.375rem;
+    height: 2.5rem;
+}
+
+.dot-tab-button__right {
+    border: 1.5px solid $color-palette-gray-200;
+    color: $color-palette-primary-500;
+    background-color: transparent;
+    padding: 0 0.5rem 0 1rem;
+    height: 2.5rem;
+    border-right: 0;
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.dot-tab-dropdown {
+    background-color: transparent;
+    border: 1.5px solid $color-palette-gray-200;
+    height: 2.5rem;
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+    border-left: 0;
+    padding: 0.5rem;
+    color: $color-palette-primary-500;
+}
+
+.dot-button-dropdown {
+    display: flex;
+}
+
+.dot-tab-buttons-select {
+    height: 0.25rem;
+    border-radius: 6.25rem;
+    width: auto;
+    background-color: $color-palette-primary-500;
+    left: 0;
+    right: 0;
+    bottom: -0.6rem;
+    position: absolute;
+}
+
+.dot-tab-button-hover {
+    background: $color-palette-primary-100;
+}
+
+.dot-tab-button-hover-dropdown {
+    background: $color-palette-primary-200;
+}

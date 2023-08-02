@@ -7,6 +7,7 @@
 .page-tools-list {
     list-style: none;
     padding: 0;
+    margin-top: 0;
 }
 
 .page-tools-list__item {
@@ -74,6 +75,10 @@
                 .p-dialog-header-icon {
                     opacity: 0;
                 }
+            }
+
+            .p-dialog-content {
+                padding: 0 1rem;
             }
         }
 
