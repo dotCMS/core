@@ -23,7 +23,17 @@ jobs:
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
           export DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat
       - name: Run cli tests
-        working-directory: ${GITHUB_WORKSPACE}/tools/dotcms-cli/
+        working-directory: ./tools/dotcms-cli/
         run: |
           echo $DOTCMS_LICENSE_FILE
           ./mvnw clean verify
+#      - name: Github publish tests results
+#        uses: ./.github/actions/publish-test-results
+#        with:
+#          build_id: <branch or commit>
+#          test_type: cli # or whatever name you need to
+#          pull_request: ${{ github.event.number }} # optional in case the tests are triggered by a PR
+#          tests_results_status: PASSED|FAILED # tests results status, optional
+#          tests_results_location: # tests results location, optional, most of the time this made up of a bunch of XML files, optional
+#          tests_results_report_location: <path to results> # actual reports made from XML files, probably in HTML format
+#          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }
