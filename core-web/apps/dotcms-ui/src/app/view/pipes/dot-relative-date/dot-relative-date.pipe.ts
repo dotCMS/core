@@ -9,7 +9,11 @@ import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-s
 export class DotRelativeDatePipe implements PipeTransform {
     constructor(private dotFormatDateService: DotFormatDateService) {}
 
-    transform(time: string | number, format: string = 'MM/dd/yyyy', daysLimit: number = 7): string {
+    transform(
+        time: string | number = new Date().getTime(),
+        format: string = 'MM/dd/yyyy',
+        daysLimit: number = 7
+    ): string {
         const isMilliseconds = !isNaN(Number(time));
 
         // Sometimes the time is a string with this format 2/8/2023 - 10:08 PM
