@@ -32,6 +32,7 @@ public class ContainerResource implements QuarkusTestResourceLifecycleManager {
         final boolean isLocalComposeEnabled = Boolean.parseBoolean(ConfigProvider.getConfig().getValue("testcontainers.docker.compose.local.enabled", String.class));
         final String dockerImage = ConfigProvider.getConfig().getValue("testcontainers.docker.image", String.class);
         final String dockerComposeFile = ConfigProvider.getConfig().getValue("testcontainers.docker.compose.file", String.class);
+        final String dotcmsLicenseFile = ConfigProvider.getConfig().getValue("testcontainers.dotcms.license.file", String.class);
         final long dockerComposeStartupTimeout = ConfigProvider.getConfig().getOptionalValue("testcontainers.docker.compose.startup.timeout", Long.class).orElse(DEFAULT_STARTUP_TIMEOUT);
 
         DockerComposeContainer dockerComposeContainer = new DockerComposeContainer("dotcms-env", new File(dockerComposeFile));
@@ -39,6 +40,7 @@ public class ContainerResource implements QuarkusTestResourceLifecycleManager {
         dockerComposeContainer.withExposedService("elasticsearch", ELASTICSEARCH_SERVICE_PORT, Wait.forHttp("/").forPort(ELASTICSEARCH_SERVICE_PORT).forStatusCode(HttpStatus.SC_OK));
         dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(dockerComposeStartupTimeout)));
         dockerComposeContainer.withEnv("DOTCMS_IMAGE", dockerImage);
+        dockerComposeContainer.withEnv("DOTCMS_LICENSE_FILE", dotcmsLicenseFile);
 
         if (isLoggerEnabled) {
             dockerComposeContainer.withLogConsumer("dotcms", new Slf4jLogConsumer(LOGGER));

@@ -14,7 +14,16 @@ jobs:
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
-      - name: Run cli tests
-        working-directory: ./tools/dotcms-cli/
+      - name: Prepare license
+        env:
+          DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+          DOTCMS_LICENSE_PATH: ${GITHUB_WORKSPACE}/tools/dotcms-cli/license
         run: |
+          mkdir -p ${DOTCMS_LICENSE_PATH}
+          echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
+          export DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat
+      - name: Run cli tests
+        working-directory: ${GITHUB_WORKSPACE}/tools/dotcms-cli/
+        run: |
+          echo $DOTCMS_LICENSE_FILE
           ./mvnw clean verify
