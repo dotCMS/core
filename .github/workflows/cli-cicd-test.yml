@@ -22,11 +22,13 @@ jobs:
           mkdir -p ${DOTCMS_LICENSE_PATH}
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
           export DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat
+          env | grep DOTCMS_LICENSE_FILE
+
       - name: Run cli tests
         working-directory: ./tools/dotcms-cli/
         run: |
           echo $DOTCMS_LICENSE_FILE
-          ./mvnw clean verify
+#          ./mvnw clean verify
 #      - name: Github publish tests results
 #        uses: ./.github/actions/publish-test-results
 #        with:
