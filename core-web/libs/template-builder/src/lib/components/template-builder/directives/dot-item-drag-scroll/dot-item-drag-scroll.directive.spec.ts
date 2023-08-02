@@ -60,6 +60,7 @@ describe('DotItemDragScrollDirective', () => {
         imports: [DotMessagePipe],
         declarations: [MockComponent(TemplateBuilderComponent), MockGridStackElementComponent],
         providers: [
+            TemplateBuilderComponent,
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
@@ -70,9 +71,9 @@ describe('DotItemDragScrollDirective', () => {
     });
 
     beforeEach(() => {
-        spectator = createDirective(`<dotcms-template-builder>
+        spectator = createDirective(`<dotcms-template-builder-lib>
         <dotcms-grid-stack-element dotcmsItemDragScroll></dotcms-grid-stack-element>
-        </dotcms-template-builder>`);
+        </dotcms-template-builder-lib>`);
 
         spectator.directive.container = containerElementMock();
         spectator.directive.currentElement = spectator.directive.el.nativeElement;
