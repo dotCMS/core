@@ -105,15 +105,15 @@ export class DotFormatDateService {
 
     /**
      * Gets relative strict time from on a specific date passed.
-     * Date Passed must be formatted as unix timestamp ==> New Date().getTime()
+     * Dates must be in UTC format.
      *
      * @param {string} time Formatted as unix timestamp
      * @param {Date} baseDate
      * @returns {string}
      * @memberof DotFormatDateService
      */
-    getRelative(time: string, baseDate: Date = this.getUTCNow()): string {
-        return formatDistanceStrict(new Date(parseInt(time, 10)), baseDate, {
+    getRelative(time: Date, baseDate: Date = this.getUTC()): string {
+        return formatDistanceStrict(time, baseDate, {
             ...this.localeOptions,
             addSuffix: true
         });
@@ -125,9 +125,8 @@ export class DotFormatDateService {
      * @return {*}  {Date}
      * @memberof DotFormatDateService
      */
-    getUTCNow(): Date {
-        const now = new Date();
-        const utcTime = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
+    getUTC(time: Date = new Date()): Date {
+        const utcTime = new Date(time.getTime() + time.getTimezoneOffset() * 60000);
 
         return utcTime;
     }

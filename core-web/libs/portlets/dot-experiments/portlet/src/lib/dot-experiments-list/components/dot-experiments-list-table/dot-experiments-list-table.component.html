@@ -22,10 +22,10 @@
                             {{ experiment.name }}
                         </td>
                         <td data-testId="experiment-row__createdDate">
-                            {{ experiment.creationDate | dotRelativeDate : true }}
+                            {{ experiment.creationDate | dotRelativeDate }}
                         </td>
                         <td data-testId="experiment-row__modDate">
-                            {{ experiment.modDate | dotRelativeDate : true }}
+                            {{ experiment.modDate | dotRelativeDate }}
                         </td>
                         <td class="text-right" data-testId="experiment-row__actions">
                             <p-menu
