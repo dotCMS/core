@@ -13,6 +13,7 @@ import { tap } from 'rxjs/operators';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     ComponentStatus,
+    CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatus,
     ExperimentsStatusList,
@@ -58,6 +59,7 @@ export class DotExperimentsListComponent {
         tap(({ sidebar }) => this.handleSidebar(sidebar))
     );
     statusOptionList = ExperimentsStatusList;
+    confirmDialogKey = CONFIGURATION_CONFIRM_DIALOG_KEY;
     private componentRef: ComponentRef<DotExperimentsCreateComponent>;
 
     constructor(

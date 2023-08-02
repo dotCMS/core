@@ -237,6 +237,7 @@ type DotExperimentListAction =
     | 'delete'
     | 'configuration'
     | 'archive'
+    | 'end'
     | 'addToBundle'
     | 'pushPublish';
 export const AllowedActionsByExperimentStatus: Record<
@@ -250,6 +251,7 @@ export const AllowedActionsByExperimentStatus: Record<
         DotExperimentStatus.ARCHIVED
     ],
     ['archive']: [DotExperimentStatus.ENDED],
+    ['end']: [DotExperimentStatus.RUNNING],
     ['addToBundle']: [
         DotExperimentStatus.DRAFT,
         DotExperimentStatus.RUNNING,

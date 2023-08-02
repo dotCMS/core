@@ -30,7 +30,6 @@
             />
         </ng-container>
     </div>
-    <h2>{{ vm.addToBundleContentId }} -- HOLA</h2>
     <dot-add-to-bundle
         *ngIf="vm.addToBundleContentId"
         [assetIdentifier]="vm.addToBundleContentId"
@@ -49,4 +48,4 @@
 </ng-template>
 
 <ng-template dotDynamic></ng-template>
-<p-confirmDialog [style]="{ width: '30vw' }" key="positionDialog"></p-confirmDialog>
+<p-confirmDialog [style]="{ width: '30vw' }" [key]="confirmDialogKey"></p-confirmDialog>

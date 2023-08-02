@@ -439,7 +439,7 @@ export class DotExperimentsListStore
                         rejectLabel: this.dotMessageService.get('experiments.action.cancel'),
                         acceptLabel: this.dotMessageService.get('experiments.action.delete'),
                         accept: () => this.deleteExperiment(experiment),
-                        key: 'positionDialog'
+                        key: CONFIGURATION_CONFIRM_DIALOG_KEY
                     })
             },
             // Go to Configuration Action
@@ -481,9 +481,9 @@ export class DotExperimentsListStore
                         message: this.dotMessageService.get(
                             'experiments.action.stop.delete-confirm'
                         ),
-                        acceptLabel: this.dotMessageService.get('stop'),
+                        acceptLabel: this.dotMessageService.get('experiments.action.end'),
                         rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
-                        rejectButtonStyleClass: 'p-button-secondary',
+                        rejectButtonStyleClass: 'p-button-outlined',
                         accept: () => {
                             this.stopExperiment(experiment);
                         }

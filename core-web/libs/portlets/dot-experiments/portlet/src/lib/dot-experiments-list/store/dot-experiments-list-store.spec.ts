@@ -51,12 +51,13 @@ const EXPERIMENT_MOCK_1 = getExperimentMock(1);
 const EXPERIMENT_MOCK_2 = getExperimentMock(2);
 const EXPERIMENT_MOCK_ALL = getExperimentAllMocks();
 
-const MENU_ITEMS_QTY = 5;
+const MENU_ITEMS_QTY = 6;
 const MENU_ITEMS_DELETE_INDEX = 0;
 const MENU_ITEMS_CONFIGURATION_INDEX = 1;
 const MENU_ITEMS_ARCHIVE_INDEX = 2;
-const MENU_ITEMS_PUSH_PUBLISH_INDEX = 3;
-const MENU_ITEMS_ADD_T0_BUNDLE_INDEX = 4;
+const MENU_ITEMS_END_INDEX = 3;
+const MENU_ITEMS_PUSH_PUBLISH_INDEX = 4;
+const MENU_ITEMS_ADD_T0_BUNDLE_INDEX = 5;
 
 describe('DotExperimentsListStore', () => {
     let spectator: SpectatorService<DotExperimentsListStore>;
@@ -210,6 +211,9 @@ describe('DotExperimentsListStore', () => {
                     expect(
                         experiments[0].actionsItemsMenu[MENU_ITEMS_ARCHIVE_INDEX].visible
                     ).toEqual(AllowedActionsByExperimentStatus['archive'].includes(status));
+                    expect(experiments[0].actionsItemsMenu[MENU_ITEMS_END_INDEX].visible).toEqual(
+                        AllowedActionsByExperimentStatus['end'].includes(status)
+                    );
                     expect(
                         experiments[0].actionsItemsMenu[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible
                     ).toEqual(AllowedActionsByExperimentStatus['pushPublish'].includes(status));
