@@ -120,7 +120,8 @@ export class DotFormatDateService {
     }
 
     /**
-     * Get the current date in UTC, the backend uses UTC to store dates so we need to use UTC to get the relative dates.
+     * Get the UTC date from a given date. You can pass a date or it will use the current date.
+     * Dates must be in UTC format. To calculate the relative values according to the server time.
      *
      * @return {*}  {Date}
      * @memberof DotFormatDateService
