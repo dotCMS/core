@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "0f263d46-1c95-4864-9c92-d15eb14c61a1",
+		"_postman_id": "edfc14dd-42b0-4368-b1f6-2d156444807a",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "1549189"
@@ -5682,7 +5682,7 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"queryParameter\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"{\\\"name\\\":\\\"testName\\\",\\\"value\\\":\\\"testValue\\\"}\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"CONTAINS\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"REGEX\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"visitBefore\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"/my-page\");",
 											"",
