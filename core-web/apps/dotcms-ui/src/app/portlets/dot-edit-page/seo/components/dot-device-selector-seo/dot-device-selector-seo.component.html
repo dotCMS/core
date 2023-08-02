@@ -15,7 +15,7 @@
                 <ul class="device-list">
                     <li class="device-list-item" *ngFor="let option of defaultOptions">
                         <button class="device-list__button" (click)="change(option)">
-                            <i class="device-list-item__icon" [class]="option.icon"></i>
+                            <i [class]="option.icon"></i>
                             <div class="device-list-item__content">
                                 <span class="device-list-item__name">{{ option.name }}</span>
                                 <span class="device-list-item__dimensions">
@@ -58,7 +58,7 @@
                         class="device-list-item device-list-item-media"
                         *ngFor="let tile of socialMediaTiles"
                     >
-                        <i class="device-list-item__icon" [class]="tile.icon"></i>
+                        <i [class]="tile.icon"></i>
                         {{ tile.label }}
                     </li>
                 </ul>
@@ -74,7 +74,7 @@
             <div class="dot-device-selector__content">
                 <ul class="device-list">
                     <li class="device-list-item device-list-item-media">
-                        <i class="pi pi-google device-list-item__icon"></i>
+                        <i class="pi pi-google"></i>
                         Google
                     </li>
                 </ul>
