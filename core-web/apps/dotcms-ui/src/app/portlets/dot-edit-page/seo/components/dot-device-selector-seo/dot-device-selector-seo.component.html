@@ -31,10 +31,7 @@
                         *ngFor="let option of options$ | async"
                         data-testId="device-selector-option"
                     >
-                        <button
-                            class="device-list__button"
-                            (click)="change(option); op.toggle($event)"
-                        >
+                        <button class="device-list__button" (click)="change(option)">
                             <div class="device-list-item__content">
                                 <span class="device-list-item__name">{{ option.name }}</span>
                                 <span class="device-list-item__dimensions"

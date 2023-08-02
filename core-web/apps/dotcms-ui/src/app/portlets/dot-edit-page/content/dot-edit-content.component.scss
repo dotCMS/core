@@ -24,6 +24,7 @@ dot-whats-changed,
     max-width: 100%;
     padding: $spacing-5;
     width: 100%;
+    overflow: scroll;
 
     &.dot-edit__page-wrapper--deviced {
         padding: $spacing-9;

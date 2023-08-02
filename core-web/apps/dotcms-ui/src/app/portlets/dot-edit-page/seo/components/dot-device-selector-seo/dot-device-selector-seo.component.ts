@@ -121,6 +121,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
      */
     change(device: DotDevice) {
         this.selected.emit(device);
+        this.overlayPanel.hide();
     }
 
     public openMenu(event: Event) {
