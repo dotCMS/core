@@ -24,9 +24,12 @@ jobs:
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
       - name: Run cli tests
         working-directory: ./tools/dotcms-cli/
-        env:
-          DOTCMS_LICENSE_FILE: ./license/license.dat
         run: |
+          export DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/license
+          export DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat
+          pwd
+          env | grep DOTCMS_LICENSE
+          ls -la
           ./mvnw clean verify
 
 #      - name: Github publish tests results
