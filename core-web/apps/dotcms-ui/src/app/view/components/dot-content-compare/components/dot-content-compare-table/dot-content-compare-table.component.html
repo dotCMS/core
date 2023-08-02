@@ -17,14 +17,16 @@
                     >
                         <ng-template let-selected pTemplate="selectedItem">
                             {{
-                                (selected.modDate | dotRelativeDate) +
+                                (selected.modDate | dotRelativeDate : 'MM/dd/yyyy - hh:mm aa') +
                                     (' by ' | dm) +
                                     selected.modUserName
                             }}
                         </ng-template>
                         <ng-template let-item pTemplate="item">
                             {{
-                                (item.modDate | dotRelativeDate) + (' by ' | dm) + item.modUserName
+                                (item.modDate | dotRelativeDate : 'MM/dd/yyyy - hh:mm aa') +
+                                    (' by ' | dm) +
+                                    item.modUserName
                             }}
                         </ng-template>
                     </p-dropdown>
