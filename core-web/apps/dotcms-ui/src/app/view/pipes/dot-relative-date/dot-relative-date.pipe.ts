@@ -10,8 +10,6 @@ export class DotRelativeDatePipe implements PipeTransform {
     constructor(private dotFormatDateService: DotFormatDateService) {}
 
     transform(time: string | number, daysLimit: number = 7, format: string = 'MM/dd/yyyy'): string {
-        //TODO: We dont want dot-transform-version-label.pipe.ts use this pipe}
-
         // Sometimes the time is a string with this format 2/8/2023 - 10:08 PM
         // We need to get rid of that dash
         const cleanTime = typeof time === 'string' ? time.replace('- ', '') : time;
