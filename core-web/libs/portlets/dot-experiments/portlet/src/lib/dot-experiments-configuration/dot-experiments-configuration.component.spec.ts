@@ -193,7 +193,7 @@ describe('DotExperimentsConfigurationComponent', () => {
 
         const addToBundle = spectator.query(DotAddToBundleComponent);
 
-        expect(addToBundle.assetIdentifier).toEqual(EXPERIMENT_MOCK.identifier);
+        expect(addToBundle.assetIdentifier).toEqual(EXPERIMENT_MOCK.id);
 
         addToBundle.cancel.emit(true);
 

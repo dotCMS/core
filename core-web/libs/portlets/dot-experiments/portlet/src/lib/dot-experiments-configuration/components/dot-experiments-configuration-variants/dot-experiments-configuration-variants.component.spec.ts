@@ -28,9 +28,9 @@ import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-acc
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
-    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA,
     getExperimentMock,
-    MockDotMessageService
+    MockDotMessageService,
+    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -273,7 +273,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             spectator.query(ConfirmPopup).accept();
 
             expect(store.deleteVariant).toHaveBeenCalledWith({
-                experimentId: '111',
+                experimentId: EXPERIMENT_MOCK.id,
                 variant: variants[1]
             });
         });
