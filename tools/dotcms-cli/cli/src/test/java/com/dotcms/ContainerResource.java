@@ -18,22 +18,25 @@ import java.util.Map;
 @QuarkusTest
 public class ContainerResource implements QuarkusTestResourceLifecycleManager {
 
-    private static final int POSTGRES_SERVICE_PORT = 5432;
-    private static final int ELASTICSEARCH_SERVICE_PORT = 9200;
-    private static final int DOTCMS_SERVICE_PORT = 8080;
-    private static final long DEFAULT_STARTUP_TIMEOUT = 150;
+    private static final int POSTGRES_SERVICE_PORT;
+    private static final int ELASTICSEARCH_SERVICE_PORT;
+    private static final int DOTCMS_SERVICE_PORT;
     private static final Logger LOGGER = LoggerFactory.getLogger(ContainerResource.class);
 
     static DockerComposeContainer<?> COMPOSE_CONTAINER;
 
     static {
 
+        POSTGRES_SERVICE_PORT = Integer.parseInt(ConfigProvider.getConfig().getValue("testcontainers.postgres.service.port", String.class));
+        ELASTICSEARCH_SERVICE_PORT = Integer.parseInt(ConfigProvider.getConfig().getValue("testcontainers.elasticsearch.service.port", String.class));
+        DOTCMS_SERVICE_PORT = Integer.parseInt(ConfigProvider.getConfig().getValue("testcontainers.dotcms.service.port", String.class));
+
         final boolean isLoggerEnabled = Boolean.parseBoolean(ConfigProvider.getConfig().getValue("testcontainers.logger.enabled", String.class));
         final boolean isLocalComposeEnabled = Boolean.parseBoolean(ConfigProvider.getConfig().getValue("testcontainers.docker.compose.local.enabled", String.class));
         final String dockerImage = ConfigProvider.getConfig().getValue("testcontainers.docker.image", String.class);
         final String dockerComposeFile = ConfigProvider.getConfig().getValue("testcontainers.docker.compose.file", String.class);
         final String dotcmsLicenseFile = ConfigProvider.getConfig().getValue("testcontainers.dotcms.license.file", String.class);
-        final long dockerComposeStartupTimeout = ConfigProvider.getConfig().getOptionalValue("testcontainers.docker.compose.startup.timeout", Long.class).orElse(DEFAULT_STARTUP_TIMEOUT);
+        final long dockerComposeStartupTimeout = ConfigProvider.getConfig().getValue("testcontainers.docker.compose.startup.timeout", Long.class);
 
         DockerComposeContainer dockerComposeContainer = new DockerComposeContainer("dotcms-env", new File(dockerComposeFile));
         dockerComposeContainer.withExposedService("postgres", POSTGRES_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(dockerComposeStartupTimeout)));

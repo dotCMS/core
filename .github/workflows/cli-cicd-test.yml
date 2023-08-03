@@ -11,6 +11,11 @@ jobs:
   cli_tests:
     name: CLI tests
     runs-on: ubuntu-latest
+#    outputs:
+#      tests_results_status: ${{ steps.run-unit-tests.outputs.tests_results_status }}
+#      tests_results_skip_report: ${{ steps.run-unit-tests.outputs.tests_results_skip_report }}
+#      tests_results_report_url: ${{ steps.github-publish-unit-tests.outputs.tests_report_url }}
+#      tests_results_log_url: ${{ steps.github-publish-unit-tests.outputs.test_logs_url }}
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
@@ -27,15 +32,21 @@ jobs:
         working-directory: ./tools/dotcms-cli/
         run: |
           env | grep DOTCMS_LICENSE
-          pwd
-          ls -la
           ./mvnw clean verify
+
+#      - name: Gather test results
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: cli-test-results
+#          path: ./tools/dotcms-cli/target/surefire-reports
 
 #      - name: Github publish tests results
 #        uses: ./.github/actions/publish-test-results
 #        with:
-#          build_id: <branch or commit>
-#          test_type: cli # or whatever name you need to
+#          build_id: ${{ env.BUILD_ID }}
+#          build_hash: ${{ env.BUILD_HASH }}
+#          test_type: integration
+#          pull_request: ${{ github.event.number }}
 #          pull_request: ${{ github.event.number }} # optional in case the tests are triggered by a PR
 #          tests_results_status: PASSED|FAILED # tests results status, optional
 #          tests_results_location: # tests results location, optional, most of the time this made up of a bunch of XML files, optional
