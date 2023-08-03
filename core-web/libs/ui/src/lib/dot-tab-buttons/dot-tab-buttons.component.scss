@@ -7,6 +7,11 @@
     margin-right: 2rem;
 }
 
+.dot-tab-container {
+    display: flex;
+    position: relative;
+}
+
 .dot-tab-button {
     border: 1.5px solid $color-palette-gray-200;
     color: $color-palette-primary-500;
@@ -20,18 +25,9 @@
 }
 
 .dot-tab-button__right {
-    border: 1.5px solid $color-palette-gray-200;
-    color: $color-palette-primary-500;
-    background-color: transparent;
-    padding: 0 0.5rem 0 1rem;
-    height: 2.5rem;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
     border-right: 0;
-    border-top-left-radius: 0.375rem;
-    border-bottom-left-radius: 0.375rem;
-
-    &:hover {
-        background: $color-palette-primary-100;
-    }
 }
 
 .dot-tab-dropdown {
@@ -64,13 +60,15 @@
     position: absolute;
 }
 
-.dot-tab-button-hover {
+.dot-tab-button-active {
     background: $color-palette-primary-100;
     border-radius: 0.375rem;
     border: 0;
 
-    .dot-tab-button__right {
+    &.dot-tab-button__right {
         border: 1.5px solid $color-palette-primary-100;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
     }
 }
 

@@ -1,30 +1,26 @@
 <div class="dot-tab-buttons">
-    <div style="position: relative">
-        <button
-            class="dot-tab-button"
-            [ngClass]="{ 'dot-tab-button-hover': mode === pageMode.EDIT }"
-            [value]="pageMode.EDIT"
-            (click)="onChangeState($event)"
-        >
-            Edit
-        </button>
-        <div class="dot-tab-buttons-select" *ngIf="mode === pageMode.EDIT"></div>
-    </div>
+    <div *ngFor="let item of options" style="position: relative">
+        <div class="dot-tab-container" (click)="onChangeState($event)">
+            <button
+                class="dot-tab-button"
+                [ngClass]="{
+                    'dot-tab-button-active': mode === item.value,
+                    'dot-tab-button__right': item.value === pageMode.PREVIEW
+                }"
+                [value]="item.value"
+                [disabled]="item.disabled"
+            >
+                {{ item.label }}
+            </button>
 
-    <div style="position: relative">
-        <div
-            class="dot-button-dropdown"
-            [ngClass]="{ 'dot-tab-button-hover': mode === pageMode.PREVIEW }"
-            (click)="onChangeState($event)"
-        >
-            <button class="dot-tab-button__right" [value]="pageMode.PREVIEW">Preview</button>
             <button
                 class="dot-tab-dropdown"
+                *ngIf="item.value === pageMode.PREVIEW"
                 [ngClass]="{ 'dot-tab-button-hover-dropdown': mode === pageMode.PREVIEW }"
             >
                 <i class="dot-tabs-dropdown-icon" [class]="icon"></i>
             </button>
         </div>
-        <div class="dot-tab-buttons-select" *ngIf="mode === pageMode.PREVIEW"></div>
+        <div class="dot-tab-buttons-select" *ngIf="mode === item.value"></div>
     </div>
 </div>
