@@ -1,5 +1,7 @@
 import { v4 as uuid } from 'uuid';
 
+import { Component, ElementRef } from '@angular/core';
+
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { containersMapMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -635,3 +637,22 @@ export const BOX_MOCK = {
         }
     ]
 };
+
+/**
+ * Mock of an element inside the gridstack
+ *
+ * @class MockGridStackElementComponent
+ */
+@Component({
+    selector: 'dotcms-grid-stack-element',
+    template: '<div>Element</div>'
+})
+export class MockGridStackElementComponent {
+    constructor(public el: ElementRef) {
+        this.el.nativeElement.ddElement = {
+            on: () => {
+                /* noop */
+            }
+        };
+    }
+}

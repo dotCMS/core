@@ -963,7 +963,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 visible: hasEnterpriseLicense && !!pushPublishEnvironments.length,
                 command: () =>
                     this.dotPushPublishDialogService.open({
-                        assetIdentifier: experiment.identifier,
+                        assetIdentifier: experiment.id,
                         title: this.dotMessageService.get('contenttypes.content.push_publish')
                     })
             },
@@ -971,7 +971,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             {
                 label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
                 visible: hasEnterpriseLicense,
-                command: () => this.showAddToBundle(experiment.identifier)
+                command: () => this.showAddToBundle(experiment.id)
             }
         ];
     }

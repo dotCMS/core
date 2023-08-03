@@ -2303,6 +2303,95 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
      * When:
+     * - You create a Widget with the code: <code>Testing URLMap: $URLMapContent.title</code>
+     * - You create a Page with the Widget and publish both.
+     * - You create a {@link ContentType} and set as detailPage the newly created page and as URL Map Pattern: <code>/testing-urlmap/$title</code>
+     * - You create a Contentlet with  title equals to 'test'
+     * - Try to render the page using the URL: <code>/testing-urlmap/test</code>
+     * Should: render: <code>Testing URLMap: test</code>
+     */
+    @Test
+    public void renderUrlMapByLangFallbackInPage()
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final Language contentletLanguage = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType widgetContentType = new ContentTypeDataGen()
+                .createWidgetContentType("Testing URLMap: $URLMapContent.title")
+                .nextPersisted();
+
+        final Contentlet widget = new ContentletDataGen(widgetContentType)
+                .host(host)
+                .languageId(contentletLanguage.getId())
+                .setProperty("widgetTitle", "Testing URLMap")
+                .nextPersistedAndPublish();
+
+        final Container container = new ContainerDataGen()
+                .site(host)
+                .nextPersisted();
+
+        ContainerDataGen.publish(container);
+
+        final Template template = new TemplateDataGen().withContainer(container.getIdentifier())
+                .nextPersisted();
+
+        TemplateDataGen.publish(template);
+
+        final HTMLPageAsset detailPage = (HTMLPageAsset) new HTMLPageDataGen(host, template)
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .nextPersistedAndPublish();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(detailPage)
+                .setContentlet(widget)
+                .nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .type(TextField.class)
+                .next();
+
+        final String urlMapPatterPrefix =
+                "/testing-urlmap" + System.currentTimeMillis();
+
+        final String urlMapPatter = urlMapPatterPrefix + "/{title}";
+
+        final ContentType urlMapContentType = new ContentTypeDataGen()
+                .detailPage(detailPage.getIdentifier())
+                .urlMapPattern(urlMapPatter)
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(urlMapContentType.id())
+                .languageId(contentletLanguage.getId())
+                .host(host)
+                .setProperty("title", "test")
+                .nextPersistedAndPublish();
+
+        final HttpServletRequest mockRequest = new MockAttributeRequest(
+                createHttpServletRequest(contentletLanguage, host, VariantAPI.DEFAULT_VARIANT, detailPage));
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(urlMapPatterPrefix + "/test")
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        Assert.assertEquals("<div>Testing URLMap: test</div>", html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When:
      * - Create a Variant named variant_1.
      * - You create a Widget called widgetWithLabel with:
      *      - A Field called label.

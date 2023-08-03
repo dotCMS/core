@@ -49,8 +49,7 @@ export const getExperimentResultsMock = (index: number): DotExperimentResults =>
 
 const ExperimentMocks: Array<DotExperiment> = [
     {
-        id: '111',
-        identifier: '1111-1111-1111-1111',
+        id: '1111-1111-1111-1111',
         pageId: '456',
         status: DotExperimentStatus.DRAFT,
         archived: false,
@@ -68,8 +67,7 @@ const ExperimentMocks: Array<DotExperiment> = [
         goals: null
     },
     {
-        id: '222',
-        identifier: '2222-2222-2222-2222',
+        id: '2222-2222-2222-2222',
         pageId: '456',
         status: DotExperimentStatus.DRAFT,
         archived: false,
@@ -90,8 +88,7 @@ const ExperimentMocks: Array<DotExperiment> = [
         goals: null
     },
     {
-        id: '333',
-        identifier: '3333-3333-3333-3333',
+        id: '3333-3333-3333-333',
         pageId: '456',
         status: DotExperimentStatus.DRAFT,
         archived: false,
@@ -112,8 +109,7 @@ const ExperimentMocks: Array<DotExperiment> = [
         goals: { ...GoalsMock }
     },
     {
-        id: '444',
-        identifier: '3333-3333-3333-3333',
+        id: '3333-3333-3333-3333',
         pageId: '456',
         status: DotExperimentStatus.DRAFT,
         archived: false,
@@ -134,8 +130,7 @@ const ExperimentMocks: Array<DotExperiment> = [
         goals: { ...GoalsMock }
     },
     {
-        id: '555',
-        identifier: '555-5555-5555-5555',
+        id: '555-5555-5555-5555',
         pageId: '456',
         status: DotExperimentStatus.RUNNING,
         archived: false,
