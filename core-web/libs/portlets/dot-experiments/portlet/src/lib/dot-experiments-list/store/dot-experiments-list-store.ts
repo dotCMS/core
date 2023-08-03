@@ -187,11 +187,6 @@ export class DotExperimentsListStore
         )
     }));
 
-    readonly stopExperimentById = this.updater((state, experimentId: string) => ({
-        ...state,
-        experiments: state.experiments.filter((exp) => exp.id != experimentId)
-    }));
-
     readonly openSidebar = this.updater((state) => ({
         ...state,
         sidebar: {
@@ -346,7 +341,7 @@ export class DotExperimentsListStore
                                     experiment.name
                                 )
                             });
-                            this.stopExperimentById(experiment.id);
+                            this.loadExperiments(this.dotExperimentsStore.getPageId$);
                         },
                         (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
                         () => this.setComponentStatus(ComponentStatus.IDLE)
