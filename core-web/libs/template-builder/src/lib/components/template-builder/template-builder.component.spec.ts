@@ -233,6 +233,16 @@ describe('TemplateBuilderComponent', () => {
         expect(fixGridStackNodeOptionsMock).toHaveBeenCalled();
     });
 
+    it('should call setAddBoxDragging when dragging Add Box Button', () => {
+        const setAddBoxDraggingMock = jest.spyOn(spectator.component, 'setAddBoxIsDragging');
+
+        const addBoxButton = spectator.query(byTestId('add-box'));
+
+        spectator.dispatchFakeEvent(addBoxButton, 'dragging');
+
+        expect(setAddBoxDraggingMock).toHaveBeenCalled();
+    });
+
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
