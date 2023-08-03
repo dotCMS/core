@@ -31,7 +31,7 @@ export class AiContentService {
     constructor(private http: HttpClient) {}
 
     async fetchAIContent(prompt: string): Promise<string> {
-        const API_KEY = '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';
+        const API_KEY = '';
 
         const body = JSON.stringify({
             model: 'gpt-3.5-turbo',
