@@ -10,8 +10,8 @@
 <dot-tab-buttons
     [mode]="mode"
     [options]="options"
-    (eventOpen)="op.openMenu($event)"
-    (changeState)="stateSelectorHandler($event.target.value)"
+    (openMenu)="op.openMenu($event)"
+    (clickOption)="stateSelectorHandler($event.target.value)"
 ></dot-tab-buttons>
 <ng-container *ngIf="!variant">
     <p-inputSwitch

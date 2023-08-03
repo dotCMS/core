@@ -7,6 +7,12 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 
 import { DotPageMode } from '@dotcms/dotcms-models';
 
+/**
+ * This component is responsible to display the tab buttons for the edit page.
+ *
+ * @export
+ * @class DotTabButtonsComponent
+ */
 @Component({
     selector: 'dot-tab-buttons',
     standalone: true,
@@ -16,23 +22,32 @@ import { DotPageMode } from '@dotcms/dotcms-models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotTabButtonsComponent {
-    @Output() eventOpen = new EventEmitter();
-    @Output() changeState = new EventEmitter();
+    @Output() openMenu = new EventEmitter();
+    @Output() clickOption = new EventEmitter();
     @Input() mode: DotPageMode;
     @Input() options: SelectItem[];
     pageMode = DotPageMode;
-    up = 'pi pi-angle-up';
-    down = 'pi pi-angle-down';
+    dropDownOpenIcon = 'pi pi-angle-up';
+    dropDownCloseIcon = 'pi pi-angle-down';
     toggle = false;
-    icon = this.down;
+    icon = this.dropDownCloseIcon;
+    OPEN_MENU = 'openMenu';
 
-    onChangeState(event) {
-        if (!event.target.value) {
-            this.eventOpen.emit(event);
-            this.toggle = !this.toggle;
-            this.icon = this.toggle ? this.up : this.down;
+    onClickOption(event) {
+        if (event.target.value === this.OPEN_MENU) {
+            this.showMenu(event);
         } else {
-            this.changeState.emit(event);
+            this.clickOption.emit(event);
         }
+    }
+
+    showMenu(event) {
+        this.toggle = !this.toggle;
+        this.toggleIcon();
+        this.openMenu.emit(event);
+    }
+
+    toggleIcon() {
+        this.icon = this.toggle ? this.dropDownOpenIcon : this.dropDownCloseIcon;
     }
 }
