@@ -32,6 +32,7 @@
     class="template-builder__main"
     *ngIf="vm$ | async as vm"
     (mousemove)="fixGridStackNodeOptions()"
+    data-testId="template-builder-main"
 >
     <dotcms-template-builder-section *ngIf="vm.layoutProperties.header">{{
         'dot.template.builder.header' | dm
