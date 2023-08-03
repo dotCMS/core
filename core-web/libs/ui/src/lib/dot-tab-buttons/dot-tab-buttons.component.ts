@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { SplitButtonModule } from 'primeng/splitbutton';
 
 import { DotPageMode } from '@dotcms/dotcms-models';
 
@@ -16,7 +15,7 @@ import { DotPageMode } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-tab-buttons',
     standalone: true,
-    imports: [CommonModule, SplitButtonModule, ButtonModule, NgIf, NgClass],
+    imports: [CommonModule, ButtonModule, NgIf, NgClass],
     templateUrl: './dot-tab-buttons.component.html',
     styleUrls: ['./dot-tab-buttons.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
