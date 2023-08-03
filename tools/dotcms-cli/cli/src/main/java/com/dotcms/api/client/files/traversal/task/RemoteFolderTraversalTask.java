@@ -1,6 +1,7 @@
 package com.dotcms.api.client.files.traversal.task;
 
 import com.dotcms.api.client.files.traversal.data.Retriever;
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.Filter;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.model.asset.FolderView;
@@ -247,7 +248,7 @@ public class RemoteFolderTraversalTask extends RecursiveTask<Pair<List<Exception
         } catch (Exception e) {
             var message = String.format("Error retrieving folder information [%s]", folderPath);
             logger.debug(message, e);
-            throw new RuntimeException(message, e);
+            throw new TraversalTaskException(message, e);
         }
     }
 

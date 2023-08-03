@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @QuarkusTest
-class PullFilesServiceTest {
+class PullServiceTest {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;
@@ -48,7 +48,7 @@ class PullFilesServiceTest {
     RemoteTraversalService remoteTraversalService;
 
     @Inject
-    PullService pullAssetsService;
+    PullService pullService;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -89,7 +89,7 @@ class PullFilesServiceTest {
 
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
-            pullAssetsService.pullTree(outputOptions, result.getRight(), tempFolder.toAbsolutePath().toFile(),
+            pullService.pullTree(outputOptions, result.getRight(), tempFolder.toAbsolutePath().toFile(),
                     true, true, true, 0);
 
             // ============================

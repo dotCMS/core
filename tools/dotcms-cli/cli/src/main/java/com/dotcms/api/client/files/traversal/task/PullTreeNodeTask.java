@@ -1,6 +1,7 @@
 package com.dotcms.api.client.files.traversal.task;
 
 import com.dotcms.api.client.files.traversal.data.Downloader;
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.model.asset.AssetRequest;
@@ -152,10 +153,9 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
                 logger.debug(String.format("Skipping folder [%s], it already exists in the file system", remoteFolderURL));
             }
         } catch (Exception e) {
-            var message = String.format("Error creating folder [%s] to [%s] --- %s",
-                    remoteFolderURL, folderPath, e.getMessage());
+            var message = String.format("Error creating folder [%s] to [%s]", remoteFolderURL, folderPath);
             logger.debug(message, e);
-            throw new RuntimeException(message, e);
+            throw new TraversalTaskException(message, e);
         }
     }
 
@@ -209,10 +209,9 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
                         remoteAssetURL, overwrite));
             }
         } catch (Exception e) {
-            var message = String.format("Error pulling file [%s] to [%s] --- %s",
-                    remoteAssetURL, assetFilePath, e.getMessage());
+            var message = String.format("Error pulling file [%s] to [%s]", remoteAssetURL, assetFilePath);
             logger.debug(message, e);
-            throw new RuntimeException(message, e);
+            throw new TraversalTaskException(message, e);
         } finally {
             // File processed, updating the progress bar
             progressBar.incrementStep();

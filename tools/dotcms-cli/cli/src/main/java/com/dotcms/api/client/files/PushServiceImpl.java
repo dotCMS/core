@@ -2,6 +2,7 @@ package com.dotcms.api.client.files;
 
 import com.dotcms.api.client.files.traversal.LocalTraversalService;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
@@ -139,7 +140,11 @@ public class PushServiceImpl implements PushService {
                     output.info(String.format("\n\nFound [@|bold,red %s|@] errors during the push process:",
                             errors.size()));
                     for (var error : errors) {
-                        output.error(error.getMessage());
+                        if (error instanceof TraversalTaskException) {
+                            output.error(String.format("%s --- %s", error.getMessage(), error.getCause().getMessage()));
+                        } else {
+                            output.error(error.getMessage());
+                        }
                     }
                 }
 

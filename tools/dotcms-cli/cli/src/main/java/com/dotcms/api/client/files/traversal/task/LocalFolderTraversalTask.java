@@ -1,6 +1,7 @@
 package com.dotcms.api.client.files.traversal.task;
 
 import com.dotcms.api.client.files.traversal.data.Retriever;
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.AssetVersionsView;
@@ -187,7 +188,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
             } catch (Exception e) {
                 var message = String.format("Error processing folder [%s]", folderOrFile.getAbsolutePath());
                 logger.debug(message, e);
-                throw new RuntimeException(message, e);
+                throw new TraversalTaskException(message, e);
             }
 
             parentFolderViewBuilder.assets(parentFolderAssetVersionsViewBuilder.build());
@@ -235,7 +236,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
             } catch (Exception e) {
                 var message = String.format("Error processing file [%s]", folderOrFile.getAbsolutePath());
                 logger.debug(message, e);
-                throw new RuntimeException(message, e);
+                throw new TraversalTaskException(message, e);
             }
 
             parentFolderViewBuilder.assets(parentFolderAssetVersionsViewBuilder.build());

@@ -1,5 +1,6 @@
 package com.dotcms.api.client.files;
 
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
@@ -41,7 +42,7 @@ public class PullFile extends PullBase {
         do {
 
             if (retryAttempts > 0) {
-                output.info(String.format("\n↺ Retrying push process [%d of %d]...", retryAttempts, maxRetryAttempts));
+                output.info(String.format("\n↺ Retrying pull process [%d of %d]...", retryAttempts, maxRetryAttempts));
             }
 
             // Parsing and validating the given path
@@ -91,7 +92,11 @@ public class PullFile extends PullBase {
                     output.info(String.format("\n\nFound [@|bold,red %s|@] errors during the pull process:",
                             errors.size()));
                     for (var error : errors) {
-                        output.error(error.getMessage());
+                        if (error instanceof TraversalTaskException) {
+                            output.error(String.format("%s --- %s", error.getMessage(), error.getCause().getMessage()));
+                        } else {
+                            output.error(error.getMessage());
+                        }
                     }
                 }
 
