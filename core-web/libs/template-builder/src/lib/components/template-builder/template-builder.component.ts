@@ -195,8 +195,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         Array.from(this.grid.el.querySelectorAll('.grid-stack')).forEach((el) => {
             const subgrid = GridStack.addGrid(el as HTMLElement, subGridOptions);
 
-            this.fixGridstackNodeOnMouseLeave(el);
-
             subgrid.on('change', (_: Event, nodes: GridStackNode[]) => {
                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
             });
@@ -245,7 +243,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 if (row && row.el) {
                     if (isNew) {
                         const newGridElement = row.el.querySelector('.grid-stack') as HTMLElement;
-                        this.fixGridstackNodeOnMouseLeave(ref.nativeElement);
 
                         // Adding subgrids on drop row
                         GridStack.addGrid(newGridElement, subGridOptions)
@@ -415,22 +412,17 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     /**
-     * @description This method sets the box initial values everytime a mouse leaves a row
-     * so that way we always have the correct value setted and overriding the behavior of gridstack
+     * @description This method sets the box initial values of gridstack when gridstack changes it
      *
      * @private
-     * @param {Element} el
      * @memberof TemplateBuilderComponent
      */
-    private fixGridstackNodeOnMouseLeave(el: Element): void {
-        // So every time the mouse leaves the row, we set the initial values for the box
-        el.addEventListener('mouseleave', () => {
-            if (this.addBoxIsDragging && this.addBox.nativeElement.gridstackNode?.w !== BOX_WIDTH) {
-                this.addBox.nativeElement.gridstackNode = {
-                    ...this.addBox.nativeElement.gridstackNode,
-                    ...this.boxOptions
-                };
-            }
-        });
+    fixGridStackNodeOptions() {
+        if (this.addBoxIsDragging && this.addBox.nativeElement.gridstackNode?.w !== BOX_WIDTH) {
+            this.addBox.nativeElement.gridstackNode = {
+                ...this.addBox.nativeElement.gridstackNode,
+                ...this.boxOptions
+            };
+        }
     }
 }
