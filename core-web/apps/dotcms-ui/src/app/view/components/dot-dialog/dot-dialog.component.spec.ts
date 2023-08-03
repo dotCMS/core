@@ -5,8 +5,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 
-import { UiDotIconButtonComponent, UiDotIconButtonModule } from '@dotcms/ui';
-
 import { DotDialogActions, DotDialogComponent } from './dot-dialog.component';
 
 const dispatchKeydownEvent = (key: string, meta = false, alt = false) => {
@@ -82,7 +80,7 @@ describe('DotDialogComponent', () => {
 
         beforeEach(waitForAsync(() => {
             TestBed.configureTestingModule({
-                imports: [UiDotIconButtonModule, ButtonModule, BrowserAnimationsModule],
+                imports: [ButtonModule, BrowserAnimationsModule],
                 providers: [],
                 declarations: [DotDialogComponent, TestHostComponent]
             }).compileComponents();
@@ -118,7 +116,7 @@ describe('DotDialogComponent', () => {
             });
 
             it('should not show close button', () => {
-                const close: DebugElement = de.query(By.css('dot-icon-button'));
+                const close: DebugElement = de.query(By.css('[data-testId="close-button"]'));
                 expect(close === null).toBe(true);
             });
 
@@ -169,11 +167,10 @@ describe('DotDialogComponent', () => {
             });
 
             it('should have close button', () => {
-                const close: DebugElement = de.query(By.css('dot-icon-button'));
-                const closeComponent: UiDotIconButtonComponent = close.componentInstance;
+                const close: DebugElement = de.query(By.css('[data-testId="close-button"]'));
+                const closeComponent = close.componentInstance;
 
-                expect(closeComponent.icon).toBe('close');
-                expect(close.attributes.big).toBeDefined();
+                expect(closeComponent.icon).toBe('pi pi-times');
             });
 
             it('should show content', () => {
@@ -239,7 +236,7 @@ describe('DotDialogComponent', () => {
                 it('should close dialog and emit close', () => {
                     expect(component.visible).toBe(true);
 
-                    const close: DebugElement = de.query(By.css('dot-icon-button'));
+                    const close: DebugElement = de.query(By.css('[data-testId="close-button"]'));
 
                     close.triggerEventHandler('click', {
                         preventDefault: () => {
@@ -480,7 +477,7 @@ describe('DotDialogComponent', () => {
 
         beforeEach(waitForAsync(() => {
             TestBed.configureTestingModule({
-                imports: [UiDotIconButtonModule, ButtonModule, BrowserAnimationsModule],
+                imports: [ButtonModule, BrowserAnimationsModule],
                 providers: [],
                 declarations: [DotDialogComponent, TestHost2Component]
             }).compileComponents();
@@ -502,7 +499,7 @@ describe('DotDialogComponent', () => {
         it('should emit beforeClose', () => {
             expect(component.visible).toBe(true);
 
-            const close: DebugElement = de.query(By.css('dot-icon-button'));
+            const close: DebugElement = de.query(By.css('[data-testId="close-button"]'));
 
             close.triggerEventHandler('click', {
                 preventDefault: () => {

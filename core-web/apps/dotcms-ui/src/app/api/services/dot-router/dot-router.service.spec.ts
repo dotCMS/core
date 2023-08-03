@@ -246,6 +246,32 @@ describe('DotRouterService', () => {
         });
     });
 
+    it('Should set canDeactivateRoute$ to true', (done) => {
+        service.allowRouteDeactivation();
+        service.canDeactivateRoute$.subscribe((resp) => {
+            expect(resp).toBe(true);
+            done();
+        });
+    });
+
+    it('Should set canDeactivateRoute$ to false', (done) => {
+        service.forbidRouteDeactivation();
+        service.canDeactivateRoute$.subscribe((resp) => {
+            expect(resp).toBe(false);
+            done();
+        });
+    });
+
+    it('trigger pageLeaveRequest observable stream when a page leave is requested', (done) => {
+        const leavePage = jasmine.createSpy();
+        service.pageLeaveRequest$.subscribe(() => {
+            leavePage();
+            expect(leavePage).toHaveBeenCalled();
+            done();
+        });
+        service.requestPageLeave();
+    });
+
     describe('go to login', () => {
         beforeEach(() => {
             const mockDate = new Date(1466424490000);

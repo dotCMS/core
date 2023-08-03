@@ -239,7 +239,7 @@ describe('DotExperimentsReportsComponent', () => {
         confirmPopupComponent.accept();
 
         expect(store.promoteVariant).toHaveBeenCalledWith({
-            experimentId: '111',
+            experimentId: EXPERIMENT_MOCK.id,
             variant: variant
         });
         expect(spectator.queryAll(byTestId('variant-promoted-tag')).length).toEqual(0);

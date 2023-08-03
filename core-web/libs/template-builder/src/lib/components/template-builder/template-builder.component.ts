@@ -26,7 +26,7 @@ import {
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, startWith, take, tap, map, skip, takeUntil } from 'rxjs/operators';
+import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -65,10 +65,11 @@ import {
 } from './utils/gridstack-utils';
 
 @Component({
-    selector: 'dotcms-template-builder',
+    selector: 'dotcms-template-builder-lib',
     templateUrl: './template-builder.component.html',
     styleUrls: ['./template-builder.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [DotTemplateBuilderStore]
 })
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
     @Input()
@@ -82,6 +83,11 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     @Output()
     templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter<DotTemplateDesigner>();
+
+    @Output() fullyLoaded = new EventEmitter<void>();
+
+    @ViewChild('templateContainerRef')
+    templateContainerRef!: ElementRef<HTMLDivElement>;
 
     @ViewChildren('rowElement', {
         emitDistinctChangesOnly: true
@@ -121,6 +127,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     grid!: GridStack;
     addBoxIsDragging = false;
 
+    get templateContaniner(): HTMLElement {
+        return this.templateContainerRef.nativeElement;
+    }
+
     constructor(
         private store: DotTemplateBuilderStore,
         private dialogService: DialogService,
@@ -131,32 +141,30 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
         combineLatest([this.rows$, this.store.layoutProperties$])
             .pipe(
-                startWith([]),
-                filter(([rows, layoutProperties]) => !!rows && !!layoutProperties),
-                skip(1), // Skip the init of the store
-                tap(([rows, layoutProperties]) => {
-                    this.dotLayout = {
-                        ...this.layout,
-                        sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
-                            ? layoutProperties.sidebar
-                            : null,
-                        body: rows,
-                        title: this.layout?.title ?? '',
-                        width: this.layout?.width ?? ''
-                    };
-
-                    this.templateChange.emit({
-                        themeId: this.themeId,
-                        layout: { ...this.dotLayout }
-                    });
-                }),
+                filter(([items, layoutProperties]) => !!items && !!layoutProperties),
+                skip(1),
                 takeUntil(this.destroy$)
             )
-            .subscribe();
+            .subscribe(([rows, layoutProperties]) => {
+                this.dotLayout = {
+                    ...this.layout,
+                    sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
+                        ? layoutProperties.sidebar
+                        : null,
+                    body: rows,
+                    title: this.layout?.title ?? '',
+                    width: this.layout?.width ?? ''
+                };
+
+                this.templateChange.emit({
+                    themeId: this.themeId,
+                    layout: { ...this.dotLayout }
+                });
+            });
     }
 
     ngOnInit(): void {
-        this.store.init({
+        this.store.setState({
             rows: parseFromDotObjectToGridStack(this.layout.body),
             layoutProperties: this.layoutProperties,
             resizingRowID: '',
@@ -170,7 +178,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         });
 
         GridStack.setupDragIn('dotcms-add-widget', {
-            appendTo: 'body',
             helper: 'clone'
         });
 
@@ -187,8 +194,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         // Adding subgrids on load
         Array.from(this.grid.el.querySelectorAll('.grid-stack')).forEach((el) => {
             const subgrid = GridStack.addGrid(el as HTMLElement, subGridOptions);
-
-            this.fixGridstackNodeOnMouseLeave(el);
 
             subgrid.on('change', (_: Event, nodes: GridStackNode[]) => {
                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
@@ -238,7 +243,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 if (row && row.el) {
                     if (isNew) {
                         const newGridElement = row.el.querySelector('.grid-stack') as HTMLElement;
-                        this.fixGridstackNodeOnMouseLeave(ref.nativeElement);
 
                         // Adding subgrids on drop row
                         GridStack.addGrid(newGridElement, subGridOptions)
@@ -267,6 +271,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
             this.grid.load(layout); // efficient that does diffs only
         });
+
+        this.fullyLoaded.emit();
     }
 
     ngOnDestroy(): void {
@@ -406,22 +412,17 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     /**
-     * @description This method sets the box initial values everytime a mouse leaves a row
-     * so that way we always have the correct value setted and overriding the behavior of gridstack
+     * @description This method sets the box initial values of gridstack when gridstack changes it
      *
      * @private
-     * @param {Element} el
      * @memberof TemplateBuilderComponent
      */
-    private fixGridstackNodeOnMouseLeave(el: Element): void {
-        // So every time the mouse leaves the row, we set the initial values for the box
-        el.addEventListener('mouseleave', () => {
-            if (this.addBoxIsDragging && this.addBox.nativeElement.gridstackNode?.w !== BOX_WIDTH) {
-                this.addBox.nativeElement.gridstackNode = {
-                    ...this.addBox.nativeElement.gridstackNode,
-                    ...this.boxOptions
-                };
-            }
-        });
+    fixGridStackNodeOptions() {
+        if (this.addBoxIsDragging && this.addBox.nativeElement.gridstackNode?.w !== BOX_WIDTH) {
+            this.addBox.nativeElement.gridstackNode = {
+                ...this.addBox.nativeElement.gridstackNode,
+                ...this.boxOptions
+            };
+        }
     }
 }

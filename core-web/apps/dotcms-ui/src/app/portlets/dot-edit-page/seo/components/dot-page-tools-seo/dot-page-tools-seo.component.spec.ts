@@ -1,4 +1,4 @@
-import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -6,19 +6,23 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { DialogModule } from 'primeng/dialog';
 
-import { DotMessageService, DotPageToolsService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockPageTools } from '@dotcms/utils-testing';
 
 import { DotPageToolsSeoComponent } from './dot-page-tools-seo.component';
+import { DotPageToolsSeoStore } from './store/dot-page-tools-seo.store';
 
 describe('DotPageToolsSeoComponent', () => {
-    let spectator: SpectatorHost<DotPageToolsSeoComponent>;
-    const createHost = createHostFactory({
+    let pageToolUrlParamsTest: DotPageToolUrlParams;
+    let spectator: Spectator<DotPageToolsSeoComponent>;
+    const createComponent = createComponentFactory({
         component: DotPageToolsSeoComponent,
         imports: [HttpClientTestingModule, DialogModule],
         providers: [
-            DotPageToolsService,
+            DotPageToolsSeoStore,
+
             {
                 provide: HttpClient,
                 useValue: {
@@ -37,18 +41,18 @@ describe('DotPageToolsSeoComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createHost(
-            `<dot-page-tools-seo
-                [visible]="visible"
-                [currentPageUrl]="currentPageUrl">
-             </dot-page-tools-seo>`,
-            {
-                hostProps: {
-                    visible: true,
-                    currentPageUrl: 'blogTest'
-                }
+        pageToolUrlParamsTest = {
+            currentUrl: '/blogTest',
+            requestHostName: 'localhost',
+            siteId: '123',
+            languageId: 1
+        };
+        spectator = createComponent({
+            props: {
+                visible: true,
+                currentPageUrlParams: pageToolUrlParamsTest
             }
-        );
+        });
     });
 
     it('should have page tool list', () => {

@@ -17,8 +17,11 @@ import java.util.Set;
 public enum MetricType {
     REACH_PAGE(new Builder()
             .label("Reaching a Page")
+
             .allRequiredParameters (Parameters.URL) //TODO we can create singletons of these Parameters in order to reuse
-            .optionalParameters(Parameter.builder().name("referer").build())
+            .optionalParameters(
+                    Parameter.builder().name("referer").build(),
+                    Parameters.VISIT_BEFORE)
             .availableOperators(Operator.EQUALS, Operator.CONTAINS)),
     CLICK_ON_ELEMENT(new Builder()
             .label("Clicking on Element")
