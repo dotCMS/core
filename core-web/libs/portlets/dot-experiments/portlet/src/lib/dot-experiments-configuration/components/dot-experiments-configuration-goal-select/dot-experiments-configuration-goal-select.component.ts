@@ -1,13 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    OnDestroy,
-    OnInit
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -77,9 +71,14 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     goals = GOALS_METADATA_MAP;
     goalsTypes = GOAL_TYPES;
     statusList = ComponentStatus;
+    protected readonly maxNameLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
+    private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore = inject(
+        DotExperimentsConfigurationStore
+    );
     vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.goalsStepVm$;
-    protected readonly maxNameLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
+    private readonly dotMessageService: DotMessageService = inject(DotMessageService);
 
     protected readonly defaultNameValuesByType: Partial<Record<GOAL_TYPES, string>> = {
         [GOAL_TYPES.EXIT_RATE]: this.dotMessageService.get(
@@ -95,14 +94,6 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
             'experiments.goal.conditions.detect.queryparam.in.url'
         )
     };
-
-    private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly dotMessageService: DotMessageService,
-        private readonly cdr: ChangeDetectorRef
-    ) {}
 
     get goalNameControl(): FormControl {
         return this.form.get('primary.name') as FormControl;

@@ -30,13 +30,7 @@ const formMock = new FormGroup({
             validators: [Validators.required]
         }),
         type: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-        conditions: new FormArray([
-            new FormGroup({
-                parameter: new FormControl('', { validators: [Validators.required] }),
-                operator: new FormControl('', { validators: [Validators.required] }),
-                value: new FormControl('', { validators: [Validators.required] })
-            })
-        ])
+        conditions: new FormArray([new FormControl()])
     })
 });
 const formGroupDirectiveMock = new FormGroupDirective([], []);
@@ -70,7 +64,17 @@ describe('DotExperimentsExperimentGoalReachPageConfigComponent', () => {
             primary: {
                 ...DefaultGoalConfiguration.primary,
                 name: 'default',
-                type: GOAL_TYPES.BOUNCE_RATE
+                type: GOAL_TYPES.BOUNCE_RATE,
+                conditions: [
+                    {
+                        parameter: GOAL_PARAMETERS.URL,
+                        operator: GOAL_OPERATORS.EQUALS,
+                        value: {
+                            name: 'test',
+                            value: 'test'
+                        }
+                    }
+                ]
             }
         };
 

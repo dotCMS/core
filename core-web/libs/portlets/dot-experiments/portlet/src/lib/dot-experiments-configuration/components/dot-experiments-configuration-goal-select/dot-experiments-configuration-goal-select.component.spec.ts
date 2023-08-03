@@ -17,7 +17,13 @@ import { DropdownModule } from 'primeng/dropdown';
 import { Sidebar } from 'primeng/sidebar';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DefaultGoalConfiguration, ExperimentSteps, GOAL_TYPES } from '@dotcms/dotcms-models';
+import {
+    DefaultGoalConfiguration,
+    ExperimentSteps,
+    GOAL_OPERATORS,
+    GOAL_PARAMETERS,
+    GOAL_TYPES
+} from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
@@ -99,30 +105,35 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             ''
         );
 
-        const optionsRendered = spectator.queryAll(byTestId('dot-options-item-header'));
+        const bounceRateOption = spectator.query(byTestId('dot-options-item-header_BOUNCE_RATE'));
+        const exitRateOption = spectator.query(byTestId('dot-options-item-header_EXIT_RATE'));
+        const reachPageOption = spectator.query(byTestId('dot-options-item-header_REACH_PAGE'));
+        const urlParameterOption = spectator.query(
+            byTestId('dot-options-item-header_URL_PARAMETER')
+        );
 
-        spectator.click(optionsRendered[0]);
+        spectator.click(bounceRateOption);
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             'Minimize Bounce Rate'
         );
 
-        spectator.click(optionsRendered[1]);
+        spectator.click(exitRateOption);
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             'Detect exit rate'
         );
 
-        spectator.click(optionsRendered[2]);
+        spectator.click(reachPageOption);
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             'Maximize Reaching a Page'
         );
 
-        spectator.click(optionsRendered[3]);
+        spectator.click(urlParameterOption);
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             'Detect URL Parameter'
         );
     });
 
-    it('should not change the name if the user set one', () => {
+    it('should not change the Goal Name if the user set one', () => {
         const customName = 'Test Goal';
 
         spectator.typeInElement(
@@ -130,25 +141,19 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             spectator.query(byTestId('goal-name-input')) as SpectatorElement
         );
 
-        const optionsRendered = spectator.queryAll(byTestId('dot-options-item-header'));
+        const bounceRateOption = spectator.query(byTestId('dot-options-item-header_BOUNCE_RATE'));
+        const reachPageOption = spectator.query(byTestId('dot-options-item-header_REACH_PAGE'));
 
-        spectator.click(optionsRendered[0]);
-        spectator.click(optionsRendered[1]);
+        spectator.click(bounceRateOption);
+        spectator.click(reachPageOption);
 
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             customName
         );
     });
 
-    it('should have rendered BOUNCE_RATE and REACH_PAGE and URL_PARAMETER options items', () => {
-        const optionsRendered = spectator.queryAll(byTestId('dot-options-item-header'));
-        const EXPECTED_GOAL_OPTIONS_COUNT = 4;
-
-        expect(optionsRendered.length).toBe(EXPECTED_GOAL_OPTIONS_COUNT);
-    });
-
     it('should be a form valid in case of click on a No content option item', () => {
-        const bounceRateOption = spectator.query(byTestId('dot-options-item-header'));
+        const bounceRateOption = spectator.query(byTestId('dot-options-item-header_BOUNCE_RATE'));
 
         spectator.component.form.get('primary.name').setValue('default');
         spectator.component.form.updateValueAndValidity();
@@ -160,39 +165,137 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
         expect(spectator.component.form.valid).toEqual(true);
         expect(applyBtn.disabled).toEqual(false);
+
+        const exitRateOption = spectator.query(byTestId('dot-options-item-header_EXIT_RATE'));
+        spectator.click(exitRateOption);
+        spectator.detectComponentChanges();
+
+        expect(spectator.component.form.valid).toEqual(true);
+        expect(applyBtn.disabled).toEqual(false);
     });
 
-    it('should be a form invalid in case of click on an option item with content', () => {
-        const reachPageOption = spectator.queryLast(byTestId('dot-options-item-header'));
+    it('should be a form invalid in case of click on an option item with conditions', () => {
+        const reachPageOption = spectator.query(byTestId('dot-options-item-header_REACH_PAGE'));
 
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        spectator.click(reachPageOption!);
+        spectator.click(reachPageOption);
 
         const applyBtn = spectator.query(byTestId('add-goal-button')) as HTMLButtonElement;
         spectator.detectComponentChanges();
 
         expect(spectator.component.form.valid).toEqual(false);
         expect(applyBtn.disabled).toEqual(true);
+
+        const urlParameterOption = spectator.query(
+            byTestId('dot-options-item-header_URL_PARAMETER')
+        );
+        spectator.click(urlParameterOption);
+
+        spectator.detectComponentChanges();
+
+        expect(spectator.component.form.valid).toEqual(false);
+        expect(applyBtn.disabled).toEqual(true);
     });
 
-    it('should be a form valid in case of click on an option item with content and all input filled', () => {
-        const bounceRateOption = spectator.queryLast(byTestId('dot-options-item-header'));
+    it('should be a valid form when select REACH_PAGE', () => {
+        const reachPageOption = spectator.query(byTestId('dot-options-item-header_REACH_PAGE'));
 
-        spectator.click(bounceRateOption);
+        spectator.click(reachPageOption);
 
         const applyBtn = spectator.query(byTestId('add-goal-button')) as HTMLButtonElement;
         spectator.detectComponentChanges();
 
-        const formValues = {
+        expect(applyBtn.disabled).toEqual(true);
+
+        const invalidFormValues = {
             primary: {
-                ...DefaultGoalConfiguration.primary,
                 name: 'default',
-                type: GOAL_TYPES.BOUNCE_RATE
+                type: GOAL_TYPES.REACH_PAGE,
+                conditions: [{ parameter: '', operator: null, value: '' }]
             }
         };
-        spectator.component.form.setValue(formValues);
+        spectator.component.form.setValue(invalidFormValues);
         spectator.component.form.updateValueAndValidity();
+        spectator.detectComponentChanges();
 
+        expect(spectator.component.form.valid).toEqual(false);
+        expect(applyBtn.disabled).toEqual(true);
+
+        const validFormValues = {
+            primary: {
+                name: 'default',
+                type: GOAL_TYPES.REACH_PAGE,
+                conditions: [
+                    {
+                        parameter: GOAL_PARAMETERS.URL,
+                        operator: GOAL_OPERATORS.EQUALS,
+                        value: '1111'
+                    }
+                ]
+            }
+        };
+
+        spectator.component.form.setValue(validFormValues);
+        spectator.component.form.updateValueAndValidity();
+        spectator.detectComponentChanges();
+
+        expect(spectator.component.form.valid).toEqual(true);
+        expect(applyBtn.disabled).toEqual(false);
+    });
+
+    it('should be a valid form when select URL_PARAMETER', () => {
+        const urlParameterOption = spectator.query(
+            byTestId('dot-options-item-header_URL_PARAMETER')
+        );
+
+        spectator.click(urlParameterOption);
+
+        const applyBtn = spectator.query(byTestId('add-goal-button')) as HTMLButtonElement;
+        spectator.detectComponentChanges();
+
+        expect(applyBtn.disabled).toEqual(true);
+
+        const invalidFormValues = {
+            primary: {
+                name: 'default',
+                type: GOAL_TYPES.URL_PARAMETER,
+                conditions: [
+                    {
+                        parameter: '',
+                        operator: null,
+                        value: {
+                            name: '',
+                            value: ''
+                        }
+                    }
+                ]
+            }
+        };
+        spectator.component.form.setValue(invalidFormValues);
+        spectator.component.form.updateValueAndValidity();
+        spectator.detectComponentChanges();
+
+        expect(spectator.component.form.valid).toEqual(false);
+        expect(applyBtn.disabled).toEqual(true);
+
+        const validFormValuesExistOperator = {
+            primary: {
+                name: 'default',
+                type: GOAL_TYPES.URL_PARAMETER,
+                conditions: [
+                    {
+                        parameter: GOAL_PARAMETERS.URL,
+                        operator: GOAL_OPERATORS.EXISTS,
+                        value: {
+                            name: 'queryParam',
+                            value: ''
+                        }
+                    }
+                ]
+            }
+        };
+
+        spectator.component.form.setValue(validFormValuesExistOperator);
+        spectator.component.form.updateValueAndValidity();
         spectator.detectComponentChanges();
 
         expect(spectator.component.form.valid).toEqual(true);
@@ -206,7 +309,8 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             goals: {
                 primary: {
                     name: 'default',
-                    type: GOAL_TYPES.BOUNCE_RATE
+                    type: GOAL_TYPES.BOUNCE_RATE,
+                    conditions: []
                 }
             }
         };
@@ -216,7 +320,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
         spectator.detectComponentChanges();
 
-        const bounceRateOption = spectator.query(byTestId('dot-options-item-header'));
+        const bounceRateOption = spectator.query(byTestId('dot-options-item-header_BOUNCE_RATE'));
 
         spectator.click(bounceRateOption);
 
@@ -235,7 +339,8 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             primary: {
                 ...DefaultGoalConfiguration.primary,
                 name: 'Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really really really really long name for a goal',
-                type: GOAL_TYPES.BOUNCE_RATE
+                type: GOAL_TYPES.BOUNCE_RATE,
+                conditions: []
             }
         };
 
@@ -251,15 +356,16 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     });
 
     it('should add the class expand to an option clicked that contains content', () => {
-        const goalsOption = spectator.queryAll(byTestId('dot-options-item-header'));
-        const OPTION_INDEX_WITH_CONTENT = 2;
+        const reachPageOption = spectator.query(byTestId('dot-options-item-header_REACH_PAGE'));
 
-        spectator.click(goalsOption[OPTION_INDEX_WITH_CONTENT]);
+        spectator.click(reachPageOption);
         spectator.detectComponentChanges();
 
-        const firstOptionContentRendered = spectator.query(byTestId('dot-options-item-content'));
+        const reachPageOptionContent = spectator.query(
+            byTestId('dot-options-item-content_REACH_PAGE')
+        );
 
-        expect(firstOptionContentRendered).toHaveClass('expanded');
+        expect(reachPageOptionContent).toHaveClass('expanded');
     });
 
     it('should emit closedSidebar when the sidebar its closed', async () => {
