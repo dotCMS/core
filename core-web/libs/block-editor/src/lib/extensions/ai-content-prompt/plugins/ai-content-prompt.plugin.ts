@@ -1,36 +1,18 @@
-import { Plugin, PluginKey, EditorState } from 'prosemirror-state';
+import { Plugin, PluginKey, EditorState, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { Observable, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
+import { takeUntil } from 'rxjs/operators';
+
 import { Editor } from '@tiptap/core';
+import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
-
-const TIPPY_OPTIONS: Partial<Props> = {
-    duration: [250, 0],
-    interactive: true,
-    maxWidth: '100%',
-    trigger: 'manual',
-    hideOnClick: 'toggle',
-    popperOptions: {
-        modifiers: [
-            {
-                name: 'flip',
-                options: { fallbackPlacements: ['bottom'] }
-            },
-            {
-                name: 'preventOverflow',
-                options: {
-                    padding: { left: 10, right: 10 },
-                    boundary: 'viewport'
-                }
-            }
-        ]
-    }
-};
+import { AI_CONTENT_PROMPT_PLUGIN_KEY } from '../ai-content-prompt.extension';
+import { TIPPY_OPTIONS } from '../utils';
 
 interface AIContentPromptProps {
     pluginKey: PluginKey;
@@ -38,14 +20,18 @@ interface AIContentPromptProps {
     element: HTMLElement;
     tippyOptions?: Partial<Props>;
     component: ComponentRef<AIContentPromptComponent>;
-    form$: Observable<{ [key: string]: string }>;
+}
+
+interface PluginState {
+    open: boolean;
+    form: [];
 }
 
 export type AIContentPromptViewProps = AIContentPromptProps & {
     view: EditorView;
 };
 
-export class AIContentPromptView {
+export class AIContentPromptView extends BubbleMenuView {
     public editor: Editor;
 
     public element: HTMLElement;
@@ -60,10 +46,12 @@ export class AIContentPromptView {
 
     public component?: ComponentRef<AIContentPromptComponent>;
 
-    public destroy$ = new Subject<boolean>();
+    private $destroy = new Subject<boolean>();
 
     constructor(props: AIContentPromptViewProps) {
         const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
+
+        super(props);
 
         this.editor = editor;
         this.element = element;
@@ -77,9 +65,19 @@ export class AIContentPromptView {
         this.component = component;
 
         this.component.instance.buildForm();
+
+        this.component.instance.formValues.pipe(takeUntil(this.$destroy)).subscribe((data) => {
+            this.editor.commands.updateValue(data);
+        });
+
+        this.component.instance.hide.pipe(takeUntil(this.$destroy)).subscribe(() => {
+            this.editor.commands.closeAIPrompt();
+        });
+
+        this.editor.on('focus', this.focusHandler);
     }
 
-    update(view: EditorView, prevState: EditorState) {
+    update(view: EditorView, prevState?: EditorState) {
         const next = this.pluginKey?.getState(view.state);
         const prev = prevState ? this.pluginKey?.getState(prevState) : { open: false };
 
@@ -91,6 +89,8 @@ export class AIContentPromptView {
 
         if (next.open && next.form) {
             this.component.instance.buildForm();
+        } else {
+            this.component.instance.cleanForm();
         }
 
         this.createTooltip();
@@ -118,6 +118,11 @@ export class AIContentPromptView {
         });
     }
 
+    focusHandler = () => {
+        this.editor.commands.closeForm();
+        setTimeout(() => this.update(this.editor.view));
+    };
+
     show() {
         this.tippy?.show();
     }
@@ -128,25 +133,53 @@ export class AIContentPromptView {
     }
 
     destroy() {
-        this.destroy$.next(true);
-        this.destroy$.complete();
         this.tippy?.destroy();
+        this.editor.off('focus', this.focusHandler);
+        this.$destroy.next(true);
+        this.component.destroy();
+        this.component.instance.formValues.unsubscribe();
+    }
+
+    private hanlderScroll(e: Event) {
+        if (!this.shouldHideOnScroll(e.target as HTMLElement)) {
+            return true;
+        }
+
+        // we use `setTimeout` to make sure `selection` is already updated
+        setTimeout(() => this.update(this.editor.view));
+    }
+
+    private shouldHideOnScroll(node: HTMLElement): boolean {
+        return this.tippy?.state.isMounted && this.tippy?.popper.contains(node);
     }
 }
 
 export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
     return new Plugin({
-        key: options.pluginKey,
+        key: options.pluginKey as PluginKey,
         view: (view) => new AIContentPromptView({ view, ...options }),
         state: {
-            init: () => ({ open: false }),
-            apply: (tr, prevState) => {
-                const next = tr.getMeta(options.pluginKey);
-                if (next && next.open !== prevState.open) {
-                    return { open: next.open };
+            init(): PluginState {
+                return {
+                    open: false,
+                    form: []
+                };
+            },
+
+            apply(
+                transaction: Transaction,
+                value: PluginState,
+                oldState: EditorState
+            ): PluginState {
+                const { open, form } = transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
+                const state = AI_CONTENT_PROMPT_PLUGIN_KEY?.getState(oldState);
+
+                if (typeof open === 'boolean') {
+                    return { open, form };
                 }
 
-                return prevState;
+                // keep the old state in case we do not receive a new one.
+                return state || value;
             }
         }
     });

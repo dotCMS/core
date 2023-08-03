@@ -1,45 +1,27 @@
-import {
-    Component,
-    ElementRef,
-    EventEmitter,
-    Input,
-    OnInit,
-    Output,
-    ViewChild
-} from '@angular/core';
+import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { AiContentService } from '../../shared/services/ai-content/ai-content.service';
 
-interface NodeProps {
-    textPrompt: string;
-    textPromptResponse?: string;
-}
-
 @Component({
     selector: 'dot-ai-content-prompt',
     templateUrl: './ai-content-prompt.component.html',
-    styleUrls: ['./ai-content-prompt.component.css']
+    styleUrls: ['./ai-content-prompt.component.scss']
 })
-export class AIContentPromptComponent implements OnInit {
+export class AIContentPromptComponent {
     @ViewChild('input') input: ElementRef;
 
-    @Output() hide: EventEmitter<boolean> = new EventEmitter(false);
-
-    @Input() initialValues: NodeProps = {
-        textPrompt: ''
-    };
+    @Output() formValues = new EventEmitter();
+    @Output() hide = new EventEmitter<boolean>();
 
     loading = false;
     form: FormGroup;
 
-    constructor(private fb: FormBuilder, private aiContentService: AiContentService) {}
-
-    ngOnInit() {
-        this.form = this.fb.group({
-            textPrompt: ''
-        });
+    get getPrompt() {
+        return this.form.get('textPrompt').value;
     }
+
+    constructor(private fb: FormBuilder, private aiContentService: AiContentService) {}
 
     /**
      * Build FormGroup
@@ -52,23 +34,17 @@ export class AIContentPromptComponent implements OnInit {
         });
     }
 
-    async submitForm(event?: Event) {
+    async onSubmit() {
         try {
-            if (event) {
-                event.preventDefault();
-            }
+            this.formValues.emit({ ...this.form.value });
 
-            if (this.form) {
-                const textPrompt = this.form.get('textPrompt').value;
-                const response = await this.aiContentService.fetchAIContent(textPrompt);
+            const textPrompt = this.form.get('textPrompt').value;
+            const response = await this.aiContentService.fetchAIContent(textPrompt);
 
-                console.warn('openai response____', response);
-                this.hide.emit(true);
-            } else {
-                console.warn('form is null');
-            }
+            console.warn('openai response____', response);
+            this.hide.emit(true);
         } catch (error) {
-            console.error('error______', error);
+            console.warn('error', error);
         }
     }
 
@@ -79,6 +55,15 @@ export class AIContentPromptComponent implements OnInit {
      */
     setFormValue({ textPrompt = '' }) {
         this.form.setValue({ textPrompt }, { emitEvent: false });
+    }
+
+    /**
+     * Set Focus prompt Input
+     *
+     * @memberof AIContentPromptComponent
+     */
+    focusInput() {
+        this.input.nativeElement.focus();
     }
 
     /**
@@ -104,6 +89,10 @@ export class AIContentPromptComponent implements OnInit {
      * @memberof AIContentPromptComponent
      */
     resetForm() {
-        this.setFormValue({ ...this.initialValues });
+        this.setFormValue({ textPrompt: '' });
+    }
+
+    cleanForm() {
+        this.form = null;
     }
 }
