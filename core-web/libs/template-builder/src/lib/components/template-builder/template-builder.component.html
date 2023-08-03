@@ -7,6 +7,7 @@
             [label]="'dot.template.builder.add.row' | dm"
             [icon]="rowIcon"
             [gridstackOptions]="rowOptions"
+            dotcmsItemDragScroll
             data-widget-type="row"
             data-testId="add-row"
         ></dotcms-add-widget>
@@ -17,6 +18,7 @@
             [gridstackOptions]="boxOptions"
             [attr.gs-w]="boxWidth"
             [icon]="colIcon"
+            dotcmsItemDragScroll
             data-widget-type="col"
             data-testId="add-box"
         ></dotcms-add-widget>
@@ -28,7 +30,7 @@
         <ng-content select="[toolbar-actions-right]"></ng-content>
     </div>
 </p-toolbar>
-<div class="template-builder__main" *ngIf="vm$ | async as vm">
+<div class="template-builder__main" #templateContainerRef *ngIf="vm$ | async as vm">
     <dotcms-template-builder-section *ngIf="vm.layoutProperties.header">{{
         'dot.template.builder.header' | dm
     }}</dotcms-template-builder-section>
@@ -63,6 +65,7 @@
                     'template-builder-row--wont-fit': addBoxIsDragging && !row.willBoxFit
                 }"
                 [attr.data-wont-fit]="'dot.template.builder.row.box.wont.fit' | dm"
+                dotcmsItemDragScroll
                 data-testId="row"
             >
                 <div class="grid-stack-item-content grid-stack">
@@ -81,6 +84,7 @@
                         [attr.gs-w]="box.w"
                         [attr.gs-h]="box.h"
                         [attr.data-testId]="'box-' + i"
+                        dotcmsItemDragScroll
                     >
                         <dotcms-template-builder-box
                             class="grid-stack-item-content"
