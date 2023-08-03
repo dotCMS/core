@@ -5682,7 +5682,7 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"queryParameter\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"{\\\"name\\\":\\\"testName\\\",\\\"value\\\":\\\"testValue\\\"}\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"CONTAINS\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"REGEX\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"visitBefore\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"/my-page\");",
 											"",
