@@ -5,3 +5,4 @@
     [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
 ></dot-copy-button>
 <dot-api-link *ngIf="apiLink" [href]="apiLink"></dot-api-link>
+<dot-preview-link *ngIf="apiLink" [href]="previewURl()"></dot-preview-link>
