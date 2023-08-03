@@ -15,13 +15,12 @@
                 tooltipPosition="bottom"
             >
                 <button
-                    class="p-button-sm p-button-link"
+                    class="p-button-sm p-button-text"
                     [disabled]="!vm.isExperimentADraft"
                     (click)="setupTargeting()"
                     data-testId="targeting-add-button"
                     label="{{ 'experiments.configure.targeting.add' | dm }}"
                     pButton
-                    styleClass="p-button-sm p-button-link"
                 ></button>
             </div>
         </ng-template>

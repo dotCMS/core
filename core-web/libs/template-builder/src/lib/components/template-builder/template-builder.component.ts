@@ -26,7 +26,7 @@ import {
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, startWith, take, tap, map, skip, takeUntil } from 'rxjs/operators';
+import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -65,10 +65,11 @@ import {
 } from './utils/gridstack-utils';
 
 @Component({
-    selector: 'dotcms-template-builder',
+    selector: 'dotcms-template-builder-lib',
     templateUrl: './template-builder.component.html',
     styleUrls: ['./template-builder.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [DotTemplateBuilderStore]
 })
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
     @Input()
@@ -131,32 +132,30 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
         combineLatest([this.rows$, this.store.layoutProperties$])
             .pipe(
-                startWith([]),
-                filter(([rows, layoutProperties]) => !!rows && !!layoutProperties),
-                skip(1), // Skip the init of the store
-                tap(([rows, layoutProperties]) => {
-                    this.dotLayout = {
-                        ...this.layout,
-                        sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
-                            ? layoutProperties.sidebar
-                            : null,
-                        body: rows,
-                        title: this.layout?.title ?? '',
-                        width: this.layout?.width ?? ''
-                    };
-
-                    this.templateChange.emit({
-                        themeId: this.themeId,
-                        layout: { ...this.dotLayout }
-                    });
-                }),
+                filter(([items, layoutProperties]) => !!items && !!layoutProperties),
+                skip(1),
                 takeUntil(this.destroy$)
             )
-            .subscribe();
+            .subscribe(([rows, layoutProperties]) => {
+                this.dotLayout = {
+                    ...this.layout,
+                    sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
+                        ? layoutProperties.sidebar
+                        : null,
+                    body: rows,
+                    title: this.layout?.title ?? '',
+                    width: this.layout?.width ?? ''
+                };
+
+                this.templateChange.emit({
+                    themeId: this.themeId,
+                    layout: { ...this.dotLayout }
+                });
+            });
     }
 
     ngOnInit(): void {
-        this.store.init({
+        this.store.setState({
             rows: parseFromDotObjectToGridStack(this.layout.body),
             layoutProperties: this.layoutProperties,
             resizingRowID: '',

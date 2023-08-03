@@ -60,7 +60,7 @@ describe('TemplateBuilderSidebarComponent', () => {
 
         boxComponent = spectator.query(TemplateBuilderBoxComponent);
 
-        store.init({
+        store.setState({
             rows: GRIDSTACK_DATA_MOCK,
             layoutProperties: {
                 header: true,

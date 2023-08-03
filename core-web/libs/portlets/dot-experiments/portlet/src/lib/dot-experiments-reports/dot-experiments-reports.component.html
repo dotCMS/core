@@ -16,7 +16,7 @@
                 [suggestedWinner]="vm.winnerLegendSummary"
             />
 
-            <div class="flex justify-content-center w-full container">
+            <div class="flex align-items-center flex-column w-full container gap-3">
                 <p-tabView>
                     <p-tabPanel header="{{ 'experiments.reports.chart.title' | dm }}">
                         <div class="flex flex-column gap-2 content">
@@ -26,13 +26,6 @@
                                 [isEmpty]="!vm.hasEnoughSessions"
                                 [isLoading]="vm.isLoading"
                                 data-testId="daily-chart"
-                            />
-
-                            <dot-experiments-report-daily-details
-                                [detailData]="vm.detailData"
-                                [experimentId]="vm.experiment.id"
-                                [hasEnoughSessions]="vm.hasEnoughSessions"
-                                [promotedVariantId]="vm.promotedVariant"
                             />
                         </div>
                     </p-tabPanel>
@@ -50,6 +43,12 @@
                         </div>
                     </p-tabPanel>
                 </p-tabView>
+                <dot-experiments-report-daily-details
+                    [detailData]="vm.detailData"
+                    [experimentId]="vm.experiment.id"
+                    [hasEnoughSessions]="vm.hasEnoughSessions"
+                    [promotedVariantId]="vm.promotedVariant"
+                />
             </div>
         </ng-container>
     </div>

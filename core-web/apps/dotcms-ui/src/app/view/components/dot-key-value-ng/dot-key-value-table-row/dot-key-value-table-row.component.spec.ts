@@ -14,11 +14,11 @@ import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { PrimeTemplate } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { InputSwitchModule } from 'primeng/inputswitch';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
-import { UiDotIconButtonModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
@@ -111,7 +111,7 @@ xdescribe('DotKeyValueTableRowComponent', () => {
                 MockEditableColumnDirective,
                 TestHostComponent
             ],
-            imports: [UiDotIconButtonModule, InputSwitchModule],
+            imports: [ButtonModule, InputSwitchModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 
@@ -134,8 +134,7 @@ xdescribe('DotKeyValueTableRowComponent', () => {
             const inputs = de.queryAll(By.css('input'));
             const btns = de.queryAll(By.css('button'));
             expect(inputs[0].nativeElement.placeholder).toContain('Enter Value');
-            expect(btns[0].nativeElement.innerText).toContain('delete_outline');
-            expect(btns[1].nativeElement.innerText).toContain('edit');
+            expect(btns.length).toBe(2);
             expect(comp.saveDisabled).toBe(false);
         });
 
@@ -145,7 +144,7 @@ xdescribe('DotKeyValueTableRowComponent', () => {
             hostComponentfixture.detectChanges();
             spyOn(comp.valueCell.nativeElement, 'click');
             const button = de.queryAll(
-                By.css('.dot-key-value-table-row__variables-actions dot-icon-button')
+                By.css('.dot-key-value-table-row__variables-actions p-button')
             )[1];
             button.triggerEventHandler('click', {
                 stopPropagation: () => {
@@ -221,7 +220,7 @@ xdescribe('DotKeyValueTableRowComponent', () => {
             spyOn(comp.delete, 'emit');
             hostComponentfixture.detectChanges();
             de.queryAll(
-                By.css('.dot-key-value-table-row__variables-actions dot-icon-button')
+                By.css('.dot-key-value-table-row__variables-actions p-button')
             )[0].triggerEventHandler('click', {});
             expect(comp.delete.emit).toHaveBeenCalledWith(comp.variable);
         });
@@ -240,7 +239,7 @@ xdescribe('DotKeyValueTableRowComponent', () => {
             const switchButton = de.query(By.css('p-inputSwitch'));
             const valueLabel = de.queryAll(By.css('.dot-key-value-table-row td'))[1];
             const editIconButton = de.queryAll(
-                By.css('.dot-key-value-table-row__variables-actions dot-icon-button')
+                By.css('.dot-key-value-table-row__variables-actions p-button')
             )[1];
             expect(switchButton.componentInstance.disabled).toBe(true);
             expect(editIconButton.attributes.disabled).toBe('true');
