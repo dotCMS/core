@@ -77,7 +77,7 @@ $device-selector-name-margin: 0.375rem;
 .device-list-item__dimensions {
     color: $color-palette-gray-600;
     font-size: $font-size-sm;
-    font-weight: 400;
+    font-weight: $font-weight-regular-bold;
 }
 
 .device-list-item__name {

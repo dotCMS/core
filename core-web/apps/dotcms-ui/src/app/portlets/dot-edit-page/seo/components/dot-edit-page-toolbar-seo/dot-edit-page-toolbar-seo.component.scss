@@ -17,11 +17,18 @@
     cursor: pointer;
 }
 
-:host {
-    .dot-secondary-toolbar__main {
+::ng-deep {
+    .dot-favorite-page-highlight i {
+        color: $color-palette-primary;
+    }
+
+    .dot-secondary-toolbar__lower {
         height: 3.75rem;
         align-items: center;
     }
+}
+
+:host {
     @media only screen and (max-width: $screen-device-container-max) {
         .lower-toolbar-right {
             flex-flow: row;
