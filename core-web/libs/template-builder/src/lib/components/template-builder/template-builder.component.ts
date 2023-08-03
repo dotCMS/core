@@ -84,6 +84,11 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @Output()
     templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter<DotTemplateDesigner>();
 
+    @Output() fullyLoaded = new EventEmitter<void>();
+
+    @ViewChild('templateContainerRef')
+    templateContainerRef!: ElementRef<HTMLDivElement>;
+
     @ViewChildren('rowElement', {
         emitDistinctChangesOnly: true
     })
@@ -121,6 +126,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     grid!: GridStack;
     addBoxIsDragging = false;
+
+    get templateContaniner(): HTMLElement {
+        return this.templateContainerRef.nativeElement;
+    }
 
     constructor(
         private store: DotTemplateBuilderStore,
@@ -169,7 +178,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         });
 
         GridStack.setupDragIn('dotcms-add-widget', {
-            appendTo: 'body',
             helper: 'clone'
         });
 
@@ -263,6 +271,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
             this.grid.load(layout); // efficient that does diffs only
         });
+
+        this.fullyLoaded.emit();
     }
 
     ngOnDestroy(): void {

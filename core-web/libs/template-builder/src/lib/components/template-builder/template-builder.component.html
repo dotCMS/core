@@ -7,6 +7,7 @@
             [label]="'dot.template.builder.add.row' | dm"
             [icon]="rowIcon"
             [gridstackOptions]="rowOptions"
+            dotcmsItemDragScroll
             data-widget-type="row"
             data-testId="add-row"
         ></dotcms-add-widget>
@@ -17,6 +18,7 @@
             [gridstackOptions]="boxOptions"
             [attr.gs-w]="boxWidth"
             [icon]="colIcon"
+            dotcmsItemDragScroll
             data-widget-type="col"
             data-testId="add-box"
         ></dotcms-add-widget>
@@ -33,6 +35,7 @@
     *ngIf="vm$ | async as vm"
     (mousemove)="fixGridStackNodeOptions()"
     data-testId="template-builder-main"
+    #templateContainerRef
 >
     <dotcms-template-builder-section *ngIf="vm.layoutProperties.header">{{
         'dot.template.builder.header' | dm
@@ -68,6 +71,7 @@
                     'template-builder-row--wont-fit': addBoxIsDragging && !row.willBoxFit
                 }"
                 [attr.data-wont-fit]="'dot.template.builder.row.box.wont.fit' | dm"
+                dotcmsItemDragScroll
                 data-testId="row"
             >
                 <div class="grid-stack-item-content grid-stack">
@@ -86,6 +90,7 @@
                         [attr.gs-w]="box.w"
                         [attr.gs-h]="box.h"
                         [attr.data-testId]="'box-' + i"
+                        dotcmsItemDragScroll
                     >
                         <dotcms-template-builder-box
                             class="grid-stack-item-content"
