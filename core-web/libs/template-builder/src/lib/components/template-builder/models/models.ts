@@ -118,3 +118,15 @@ export interface DotTemplateLayoutProperties {
 export interface StyleClassModel {
     cssClass: string;
 }
+
+/**
+ * @description This it the model for the Scroll Direction of the GridStack
+ *
+ * @export
+ * @enum {number}
+ */
+export enum SCROLL_DIRECTION {
+    UP = 'UP',
+    DOWN = 'DOWN',
+    NONE = 'NONE'
+}
