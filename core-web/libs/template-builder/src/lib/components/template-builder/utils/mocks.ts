@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { v4 as uuid } from 'uuid';
 
 import { Component, ElementRef } from '@angular/core';
@@ -651,7 +650,9 @@ export const BOX_MOCK = {
 export class MockGridStackElementComponent {
     constructor(public el: ElementRef) {
         this.el.nativeElement.ddElement = {
-            on: jest.fn()
+            on: () => {
+                /* noop */
+            }
         };
     }
 }
