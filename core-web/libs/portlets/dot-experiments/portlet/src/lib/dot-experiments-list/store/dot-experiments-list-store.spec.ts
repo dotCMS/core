@@ -135,11 +135,19 @@ describe('DotExperimentsListStore', () => {
         });
     });
 
-    it('should change status to archived status by experiment id of the store', () => {
-        store.setExperiments([{ ...getExperimentMock(1) }]);
-        store.archiveExperimentById(EXPERIMENT_MOCK_1.id);
-        store.state$.subscribe(({ experiments }) => {
-            expect(experiments[0].status).toEqual(DotExperimentStatus.ARCHIVED);
+    it('should change status to archived', (done) => {
+        store.archiveExperiment({ ...getExperimentMock(1) });
+        store.state$.subscribe(() => {
+            expect(dotExperimentsService.archive).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
+            done();
+        });
+    });
+
+    it('should change status to ended', (done) => {
+        store.stopExperiment({ ...getExperimentMock(1) });
+        store.state$.subscribe(() => {
+            expect(dotExperimentsService.stop).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
+            done();
         });
     });
 

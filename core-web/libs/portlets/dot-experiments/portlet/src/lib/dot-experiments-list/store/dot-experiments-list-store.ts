@@ -180,13 +180,6 @@ export class DotExperimentsListStore
         experiments: state.experiments.filter((exp) => exp.id != experimentId)
     }));
 
-    readonly archiveExperimentById = this.updater((state, experimentId: string) => ({
-        ...state,
-        experiments: state.experiments.map((exp) =>
-            experimentId === exp.id ? { ...exp, status: DotExperimentStatus.ARCHIVED } : exp
-        )
-    }));
-
     readonly openSidebar = this.updater((state) => ({
         ...state,
         sidebar: {
@@ -313,7 +306,7 @@ export class DotExperimentsListStore
                                     experiment.name
                                 )
                             });
-                            this.archiveExperimentById(experiment.id);
+                            this.loadExperiments(this.dotExperimentsStore.getPageId$);
                         },
                         (error) => throwError(error),
                         () => this.setComponentStatus(ComponentStatus.LOADED)
