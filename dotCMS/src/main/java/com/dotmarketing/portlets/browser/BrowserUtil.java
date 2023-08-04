@@ -172,7 +172,7 @@ public class BrowserUtil {
                         APILocator.getFolderAPI()
                                 .findFolderByPath(identifier.getParentPath(), identifier.getHostId(), APILocator.systemUser(), false)
                 );
-            } catch (DotDataException | DotSecurityException e) {
+            } catch (Exception e) {
                 return Optional.empty();
             }
         } else {
