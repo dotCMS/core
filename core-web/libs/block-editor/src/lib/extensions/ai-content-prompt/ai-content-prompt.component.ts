@@ -1,7 +1,15 @@
+import { of } from 'rxjs';
+
 import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+
+import { catchError } from 'rxjs/operators';
 
 import { AiContentService } from '../../shared/services/ai-content/ai-content.service';
+
+interface FormValues {
+    textPrompt: string;
+}
 
 @Component({
     selector: 'dot-ai-content-prompt',
@@ -11,15 +19,13 @@ import { AiContentService } from '../../shared/services/ai-content/ai-content.se
 export class AIContentPromptComponent {
     @ViewChild('input') input: ElementRef;
 
-    @Output() formValues = new EventEmitter();
+    @Output() formValues = new EventEmitter<FormValues>();
     @Output() hide = new EventEmitter<boolean>();
 
     loading = false;
-    form: FormGroup;
-
-    get getPrompt() {
-        return this.form.get('textPrompt').value;
-    }
+    form: FormGroup<{
+        textPrompt: FormControl<string | null>;
+    }>;
 
     constructor(private fb: FormBuilder, private aiContentService: AiContentService) {}
 
@@ -34,17 +40,25 @@ export class AIContentPromptComponent {
         });
     }
 
-    async onSubmit() {
-        try {
-            this.formValues.emit({ ...this.form.value });
+    onSubmit() {
+        const textPrompt = this.form.get('textPrompt').value;
 
-            const textPrompt = this.form.get('textPrompt').value;
-            const response = await this.aiContentService.fetchAIContent(textPrompt);
+        if (textPrompt) {
+            this.formValues.emit({ textPrompt });
 
-            console.warn('openai response____', response);
-            this.hide.emit(true);
-        } catch (error) {
-            console.warn('error', error);
+            this.aiContentService
+                .getIAContent(textPrompt)
+                .pipe(
+                    catchError((error) => {
+                        console.warn('error', error);
+
+                        return of(null);
+                    })
+                )
+                .subscribe((response) => {
+                    console.warn('openai response____', response);
+                    this.hide.emit(true);
+                });
         }
     }
 
@@ -54,7 +68,7 @@ export class AIContentPromptComponent {
      * @memberof AIContentPromptComponent
      */
     setFormValue({ textPrompt = '' }) {
-        this.form.setValue({ textPrompt }, { emitEvent: false });
+        this.form.patchValue({ textPrompt }, { emitEvent: false });
     }
 
     /**

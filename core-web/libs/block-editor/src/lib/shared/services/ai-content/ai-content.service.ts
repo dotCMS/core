@@ -1,5 +1,11 @@
+import { Observable, throwError } from 'rxjs';
+
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+
+import { catchError, map } from 'rxjs/operators';
+
+const API_KEY = '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';
 
 interface Message {
     role: string;
@@ -30,9 +36,7 @@ interface OpenAIResponse {
 export class AiContentService {
     constructor(private http: HttpClient) {}
 
-    async fetchAIContent(prompt: string): Promise<string> {
-        const API_KEY = '';
-
+    getIAContent(prompt: string): Observable<string> {
         const body = JSON.stringify({
             model: 'gpt-3.5-turbo',
             messages: [
@@ -52,15 +56,22 @@ export class AiContentService {
             'Content-Type': 'application/json'
         });
 
-        const response: OpenAIResponse = await this.http
+        return this.http
             .post<OpenAIResponse>('https://api.openai.com/v1/chat/completions', body, { headers })
-            .toPromise();
+            .pipe(
+                catchError((error) => {
+                    console.error('Error fetching AI content:', error);
 
-        let messageResponse = '';
-        if (response.choices && response.choices.length > 0) {
-            messageResponse = response.choices[0].message.content;
-        }
+                    return throwError('Error fetching AI content');
+                }),
+                map((response) => {
+                    let messageResponse = '';
+                    if (response.choices && response.choices.length > 0) {
+                        messageResponse = response.choices[0].message.content;
+                    }
 
-        return messageResponse;
+                    return messageResponse;
+                })
+            );
     }
 }

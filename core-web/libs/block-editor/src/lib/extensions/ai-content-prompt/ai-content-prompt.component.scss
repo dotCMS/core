@@ -1,14 +1,37 @@
 form {
     display: flex;
-    width: 100%;
-}
+    flex-direction: column;
+    width: "500px";
 
-input {
-    flex-grow: 1;
-    margin-right: 10px;
-    width: 100%;
-}
+    .p-float-label {
+        position: relative;
 
-button {
-    padding: 5px 10px;
+        input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input:focus {
+            border-color: #007ad9;
+        }
+
+        input:focus {
+            color: #007ad9;
+        }
+
+        input:not(:placeholder-shown) {
+            font-size: 12px;
+            top: -20px;
+        }
+    }
+
+    button {
+        width: 50px;
+        height: 30px;
+        color: black;
+        background: transparent;
+    }
 }

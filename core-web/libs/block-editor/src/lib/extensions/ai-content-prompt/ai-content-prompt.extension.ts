@@ -42,7 +42,7 @@ export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => 
                 openAIPrompt:
                     () =>
                     ({ chain }) => {
-                        chain()
+                        return chain()
                             .command(({ tr }) => {
                                 tr.setMeta(AI_CONTENT_PROMPT_PLUGIN_KEY, { open: true });
 
@@ -64,11 +64,6 @@ export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => 
                             })
                             .freezeScroll(false)
                             .run();
-                    },
-                updateValue:
-                    () =>
-                    ({ editor }) => {
-                        editor.commands.closeAIPrompt();
                     }
             };
         },

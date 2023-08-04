@@ -134,19 +134,9 @@ export class AIContentPromptView extends BubbleMenuView {
 
     destroy() {
         this.tippy?.destroy();
+        takeUntil(this.$destroy);
+        this.$destroy.complete();
         this.editor.off('focus', this.focusHandler);
-        this.$destroy.next(true);
-        this.component.destroy();
-        this.component.instance.formValues.unsubscribe();
-    }
-
-    private hanlderScroll(e: Event) {
-        if (!this.shouldHideOnScroll(e.target as HTMLElement)) {
-            return true;
-        }
-
-        // we use `setTimeout` to make sure `selection` is already updated
-        setTimeout(() => this.update(this.editor.view));
     }
 
     private shouldHideOnScroll(node: HTMLElement): boolean {
