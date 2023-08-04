@@ -36,7 +36,8 @@ jobs:
         working-directory: ./tools/dotcms-cli/
         run: |
           ./mvnw clean verify
-          echo "status=$?" >> $GITHUB_OUTPUT
+          EXIT=$?
+          echo "status=${EXIT}" >> $GITHUB_OUTPUT
 
       - id: gather-test-results
         name: Gather test results
