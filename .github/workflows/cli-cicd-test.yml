@@ -19,7 +19,6 @@ jobs:
       - id: checkout-core
         name: Checkout core
         uses: actions/checkout@v3
-
       - id: prepare-license
         name: Prepare license
         working-directory: ./tools/dotcms-cli/
@@ -30,7 +29,6 @@ jobs:
           mkdir -p ${DOTCMS_LICENSE_PATH}
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
-
       - id: run-cli-tests
         name: Run cli tests
         working-directory: ./tools/dotcms-cli/
@@ -38,7 +36,6 @@ jobs:
           ./mvnw clean verify
           EXIT=$?
           echo "status=${EXIT}" >> $GITHUB_OUTPUT
-
       - id: gather-test-results
         name: Gather test results
         working-directory: ./tools/dotcms-cli/
