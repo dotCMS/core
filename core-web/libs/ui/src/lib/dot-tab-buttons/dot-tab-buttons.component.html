@@ -1,6 +1,10 @@
 <div class="dot-tab-buttons">
     <div class="dot-tab-buttons-container" *ngFor="let item of options">
-        <div class="dot-tab-container" (click)="onClickOption($event)">
+        <div
+            class="dot-tab-container"
+            (click)="onClickOption($event)"
+            data-testId="dot-tab-container"
+        >
             <button
                 class="dot-tab-button"
                 [ngClass]="{
