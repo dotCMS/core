@@ -52,7 +52,8 @@ import { DotPagesComponent } from './dot-pages.component';
         DotWorkflowActionsFireService,
         DotWorkflowEventHandlerService,
         DotRouterService,
-        DotFavoritePageService
+        DotFavoritePageService,
+        DotSessionStorageService
     ]
 })
 export class DotPagesModule {}

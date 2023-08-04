@@ -20,7 +20,7 @@ export class DotActionMenuButtonComponent implements OnInit {
 
     @Input() item: Record<string, unknown>;
 
-    @Input() icon? = 'more_vert';
+    @Input() icon? = 'pi pi-ellipsis-v';
 
     @Input() actions?: DotActionMenuItem[];
 

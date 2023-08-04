@@ -16,7 +16,7 @@
         </ng-container>
         <ng-template #elseBlock>
             <ng-template #enabledComponent>
-                <dotcms-template-builder
+                <dotcms-template-builder-lib
                     [layout]="item.layout"
                     [themeId]="item.theme"
                     [containerMap]="item.containers"
@@ -24,15 +24,7 @@
                     data-testId="new-template-builder"
                 >
                     <dot-global-message toolbar-left></dot-global-message>
-                    <button
-                        [label]="'Publish' | dm"
-                        (click)="saveAndPublish.emit(item)"
-                        type="button"
-                        data-testId="save-and-publish-btn"
-                        toolbar-actions-right
-                        pButton
-                    ></button>
-                </dotcms-template-builder>
+                </dotcms-template-builder-lib>
             </ng-template>
             <ng-template #disabledComponent>
                 <dot-edit-layout-designer

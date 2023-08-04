@@ -16,7 +16,7 @@
             <div class="container-listing__header-options">
                 <div class="container-listing__filter-controls">
                     <button
-                        class="p-button-secondary p-button"
+                        class="p-button-outlined p-button"
                         [label]="'Search' | dm"
                         type="button"
                         pButton
@@ -31,7 +31,7 @@
 
                 <div>
                     <button
-                        class="p-button-secondary p-button"
+                        class="p-button-outlined p-button"
                         [label]="'Actions' | dm"
                         [disabled]="!vm.selectedContainers.length"
                         (click)="actionsMenu.toggle($event)"
