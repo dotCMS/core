@@ -518,7 +518,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Scheduling scheduling = startNowScheduling();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
             validateNoConflictsWithScheduledExperiments(experimentToSave, user);
-            toReturn = innerStart(experimentToSave, user);
+            toReturn = innerStart(experimentToSave, user, true);
         } else {
             Scheduling scheduling = persistedExperiment.scheduling().get();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
@@ -581,7 +581,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Scheduling scheduling = startNowScheduling();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
             cancelScheduledExperimentsUponConflicts(experimentToSave, user);
-            toReturn = innerStart(experimentToSave, user);
+            toReturn = innerStart(experimentToSave, user, false);
         } else {
             Scheduling scheduling = persistedExperiment.scheduling().get();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
@@ -712,16 +712,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(persistedExperiment.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
                 DotStateException.class);
 
-        return innerStart(persistedExperiment, user);
+        return innerStart(persistedExperiment, user, true);
     }
 
-    private Experiment innerStart(final Experiment persistedExperiment, final User user)
+    private Experiment innerStart(final Experiment persistedExperiment, final User user,
+            final boolean generateNewRunId)
             throws DotSecurityException, DotDataException {
 
-        final Experiment experimentToSave = Experiment.builder().from(persistedExperiment)
-                .runningIds(getRunningIds(persistedExperiment))
-                .status(RUNNING)
-                .build();
+        // TODO THIS CHANGES ARE NOT BEING TAKEN ON THE RECEIVER
+
+        final Experiment experimentToSave = generateNewRunId
+                ? Experiment.builder().from(persistedExperiment)
+                    .runningIds(getRunningIds(persistedExperiment)).build()
+                : persistedExperiment;
 
         Experiment running = save(experimentToSave, user);
         cacheRunningExperiments();
