@@ -8,6 +8,7 @@ import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.asset.FileUploadData;
 import com.dotcms.model.asset.FileUploadDetail;
@@ -16,7 +17,6 @@ import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,9 +38,6 @@ import static com.dotcms.common.AssetsUtils.BuildRemoteAssetURL;
 @QuarkusTest
 class PullServiceTest {
 
-    @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
-    String siteName;
-
     @Inject
     AuthenticationContext authenticationContext;
 
@@ -55,6 +52,9 @@ class PullServiceTest {
 
     @Inject
     PullService pullService;
+
+    @Inject
+    WorkspaceManager workspaceManager;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -75,6 +75,7 @@ class PullServiceTest {
 
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
+        var workspace = workspaceManager.getOrCreate(tempFolder);
 
         try {
 
@@ -95,7 +96,7 @@ class PullServiceTest {
 
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
-            pullService.pullTree(outputOptions, result.getRight(), tempFolder.toAbsolutePath().toFile(),
+            pullService.pullTree(outputOptions, result.getRight(), workspace.files().toAbsolutePath().toFile(),
                     true, true, true, 0);
 
             // ============================
@@ -119,7 +120,7 @@ class PullServiceTest {
             List<String> existingFiles = collectedFiles.stream().map(folder -> folder.replaceAll(
                     "^dot-workspace-\\d+/", "")).collect(Collectors.toList());
 
-            var basePath = "live/en-us/" + testSiteName;
+            var basePath = "files/live/en-us/" + testSiteName;
             // Expected folder structure based on the treeNode object
             Map<String, List<String>> expectedFolders = Map.of(
                     basePath,
@@ -202,6 +203,12 @@ class PullServiceTest {
         }
     }
 
+    /**
+     * Prepares data by creating test folders, adding test files, and creating a new test site.
+     *
+     * @return The name of the newly created test site.
+     * @throws IOException If an I/O error occurs.
+     */
     private String prepareData() throws IOException {
 
         final FolderAPI folderAPI = clientFactory.getClient(FolderAPI.class);
@@ -337,12 +344,24 @@ class PullServiceTest {
         }
     }
 
+    /**
+     * Creates a temporary folder with a random name.
+     *
+     * @return The path to the newly created temporary folder
+     * @throws IOException If an I/O error occurs while creating the temporary folder
+     */
     private Path createTempFolder() throws IOException {
 
-        String randomFolderName = "folder-" + UUID.randomUUID().toString();
+        String randomFolderName = "folder-" + UUID.randomUUID();
         return Files.createTempDirectory(randomFolderName);
     }
 
+    /**
+     * Deletes a temporary directory and all its contents recursively.
+     *
+     * @param folderPath The path to the temporary directory to delete
+     * @throws IOException If an error occurs while deleting the directory or its contents
+     */
     private void deleteTempDirectory(Path folderPath) throws IOException {
         Files.walkFileTree(folderPath, new SimpleFileVisitor<Path>() {
             @Override
