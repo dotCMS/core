@@ -124,6 +124,10 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         this.overlayPanel.hide();
     }
 
+    /**
+     * Opens the device selector menu
+     * @param event
+     */
     public openMenu(event: Event) {
         this.overlayPanel.toggle(event);
     }
