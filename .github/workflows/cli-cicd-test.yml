@@ -35,7 +35,8 @@ jobs:
         run: |
           ./mvnw clean verify
           EXIT=$?
-          echo "status=${EXIT}" >> $GITHUB_OUTPUT
+          echo "::set-output name=status::$EXIT"
+#          echo "status=$EXIT" >> $GITHUB_OUTPUT
       - id: gather-test-results
         name: Gather test results
         working-directory: ./tools/dotcms-cli/
@@ -48,7 +49,7 @@ jobs:
               OUTPUT_STATUS="FAILED"
           fi
           
-          echo "status=${OUTPUT_STATUS}" >> $GITHUB_OUTPUT
+          echo "status=$OUTPUT_STATUS" >> $GITHUB_OUTPUT
 
 #          Generate surefire and failsafe HTML reports
           ./mvnw surefire-report:report-only surefire-report:failsafe-report-only     
@@ -73,8 +74,8 @@ jobs:
             cp -r ${module}/target/site ${HTML_REPORTS_PATH}/${module}
           done
 
-          echo "results_location=${XML_REPORTS_PATH}" >> $GITHUB_OUTPUT
-          echo "results_report_location=${HTML_REPORTS_PATH}" >> $GITHUB_OUTPUT
+          echo "results_location=${XML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
+          echo "results_report_location=${HTML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
 
       - id: publish-test-results
         name: Github publish tests results
