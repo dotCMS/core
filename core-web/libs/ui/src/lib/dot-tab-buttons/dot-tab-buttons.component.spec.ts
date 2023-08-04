@@ -78,4 +78,16 @@ describe('DotTabButtonsComponent', () => {
 
         expect(indicatorEl).toBeDefined();
     });
+
+    it('should toggle icon', () => {
+        expect(spectator.component.icon).toEqual('pi pi-angle-down');
+
+        spectator.component.toggle = true;
+        spectator.component.toggleIcon();
+        expect(spectator.component.icon).toEqual('pi pi-angle-up');
+
+        spectator.component.toggle = false;
+        spectator.component.toggleIcon();
+        expect(spectator.component.icon).toEqual('pi pi-angle-down');
+    });
 });
