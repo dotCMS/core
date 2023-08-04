@@ -33,8 +33,8 @@ describe('DotTabButtonsComponent', () => {
     it('should render options', () => {
         spectator.detectChanges();
 
-        const buttons = spectator.queryAll(byTestId('dot-tab-button'));
-        expect(spectator.query(byTestId('dot-tab-buttons'))).toBeDefined();
+        const buttons = spectator.queryAll(byTestId('dot-tab-button-text'));
+        expect(spectator.query(byTestId('dot-tab-button-text'))).toBeDefined();
         expect(buttons.length).toEqual(2);
         buttons.forEach((button, index) => {
             expect(button.textContent.trim()).toEqual(optionsMock[index].label);
@@ -57,5 +57,25 @@ describe('DotTabButtonsComponent', () => {
         const showMenuSpy = spyOn(spectator.component, 'showMenu');
         spectator.component.onClickOption({ target: { value: spectator.component.OPEN_MENU } });
         expect(showMenuSpy).toHaveBeenCalled();
+    });
+
+    it('should show dot-tab-indicator when a tab is active', () => {
+        spectator.component.mode = DotPageMode.EDIT;
+
+        spectator.detectChanges();
+
+        const indicatorEl = spectator.queryAll(byTestId('dot-tab-indicator'));
+
+        expect(indicatorEl).toBeDefined();
+    });
+
+    it('should show dot-tab-indicator when a tab is active', () => {
+        spectator.component.mode = DotPageMode.PREVIEW;
+
+        spectator.detectChanges();
+
+        const indicatorEl = spectator.queryAll(byTestId('dot-tab-indicator'));
+
+        expect(indicatorEl).toBeDefined();
     });
 });

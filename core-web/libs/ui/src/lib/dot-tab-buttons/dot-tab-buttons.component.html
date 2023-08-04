@@ -9,7 +9,7 @@
                 }"
                 [value]="item.value"
                 [disabled]="item.disabled"
-                data-testId="dot-tab-button"
+                data-testId="dot-tab-button-text"
             >
                 {{ item.label }}
             </button>
@@ -22,6 +22,10 @@
                 <i class="dot-tab-dropdown__icon" [value]="'openMenu'" [class]="icon"></i>
             </button>
         </div>
-        <div class="ot-tab-indicator" *ngIf="mode === item.value"></div>
+        <div
+            class="dot-tab-indicator"
+            *ngIf="mode === item.value"
+            data-testId="dot-tab-button"
+        ></div>
     </div>
 </div>
