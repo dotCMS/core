@@ -1,15 +1,11 @@
 <div class="dot-tab-buttons">
-    <div class="dot-tab-buttons-container" *ngFor="let item of options">
-        <div
-            class="dot-tab-container"
-            (click)="onClickOption($event)"
-            data-testId="dot-tab-container"
-        >
+    <div class="dot-tab-buttons__container" *ngFor="let item of options">
+        <div class="dot-tab" (click)="onClickOption($event)" data-testId="dot-tab-container">
             <button
-                class="dot-tab-button"
+                class="dot-tab__button"
                 [ngClass]="{
-                    'dot-tab-button-active': mode === item.value,
-                    'dot-tab-button__right': item.value === pageMode.PREVIEW
+                    'dot-tab--active': mode === item.value,
+                    'dot-tab__button--right': item.value === pageMode.PREVIEW
                 }"
                 [value]="item.value"
                 [disabled]="item.disabled"
@@ -19,13 +15,13 @@
             </button>
 
             <button
-                class="dot-tab-dropdown"
+                class="dot-tab__dropdow"
                 *ngIf="item.value === pageMode.PREVIEW"
-                [ngClass]="{ 'dot-tab-button-active-dropdown': mode === pageMode.PREVIEW }"
+                [ngClass]="{ 'dot-tab-dropdown--active': mode === pageMode.PREVIEW }"
             >
-                <i class="dot-tabs-dropdown-icon" [value]="'openMenu'" [class]="icon"></i>
+                <i class="dot-tab-dropdown__icon" [value]="'openMenu'" [class]="icon"></i>
             </button>
         </div>
-        <div class="dot-tab-buttons-select" *ngIf="mode === item.value"></div>
+        <div class="ot-tab-indicator" *ngIf="mode === item.value"></div>
     </div>
 </div>

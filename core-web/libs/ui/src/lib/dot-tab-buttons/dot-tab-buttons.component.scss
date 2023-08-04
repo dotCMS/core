@@ -10,16 +10,16 @@ $dot-tab-height: 2.5rem;
     margin-right: $spacing-5;
 }
 
-.dot-tab-buttons-container {
+.dot-tab-buttons__container {
     position: relative;
 }
 
-.dot-tab-container {
+.dot-tab {
     display: flex;
     position: relative;
 }
 
-.dot-tab-button {
+.dot-tab__button {
     border: 1.5px solid $color-palette-gray-200;
     color: $color-palette-primary-500;
     background-color: transparent;
@@ -31,13 +31,13 @@ $dot-tab-height: 2.5rem;
     }
 }
 
-.dot-tab-button__right {
+.dot-tab__button--right {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     border-right: 0;
 }
 
-.dot-tab-dropdown {
+.dot-tab__dropdow {
     background-color: transparent;
     border: 1.5px solid $color-palette-gray-200;
     height: $dot-tab-height;
@@ -52,7 +52,7 @@ $dot-tab-height: 2.5rem;
     }
 }
 
-.dot-tab-buttons-select {
+.dot-tab-indicator {
     height: 0.25rem;
     border-radius: $border-radius-xl;
     width: auto;
@@ -63,24 +63,24 @@ $dot-tab-height: 2.5rem;
     position: absolute;
 }
 
-.dot-tab-button-active {
+.dot-tab--active {
     background: $color-palette-primary-100;
     border-radius: $border-radius-md;
     border: 0;
 
-    &.dot-tab-button__right {
+    &.dot-tab__button--right {
         border: 1.5px solid $color-palette-primary-100;
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
     }
 }
 
-.dot-tab-button-active-dropdown {
+.dot-tab-dropdown--active {
     background: $color-palette-primary-200;
     border: $color-palette-primary-200;
 }
 
-.dot-tabs-dropdown-icon {
+.dot-tab-dropdown__icon {
     height: $dot-tab-buttons-icon;
     width: $dot-tab-buttons-icon;
     display: flex;
