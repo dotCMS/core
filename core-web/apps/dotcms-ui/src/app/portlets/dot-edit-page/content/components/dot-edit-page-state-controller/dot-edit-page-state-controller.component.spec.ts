@@ -3,15 +3,17 @@
 import * as _ from 'lodash';
 import { of } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
+import { ConfirmationService } from 'primeng/api';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -100,7 +102,7 @@ describe('DotEditPageStateControllerComponent', () => {
     let personalizeService: DotPersonalizeService;
 
     beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [
                 TestHostComponent,
                 DotEditPageStateControllerComponent,
@@ -119,20 +121,23 @@ describe('DotEditPageStateControllerComponent', () => {
                     provide: DotPersonalizeService,
                     useClass: DotPersonalizeServiceMock
                 },
-                DotAlertConfirmService
+                DotAlertConfirmService,
+                ConfirmationService
             ],
             imports: [
                 InputSwitchModule,
                 SelectButtonModule,
                 TooltipModule,
                 DotPipesModule,
-                DotMessagePipe
+                DotMessagePipe,
+                CommonModule,
+                FormsModule
             ]
         });
     }));
 
     beforeEach(() => {
-        fixtureHost = DOTTestBed.createComponent(TestHostComponent);
+        fixtureHost = TestBed.createComponent(TestHostComponent);
         deHost = fixtureHost.debugElement;
         componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-edit-page-state-controller'));
@@ -439,7 +444,7 @@ describe('DotEditPageStateControllerComponent', () => {
     describe('running experiment confirmation', () => {
         beforeEach(() => {
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
-                { ...mockUser(), userId: '456' },
+                mockUser(),
                 new DotPageRender(mockDotRenderedPage()),
                 null,
                 EXPERIMENT_MOCK
