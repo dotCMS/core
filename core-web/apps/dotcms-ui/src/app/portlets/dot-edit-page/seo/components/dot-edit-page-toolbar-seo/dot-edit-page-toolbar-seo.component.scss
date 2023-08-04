@@ -1,5 +1,7 @@
 @use "variables" as *;
 
+$dot-secondary-toolbar-height: 3.75rem;
+
 .edit-page-toolbar__cancel {
     margin-right: $spacing-1;
 }
@@ -23,8 +25,12 @@
     }
 
     .dot-secondary-toolbar__lower {
-        height: 3.75rem;
+        height: $dot-secondary-toolbar-height;
         align-items: center;
+    }
+
+    .lower-toolbar-right {
+        justify-content: flex-end;
     }
 }
 

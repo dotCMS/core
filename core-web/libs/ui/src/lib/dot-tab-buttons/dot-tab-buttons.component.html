@@ -21,7 +21,7 @@
             <button
                 class="dot-tab-dropdown"
                 *ngIf="item.value === pageMode.PREVIEW"
-                [ngClass]="{ 'dot-tab-button-hover-dropdown': mode === pageMode.PREVIEW }"
+                [ngClass]="{ 'dot-tab-button-active-dropdown': mode === pageMode.PREVIEW }"
             >
                 <i class="dot-tabs-dropdown-icon" [value]="'openMenu'" [class]="icon"></i>
             </button>
