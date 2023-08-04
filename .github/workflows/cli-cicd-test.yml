@@ -13,14 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tests_results_status: ${{ steps.run-cli-tests.outputs.status }}
-#      tests_results_skip_report: ${{ steps.run-unit-tests.outputs.tests_results_skip_report }}
       tests_results_report_url: ${{ steps.publish-test-results.outputs.tests_report_url }}
       tests_results_log_url: ${{ steps.publish-test-results.outputs.test_logs_url }}
     steps:
       - id: checkout-core
         name: Checkout core
         uses: actions/checkout@v3
-#        if: success()
 
       - id: prepare-license
         name: Prepare license
@@ -32,36 +30,54 @@ jobs:
           mkdir -p ${DOTCMS_LICENSE_PATH}
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
-#        if: success()
 
       - id: run-cli-tests
         name: Run cli tests
         working-directory: ./tools/dotcms-cli/
         run: |
-          env | grep DOTCMS_LICENSE
-          RESULTS_PATH=${{ github.workspace }}/tools/dotcms-cli/target/test-results
-
           ./mvnw clean verify
-          
-          command_result=$?
+          echo "status=$?" >> $GITHUB_OUTPUT
 
-          if [ $command_result -eq 0 ]; then
-            echo "::set-output name=status::PASSED"
+      - id: gather-test-results
+        name: Gather test results
+        working-directory: ./tools/dotcms-cli/
+        run: |         
+          MAVEN_COMMAND_RESULT=${{ steps.run-cli-tests.outputs.status }}
+               
+          if [ $MAVEN_COMMAND_RESULT -eq 0 ]; then
+              OUTPUT_STATUS="PASSED"
           else
-            echo "::set-output name=status::FAILED"
+              OUTPUT_STATUS="FAILED"
           fi
           
-          mkdir -p $RESULTS_PATH
-          
-          cp -r api-data-model/target/surefire-reports $RESULTS_PATH
-          cp -r api-data-model/target/failsafe-reports $RESULTS_PATH
-          
-          echo "::set-output name=results_location::$RESULTS_PATH"
-          echo "::set-output name=results_report_location::$RESULTS_PATH"
-          
-          ls $RESULTS_PATH
+          echo "status=${OUTPUT_STATUS}" >> $GITHUB_OUTPUT
 
-#        if: success()
+#          Generate surefire and failsafe HTML reports
+          ./mvnw surefire-report:report-only surefire-report:failsafe-report-only     
+               
+          RESULTS_PATH=${{ github.workspace }}/tools/dotcms-cli/target/test-results
+          XML_REPORTS_PATH=${RESULTS_PATH}/xml-reports
+          HTML_REPORTS_PATH=${RESULTS_PATH}/html-reports          
+          
+          POM_FILE=${{ github.workspace }}/tools/dotcms-cli/pom.xml
+#          Extracting modules from pom.xml 
+          MODULES=$(grep "<module>" $POM_FILE | sed 's/<module>//' | sed 's/<\/module>//')
+          for module in $MODULES
+          do
+#            With a future minor version several mojos and output filenames will change for alignment
+#            with other reporting plugins from 'org.apache.maven.plugins'
+#            https://maven.apache.org/surefire/maven-surefire-report-plugin/
+#            https://issues.apache.org/jira/browse/SUREFIRE-2161
+            mkdir -p ${XML_REPORTS_PATH}/${module}
+            cp -r ${module}/target/surefire-reports ${XML_REPORTS_PATH}/${module}
+            cp -r ${module}/target/failsafe-reports ${XML_REPORTS_PATH}/${module}
+            mkdir -p ${HTML_REPORTS_PATH}/${module}
+            cp -r ${module}/target/site ${HTML_REPORTS_PATH}/${module}
+          done
+
+          echo "results_location=${XML_REPORTS_PATH}" >> $GITHUB_OUTPUT
+          echo "results_report_location=${HTML_REPORTS_PATH}" >> $GITHUB_OUTPUT
+
       - id: publish-test-results
         name: Github publish tests results
         uses: ./.github/actions/publish-test-results
@@ -70,8 +86,8 @@ jobs:
           build_hash: ${{ env.BUILD_HASH }}
           test_type: cli
           pull_request: ${{ github.event.number }} # optional in case the tests are triggered by a PR
-          tests_results_status: ${{ steps.run-cli-tests.outputs.status }} # tests results status, optional
-          tests_results_location: ${{ steps.run-cli-tests.outputs.results_location }} # tests results location, optional, most of the time this made up of a bunch of XML files, optional
-          tests_results_report_location: ${{ steps.run-cli-tests.outputs.results_report_location }} # actual reports made from XML files, probably in HTML format
+          tests_results_status: ${{ steps.gather-test-results.outputs.status }} # tests results status, optional
+          tests_results_location: ${{ steps.gather-test-results.outputs.results_location }} # tests results location, optional, most of the time this made up of a bunch of XML files, optional
+          tests_results_report_location: ${{ steps.gather-test-results.outputs.results_report_location }} # actual reports made from XML files, probably in HTML format
           tests_results_repo: tools-test-results
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
