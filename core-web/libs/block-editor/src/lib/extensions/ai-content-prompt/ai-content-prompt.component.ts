@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 
-import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 
 import { catchError } from 'rxjs/operators';
@@ -16,8 +16,8 @@ interface FormValues {
     templateUrl: './ai-content-prompt.component.html',
     styleUrls: ['./ai-content-prompt.component.scss']
 })
-export class AIContentPromptComponent {
-    @ViewChild('input') input: ElementRef;
+export class AIContentPromptComponent implements OnInit {
+    @ViewChild('textPrompt') input: ElementRef;
 
     @Output() formValues = new EventEmitter<FormValues>();
     @Output() hide = new EventEmitter<boolean>();
@@ -28,6 +28,10 @@ export class AIContentPromptComponent {
     }>;
 
     constructor(private fb: FormBuilder, private aiContentService: AiContentService) {}
+
+    ngOnInit() {
+        this.buildForm();
+    }
 
     /**
      * Build FormGroup
@@ -42,6 +46,8 @@ export class AIContentPromptComponent {
 
     onSubmit() {
         const textPrompt = this.form.get('textPrompt').value;
+
+        console.info('this.form.get()', this.form.get('textPrompt'));
 
         if (textPrompt) {
             this.formValues.emit({ textPrompt });

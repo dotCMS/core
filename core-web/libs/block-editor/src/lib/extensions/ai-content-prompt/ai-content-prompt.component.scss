@@ -3,7 +3,7 @@ form {
     flex-direction: column;
     width: "500px";
 
-    .p-float-label {
+    .p-input-icon-right {
         position: relative;
 
         input {
@@ -11,27 +11,21 @@ form {
             padding: 10px;
             box-sizing: border-box;
             border: 1px solid #ccc;
-            border-radius: 4px;
+            border-radius: 5px;
+            outline: none;
+            padding-right: 30px;
         }
 
-        input:focus {
-            border-color: #007ad9;
+        button {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            background: none;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 20px;
         }
-
-        input:focus {
-            color: #007ad9;
-        }
-
-        input:not(:placeholder-shown) {
-            font-size: 12px;
-            top: -20px;
-        }
-    }
-
-    button {
-        width: 50px;
-        height: 30px;
-        color: black;
-        background: transparent;
     }
 }

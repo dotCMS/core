@@ -1,18 +1,13 @@
 <form [formGroup]="form" autocomplete="off">
     <span class="p-input-icon-right">
-        <i class="pi pi-search"></i>
         <input
             type="text"
             pInputText
             formControlName="textPrompt"
             placeholder="Ask AI to write something"
         />
+        <button (click)="onSubmit()" type="button">
+            <i class="pi pi-search"></i>
+        </button>
     </span>
-    <button
-        class="p-button-success"
-        (click)="onSubmit()"
-        pButton
-        type="button"
-        label="Submit"
-    ></button>
 </form>
