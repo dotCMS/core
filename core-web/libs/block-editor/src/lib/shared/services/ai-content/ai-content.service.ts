@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
-const API_KEY = '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';
+const API_KEY = '';
 
 interface Message {
     role: string;
