@@ -1,6 +1,8 @@
 package com.dotcms.cli.command.site;
 
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
 import com.dotcms.cli.common.WorkspaceMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -31,7 +33,7 @@ import picocli.CommandLine;
            "" // empty line left here on purpose to make room at the end
         }
 )
-public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
+public class SitePull extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "pull";
 
@@ -51,41 +53,39 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
     String siteNameOrId;
 
     @Override
-    public Integer call() {
+    public Integer call() throws IOException {
         return pull();
     }
 
-    private int pull() {
+    private int pull() throws IOException {
 
-        final Optional<SiteView> site = super.findSite(siteNameOrId);
+        final SiteView siteView = findSite(siteNameOrId);
+        if (shortOutputOption.isShortOutput()) {
+            final String shortFormat = shortFormat(siteView);
+            output.info(shortFormat);
+        } else {
+            ObjectMapper objectMapper = formatOption.objectMapper();
+            final String asString = objectMapper.writeValueAsString(siteView);
+            output.info(asString);
 
-        if (site.isEmpty()) {
-            output.error(String.format(
-                    "Failed pulling Site: [%s].", siteNameOrId));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
-
-        final SiteView siteView = site.get();
-        try {
-            if (shortOutputOption.isShortOutput()) {
-                final String shortFormat = shortFormat(siteView);
-                output.info(shortFormat);
-            } else {
-                ObjectMapper objectMapper = formatOption.objectMapper();
-                final String asString = objectMapper.writeValueAsString(siteView);
-                output.info(asString);
-
-                final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
-                final String fileName = String.format( "%s.%s", siteView.hostName(), formatOption.getInputOutputFormat().getExtension());
-                final Path path = Path.of(workspace.sites().toString(), fileName);
-                Files.writeString(path, asString);
-                output.info(String.format("Output has been written to file [%s].",path));
-            }
-        } catch (IOException e) {
-            output.error("Error occurred transforming the response: ", e.getMessage());
+            final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
+            final String fileName = String.format("%s.%s", siteView.hostName(),
+                    formatOption.getInputOutputFormat().getExtension());
+            final Path path = Path.of(workspace.sites().toString(), fileName);
+            Files.writeString(path, asString);
+            output.info(String.format("Output has been written to file [%s].", path));
         }
 
         return CommandLine.ExitCode.OK;
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

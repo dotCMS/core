@@ -1,6 +1,8 @@
 package com.dotcms.cli.command.language;
 
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
 import com.dotcms.cli.common.WorkspaceMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -36,7 +38,7 @@ import picocli.CommandLine.Parameters;
  * Command to pull a language given its id or iso code (e.g.: en-us)
  * @author nollymar
  */
-public class LanguagePull extends AbstractLanguageCommand implements Callable<Integer> {
+public class LanguagePull extends AbstractLanguageCommand implements Callable<Integer>, DotCommand {
     static final String NAME = "pull";
 
     @CommandLine.Mixin(name = "format")
@@ -56,7 +58,6 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
 
     @Override
     public Integer call() throws Exception {
-        try {
             final Optional<Language> result = super.findExistingLanguage(languageIdOrIso);
 
             if (result.isEmpty()){
@@ -81,12 +82,17 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
                 Files.writeString(path, asString);
                 output.info(String.format("Output has been written to file [%s].",path));
             }
-        } catch (IOException | NotFoundException e) {
-            output.error(String.format(
-                    "Error occurred while pulling Language: [%s] with message: [%s:%s].",
-                    languageIdOrIso, e.getClass().getSimpleName(),e.getMessage()));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
+
         return CommandLine.ExitCode.OK;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 }

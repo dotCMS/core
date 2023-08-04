@@ -1,16 +1,10 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.api.client.ServiceManager;
-import com.dotcms.model.config.ServiceBean;
-import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import javax.inject.Inject;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -18,17 +12,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-public class LoginCommandTest extends CommandTest {
-
-    @BeforeAll
-    public static void beforeAll() {
-        disableAnsi();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        enableAnsi();
-    }
+class LoginCommandTest extends CommandTest {
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -41,7 +25,7 @@ public class LoginCommandTest extends CommandTest {
     @Test
     @Order(1)
     void Test_Command_Login_No_Params()  {
-        final CommandLine commandLine = factory.create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try(PrintWriter out = new PrintWriter(writer)){
             commandLine.setErr(out);
@@ -68,7 +52,7 @@ public class LoginCommandTest extends CommandTest {
         };
 
         for (final String [] option:options) {
-            final CommandLine commandLine = factory.create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try(PrintWriter out = new PrintWriter(writer)){
                 commandLine.setOut(out);
@@ -95,7 +79,7 @@ public class LoginCommandTest extends CommandTest {
 
         for (final String [] option:options) {
 
-            final CommandLine commandLine = factory.create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try(PrintWriter out = new PrintWriter(writer)){
                 commandLine.setErr(out);

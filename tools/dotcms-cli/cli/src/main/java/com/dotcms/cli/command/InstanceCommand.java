@@ -37,7 +37,7 @@ import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
                 "" // empty line left here on purpose to make room at the end
         }
 )
-public class InstanceCommand implements Callable<Integer> {
+public class InstanceCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "instance";
 
@@ -130,4 +130,13 @@ public class InstanceCommand implements Callable<Integer> {
         return beans;
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

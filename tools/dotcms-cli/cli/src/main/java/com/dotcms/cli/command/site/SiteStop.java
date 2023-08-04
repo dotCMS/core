@@ -1,6 +1,8 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
+import com.dotcms.cli.command.DotCommand;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
 import java.util.Optional;
@@ -17,7 +19,7 @@ import picocli.CommandLine;
                  "" // This is needed to add a new line after the description.
           }
 )
-public class SiteStop extends AbstractSiteCommand implements Callable<Integer> {
+public class SiteStop extends AbstractSiteCommand implements Callable<Integer>,DotCommand {
 
     static final String NAME = "stop";
 
@@ -26,29 +28,25 @@ public class SiteStop extends AbstractSiteCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-       try{
-          return unpublish();
-       } catch (Exception e){
-           return output.handleCommandException(e,"Error while stopping site. ");
-       }
+       return unpublish();
     }
 
     private int unpublish() {
 
-        final Optional<SiteView> site = super.findSite(siteNameOrId);
-
-        if (site.isEmpty()) {
-            output.error(String.format(
-                    "Error occurred while pulling Site Info: [%s].", siteNameOrId));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
-
+        final SiteView site = super.findSite(siteNameOrId);
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-
-        final SiteView siteView = site.get();
-        final ResponseEntityView<SiteView> unpublish = siteAPI.unpublish(siteView.identifier());
+        final ResponseEntityView<SiteView> unpublish = siteAPI.unpublish(site.identifier());
         output.info(String.format("Site [%s] un-published successfully.",unpublish.entity().hostName()));
         return CommandLine.ExitCode.OK;
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

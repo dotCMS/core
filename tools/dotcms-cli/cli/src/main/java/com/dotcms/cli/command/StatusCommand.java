@@ -30,7 +30,7 @@ import java.util.concurrent.Callable;
                 " and which user is logged in.",
                 "" // empty line left here on purpose to make room at the end
         })
-public class StatusCommand implements Callable<Integer>, Command {
+public class StatusCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "status";
 

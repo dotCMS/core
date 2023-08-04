@@ -4,10 +4,13 @@ import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.files.PullService;
 import com.dotcms.api.traversal.RemoteFolderTraversalService;
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.SearchByPathRequest;
+import java.io.IOException;
 import picocli.CommandLine;
 
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -24,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
                 "" // empty string here so we can have a new line
         }
 )
-public class FilesPull extends AbstractFilesCommand implements Callable<Integer> {
+public class FilesPull extends AbstractFilesCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "pull";
     
@@ -84,7 +87,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Integer call() throws Exception {
 
-        try {
+
 
             if (AssetsUtils.URLIsFolder(source)) {
 
@@ -123,8 +126,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 final var result = folderTraversalFuture.get();
 
                 if (result == null) {
-                    output.error(String.format("Error occurred while pulling folder info: [%s].", source));
-                    return CommandLine.ExitCode.SOFTWARE;
+                    throw new IOException(String.format("Error occurred while pulling folder info: [%s].", source));
                 }
 
                 // ---
@@ -164,9 +166,6 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
             output.info("\n\nPull process finished successfully.");
 
-        } catch (Exception e) {
-            return handleFolderTraversalExceptions(source, e);
-        }
 
         return CommandLine.ExitCode.OK;
     }
@@ -185,6 +184,16 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
         // Execute the REST call to retrieve asset information
         var response = assetAPI.assetByPath(SearchByPathRequest.builder().assetPath(source).build());
         return response.entity();
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 
 }

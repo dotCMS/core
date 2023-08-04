@@ -1,5 +1,6 @@
 package com.dotcms.cli.command.contenttype;
 
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import picocli.CommandLine;
@@ -23,7 +24,7 @@ import java.util.concurrent.Callable;
           ContentTypeRemove.class
      }
  )
-public class ContentTypeCommand implements Callable<Integer> {
+public class ContentTypeCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "content-type";
     static final String ALIAS = "ct";
@@ -57,4 +58,15 @@ public class ContentTypeCommand implements Callable<Integer> {
                 result.originalArgs().stream().filter(x -> !NAME.equals(x) && !ALIAS.equals(x))
                         .toArray(String[]::new));
     }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
+
 }

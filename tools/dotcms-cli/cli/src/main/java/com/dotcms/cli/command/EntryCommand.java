@@ -11,6 +11,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
+import picocli.CommandLine.ParameterException;
 
 @TopCommand
 @CommandLine.Command(
@@ -44,24 +45,36 @@ public class EntryCommand  {
 @ApplicationScoped
 class CustomConfiguration {
 
-        @Produces
-        CommandLine customCommandLine(PicocliCommandLineFactory factory) {
-                return factory.create().setCaseInsensitiveEnumValuesAllowed(true)
+    /**
+     * This method configures and produces a customized Picocli {@code CommandLine} instance.
+     *
+     * @param factory The {@code PicocliCommandLineFactory} used to create the {@code CommandLine}.
+     * @return The customized {@code CommandLine} instance.
+     */
+    @Produces
+        CommandLine customCommandLine( final PicocliCommandLineFactory factory) {
+                return factory.create()
+                        .setCaseInsensitiveEnumValuesAllowed(true)
                         .setExecutionExceptionHandler((ex, commandLine, parseResult) -> {
 
                                 final Object object = commandLine.getCommand();
-                                if (object instanceof Command) {
-                                        final Command command = (Command) object;
+                                if (object instanceof DotCommand) {
+                                        final DotCommand command = (DotCommand) object;
                                         final OutputOptionMixin output = command.getOutput();
                                         return output.handleCommandException(ex,
-                                                String.format("Error executing command '%s'.",
+                                                String.format("Error in command [%s] with message: %n ",
                                                         command.getName()));
                                 } else {
                                         commandLine.getErr().println(ex.getMessage());
                                 }
 
                                 return ExitCode.SOFTWARE;
+                        }).setExitCodeExceptionMapper(t -> {
+                               // customize exit code
+                                if (t instanceof ParameterException || t instanceof IllegalArgumentException) {
+                                        return ExitCode.USAGE;
+                                }
+                                return ExitCode.SOFTWARE;
                         });
-
         }
 }

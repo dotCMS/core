@@ -49,7 +49,7 @@ public interface SiteAPI {
             @QueryParam("system") Boolean showSystem,
             @QueryParam("page") Integer page, @QueryParam("perPage") Integer perPage);
 
-    @POST
+    @GET
     @Path("/{siteId}")
     @Operation(
             summary = " Returns the Site that matches the specified search criteria"

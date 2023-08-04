@@ -23,7 +23,7 @@ import picocli.CommandLine.ExitCode;
                 "" // empty line left here on purpose to make room at the end
         }
 )
-public class LoginCommand implements Callable<Integer> {
+public class LoginCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "login";
 
@@ -52,5 +52,15 @@ public class LoginCommand implements Callable<Integer> {
             return output.handleCommandException(wae,"Unable to login. ");
         }
         return ExitCode.OK;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 }
