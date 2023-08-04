@@ -6,5 +6,10 @@ public abstract class Parameters {
             .valueGetter(new LowerCaseParameterValuesGetter(new EventAttributeParameterValuesGetter()))
             .build();
 
+    static Parameter REFERER = Parameter.builder()
+            .name("referer")
+            .valueGetter(new LowerCaseParameterValuesGetter(new EventAttributeParameterValuesGetter()))
+            .build();
+
     static Parameter VISIT_BEFORE = Parameter.builder().name("visitBefore").validate(false).build();
 }
