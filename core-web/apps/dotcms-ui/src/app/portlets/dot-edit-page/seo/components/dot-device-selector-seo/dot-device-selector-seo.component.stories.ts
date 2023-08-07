@@ -75,7 +75,7 @@ export const Default = () => {
 
     return {
         template: `
-        <button (click)="op.openMenu($event)">Open Selector</button>
+        <p-button label="Open Selector" styleClass="p-button-outlined" (click)="op.openMenu($event)"></p-button>
         <dot-device-selector-seo #op></dot-device-selector-seo>
       `,
         props: {

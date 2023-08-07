@@ -25,6 +25,7 @@ export class DotTabButtonsComponent {
     @Output() clickOption = new EventEmitter();
     @Input() mode: DotPageMode;
     @Input() options: SelectItem[];
+    protected readonly pageMode = DotPageMode;
     protected readonly dropDownOpenIcon = 'pi pi-angle-up';
     protected readonly dropDownCloseIcon = 'pi pi-angle-down';
     protected readonly OPEN_MENU = 'openMenu';
