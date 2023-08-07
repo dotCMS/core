@@ -84,8 +84,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @Output()
     templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter<DotTemplateDesigner>();
 
-    @Output() fullyLoaded = new EventEmitter<void>();
-
     @ViewChild('templateContainerRef')
     templateContainerRef!: ElementRef<HTMLDivElement>;
 
@@ -261,8 +259,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
             this.grid.load(layout); // efficient that does diffs only
         });
-
-        this.fullyLoaded.emit();
     }
 
     ngOnDestroy(): void {

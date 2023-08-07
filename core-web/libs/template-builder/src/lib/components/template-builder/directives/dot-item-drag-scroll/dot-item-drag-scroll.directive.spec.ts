@@ -66,9 +66,13 @@ describe('DotItemDragScrollDirective', () => {
         expect(spectator.directive).toBeTruthy();
     });
 
-    it('should called "on" method wiht "dragstart" and "dragstop" of the ddElement when fullyLoaded event is emitted', () => {
+    it('should called "on" method wiht "dragstart" and "dragstop" of the ddElement', async () => {
         const ddElementSpy = jest.spyOn(spectator.directive.el.nativeElement.ddElement, 'on');
-        spectator.directive.parentComponent.fullyLoaded.emit();
+
+        spectator.directive.ngAfterViewInit();
+
+        // tick(100);
+        await spectator.fixture.whenStable();
 
         expect(ddElementSpy).toHaveBeenCalledTimes(2);
         expect(ddElementSpy).toHaveBeenCalledWith('dragstart', expect.any(Function));

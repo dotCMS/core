@@ -1,15 +1,13 @@
 import {
+    AfterViewInit,
     Directive,
     ElementRef,
     EventEmitter,
     Host,
     HostListener,
-    OnInit,
     Optional,
     Output
 } from '@angular/core';
-
-import { take } from 'rxjs/operators';
 
 import { SCROLL_DIRECTION } from '../../models/models';
 import { TemplateBuilderComponent } from '../../template-builder.component';
@@ -18,9 +16,7 @@ import { TemplateBuilderComponent } from '../../template-builder.component';
     selector: '[dotcmsItemDragScroll]',
     standalone: true
 })
-export class DotItemDragScrollDirective implements OnInit {
-    private scrollInterval;
-
+export class DotItemDragScrollDirective implements AfterViewInit {
     isDragging = false;
     container: HTMLElement;
     currentElement: HTMLElement;
@@ -66,16 +62,12 @@ export class DotItemDragScrollDirective implements OnInit {
     constructor(
         public el: ElementRef,
         @Optional() @Host() public parentComponent: TemplateBuilderComponent
-    ) {
-        if (!this.parentComponent) {
-            console.warn(
-                'dotcmsItemDragScroll directive must be used inside a dot-template-builder component'
-            );
-        }
-    }
+    ) {}
 
-    ngOnInit() {
-        this.parentComponent?.fullyLoaded.pipe(take(1)).subscribe(() => {
+    ngAfterViewInit() {
+        // Wait for gridstack to be initialized
+        // TODO: Find a better way to do this, right now it's the only way 'cause gridstack doesn't have an event for this
+        requestAnimationFrame(() => {
             this.container = this.parentComponent.templateContaniner;
             this.listenDragEvents();
         });
