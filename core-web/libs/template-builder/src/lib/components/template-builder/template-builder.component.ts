@@ -84,6 +84,11 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @Output()
     templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter<DotTemplateDesigner>();
 
+    @Output() fullyLoaded = new EventEmitter<void>();
+
+    @ViewChild('templateContainerRef')
+    templateContainerRef!: ElementRef<HTMLDivElement>;
+
     @ViewChildren('rowElement', {
         emitDistinctChangesOnly: true
     })
@@ -121,6 +126,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     grid!: GridStack;
     addBoxIsDragging = false;
+
+    get templateContaniner(): HTMLElement {
+        return this.templateContainerRef.nativeElement;
+    }
 
     constructor(
         private store: DotTemplateBuilderStore,
@@ -169,25 +178,12 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         });
 
         GridStack.setupDragIn('dotcms-add-widget', {
-            appendTo: 'body',
             helper: 'clone'
-        });
-
-        this.addBox.nativeElement.ddElement.on('dragstart', () => {
-            this.addBoxIsDragging = true;
-            this.cd.detectChanges();
-        });
-
-        this.addBox.nativeElement.ddElement.on('dragstop', () => {
-            this.addBoxIsDragging = false;
-            this.cd.detectChanges();
         });
 
         // Adding subgrids on load
         Array.from(this.grid.el.querySelectorAll('.grid-stack')).forEach((el) => {
             const subgrid = GridStack.addGrid(el as HTMLElement, subGridOptions);
-
-            this.fixGridstackNodeOnMouseLeave(el);
 
             subgrid.on('change', (_: Event, nodes: GridStackNode[]) => {
                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
@@ -237,7 +233,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 if (row && row.el) {
                     if (isNew) {
                         const newGridElement = row.el.querySelector('.grid-stack') as HTMLElement;
-                        this.fixGridstackNodeOnMouseLeave(ref.nativeElement);
 
                         // Adding subgrids on drop row
                         GridStack.addGrid(newGridElement, subGridOptions)
@@ -266,6 +261,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
             this.grid.load(layout); // efficient that does diffs only
         });
+
+        this.fullyLoaded.emit();
     }
 
     ngOnDestroy(): void {
@@ -405,22 +402,26 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     /**
-     * @description This method sets the box initial values everytime a mouse leaves a row
-     * so that way we always have the correct value setted and overriding the behavior of gridstack
+     * @description This method sets the box initial values of gridstack when gridstack changes it
      *
      * @private
-     * @param {Element} el
      * @memberof TemplateBuilderComponent
      */
-    private fixGridstackNodeOnMouseLeave(el: Element): void {
-        // So every time the mouse leaves the row, we set the initial values for the box
-        el.addEventListener('mouseleave', () => {
-            if (this.addBoxIsDragging && this.addBox.nativeElement.gridstackNode?.w !== BOX_WIDTH) {
-                this.addBox.nativeElement.gridstackNode = {
-                    ...this.addBox.nativeElement.gridstackNode,
-                    ...this.boxOptions
-                };
-            }
-        });
+    fixGridStackNodeOptions() {
+        if (this.addBoxIsDragging && this.addBox.nativeElement.gridstackNode?.w !== BOX_WIDTH) {
+            this.addBox.nativeElement.gridstackNode = {
+                ...this.addBox.nativeElement.gridstackNode,
+                ...this.boxOptions
+            };
+        }
+    }
+    /**
+     * @description Set the current value of dragging add box
+     *
+     * @param {boolean} isDragging
+     * @memberof TemplateBuilderComponent
+     */
+    setAddBoxIsDragging(isDragging: boolean): void {
+        this.addBoxIsDragging = isDragging;
     }
 }

@@ -11,6 +11,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotAddStyleClassesDialogStore } from './components/template-builder/components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { DotLayoutPropertiesComponent } from './components/template-builder/components/dot-layout-properties/dot-layout-properties.component';
 import { TemplateBuilderComponentsModule } from './components/template-builder/components/template-builder-components.module';
+import { DotItemDragScrollDirective } from './components/template-builder/directives/dot-item-drag-scroll/dot-item-drag-scroll.directive';
 import { TemplateBuilderComponent } from './components/template-builder/template-builder.component';
 
 @NgModule({
@@ -24,7 +25,8 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         NgClass,
         ToolbarModule,
         DividerModule,
-        TemplateBuilderComponentsModule
+        TemplateBuilderComponentsModule,
+        DotItemDragScrollDirective
     ],
     declarations: [TemplateBuilderComponent],
     providers: [
