@@ -1,5 +1,5 @@
 <dot-device-selector-seo
-    #op
+    #deviceSelector
     [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
     (selected)="changeDeviceHandler($event)"
     appendTo="body"
@@ -10,7 +10,7 @@
 <dot-tab-buttons
     [mode]="mode"
     [options]="options"
-    (openMenu)="op.openMenu($event)"
+    (openMenu)="deviceSelector.openMenu($event)"
     (clickOption)="stateSelectorHandler($event.target.value)"
     data-testId="dot-tabs-buttons"
 ></dot-tab-buttons>
