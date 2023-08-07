@@ -1,5 +1,7 @@
 package com.dotcms.api.client.files;
 
+import static com.dotcms.common.AssetsUtils.BuildRemoteAssetURL;
+
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.FolderAPI;
@@ -17,12 +19,6 @@ import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,8 +31,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import static com.dotcms.common.AssetsUtils.BuildRemoteAssetURL;
+import javax.inject.Inject;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 public class PushServiceTest {
@@ -76,6 +75,14 @@ public class PushServiceTest {
         authenticationContext.login(user, passwd);
     }
 
+    /**
+     * This method tests the scenario where there is nothing to push. It creates a temporal folder
+     * for the pull operation, prepares the test data, performs a pull operation, and then attempts
+     * to push the same content. It asserts that there are no assets or folders to push, delete,
+     * modify, or create.
+     *
+     * @throws IOException if an I/O error occurs
+     */
     @Test
     void Test_Nothing_To_Push() throws IOException {
 
@@ -135,6 +142,14 @@ public class PushServiceTest {
         }
     }
 
+    /**
+     * This method tests the scenario where there is a new site to push. It creates a temporal
+     * folder for the pull operation, prepares the test data, performs a pull operation, renames the
+     * site folder to simulate a new site, pushes the content, and validates that the new site was
+     * created correctly.
+     *
+     * @throws IOException if an I/O error occurs
+     */
     @Test
     void Test_Push_New_Site() throws IOException {
 
@@ -227,6 +242,14 @@ public class PushServiceTest {
         }
     }
 
+    /**
+     * This method tests the scenario where modified data is pushed. It creates a temporal folder
+     * for the pull operation, prepares the test data, performs a pull operation, modifies the
+     * pulled data, pushes the modified content, and validates that the modifications were pushed
+     * correctly.
+     *
+     * @throws IOException if an I/O error occurs
+     */
     @Test
     void Test_Push_Modified_Data() throws IOException {
 
@@ -440,7 +463,7 @@ public class PushServiceTest {
      * @throws IOException If there is an error reading the file or pushing
      *                     it to the server
      */
-    public void pushFile(final boolean live, final String language,
+    private void pushFile(final boolean live, final String language,
                          final String siteName, String folderPath, final String assetName) throws IOException {
 
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);

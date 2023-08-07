@@ -1,5 +1,7 @@
 package com.dotcms.api.client.files;
 
+import static com.dotcms.common.AssetsUtils.BuildRemoteAssetURL;
+
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.FolderAPI;
@@ -17,11 +19,6 @@ import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitResult;
@@ -29,11 +26,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotcms.common.AssetsUtils.BuildRemoteAssetURL;
+import javax.inject.Inject;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 class PullServiceTest {
@@ -319,7 +325,7 @@ class PullServiceTest {
      * @throws IOException If there is an error reading the file or pushing
      *                     it to the server
      */
-    public void pushFile(final boolean live, final String language,
+    private void pushFile(final boolean live, final String language,
                          final String siteName, String folderPath, final String assetName) throws IOException {
 
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);

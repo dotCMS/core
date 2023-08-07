@@ -1,21 +1,26 @@
 package com.dotcms.api.traversal;
 
+import static com.dotcms.model.asset.BasicMetadataFields.PATH_META_KEY;
+import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
+import static com.dotcms.model.asset.BasicMetadataFields.SIZE_META_KEY;
+
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
-
-import static com.dotcms.model.asset.BasicMetadataFields.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 public class FilterTest {
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when no filters are
+     * applied.
+     */
     @Test
     public void test_no_filters() {
 
@@ -34,6 +39,10 @@ public class FilterTest {
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when simple assets
+     * include filters are applied.
+     */
     @Test
     public void test_simple_includes() {
 
@@ -53,6 +62,10 @@ public class FilterTest {
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when simple assets
+     * include filters are applied
+     */
     @Test
     public void test_simple_includes2() {
 
@@ -72,6 +85,10 @@ public class FilterTest {
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when simple assets
+     * include filters are applied
+     */
     @Test
     public void test_simple_includes3() {
 
@@ -91,6 +108,10 @@ public class FilterTest {
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when simple folder
+     * include filters are applied
+     */
     @Test
     public void test_simple_includes4() {
 
@@ -110,6 +131,10 @@ public class FilterTest {
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when simple asset include
+     * filters are applied on the root folder.
+     */
     @Test
     public void test_simple_includes5() {
 
@@ -137,6 +162,10 @@ public class FilterTest {
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when simple folder
+     * include filters are applied on the root folder.
+     */
     @Test
     public void test_simple_includes6() {
 
@@ -156,6 +185,10 @@ public class FilterTest {
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when a simple folder
+     * include filter is applied on a specific folder.
+     */
     @Test
     public void test_simple_includes7() {
 
@@ -175,6 +208,10 @@ public class FilterTest {
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when a simple folder
+     * include filter is applied on a specific folder.
+     */
     @Test
     public void test_simple_includes8() {
 
@@ -194,6 +231,10 @@ public class FilterTest {
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple asset
+     * include filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_includes() {
 
@@ -214,6 +255,10 @@ public class FilterTest {
         Assertions.assertEquals(4, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple include
+     * filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_includes2() {
 
@@ -234,6 +279,10 @@ public class FilterTest {
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple include
+     * filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_includes3() {
 
@@ -254,6 +303,10 @@ public class FilterTest {
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple include
+     * filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_includes4() {
 
@@ -274,6 +327,10 @@ public class FilterTest {
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple include
+     * filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_includes5() {
 
@@ -294,6 +351,10 @@ public class FilterTest {
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple include
+     * filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_includes6() {
 
@@ -314,6 +375,10 @@ public class FilterTest {
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple include
+     * filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_includes7() {
 
@@ -334,6 +399,10 @@ public class FilterTest {
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple include
+     * filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_includes8() {
 
@@ -354,6 +423,10 @@ public class FilterTest {
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple include
+     * filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_includes9() {
 
@@ -374,6 +447,10 @@ public class FilterTest {
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple include
+     * filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_includes10() {
 
@@ -394,6 +471,10 @@ public class FilterTest {
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple include
+     * filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_includes11() {
 
@@ -414,6 +495,10 @@ public class FilterTest {
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when excluding specific
+     * assets based on their file extension.
+     */
     @Test
     public void test_simple_excludes() {
 
@@ -433,6 +518,10 @@ public class FilterTest {
         Assertions.assertEquals(4, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when excluding specific
+     * assets.
+     */
     @Test
     public void test_simple_excludes2() {
 
@@ -452,6 +541,10 @@ public class FilterTest {
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when a simple folder
+     * exclude filter is applied on a specific folder.
+     */
     @Test
     public void test_simple_excludes3() {
 
@@ -471,6 +564,10 @@ public class FilterTest {
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when a simple folder
+     * exclude filter is applied on a specific folder.
+     */
     @Test
     public void test_simple_excludes4() {
 
@@ -490,6 +587,10 @@ public class FilterTest {
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple folder and
+     * asset exclude filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_excludes() {
 
@@ -510,6 +611,10 @@ public class FilterTest {
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple folder and
+     * asset exclude filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_excludes2() {
 
@@ -530,6 +635,10 @@ public class FilterTest {
         Assertions.assertEquals(2, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when multiple folder
+     * exclude filters are applied on a specific folder.
+     */
     @Test
     public void test_multiple_excludes3() {
 
@@ -550,6 +659,10 @@ public class FilterTest {
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when combining multiple
+     * filters on a specific folder.
+     */
     @Test
     public void test_combine() {
 
@@ -570,6 +683,10 @@ public class FilterTest {
         Assertions.assertEquals(2, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when combining multiple
+     * filters on a specific folder.
+     */
     @Test
     public void test_combine2() {
 
@@ -591,6 +708,10 @@ public class FilterTest {
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when combining multiple
+     * filters on a specific folder.
+     */
     @Test
     public void test_combine3() {
 
@@ -612,6 +733,10 @@ public class FilterTest {
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when combining multiple
+     * filters on a specific folder.
+     */
     @Test
     public void test_combine4() {
 
@@ -633,6 +758,10 @@ public class FilterTest {
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Test that verifies that the filtering functionality works correctly when combining multiple
+     * filters on a specific folder.
+     */
     @Test
     public void test_combine5() {
 
@@ -654,6 +783,13 @@ public class FilterTest {
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
+    /**
+     * Creates a FolderView object for a specific folder with sub-folders and assets.
+     *
+     * @param name The name of the folder.
+     * @param path The path of the folder.
+     * @return A FolderView object representing the specified folder.
+     */
     private FolderView folderViewForPath(String name, String path) {
 
         var folderBuilder = FolderView.builder();
