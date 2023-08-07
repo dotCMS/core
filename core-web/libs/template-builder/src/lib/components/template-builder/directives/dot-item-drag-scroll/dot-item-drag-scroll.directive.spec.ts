@@ -71,7 +71,6 @@ describe('DotItemDragScrollDirective', () => {
 
         spectator.directive.ngAfterViewInit();
 
-        // tick(100);
         await spectator.fixture.whenStable();
 
         expect(ddElementSpy).toHaveBeenCalledTimes(2);
