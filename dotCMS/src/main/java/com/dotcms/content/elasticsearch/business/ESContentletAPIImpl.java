@@ -924,7 +924,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     user, respectFrontendRoles);
             if (contentletOpt.isPresent()) {
 
-                Logger.info(this, "A Workflow has been run instead of a simple publish: " +
+                Logger.debug(this, "A Workflow has been run instead of a simple publish: " +
                         contentlet.getIdentifier());
                 if (!contentlet.getInode().equals(contentletOpt.get().getInode())) {
                     this.copyProperties(contentlet, contentletOpt.get().getMap());
@@ -6663,6 +6663,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Map<String, Object> cmap = contentlet.getMap();
         workingContentlet.setStructureInode(contentlet.getStructureInode());
         workingContentlet.setInode(contentletInode);
+        workingContentlet.setVariantId(contentlet.getVariantId());
         copyProperties(workingContentlet, cmap);
         workingContentlet.setInode("");
 
@@ -6943,6 +6944,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return findAllVersions(identifier, true, user, respectFrontendRoles);
     }
 
+    /**
+     *  Returns all versions of a contentlet given a set of identifiers
+     * @param identifiers
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Override
+    public List<Contentlet> findLiveOrWorkingVersions(Set<String> identifiers, User user,
+            boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> allVersions = contentFactory.findLiveOrWorkingVersions(identifiers);
+        if (allVersions.isEmpty()) {
+            return List.of();
+        }
+        return allVersions.stream().filter(contentlet -> {
+            try {
+                return permissionAPI.doesUserHavePermission(contentlet,
+                        PermissionAPI.PERMISSION_READ, user, respectFrontendRoles);
+            } catch (DotDataException e) {
+                return false;
+            }
+        }).collect(Collectors.toList());
+    }
+
     @CloseDBIfOpened
     @Override
     public List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant,
@@ -7106,8 +7134,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setFolder((String) value);
                 } else if (isSetPropertyVariable(conVariable)) {
                     contentlet.setProperty(conVariable, value);
-                } else if (conVariable.equals(Contentlet.VARIANT_ID)) {
-                    contentlet.setVariantId(value.toString());
                 } else if (velFieldmap.get(conVariable) != null) {
                     Field field = velFieldmap.get(conVariable);
                     if (isFieldTypeString(field)) {
@@ -8549,23 +8575,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletStateException
      */
     private Contentlet findWorkingContentlet(Contentlet content)
-            throws DotSecurityException, DotDataException, DotContentletStateException {
-        Contentlet con = null;
-        List<Contentlet> workingCons = new ArrayList<>();
+            throws DotDataException, DotContentletStateException {
+        Contentlet workingCons = null;
         if (InodeUtils.isSet(content.getIdentifier())) {
-            workingCons = contentFactory.findContentletsByIdentifier(content.getIdentifier(), false,
-                    content.getLanguageId());
+            workingCons = contentFactory.findContentletByIdentifier(content.getIdentifier(), false,
+                    content.getLanguageId(), content.getVariantId());
+
+            if (!UtilMethods.isSet(workingCons)) {
+                workingCons = contentFactory.findContentletByIdentifier(content.getIdentifier(), false,
+                        content.getLanguageId(), VariantAPI.DEFAULT_VARIANT.name());
+            }
         }
-        if (workingCons.size() > 0) {
-            con = workingCons.get(0);
-        }
-        if (workingCons.size() > 1) {
-            Logger.warn(this,
-                    "Multiple working contentlets found for identifier:" + content.getIdentifier()
-                            + " with languageid:" + content.getLanguageId()
-                            + " returning the lastest modified.");
-        }
-        return con;
+
+        return workingCons;
     }
 
     /**

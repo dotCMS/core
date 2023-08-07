@@ -129,7 +129,7 @@ tt {
     border: 1px solid #c9c9c9;
     border-top: 0;
     padding: 10px 0;
-    @include box-shadow(0 -1px 6px rgba(0, 0, 0, 0.2));
+    @include box-shadow(0 -1px 6px $color-palette-black-op-20);
 }
 #ft {
     padding: 0;

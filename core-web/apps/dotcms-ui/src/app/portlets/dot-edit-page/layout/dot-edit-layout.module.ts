@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
+import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 import { DotEditLayoutDesignerModule } from '@components/dot-edit-layout-designer/dot-edit-layout-designer.module';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { TemplateBuilderModule } from '@dotcms/template-builder';
@@ -22,7 +23,8 @@ const routes: Routes = [
         RouterModule.forChild(routes),
         DotEditLayoutDesignerModule,
         DotShowHideFeatureDirective,
-        TemplateBuilderModule
+        TemplateBuilderModule,
+        DotGlobalMessageModule
     ],
     exports: [DotEditLayoutComponent]
 })

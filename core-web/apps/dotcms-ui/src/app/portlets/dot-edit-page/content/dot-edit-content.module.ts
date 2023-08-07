@@ -14,6 +14,7 @@ import { IframeOverlayService } from '@components/_common/iframe/service/iframe-
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotPaletteModule } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.module';
+import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import {
     DotEditPageService,
     DotESContentService,
@@ -40,6 +41,7 @@ import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
 
+import { DotEditPageToolbarSeoComponent } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.component';
 const routes: Routes = [
     {
         component: DotEditContentComponent,
@@ -68,7 +70,9 @@ const routes: Routes = [
         DotEditPageStateControllerModule,
         DotOverlayMaskModule,
         DotPaletteModule,
-        DotIconModule
+        DotIconModule,
+        DotEditPageToolbarSeoComponent,
+        DotShowHideFeatureDirective
     ],
     exports: [DotEditContentComponent],
     providers: [

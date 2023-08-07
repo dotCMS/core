@@ -69,11 +69,11 @@
     }
 
     .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-        border-bottom: 2px solid var(--color-sec);
+        border-bottom: 2px solid $color-palette-secondary-500;
     }
 
     .p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
-        border-bottom: 2px solid var(--color-sec);
+        border-bottom: 2px solid $color-palette-secondary-500;
     }
 
     .p-tabview .p-tabview-nav li .p-tabview-nav-link {

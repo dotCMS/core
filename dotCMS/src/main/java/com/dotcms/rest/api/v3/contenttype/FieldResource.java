@@ -22,6 +22,10 @@ import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static com.dotcms.util.CollectionsUtils.map;
 
 /**
@@ -206,6 +210,17 @@ public class FieldResource {
 
         final List<String> fieldsID = deleteFieldsForm.getFieldsID();
         final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
+        final String publishDateVar = contentType.publishDateVar();
+        final String expireDateVar = contentType.expireDateVar();
+
+        final List<Field> filteredFields = contentType.fields().stream().filter(field -> fieldsID.contains(field.id())).collect(Collectors.toList());
+
+        for (final Field field : filteredFields) {
+            if ((publishDateVar != null && publishDateVar.equals(field.variable())) ||
+                    (expireDateVar != null && expireDateVar.equals(field.variable()))){
+                throw new DotDataException("Field is being used as Publish or Expire Field at Content Type Level. Please unlink the field before deleting it.");
+            }
+        };
 
         final ContentTypeFieldLayoutAPI.DeleteFieldResult deleteFieldResult =
                 this.contentTypeFieldLayoutAPI.deleteField(contentType, fieldsID, user);

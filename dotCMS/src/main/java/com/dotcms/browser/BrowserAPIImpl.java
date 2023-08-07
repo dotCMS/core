@@ -66,6 +66,8 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
 
+    private static final StringBuilder ASSET_NAME_EQ = new StringBuilder().append("LOWER(%s) = ? ");
+
     /**
      * Returns a collection of contentlets based on specific filtering criteria specified via the
      * {@link BrowserQuery} class, such as: Parent folder, Site, archived/non-archived status, base Content Types,
@@ -335,6 +337,15 @@ public class BrowserAPIImpl implements BrowserAPI {
             sqlQuery.append(" ) ");
             parameters.add("%" + filterText + "%");
         }
+
+        if(UtilMethods.isSet(browserQuery.fileName)){
+            final String matchText = browserQuery.fileName.toLowerCase().trim();
+            sqlQuery.append(" and (");
+            sqlQuery.append(" LOWER(id.asset_name) = ?");
+            sqlQuery.append(" ) ");
+            parameters.add( matchText );
+        }
+
         if (browserQuery.showMenuItemsOnly) {
             sqlQuery.append(" and c.show_on_menu = ").append(DbConnectionFactory.getDBTrue());
             luceneQuery.append(" +showOnMenu:true ");

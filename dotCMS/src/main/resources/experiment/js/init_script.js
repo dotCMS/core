@@ -3,6 +3,7 @@ function setJitsuExperimentData (experimentData) {
     let experimentsShortData = {
         experiments: experimentData.experiments.map((experiment) => ({
                 experiment: experiment.id,
+                runningId: experiment.runningId,
                 variant: experiment.variant.name,
                 lookBackWindow: experiment.lookBackWindow.value
             })

@@ -283,6 +283,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				}
 			}
 		}
+
+		fileAsset.setVariantId(con.getVariantId());
 		this.contentletCache.add(fileAsset);
 		return fileAsset;
 	}

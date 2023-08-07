@@ -9,6 +9,7 @@ import com.dotcms.jitsu.EventLogWebInterceptor;
 import com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptor;
 import com.dotcms.prerender.PreRenderSEOWebInterceptor;
 
+import com.dotcms.variant.business.web.CurrentVariantWebInterceptor;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 
@@ -37,6 +38,7 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         delegate.add(new GraphqlCacheWebInterceptor());
         delegate.add(new ResponseMetaDataWebInterceptor());
         delegate.add(new EventLogWebInterceptor());
+        delegate.add(new CurrentVariantWebInterceptor());
     } // addInterceptors.
 
 } // E:O:F:InterceptorFilter.

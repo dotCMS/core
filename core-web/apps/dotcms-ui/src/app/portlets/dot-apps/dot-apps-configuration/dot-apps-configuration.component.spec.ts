@@ -20,6 +20,7 @@ import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.servi
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotAlertConfirmService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     MockDotMessageService,
@@ -74,6 +75,7 @@ const appData = {
 const routeDatamock = {
     data: appData
 };
+
 class ActivatedRouteMock {
     get data() {
         return of(routeDatamock);
@@ -85,6 +87,7 @@ class MockDotAppsService {
     deleteConfiguration(_configurationId: string): Observable<string> {
         return of('');
     }
+
     deleteAllConfigurations(): Observable<string> {
         return of('');
     }
@@ -118,6 +121,7 @@ describe('DotAppsConfigurationComponent', () => {
                 DotAppsConfigurationListModule,
                 HttpClientTestingModule,
                 DotPipesModule,
+                DotMessagePipe,
                 MarkdownModule.forRoot()
             ],
             declarations: [DotAppsConfigurationComponent],
@@ -197,17 +201,13 @@ describe('DotAppsConfigurationComponent', () => {
                 fixture.debugElement.queryAll(
                     By.css('.dot-apps-configuration__action_header button')
                 )[0].nativeElement.innerText
-            ).toContain(
-                messageServiceMock.get('apps.confirmation.export.all.button').toUpperCase()
-            );
+            ).toContain(messageServiceMock.get('apps.confirmation.export.all.button'));
 
             expect(
                 fixture.debugElement.queryAll(
                     By.css('.dot-apps-configuration__action_header button')
                 )[1].nativeElement.innerText
-            ).toContain(
-                messageServiceMock.get('apps.confirmation.delete.all.button').toUpperCase()
-            );
+            ).toContain(messageServiceMock.get('apps.confirmation.delete.all.button'));
         });
 
         it('should have dot-apps-configuration-list with correct values', () => {

@@ -13,10 +13,10 @@ import { of } from 'rxjs/internal/observable/of';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/app/portlets/dot-pages/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -24,10 +24,10 @@ import {
     MockDotRouterService,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 
 import { DotFavoritePageComponent } from './dot-favorite-page.component';
 import { DotFavoritePageActionState, DotFavoritePageStore } from './store/dot-favorite-page.store';
+
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content><ng-content select="[footerActions]"></ng-content>',
@@ -124,12 +124,13 @@ describe('DotFavoritePageComponent', () => {
         TestBed.configureTestingModule({
             declarations: [
                 DotFavoritePageComponent,
-                DotMessagePipe,
+
                 DotFormDialogMockComponent,
                 DotHtmlToImageMockComponent
             ],
             imports: [
                 ButtonModule,
+                DotMessagePipe,
                 FormsModule,
                 MultiSelectModule,
                 ReactiveFormsModule,
@@ -139,6 +140,7 @@ describe('DotFavoritePageComponent', () => {
                 HttpClientTestingModule
             ],
             providers: [
+                DotSessionStorageService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
@@ -439,7 +441,7 @@ describe('DotFavoritePageComponent', () => {
             );
 
             expect(image.nativeElement['src'].includes('123')).toBe(true);
-            expect(reloadBtn.nativeElement.outerText).toBe('RELOAD');
+            expect(reloadBtn.nativeElement.outerText).toBe('Reload');
         });
 
         it('should button Remove Favorite be enabled', () => {

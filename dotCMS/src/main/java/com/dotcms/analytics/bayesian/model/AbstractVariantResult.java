@@ -21,11 +21,22 @@ public interface AbstractVariantResult {
     @JsonProperty("variant")
     String variant();
 
+    @JsonProperty("isControl")
+    boolean isControl();
+
     @JsonProperty("conversionRate")
     double conversionRate();
 
     @JsonProperty("probability")
     double probability();
+
+    @Nullable
+    @JsonProperty("expectedLoss")
+    Double expectedLoss();
+
+    @Nullable
+    @JsonProperty("risk")
+    Double risk();
 
     @Nullable
     @JsonProperty("medianGrowth")
@@ -34,8 +45,5 @@ public interface AbstractVariantResult {
     @Nullable
     @JsonProperty("credibilityInterval")
     CredibilityInterval credibilityInterval();
-
-    @JsonProperty("risk")
-    double risk();
 
 }

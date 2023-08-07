@@ -43,7 +43,7 @@
 		}
 
 		.logout__container button {
-			background: var(--color-main);
+			background: var(--color-palette-primary-500);
 			border: solid 1px transparent;
 			height: 36px;
 			margin-right: 0;
@@ -60,7 +60,7 @@
 		}
 
 		.logout__container button:hover {
-			background: var(--color-main_mod);
+			background: var(--color-palette-primary-600);
 		}
 
 		#logout__image {

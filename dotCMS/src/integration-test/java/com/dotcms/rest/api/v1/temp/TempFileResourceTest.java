@@ -33,6 +33,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.util.SystemProperties;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -45,6 +46,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,7 +87,8 @@ public class TempFileResourceTest {
     }
 
     private static File testFile() throws Exception {
-        File testFile = new File(UUIDGenerator.shorty() + "test.png");
+        File testFile = Path.of(
+                SystemProperties.get("java.io.tmpdir"), UUIDGenerator.shorty() + "test.png").toFile();
         RandomAccessFile fileWrite = new RandomAccessFile(testFile, "rw");
         final long fileLength = 1024 * 50;
         fileWrite.setLength(fileLength);

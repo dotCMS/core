@@ -28,33 +28,38 @@ public abstract class AbstractLanguageCommand {
 
     String shortFormat(final Language language) {
         return String.format(
-                "language: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] code: [@|bold,underline,green %s|@] country:[@|bold,yellow %s|@] countryCode: [@|bold,yellow %s|@]",
-                language.language(),
+                "language: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] code: [@|bold,underline,green %s|@] country:[@|bold,yellow %s|@] countryCode: [@|bold,yellow %s|@] isoCode: [@|bold,yellow %s|@]",
+                language.language().orElse(""),
                 language.id().get(),
-                language.languageCode(),
-                language.country(),
-                language.countryCode()
+                language.languageCode().get(),
+                language.country().orElse(""),
+                language.countryCode().orElse(""),
+                language.isoCode()
+
         );
     }
 
     /**
-     * Find a language by id or language tag
-     * @param languageTagOrId
+     * Find a language by id or language iso code
+     * @param languageIsoOrId
      * @return
      */
-    Optional<Language> findExistingLanguage(final String languageTagOrId){
-        if (null != languageTagOrId) {
+    Optional<Language> findExistingLanguage(final String languageIsoOrId){
+        if (null != languageIsoOrId) {
             final Language language;
             final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
             try {
-                if (StringUtils.isNumeric(languageTagOrId)) {
-                    language = languageAPI.findById(languageTagOrId).entity();
+                if (StringUtils.isNumeric(languageIsoOrId)) {
+                    language = languageAPI.findById(languageIsoOrId).entity();
                 } else {
-                    language = languageAPI.getFromLanguageTag(languageTagOrId).entity();
+                    language = languageAPI.getFromLanguageIsoCode(languageIsoOrId).entity();
                 }
-                return Optional.of(language);
+
+                if (language.id().isPresent() && language.id().get() > 0) {
+                    return Optional.of(language);
+                }
             } catch (NotFoundException nfe){
-                output.error("Language not found: " + languageTagOrId);
+                output.error("Language not found: " + languageIsoOrId);
             }
         }
         return Optional.empty();

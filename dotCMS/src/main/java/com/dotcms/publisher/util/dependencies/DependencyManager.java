@@ -5,6 +5,7 @@ import static com.dotcms.util.CollectionsUtils.set;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PublisherUtil;
@@ -15,6 +16,7 @@ import com.dotcms.publishing.manifest.CSVManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
 import com.dotcms.publishing.manifest.ManifestReason;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -49,6 +51,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.math3.analysis.function.Exp;
 import org.apache.felix.framework.OSGIUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -324,6 +327,17 @@ public class DependencyManager {
 						.title(getSyncingAllCategoriesTitle())
 						.build(), ManifestReason.INCLUDE_BY_USER.getMessage());
 
+			} else if (asset.getType().equals(PusheableAsset.EXPERIMENT.getType())) {
+				final Optional<Experiment> experiment = APILocator.getExperimentsAPI()
+						.find(asset.getAsset(), user);
+				if (experiment.isPresent()) {
+					add(experiment.get(), PusheableAsset.EXPERIMENT);
+				} else {
+					Logger.warn(getClass(), "Experiment  id: "
+							+ (asset.getAsset() != null ? asset.getAsset()
+							: "N/A")
+							+ " is not present in the database, not Pushed.");
+				}
 			}
 		}
 
@@ -460,7 +474,13 @@ public class DependencyManager {
 		} else if (User.class.isInstance(asset)) {
 			final User user = User.class.cast(asset);
 			return user.getUserId();
-		} else {
+		}  else if (Experiment.class.isInstance(asset)) {
+			final Experiment experiment = Experiment.class.cast(asset);
+			return experiment.id().orElseThrow();
+		} else if (Variant.class.isInstance(asset)) {
+			final Variant variant = Variant.class.cast(asset);
+			return variant.name();
+		}else {
 			throw new IllegalArgumentException("Not allowed: " + asset.getClass().getName());
 		}
 	}

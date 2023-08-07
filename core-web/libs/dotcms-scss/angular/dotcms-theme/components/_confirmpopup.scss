@@ -5,15 +5,17 @@
     margin-top: $spacing-2;
     top: 0;
     left: 0;
+    width: 21.75rem;
 
     background: $white;
     color: $color-palette-gray-800;
     border: 0 none;
-    border-radius: $border-radius-xs;
+    border-radius: $border-radius-md;
     box-shadow: $md-shadow-1;
 
     .p-confirm-popup-icon {
         font-size: $font-size-xl;
+        color: $color-palette-primary-500;
     }
 
     .p-confirm-popup-message {
@@ -88,4 +90,8 @@
     background-color: transparent;
     color: $color-palette-primary;
     border-color: transparent;
+}
+
+.p-confirm-popup .p-button.p-button-text.p-confirm-popup-reject {
+    border: 1.5px solid $color-palette-primary-400;
 }

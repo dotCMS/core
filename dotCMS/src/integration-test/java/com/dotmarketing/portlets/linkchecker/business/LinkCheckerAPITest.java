@@ -2,7 +2,9 @@ package com.dotmarketing.portlets.linkchecker.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -11,7 +13,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.HTMLPageAssetUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -28,6 +29,8 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -39,6 +42,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * This class tests the Link Checker functionality provided in dotCMS. It
@@ -188,249 +192,281 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
 
     @Test
     public void findInvalidLinks() throws Exception {
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
-        //////////////////////////
-        // basic external links //
-        //////////////////////////
-        String[] extlinks=new String[]{
-            "http://thissitedoesntexists.imsureaboutthat.badextension.",
-            "https://somebadhostovergoogle.google.com.", // hope they don't create it in the future
-            "http://thisisabadhostover.dotcms.comx.", // yeah small typo
-            "mailto:dev@dotcms.com", // should ignore this one
-            "webcalc://somehostnomatter.itsbad.", // should ignore this
-            "http://www.oracle.com./index.html", // bad URL
-            "https://github.com/dotCMS/core" // this is a good link
-        };
-        HashSet<String> links=new HashSet<>(Arrays.asList(extlinks));
-        StringBuilder sb=new StringBuilder("<html><body>\n");
-        for(String ll : extlinks) sb.append("<a href='").append(ll).append("' title='short title'>this is a link</a>\n");
-        sb.append("</body></html>");
+        try {
+            final HttpSession session = mock(HttpSession.class);
+            final DotCMSMockRequestWithSession request = new DotCMSMockRequestWithSession(session,
+                    false);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
-        Contentlet con=new Contentlet();
-        con.setStructureInode(structure.getInode());
-        con.setStringProperty("html", sb.toString());
-        con.setHost(host.getIdentifier());
-        con.setIndexPolicy(IndexPolicy.FORCE);
-        con=APILocator.getContentletAPI().checkin(con, sysuser, false);
+            //////////////////////////
+            // basic external links //
+            //////////////////////////
+            String[] extlinks = new String[]{
+                    "http://thissitedoesntexists.imsureaboutthat.badextension.",
+                    "https://somebadhostovergoogle.google.com.",
+                    // hope they don't create it in the future
+                    "http://thisisabadhostover.dotcms.comx.", // yeah small typo
+                    "mailto:dev@dotcms.com", // should ignore this one
+                    "webcalc://somehostnomatter.itsbad.", // should ignore this
+                    "http://www.oracle.com./index.html", // bad URL
+                    "https://github.com/dotCMS/core" // this is a good link
+            };
+            HashSet<String> links = new HashSet<>(Arrays.asList(extlinks));
+            StringBuilder sb = new StringBuilder("<html><body>\n");
+            for (String ll : extlinks)
+                sb.append("<a href='").append(ll)
+                        .append("' title='short title'>this is a link</a>\n");
+            sb.append("</body></html>");
 
-        List<InvalidLink> invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
-        assertTrue(invalids!=null);
-        assertTrue(invalids.size()>0);
+            Contentlet con = new Contentlet();
+            con.setStructureInode(structure.getInode());
+            con.setStringProperty("html", sb.toString());
+            con.setHost(host.getIdentifier());
+            con.setIndexPolicy(IndexPolicy.FORCE);
+            con = APILocator.getContentletAPI().checkin(con, sysuser, false);
 
-        for(InvalidLink il : invalids) {
-           System.out.println("url: " + il.getUrl());
+            List<InvalidLink> invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
+            assertTrue(invalids != null);
+            assertTrue(invalids.size() > 0);
+
+            for (InvalidLink il : invalids) {
+                System.out.println("url: " + il.getUrl());
+            }
+
+            assertEquals(4, invalids.size());
+
+            for (InvalidLink il : invalids) {
+                assertEquals(il.getTitle(), "short title");
+                assertTrue(links.remove(il.getUrl()));
+            }
+
+            ///////////////////////////////////////
+            // basic internal links to htmlpages //
+            ///////////////////////////////////////
+
+            APILocator.getFolderAPI().createFolders("/a_test/b_test/", host, sysuser, false);
+            Folder Fa = APILocator.getFolderAPI()
+                    .findFolderByPath("/a_test/", host, sysuser, false);
+            Folder Fab = APILocator.getFolderAPI()
+                    .findFolderByPath("/a_test/b_test", host, sysuser, false);
+
+            HTMLPageAsset page1 = HTMLPageAssetUtil.createDummyPage("index", "index", "index",
+                    template, Fa, host);
+            pages.add(page1);
+            HTMLPageAsset page2 = HTMLPageAssetUtil.createDummyPage("something", "something",
+                    "something", template, Fa, host);
+            pages.add(page2);
+            HTMLPageAsset page3 = HTMLPageAssetUtil.createDummyPage("index", "index", "index",
+                    template, Fab, host);
+            pages.add(page3);
+            HTMLPageAsset page4 = HTMLPageAssetUtil.createDummyPage("something", "something",
+                    "something", template, Fab, host);
+            pages.add(page4);
+
+            extlinks = new String[]{
+                    page1.getURI(), page2.getURI(), page3.getURI(), page4.getURI(), // direct hit!
+                    "/a_test/", "/a_test/b_test", // should be good as it hits index page
+                    "/a_test/notnotnot_exists." + pageExt,  // a bad one!
+                    "?relative=yes", // should be ignored
+                    "#id_inside_page", // ignored too
+                    page2.getURI() + "?a=1&b=2" // with query string
+            };
+
+            sb = new StringBuilder("<html><body>\n");
+            for (String ll : extlinks)
+                sb.append("<a href='").append(ll).append("'>link</a>\n");
+            sb.append("</body></html>");
+
+            con = new Contentlet();
+            con.setStructureInode(structure.getInode());
+            con.setStringProperty("html", sb.toString());
+            con.setHost(host.getIdentifier());
+            con.setIndexPolicy(IndexPolicy.FORCE);
+            con = APILocator.getContentletAPI().checkin(con, sysuser, false);
+
+            invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
+            assertTrue(invalids != null);
+            assertEquals(invalids.size(), 1);
+            assertEquals(invalids.get(0).getUrl(), "/a_test/notnotnot_exists." + pageExt);
+
+            ////////////////////////
+            // basic urlmap links //
+            ////////////////////////
+            con = new Contentlet();
+            con.setStructureInode(urlmapstructure.getInode());
+            con.setStringProperty("a", "url1");
+            con.setHost(host.getIdentifier());
+            con.setIndexPolicy(IndexPolicy.FORCE);
+            con = APILocator.getContentletAPI().checkin(con, sysuser, false);
+
+            con = new Contentlet();
+            con.setStructureInode(urlmapstructure.getInode());
+            con.setStringProperty("a", "url2");
+            con.setIndexPolicy(IndexPolicy.FORCE);
+            con = APILocator.getContentletAPI().checkin(con, sysuser, false);
+
+            extlinks = new String[]{
+                    "/test_mapped/url1", "/test_mapped/url2/", // those should be good
+                    "/test_mapped/url1#ignorethis",
+                    "/test_mapped/url2/#againignore",
+                    "/test_mapped/url3" // a bad one
+            };
+            sb = new StringBuilder("<html><body>\n");
+            for (String ll : extlinks)
+                sb.append("<a href='").append(ll).append("'>link</a>\n");
+            sb.append("</body></html>");
+
+            con = new Contentlet();
+            con.setStructureInode(structure.getInode());
+            con.setStringProperty("html", sb.toString());
+            con.setHost(host.getIdentifier());
+            con.setIndexPolicy(IndexPolicy.FORCE);
+            con = APILocator.getContentletAPI().checkin(con, sysuser, false);
+
+            invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
+            assertTrue(invalids != null);
+            assertEquals(invalids.size(), 1);
+            assertEquals(invalids.get(0).getUrl(), "/test_mapped/url3");
+
+            /* Now using two hosts. In host1 we gonna put a content with a valid
+             * internal link to a page. Then we add the contentlet in a page that
+             * lives in another host. That should break the internal link */
+            con = new Contentlet();
+            con.setStringProperty("html", "<html><body>" +
+                    "<a href='" + page2.getURI() + "'>thislink</a>" +
+                    "<a href='" + page3.getURI() + "'>thislink</a>" +
+                    "<a href='" + page4.getURI() + "'>thislink</a>" +
+                    "</body></html>");
+            con.setStructureInode(structure.getInode());
+            con.setHost(host.getIdentifier());
+            con.setIndexPolicy(IndexPolicy.FORCE);
+            con = APILocator.getContentletAPI().checkin(con, sysuser, false);
+            MultiTree mtree = new MultiTree();
+            mtree.setParent1(page1.getIdentifier());
+            mtree.setParent2(container.getIdentifier());
+            mtree.setChild(con.getIdentifier());
+            mtree.setTreeOrder(1);
+            APILocator.getMultiTreeAPI().saveMultiTree(mtree);
+
+            // that should be ok. It is in the same host where those pages are valid
+            invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
+            assertTrue(invalids != null);
+            assertEquals(invalids.size(), 0);
+
+            // now lets add some salt here. If the content is added in a page in host2 it
+            // should break the internal links
+            Folder home = APILocator.getFolderAPI().createFolders("/home/", host2, sysuser, false);
+            HTMLPageAsset page5 = HTMLPageAssetUtil.createDummyPage("something", "something",
+                    "something", template, home, host2);
+            pages.add(page5);
+
+            con = new Contentlet();
+            con.setStringProperty("html", "<html><body>" +
+                    "<a href='" + page2.getURI() + "'>thislink</a>" +
+                    "<a href='" + page3.getURI() + "'>thislink</a>" +
+                    "<a href='" + page4.getURI() + "'>thislink</a>" +
+                    "</body></html>");
+            con.setStructureInode(structure.getInode());
+            con.setHost(host2.getIdentifier());
+            con = APILocator.getContentletAPI().checkin(con, sysuser, false);
+            mtree = new MultiTree();
+            mtree.setParent1(page5.getIdentifier());
+            mtree.setParent2(container.getIdentifier());
+            mtree.setChild(con.getIdentifier());
+            mtree.setTreeOrder(1);
+            APILocator.getMultiTreeAPI().saveMultiTree(mtree);
+
+            // now all those links should be broken
+            invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
+            assertTrue(invalids != null);
+            assertEquals(3, invalids.size());
+            links = new HashSet<>(
+                    Arrays.asList(new String[]{page2.getURI(), page3.getURI(), page4.getURI()}));
+            for (InvalidLink link : invalids)
+                assertTrue(links.remove(link.getUrl()));
+
+            ///////////////////////////////////////
+            // Content htmlpages                 //
+            ///////////////////////////////////////
+
+            APILocator.getFolderAPI()
+                    .createFolders("/a_html_asset_test/b_html_asset_test/", host, sysuser, false);
+            Folder Fahtml = APILocator.getFolderAPI()
+                    .findFolderByPath("/a_html_asset_test/", host, sysuser, false);
+            Folder Fabhtml = APILocator.getFolderAPI()
+                    .findFolderByPath("/a_html_asset_test/b_html_asset_test", host, sysuser, false);
+
+            HTMLPageAsset page6 = HTMLPageAssetUtil.createDummyPage("index", "index", "index",
+                    template, Fahtml, host);
+            pages.add(page6);
+            HTMLPageAsset page7 = HTMLPageAssetUtil.createDummyPage("something", "something",
+                    "something", template, Fahtml, host);
+            pages.add(page7);
+            HTMLPageAsset page8 = HTMLPageAssetUtil.createDummyPage("index", "index", "index",
+                    template, Fabhtml, host);
+            pages.add(page8);
+            HTMLPageAsset page9 = HTMLPageAssetUtil.createDummyPage("something", "something",
+                    "something", template, Fabhtml, host);
+            pages.add(page9);
+
+            extlinks = new String[]{
+                    page6.getURI(), page7.getURI(), page8.getURI(), page9.getURI(), // direct hit!
+                    "/a_html_asset_test/", "/a_html_asset_test/b_html_asset_test",
+                    // should be good as it hits index page
+                    "/a_html_asset_test/notnotnot_exists",  // a bad one!
+                    page7.getURI() + "?a=1&b=2" // with query string
+            };
+
+            sb = new StringBuilder("<html><body>\n");
+            for (String ll : extlinks)
+                sb.append("<a href='").append(ll).append("'>link</a>\n");
+            sb.append("</body></html>");
+
+            con = new Contentlet();
+            con.setStructureInode(structure.getInode());
+            con.setStringProperty("html", sb.toString());
+            con.setHost(host.getIdentifier());
+            con.setIndexPolicy(IndexPolicy.FORCE);
+            con = APILocator.getContentletAPI().checkin(con, sysuser, false);
+
+            invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
+            assertTrue(invalids != null);
+            assertEquals(invalids.size(), 1);
+            assertEquals(invalids.get(0).getUrl(), "/a_html_asset_test/notnotnot_exists");
+
+            // content on host2 referencing pages on host
+            con = new Contentlet();
+            con.setStringProperty("html", "<html><body>" +
+                    "<a href='" + page6.getURI() + "'>thislink</a>" +
+                    "<a href='" + page7.getURI() + "'>thislink</a>" +
+                    "<a href='" + page8.getURI() + "'>thislink</a>" +
+                    "</body></html>");
+            con.setStructureInode(structure.getInode());
+            con.setHost(host2.getIdentifier());
+            con.setIndexPolicy(IndexPolicy.FORCE);
+            con = APILocator.getContentletAPI().checkin(con, sysuser, false);
+
+            // now all those links should be broken
+            invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
+            assertTrue(invalids != null);
+            assertEquals(3, invalids.size());
+            links = new HashSet<>(
+                    Arrays.asList(new String[]{page6.getURI(), page7.getURI(), page8.getURI()}));
+
+            APILocator.getVersionableAPI().setWorking(page6);
+            APILocator.getVersionableAPI().setWorking(page7);
+            APILocator.getVersionableAPI().setWorking(page8);
+            APILocator.getVersionableAPI().setWorking(page9);
+            HibernateUtil.flush();
+            HibernateUtil.closeSession();
+
+            for (InvalidLink link : invalids)
+                assertTrue(links.remove(link.getUrl()));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
         }
-
-        assertEquals(4,invalids.size());
-
-        for(InvalidLink il : invalids) {
-            assertEquals(il.getTitle(),"short title");
-            assertTrue(links.remove(il.getUrl()));
-        }
-
-        ///////////////////////////////////////
-        // basic internal links to htmlpages //
-        ///////////////////////////////////////
-
-        APILocator.getFolderAPI().createFolders("/a_test/b_test/", host, sysuser, false);
-        Folder Fa=APILocator.getFolderAPI().findFolderByPath("/a_test/", host, sysuser, false);
-        Folder Fab=APILocator.getFolderAPI().findFolderByPath("/a_test/b_test", host, sysuser, false);
-
-        HTMLPageAsset page1 = HTMLPageAssetUtil.createDummyPage("index","index", "index", template, Fa, host);
-        pages.add(page1);
-        HTMLPageAsset page2 = HTMLPageAssetUtil.createDummyPage("something","something", "something", template, Fa, host);
-        pages.add(page2);
-        HTMLPageAsset page3 = HTMLPageAssetUtil.createDummyPage("index","index", "index", template, Fab, host);
-        pages.add(page3);
-        HTMLPageAsset page4 = HTMLPageAssetUtil.createDummyPage("something","something", "something", template, Fab, host);
-        pages.add(page4);
-        
-        extlinks=new String[] {
-            page1.getURI(), page2.getURI(), page3.getURI(), page4.getURI(), // direct hit!
-            "/a_test/", "/a_test/b_test", // should be good as it hits index page
-            "/a_test/notnotnot_exists."+pageExt,  // a bad one!
-            "?relative=yes", // should be ignored
-            "#id_inside_page", // ignored too
-            page2.getURI()+"?a=1&b=2" // with query string
-        };
-
-        sb=new StringBuilder("<html><body>\n");
-        for(String ll : extlinks) sb.append("<a href='").append(ll).append("'>link</a>\n");
-        sb.append("</body></html>");
-
-        con=new Contentlet();
-        con.setStructureInode(structure.getInode());
-        con.setStringProperty("html", sb.toString());
-        con.setHost(host.getIdentifier());
-        con.setIndexPolicy(IndexPolicy.FORCE);
-        con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-
-        invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
-        assertTrue(invalids!=null);
-        assertEquals(invalids.size(),1);
-        assertEquals(invalids.get(0).getUrl(),"/a_test/notnotnot_exists."+pageExt);
-
-        ////////////////////////
-        // basic urlmap links //
-        ////////////////////////
-        con=new Contentlet();
-        con.setStructureInode(urlmapstructure.getInode());
-        con.setStringProperty("a", "url1");
-        con.setHost(host.getIdentifier());
-        con.setIndexPolicy(IndexPolicy.FORCE);
-        con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-
-        con=new Contentlet();
-        con.setStructureInode(urlmapstructure.getInode());
-        con.setStringProperty("a", "url2");
-        con.setIndexPolicy(IndexPolicy.FORCE);
-        con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-
-        extlinks=new String[] {
-           "/test_mapped/url1","/test_mapped/url2/", // those should be good
-           "/test_mapped/url1#ignorethis",
-           "/test_mapped/url2/#againignore",
-           "/test_mapped/url3" // a bad one
-        };
-        sb=new StringBuilder("<html><body>\n");
-        for(String ll : extlinks) sb.append("<a href='").append(ll).append("'>link</a>\n");
-        sb.append("</body></html>");
-
-        con=new Contentlet();
-        con.setStructureInode(structure.getInode());
-        con.setStringProperty("html", sb.toString());
-        con.setHost(host.getIdentifier());
-        con.setIndexPolicy(IndexPolicy.FORCE);
-        con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-
-        invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
-        assertTrue(invalids!=null);
-        assertEquals(invalids.size(),1);
-        assertEquals(invalids.get(0).getUrl(),"/test_mapped/url3");
-
-        /* Now using two hosts. In host1 we gonna put a content with a valid
-         * internal link to a page. Then we add the contentlet in a page that
-         * lives in another host. That should break the internal link */
-        con=new Contentlet();
-        con.setStringProperty("html", "<html><body>" +
-        		              "<a href='"+page2.getURI()+"'>thislink</a>" +
-        		              "<a href='"+page3.getURI()+"'>thislink</a>" +
-        		              "<a href='"+page4.getURI()+"'>thislink</a>" +
-        				      "</body></html>");
-        con.setStructureInode(structure.getInode());
-        con.setHost(host.getIdentifier());
-        con.setIndexPolicy(IndexPolicy.FORCE);
-        con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-        MultiTree mtree=new MultiTree();
-        mtree.setParent1(page1.getIdentifier());
-        mtree.setParent2(container.getIdentifier());
-        mtree.setChild(con.getIdentifier());
-        mtree.setTreeOrder(1);
-        APILocator.getMultiTreeAPI().saveMultiTree(mtree);
-
-        // that should be ok. It is in the same host where those pages are valid
-        invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
-        assertTrue(invalids!=null);
-        assertEquals(invalids.size(),0);
-
-        // now lets add some salt here. If the content is added in a page in host2 it
-        // should break the internal links
-        Folder home=APILocator.getFolderAPI().createFolders("/home/", host2, sysuser, false);
-        HTMLPageAsset page5 = HTMLPageAssetUtil.createDummyPage("something","something", "something", template, home, host2);
-        pages.add(page5);
-
-        con=new Contentlet();
-        con.setStringProperty("html", "<html><body>" +
-        		              "<a href='"+page2.getURI()+"'>thislink</a>" +
-        		              "<a href='"+page3.getURI()+"'>thislink</a>" +
-        		              "<a href='"+page4.getURI()+"'>thislink</a>" +
-        				      "</body></html>");
-        con.setStructureInode(structure.getInode());
-        con.setHost(host2.getIdentifier());
-        con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-        mtree=new MultiTree();
-        mtree.setParent1(page5.getIdentifier());
-        mtree.setParent2(container.getIdentifier());
-        mtree.setChild(con.getIdentifier());
-        mtree.setTreeOrder(1);
-        APILocator.getMultiTreeAPI().saveMultiTree(mtree);
-
-        // now all those links should be broken
-        invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
-        assertTrue(invalids!=null);
-        assertEquals(3,invalids.size());
-        links=new HashSet<>(Arrays.asList(new String[] {page2.getURI(),page3.getURI(),page4.getURI()}));
-        for(InvalidLink link : invalids)
-            assertTrue(links.remove(link.getUrl()));
-        
-		///////////////////////////////////////
-		// Content htmlpages                 //
-		///////////////////////////////////////
-        
-        APILocator.getFolderAPI().createFolders("/a_html_asset_test/b_html_asset_test/", host, sysuser, false);
-        Folder Fahtml=APILocator.getFolderAPI().findFolderByPath("/a_html_asset_test/", host, sysuser, false);
-        Folder Fabhtml=APILocator.getFolderAPI().findFolderByPath("/a_html_asset_test/b_html_asset_test", host, sysuser, false);
-        
-        HTMLPageAsset page6 = HTMLPageAssetUtil.createDummyPage("index","index", "index", template, Fahtml, host);
-        pages.add(page6);
-        HTMLPageAsset page7 = HTMLPageAssetUtil.createDummyPage("something","something", "something", template, Fahtml, host);
-        pages.add(page7);
-        HTMLPageAsset page8 = HTMLPageAssetUtil.createDummyPage("index","index", "index", template, Fabhtml, host);
-        pages.add(page8);
-        HTMLPageAsset page9 = HTMLPageAssetUtil.createDummyPage("something","something", "something", template, Fabhtml, host);
-        pages.add(page9);
-        
-        
-        extlinks=new String[] {
-        	page6.getURI(), page7.getURI(),page8.getURI(), page9.getURI(), // direct hit!
-            "/a_html_asset_test/", "/a_html_asset_test/b_html_asset_test", // should be good as it hits index page
-            "/a_html_asset_test/notnotnot_exists",  // a bad one!
-            page7.getURI()+"?a=1&b=2" // with query string
-        };
-
-        sb=new StringBuilder("<html><body>\n");
-        for(String ll : extlinks) sb.append("<a href='").append(ll).append("'>link</a>\n");
-        sb.append("</body></html>");
-
-        con=new Contentlet();
-        con.setStructureInode(structure.getInode());
-        con.setStringProperty("html", sb.toString());
-        con.setHost(host.getIdentifier());
-        con.setIndexPolicy(IndexPolicy.FORCE);
-        con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-
-        invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
-        assertTrue(invalids!=null);
-        assertEquals(invalids.size(),1);
-        assertEquals(invalids.get(0).getUrl(),"/a_html_asset_test/notnotnot_exists");
-          
-        // content on host2 referencing pages on host
-        con=new Contentlet();
-        con.setStringProperty("html", "<html><body>" +
-        		              "<a href='"+page6.getURI()+"'>thislink</a>" +
-        		              "<a href='"+page7.getURI()+"'>thislink</a>" +
-        		              "<a href='"+page8.getURI()+"'>thislink</a>" +
-        				      "</body></html>");
-        con.setStructureInode(structure.getInode());
-        con.setHost(host2.getIdentifier());
-        con.setIndexPolicy(IndexPolicy.FORCE);
-        con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-
-        // now all those links should be broken
-        invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
-        assertTrue(invalids!=null);
-        assertEquals(3,invalids.size());
-        links=new HashSet<>(Arrays.asList(new String[] {page6.getURI(),page7.getURI(),page8.getURI()}));
-        
-        APILocator.getVersionableAPI().setWorking(page6);
-        APILocator.getVersionableAPI().setWorking(page7);
-        APILocator.getVersionableAPI().setWorking(page8);
-        APILocator.getVersionableAPI().setWorking(page9);
-        HibernateUtil.flush();
-        HibernateUtil.closeSession();
-        
-        for(InvalidLink link : invalids)
-            assertTrue(links.remove(link.getUrl()));
     }
 
 }

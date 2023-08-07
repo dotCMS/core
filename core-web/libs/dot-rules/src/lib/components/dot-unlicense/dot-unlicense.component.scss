@@ -42,26 +42,9 @@
             text-align: left;
 
             a {
-                color: var(--color-main);
+                color: $color-palette-primary-500;
                 font-size: $font-size-md;
             }
         }
-    }
-}
-
-.request-license-button {
-    background: var(--color-main);
-    border: solid 1px transparent;
-    border-radius: 2px;
-    color: #fff;
-    display: inline-block;
-    line-height: 36px;
-    padding: 0 $spacing-4;
-    text-decoration: none;
-    text-transform: uppercase;
-
-    &:hover {
-        background: var(--color-main_mod);
-        border: solid 1px transparent;
     }
 }

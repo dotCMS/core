@@ -8,13 +8,12 @@ import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.Site;
 import com.dotcms.model.site.SiteView;
-import java.util.logging.Logger;
 import org.apache.commons.lang3.BooleanUtils;
+import picocli.CommandLine;
 
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import java.util.Optional;
-import picocli.CommandLine;
 
 public abstract class AbstractSiteCommand {
 

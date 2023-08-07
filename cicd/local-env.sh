@@ -48,7 +48,7 @@ fi
 if [[ -z "${GITHUB_SHA}" ]]; then
   export BUILD_HASH=$(git log -1 --pretty=%h)
 else
-  export BUILD_HASH=${GITHUB_SHA::8}
+  export BUILD_HASH=${GITHUB_SHA::7}
 fi
 echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
 echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV

@@ -1,12 +1,16 @@
 package com.dotcms.listeners;
 
-import com.dotcms.api.system.event.*;
+import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.UserSessionPayloadBuilder;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import javax.servlet.http.HttpServletRequest;
@@ -15,6 +19,8 @@ import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.dotcms.cms.login.LoginServiceAPIFactory.LOG_OUT_ATTRIBUTE;
 
@@ -27,6 +33,7 @@ import static com.dotcms.cms.login.LoginServiceAPIFactory.LOG_OUT_ATTRIBUTE;
 public class SessionMonitor implements ServletRequestListener,
         HttpSessionAttributeListener, HttpSessionListener {
 
+    public static final String DOT_CLUSTER_SESSION = "DOT_CLUSTER_SESSION";
 
     private final SystemEventsAPI systemEventsAPI;
 
@@ -42,9 +49,9 @@ public class SessionMonitor implements ServletRequestListener,
 
     
     // this will hold all logged in users
-    private Map<String, String> sysUsers = new ConcurrentHashMap<>();
-    private Map<String, HttpSession> userSessions = new ConcurrentHashMap<>();
-    private Map<String, String> sysUsersAddress = new ConcurrentHashMap<>();
+    private final Map<String, String> sysUsers = new ConcurrentHashMap<>();
+    private final Map<String, HttpSession> userSessions = new ConcurrentHashMap<>();
+    private final Map<String, String> sysUsersAddress = new ConcurrentHashMap<>();
     
     public Map<String, String> getSysUsers() {
         return sysUsers;
@@ -59,6 +66,7 @@ public class SessionMonitor implements ServletRequestListener,
     }
     
     public void attributeAdded(HttpSessionBindingEvent event) {
+        // Not implemented
     }
     
     /**
@@ -66,10 +74,10 @@ public class SessionMonitor implements ServletRequestListener,
      * user
      * 
      */
-    public void attributeRemoved(HttpSessionBindingEvent event) {
-        String currentAttributeName = event.getName().toString();
+    public void attributeRemoved(final HttpSessionBindingEvent event) {
+        final String currentAttributeName = event.getName();
         
-        if (currentAttributeName.equals("USER_ID")) {
+        if (currentAttributeName.equals(com.liferay.portal.util.WebKeys.USER_ID)) {
             
             String id = event.getSession().getId();
             
@@ -83,28 +91,16 @@ public class SessionMonitor implements ServletRequestListener,
      * Do nothing here.
      */
     public void attributeReplaced(HttpSessionBindingEvent event) {
+        // Not implemented
     }
     
     public void sessionCreated(final HttpSessionEvent event) {
-
-        /*final String userId = (String) event.getSession().getAttribute("USER_ID");
-        if (userId != null) {
-            try {
-
-                Logger.debug(this, "Triggering a session created event");
-
-                this.systemEventsAPI.push(new SystemEvent
-                        (SystemEventType.SESSION_CREATED, new Payload(new Date())));
-            } catch (DotDataException e) {
-
-                Logger.debug(this, "Could not sent the session created event" + e.getMessage(), e);
-            }
-        }*/
+        // Not implemented
     }
     
     public void sessionDestroyed(final HttpSessionEvent event) {
 
-        final String userId = (String) event.getSession().getAttribute("USER_ID");
+        final String userId = (String) event.getSession().getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
         if (userId != null) {
 
             final String sessionId = event.getSession().getId();
@@ -117,9 +113,8 @@ public class SessionMonitor implements ServletRequestListener,
 
                 Logger.debug(this, "Triggering a session destroyed event");
 
-                final Boolean isLogout = event.getSession().getAttribute(LOG_OUT_ATTRIBUTE) != null ?
-                        Boolean.parseBoolean(event.getSession().getAttribute(LOG_OUT_ATTRIBUTE).toString()) :
-                        false;
+                final boolean isLogout =
+                        event.getSession().getAttribute(LOG_OUT_ATTRIBUTE) != null && Boolean.parseBoolean(event.getSession().getAttribute(LOG_OUT_ATTRIBUTE).toString());
 
                 if (!isLogout) {
                     this.systemEventsAPI.push(new SystemEvent
@@ -137,15 +132,16 @@ public class SessionMonitor implements ServletRequestListener,
     
     @Override
     public void requestDestroyed(ServletRequestEvent arg0) {
+        // Not implemented
     }
     
     @Override
-    public void requestInitialized(ServletRequestEvent event) {
-        HttpSession session = ((HttpServletRequest) event.getServletRequest())
+    public void requestInitialized(final ServletRequestEvent event) {
+        final HttpSession session = ((HttpServletRequest) event.getServletRequest())
                 .getSession(false);
-        if (session != null && session.getAttribute("USER_ID") != null) {
-            String userId = (String) session.getAttribute("USER_ID");
-            String id = session.getId();
+        if (session != null && session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID) != null) {
+            final String userId = (String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
+            final String id = session.getId();
             synchronized (sysUsers) {
                 if (!sysUsers.containsKey(id)) {
                     sysUsers.put(id, userId);
@@ -161,6 +157,9 @@ public class SessionMonitor implements ServletRequestListener,
                     sysUsersAddress.put(id, event.getServletRequest()
                             .getRemoteAddr());
                 }
+            }
+            if (UtilMethods.isSet(userId) && !UserAPI.CMS_ANON_USER_ID.equalsIgnoreCase(userId)) {
+                session.setAttribute(DOT_CLUSTER_SESSION, true);
             }
         }
         event.getServletContext().setAttribute(WebKeys.USER_SESSIONS, this);

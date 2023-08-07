@@ -116,13 +116,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
   }
 
-  final Lazy<Boolean>  deleteContentTypeAsynchronously =  Lazy.of(
-          ()->Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC, true)
-  );
-  final Lazy<Boolean>  deleteContentTypeAsynchronouslyUsingJob =  Lazy.of(
-          ()->Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC_WITH_JOB, true)
-  );
-
   /**
    * Content-Type Delete Entry point
    * @param type Content Type that will be deleted
@@ -137,8 +130,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       return;
     }
 
-    final boolean asyncDelete = deleteContentTypeAsynchronously.get();
-    final boolean asyncDeleteWithJob = deleteContentTypeAsynchronouslyUsingJob.get();
+    final boolean asyncDelete = Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC, true);;
+    final boolean asyncDeleteWithJob = Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC_WITH_JOB, true);
 
     if (!asyncDelete) {
       Logger.debug(this, String.format(" Content type (%s) will be deleted sequentially.", type.name()));

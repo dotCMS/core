@@ -357,6 +357,8 @@
 
 		if (variantName) {
 			formData[formData.length] = '<%=VariantAPI.VARIANT_KEY%>' + nameValueSeparator + variantName;
+		} else {
+			formData[formData.length] = '<%=VariantAPI.VARIANT_KEY%>' + nameValueSeparator + 'DEFAULT';
 		}
 
         return formData;

@@ -9,8 +9,8 @@ import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component'
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { COMPARE_CUSTOM_EVENT } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { cleanUpDialog, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotContentCompareDialogComponent } from './dot-content-compare-dialog.component';
 
@@ -35,7 +35,7 @@ describe('DotContentCompareDialogComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotContentCompareDialogComponent, TestDotContentCompareComponent],
-            imports: [DotDialogModule, DotMessagePipeModule],
+            imports: [DotDialogModule, DotMessagePipe],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotEventsService
@@ -58,7 +58,7 @@ describe('DotContentCompareDialogComponent', () => {
     });
 
     it('should hide dialog on close', () => {
-        const closeBtn = fixture.debugElement.query(By.css('.dialog__header dot-icon-button'));
+        const closeBtn = fixture.debugElement.query(By.css('.dialog__header p-button'));
         closeBtn.triggerEventHandler('click', {
             preventDefault: () => {
                 //

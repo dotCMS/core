@@ -1,5 +1,6 @@
 #parse( "static/storyblock/render.vtl" )
 
-<h2 style="text-align: $!item.attrs.textAlign">
+<h2#if($item.attrs.textAlign) style="text-align: $item.attrs.textAlign;"#end>
 #renderContentBlock($item.content)
+
 </h2>

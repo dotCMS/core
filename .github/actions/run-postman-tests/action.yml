@@ -57,6 +57,14 @@ inputs:
                 "collections": ["ContainerResource.postman_collection", "Containers.postman_collection"]
               },
               {
+                "name": "experiment",
+                "collections": ["ExperimentResource.postman_collection", "Experiments.postman_collection", "UserExperimentResource.postman_collection"]
+              },
+              {
+                "name": "container",
+                "collections": ["ContainerResource.postman_collection", "Containers.postman_collection"]
+              },
+              {
                 "name": "pp",
                 "collections": ["PublishQueueResource", "Push Publish from sender.postman_collection", "Push Publish JWT Token Test.postman_collection", "PushPublishFilterResource.postman_collection"]
               }

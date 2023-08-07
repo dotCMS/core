@@ -29,6 +29,9 @@ public class SelectedExperiment implements Serializable {
     @JsonProperty("id")
     private final String id;
 
+    @JsonProperty("runningId")
+    private final String runningId;
+
     /**
      * Experiment;s page URL
      */
@@ -50,16 +53,15 @@ public class SelectedExperiment implements Serializable {
     @JsonProperty("redirectPattern")
     private final String redirectPattern;
 
-    private SelectedExperiment(final String id, final String name, final String pageUrl,
-            final SelectedVariant variant, final LookBackWindow lookBackWindow,
-            final String redirectPattern) {
+    private SelectedExperiment(final Builder builder) {
 
-        this.id = id;
-        this.name = name;
-        this.pageUrl = pageUrl;
-        this.variant = variant;
-        this.lookBackWindow = lookBackWindow;
-        this.redirectPattern = redirectPattern;
+        this.id = builder.id;
+        this.name = builder.name;
+        this.pageUrl = builder.pageUrl;
+        this.variant = builder.variant;
+        this.lookBackWindow = new LookBackWindow(builder.lookBackWindow, builder.expireTime);
+        this.redirectPattern = builder.redirectPattern;
+        this.runningId = builder.runningId;
     }
 
     public String id() {
@@ -86,6 +88,10 @@ public class SelectedExperiment implements Serializable {
         return redirectPattern;
     }
 
+    public String getRunningId() {
+        return runningId;
+    }
+
     public static class Builder {
         private String name;
         private String id;
@@ -95,7 +101,12 @@ public class SelectedExperiment implements Serializable {
         private long expireTime;
 
         private String redirectPattern;
+        private String runningId;
 
+        public Builder runningId(final String runningId) {
+            this.runningId = runningId;
+            return this;
+        }
         public Builder id(final String id) {
             this.id = id;
             return this;
@@ -132,8 +143,7 @@ public class SelectedExperiment implements Serializable {
         }
 
         public SelectedExperiment build(){
-            return new SelectedExperiment(id, name, pageUrl, variant,
-                    new LookBackWindow(lookBackWindow, expireTime), redirectPattern);
+            return new SelectedExperiment(this);
         }
     }
 

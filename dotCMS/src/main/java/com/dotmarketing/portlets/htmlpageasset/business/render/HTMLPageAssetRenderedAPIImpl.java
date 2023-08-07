@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
-import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.web.ExperimentWebAPI;
@@ -47,14 +45,12 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.io.IOException;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Implementation class for the {@link HTMLPageAssetRenderedAPI}.
@@ -473,7 +469,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final Language language = request != null ? this.getCurrentLanguage(request) : this.languageAPI.getDefaultLanguage();
 
         final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
-                .getRenderContext(language.getId(), id, mode, userAPI.getSystemUser());
+                .getRenderContextForceLangFallback(language.getId(), id, mode, userAPI.getSystemUser());
 
         final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
                 .getContentletVersionInfo(id, renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey())
@@ -598,16 +594,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml();
 
         return new PageLivePreviewVersionBean(renderLive, renderWorking);
-    }
-
-    @Nullable
-    private static String getAnalyticsKey(Host host) {
-        try {
-            final AnalyticsApp analyticsApp = AnalyticsHelper.get().appFromHost(host);
-            return analyticsApp.getAnalyticsProperties().analyticsKey();
-        } catch (IllegalStateException e) {
-            return StringPool.BLANK;
-        }
     }
 
 }

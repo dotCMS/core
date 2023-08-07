@@ -1,16 +1,29 @@
-import { NgClass, NgFor, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { GridItemHTMLElement } from 'gridstack';
+
+import { CommonModule, NgClass, NgFor, NgIf } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    EventEmitter,
+    Input,
+    OnChanges,
+    Output
+} from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
-import { DotTemplateBuilderContainer } from '../../models/models';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotContainer, DotContainerMap } from '@dotcms/dotcms-models';
+import { DotContainerOptionsDirective, DotMessagePipe } from '@dotcms/ui';
 
-export enum TemplateBuilderBoxSize {
-    large = 'large',
-    medium = 'medium',
-    small = 'small'
-}
+import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
+import { getBoxVariantByWidth } from '../../utils/gridstack-utils';
+import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 @Component({
     selector: 'dotcms-template-builder-box',
@@ -18,20 +31,66 @@ export enum TemplateBuilderBoxSize {
     styleUrls: ['./template-builder-box.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [NgFor, NgIf, NgClass, ButtonModule, ScrollPanelModule]
+    imports: [
+        NgFor,
+        NgIf,
+        NgClass,
+        ButtonModule,
+        ScrollPanelModule,
+        RemoveConfirmDialogComponent,
+        DialogModule,
+        DropdownModule,
+        DotContainerOptionsDirective,
+        ReactiveFormsModule,
+        CommonModule,
+        DotMessagePipe
+    ]
 })
-export class TemplateBuilderBoxComponent {
+export class TemplateBuilderBoxComponent implements OnChanges {
     @Output()
-    editStyle: EventEmitter<void> = new EventEmitter<void>();
+    editClasses: EventEmitter<void> = new EventEmitter<void>();
     @Output()
-    addContainer: EventEmitter<void> = new EventEmitter<void>();
+    addContainer: EventEmitter<DotContainer> = new EventEmitter<DotContainer>();
     @Output()
-    deleteContainer: EventEmitter<void> = new EventEmitter<void>();
+    deleteContainer: EventEmitter<number> = new EventEmitter<number>();
     @Output()
     deleteColumn: EventEmitter<void> = new EventEmitter<void>();
-
+    @Output()
+    deleteColumnRejected: EventEmitter<void> = new EventEmitter<void>();
     @Input() items: DotTemplateBuilderContainer[];
-
+    @Input() width = 1;
+    @Input() containerMap: DotContainerMap;
+    @Input() actions = ['add', 'delete', 'edit'];
+    dialogVisible = false;
+    boxVariant = TemplateBuilderBoxSize.small;
+    formControl = new FormControl(null); // used to programmatically set dropdown value, so that the same value can be selected twice consecutively
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
-    @Input() size: TemplateBuilderBoxSize = TemplateBuilderBoxSize.large;
+
+    constructor(private el: ElementRef, private dotMessage: DotMessageService) {}
+
+    private _dropdownLabel: string | null = null;
+
+    get dropdownLabel(): string {
+        return this.boxVariant === this.templateBuilderSizes.large || this.dialogVisible
+            ? this._dropdownLabel
+            : '';
+    }
+
+    get nativeElement(): GridItemHTMLElement {
+        return this.el.nativeElement;
+    }
+
+    ngOnChanges(): void {
+        this.boxVariant = getBoxVariantByWidth(this.width);
+        this._dropdownLabel = this.dotMessage.get('dot.template.builder.add.container');
+    }
+
+    onContainerSelect({ value }: { value: DotContainer }) {
+        this.addContainer.emit(value);
+        this.formControl.setValue(null);
+    }
+
+    requestColumnDelete() {
+        this.deleteColumn.emit();
+    }
 }

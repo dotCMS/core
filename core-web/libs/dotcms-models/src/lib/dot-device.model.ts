@@ -5,3 +5,7 @@ export interface DotDevice {
     name: string;
     inode: string;
 }
+
+export interface DotDeviceListItem extends DotDevice {
+    icon: string;
+}

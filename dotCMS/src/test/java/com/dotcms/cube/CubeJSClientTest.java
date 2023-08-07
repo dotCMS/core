@@ -21,6 +21,7 @@ import java.net.HttpURLConnection;
 
 import java.util.List;
 import java.util.Map;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class CubeJSClientTest {

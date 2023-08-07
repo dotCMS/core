@@ -1,32 +1,48 @@
-import { Subject, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse, HttpHandler, HttpResponse } from '@angular/common/http';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
 
+import { ConfirmationService } from 'primeng/api';
 import { MenuModule } from 'primeng/menu';
 
 import { of } from 'rxjs/internal/observable/of';
 
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
-import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
+import {
+    DotSessionStorageService,
+    DotAlertConfirmService,
+    DotEventsService,
+    DotPageRenderService
+} from '@dotcms/data-access';
 import {
     CoreWebService,
     CoreWebServiceMock,
+    DotcmsEventsService,
     HttpCode,
-    mockSites,
-    SiteService
+    LoggerService,
+    LoginService,
+    StringUtils
 } from '@dotcms/dotcms-js';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
+    DotcmsEventsServiceMock,
+    LoginServiceMock,
     MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';
@@ -130,6 +146,12 @@ const storeMock = {
     })
 };
 
+class DotContentletEditorServiceMock {
+    get createUrl$(): Observable<unknown> {
+        return of(undefined);
+    }
+}
+
 describe('DotPagesComponent', () => {
     let fixture: ComponentFixture<DotPagesComponent>;
     let component: DotPagesComponent;
@@ -140,7 +162,8 @@ describe('DotPagesComponent', () => {
     let dotPageRenderService: DotPageRenderService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
-    const switchSiteSubject = new Subject();
+    const dotContentletEditorServiceMock: DotContentletEditorServiceMock =
+        new DotContentletEditorServiceMock();
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -152,10 +175,19 @@ describe('DotPagesComponent', () => {
             ],
             imports: [MenuModule],
             providers: [
+                DotSessionStorageService,
                 DotEventsService,
                 HttpClient,
                 HttpHandler,
                 DotPageRenderService,
+                DotIframeService,
+                DotFormatDateService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                DotUiColorsService,
+                IframeOverlayService,
+                LoggerService,
+                StringUtils,
                 {
                     provide: DotHttpErrorManagerService,
                     useClass: MockDotHttpErrorManagerService
@@ -164,14 +196,22 @@ describe('DotPagesComponent', () => {
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {
-                    provide: SiteService,
+                    provide: DotContentletEditorService,
+                    useValue: dotContentletEditorServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: DotcmsEventsService,
+                    useClass: DotcmsEventsServiceMock
+                },
+                {
+                    provide: ActivatedRoute,
                     useValue: {
-                        get currentSite() {
-                            return undefined;
-                        },
-
-                        get switchSite$() {
-                            return switchSiteSubject.asObservable();
+                        get data() {
+                            return of({ url: undefined });
                         }
                     }
                 }
@@ -200,7 +240,7 @@ describe('DotPagesComponent', () => {
     });
 
     it('should init store', () => {
-        expect(store.setInitialStateData).toHaveBeenCalledWith(5);
+        expect(store.setInitialStateData).toHaveBeenCalledWith(500);
     });
 
     it('should have favorite page panel, menu, pages panel and DotAddToBundle components', () => {
@@ -353,27 +393,14 @@ describe('DotPagesComponent', () => {
         });
     });
 
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-    });
+    it('should trigger getPages when deactivating the router-outlet', () => {
+        const routerOutlet = de.query(By.css('router-outlet'));
 
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-    });
+        routerOutlet.triggerEventHandler('activate');
+        fixture.detectChanges();
+        routerOutlet.triggerEventHandler('deactivate');
+        fixture.detectChanges();
 
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-    });
-
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+        expect(store.getPages).toHaveBeenCalled();
     });
 });

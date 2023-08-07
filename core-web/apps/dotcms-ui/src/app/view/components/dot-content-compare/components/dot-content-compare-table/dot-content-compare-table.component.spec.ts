@@ -16,9 +16,9 @@ import { DotContentCompareTableData } from '@components/dot-content-compare/stor
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
 
@@ -296,7 +296,7 @@ describe('DotContentCompareTableComponent', () => {
                 DropdownModule,
                 SelectButtonModule,
                 DotDiffPipeModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 FormsModule
             ],
             providers: [

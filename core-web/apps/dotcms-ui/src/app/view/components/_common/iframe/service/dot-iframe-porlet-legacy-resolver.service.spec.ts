@@ -14,10 +14,12 @@ import {
     DotContentletLockerService,
     DotESContentService,
     DotLicenseService,
-    DotPageRenderService
+    DotPageRenderService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { LoginServiceMock, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 
@@ -40,9 +42,11 @@ describe('DotIframePorletLegacyResolver', () => {
     beforeEach(waitForAsync(() => {
         const testbed = DOTTestBed.configureTestingModule({
             providers: [
+                DotSessionStorageService,
                 DotPageStateService,
                 DotIframePortletLegacyResolver,
                 DotPageRenderService,
+                DotExperimentsService,
                 DotContentletLockerService,
                 DotLicenseService,
                 DotESContentService,

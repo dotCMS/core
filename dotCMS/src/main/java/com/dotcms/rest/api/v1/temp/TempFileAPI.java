@@ -419,7 +419,7 @@ public class TempFileAPI {
   
   public String getRequestFingerprint(final HttpServletRequest request) {
     
-    final List<String> uniqList = new ArrayList<String>();
+    final List<String> uniqList = new ArrayList<>();
     uniqList.add(request.getHeader("User-Agent"));
     uniqList.add(request.getHeader("Host"));
     uniqList.add(request.getHeader("Accept-Language"));

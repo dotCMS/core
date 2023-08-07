@@ -2,7 +2,7 @@ import { fromEvent, merge, Observable, Subject } from 'rxjs';
 
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, NavigationStart, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -32,17 +32,16 @@ import {
     DotCMSContentType,
     DotContainerStructure,
     DotExperiment,
-    DotExperimentStatusList,
     DotIframeEditEvent,
     DotPageContainer,
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
     DotVariantData,
-    ESContent
+    ESContent,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import {
@@ -86,7 +85,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     paletteCollapsed = false;
     isEnterpriseLicense = false;
     variantData: Observable<DotVariantData>;
-    runningExperiment$: Observable<DotExperiment | null>;
+    featureFlagSeo = FeaturedFlags.FEATURE_FLAG_SEO_IMPROVEMENTS;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -116,8 +115,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dotESContentService: DotESContentService,
         private dotSessionStorageService: DotSessionStorageService,
         private dotCurrentUser: DotCurrentUserService,
-        private dotFavoritePageService: DotFavoritePageService,
-        private dotExperimentsService: DotExperimentsService
+        private dotFavoritePageService: DotFavoritePageService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -134,6 +132,8 @@ browse from the page internal links
                         this.pageStateInternal.user,
                         pageRendered
                     );
+
+                    this.variantData = null; // internal navigation, reset variant data - leave experiments.
 
                     if (this.isInternallyNavigatingToSamePage(pageRendered.page.pageURI)) {
                         this.dotPageStateService.setLocalState(dotRenderedPageState);
@@ -185,7 +185,18 @@ browse from the page internal links
         this.subscribeOverlayService();
         this.subscribeDraggedContentType();
         this.getExperimentResolverData();
-        this.getRunningExperiment();
+
+        /*This is needed when the user is in the edit mode in an experiment variant
+        and navigate to another page with the page menu and want to go back with the
+         browser back button */
+        this.router.events
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((event) => event instanceof NavigationEnd)
+            )
+            .subscribe((_event: NavigationStart) => {
+                this.getExperimentResolverData();
+            });
     }
 
     ngOnDestroy(): void {
@@ -637,19 +648,6 @@ browse from the page internal links
                     mode: mode
                 } as DotVariantData;
             })
-        );
-    }
-
-    private getRunningExperiment(): void {
-        this.runningExperiment$ = this.pageState$.pipe(
-            take(1),
-            switchMap((content) =>
-                this.dotExperimentsService.getByStatus(
-                    content.page.identifier,
-                    DotExperimentStatusList.RUNNING
-                )
-            ),
-            map((experiments) => (experiments.length ? experiments[0] : null))
         );
     }
 }

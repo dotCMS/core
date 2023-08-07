@@ -35,6 +35,7 @@ import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -47,6 +48,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -71,6 +73,8 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -79,6 +83,7 @@ import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -88,6 +93,7 @@ import java.util.List;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -104,6 +110,7 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -2218,6 +2225,81 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
+     * Testing the method {@link ContentletAPI#findLiveOrWorkingVersions(Set, User, boolean)}
+     * This version of the method takes a collection of identifiers and returns all the versions of the contentlets
+     * Given scenario: The contentlet had several versions in different {@link Language} `
+     * Expected result: The method should return all the versions of the contentlets
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void TestFindLiveOrWorkingVersions() throws DotDataException, DotSecurityException {
+
+        final Language language_1 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Language language_2 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Language language_3 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentletLanguage1Live = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        Contentlet contentlet1Checkout = ContentletDataGen.checkout(contentletLanguage1Live);
+        final Contentlet contentletLanguage1Working = ContentletDataGen.checkin(contentlet1Checkout);
+
+        final Contentlet contentletLanguage2Live = createNewLangVersionAndPublish(language_2, contentletLanguage1Live);
+
+        final Contentlet contentlet2Checkout = ContentletDataGen.checkout(contentletLanguage2Live);
+        final Contentlet contentletLanguage2Working = ContentletDataGen.checkin(contentlet2Checkout);
+
+        final Contentlet contentletLanguage3Live = createNewLangVersionAndPublish(language_3, contentletLanguage1Live);
+        final Contentlet contentlet3Checkout = ContentletDataGen.checkout(contentletLanguage3Live);
+        final Contentlet contentletLanguage3Working = ContentletDataGen.checkin(contentlet3Checkout);
+
+        final Contentlet contentletLanguage1Live2 = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        final Contentlet contentletLanguage1Live3 = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        final Contentlet contentletLanguage1Live4 = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        final List<Contentlet> contentlets = List.of(contentletLanguage1Live,
+                contentletLanguage1Working, contentletLanguage2Live, contentletLanguage2Working,
+                contentletLanguage3Live, contentletLanguage3Working, contentletLanguage1Live2,
+                contentletLanguage1Live3,
+                contentletLanguage1Live4);
+
+        final Set<String> identifiers = contentlets.stream().map(Contentlet::getIdentifier)
+                .collect(Collectors.toSet());
+
+        final ContentletAPI contentletAPI1 = APILocator.getContentletAPI();
+        final List<Contentlet> allVersions = contentletAPI1.findLiveOrWorkingVersions(identifiers, APILocator.systemUser(), false);
+
+        Assert.assertEquals(9, allVersions.size());
+
+        for (Contentlet c:contentlets) {
+            Assert.assertTrue(c.isLive() || c.isWorking() );
+            Assert.assertTrue(allVersions.stream().anyMatch(contentlet -> contentlet.getIdentifier().equals(c.getIdentifier())));
+            Assert.assertTrue(allVersions.stream().anyMatch(contentlet -> contentlet.getInode().equals(c.getInode())));
+        }
+        //Random dude with no permissions
+        final User randomUser = new UserDataGen().nextPersisted();
+        Assert.assertTrue(contentletAPI1.findLiveOrWorkingVersions(identifiers, randomUser, false).isEmpty());
+    }
+
+
+    /**
      * Method to test: {@link ESContentletAPIImpl#copyContentToVariant(Contentlet, String, User)}
      * When:
      * - Create a {@link Contentlet} in the DEFAULT Variant.
@@ -2413,6 +2495,53 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertEquals(content.getContentTypeId(), type.id());
 
         assertEquals("/testing/urlMapValue1/urlMapValue2",contentletAPI.getUrlMapForContentlet(content, user, false));
+    }
+
+    /***
+     * Method to test:
+     * When: Save a {@link Contentlet}
+     * Should: Save the Variant name inside a new column and not inside the Json Field
+     *
+     * @throws DotDataException
+     * @throws JsonProcessingException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void variantIdOutsideJsonFIeld() throws DotDataException, JsonProcessingException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+        final ArrayList<Map<String, Object>> results = new DotConnect().setSQL(
+                        "SELECT contentlet_as_json, variant_id FROM contentlet where inode = ?")
+                .addParam(contentlet.getInode())
+                .loadResults();
+
+        assertEquals(1, results.size());
+
+        final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.createDefaultMapper();
+        final Map<String, Object> map = defaultObjectMapper.readValue(
+                (String) results.get(0).get("contentlet_as_json"), Map.class);
+
+        assertEquals(contentlet.getInode(), map.get("inode"));
+
+        assertNull(map.get("variantId"));
+
+        assertEquals(variant.name(), results.get(0).get("variant_id"));
+
+        final List<Contentlet> contentletsFromDataBase = APILocator.getContentletAPIImpl()
+                .findContentlets(list(contentlet.getInode()));
+
+        assertEquals(1, contentletsFromDataBase.size());
+        assertEquals(variant.name(), contentletsFromDataBase.get(0).getVariantId());
+
     }
 
 }

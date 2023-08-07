@@ -9,6 +9,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.EncryptorException;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -60,20 +61,24 @@ public interface AppsAPI {
              Host host, User user) throws DotDataException, DotSecurityException;
 
     /**
-     * This returns a json object read from the secret store that contains the app integration configuration and secret
-     * This method allows an additional hit against systemHost in case the secret isn't found under the given host
-     * The key is a combination of app + host.
-     * @param key the unique app identifier
-     * @param fallbackOnSystemHost this param allows  an additional try against system host
-     * @param host the host for the respective app key
-     * @param user logged in user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Returns a JSON object read from the secret store that contains the app integration configuration and secret.
+     * This method allows an additional hit against {@code System Host} in case the secret isn't found under the given
+     * Site. The key is a combination of app + site.
+     *
+     * @param key                  The unique app identifier.
+     * @param fallbackOnSystemHost Allows an additional try against {@code System Host}.
+     * @param site                 The Site for the respective app key.
+     * @param user                 The logged-in {@link User}.
+     *
+     * @return An {@link Optional} with the {@link AppSecrets} if found, otherwise {@link Optional#empty()}.
+     *
+     * @throws DotDataException     An error occurred when validating User Access permissions, or when reading the
+     * App secrets.
+     * @throws DotSecurityException The User doesn't have the required permissions to access the specified App.
      */
-    Optional<AppSecrets> getSecrets(String key,
-            boolean fallbackOnSystemHost,
-            Host host, User user) throws DotDataException, DotSecurityException;
+    Optional<AppSecrets> getSecrets(final String key,
+            final boolean fallbackOnSystemHost,
+            final Host site, final User user) throws DotDataException, DotSecurityException;
 
    /**
     * This will tell you all the different apps for a given appKey.

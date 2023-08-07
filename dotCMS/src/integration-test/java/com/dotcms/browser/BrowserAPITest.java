@@ -684,21 +684,27 @@ public class BrowserAPITest extends IntegrationTestBase {
      * Generally speaking in most cases when a file is uploaded title and file name are the same.
      * But this is not always the case. Since we can upload a file via workflows and the title is not required.
      * Or it can take any value.
-     * Given scenario: A folder with a file asset with no title.
-     * Expected result: We query using the file name The file asset should be returned by the API.
+     * Given scenario: A folder with two files named very similar. Title is different from file name.
+     * Expected result: We query using the exact file name The file asset should be returned by the API.
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws IOException
      */
     @Test
-    public void getFolderContent_searchAssetWithNoTitleUsingFilter_Expect_Results()
+    public void getFolderContent_searchAssetWithNoTitleUsingFileName_Expect_Results()
             throws DotDataException, DotSecurityException, IOException {
 
-        final File file = FileUtil.createTemporaryFile("lol", ".txt", "lol");
         final Folder folder = new FolderDataGen().nextPersisted();
-        final Contentlet contentlet = new FileAssetDataGen(folder, file).title("testFileAsset1").languageId(1).nextPersisted();
-        final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+
+        final File file1 = FileUtil.createTemporaryFile("lol", ".txt", "lol");
+        final File file2 = FileUtil.createTemporaryFile("lol", ".txt", "lol");
+
+        final String title = "testFileAsset1";
+        final Contentlet contentlet1 = new FileAssetDataGen(folder, file1).title(title).languageId(1).nextPersisted();
+        final Contentlet contentlet2 = new FileAssetDataGen(folder, file2).title(title).languageId(1).nextPersisted();
         //Title is different from file name to test the filter
+
+        final FileAsset fileAsset1 = APILocator.getFileAssetAPI().fromContentlet(contentlet1);
 
         final User user = APILocator.systemUser();
 
@@ -706,7 +712,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .withUser(user)
                 .maxResults(1)
                 .withHostOrFolderId(folder.getIdentifier())
-                .withFilter(fileAsset.getFileName())
+                .withFileName(fileAsset1.getFileName())
                 .showWorking(true)
                 .showArchived(false)
                 .showFolders(false)
@@ -718,6 +724,8 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         final List<Contentlet> contentletList = this.browserAPI.getContentUnderParentFromDB(browserQuery);
         assertFalse(contentletList.isEmpty());
+        assertEquals(1, contentletList.size());
+        assertEquals(contentletList.get(0).getInode(),contentlet1.getInode());
 
     }
 

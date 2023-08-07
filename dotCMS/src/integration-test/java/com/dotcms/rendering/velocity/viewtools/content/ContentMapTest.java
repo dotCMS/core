@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -42,6 +43,10 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
+
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -276,6 +281,58 @@ public class ContentMapTest extends IntegrationTestBase {
         }
     }
 
+    @Test
+    public void testGetDateFieldFromContentMap() throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+        try {
+            final Date contentDate = new Date();
+
+            contentType = createContentType("testContentTypeWithDateField");
+
+            // create date field
+            createDateField("testDateField", contentType.id());
+
+            // create contentlet
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+            final Contentlet contentlet = contentletDataGen
+                    .setProperty("testDateField", contentDate).next();
+
+            // verify contentlet date field format
+            final Context velocityContext = mock(Context.class);
+
+            final ContentMap contentMap = new ContentMap(contentlet,
+                    userAPI.getAnonymousUser(),
+                    PageMode.LIVE, defaultHost, velocityContext);
+
+            final Date resultDate = (Date) contentMap.get("testDateField");
+            assertNotNull(resultDate);
+
+            final SimpleDateFormat dateFormat = new SimpleDateFormat(
+                    "yyyy-MM-dd HH:mm:ss.SSS");
+            final String formattedExpectedDate = dateFormat.format(contentDate);
+            final String dateWithTrailingDigits = resultDate.toString();
+
+            final int startIndex = dateWithTrailingDigits.lastIndexOf('.');
+            String formattedResultDate = dateWithTrailingDigits;
+            if (startIndex > 1) {
+                final int endIndex = Math.min(startIndex + 4, dateWithTrailingDigits.length());
+                BigDecimal trailingDigits = new BigDecimal(
+                        dateWithTrailingDigits.substring(startIndex - 1, endIndex));
+                DecimalFormat decimalFormat = new DecimalFormat("0.000");
+                formattedResultDate =
+                        dateWithTrailingDigits.substring(0, startIndex - 1) +
+                        decimalFormat.format(trailingDigits);
+            }
+
+            assertEquals(formattedExpectedDate, formattedResultDate);
+
+        } finally {
+            if (contentType != null) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
     /**
      *
      * @param name
@@ -321,6 +378,23 @@ public class ContentMapTest extends IntegrationTestBase {
 
         final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
                 .contentTypeId(parentTypeId).values(cardinality).relationType(childTypeVar).build();
+
+        return fieldAPI.save(field, user);
+    }
+
+    /**
+     *
+     * @param fieldName
+     * @param contentTypeId
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Field createDateField(final String fieldName, final String contentTypeId)
+            throws DotSecurityException, DotDataException {
+
+        final Field field = FieldBuilder.builder(DateField.class).name(fieldName)
+                .contentTypeId(contentTypeId).build();
 
         return fieldAPI.save(field, user);
     }

@@ -129,7 +129,7 @@ $dropdown-size: $field-height - 10;
 
     &NextYear,
     &PreviousYear {
-        color: rgba($calendar-year-label-textcolor, 0.5);
+        color: $color-palette-white-op-10;
     }
 
     &SelectedDate {
@@ -145,7 +145,7 @@ $dropdown-size: $field-height - 10;
     }
 
     &SelectedYear {
-        color: $calendar-year-label-textcolor;
+        color: $white;
         font-weight: bold;
     }
 

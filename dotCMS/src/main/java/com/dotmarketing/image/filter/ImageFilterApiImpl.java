@@ -5,6 +5,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -12,10 +14,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
+
+import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
+import org.apache.batik.util.XMLResourceDescriptor;
 import org.apache.commons.codec.digest.DigestUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -24,6 +32,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import com.twelvemonkeys.image.ResampleOp;
 import io.vavr.control.Try;
+import org.w3c.dom.Document;
 
 public class ImageFilterApiImpl implements ImageFilterAPI {
 
@@ -31,9 +40,9 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
 
 
     /**
-     * List of image filter classes accessable by a case insensitive key
+     * List of image filter classes accessible by a case-insensitive key
      */
-    protected static final  Map<String, Class> filterClasses = new ImmutableMap.Builder<String, Class>()
+    protected static final  Map<String, Class<? extends ImageFilter>> filterClasses = new ImmutableMap.Builder<String, Class<? extends ImageFilter>>()
                     .put(CROP, CropImageFilter.class)
                     .put(EXPOSURE, ExposureImageFilter.class)
                     .put(FLIP, FlipImageFilter.class)
@@ -62,27 +71,29 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
     public static final int DEFAULT_RESAMPLE_OPT =
                     Try.of(() -> Config.getIntProperty("IMAGE_DEFAULT_RESAMPLE_OPT", ResampleOp.FILTER_TRIANGLE))
                                     .getOrElse(ResampleOp.FILTER_TRIANGLE);
+    public static final String FILTER = "filter";
+    public static final String FILTERS = "filters";
 
     @Override
-    public Map<String, Class<ImageFilter>> resolveFilters(final Map<String, String[]> parameters) {
+    public Map<String, Class<? extends ImageFilter>> resolveFilters(final Map<String, String[]> parameters) {
         final List<String> filters = new ArrayList<>();
 
-        if (parameters.containsKey("filter")) {
-            filters.addAll(Arrays.asList(parameters.get("filter")[0].toLowerCase().split(StringPool.COMMA)));
-        } else if (parameters.get("filters") != null) {
-            filters.addAll(Arrays.asList(parameters.get("filters")[0].toLowerCase().split(StringPool.COMMA)));
+        if (parameters.containsKey(FILTER)) {
+            filters.addAll(Arrays.asList(parameters.get(FILTER)[0].toLowerCase().split(StringPool.COMMA)));
+        } else if (parameters.get(FILTERS) != null) {
+            filters.addAll(Arrays.asList(parameters.get(FILTERS)[0].toLowerCase().split(StringPool.COMMA)));
         }
 
-        parameters.entrySet().forEach(k -> {
-            if (k.getKey().contains(StringPool.UNDERLINE)) {
-                final String filter = k.getKey().substring(0, k.getKey().indexOf(StringPool.UNDERLINE));
+        parameters.forEach((key, value) -> {
+            if (key.contains(StringPool.UNDERLINE)) {
+                final String filter = key.substring(0, key.indexOf(StringPool.UNDERLINE));
                 if (!filters.contains(filter)) {
                     filters.add(filter);
                 }
             }
         });
 
-        final Map<String, Class<ImageFilter>> classes = new LinkedHashMap<>();
+        final Map<String, Class<? extends ImageFilter>> classes = new LinkedHashMap<>();
         filters.forEach(s -> {
             final String filter = s.toLowerCase();
             if (!classes.containsKey(filter) && filterClasses.containsKey(filter)) {
@@ -95,6 +106,15 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
 
     @Override
     public Dimension getWidthHeight(final File imageFile) {
+
+        if (imageFile == null) {
+            throw new DotRuntimeException("imageFile is null");
+        }
+
+        if (imageFile.getName().toLowerCase().endsWith(".svg")) {
+            return getWidthHeightofSVG(imageFile);
+        }
+
 
         try (ImageInputStream inputStream = ImageIO.createImageInputStream(imageFile)) {
             final ImageReader reader = getReader(imageFile, inputStream);
@@ -111,12 +131,37 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
 
     }
 
+    @VisibleForTesting
+    Dimension getWidthHeightofSVG(@Nonnull final File imageFile) {
+        SAXSVGDocumentFactory factory = new SAXSVGDocumentFactory(
+                XMLResourceDescriptor.getXMLParserClassName());
+
+        try (InputStream is = Files.newInputStream(imageFile.toPath())) {
+            Document document = factory.createDocument(imageFile.toURI().toString(), is);
+
+            String viewBox = document.getDocumentElement().getAttribute("viewBox");
+            String[] viewBoxValues = viewBox.split(" ");
+
+            float x = Float.parseFloat(viewBoxValues[2]);
+            float y = Float.parseFloat(viewBoxValues[3]);
+
+
+            return new Dimension(Math.round(x), Math.round(y));
+
+        } catch (Exception e) {
+            throw new DotRuntimeException("unable to parse svg file: " + imageFile.getAbsolutePath() + " : " + e.getMessage(), e);
+        }
+    }
+
+
+
+
     /**
      * gets the reader based on both the input stream and the file extension
      * 
-     * @param imageFile
-     * @param inputStream
-     * @return
+     * @param imageFile the image file
+     * @param inputStream the input stream
+     * @return the reader
      */
     ImageReader getReader(File imageFile, ImageInputStream inputStream) {
         Set<ImageReader> readers = new LinkedHashSet<>();
@@ -125,7 +170,10 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
         ImageIO.getImageReadersBySuffix(UtilMethods.getFileExtension(imageFile.getName()))
                         .forEachRemaining(readers::add);
         if(readers.size()>1) {
-            readers.removeIf(r -> r instanceof net.sf.javavp8decoder.imageio.WebPImageReader);
+            // We remove the Luciad based webp-imageio reader if there are more than one reader should choose twelve monkeys
+            readers.removeIf(r ->
+                    r.getOriginatingProvider().getVendorName().equals("Luciad")
+            );
         }
         return readers.stream().findFirst().orElseThrow(()->new DotRuntimeException("Unable to find reader for image:" + imageFile));
 
@@ -143,8 +191,8 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
 
         width = Math.min(MAX_SIZE, width);
         height = Math.min(MAX_SIZE, height);
-        resampleOption = (resampleOption < 0) ? 0 : resampleOption;
-        resampleOption = (resampleOption > 15) ? 15 : resampleOption;
+        resampleOption = Math.max(resampleOption, 0);
+        resampleOption = Math.min(resampleOption, 15);
 
         BufferedImageOp resampler = new ResampleOp(width, height, resampleOption);
         return resampler.filter(srcImage, null);
@@ -168,7 +216,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
                     return reader.read(0);
                 }
 
-                return this.resizeImage(reader.read(0), width, height, DEFAULT_RESAMPLE_OPT);
+                return this.resizeImage(reader.read(0), width, height, resampleOption);
 
             } finally {
                 reader.dispose();
@@ -205,7 +253,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
                             "subsample_w", new String[] {String.valueOf(MAX_SIZE)},
                             "subsample_h", new String[] {String.valueOf(MAX_SIZE)},
                             "subsample_hash", new String[] {hash},
-                            "filter", new String[] {"subsample"}
+                    FILTER, new String[] {"subsample"}
             );
             incomingImage = new SubSampleImageFilter().runFilter(incomingImage, params);
         }

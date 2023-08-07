@@ -13,6 +13,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.SystemProperties;
 
+import java.io.File;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -46,6 +48,10 @@ public class IntegrationTestInitService {
     public void init() throws Exception {
         try {
             if (initCompleted.compareAndSet(false, true)) {
+                String classpath = System.getProperty("java.class.path");
+                String[] classPathValues = classpath.split(File.pathSeparator);
+                Logger.info(IntegrationTestInitService.class,"Classpath="+Arrays.toString(classPathValues));
+
                 System.setProperty(TestUtil.DOTCMS_INTEGRATION_TEST, TestUtil.DOTCMS_INTEGRATION_TEST);
                 
                 

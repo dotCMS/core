@@ -3,6 +3,7 @@ package com.dotcms.publishing;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.XStreamException;
+import com.thoughtworks.xstream.converters.reflection.PureJavaReflectionProvider;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
@@ -29,6 +30,7 @@ public class XMLSerializerUtil {
 
     private XMLSerializerUtil(){
         xmlSerializer = new XStream(new DomDriver(StandardCharsets.UTF_8.name()));
+        xmlSerializer.autodetectAnnotations(true);
     }
 
     public XStream getXmlSerializer() {

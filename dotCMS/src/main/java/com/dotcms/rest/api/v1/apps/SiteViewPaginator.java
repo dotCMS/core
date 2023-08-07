@@ -73,15 +73,14 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
             //get all sites. system_host is lower cased here.
             final List<String> allSitesIdentifiers = getHostIdentifiers(user, filter);
 
-            final long totalCount = allSitesIdentifiers.size();
-
-            //This values are fed from the outside through the appsAPI.
+            //These values are fed from the outside through the appsAPI.
             final Set<String> sitesWithConfigurations = configuredSitesSupplier.get().stream()
                     .map(String::toLowerCase).collect(Collectors.toSet());
             final LinkedHashSet<String> allSites = new LinkedHashSet<>(allSitesIdentifiers);
+            final long totalCount = allSites.size();
 
             //By doing this we remove from the configured-sites collection whatever sites didn't match the search.
-            //If it isn't part of the search results also discard from the configured sites we intent to show.
+            //If it isn't part of the search results also discard from the configured sites we intend to show.
             final LinkedHashSet<String> configuredSites = sitesWithConfigurations.stream()
                     .filter(allSites::contains)
                     .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -165,13 +164,12 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private List<String> getHostIdentifiers(final User user, final String filter)
+     List<String> getHostIdentifiers(final User user, final String filter)
             throws DotDataException, DotSecurityException {
-        Stream<Host> hostStream = Stream.concat(
-                Stream.of(hostAPI.findSystemHost()),
-                hostAPI.findAllFromCache(user, false).stream()
-                        .filter(host -> Try.of(() -> !host.isArchived()).getOrElse(false))
-                );
+
+        Stream<Host> hostStream = hostAPI.findAllFromCache(user, false).stream()
+                .filter(Objects::nonNull).filter(host -> null != host.getHostname())
+                .filter(host -> Try.of(() -> !host.isArchived()).getOrElse(false));
 
         if (UtilMethods.isSet(filter)) {
             final String regexFilter = "(?i).*"+filter+"(.*)";

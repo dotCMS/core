@@ -6,8 +6,7 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotTemplateBuilderModule } from './dot-template-builder/dot-template-builder.module';
 import { DotTemplateCreateEditRoutingModule } from './dot-template-create-edit-routing.module';
@@ -23,7 +22,7 @@ import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.
         DotTemplateCreateEditRoutingModule,
         DotTemplatePropsModule,
         DynamicDialogModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         DotFieldRequiredDirective,
         DotTemplateBuilderModule
     ],

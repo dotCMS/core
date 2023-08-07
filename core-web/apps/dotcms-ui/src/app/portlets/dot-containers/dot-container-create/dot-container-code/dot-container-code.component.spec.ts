@@ -26,6 +26,7 @@ import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAddVariableModule } from './dot-add-variable/dot-add-variable.module';
@@ -85,12 +86,13 @@ const mockContentTypes: DotCMSContentType[] = [
 @Component({
     selector: 'dot-host-component',
     template: `
-        <dot-container-code [contentTypes]="contentTypes" [fg]="form"> </dot-container-code>
+        <dot-container-code [contentTypes]="contentTypes" [fg]="form"></dot-container-code>
     `
 })
 class HostTestComponent {
     form: FormGroup;
     contentTypes = mockContentTypes;
+
     constructor(private fb: FormBuilder) {
         this.form = this.fb.group({
             containerStructures: this.fb.array([], [Validators.required, Validators.minLength(1)])
@@ -134,9 +136,11 @@ export class DotTextareaContentMockComponent implements ControlValueAccessor {
     writeValue() {
         //
     }
+
     registerOnChange() {
         //
     }
+
     registerOnTouched() {
         //
     }
@@ -174,6 +178,7 @@ describe('DotContentEditorComponent', () => {
                 MenuModule,
                 ButtonModule,
                 DotPipesModule,
+                DotMessagePipe,
                 HttpClientTestingModule,
                 BrowserAnimationsModule,
                 SkeletonModule

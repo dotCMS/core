@@ -88,6 +88,16 @@ public class BetaDistributionWrapper {
         return Stream.generate(this::rv).limit(size).mapToDouble(Double::doubleValue).toArray();
     }
 
+    /**
+     * Returns inverse cumulative probability actual result.
+     *
+     * @param x number to calculate cumulative probability from
+     * @return cumulative probability result
+     */
+    public double inverseCumulativeProbability(final double x) {
+        return betaDistribution.inverseCumulativeProbability(x);
+    }
+
     @Override
     public String toString() {
         return "BetaDistributionWrapper{" +

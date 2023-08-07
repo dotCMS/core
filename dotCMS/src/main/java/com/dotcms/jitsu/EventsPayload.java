@@ -24,8 +24,8 @@ public class EventsPayload {
         jsonObject.put(key, value);
     }
 
-    public void addExperiment(final String name, final String variant, final String lookBackWindow){
-        shortExperiments.add(new LiteExperiment(name, variant, lookBackWindow));
+    public void addExperiment(final String name, final String runningId, final String variant, final String lookBackWindow){
+        shortExperiments.add(new LiteExperiment(name, runningId, variant, lookBackWindow));
     }
 
     public Iterable<EventPayload> payloads() {
@@ -36,6 +36,7 @@ public class EventsPayload {
             final JSONObject experimentJsonPayload = new JSONObject(jsonObjectString);
 
             experimentJsonPayload.put("experiment", shortExperiment.name);
+            experimentJsonPayload.put("runningId", shortExperiment.runningId);
             experimentJsonPayload.put("variant", shortExperiment.variant);
             experimentJsonPayload.put("lookBackWindow", shortExperiment.lookBackWindow);
 
@@ -62,11 +63,14 @@ public class EventsPayload {
         final String name;
         final String variant;
         final String lookBackWindow;
+        final String runningId;
 
-        public LiteExperiment(String name, String variant, String lookBackWindow) {
+        public LiteExperiment(final String name, final String runningId, final String variant,
+                final String lookBackWindow) {
             this.name = name;
             this.variant = variant;
             this.lookBackWindow = lookBackWindow;
+            this.runningId = runningId;
         }
     }
 

@@ -1,0 +1,38 @@
+<p-selectButton
+    class="p-button-tabbed"
+    [(ngModel)]="mode"
+    [options]="options"
+    (onChange)="stateSelectorHandler($event.value)"
+    data-testId="selectButton"
+></p-selectButton>
+
+<dot-device-selector-seo
+    [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
+    (selected)="changeDeviceHandler($event)"
+    appendTo="body"
+    tooltipPosition="bottom"
+    tooltipStyleClass="dot-device-selector__dialog"
+></dot-device-selector-seo>
+<ng-container *ngIf="!variant">
+    <p-inputSwitch
+        #locker
+        [(ngModel)]="lock"
+        [class.warn]="lockWarn"
+        [disabled]="!pageState.page.canLock"
+        [pTooltip]="
+            pageState.state.lockedByAnotherUser && pageState.page.canEdit
+                ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
+                : null
+        "
+        [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"
+        (click)="onLockerClick()"
+        (onChange)="lockPageHandler()"
+        appendTo="target"
+    ></p-inputSwitch>
+</ng-container>
+
+<dot-edit-page-lock-info-seo
+    #pageLockInfo
+    [pageState]="pageState"
+    data-testId="lockInfo"
+></dot-edit-page-lock-info-seo>

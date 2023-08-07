@@ -35,7 +35,7 @@ services:
 
   dotcms-analytics:
     container_name: dotcms-analytics
-    image: dotcms/configurator:dot-cicd
+    image: dotcms/configurator:latest
     environment:
       - JITSU_USE_CONFIGURATOR='true'
       - JITSU_JITSU_CONFIGURATOR=http://jitsu-configurator:7000/
@@ -49,6 +49,7 @@ services:
       - QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=drop-and-create
       - QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION_CREATE_SCHEMAS=true
       - QUARKUS_SWAGGER_UI_ALWAYS_INCLUDE=true
+      - EXCLUDED_QUERY_PARAMS=${ANALYTICS_EXCLUDED_QUERY_PARAMS:-variantName,redirect}
     ports:
       - "${DOTCMS_ANALYTICS_HOST_PORT:-8088}:8080"
     depends_on:

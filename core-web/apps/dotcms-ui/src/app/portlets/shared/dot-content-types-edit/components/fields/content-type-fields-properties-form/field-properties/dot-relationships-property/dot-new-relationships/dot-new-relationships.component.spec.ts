@@ -19,7 +19,7 @@ import { PaginationEvent } from '@components/_common/searchable-dropdown/compone
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContentTypeService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
@@ -55,7 +55,7 @@ const contentTypeMock: DotCMSContentType = {
 
 @Component({
     selector: 'dot-host-component',
-    template: `<dot-new-relationships
+    template: ` <dot-new-relationships
         [cardinality]="cardinalityIndex"
         [velocityVar]="velocityVar"
         [editing]="editing"
@@ -170,7 +170,7 @@ describe('DotNewRelationshipsComponent', () => {
                 MockSearchableDropdownComponent,
                 MockCardinalitySelectorComponent
             ],
-            imports: [DotFieldRequiredDirective],
+            imports: [DotFieldRequiredDirective, DotMessagePipe],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PaginatorService, useClass: MockPaginatorService },

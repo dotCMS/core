@@ -1,5 +1,9 @@
 package com.dotcms.rendering.velocity.viewtools;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.variant.VariantAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -47,8 +51,15 @@ public class FileTool implements ViewTool {
 	private String  getContentInode(String identifier, boolean live, long languageId)
 			throws DotDataException {
 		Identifier id = identifierAPI.find(identifier);
+
+		final String currentVariantName = WebAPILocator.getVariantWebAPI().currentVariantId();
 		Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(),
-				languageId);
+				languageId, currentVariantName);
+
+		if(cvi.isEmpty()) {
+			cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(),
+					languageId, VariantAPI.DEFAULT_VARIANT.name());
+		}
 
 		if(cvi.isEmpty()) {
 			throw new DotDataException("Can't find Content-version-info. Identifier: " + id.getId() + ". Lang:" + languageId);

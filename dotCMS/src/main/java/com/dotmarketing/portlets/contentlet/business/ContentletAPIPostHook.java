@@ -924,6 +924,16 @@ public interface ContentletAPIPostHook {
 	}
 
 	/**
+	 * Retrieves all versions for a contentlet identifier
+	 * @param identifiers
+	 * @param user
+	 * @param respectFrontendRoles
+	 */
+	public default void findLiveOrWorkingVersions(Set<String> identifiers, User user, boolean respectFrontendRoles){
+
+	}
+
+	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user
 	 * @param identifier
 	 * @param user

@@ -354,7 +354,7 @@ public class CubeJSQuery {
         }
     }
 
-    private static class OrderItem {
+    static class OrderItem {
         private String orderBy;
         private Order order;
 

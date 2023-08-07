@@ -748,7 +748,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     //AJAX callback to load the left hand side of the browser
     function selectFolderContentCallBack (content) {
 
-
         var subFoldersCount = 0;
 
         //Loading the contents table at the rigth hand side

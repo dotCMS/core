@@ -29,6 +29,7 @@
 <%@ include file="/html/portlet/ext/cmsmaintenance/init.jsp"%>
 
 <%
+int rollingRestartDelay = Config.getIntProperty("ROLLING_RESTART_DELAY_SECONDS", 60);
 
 DateFormat modDateFormat = java.text.DateFormat.getDateTimeInstance(DateFormat.SHORT,DateFormat.SHORT, locale);
 
@@ -284,21 +285,67 @@ function doDeactivateIndex(indexName){
 
 }
 
-function doShutdownDotcms(){
 
+function toggleRollingShutdown(){
+    let show = document.getElementById("rollingShutdownInfo").style.display;
+    document.getElementById("rollingShutdownInfo").style.display=(show=='none') ? '':'none';
     
-    if(!dijit.byId("agreeToShutdown").checked){
+}
+
+function doShutdownDotcms(){
+    
+    if(dijit.byId("agreeToShutdown") && !dijit.byId("agreeToShutdown").checked){
         alert("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Please agree with the disclaimer"))%>")
         return;
     }
     
-    if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "shutdown.dotcms.confirmation"))%>")){
+    if(dijit.byId("agreeToShutdown") && !confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "shutdown.dotcms.confirmation"))%>")){
         return;
     }
+    
+    let rollingShutdown = false;
+    
+    if(dijit.byId("rollingShutdown")){
+        rollingShutdown = dijit.byId("rollingShutdown").getValue();
+    }
 
-    fetch('/api/v1/maintenance/_shutdown', {method:'DELETE'} )
+    
+    rollingShutdown = (rollingShutdown === 'true');
+    
+
+    
+    
+    if(!rollingShutdown){
+        fetch('/api/v1/maintenance/_shutdown', {method:'DELETE'} )
+        .then(response => response.json())
+        .then(()=>{
+            alert('shutdown started');
+            dijit.byId("rollingRestartDelay").setDisabled(true);
+        });
+    }
+
+    if(rollingShutdown && !(dijit.byId("rollingRestartDelay").isValid())){
+        alert("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Please enter a number for the restart delay"))%>")
+        return;
+    }
+    
+    let rollingRestartDelay = dijit.byId("rollingRestartDelay").getValue();
+    
+    if(isNaN(parseInt( rollingRestartDelay ))){
+        rollingRestartDelay = <%=rollingRestartDelay%> ;
+    }else{
+        rollingRestartDelay=parseInt( rollingRestartDelay );
+    }
+
+
+
+    fetch('/api/v1/maintenance/_shutdownCluster?rollingDelay=' + rollingRestartDelay, {method:'DELETE'} )
     .then(response => response.json())
-    .then(()=>alert('shutdown started'));
+    .then(()=>{
+        alert('shutdown started');
+        dijit.byId("rollingRestartDelay").setDisabled(true);
+    });
+    
 
 }
 
@@ -1659,20 +1706,74 @@ dd.leftdl {
                 </tr>
                 <tr>
                     <td align="center" class="warning">
-                    <div style="margin:auto;width:55%;padding:50px;text-align: justify;line-height:1.5">
-                        <%= LanguageUtil.get(pageContext,"shutdown.dotcms.disclaimer") %>
                     
-                    </div>
+                    <%if(System.getProperty("DOTCMS_CLUSTER_RESTART")!=null){ %>
                     
-                    <div style="margin:auto;width:50%;background-color:pink;padding:50px;border-radius:20px;">
+                        <div style="margin:auto;width:50%;background-color:pink;padding:50px;border-radius:20px;">
+                             System restarting @ <%=System.getProperty("DOTCMS_CLUSTER_RESTART")%>
+                             <br>&nbsp;<br>
+                            <button dojoType="dijit.form.Button" onClick="doShutdownDotcms();"  id="doShutdownDotcms">
+                               <%= LanguageUtil.get(pageContext,"shutdown.dotcms.button.force") %>
+                            </button>
+                             
+                             
+                        </div>
+                        
+                    <%} else { %>
                     
-                    <input dojoType="dijit.form.CheckBox" type="checkbox" id="agreeToShutdown" name="agreeToShutdown" value="true"><label for="agreeToShutdown" style="padding-left:5px;padding-right:15px;"><%= LanguageUtil.get(pageContext,"shutdown.dotcms.consent") %></label>
-                    
-                         <button dojoType="dijit.form.Button" onClick="doShutdownDotcms();"  id="doShutdownDotcms">
-                            <%= LanguageUtil.get(pageContext,"shutdown.dotcms.button") %>
-                         </button>
-                      
-                      </div>
+                       <div style="margin:auto;width:55%;padding:50px;text-align: justify;line-height:1.5">
+                           <%= LanguageUtil.get(pageContext,"shutdown.dotcms.disclaimer") %>
+                       </div>
+                       
+                       <div style="margin:auto;width:50%;background-color:pink;padding:50px;border-radius:20px;">
+                          <div style="display:grid;grid-template-columns: 50% 50%;width:100%">
+                             <div style="text-align: right;padding:10px 10px">
+                                <%= LanguageUtil.get(pageContext,"shutdown.dotcms.consent") %>:
+                             </div>  
+                             <div style="text-align: left;padding:10px 10px">
+                                  <input dojoType="dijit.form.CheckBox" type="checkbox" id="agreeToShutdown" name="agreeToShutdown" value="true"><label for="agreeToShutdown">
+                             </div>
+                             <div style="text-align: right;padding:10px 10px">
+                                   <%= LanguageUtil.get(pageContext,"shutdown.dotcms.cluster") %>:
+                             </div>
+                             <%if(System.getProperty("DOTCMS_CLUSTER_RESTART")==null){ %>
+                                <div style="text-align: left;padding:10px 10px">
+                                     <input dojoType="dijit.form.CheckBox" type="checkbox" id="rollingShutdown" value="true" name="rollingShutdown" onclick="toggleRollingShutdown()">
+                                </div>
+                             <%} %>
+                             
+                          </div>
+                          <%if(System.getProperty("DOTCMS_CLUSTER_RESTART")==null){ %>
+                          <div id="rollingShutdownInfo" style="display:none">
+                          <div style="display:grid;grid-template-columns: 50% 50%;width:100%">
+                             <div style="text-align: right;padding:15px;vertical-align: middle;"> 
+                       
+                                     Rolling Delay in Seconds:
+                             </div>
+                            <div style="text-align:left;align:left;padding-top:15px">
+         
+                                <input dojoType="dijit.form.NumberTextBox" 
+                                    type="text" 
+                                    id="rollingRestartDelay" 
+                                    name="rollingRestartDelay" 
+                                    value="<%=rollingRestartDelay %>"  
+                                    style="width:100px" 
+                                    invalidMessage="Please enter only numbers" 
+                                    constraints="{ min:0,max:6000,places:0,pattern:'####'}">
+                                   <div style="padding:10px;font-size:95%">
+                                       <%= LanguageUtil.get(pageContext,"shutdown.dotcms.rolling.message") %>
+                                  </div>
+                              </div>
+                            </div>
+                            </div>
+                            <%} %>
+                           <div style="padding:15 15 0 15">
+                            <button dojoType="dijit.form.Button" onClick="doShutdownDotcms();"  id="doShutdownDotcms">
+                               <%= LanguageUtil.get(pageContext,"shutdown.dotcms.button") %>
+                            </button>
+                         </div>
+                         
+                      <% } %>
                     </td>
                 </tr>
 

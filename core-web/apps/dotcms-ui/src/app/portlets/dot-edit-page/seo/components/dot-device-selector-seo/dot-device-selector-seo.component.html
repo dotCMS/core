@@ -1,0 +1,96 @@
+<p-overlayPanel
+    #op
+    data-testId="p-overlaypanel-selector"
+    styleClass="dot-device-selector__overlayPanel"
+>
+    <div class="dot-device-selector__column" data-testId="dot-devices-selector">
+        <div class="dot-device-selector__panel">
+            <div class="dot-device-selector__header">
+                <h3 class="dot-device-selector__header-title">
+                    {{ 'editpage.device.selector.title' | dm }}
+                </h3>
+                <p-button icon="pi pi-plus" styleClass="p-button-rounded p-button-text"></p-button>
+            </div>
+            <div class="dot-device-selector__grid">
+                <ul class="device-list">
+                    <li class="device-list-item" *ngFor="let option of defaultOptions">
+                        <button class="device-list__button" (click)="change(option)">
+                            <i [class]="option.icon"></i>
+                            <div class="device-list-item__content">
+                                <span class="device-list-item__name">{{ option.name }}</span>
+                                <span class="device-list-item__dimensions">
+                                    {{ option.cssHeight }} x {{ option.cssWidth }}
+                                </span>
+                            </div>
+                        </button>
+                    </li>
+                </ul>
+                <ul class="device-list">
+                    <li
+                        class="device-list-item"
+                        *ngFor="let option of options$ | async"
+                        data-testId="device-selector-option"
+                    >
+                        <button
+                            class="device-list__button"
+                            (click)="change(option); op.toggle($event)"
+                        >
+                            <div class="device-list-item__content">
+                                <span>{{ option.name }}</span>
+                                <span class="device-list-item__dimensions"
+                                    >{{ option.cssHeight }} x {{ option.cssWidth }}</span
+                                >
+                            </div>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="dot-device-selector__column">
+        <div class="dot-device-selector__panel">
+            <div class="dot-device-selector__header">
+                <h3 class="dot-device-selector__header-title">
+                    {{ 'editpage.device.selector.media.tile' | dm }}
+                </h3>
+            </div>
+            <div class="dot-device-selector__content">
+                <ul class="device-list">
+                    <li
+                        class="device-list-item device-list-item-media"
+                        *ngFor="let tile of socialMediaTiles"
+                    >
+                        <i [class]="tile.icon"></i>
+                        {{ tile.label }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="dot-device-selector__panel">
+            <div class="dot-device-selector__header">
+                <h3 class="dot-device-selector__header-title">
+                    {{ 'editpage.device.selector.search.engine' | dm }}
+                </h3>
+            </div>
+            <div class="dot-device-selector__content">
+                <ul class="device-list">
+                    <li class="device-list-item device-list-item-media">
+                        <i class="pi pi-google"></i>
+                        Google
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="dot-device-selector__link--container">
+            <a class="dot-device-selector__link"> {{ 'editpage.device.selector.new.tab' | dm }} </a>
+            <i class="pi pi-external-link"></i>
+        </div>
+    </div>
+</p-overlayPanel>
+<p-button
+    (click)="op.toggle($event)"
+    icon="pi pi-angle-down"
+    styleClass=" p-button-text"
+    data-testId="device-selector-button"
+></p-button>

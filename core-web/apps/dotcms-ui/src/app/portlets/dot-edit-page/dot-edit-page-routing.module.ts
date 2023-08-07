@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { LayoutEditorCanDeactivateGuardService } from '@dotcms/app/api/services/guards/layout-editor-can-deactivate-guard.service';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotExperimentExperimentResolver } from '@portlets/dot-experiments/shared/resolvers/dot-experiment-experiment.resolver';
+import { DotExperimentExperimentResolver } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
+import { CanDeactivateGuardService } from '@services/guards/can-deactivate-guard.service';
 
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
@@ -15,13 +15,16 @@ const dotEditPage: Routes = [
         path: '',
         resolve: {
             content: DotEditPageResolver,
-            featuredFlag: DotFeatureFlagResolver,
+            featuredFlags: DotFeatureFlagResolver,
             experiment: DotExperimentExperimentResolver
         },
         data: {
-            featuredFlagToCheck: FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
+            featuredFlagsToCheck: [
+                FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS,
+                FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS
+            ]
         },
-
+        // needed to allow navigation from the page menu in the edit mode. See https://github.com/dotCMS/core/pull/25509
         runGuardsAndResolvers: 'always',
         children: [
             {
@@ -42,7 +45,7 @@ const dotEditPage: Routes = [
                     import('@portlets/dot-edit-page/layout/dot-edit-layout.module').then(
                         (m) => m.DotEditLayoutModule
                     ),
-                canDeactivate: [LayoutEditorCanDeactivateGuardService]
+                canDeactivate: [CanDeactivateGuardService]
             },
             {
                 path: 'rules/:pageId',
@@ -54,11 +57,13 @@ const dotEditPage: Routes = [
             {
                 path: 'experiments',
                 loadChildren: async () =>
-                    (
-                        await import(
-                            '../dot-experiments/dot-experiments-shell/dot-experiments-shell-routes'
-                        )
-                    ).DotExperimentsShellRoutes
+                    //TODO: move all the core-web/apps/dotcms-ui/src/app/view/components/_common
+                    // folder with components reused in experiments to a Library to
+                    // avoid this circular dependency
+
+                    // eslint-disable-next-line @nrwl/nx/enforce-module-boundaries
+                    (await import('@dotcms/portlets/dot-experiments/portlet'))
+                        .DotExperimentsPortletRoutes
             }
         ]
     },

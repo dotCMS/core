@@ -49,12 +49,12 @@
         background-color: transparent;
     }
     to {
-        background-color: rgba($black, 0.8);
+        background-color: $color-palette-black-op-80;
     }
 }
 @keyframes p-component-overlay-leave-animation {
     from {
-        background-color: rgba($black, 0.8);
+        background-color: $color-palette-black-op-80;
     }
     to {
         background-color: transparent;

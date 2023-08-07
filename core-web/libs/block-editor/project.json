@@ -21,6 +21,11 @@
             "options": {
                 "jestConfig": "libs/block-editor/jest.config.ts",
                 "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true
+                }
             }
         },
         "storybook": {

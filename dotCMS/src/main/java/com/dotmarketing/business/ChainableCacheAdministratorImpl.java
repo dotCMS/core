@@ -231,7 +231,9 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
         group = group.toLowerCase();
 
         flushGroupLocalOnly(group, false);
-
+        // Distributed caches invalidate themselves we need to
+        // invalidate the other nodes in the cluster if any non distributed cache
+        // The group is not distributed if any of the caches is not distributed
         if (!cacheProviderAPI.isGroupDistributed(group)) {
             try {
                 getTransport().send("0:" + group);

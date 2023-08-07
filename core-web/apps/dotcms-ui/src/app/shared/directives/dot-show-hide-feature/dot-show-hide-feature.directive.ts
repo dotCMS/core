@@ -1,5 +1,7 @@
 import { Component, Directive, Input, OnInit, TemplateRef, ViewContainerRef } from '@angular/core';
 
+import { take } from 'rxjs/operators';
+
 import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
@@ -63,19 +65,22 @@ export class DotShowHideFeatureDirective implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.dotPropertiesService.getKey(this._featureFlag).subscribe((value) => {
-            const isEnabled = value && value === 'true';
-            this.viewContainer.clear();
+        this.dotPropertiesService
+            .getKey(this._featureFlag)
+            .pipe(take(1))
+            .subscribe((value) => {
+                const isEnabled = value && value === 'true';
+                this.viewContainer.clear();
 
-            if (isEnabled) {
-                this.viewContainer.createEmbeddedView(this.templateRef);
-            } else if (this.alternateTemplateRef) {
-                this.viewContainer.createEmbeddedView(this.alternateTemplateRef);
-            } else {
-                console.warn(
-                    `Feature flag "${this._featureFlag}" doesn't exist or is disabled and no alternate template was provided`
-                );
-            }
-        });
+                if (isEnabled) {
+                    this.viewContainer.createEmbeddedView(this.templateRef);
+                } else if (this.alternateTemplateRef) {
+                    this.viewContainer.createEmbeddedView(this.alternateTemplateRef);
+                } else {
+                    console.warn(
+                        `Feature flag "${this._featureFlag}" doesn't exist or is disabled and no alternate template was provided`
+                    );
+                }
+            });
     }
 }

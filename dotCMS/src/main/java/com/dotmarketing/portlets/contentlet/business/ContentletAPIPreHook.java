@@ -1053,6 +1053,17 @@ public interface ContentletAPIPreHook {
     }
 
 	/**
+	 * Retrieves all versions for a contentlet identifier
+	 * @param identifiers
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public default boolean findLiveOrWorkingVersions(Set<String> identifiers, User user, boolean respectFrontendRoles){
+		return true;
+	}
+
+	/**
 	 * Retrieves all versions for a contentlet identifier.
 	 * Note: This method could pull too many versions.
 	 * @param identifier - Identifier object that belongs to a contentlet

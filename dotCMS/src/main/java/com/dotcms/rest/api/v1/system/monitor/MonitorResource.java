@@ -11,11 +11,12 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.util.StringPool;
 
 
-@Path("/v1/system-status")
+@Path("/v1/{a:system-status|probes}")
 public class MonitorResource {
 
     private static final int    INSUFFICIENT_STORAGE        = 507;
@@ -29,7 +30,6 @@ public class MonitorResource {
     @Produces(MediaType.APPLICATION_JSON)
     @CloseDBIfOpened
     public Response statusCheck(final @Context HttpServletRequest request) throws Throwable {
-        // Cannot require authentication as we cannot assume db or other subsystems are functioning
 
         final MonitorHelper helper = new MonitorHelper(request);
 
@@ -73,10 +73,10 @@ public class MonitorResource {
         return builder.build();
     }
     
+    
     /**
-     * This resource tests a very simple case of querying data that should be in cache and returns
-     * either success or failure result code.  This is a valid liveness check as the request already runs
-     * through the CMSFilter (url resolution, rules firing) before reaching here.
+     * This probe is lightweight - it checks if the server is up (by the time a request gets here it has
+     * already run through the CMSFilter) and does a quick cache check to insure all is well.
      * 
      * @param request
      * @return
@@ -86,17 +86,72 @@ public class MonitorResource {
     @Path("/alive")
     @CloseDBIfOpened
     public Response aliveCheck(final @Context HttpServletRequest request) throws Throwable {
-        // Cannot require authentication as we cannot assume db or other subsystems are functioning
+
+
+        final MonitorHelper helper = new MonitorHelper(request);
+        if(!helper.accessGranted) {
+            return Response.status(FORBIDDEN).build();
+        }
+        //try this twice as it is an imperfect test
+        if(helper.isCacheHealthy(3000)) {
+            return Response.ok().build();
+        }
+        if(helper.isCacheHealthy(3000)) {
+            return Response.ok().build();
+        }
+        
+        return Response.status(SERVICE_UNAVAILABLE).build();
+        
+    }
+    
+    
+    /**
+     * This probe tests all the dotCMS subsystems and will return either a success or failure based on
+     * the result. This is a valid readiness check as the request already runs through the CMSFilter
+     * (url resolution, rules firing) before reaching here.
+     * 
+     * @param request
+     * @return
+     * @throws Throwable
+     */
+    @GET
+    @Path("/ready")
+    @CloseDBIfOpened
+    public Response readyCheck(final @Context HttpServletRequest request) throws Throwable {
+
+        return startup(request);
+    }
+    
+    /**
+     * This resource tests that dotCMS has started and queries all subsystems before returning an ok.
+     * 
+     * @param request
+     * @return
+     * @throws Throwable
+     */
+    @GET
+    @Path("/startup")
+    @CloseDBIfOpened
+    public Response startup(final @Context HttpServletRequest request) throws Throwable {
 
         final MonitorHelper helper = new MonitorHelper(request);
         if(!helper.accessGranted) {
             return Response.status(FORBIDDEN).build();
         }
         
+        // this is set at the end of the InitServlet
+        if(System.getProperty(WebKeys.DOTCMS_STARTED_UP)==null) {
+            return Response.status(SERVICE_UNAVAILABLE).build();
+        }
         
-        return Response.status(200).build();
+        if(!helper.getMonitorStats().isDotCMSHealthy()) {
+            return Response.status(SERVICE_UNAVAILABLE).build();
+        }
+        
+        return Response.ok().build();
         
     }
+    
     
     
     

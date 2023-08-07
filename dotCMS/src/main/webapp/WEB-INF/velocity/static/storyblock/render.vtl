@@ -1,55 +1,57 @@
-#macro(renderContentBlock $data)
-    #foreach($element in $data)
-        #if( $element.type == "paragraph" )
-            <p style="text-align: $!element.attrs.textAlign;">
-                #renderContentBlock($element.content)
-            </p>
-        #elseif( $element.type == "heading" )
-            #if($element.attrs.level == "1")
-                <h1 style="text-align: $!element.attrs.textAlign;">
-                    #renderContentBlock($element.content)
-                </h1>
-            #elseif($element.attrs.level == "2")
-                <h2 style="text-align: $!element.attrs.textAlign;">
-                    #renderContentBlock($element.content)
-                </h2>
-            #elseif($element.attrs.level == "3")
-                <h3 style="text-align: $!element.attrs.textAlign;">
-                    #renderContentBlock($element.content)
-                </h3>
-            #end
-        #elseif( $element.type == "listItem" )
-            <li style="text-align: $!element.attrs.textAlign;">
-                #renderContentBlock($element.content)
-            </li>
-        #elseif( $element.type == "bulletList" )
-            <ul style="text-align: $!element.attrs.textAlign;">
-                #renderContentBlock($element.content)
-            </ul>
-        #elseif( $element.type == "orderedList" )
-            <ol style="text-align: $!element.attrs.textAlign;">
-                #renderContentBlock($element.content)
-            </ol>
-        #elseif( $element.type == "codeBlock" )
-            <pre><code>#renderContentBlock($element.content)</code></pre>
-        #elseif( $element.type == "blockquote" )
-            <blockquote style="text-align: e!lement.attrs.textAlign;">
-                #renderContentBlock($element.content)
-            </blockquote>
-        #elseif( $element.type == "table" )
-            <table>#renderContentBlock($element.content)</table>
-        #elseif( $element.type == "tableRow" )
-            <tr>#renderContentBlock($element.content)</tr>
-        #elseif( $element.type == "tableHeader" )
-            <th colspan="$!element.attrs.colspan" rowspan="$!element.attrs.rowspan" colwidth="$!element.attrs.rowspan" >#renderContentBlock($element.content)</th>
-        #elseif( $element.type == "tableCell" )
-            <td colspan="$!element.attrs.colspan" rowspan="$!element.attrs.rowspan" colwidth="$!element.attrs.rowspan" >#renderContentBlock($element.content)</td>
-        #elseif( $element.type == "hardBreak" )
-            <br />
-        #elseif( $element.type == "horizontalRule" )
-            <hr />
-        #elseif( $element.type == "text" )
-            #renderMarks($element)
-        #end
-    #end
-#end
+#macro(renderContentBlock $data)#*
+    *##foreach($element in $data)#*
+        *##if( $element.type == "paragraph" )
+#*          *#<p#if(${element.attrs.textAlign}) style="text-align: $element.attrs.textAlign;"#end>#*
+                *##renderContentBlock($element.content)#*
+            *#</p>#*
+        *##elseif( $element.type == "heading" )#*
+            *##if($element.attrs.level == "1")
+#*              *#<h1#if($element.attrs.textAlign) style="text-align: $element.attrs.textAlign;"#end>#*
+                    *##renderContentBlock($element.content)#*
+                *#</h1>
+#*          *##elseif($element.attrs.level == "2")
+#*              *#<h2#if($element.attrs.textAlign) style="text-align: $element.attrs.textAlign;"#end>#*
+                    *##renderContentBlock($element.content)#*
+                *#</h2>
+#*          *##elseif($element.attrs.level == "3")
+#*              *#<h3#if($element.attrs.textAlign) style="text-align: $element.attrs.textAlign;"#end>#*
+                    *##renderContentBlock($element.content)#*
+                *#</h3>
+#*          *##end#*
+        *##elseif( $element.type == "listItem" )
+#*        *#  <li#{if}(${element.attrs.textAlign}) style="text-align: ${element.attrs.textAlign};"#{end}>#*
+                *##renderContentBlock($element.content)#*
+          *#  </li>
+#*      *##elseif( $element.type == "bulletList" )
+#*        *#  <ul#{if}(${element.attrs.textAlign}) style="text-align: ${element.attrs.textAlign};"#{end}>#*
+                *##renderContentBlock($element.content)#*
+          *#  </ul>
+#*      *##elseif( $element.type == "orderedList" )
+#*        *#  <ol#{if}(${element.attrs.textAlign}) style="text-align: ${element.attrs.textAlign};"#{end}>#*
+                *##renderContentBlock($element.content)#*
+          *#  </ol>
+#*      *##elseif( $element.type == "codeBlock" )
+#*          *#<pre><code>#renderContentBlock($element.content)</code></pre>
+#*      *##elseif( $element.type == "blockquote" )
+#*          *#<blockquote#if($element.attrs.textAlign) style="text-align: $element.attrs.textAlign;"#end>#*
+                *##renderContentBlock($element.content)#*
+            *#</blockquote>#*
+        *##elseif( $element.type == "table" )
+#*          *#<table>#renderContentBlock($element.content)</table>
+#*      *##elseif( $element.type == "tableRow" )
+#*        *#  <tr>
+#*        *##renderContentBlock($element.content)
+#*        *#  </tr>
+#*      *##elseif( $element.type == "tableHeader" )
+#*      *#    <th colspan="$!element.attrs.colspan" rowspan="$!element.attrs.rowspan" colwidth="$!element.attrs.colwidth" >#renderContentBlock($element.content)</th>
+#*      *##elseif( $element.type == "tableCell" )
+#*      *#    <td colspan="$!element.attrs.colspan" rowspan="$!element.attrs.rowspan" colwidth="$!element.attrs.colwidth" >#renderContentBlock($element.content)</td>
+#*      *##elseif( $element.type == "hardBreak" )#*
+            *#<br />
+#*      *##elseif( $element.type == "horizontalRule" )
+#*          *#<hr />
+#*      *##elseif( $element.type == "text" )#*
+            *##renderMarks($element)#*
+        *##end#*
+    *##end#*
+*##end

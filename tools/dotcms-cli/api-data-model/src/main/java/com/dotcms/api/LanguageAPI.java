@@ -45,9 +45,9 @@ public interface LanguageAPI {
     @GET
     @Path("/{languageTag}")
     @Operation(
-            summary = " Returns the Language that matches the specified tag"
+            summary = " Returns the Language that matches the specified ISO code"
     )
-    ResponseEntityView<Language> getFromLanguageTag(@PathParam("languageTag") String languageTag);
+    ResponseEntityView<Language> getFromLanguageIsoCode(@PathParam("languageTag") String languageIsoCode);
 
     @GET
     @Operation(
@@ -64,9 +64,9 @@ public interface LanguageAPI {
     @POST
     @Path("/{languageTag}")
     @Operation(
-            summary = " Creates a new language in the system given its tag"
+            summary = " Creates a new language in the system given its ISO code"
     )
-    ResponseEntityView<Language> create(@PathParam("languageTag") String languageTag);
+    ResponseEntityView<Language> create(@PathParam("languageTag") String languageIsoCode);
 
     @PUT
     @Path("/{languageId}")

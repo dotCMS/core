@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 import { PaginatorService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -22,7 +21,6 @@ import { SearchableDropDownModule } from '../_common/searchable-dropdown/searcha
         ButtonModule,
         SearchableDropDownModule,
         DotPipesModule,
-        UiDotIconButtonModule,
         DotContainerSelectorModule
     ],
     providers: [PaginatorService]

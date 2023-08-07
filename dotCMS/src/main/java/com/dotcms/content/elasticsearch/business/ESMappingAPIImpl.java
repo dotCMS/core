@@ -369,6 +369,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             }
 
 			contentletMap.put(ESMappingConstants.TITLE, contentlet.getTitle());
+			contentletMap.put(ESMappingConstants.SYSTEM_TYPE, contentType.system());
 			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, contentType.variable()); // marked for DEPRECATION
 			contentletMap.put(ESMappingConstants.CONTENT_TYPE, contentType.variable());
 			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, contentType.baseType().getType()); // marked for DEPRECATION

@@ -81,6 +81,7 @@ public class URLMapAPIImplTest {
 
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
+        when(request.getSession(true)).thenReturn(session);
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
     }

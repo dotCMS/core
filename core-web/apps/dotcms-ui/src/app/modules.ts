@@ -33,7 +33,6 @@ import { DotIconModule } from '@dotcms/ui';
 import { DotActionButtonModule } from './view/components/_common/dot-action-button/dot-action-button.module';
 import { DotFieldValidationMessageModule } from './view/components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotGenerateSecurePasswordModule } from './view/components/_common/dot-generate-secure-password/dot-generate-secure-password.module';
-import { UiDotIconButtonModule } from './view/components/_common/dot-icon-button/dot-icon-button.module';
 import { DotSiteSelectorModule } from './view/components/_common/dot-site-selector/dot-site-selector.module';
 import { DotTextareaContentModule } from './view/components/_common/dot-textarea-content/dot-textarea-content.module';
 import { IFrameModule } from './view/components/_common/iframe';
@@ -48,7 +47,6 @@ export const CUSTOM_MODULES = [
     DotActionButtonModule,
     DotContentletEditorModule,
     DotDialogModule,
-    UiDotIconButtonModule,
     DotIconModule,
     DotTextareaContentModule,
     DotWorkflowTaskDetailModule,

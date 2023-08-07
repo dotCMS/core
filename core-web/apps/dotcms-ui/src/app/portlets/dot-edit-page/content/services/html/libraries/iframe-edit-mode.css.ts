@@ -40,17 +40,8 @@ export const getEditPageCss = (timestampId: string): string => {
         url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
 
-    ${timestampId}:root {
-        --color-background: #3A3847;
-        --color-main: #C336E5;
-        --color-main_mod: #D369EC;
-        --color-main_rgb: 195, 54, 229;
-        --color-sec: #54428E;
-        --color-sec_rgb: 84, 66, 142;
-    }
-
     ${timestampId} [data-dot-object="container"] {
-        border: solid 1px #53c2f9 !important;
+        border: solid 1px var(--color-palette-primary-300) !important;
         margin-bottom: 35px !important;
         min-height: 120px !important;
         display: flex !important;
@@ -239,19 +230,19 @@ export const getEditPageCss = (timestampId: string): string => {
 
     ${timestampId} .dotedit-container__add {
         background-image: url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjRkZGRkZGIiBoZWlnaHQ9IjI0IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gICAgPHBhdGggZD0iTTE5IDEzaC02djZoLTJ2LTZINXYtMmg2VjVoMnY2aDZ2MnoiLz4gICAgPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==) !important;
-        background-color: var(--color-main) !important;
+        background-color: var(--color-palette-primary-500) !important;
     }
 
     ${timestampId} .dotedit-container__add:hover {
-        background-color: var(--color-main_mod) !important;
+        background-color: var(--color-palette-primary-700) !important;
     }
 
     ${timestampId} .dotedit-container__add:focus {
-        background-color: var(--color-main_mod) !important;
+        background-color: var(--color-palette-primary-700) !important;
     }
 
     ${timestampId} .dotedit-container__add:active {
-        background-color: var(--color-main_mod) !important;
+        background-color: var(--color-palette-primary-700) !important;
     }
 
     ${timestampId} button.dotedit-contentlet__drag {
@@ -357,10 +348,10 @@ export const getEditPageCss = (timestampId: string): string => {
 
     ${timestampId} .loader {
         animation: load8 1.1s infinite linear !important;
-        border-bottom: solid 5px rgba(var(--color-sec_rgb), 0.2) !important;
-        border-left: solid 5px var(--color-sec) !important;
-        border-right: solid 5px rgba(var(--color-sec_rgb), 0.2) !important;
-        border-top: solid 5px rgba(var(--color-sec_rgb), 0.2) !important;
+        border-bottom: solid 5px var(--color-palette-secondary-op-20) !important;
+        border-left: solid 5px var(--color-palette-secondary-500) !important;
+        border-right: solid 5px var(--color-palette-secondary-op-20) !important;
+        border-top: solid 5px var(--color-palette-secondary-op-20) !important;
         display: inline-block !important;
         font-size: 10px !important;
         overflow: hidden !important;
@@ -435,7 +426,7 @@ export const getEditPageCss = (timestampId: string): string => {
     }
 
     ${timestampId} .dotcms__navbar-form .reorder-menu-link {
-        background-color: var(--color-main);
+        background-color: var(--color-palette-primary-500);
         border-radius: 3px;
         display: flex;
         flex-direction: row;

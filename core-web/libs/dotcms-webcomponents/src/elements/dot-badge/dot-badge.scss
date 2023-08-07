@@ -1,5 +1,5 @@
 :host {
-    --bg-color: var(--color-sec);
+    --bg-color: $color-palette-secondary-500;
     --color: var(--color-white);
     --font-size: 12px;
 }

@@ -23,9 +23,9 @@ import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-emp
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
-import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -91,6 +91,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 DotMenuModule,
                 HttpClientTestingModule,
                 DotPipesModule,
+                DotMessagePipe,
                 BreadcrumbModule,
                 DotPortletBaseModule,
                 ButtonModule,
@@ -100,7 +101,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 InplaceModule,
                 InputNumberModule,
                 DotActionMenuButtonModule,
-                DotMessagePipeModule,
+
                 CheckboxModule,
                 DotEmptyStateModule
             ],

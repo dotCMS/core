@@ -106,7 +106,7 @@
     background-image: radial-gradient(circle, $inner-color, $outer-color);
     background-repeat: no-repeat;
 }
-@mixin gradient-striped($color: rgba(255, 255, 255, 0.15), $angle: 45deg) {
+@mixin gradient-striped($color: $color-palette-white-op-10, $angle: 45deg) {
     background-image: -webkit-linear-gradient(
         $angle,
         $color 25%,

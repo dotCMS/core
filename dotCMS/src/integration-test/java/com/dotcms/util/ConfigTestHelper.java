@@ -4,9 +4,13 @@ import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import java.util.Objects;
 import javax.servlet.ServletContext;
 
 import com.liferay.util.FileUtil;
@@ -15,7 +19,6 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
@@ -46,43 +49,34 @@ public class ConfigTestHelper extends Config {
             WebAppPool.put("dotcms.org", Globals.MESSAGES_KEY, messages);
             Mockito.when(context.getAttribute(Globals.MESSAGES_KEY)).thenReturn(messages);
 
-            final String topPath = Files.createTempDir().getCanonicalPath();
+            final String topPath = Files.createTempDirectory("config_test_helper").toAbsolutePath().toString();
+
             final String velocityPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
             copyVelocityFolder(topPath, velocityPath);
+
+            Path testRoot = Paths.get(Config.getStringProperty("TEST_WEBAPP_ROOT","src/main/webapp")).normalize().toAbsolutePath();
+
+            String[] contextRoots = new String[]{topPath,testRoot.toString()};
+
             Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
             //Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
                 @Override
                 public String answer(InvocationOnMock invocation) throws Throwable {
                     String path = (String) invocation.getArguments()[0];
-                    path = topPath + path.replaceAll("/", File.separator);
-
-                    return path;
+                    Path fullPath = getTestFilePath(path, contextRoots);
+                    return (fullPath!=null) ? fullPath.toString() : null;
                 }
             });
             Mockito.when(context.getResource(Matchers.anyString())).thenAnswer(new Answer<URL>() {
             //Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
                 @Override
                 public URL answer(InvocationOnMock invocation) throws Throwable {
-                  final String path = (String) invocation.getArguments()[0];
-                  
-                  URL url = MultiMessageResources.class.getClassLoader().getResource(path);
-                  if(url==null) {
-                    String workingDir=new File(".").getAbsolutePath();
-                    System.out.println("Working Directory = " + workingDir);
-
-                    
-                    String newPath  = workingDir + File.separator + 
-                    "src" + File.separator + 
-                    "main"  + File.separator +
-                    "webapp"  + path;
-                    System.out.println("path      :" + path);
-                    System.out.println("workingDir:" + workingDir);
-                    System.out.println("newPath   :" + newPath);
-                    if(new File(newPath).exists()) {
-                      return new URL("file://" + newPath);
-                    }
-                  }
-                  return url;
+                    String path = (String) invocation.getArguments()[0];
+                    Path fullPath = getTestFilePath(path, contextRoots);
+                    if (fullPath!=null)
+                        return fullPath.toUri().toURL();
+                    else
+                        return null;
                 }
             });
             
@@ -98,6 +92,23 @@ public class ConfigTestHelper extends Config {
         setToolboxPath();
     }
 
+
+    private static Path getTestFilePath(String contextPath,String[] contextRoots)
+            throws MalformedURLException {
+        if (!contextPath.startsWith("/"))
+            throw new IllegalArgumentException("Resource path must start with a / and is relative to context root");
+        else
+            contextPath = contextPath.substring(1);
+
+        for (String root : contextRoots) {
+            Path path = Paths.get(root,contextPath);
+            if(Files.exists(path)) {
+               return path.normalize().toAbsolutePath();
+            }
+        }
+
+        return null;
+    }
     /*
     * Copy the velocity code to the temporal directory
      */

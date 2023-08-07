@@ -27,6 +27,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageCacheImpl;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.quartz.job.DefaultLanguageTransferAssetJob;
@@ -147,7 +148,8 @@ public class LanguagesResource {
     }
 
     private Language validateLanguageExists(final LanguageForm languageForm) {
-        DotPreconditions.checkArgument(UtilMethods.isSet(languageForm.getLanguageCode()),
+        DotPreconditions.checkArgument(UtilMethods.isSet(languageForm.getLanguageCode())
+                        || UtilMethods.isSet(languageForm.getIsoCode()),
                 "Language Code can't be null or empty");
         return getLanguage(languageForm);
     }
@@ -177,7 +179,7 @@ public class LanguagesResource {
                 true, PortletID.LANGUAGES.toString());
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
         final Language language = validateLanguageExists(languageForm);
-        if(null != language){
+        if(null != language && language != LanguageCacheImpl.LANG_404){
             return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
         return Response.ok(new ResponseEntityView(saveOrUpdateLanguage(null, languageForm))).build(); // 200
@@ -203,7 +205,7 @@ public class LanguagesResource {
                 .country(locale.getDisplayCountry()).countryCode(locale.getCountry()).build();
 
         final Language language = validateLanguageExists(languageForm);
-        if(null != language){
+        if(null != language && language != LanguageCacheImpl.LANG_404){
            return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
         return Response.ok(new ResponseEntityView(saveOrUpdateLanguage(null, languageForm))).build(); // 200
@@ -418,16 +420,25 @@ public class LanguagesResource {
             newLanguage.setId(origLanguage.getId());
         }
 
-        newLanguage.setLanguageCode(form.getLanguageCode());
-        newLanguage.setLanguage(form.getLanguage());
-        newLanguage.setCountryCode(form.getCountryCode());
-        newLanguage.setCountry(form.getCountry());
+        if (StringUtils.isSet(form.getIsoCode())){
+            final Locale locale = Locale.forLanguageTag(form.getIsoCode());
+
+            newLanguage.setLanguage(locale.getDisplayLanguage());
+            newLanguage.setLanguageCode(locale.getLanguage());
+            newLanguage.setCountry(locale.getDisplayCountry());
+            newLanguage.setCountryCode(locale.getCountry());
+        } else{
+            newLanguage.setLanguage(form.getLanguage());
+            newLanguage.setCountry(form.getCountry());
+            newLanguage.setLanguageCode(form.getLanguageCode());
+            newLanguage.setCountryCode(form.getCountryCode());
+        }
 
         DotPreconditions.checkArgument(UtilMethods.isSet(newLanguage.getLanguageCode()),
                 "Language Code can't be null or empty");
 
         final Language existingLang = languageAPI.getLanguage(newLanguage.getLanguageCode(), newLanguage.getCountryCode());
-        if(null != existingLang && Long.parseLong(languageId) != existingLang.getId()){
+        if(null != existingLang && existingLang != LanguageCacheImpl.LANG_404 && Long.parseLong(languageId) != existingLang.getId()){
            throw new AlreadyExistException(String.format("Update Attempt clashes with an existing language with id `%s`.",existingLang.getId()));
         }
 
@@ -441,7 +452,10 @@ public class LanguagesResource {
     }
 
     private Language getLanguage(final LanguageForm form) {
-        return this.languageAPI.getLanguage(form.getLanguageCode(), form.getCountryCode());
+        final String languageCode = (StringUtils.isSet(form.getIsoCode())? form.getIsoCode().split("-")[0]:form.getLanguageCode());
+        final String countryCode = ((StringUtils.isSet(form.getIsoCode()) && form.getIsoCode().split("-").length > 1)
+                        ? form.getIsoCode().split("-")[1] : form.getCountryCode());
+        return this.languageAPI.getLanguage(languageCode, countryCode);
     }
 
     @PUT

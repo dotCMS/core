@@ -307,7 +307,7 @@ public class URLMapAPIImpl implements URLMapAPI {
                         ? contentletVersionInfo.getLiveInode()
                         : contentletVersionInfo.getWorkingInode();
 
-                contentlet = APILocator.getContentletAPI().find(inode, context.getUser(), false);
+                contentlet = APILocator.getContentletAPI().find(inode, context.getUser(), context.getMode().respectAnonPerms);
             }
         }
 

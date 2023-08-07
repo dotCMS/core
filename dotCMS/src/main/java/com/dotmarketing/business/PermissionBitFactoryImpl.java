@@ -67,7 +67,6 @@ import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import jersey.repackaged.com.google.common.collect.Lists;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1800,7 +1799,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
   
   private Tuple2<Permissionable,List<Permission>> _loadParentPermissions(final Permissionable permissionable, final String permissionKey) throws DotDataException {
 
-      List<Permission> permissionList = Lists.newArrayList();
+      List<Permission> permissionList = new ArrayList<>();
       final String type = resolvePermissionType(permissionable);
 
       Permissionable parentPermissionable = permissionable.getParentPermissionable();

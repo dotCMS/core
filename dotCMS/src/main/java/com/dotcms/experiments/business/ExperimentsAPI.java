@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResults;
@@ -81,6 +82,13 @@ public interface ExperimentsAPI {
      * @return
      */
     Experiment start(final String experimentId, final User user)
+            throws DotDataException, DotSecurityException;
+
+    /**
+     * Similar to #start, but it forces the start of the Experiment even if there is an Experiment
+     * already running for the same page, which would then be stopped.
+     */
+    Experiment forceStart(final String experimentId, final User user)
             throws DotDataException, DotSecurityException;
 
     /**
@@ -180,17 +188,22 @@ public interface ExperimentsAPI {
      * Return the Experiment partial or total result.
      *
      * @param experiment
+     * @param user
      * @return
      */
-    ExperimentResults getResults(final Experiment experiment)
+    ExperimentResults getResults(final Experiment experiment, User user)
             throws DotDataException, DotSecurityException;
+
+    List<Experiment> cacheRunningExperiments() throws DotDataException;
 
     /**
      * Return a list of the Events into an Experiment group by {@link BrowserSession}
+     *
      * @param experiment
+     * @param user
      * @return
      */
-    List<BrowserSession> getEvents(final Experiment experiment);
+    List<BrowserSession> getEvents(final Experiment experiment, User user) throws DotDataException;
 
     /*
      * Ends finalized {@link com.dotcms.experiments.model.Experiment}s

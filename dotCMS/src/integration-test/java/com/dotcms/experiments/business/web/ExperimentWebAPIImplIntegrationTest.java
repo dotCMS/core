@@ -20,12 +20,14 @@ import com.dotcms.experiments.business.web.SelectedExperiment.LookBackWindow;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.RunningIds.RunningId;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.mock.response.DotCMSMockResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -55,18 +57,31 @@ public class ExperimentWebAPIImplIntegrationTest {
 
     /**
      * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
-     * When: You have one experiment running with 100% of traffic allocation and without targeting
-     * Should: Return this experiment all the time
+     * When: You have one experiment restarted running with 100% of traffic allocation and without targeting
+     * Should: Return this experiment all the time with the last Running ID
      *
      * @throws DotDataException
      */
-    @Test
-    public void isUserIncluded() throws DotDataException, DotSecurityException {
+    public void returnCurrenTRunningIdWhenTheExperimentHasMoreThanOne()
+            throws DotDataException, DotSecurityException {
         final Experiment experiment = new ExperimentDataGen().trafficAllocation(100).nextPersisted();
 
         try {
             final Experiment experimentStarted = ExperimentDataGen.start(experiment);
 
+            final Experiment experimentToRestart = Experiment.builder().from(experimentStarted)
+                    .status(Status.DRAFT)
+                    .scheduling(Optional.empty())
+                    .build();
+
+            FactoryLocator.getExperimentsFactory().save(experimentToRestart);
+
+            final Experiment experimentRestarted = APILocator.getExperimentsAPI()
+                    .start(experimentToRestart.id().get(), APILocator.systemUser());
+
+            assertEquals(2, experimentRestarted.runningIds().size());
+
+            final RunningId runningId = experimentRestarted.runningIds().getCurrent().orElseThrow();
             final HTMLPageAsset htmlPageAsset = getExperimentPage(experiment);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -80,7 +95,57 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-                assertEquals("^(http|https):\\/\\/.*:.*\\/" + htmlPageAsset.getPageUrl() + "(\\?.*)?$", selectedExperiments.getExperiments().get(0).redirectPattern());
+                assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/" + htmlPageAsset.getPageUrl() + "(\\/?\\?.*)?$",
+                        selectedExperiments.getExperiments().get(0).redirectPattern());
+                assertEquals(runningId.id(), selectedExperiments.getExperiments().get(0).getRunningId());
+
+                assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
+
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
+
+                final LookBackWindow lookBackWindow = selectedExperiments.getExperiments().get(0)
+                        .getLookBackWindow();
+                assertNotNull(lookBackWindow);
+                assertNotNull(lookBackWindow.getValue());
+                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+
+            }
+        } finally {
+            ExperimentDataGen.end(experiment);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
+     * When: You have one experiment running with 100% of traffic allocation and without targeting
+     * Should: Return this experiment all the time
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void isUserIncluded() throws DotDataException, DotSecurityException {
+        final Experiment experiment = new ExperimentDataGen().trafficAllocation(100).nextPersisted();
+
+        try {
+            final Experiment experimentStarted = ExperimentDataGen.start(experiment);
+            final RunningId runningId = experimentStarted.runningIds().getCurrent().orElseThrow();
+            final HTMLPageAsset htmlPageAsset = getExperimentPage(experiment);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+
+            for (int i = 0; i < 100; i++) {
+                final DotCMSMockResponse response = new DotCMSMockResponse();
+
+                final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
+                        .isUserIncluded(request, response, null);
+
+                assertEquals(1, selectedExperiments.getExperiments().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
+                assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
+                assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/" + htmlPageAsset.getPageUrl() + "(\\/?\\?.*)?$",
+                        selectedExperiments.getExperiments().get(0).redirectPattern());
+                assertEquals(runningId.id(), selectedExperiments.getExperiments().get(0).getRunningId());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
@@ -137,7 +202,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-                final String regexExpected = "^(http|https):\\/\\/.*:.*\\/blog(\\/index|\\/)?(\\?.*)?$";
+                final String regexExpected = "^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/blog(\\/[iI][nN][dD][eE][xX]|\\/)?(\\/?\\?.*)?$" ;
                 assertEquals(regexExpected, selectedExperiments.getExperiments().get(0).redirectPattern());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
@@ -194,7 +259,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-                assertEquals("^(http|https):\\/\\/.*:.*(\\/index|\\/)?(\\?.*)?$", selectedExperiments.getExperiments().get(0).redirectPattern());
+                assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?(\\/[iI][nN][dD][eE][xX]|\\/)?(\\/?\\?.*)?$", selectedExperiments.getExperiments().get(0).redirectPattern());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
@@ -256,7 +321,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-                assertEquals("^(http|https):\\/\\/.*:.*\\/store\\/products\\/(.+)(\\?.*)?$", selectedExperiments.getExperiments().get(0).redirectPattern());
+                assertEquals("(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/store\\/products\\/(.+)(\\/?\\?.*)?", selectedExperiments.getExperiments().get(0).redirectPattern());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
@@ -325,7 +390,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-                assertEquals("^(http|https):\\/\\/.*:.*\\/store\\/products\\/(.+)(\\?.*)?|(http|https):\\/\\/.*:.*\\/products\\/detail\\/(.+)(\\?.*)?$",
+                assertEquals("(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/store\\/products\\/(.+)(\\/?\\?.*)?|(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/products\\/detail\\/(.+)(\\/?\\?.*)?",
                         selectedExperiments.getExperiments().get(0).redirectPattern());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());

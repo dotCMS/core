@@ -12,13 +12,13 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotApps } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     MockDotMessageService,
     MockDotNotLicensedComponent,
     MockDotRouterService
 } from '@dotcms/utils-testing';
-import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 
 import { DotAppsListComponent } from './dot-apps-list.component';
 
@@ -107,11 +107,11 @@ describe('DotAppsListComponent', () => {
                 DotAppsListComponent,
                 MockDotAppsCardComponent,
                 MockDotNotLicensedComponent,
-                DotMessagePipe,
+
                 MockDotAppsImportExportDialogComponent,
                 MockDotIconComponent
             ],
-            imports: [ButtonModule],
+            imports: [ButtonModule, DotMessagePipe],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {

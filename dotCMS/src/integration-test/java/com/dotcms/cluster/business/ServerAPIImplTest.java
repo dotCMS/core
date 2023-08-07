@@ -100,7 +100,8 @@ public class ServerAPIImplTest {
         final List<Server> aliveServers = serverApi.getAliveServers();
         final String oldestServerId = serverApi.getOldestServer();
 
-        assertEquals("We have 6 servers", 6, aliveServers.size());
+        // The main server could also be in the list of alive servers and may have been pinged.
+        assertEquals("We have 6 servers", 6, aliveServers.stream().filter(server -> server.getName().startsWith(TEST_SERVER_PREFIX)).count());
 
         // the oldest server is the first alive server ordered by startup_time asc
         assertEquals(oldestServerId, aliveServers.get(0).serverId);

@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "efa22acb-6704-493e-bb14-fec8cb186601",
+		"_postman_id": "f9c4aa35-f88c-45c1-ad05-78295a74b66f",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "781456"
@@ -5220,6 +5220,42 @@
 								"api",
 								"v1",
 								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SwitchToDefaultSiteJustInCase",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
 							]
 						}
 					},

@@ -8,9 +8,8 @@ import {
     TemplateRef
 } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
 import { Sidebar } from 'primeng/sidebar';
-
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 /**
  * Used to add a header bar to Sidebar (PrimeNg)
@@ -23,7 +22,7 @@ import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-i
 @Component({
     selector: 'dot-sidebar-header',
     standalone: true,
-    imports: [CommonModule, UiDotIconButtonModule],
+    imports: [CommonModule, ButtonModule],
     templateUrl: './dot-sidebar-header.component.html',
     styleUrls: ['./dot-sidebar-header.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

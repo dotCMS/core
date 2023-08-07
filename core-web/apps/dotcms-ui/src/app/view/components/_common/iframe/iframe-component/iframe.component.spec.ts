@@ -9,6 +9,7 @@ import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-o
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     DotcmsEventsServiceMock,
@@ -46,7 +47,7 @@ describe('IframeComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
-            imports: [RouterTestingModule, DotOverlayMaskModule, DotPipesModule],
+            imports: [RouterTestingModule, DotOverlayMaskModule, DotPipesModule, DotMessagePipe],
             providers: [
                 DotLoadingIndicatorService,
                 IframeOverlayService,

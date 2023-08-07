@@ -20,3 +20,9 @@
 .content-type__form {
     width: 522px;
 }
+
+.field {
+    .field__date-hint {
+        margin-top: -$spacing-3;
+    }
+}

@@ -45,6 +45,7 @@
 
 package com.dotcms.enterprise.license;
 
+import com.dotmarketing.util.Config;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -172,7 +173,11 @@ public final class LicenseManager {
         try (InputStream is = Files.newInputStream(f.toPath())){
             String licenseRaw = IOUtils.toString(is);
             DotLicense dl = new LicenseTransformer(licenseRaw).dotLicense;
-            LicenseRepoDAO.upsertLicenseToRepo( dl.serial, licenseRaw);
+            try {
+                LicenseRepoDAO.upsertLicenseToRepo( dl.serial, licenseRaw);
+            } catch (Exception e) {
+                Logger.warnEveryAndDebug(this.getClass(), "Cannot upsert License to db", e,120000);
+            }
             return dl;
         } catch (Throwable e) {
             // Eat Me

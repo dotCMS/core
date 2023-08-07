@@ -351,10 +351,15 @@ var cmsfile=null;
 
 	function insertAssetInEditor(dotAssets) {
 		dotAssets.forEach(async (asset) => {
+            const languageQuery = asset.languageId ? `&language=${asset.languageId}` : "";
 			let results = await fetch(
-				`/api/v1/content/resourcelinks?identifier=${asset.identifier}`
+				`/api/v1/content/resourcelinks?identifier=${asset.identifier}${languageQuery}`
 			);
 			results = await results.json();
+            if (!results || !results.entity) {
+                showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "an-unexpected-system-error-occurred")) %>');
+                return;
+            }
 
 			const mimeWhiteList = [
 				"image/jpeg",

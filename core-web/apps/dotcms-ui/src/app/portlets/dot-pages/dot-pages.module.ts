@@ -17,7 +17,8 @@ import {
     DotWorkflowsActionsService,
     DotPageRenderService,
     DotPageTypesService,
-    DotPageWorkflowsActionsService
+    DotPageWorkflowsActionsService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 
 import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
@@ -39,6 +40,7 @@ import { DotPagesComponent } from './dot-pages.component';
         ProgressSpinnerModule
     ],
     providers: [
+        DotSessionStorageService,
         DialogService,
         DotESContentService,
         DotLanguagesService,
@@ -50,7 +52,8 @@ import { DotPagesComponent } from './dot-pages.component';
         DotWorkflowActionsFireService,
         DotWorkflowEventHandlerService,
         DotRouterService,
-        DotFavoritePageService
+        DotFavoritePageService,
+        DotSessionStorageService
     ]
 })
 export class DotPagesModule {}

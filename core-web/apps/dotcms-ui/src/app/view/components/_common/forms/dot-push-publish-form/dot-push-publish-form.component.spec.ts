@@ -31,6 +31,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotcmsConfigServiceMock,
@@ -145,6 +146,7 @@ xdescribe('DotPushPublishFormComponent', () => {
                 DotFieldValidationMessageModule,
                 SelectButtonModule,
                 DotPipesModule,
+                DotMessagePipe,
                 HttpClientTestingModule
             ]
         }).compileComponents();

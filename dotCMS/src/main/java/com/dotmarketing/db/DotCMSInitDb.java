@@ -118,8 +118,10 @@ public class DotCMSInitDb {
             Thread.sleep(2000);
             recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
             Logger.info(DotCMSInitDb.class, "Records left to index : " + recordsToIndex);
+            if (!ReindexThread.isWorking())
+                ReindexThread.startThread();
             // ten minutes
-            if(++counter>30000) {
+            if(++counter>300) {
                 break;
             }
         }

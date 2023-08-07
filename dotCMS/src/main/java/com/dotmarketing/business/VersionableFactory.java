@@ -207,6 +207,16 @@ public abstract class VersionableFactory {
 	 */
     protected abstract void deleteContentletVersionInfo(String id, long lang) throws DotDataException;
 
+	/**
+	 *
+	 * @param id
+	 * @param lang
+	 * @param variantId
+	 * @throws DotDataException
+	 */
+	protected abstract void deleteContentletVersionInfo(String id, long lang, final String variantId)
+			throws DotDataException;
+
     /**
      * 
      * @param identifier

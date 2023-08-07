@@ -203,11 +203,15 @@ export class DotKeyValueComponent {
     reorderItemsHandler(event: CustomEvent) {
         event.stopImmediatePropagation();
 
+        //created with the purpose of only access the DOM of the triggered element
+
         // Hack to clean the items in DOM without showing "No values" label
         this.items = [{ key: ' ', value: '' }];
 
-        const keys = document.querySelectorAll('.key-value-table-wc__key');
-        const values = document.querySelectorAll('.key-value-table-wc__value');
+        //only manipulate the keys and values of the selected content
+        const keys = this.el.querySelectorAll('.key-value-table-wc__key');
+        const values = this.el.querySelectorAll('.key-value-table-wc__value');
+
         let keyValueRawData = '';
 
         for (let i = 0, total = keys.length; i < total; i++) {

@@ -1,9 +1,9 @@
 .dijit {
     &Splitter {
-        background: rgba($color-palette-gray-200, 0.25);
+        background: $color-palette-black-op-20;
 
         &Hover {
-            background: rgba($color-palette-gray-200, 0.5);
+            background: $color-palette-black-op-50;
 
             .dijitSplitterThumb {
                 background: $color-palette-gray-700;
@@ -11,7 +11,7 @@
         }
 
         &Active {
-            background-color: rgba($color-palette-gray-700, 0.2);
+            background-color: $color-palette-black-op-20;
 
             .dijitSplitterThumb {
                 background: $color-palette-gray-700;

@@ -2,7 +2,6 @@ package com.dotcms.datagen;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -12,6 +11,8 @@ import com.dotmarketing.portlets.folders.model.Folder;
 
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Class used to create {@link Contentlet} objects of type {@link com.dotcms.vanityurl.model.VanityUrl} for test purposes
@@ -25,16 +26,36 @@ public class VanityUrlDataGen extends ContentletDataGen {
   private int order;
   private String title;
 
+  private static final AtomicReference<ContentType> vanityUrlContentType = new AtomicReference<>();
+
+  private static Object lock = new Object();
+
   public VanityUrlDataGen() {
-    super(Try.of(()-> createVanityURLContentType()).getOrElseThrow(e->new DotRuntimeException(e)));
-    this.language(Try.of(()->APILocator.getLanguageAPI().getDefaultLanguage().getId()).getOrElseThrow(e->new DotRuntimeException(e)));
+    super(createOrGetVanityURLContentType());
+    structure(Objects.requireNonNull(vanityUrlContentType.get()).id());
+    this.language(Try.of(()->APILocator.getLanguageAPI().getDefaultLanguage().getId()).getOrElseThrow(
+            DotRuntimeException::new));
     this.host(APILocator.systemHost());
   }
 
-  private static ContentType createVanityURLContentType() {
-    return new ContentTypeDataGen()
-            .baseContentType(BaseContentType.VANITY_URL)
-            .nextPersisted();
+  private static synchronized  ContentType createOrGetVanityURLContentType() {
+    ContentType vanityType = vanityUrlContentType.get();
+    if (vanityType!=null) {
+        // Check if the content type still exists
+        try {
+          vanityType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(vanityType.id());
+        } catch (Exception e) {
+          vanityType = null;
+        }
+    }
+
+    vanityType =  new ContentTypeDataGen()
+           .baseContentType(BaseContentType.VANITY_URL)
+           .nextPersisted();
+
+    vanityUrlContentType.set(vanityType);
+    return vanityType;
+
   }
 
   public VanityUrlDataGen uri(final String uri) {

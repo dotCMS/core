@@ -593,7 +593,7 @@ public class ContentUtils {
      * Logic used for `pullRelated` and `pullRelatedField` methods
      */
     public static List<Contentlet> getPullResults(final Relationship relationship,
-            String contentletIdentifier, final String condition, final int limit, final int offset,
+            String contentletIdentifier, final String condition, final int limit, int offset,
             String sort, final User user, final String tmDate, final boolean pullParents,
             final long language, final Boolean live) {
 
@@ -642,8 +642,9 @@ public class ContentUtils {
 
 					final List<Contentlet> filteredList = relatedContent.stream().filter(c->results.contains(c.getIdentifier()))
 							.collect(Collectors.toList());
-                    
-                    return filteredList.subList(offset>=0?offset:0, (limit > 0 && limit <= filteredList.size())? limit: filteredList.size());
+
+					offset = offset >=0 ? offset : 0;
+					return filteredList.subList(offset, (limit <= 0 || limit >= filteredList.size() ) ? filteredList.size() : offset+limit);
                 } 
                 
                 //pulling parents
@@ -824,6 +825,9 @@ public class ContentUtils {
 						contentlet.getIdentifier() + ", msg:" + e.getMessage(), e);
 				throw new DotRuntimeException(e);
 			}
+		} else {
+
+			throw new IllegalArgumentException("Depth must be a number between 0 and 3");
 		}
 
 	}

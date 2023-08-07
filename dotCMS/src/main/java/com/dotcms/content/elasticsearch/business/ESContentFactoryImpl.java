@@ -128,7 +128,6 @@ import java.util.stream.Collectors;
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
-import static com.dotmarketing.db.DbConnectionFactory.isPostgres;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ACTION_KEY;
@@ -157,7 +156,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final String[] UPSERT_EXTRA_COLUMNS = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "contentlet_as_json",
+            "language_id", "contentlet_as_json", "variant_id",
             "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
@@ -182,7 +181,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final String[] UPSERT_EXTRA_COLUMNS_ORACLE = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "contentlet_as_json",
+            "language_id", "contentlet_as_json", "variant_id",
             "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
@@ -208,7 +207,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final String[] UPSERT_EXTRA_COLUMNS_MYSQL = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "contentlet_as_json",
+            "language_id", "contentlet_as_json", "variant_id",
             "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
@@ -608,17 +607,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if(InodeUtils.isSet(contentlet.getInode())){
                 APILocator.getPermissionAPI().removePermissions(contentlet);
 
-                Optional<ContentletVersionInfo> verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+                Optional<ContentletVersionInfo> verInfo=APILocator.getVersionableAPI()
+                        .getContentletVersionInfo(contentlet.getIdentifier(),
+                                contentlet.getLanguageId(), contentlet.getVariantId());
 
                 if(verInfo.isPresent()) {
-                    if(UtilMethods.isSet(verInfo.get().getLiveInode()) && verInfo.get().getLiveInode().equals(contentlet.getInode()))
+                    if(UtilMethods.isSet(verInfo.get().getLiveInode())
+                            && verInfo.get().getLiveInode().equals(contentlet.getInode()))
                         try {
                             APILocator.getVersionableAPI().removeLive(contentlet);
                         } catch (Exception e) {
                             throw new DotDataException(e.getMessage(),e);
                         }
                     if(verInfo.get().getWorkingInode().equals(contentlet.getInode()))
-                        APILocator.getVersionableAPI().deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+                        APILocator.getVersionableAPI()
+                                .deleteContentletVersionInfo(contentlet.getIdentifier(),
+                                        contentlet.getLanguageId());
                 }
                 delete(contentlet.getInode());
             }
@@ -1007,7 +1011,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         DotPreconditions.notNull(variant, () -> "Variant cannot be null");
 
         if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()){
-            return findContentlets(getContantletInodesFromJsonField(identifier, variant).stream()
+            return findContentlets(getContentletInodesFromJsonField(identifier, variant).stream()
                     .map(map -> map.get("inode").toString())
                     .collect(Collectors.toList()));
         } else {
@@ -1015,22 +1019,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
-    private static Collection<Map<String, Object>> getContantletInodesFromJsonField
+    private static Collection<Map<String, Object>> getContentletInodesFromJsonField
             (final Identifier identifier, final Variant variant) throws DotDataException {
-        final String columnName = getJsonVariantIdColumnName();
 
         return new DotConnect()
-                .setSQL(String.format(
-                        "select inode from contentlet where identifier = ? and %s = ?",
-                        columnName))
+                .setSQL("select inode from contentlet where identifier = ? and variant_id = ?  order by mod_date desc")
                 .addParam(identifier.getId())
                 .addParam(variant.name())
                 .loadResults();
-    }
-
-    private static String getJsonVariantIdColumnName() {
-        return isPostgres() ? ContentletJsonAPI.CONTENTLET_AS_JSON + "->>'variantId'" :
-                "JSON_VALUE(" + ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.variantId')";
     }
 
     @Override
@@ -1066,6 +1062,36 @@ public class ESContentFactoryImpl extends ContentletFactory {
             inodes.add(r.get("inode").toString());
         return findContentlets(inodes);
 	}
+
+
+    /**
+     * Find all versions for  the given set of identifiers
+     * @param identifiers
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Override
+    public List<Contentlet> findLiveOrWorkingVersions(final Set<String> identifiers)
+            throws DotDataException, DotSecurityException {
+        if(identifiers == null || identifiers.isEmpty()) {
+            return List.of();
+        }
+        final DotConnect dc = new DotConnect();
+        final String query =  "SELECT inode FROM contentlet c INNER JOIN contentlet_version_info cvi \n"
+                + "ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) \n"
+                + "WHERE c.identifier IN (?) order by c.mod_date desc";
+        final String parameterPlaceholders = DotConnect.createParametersPlaceholder(identifiers.size());
+        dc.setSQL(query.replace("?", parameterPlaceholders));
+        for (  final String identifier : identifiers) {
+            dc.addParam(identifier);
+        }
+        @SuppressWarnings("unchecked")
+        final List<Map<String,Object>> list = dc.loadResults();
+        final List<String> inodes = list.stream().map(map -> map.get("inode").toString())
+                .collect(Collectors.toList());
+        return findContentlets(inodes);
+    }
 
     @Override
     protected List<Contentlet> findByStructure(String structureInode, int limit, int offset)
@@ -2263,6 +2289,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         upsertValues.add(UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier():null);
         upsertValues.add(contentlet.getLanguageId());
         upsertValues.add(jsonContentlet);
+        upsertValues.add(contentlet.getVariantId());
 
         if (APILocator.getContentletJsonAPI().isPersistContentletInColumns()) {
             final Map<String, Object> fieldsMap = getFieldsMap(contentlet);

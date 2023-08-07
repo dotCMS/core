@@ -12,7 +12,8 @@ import { DotIconModule } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
     mockDotLanguage,
-    MockDotMessageService
+    MockDotMessageService,
+    mockLanguageArray
 } from '@dotcms/utils-testing';
 
 import { DotLanguageSelectorComponent } from './dot-language-selector.component';
@@ -69,11 +70,14 @@ describe('DotLanguageSelectorComponent', () => {
 
     it('should load languages in the dropdown', () => {
         fixtureHost.detectChanges();
-        const decoratedLanguage = {
-            ...mockDotLanguage,
-            language: `${mockDotLanguage.language} (${mockDotLanguage.countryCode})`
-        };
-        expect(component.options).toEqual([decoratedLanguage]);
+
+        const decoratedLanguages = mockLanguageArray.map((lang) => {
+            const countryCode = lang.countryCode.length ? ` (${lang.countryCode})` : '';
+
+            return { ...lang, language: `${lang.language}${countryCode}` };
+        });
+
+        expect(component.options).toEqual(decoratedLanguages);
     });
 
     it('should have right attributes on dropdown', () => {

@@ -28,7 +28,8 @@ public enum PusheableAsset {
 	OSGI("osgi"),
 	CONTENTLET("contentlet"),
 	RELATIONSHIP("relationship"),
-	EXPERIMENT("experiment");
+	EXPERIMENT("experiment"),
+	VARIANT("variant");
 
 	private String type = null;
 

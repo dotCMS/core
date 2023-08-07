@@ -32,7 +32,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.MultiMessageResources;
 import io.vavr.control.Try;
-import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 /**
  * @author Jonathan Gamba
@@ -304,7 +303,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
                     Thread.sleep(10);
 
                     if(cacheStatus.size()>=numberServers) {
-                        return ImmutableMap.copyOf(cacheStatus);
+                        return Map.copyOf(cacheStatus);
                     }
                 } catch ( InterruptedException ex ) {
                     Thread.currentThread().interrupt();
@@ -313,7 +312,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
             }
         }
 
-        return ImmutableMap.copyOf(cacheStatus);
+        return Map.copyOf(cacheStatus);
 
 
     }

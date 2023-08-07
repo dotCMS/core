@@ -3,6 +3,7 @@ package com.dotcms.cli.common;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
 import picocli.CommandLine;
 
 public class FormatOptionMixin {
@@ -12,9 +13,17 @@ public class FormatOptionMixin {
 
     private ObjectMapper objectMapper;
 
-    public ObjectMapper objectMapper() {
+    public ObjectMapper objectMapper(final File file) {
         if (null != objectMapper) {
             return objectMapper;
+        }
+
+        if (null != file){
+            if (isJSONFile(file)){
+                inputOutputFormat = InputOutputFormat.JSON;
+            } else {
+                inputOutputFormat = InputOutputFormat.YML;
+            }
         }
 
         if (inputOutputFormat == InputOutputFormat.JSON) {
@@ -24,6 +33,14 @@ public class FormatOptionMixin {
         }
 
         return objectMapper;
+    }
+
+    public ObjectMapper objectMapper() {
+        return objectMapper(null);
+    }
+
+    private boolean isJSONFile(final File file){
+        return file.getName().toLowerCase().endsWith(".json");
     }
 
     public InputOutputFormat getInputOutputFormat() {

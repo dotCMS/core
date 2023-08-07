@@ -9,8 +9,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
-import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
-import { DotFieldRequiredDirective, DotIconModule } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAddVariableModule } from './dot-add-variable/dot-add-variable.module';
 import { DotContentEditorComponent } from './dot-container-code.component';
@@ -22,7 +21,7 @@ import { DotContentEditorComponent } from './dot-container-code.component';
         TabViewModule,
         MenuModule,
         DotTextareaContentModule,
-        DotMessagePipeModule,
+        DotMessagePipe,
         ReactiveFormsModule,
         ButtonModule,
         DynamicDialogModule,

@@ -27,6 +27,7 @@ import {
     DotCurrentUserService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotLicenseService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -84,7 +85,8 @@ describe('DotPortletDetailComponent', () => {
                 DotWorkflowActionsFireService,
                 DotGlobalMessageService,
                 DotEventsService,
-                DotGenerateSecurePasswordService
+                DotGenerateSecurePasswordService,
+                DotLicenseService
             ],
             declarations: [DotPortletDetailComponent],
             imports: [

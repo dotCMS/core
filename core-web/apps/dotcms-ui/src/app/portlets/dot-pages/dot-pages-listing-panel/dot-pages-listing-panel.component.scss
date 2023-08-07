@@ -1,7 +1,6 @@
 @use "variables" as *;
 
 :host {
-    flex-grow: 1;
     margin-bottom: $spacing-4;
 }
 
@@ -32,6 +31,10 @@
     .p-datatable .p-datatable-tbody tr td.dot-pages-listing__empty-content {
         text-align: center;
     }
+
+    .p-autocomplete-loader {
+        margin-right: $spacing-5;
+    }
 }
 
 .dot-pages-listing-header__inputs {
@@ -55,4 +58,8 @@
         margin-left: $spacing-1;
     }
     display: flex;
+}
+
+.pi.pi-times {
+    cursor: pointer;
 }

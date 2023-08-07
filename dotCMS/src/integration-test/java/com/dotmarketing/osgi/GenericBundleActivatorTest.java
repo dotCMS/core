@@ -34,7 +34,7 @@ public class GenericBundleActivatorTest {
     public static void prepare() throws Exception {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        LicenseTestUtil.getLicense();
+        //LicenseTestUtil.getLicense();
         OSGIUtil.getInstance().initializeFramework();
     }
 

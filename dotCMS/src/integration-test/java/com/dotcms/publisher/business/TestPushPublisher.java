@@ -105,9 +105,6 @@ public class TestPushPublisher extends PushPublisher {
 
                         Bundle b=APILocator.getBundleAPI().getBundleById(this.config.getId());
 
-                        System.out.println("******** PUBLISHER TEST UTIL *******");
-                        System.out.println("******** PRINTING BUNDLE *******");
-                        System.out.println(IOUtils.toString(bundleStream));
                         //For logging purpose
                         PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
                         detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());

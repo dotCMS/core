@@ -15,19 +15,24 @@ import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotESContentService,
-    DotPageRenderService
+    DotLicenseService,
+    DotPageRenderService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotDevice,
+    DotExperimentStatus,
     DotPageMode,
     DotPageRenderState,
     DotPersona
 } from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
+    getExperimentMock,
     LoginServiceMock,
     mockDotPersona,
     mockDotRenderedPage,
@@ -36,13 +41,20 @@ import {
     mockUser,
     mockUserAuth
 } from '@dotcms/utils-testing';
+import { DotLicenseServiceMock } from '@portlets/dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
 
 import { DotPageStateService } from './dot-page-state.service';
 
 import { PageModelChangeEventType } from '../dot-edit-content-html/models';
 
-const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet) => {
-    return new DotPageRenderState(mockUser(), mockDotRenderedPage(), favoritePage);
+const EXPERIMENT_MOCK = getExperimentMock(0);
+const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet, runningExperiment = null) => {
+    return new DotPageRenderState(
+        mockUser(),
+        mockDotRenderedPage(),
+        favoritePage,
+        runningExperiment
+    );
 };
 
 describe('DotPageStateService', () => {
@@ -56,11 +68,13 @@ describe('DotPageStateService', () => {
     let loginService: LoginService;
     let injector: TestBed;
     let service: DotPageStateService;
+    let dotExperimentsService: DotExperimentsService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
+                DotSessionStorageService,
                 DotContentletLockerService,
                 DotHttpErrorManagerService,
                 DotPageRenderService,
@@ -70,12 +84,17 @@ describe('DotPageStateService', () => {
                 DotFormatDateService,
                 DotESContentService,
                 DotFavoritePageService,
+                DotExperimentsService,
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
+                },
+                {
+                    provide: DotLicenseService,
+                    useClass: DotLicenseServiceMock
                 }
             ]
         });
@@ -88,6 +107,7 @@ describe('DotPageStateService', () => {
         dotRouterService = injector.get(DotRouterService);
         loginService = injector.get(LoginService);
         dotFavoritePageService = injector.get(DotFavoritePageService);
+        dotExperimentsService = injector.get(DotExperimentsService);
 
         dotPageRenderServiceGetSpy = spyOn(dotPageRenderService, 'get').and.returnValue(
             of(mockDotRenderedPage())
@@ -114,6 +134,8 @@ describe('DotPageStateService', () => {
                 resultsSize: 20
             })
         );
+
+        spyOn(dotExperimentsService, 'getByStatus').and.returnValue(of([]));
     });
 
     describe('Method: get', () => {
@@ -162,6 +184,54 @@ describe('DotPageStateService', () => {
             service.state$.subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(mock);
             });
+        });
+    });
+
+    describe('Get Running Experiment', () => {
+        it('should get running experiment', () => {
+            const mock = getDotPageRenderStateMock(null, EXPERIMENT_MOCK);
+            dotExperimentsService.getByStatus = jasmine
+                .createSpy()
+                .and.returnValue(of([EXPERIMENT_MOCK]));
+
+            service.get();
+
+            expect(dotExperimentsService.getByStatus).toHaveBeenCalledWith(
+                '123',
+                DotExperimentStatus.RUNNING
+            );
+
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
+            });
+        });
+
+        it('should set running experiment to  null if no running experiments', () => {
+            const mock = getDotPageRenderStateMock();
+
+            service.get();
+
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
+            });
+        });
+
+        it('should set running experiment to null if endpoint error', () => {
+            const error500 = mockResponseView(500, '/test', null, {
+                message: 'experiments.error.fetching.data'
+            });
+            const mock = getDotPageRenderStateMock();
+
+            dotExperimentsService.getByStatus = jasmine
+                .createSpy()
+                .and.returnValue(throwError(error500));
+
+            service.get();
+
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
+            });
+            expect(dotHttpErrorManagerServiceHandle).toHaveBeenCalledWith(error500, true);
         });
     });
 
@@ -417,6 +487,21 @@ describe('DotPageStateService', () => {
 
             service.state$.subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(renderedPage);
+            });
+
+            service.setLocalState(renderedPage);
+        });
+
+        it('should set local state and emit with experiment', () => {
+            const mock = getDotPageRenderStateMock(dotcmsContentletMock, EXPERIMENT_MOCK);
+            dotExperimentsService.getByStatus = jasmine
+                .createSpy()
+                .and.returnValue(of([EXPERIMENT_MOCK]));
+
+            const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
+
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
             });
 
             service.setLocalState(renderedPage);

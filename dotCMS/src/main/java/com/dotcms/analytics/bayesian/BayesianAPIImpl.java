@@ -1,37 +1,19 @@
 package com.dotcms.analytics.bayesian;
 
 import com.dotcms.analytics.bayesian.beta.BetaDistributionWrapper;
-import com.dotcms.analytics.bayesian.model.ABTestingType;
-import com.dotcms.analytics.bayesian.model.BayesianInput;
-import com.dotcms.analytics.bayesian.model.BayesianPriors;
-import com.dotcms.analytics.bayesian.model.BayesianResult;
-import com.dotcms.analytics.bayesian.model.CredibilityInterval;
-import com.dotcms.analytics.bayesian.model.DifferenceData;
-import com.dotcms.analytics.bayesian.model.QuantilePair;
-import com.dotcms.analytics.bayesian.model.SampleData;
-import com.dotcms.analytics.bayesian.model.SampleGroup;
-import com.dotcms.analytics.bayesian.model.VariantBayesianInput;
-import com.dotcms.analytics.bayesian.model.VariantResult;
+import com.dotcms.analytics.bayesian.model.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.Lazy;
-import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
-import org.apache.commons.math3.analysis.integration.UnivariateIntegrator;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
-import org.apache.commons.math3.util.FastMath;
-import org.apache.commons.math3.util.Pair;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -66,8 +48,8 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @return Bayesian result
      */
     private BayesianResult getAbBayesianResult(final BayesianInput input) {
-        final VariantBayesianInput control = input.control();
-        final VariantBayesianInput test = input.variantPairs().get(0);
+        final VariantInput control = input.control();
+        final VariantInput test = input.variantPairs().get(0);
         final BayesianPriors priors = input.priors().get(0);
 
         final double testGain = calcProbabilityBBeatsA(priors, control, test);
@@ -80,30 +62,145 @@ public class BayesianAPIImpl implements BayesianAPI {
         final BetaDistributionWrapper testBeta = BetaDistributionWrapper.create(
             priors.alpha() + test.successes(),
             priors.beta() + test.failures());
-        final DifferenceData differenceData = generateDifferenceData(controlBeta, testBeta);
+        final DifferenceData differenceData = resolveDifference(() -> generateDifferenceData(controlBeta, testBeta));
 
         return BayesianResult.builder()
             .value(testGain)
             .results(List.of(
                 toResult(
                     control,
-                    controlGain,
-                    calc95Credibility(priors, control),
                     controlConversionRate,
-                    null,
-                    calcRisk(controlBeta, testBeta)),
+                    controlGain,
+                    calcExpectedLoss(testConversionRate, controlConversionRate, controlGain),
+                    calcRisk(controlBeta, testBeta),
+                    calc95Credibility(priors, control),
+                    null),
                 toResult(
                     test,
-                    testGain,
-                    calc95Credibility(priors, test),
                     testConversionRate,
-                    calcMedianGrowth(controlConversionRate, testConversionRate),
-                    calcRisk(testBeta, controlBeta))))
+                    testGain,
+                    calcExpectedLoss(controlConversionRate, testConversionRate, testGain),
+                    calcRisk(testBeta, controlBeta),
+                    calc95Credibility(priors, test),
+                    calcMedianGrowth(controlConversionRate, testConversionRate))))
             .suggestedWinner(suggestAbWinner(testGain, control.variant(), test.variant()))
-            .distributionPdfs(calcDistributionsPdfs(control.variant(), controlBeta, test.variant(), testBeta))
+            .distributionPdfs(
+                resolveSampleGroup(
+                    () -> calcDistributionsPdfs(control.variant(), controlBeta, test.variant(), testBeta),
+                    List.of(control.variant(), test.variant())))
             .differenceData(differenceData)
-            .quantiles(calcQuantiles(differenceData.differences(), priors.alpha(), priors.beta()))
+            .quantiles(resolveQuantiles(() -> calcQuantiles(
+                differenceData.differences(),
+                priors.alpha(),
+                priors.beta())))
             .build();
+    }
+
+    /**
+     * Calculates probability control and tests B and C.
+     *
+     * @param input Bayesian input
+     * @return Bayesian result
+     */
+    private BayesianResult getAbcBayesianResult(final BayesianInput input) {
+        final VariantInput control = input.control();
+        final VariantInput testB = input.variantPairs().get(0);
+        final VariantInput testC = input.variantPairs().get(1);
+        final List<BayesianPriors> priors = Optional
+            .ofNullable(input.priors())
+            .filter(p -> p.size() == 3)
+            .orElse(ImmutableList.of(
+                BayesianAPI.DEFAULT_PRIORS,
+                BayesianAPI.DEFAULT_PRIORS,
+                BayesianAPI.DEFAULT_PRIORS));
+        final BayesianPriors controlPriors = priors.get(0);
+        final BayesianPriors testBPriors = priors.get(1);
+        final BayesianPriors testCPriors = priors.get(2);
+        final BetaDistributionWrapper controlBeta = BetaDistributionWrapper.create(
+            controlPriors.alpha() + control.successes(),
+            controlPriors.beta() + control.failures());
+        final BetaDistributionWrapper testBBeta = BetaDistributionWrapper.create(
+            testBPriors.alpha() + testB.successes(),
+            testBPriors.beta() + testB.failures());
+        final BetaDistributionWrapper testCBeta = BetaDistributionWrapper.create(
+            testCPriors.alpha() + testC.successes(),
+            testCPriors.beta() + testC.failures());
+        final BayesianProcessingData controlData = BayesianProcessingData.builder()
+            .input(control)
+            .priors(priors.get(0))
+            .distribution(controlBeta)
+            .build();
+        final BayesianProcessingData testBData = BayesianProcessingData.builder()
+            .input(testB)
+            .priors(testBPriors)
+            .distribution(testBBeta)
+            .build();
+        final BayesianProcessingData testCData = BayesianProcessingData.builder()
+            .input(testC)
+            .priors(testCPriors)
+            .distribution(testCBeta)
+            .build();
+        final List<VariantResult> results = enrichResults(
+            calcAbcTesting(controlData, testBData, testCData),
+            controlData,
+            testBData,
+            testCData);
+
+        return BayesianResult.builder()
+            .value(results.get(0).probability())
+            .results(results)
+            .suggestedWinner(suggestAbcWinner(results))
+            .distributionPdfs(
+                resolveSampleGroup(() ->
+                    calcDistributionsPdfs(
+                        ImmutableMap.of(
+                            control.variant(), controlBeta,
+                            testB.variant(), testBBeta,
+                            testC.variant(), testCBeta)),
+                        List.of(control.variant(), testB.variant(), testC.variant())))
+            .build();
+    }
+
+    /**
+     * Resolves difference data.
+     *
+     * @param differenceDataSupplier supplier of difference data
+     * @return difference data
+     */
+    private DifferenceData resolveDifference(final Supplier<DifferenceData> differenceDataSupplier) {
+        return includeBetaSamples()
+                ? differenceDataSupplier.get()
+                : EMPTY_DIFFERENCE;
+    }
+
+    /**
+     * Resolves sample group.
+     *
+     * @param sampleGroupSupplier supplier of sample group
+     * @param variants variants
+     * @return sample group
+     */
+    private SampleGroup resolveSampleGroup(final Supplier<SampleGroup> sampleGroupSupplier,
+                                           final List<String> variants) {
+        return includeBetaSamples()
+                ? sampleGroupSupplier.get()
+                : SampleGroup.builder()
+                    .samples(variants
+                        .stream()
+                        .collect(Collectors.toMap(Function.identity(), variant -> Collections.emptyList())))
+                    .build();
+    }
+
+    /**
+     * Calculates quantiles for a provided difference data.
+     *
+     * @param quantilesSupplier supplier of quantiles
+     * @return map of quantiles
+     */
+    private Map<Double, QuantilePair> resolveQuantiles(final Supplier<Map<Double, QuantilePair>> quantilesSupplier) {
+        return includeBetaSamples()
+                ? quantilesSupplier.get()
+                : Collections.emptyMap();
     }
 
     /**
@@ -112,30 +209,8 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @param input variant input
      * @return conversion rate
      */
-    private double calcConversionRate(final VariantBayesianInput input) {
+    private double calcConversionRate(final VariantInput input) {
         return (double) input.successes() / (input.successes() + input.failures());
-    }
-
-    /**
-     * Calculates test conversion rate growth against control's.
-     *
-     * @param controlConversionRate control conversion rate
-     * @param testConversionRate test conversion rate
-     * @return test conversion rate growth against control's
-     */
-    private double calcMedianGrowth(final double controlConversionRate, final double testConversionRate) {
-        return (testConversionRate - controlConversionRate) / testConversionRate;
-    }
-
-    /**
-     * Executes Apache's Common Math log beta function for provided alpha and beta values
-     *
-     * @param alpha alpha value
-     * @param beta beta value
-     * @return results from log beta function
-     */
-    private double logBeta(final double alpha, final double beta) {
-        return LOG_BETA_FN.apply(alpha, beta);
     }
 
     /**
@@ -149,9 +224,9 @@ public class BayesianAPIImpl implements BayesianAPI {
      *
      *     function probability_B_beats_A(α_A, β_A, α_B, β_B)
      *         total = 0.0
-     *         for i = 0:(α_B-1)
-     *             total += exp(logbeta(α_A+i, β_B+β_A)
-     *                 - log(β_B+i) - logbeta(1+i, β_B) - logbeta(α_A, β_A))
+     *         for i = 0:(α_B - 1)
+     *             total += exp(logbeta(α_A + i, β_B + β_A)
+     *                 - log(β_B + i) - logbeta(1 + i, β_B) - logbeta(α_A, β_A))
      *         end
      *         return total
      *     end
@@ -188,32 +263,13 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @param test the test
      */
     private double calcProbabilityBBeatsA(final BayesianPriors priors,
-                                          final VariantBayesianInput control,
-                                          final VariantBayesianInput test) {
+                                          final VariantInput control,
+                                          final VariantInput test) {
         return calcProbabilityBBeatsA(
             control.successes() + priors.alpha(),
             control.failures() + priors.beta(),
             test.successes() + priors.alpha(),
             test.failures() + priors.beta());
-    }
-
-    /**
-     * Calculates probability control and tests B and C.
-     *
-     * @param input Bayesian input
-     * @return Bayesian result
-     */
-    private BayesianResult getAbcBayesianResult(final BayesianInput input) {
-        final List<VariantResult> results = calcAbcProbabilities(
-            Pair.create(input.priors().get(0), input.control()),
-            Pair.create(input.priors().get(1), input.variantPairs().get(0)),
-            Pair.create(input.priors().get(2), input.variantPairs().get(1)));
-
-        return BayesianResult.builder()
-            .value(results.get(0).probability())
-            .results(results)
-            .suggestedWinner(suggestAbcWinner(results))
-            .build();
     }
 
     /**
@@ -224,8 +280,8 @@ public class BayesianAPIImpl implements BayesianAPI {
      *        total = 0.0
      *        for i = 0:(α_A-1)
      *            for j = 0:(α_B-1)
-     *                total += exp(logbeta(α_C+i+j, β_A+β_B+β_C) - log(β_A+i) - log(β_B+j)
-     *                    - logbeta(1+i, β_A) - logbeta(1+j, β_B) - logbeta(α_C, β_C))
+     *                total += exp(logbeta(α_C + i + j, β_A + β_B + β_C) - log(β_A + i) - log(β_B + j)
+     *                    - logbeta(1 + i, β_A) - logbeta(1 + j, β_B) - logbeta(α_C, β_C))
      *            end
      *        end
      *        return (1 - probability_B_beats_A(α_C, β_C, α_A, β_A)
@@ -244,12 +300,12 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @param testCFailures test C failures
      * @return probability that C (Test) beats A (Control) and B (Test)
      */
-    private double calcAbcProbabilities(final double controlSuccesses,
-                                        final double controlFailures,
-                                        final double testBSuccesses,
-                                        final double testBFailures,
-                                        final double testCSuccesses,
-                                        final double testCFailures) {
+    private double calcProbabilityCBeatsA_B(final double controlSuccesses,
+                                            final double controlFailures,
+                                            final double testBSuccesses,
+                                            final double testBFailures,
+                                            final double testCSuccesses,
+                                            final double testCFailures) {
         double total = 0.0;
 
         for(int i = 0; i < controlSuccesses; i++) {
@@ -264,67 +320,98 @@ public class BayesianAPIImpl implements BayesianAPI {
             }
         }
 
-        final double probAOverC = calcProbabilityBBeatsA(testCSuccesses, testCFailures, controlSuccesses, controlFailures);
+        final double probAOverC = calcProbabilityBBeatsA(
+            testCSuccesses,
+            testCFailures,
+            controlSuccesses,
+            controlFailures);
         final double probBOverC = calcProbabilityBBeatsA(testCSuccesses, testCFailures, testBSuccesses, testBFailures);
 
         return 1 - probAOverC - probBOverC + total;
     }
 
     /**
-     * Calculates probability that C (Test) beats A (Control) and B (Test) just as main
-     * {@link #doBayesian(BayesianInput)}
+     * Calculates probability that C (Test) beats A (Control) and B (Test)
      *
-     * @param controlPriors control alpha and beta
-     * @param control successes and failures
-     * @param testBPriors test B alpha and beta
-     * @param testB successes and failures
-     * @param testCPriors test C alpha and beta
-     * @param testC successes and failures
-     * @return a list {@link VariantResult} representing probability that C beats A and B
+     * @param controlData control data
+     * @param testBData test B data
+     * @param testCData test C data
+     * @param finalControl final control
      */
-    private VariantResult calcSingleAbcTesting(final BayesianPriors controlPriors,
-                                               final VariantBayesianInput control,
-                                               final BayesianPriors testBPriors,
-                                               final VariantBayesianInput testB,
-                                               final BayesianPriors testCPriors,
-                                               final VariantBayesianInput testC) {
+    private VariantResult calcSingleAbcTesting(final BayesianProcessingData controlData,
+                                               final BayesianProcessingData testBData,
+                                               final BayesianProcessingData testCData,
+                                               final VariantInput finalControl) {
+        final VariantInput control = controlData.input();
+        final BayesianPriors controlPriors = controlData.priors();
+        final VariantInput testB = testBData.input();
+        final BayesianPriors testBPriors = testBData.priors();
+        final VariantInput testC = testCData.input();
+        final BayesianPriors testCPriors = testCData.priors();
+        final double controlConversionDate = calcConversionRate(finalControl);
+        final double testConversionRate = calcConversionRate(testC);
         return toResult(
             testC,
-            calcAbcProbabilities(
+            calcConversionRate(testC),
+            calcProbabilityCBeatsA_B(
                 control.successes() + controlPriors.alpha(),
                 control.failures() + controlPriors.beta(),
                 testB.successes() + testBPriors.alpha(),
                 testB.failures() + testBPriors.beta(),
                 testC.successes() + testCPriors.alpha(),
                 testC.failures() + testCPriors.beta()),
+            null,
+            null,
             calc95Credibility(testCPriors, testC),
-            0.0,
-            0.0,
-            0.0);
+            testC == finalControl ? null : calcMedianGrowth(controlConversionDate, testConversionRate));
     }
 
     /**
      * Calculates probability that C (Test) beats A (Control) and B (Test) just as main
      * {@link #doBayesian(BayesianInput)}
      *
-     * @param controlPair control successes/failures and priors
-     * @param testBPair test B successes/failures and priors
-     * @param testCPair test C successes/failures and priors
+     * @param controlData control successes/failures and priors
+     * @param testBData test B successes/failures and priors
+     * @param testCData test C successes/failures and priors
      * @return a list {@link VariantResult} representing probability that C beats A and B
      */
-    private List<VariantResult> calcAbcProbabilities(final Pair<BayesianPriors, VariantBayesianInput> controlPair,
-                                                     final Pair<BayesianPriors, VariantBayesianInput> testBPair,
-                                                     final Pair<BayesianPriors, VariantBayesianInput> testCPair) {
+    private List<VariantResult> calcAbcTesting(final BayesianProcessingData controlData,
+                                               final BayesianProcessingData testBData,
+                                               final BayesianProcessingData testCData) {
+        final Optional<VariantInput> finalControl = Stream
+            .of(controlData, testBData, testCData)
+            .filter(data -> data.input().isControl())
+            .map(BayesianProcessingData::input)
+            .findFirst();
         return Stream
             .of(
-                List.of(testCPair, testBPair, controlPair),
-                List.of(controlPair, testCPair, testBPair),
-                List.of(testBPair, controlPair, testCPair))
-            .map(inputs -> calcSingleAbcTesting(
-                inputs.get(0).getFirst(), inputs.get(0).getSecond(),
-                inputs.get(1).getFirst(), inputs.get(1).getSecond(),
-                inputs.get(2).getFirst(), inputs.get(2).getSecond()))
+                List.of(testCData, testBData, controlData),
+                List.of(controlData, testCData, testBData),
+                List.of(testBData, controlData, testCData))
+            .map(data -> calcSingleAbcTesting(data.get(0), data.get(1), data.get(2), finalControl.orElse(null)))
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Calculates test conversion rate growth against control's.
+     *
+     * @param controlConversionRate control conversion rate
+     * @param testConversionRate test conversion rate
+     * @return test conversion rate growth against control's
+     */
+    private double calcMedianGrowth(final double controlConversionRate, final double testConversionRate) {
+        return (testConversionRate - controlConversionRate) / testConversionRate;
+    }
+
+    /**
+     * Executes Apache's Common Math log beta function for provided alpha and beta values
+     *
+     * @param alpha alpha value
+     * @param beta beta value
+     * @return results from log beta function
+     */
+    private double logBeta(final double alpha, final double beta) {
+        return LOG_BETA_FN.apply(alpha, beta);
     }
 
     /**
@@ -353,80 +440,83 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @param input the input
      * @return the 95% credibility interval
      */
-    private double[] calc95Credibility(final BayesianPriors priors, final VariantBayesianInput input) {
+    private double[] calc95Credibility(final BayesianPriors priors, final VariantInput input) {
         return calc95Credibility(priors.alpha(), priors.beta(), input.successes(), input.failures());
     }
 
     /**
-     * Calculates the mean of the beta distribution.
+     * Calculate expected loss for the given input.
      *
-     * @param priorAlpha the prior alpha
-     * @param priorBeta the prior beta
-     * @param successes the number of successes
-     * @param failures the number of failures
-     * @return the mean
+     * @param conversionRate the conversion rate
+     * @return the loss
      */
-    private double calcMean(final double priorAlpha,
-                            final double priorBeta,
-                            final long successes,
-                            final long failures) {
-        return (priorAlpha + successes) / (priorAlpha + successes + priorBeta + failures);
+    private double calcLoss(final double conversionRate) {
+        return 1 - conversionRate;
     }
 
     /**
-     * Calculates variance for the beta distribution.
+     * Calcualtes expected loss for the given input.
      *
-     * @param priorAlpha the prior alpha
-     * @param priorBeta the prior beta
-     * @param successes the number of successes
-     * @param failures the number of failures
-     * @return the variance
+     * @param controlConversionRate the control conversion rate
+     * @param testConversionRate the test conversion rate
+     * @param probabilityBBeatsA the probability that the test variant beats the control variant
+     * @return the expected loss
      */
-    private double calcVariance(final double priorAlpha,
-                                final double priorBeta,
-                                final long successes,
-                                final long failures) {
-        return (successes + priorAlpha)
-            * (failures + priorBeta)
-            / (FastMath.pow(priorAlpha + successes + priorBeta + failures, 2)
-            * (priorAlpha + successes + priorBeta + failures + 1));
+    private double calcExpectedLoss(final double controlConversionRate,
+                                    final double testConversionRate,
+                                    final double probabilityBBeatsA) {
+        // Calculate the expected loss
+        return probabilityBBeatsA
+            * calcLoss(controlConversionRate)
+            + calcLoss(probabilityBBeatsA)
+            * calcLoss(testConversionRate);
     }
 
     /**
-     * Calculates the risk of the test variant beating the control variant.
+     * Calculates expected losses for the given inputs.
      *
-     * @param priorAlpha the prior alpha
-     * @param priorBeta the prior beta
-     * @param controlSuccesses the number of successes for the control variant
-     * @param controlFailures the number of failures for the control variant
-     * @param testSuccesses the number of successes for the test variant
-     * @param testFailures the number of failures for the test variant
-     * @return the risk of the test variant beating the control variant
+     * @param controlResult the control result
+     * @param testBResult the test B result
+     * @param testCResult the test C result
+     * @return the expected losses
      */
-    private double calcRiskCheap(final double priorAlpha,
-                                 final double priorBeta,
-                                 final long controlSuccesses,
-                                 final long controlFailures,
-                                 final long testSuccesses,
-                                 final long testFailures) {
-        // CLT approximation for Variants A and B
-        final double meanA = calcMean(priorAlpha, priorBeta, controlSuccesses, controlFailures);
-        final double varianceA = calcMean(priorAlpha, priorBeta, controlSuccesses, controlFailures);
-        final double meanB = calcMean(priorAlpha, priorBeta, testSuccesses, testFailures);
-        final double varianceB = calcVariance(priorAlpha, priorBeta, testSuccesses, testFailures);
-        final double meanDifference = meanA - meanB;
-        final double varianceDifference = varianceA + varianceB;
+    private Map<String, Double> calcExpectedLoss(final VariantResult controlResult,
+                                                 final VariantResult testBResult,
+                                                 final VariantResult testCResult) {
+        return Map.of(
+            controlResult.variant(),
+            calcExpectedLoss(testBResult.probability(), testCResult.probability(), controlResult.conversionRate()),
+            testBResult.variant(),
+            calcExpectedLoss(1 - testBResult.probability(), testCResult.probability(), testBResult.conversionRate()),
+            testCResult.variant(),
+            calcExpectedLoss(
+                1 - testCResult.probability(),
+                1 - testBResult.probability(),
+                testCResult.conversionRate()));
+    }
 
-        // Defining the function to be integrated
-        UnivariateFunction function = x -> {
-            double pdf = FastMath.exp(-FastMath.pow(x - meanDifference, 2) / (2 * varianceDifference))
-                / FastMath.sqrt(2 * FastMath.PI * varianceDifference);
-            return x * pdf;
-        };
+    /**
+     * Enriches results with expected losses.
+     *
+     * @param results results
+     * @return enriched results
+     */
+    private List<VariantResult> enrichResults(final List<VariantResult> results, final BayesianProcessingData controlData, final BayesianProcessingData testBData, final BayesianProcessingData testCData) {
+        final Map<String, Double> expectedLosses = calcExpectedLoss(results.get(0), results.get(1), results.get(2));
+        final Map<String, Double> risks = calcRisk(
+            controlData,
+            results.get(0).conversionRate(),
+            testBData,
+            results.get(1).conversionRate(),
+            testCData,
+            results.get(2).conversionRate());
 
-        // Gaussian quadrature integration
-        final UnivariateIntegrator integrator = new SimpsonIntegrator(); // or any other integrator
-        return integrator.integrate(1000, function, -15, 15); // adjust parameters as needed
+        return results
+            .stream()
+            .map(result -> result
+                .withExpectedLoss(expectedLosses.get(result.variant()))
+                .withRisk(risks.get(result.variant())))
+            .collect(Collectors.toList());
     }
 
     /**
@@ -448,21 +538,40 @@ public class BayesianAPIImpl implements BayesianAPI {
     /**
      * Calculates the risk of the test variant beating the control variant.
      *
-     * @param priors Bayesian priors
-     * @param controlInput control variant input
-     * @param testInput test variant input
+     * @param controlData control variant data
+     * @param controlConversionRate control variant conversion rate
+     * @param testBData test B variant data
+     * @param testBConversionRate test B variant conversion rate
+     * @param testCData test C variant data
+     * @param testCConversionRate test C variant conversion rate
      * @return risk of the test variant beating the control variant
      */
-    private double calcRisk(final BayesianPriors priors,
-                            final VariantBayesianInput controlInput,
-                            final VariantBayesianInput testInput) {
-        return calcRiskCheap(
-            priors.alpha(),
-            priors.beta(),
-            controlInput.successes(),
-            controlInput.failures(),
-            testInput.successes(),
-            testInput.failures());
+    private Map<String, Double> calcRisk(final BayesianProcessingData controlData,
+                                         final double controlConversionRate,
+                                         final BayesianProcessingData testBData,
+                                         final double testBConversionRate,
+                                         final BayesianProcessingData testCData,
+                                         final double testCConversionRate) {
+        final double testBPosterior = testBData.distribution().inverseCumulativeProbability(controlConversionRate);
+        final double testCPosterior = testCData.distribution().inverseCumulativeProbability(controlConversionRate);
+        final double relativeRiskB =
+            testBPosterior / controlData.distribution().inverseCumulativeProbability(testBConversionRate);
+        final double relativeRiskC =
+            testCPosterior / controlData.distribution().inverseCumulativeProbability(testCConversionRate);
+
+        /*return Map.of(
+            testBData.input().variant(), relativeRiskB,
+            testCData.input().variant(), relativeRiskC);*/
+
+        double controlProbability = controlData.distribution().rv();
+        double testBProbability = testBData.distribution().rv();
+        double testCProbability = testCData.distribution().rv();
+        double testBRisk = testBProbability / controlProbability;
+        double testCRisk = testCProbability / controlProbability;
+
+        return Map.of(
+            testBData.input().variant(), testBRisk,
+            testCData.input().variant(), testCRisk);
     }
 
     /**
@@ -525,6 +634,21 @@ public class BayesianAPIImpl implements BayesianAPI {
     }
 
     /**
+     * Given a map of {@link BetaDistributionWrapper} instances calculates density (pdf) elements for each one.
+     *
+     * @param distributions provided beta distributions
+     * @return {@link SampleGroup} containing each sample list against an identifier
+     */
+    private SampleGroup calcDistributionsPdfs(final Map<String, BetaDistributionWrapper> distributions) {
+        return SampleGroup.builder()
+                .samples(distributions
+                    .entrySet()
+                    .stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> calcPdfElements(entry.getValue()))))
+                .build();
+    }
+
+    /**
      * Given a couple {@link BetaDistributionWrapper} objects calculates density(PDF) for both control (A) and test (B).
      *
      * @param controlDistribution provided control beta distribution
@@ -535,11 +659,10 @@ public class BayesianAPIImpl implements BayesianAPI {
                                               final BetaDistributionWrapper controlDistribution,
                                               final String test,
                                               final BetaDistributionWrapper testDistribution) {
-        return SampleGroup.builder()
-            .samples(ImmutableMap.of(
-                control, calcPdfElements(controlDistribution),
-                test, calcPdfElements(testDistribution)))
-            .build();
+        return calcDistributionsPdfs(ImmutableMap.of(
+                control, controlDistribution,
+                test, testDistribution
+        ));
     }
 
     /**
@@ -565,6 +688,10 @@ public class BayesianAPIImpl implements BayesianAPI {
             .build();
     }
 
+    private boolean includeBetaSamples() {
+        return Config.getBooleanProperty("INCLUDE_BETA_DISTRIBUTION_SAMPLES", false);
+    }
+
     /**
      * Resolves sample size for beta distribution.
      *
@@ -575,34 +702,37 @@ public class BayesianAPIImpl implements BayesianAPI {
     }
 
     /**
-     * Converts {@link VariantBayesianInput} including probability, credibility interval, and risk to
+     * Converts {@link VariantInput} including probability and credibility interval to
      * {@link VariantResult}.
      *
      * @param input variant input
-     * @param probability probability that B (Test) beats A (Control)
-     * @param credibilityInterval credibility interval
      * @param conversionRate conversion rate
-     * @param medianGrowth median growth
+     * @param probability probability that B (Test) beats A (Control)
      * @param risk risk
+     * @param credibilityInterval credibility interval
+     * @param medianGrowth median growth
      * @return {@link VariantResult} instance
      */
-    private VariantResult toResult(final VariantBayesianInput input,
-                                   final double probability,
-                                   final double[] credibilityInterval,
+    private VariantResult toResult(final VariantInput input,
                                    final double conversionRate,
-                                   final Double medianGrowth,
-                                   final double risk) {
+                                   final double probability,
+                                   final Double expectedLoss,
+                                   final Double risk,
+                                   final double[] credibilityInterval,
+                                   final Double medianGrowth) {
         return VariantResult.builder()
             .variant(input.variant())
-            .probability(probability)
+            .isControl(input.isControl())
             .conversionRate(conversionRate)
+            .probability(probability)
+            .expectedLoss(expectedLoss)
+            .risk(risk)
             .medianGrowth(medianGrowth)
             .credibilityInterval(
                 CredibilityInterval.builder()
                     .lower(credibilityInterval[0])
                     .upper(credibilityInterval[1])
                     .build())
-            .risk(risk)
             .build();
     }
 
@@ -619,11 +749,11 @@ public class BayesianAPIImpl implements BayesianAPI {
     }
 
     /**
-     * Validates passed {@link VariantBayesianInput} instance to have the right parameters.
+     * Validates passed {@link VariantInput} instance to have the right parameters.
      *
      * @param variantPair variant pair
      */
-    private void validateVariantPair(final VariantBayesianInput variantPair) {
+    private void validateVariantPair(final VariantInput variantPair) {
         if (variantPair.successes() < 0) {
             throw new IllegalArgumentException("Variant successes cannot have negative value");
         }
@@ -643,9 +773,9 @@ public class BayesianAPIImpl implements BayesianAPI {
         validateVariantPair(input.control());
         input.variantPairs().forEach(this::validateVariantPair);
 
-        final List<VariantBayesianInput> variantPairs = new ArrayList<>(input.variantPairs());
+        final List<VariantInput> variantPairs = new ArrayList<>(input.variantPairs());
         variantPairs.add(input.control());
-        for (final VariantBayesianInput variantPair: variantPairs) {
+        for (final VariantInput variantPair: variantPairs) {
             validateVariantsSize(input, input.type() == ABTestingType.ABC ? 2 : 1);
             if (variantPair.successes() + variantPair.failures() == 0) {
                 throw new DotDataException("Variant successes and failures cannot be zero");
@@ -673,7 +803,7 @@ public class BayesianAPIImpl implements BayesianAPI {
             validateInput(input);
             return Optional.empty();
         } catch (final DotDataException e) {
-            Logger.error(
+            Logger.debug(
                 this,
                 String.format("Cannot calculate probability with zero interactions for input: %s", input), e);
             return Optional.of(NOOP_RESULT);
@@ -700,7 +830,7 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @param beta beta value
      * @return map of calculated quantiles double values
      */
-    private Map<Double, QuantilePair> calcQuantiles(final double[] differences, final Double alpha, final Double beta) {
+    private Map<Double, QuantilePair> calcQuantiles(final double[] differences, final double alpha, final double beta) {
         if (differences.length == 0) {
             return ImmutableMap.of();
         }
@@ -709,8 +839,6 @@ public class BayesianAPIImpl implements BayesianAPI {
         Arrays.sort(sorted);
 
         final int size = differences.length;
-        final double alphaFinal = Objects.requireNonNullElse(alpha, BETA_DIST_DEFAULT);
-        final double betaFinal = Objects.requireNonNullElse(beta, BETA_DIST_DEFAULT);
 
         return Arrays.stream(QUANTILES)
             .boxed()
@@ -718,7 +846,7 @@ public class BayesianAPIImpl implements BayesianAPI {
                 Function.identity(),
                 quantile -> {
                     final double p = quantile;
-                    final double m = alphaFinal + p * (1 - alphaFinal - betaFinal);
+                    final double m = alpha + p * (1 - alpha - beta);
                     final double aleph = size * p + m;
                     final int k = (int) Math.floor(clip(aleph, 1, size - 1));
                     final double gamma = clip(aleph - k, 0, 1);

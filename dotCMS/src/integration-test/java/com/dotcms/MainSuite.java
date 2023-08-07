@@ -1,8 +1,8 @@
 package com.dotcms;
 
-import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
+import com.dotcms.bayesian.BayesianAPIImplIT;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
@@ -46,10 +46,15 @@ import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.experiments.business.ExperimentAPIImpIntegrationTest;
+import com.dotcms.experiments.business.IndexRegexUrlPatterStrategyIntegrationTest;
+import com.dotcms.experiments.business.RootIndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
+import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
+import com.dotcms.integritycheckers.FolderIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
@@ -83,8 +88,10 @@ import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
-import com.dotcms.rest.api.v1.assets.AssetPathResolverImplTest;
+import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
+import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
@@ -94,7 +101,6 @@ import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
-import com.dotcms.security.ContentSecurityPolicyUtilTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.security.multipart.BoundedBufferedReaderTest;
@@ -118,7 +124,7 @@ import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
-import com.dotmarketing.filters.CMSUrlUtilTest;
+import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
 import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
@@ -129,6 +135,7 @@ import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryT
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
+import com.dotmarketing.portlets.contentlet.business.HostFactoryImplTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
@@ -143,7 +150,6 @@ import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
-import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -193,7 +199,6 @@ import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
 import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
-import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovableTest;
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropertyTest;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
@@ -201,13 +206,14 @@ import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
-import com.dotmarketing.util.ConfigTest;
+import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
+import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
+import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.TestConfig;
 import com.dotmarketing.util.UtilMethodsITest;
-import com.dotmarketing.util.ZipUtilTest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.felix.framework.OSGIUtilTest;
@@ -217,6 +223,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
+
+
 
 
 @RunWith(MainBaseSuite.class)
@@ -452,7 +460,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ContainerFactoryImplTest.class,
         TemplateFactoryImplTest.class,
         TestConfig.class,
-        ConfigTest.class,
         FolderTest.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
@@ -553,7 +560,6 @@ import org.junit.runners.Suite.SuiteClasses;
         CategoryFactoryTest.class,
         Task210805DropUserProxyTableTest.class,
         Task210816DeInodeRelationshipTest.class,
-        WorkflowEmailUtilTest.class,
         ConfigurationHelperTest.class,
         CSVManifestReaderTest.class,
         Task210901UpdateDateTimezonesTest.class,
@@ -574,7 +580,6 @@ import org.junit.runners.Suite.SuiteClasses;
         StoryBlockMapTest.class,
         HandlerUtilTest.class,
         Task211103RenameHostNameLabelTest.class,
-        ContentSecurityPolicyUtilTest.class,
         MessageToolTest.class,
         XmlToolTest.class,
         LanguageFolderTest.class,
@@ -612,7 +617,6 @@ import org.junit.runners.Suite.SuiteClasses;
         PaginatedContentletsIntegrationTest.class,
         Task220824CreateDefaultVariantTest.class,
         Task220822CreateVariantTableTest.class,
-        Task220825MakeSomeSystemFieldsRemovableTest.class,
         Task220829CreateExperimentsTableTest.class,
         StoryBlockTest.class,
         IdentifierCacheImplTest.class,
@@ -620,7 +624,7 @@ import org.junit.runners.Suite.SuiteClasses;
         VersionableFactoryImplTest.class,
         Task220928AddLookbackWindowColumnToExperimentTest.class,
         TailLogResourceTest.class,
-        BayesianAPIImplTest.class,
+        BayesianAPIImplIT.class,
         ContentletDependenciesTest.class,
         SaveContentAsDraftActionletIntegrationTest.class,
         StoryBlockAPITest.class,
@@ -628,7 +632,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
         HashedLocalFileRepositoryManagerTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class,
         Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class,
         BrowserAjaxTest.class,
         PopulateContentletAsJSONUtilTest.class,
@@ -637,10 +640,21 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230328AddMarkedForDeletionColumnTest.class,
         StartupTasksExecutorDataTest.class,
         Task230426AlterVarcharLengthOfLockedByColTest.class,
+        Task230523CreateVariantFieldInContentletIntegrationTest.class,
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
-        AssetPathResolverImplTest.class,
-        CMSUrlUtilTest.class
+        SiteViewPaginatorIntegrationTest.class,
+        CMSUrlUtilIntegrationTest.class,
+        HostFactoryImplTest.class,        
+        RootIndexRegexUrlPatterStrategyIntegrationTest.class,
+        IndexRegexUrlPatterStrategyIntegrationTest.class,
+        ContentFileAssetIntegrityCheckerTest.class,
+        FolderIntegrityCheckerTest.class,
+        ContentPageIntegrityCheckerTest.class,
+        AssetPathResolverImplIntegrationTest.class,
+        WebAssetHelperIntegrationTest.class,
+        Task230701AddHashIndicesToWorkflowTablesTest.class,
+        Task230713IncreaseDisabledWysiwygColumnSizeTest.class
 })
 
 public class MainSuite {

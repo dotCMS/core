@@ -32,6 +32,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     LoginServiceMock,
@@ -92,6 +93,7 @@ describe('DotMyAccountComponent', () => {
                 CommonModule,
                 CheckboxModule,
                 DotPipesModule,
+                DotMessagePipe,
                 HttpClientTestingModule
             ],
             providers: [
@@ -180,8 +182,8 @@ describe('DotMyAccountComponent', () => {
         expect(showStarter.nativeElement.innerText).toEqual(
             messageServiceMock.get('starter.show.getting.started')
         );
-        expect(cancel.innerText).toEqual(messageServiceMock.get('modes.Close').toUpperCase());
-        expect(save.innerText).toEqual(messageServiceMock.get('save').toUpperCase());
+        expect(cancel.innerText).toEqual(messageServiceMock.get('modes.Close'));
+        expect(save.innerText).toEqual(messageServiceMock.get('save'));
     });
 
     it(`should form be valid and load starter page data`, async () => {

@@ -736,11 +736,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		final DotConnect dotConnect = new DotConnect();
 
 		if (DbConnectionFactory.isMsSql()) {
-			dotConnect.setSQL("SELECT identifier,inode,language_id, JSON_VALUE(contentlet_as_json, '$.variantId') as variant "
+			dotConnect.setSQL("SELECT identifier,inode,language_id, variant_id as variant "
 					+ "FROM contentlet "
 					+ "WHERE JSON_VALUE(contentlet_as_json, '$.fields.template.value') = ?");
 		} else {
-			dotConnect.setSQL("SELECT identifier,inode,language_id,contentlet_as_json->>'variantId' as variant "
+			dotConnect.setSQL("SELECT identifier,inode,language_id,variant_id as variant "
 					+ "FROM contentlet "
 					+ "WHERE contentlet_as_json->'fields'->'template'->>'value' =  ?");
 		}

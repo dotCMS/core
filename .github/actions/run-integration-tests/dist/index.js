@@ -86,6 +86,11 @@ exports.COMMANDS = {
     gradle: [
         {
             cmd: './gradlew',
+            args: ['generateDependenciesFromMaven'],
+            workingDir: dotCmsRoot
+        },
+        {
+            cmd: './gradlew',
             args: ['integrationTest', `-PdatabaseType=${dbType}`, '--stacktrace'],
             workingDir: dotCmsRoot
         }
