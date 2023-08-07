@@ -333,7 +333,7 @@ public class FilesPullCommandTest extends CommandTest {
 
     private Path createTempFolder() throws IOException {
 
-        String randomFolderName = "folder-" + UUID.randomUUID().toString();
+        String randomFolderName = "folder-" + UUID.randomUUID();
         return Files.createTempDirectory(randomFolderName);
     }
 
