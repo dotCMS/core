@@ -136,7 +136,7 @@ public class AssetsUtils {
             path = "/";
         }
 
-        final var isFolder = LocationUtils.URIIsFolder(uri);
+        final var isFolder = LocationUtils.isFolderURI(uri);
 
         Path dotCMSPath;
         try {

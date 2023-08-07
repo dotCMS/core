@@ -19,7 +19,7 @@ public class LocationUtils {
      * @param url the URL to check
      * @return true if the URL is a folder, false otherwise
      */
-    public static boolean URLIsFolder(final String url) {
+    public static boolean isFolderURL(final String url) {
 
         final URI uri;
         try {
@@ -28,7 +28,7 @@ public class LocationUtils {
             throw new IllegalArgumentException(e.getMessage(), e);
         }
 
-        return URIIsFolder(uri);
+        return isFolderURI(uri);
     }
 
     /**
@@ -37,7 +37,7 @@ public class LocationUtils {
      * @param uri the URL to check
      * @return true if the URI is a folder, false otherwise
      */
-    public static boolean URIIsFolder(final URI uri) {
+    public static boolean isFolderURI(final URI uri) {
 
         var path = uri.getPath();
 
@@ -62,7 +62,7 @@ public class LocationUtils {
      * @param assetName  the asset name
      * @return the local path
      */
-    public static Path LocalPathFromAssetData(final String workspace, final String status, final String language,
+    public static Path localPathFromAssetData(final String workspace, final String status, final String language,
                                               final String siteName, String folderPath, final String assetName) {
 
         return Paths.get(workspace, Workspace.FILES_NAMESPACE, status.toLowerCase(), language.toLowerCase(),

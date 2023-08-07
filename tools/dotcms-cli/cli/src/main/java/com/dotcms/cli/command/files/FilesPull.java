@@ -105,7 +105,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
             // Calculating the workspace path for files
             var workspaceFilesFolder = getOrCreateWorkspaceFilesDirectory(workspace);
 
-            if (LocationUtils.URLIsFolder(source)) { // Handling folders
+            if (LocationUtils.isFolderURL(source)) { // Handling folders
 
                 var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
                 var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);

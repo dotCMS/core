@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.common.AssetsUtils.*;
-import static com.dotcms.common.LocationUtils.LocalPathFromAssetData;
+import static com.dotcms.common.LocationUtils.localPathFromAssetData;
 
 @ApplicationScoped
 public class Pusher {
@@ -159,7 +159,7 @@ public class Pusher {
         final var remoteAssetPath = BuildRemoteAssetURL(siteName, folderPath, assetName);
 
         // Calculating the local asset path
-        var localAssetPath = LocalPathFromAssetData(workspace, status, language, siteName,
+        var localAssetPath = localPathFromAssetData(workspace, status, language, siteName,
                 folderPath, assetName);
 
         // Reading the file and preparing the data to be pushed
