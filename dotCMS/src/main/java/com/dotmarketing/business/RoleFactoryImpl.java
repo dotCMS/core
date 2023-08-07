@@ -97,16 +97,16 @@ public class RoleFactoryImpl extends RoleFactory {
 	protected List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles) throws DotDataException {
 		try {
 
-			Logger.info(this, "===============================================================");
+			//Logger.info(this, "===============================================================");
 
 			List<Role> roles = new ArrayList<>();
 			List<UserRoleCacheHelper> helpers = rc.getRoleIdsForUser(userId);
 			if(helpers != null){
 
-				if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
+				/*if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
 					Logger.info(this, "Roles for user " + userId + " are only " + helpers.size() + " =");
 					helpers.forEach(roleData -> Logger.info(this, "- " + roleData.getRoleId()));
-				}
+				}*/
 
 				for (UserRoleCacheHelper h : helpers) {
 					if(includeImplicitRoles || !h.isInherited()){
@@ -135,10 +135,10 @@ public class RoleFactoryImpl extends RoleFactory {
 					rolesToProcess.add(r);
 				}
 
-				if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
+				/*if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
 					Logger.info(this, "DB query results for user '" + userId + "' [ " + rolesToProcess.size() + " ] =");
 					rolesToProcess.forEach(roleData -> Logger.info(this, "- " + roleData.getId()));
-				}
+				}*/
 
 				if(UserAPI.CMS_ANON_USER_ID.equals(userId)
 						&& !rolesToProcess.contains(APILocator.getRoleAPI().loadCMSAnonymousRole())){
@@ -151,41 +151,41 @@ public class RoleFactoryImpl extends RoleFactory {
 					helpers.add(h);
 					if(includeImplicitRoles || roleIdsFromDb.contains(r.getId())){
 
-						if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
+						/*if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
 							Logger.info(this, "Implicit role for user '" + userId + "' contained in 'roleIdsFromDb' = " + r);
-						}
+						}*/
 
 						roles.add(r);
-					} else {
+					} /*else {
 						if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
 							Logger.info(this, "Implicit roles for user '" + userId + "' NOT present");
 						}
-					}
+					}*/
 
 					if(r.getRoleChildren() != null && includeImplicitRoles) {
 						for (String roleId : r.getRoleChildren()) {
 
-							if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
+							/*if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
 								Logger.info(this, "Including children of role '" + r.getId() + "' for user '" + userId + "' = " + roleId);
-							}
+							}*/
 
 							rolesToProcess.add(getRoleById(roleId));
 						}
-					} else {
+					} /*else {
 						if (("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) && helpers.size() < 5) {
 							Logger.info(this, "Role children for user '" + userId + "' NOT present");
 						}
-					}
+					}*/
 				}
 				rc.addRoleListForUser(helpers, userId);
 			}
 
-			if ("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) {
+			/*if ("dotcms.org.2795".equals(userId) || "dotcms.org.2787".equals(userId)) {
 				Logger.info(this, "Final Role list for user '" + userId + "' [ " + roles.size() +" ] =");
 				roles.forEach(roleData -> Logger.info(this, "- " + roleData.getId()));
 			}
 
-			Logger.info(this, "***************************************************************");
+			Logger.info(this, "***************************************************************");*/
 
 			return roles;
 		} catch (Exception e) {

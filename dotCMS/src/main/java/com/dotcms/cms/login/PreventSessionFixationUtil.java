@@ -2,6 +2,7 @@ package com.dotcms.cms.login;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
@@ -53,6 +54,7 @@ public class PreventSessionFixationUtil {
 
             Logger.debug(this, ()-> "Preventing the session fixation");
             Logger.info(this, "========== Preventing the session fixation ==========");
+            Logger.info(this, "createSessionIfDoesNotExists = " + createSessionIfDoesNotExists);
 
             final Map<String, Object> sessionMap  = new HashMap<>();
             final HttpSession oldSession          = session;
@@ -99,14 +101,37 @@ public class PreventSessionFixationUtil {
                 for (final Map.Entry<String, Object> entry : newSessionMap.entrySet()) {
                     newSession.setAttribute(entry.getKey(), entry.getValue());
 
-                    Logger.info(this, "- Attr '" + entry.getKey() + "' = " + entry.getValue());
+                    Logger.info(this, "- Added Attr '" + entry.getKey() + "' = " + entry.getValue());
 
                 }
 
                 session = newSession;
+            } else {
+                Logger.info(this, "This time, there was NO SESSION in the request!!");
+                Logger.info(this, "--- Request Data:");
+                Logger.info(this, " -> request.getRemoteAddr() = " + request.getRemoteAddr());
+                Logger.info(this, " -> request.getContextPath() = " + request.getContextPath());
+                Logger.info(this, " -> request.getPathInfo() = " + request.getPathInfo());
+                Logger.info(this, " -> request.getRequestURI() = " + request.getRequestURI());
+                Logger.info(this, " -> request.getQueryString() = " + request.getQueryString());
+                Logger.info(this, " -> request.getRequestedSessionId() = " + request.getRequestedSessionId());
+                Logger.info(this, " -> request.getRequestURL() = " + request.getRequestURL());
+                Logger.info(this, " -> request.getRemoteHost() = " + request.getRemoteHost());
+                Logger.info(this, " -> request.getServletPath() = " + request.getServletPath());
+                Logger.info(this, " -> request.getContentType() = " + request.getContentType());
+                Logger.info(this, " -> request.getAuthType() = " + request.getAuthType());
+                Logger.info(this, "A NEW SESSION IS BEING CREATED AND RETURNED!!");
+                Logger.info(this, "--- Current stack trace:");
+                Logger.info(this, ExceptionUtil.getCurrentStackTraceAsString());
             }
         }
 
-        return null == session && createSessionIfDoesNotExists? request.getSession(): session;
+        //return null == session && createSessionIfDoesNotExists? request.getSession(): session;
+        session = null == session && createSessionIfDoesNotExists? request.getSession(): session;
+        if (null != session) {
+            Logger.info(this, "--- New Session ID = " + session.getId());
+            Logger.info(this, "--- Has any attributes? = " + session.getAttributeNames().hasMoreElements());
+        }
+        return session;
     } // preventSessionFixation.
 }

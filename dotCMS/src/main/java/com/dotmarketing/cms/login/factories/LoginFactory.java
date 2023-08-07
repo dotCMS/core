@@ -230,6 +230,8 @@ public class LoginFactory {
 					}
 				}
 
+				Logger.info(LoginFactory.class, ";;; Calling the preventSessionFixation method from LoginFactory.doLogin() ;;;");
+
             	final HttpSession session = PreventSessionFixationUtil.getInstance().preventSessionFixation(request, true);
             	session.removeAttribute(com.dotmarketing.util.WebKeys.VISITOR);
                 // session stuff

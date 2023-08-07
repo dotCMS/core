@@ -545,10 +545,12 @@ public class UserResource implements Serializable {
 			final String errorMsg = "ERROR!!! The CMS_SELECTED_HOST_ID attribute is not present in the current " +
 					"Session: " + session.getId() + " . Retrieve it again!";
 			Logger.error(this, errorMsg);
+			/*
 			final Optional<Host> optSite = this.siteAPI.resolveSiteByServerName(request.getServerName(), user, false);
 			currentSiteID = optSite.map(Contentlet::getIdentifier).orElse(StringPool.BLANK);
 			session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, currentSiteID);
 			Logger.error(this, "Setting selected host id to: " + currentSiteID + " for session: " + session.getId());
+			*/
 			throw new DotRuntimeException(String.format("ERROR: User '%s' does not have the 'CMS_SELECTED_HOST_ID' parameter set!", user.getUserId()));
 		}
 		return currentSiteID;

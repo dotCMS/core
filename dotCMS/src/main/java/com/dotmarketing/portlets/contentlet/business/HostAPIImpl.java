@@ -190,21 +190,21 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                                                   final boolean fallbackToDefault) throws DotDataException, DotSecurityException {
         Host site = APILocator.getHostAPI().resolveHostName(serverName, user, false);
         if (null == site || !UtilMethods.isSet(site.getInode())) {
-            Logger.info(this, "AUTH : Not found! Resolving '" + serverName + "' by name");
+            //Logger.info(this, "AUTH : Not found! Resolving '" + serverName + "' by name");
             site = APILocator.getHostAPI().findByName(serverName, user, false);
         }
         if (site == null || !UtilMethods.isSet(site.getInode())) {
-            Logger.info(this, "AUTH : Not found! Resolving '" + serverName + "' by alias");
+            //Logger.info(this, "AUTH : Not found! Resolving '" + serverName + "' by alias");
             site = APILocator.getHostAPI().findByAlias(serverName, user, false);
         }
-        if (site != null && UtilMethods.isSet(site.getInode())) {
+        /*if (site != null && UtilMethods.isSet(site.getInode())) {
             Logger.info(this,
                     "AUTH : It was found! The '" + serverName + "' site has the ID '" + site.getIdentifier() + "'");
-        }
+        }*/
         if ((site == null || !UtilMethods.isSet(site.getInode())) && fallbackToDefault) {
             site = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true);
-            Logger.info(this, "AUTH : [FINAL] Not found! Fall back to '" + serverName + "' treated as the default " +
-                    "site '" + site.getIdentifier() + "'");
+            /*Logger.info(this, "AUTH : [FINAL] Not found! Fall back to '" + serverName + "' treated as the default " +
+                    "site '" + site.getIdentifier() + "'");*/
         }
         return Optional.ofNullable(site);
     }
