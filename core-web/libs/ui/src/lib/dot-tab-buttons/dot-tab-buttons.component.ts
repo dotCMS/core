@@ -25,13 +25,16 @@ export class DotTabButtonsComponent {
     @Output() clickOption = new EventEmitter();
     @Input() mode: DotPageMode;
     @Input() options: SelectItem[];
-    pageMode = DotPageMode;
-    dropDownOpenIcon = 'pi pi-angle-up';
-    dropDownCloseIcon = 'pi pi-angle-down';
+    protected readonly dropDownOpenIcon = 'pi pi-angle-up';
+    protected readonly dropDownCloseIcon = 'pi pi-angle-down';
+    protected readonly OPEN_MENU = 'openMenu';
     toggle = false;
     icon = this.dropDownCloseIcon;
-    OPEN_MENU = 'openMenu';
 
+    /**
+     * Handles the click event on the tab buttons.
+     * @param event
+     */
     onClickOption(event) {
         if (event.target.value === this.OPEN_MENU) {
             this.showMenu(event);
@@ -40,6 +43,10 @@ export class DotTabButtonsComponent {
         }
     }
 
+    /**
+     * Handles the click event on the menu button.
+     * @param event
+     */
     showMenu(event) {
         this.toggle = !this.toggle;
         this.toggleIcon();

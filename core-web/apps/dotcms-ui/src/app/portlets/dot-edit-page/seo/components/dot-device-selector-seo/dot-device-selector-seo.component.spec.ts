@@ -113,7 +113,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
         expect(options.length).toBe(mockDotDevices.length);
     });
 
-    it('should open the overlayPanel', async () => {
+    it('should open the overlayPanel', () => {
         const buttonEl = fixtureHost.debugElement.query(By.css('button')).nativeElement;
         buttonEl.click();
 

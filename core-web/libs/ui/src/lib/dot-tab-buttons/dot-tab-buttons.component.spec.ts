@@ -1,9 +1,6 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
-import { CommonModule, NgClass, NgIf } from '@angular/common';
-
 import { SelectItem } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
 
 import { DotPageMode } from '@dotcms/dotcms-models';
 
@@ -13,8 +10,7 @@ describe('DotTabButtonsComponent', () => {
     let spectator: Spectator<DotTabButtonsComponent>;
 
     const createComponent = createComponentFactory({
-        component: DotTabButtonsComponent,
-        imports: [CommonModule, ButtonModule, NgIf, NgClass]
+        component: DotTabButtonsComponent
     });
     const optionsMock: SelectItem[] = [
         { label: 'Edit', value: DotPageMode.EDIT },
@@ -31,8 +27,6 @@ describe('DotTabButtonsComponent', () => {
     });
 
     it('should render options', () => {
-        spectator.detectChanges();
-
         const buttons = spectator.queryAll(byTestId('dot-tab-button-text'));
         expect(spectator.query(byTestId('dot-tab-button-text'))).toBeDefined();
         expect(buttons.length).toEqual(2);
@@ -62,8 +56,6 @@ describe('DotTabButtonsComponent', () => {
     it('should show dot-tab-indicator when a tab is active', () => {
         spectator.component.mode = DotPageMode.EDIT;
 
-        spectator.detectChanges();
-
         const indicatorEl = spectator.queryAll(byTestId('dot-tab-indicator'));
 
         expect(indicatorEl).toBeDefined();
@@ -71,8 +63,6 @@ describe('DotTabButtonsComponent', () => {
 
     it('should show dot-tab-indicator when a tab is active', () => {
         spectator.component.mode = DotPageMode.PREVIEW;
-
-        spectator.detectChanges();
 
         const indicatorEl = spectator.queryAll(byTestId('dot-tab-indicator'));
 
