@@ -59,9 +59,7 @@ export class AiContentService {
         return this.http
             .post<OpenAIResponse>('https://api.openai.com/v1/chat/completions', body, { headers })
             .pipe(
-                catchError((error) => {
-                    console.error('Error fetching AI content:', error);
-
+                catchError(() => {
                     return throwError('Error fetching AI content');
                 }),
                 map((response) => {

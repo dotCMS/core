@@ -1,11 +1,12 @@
 import { of } from 'rxjs';
 
-import { Component, ElementRef, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { catchError } from 'rxjs/operators';
 
 import { AiContentService } from '../../shared/services/ai-content/ai-content.service';
+import { DynamicControl } from '../bubble-form/model/index';
 
 interface FormValues {
     textPrompt: string;
@@ -16,38 +17,21 @@ interface FormValues {
     templateUrl: './ai-content-prompt.component.html',
     styleUrls: ['./ai-content-prompt.component.scss']
 })
-export class AIContentPromptComponent implements OnInit {
-    @ViewChild('textPrompt') input: ElementRef;
+export class AIContentPromptComponent {
+    @ViewChild('input') input: ElementRef;
 
     @Output() formValues = new EventEmitter<FormValues>();
     @Output() hide = new EventEmitter<boolean>();
 
     loading = false;
-    form: FormGroup<{
-        textPrompt: FormControl<string | null>;
-    }>;
+    form: FormGroup;
+
+    dynamicControls: DynamicControl<unknown>[] = [];
 
     constructor(private fb: FormBuilder, private aiContentService: AiContentService) {}
 
-    ngOnInit() {
-        this.buildForm();
-    }
-
-    /**
-     * Build FormGroup
-     * @memberof AIContentPromptComponent
-     * @param {NodeProps} [props]
-     */
-    buildForm() {
-        this.form = this.fb.group({
-            textPrompt: ['', Validators.required]
-        });
-    }
-
     onSubmit() {
-        const textPrompt = this.form.get('textPrompt').value;
-
-        console.info('this.form.get()', this.form.get('textPrompt'));
+        const textPrompt = this.form.value.textPrompt;
 
         if (textPrompt) {
             this.formValues.emit({ textPrompt });
@@ -68,48 +52,23 @@ export class AIContentPromptComponent implements OnInit {
         }
     }
 
-    /**
-     * Set Form values without emit `valueChanges` event.
-     *
-     * @memberof AIContentPromptComponent
-     */
     setFormValue({ textPrompt = '' }) {
         this.form.patchValue({ textPrompt }, { emitEvent: false });
     }
 
-    /**
-     * Set Focus prompt Input
-     *
-     * @memberof AIContentPromptComponent
-     */
     focusInput() {
         this.input.nativeElement.focus();
     }
 
-    /**
-     * Listen Key events on search input
-     *
-     * @param {KeyboardEvent} e
-     * @return {*}
-     * @memberof AIContentPromptComponent
-     */
-    onKeyDownEvent(e: KeyboardEvent) {
-        e.stopImmediatePropagation();
-
-        if (e.key === 'Escape') {
-            this.hide.emit(true);
-
-            return true;
-        }
-    }
-
-    /**
-     * Reset form value to initials
-     *
-     * @memberof AIContentPromptComponent
-     */
-    resetForm() {
-        this.setFormValue({ textPrompt: '' });
+    buildForm(controls: DynamicControl<unknown>[]) {
+        this.dynamicControls = controls;
+        this.form = this.fb.group({});
+        this.dynamicControls.forEach((control) => {
+            this.form.addControl(
+                control.key as keyof FormValues,
+                this.fb.control(control.value || null, control.required ? Validators.required : [])
+            );
+        });
     }
 
     cleanForm() {

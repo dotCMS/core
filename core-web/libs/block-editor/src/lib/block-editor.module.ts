@@ -10,6 +10,7 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
+    AIContentPromptComponent,
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
     BubbleMenuComponent,
@@ -50,7 +51,8 @@ import { SharedModule } from './shared/shared.module';
         SuggestionPageComponent,
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
-        FloatingButtonComponent
+        FloatingButtonComponent,
+        AIContentPromptComponent
     ],
     providers: [DotUploadFileService, LoggerService, StringUtils],
     exports: [
@@ -60,7 +62,8 @@ import { SharedModule } from './shared/shared.module';
         ReactiveFormsModule,
         SharedModule,
         BubbleFormComponent,
-        DotBlockEditorComponent
+        DotBlockEditorComponent,
+        AIContentPromptComponent
     ]
 })
 export class BlockEditorModule {}

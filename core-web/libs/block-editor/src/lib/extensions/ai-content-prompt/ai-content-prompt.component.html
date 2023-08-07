@@ -1,13 +1,24 @@
-<form [formGroup]="form" autocomplete="off">
-    <span class="p-input-icon-right">
-        <input
-            type="text"
-            pInputText
-            formControlName="textPrompt"
-            placeholder="Ask AI to write something"
-        />
-        <button (click)="onSubmit()" type="button">
-            <i class="pi pi-search"></i>
-        </button>
-    </span>
+<form
+    id="ai-text-prompt"
+    *ngIf="form"
+    [formGroup]="form"
+    (ngSubmit)="onSubmit()"
+    autocomplete="off"
+>
+    <div *ngFor="let control of dynamicControls">
+        <ng-container>
+            <span class="p-input-icon-right">
+                <input
+                    #input
+                    [formControlName]="control.key"
+                    type="text"
+                    pInputText
+                    placeholder="Ask AI to write something"
+                />
+                <button type="submit">
+                    <i class="pi pi-send"></i>
+                </button>
+            </span>
+        </ng-container>
+    </div>
 </form>

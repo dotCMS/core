@@ -15,10 +15,18 @@ export const TIPPY_OPTIONS: Partial<Props> = {
             {
                 name: 'preventOverflow',
                 options: {
-                    padding: { left: 10, right: 10 },
                     boundary: 'viewport'
                 }
             }
         ]
     }
 };
+
+export const AI_PROMPT_DYNAMIC_CONTROLS = [
+    {
+        key: 'textPrompt',
+        label: '',
+        type: 'text',
+        required: true
+    }
+];

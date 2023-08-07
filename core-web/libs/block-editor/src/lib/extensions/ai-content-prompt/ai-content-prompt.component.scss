@@ -1,22 +1,27 @@
+@use "variables" as *;
+
 form {
     display: flex;
     flex-direction: column;
-    width: "500px";
+    padding-left: 30px;
 
     .p-input-icon-right {
         position: relative;
+        width: 100%;
 
         input {
             width: 100%;
-            padding: 10px;
             box-sizing: border-box;
-            border: 1px solid #ccc;
+            border: 1px solid $color-palette-gray-700;
             border-radius: 5px;
             outline: none;
-            padding-right: 30px;
+            color: $color-palette-gray-700;
+            font-size: 16px;
         }
 
         button {
+            display: flex;
+            align-items: center;
             position: absolute;
             right: 0;
             top: 0;
@@ -25,7 +30,8 @@ form {
             border: none;
             outline: none;
             cursor: pointer;
-            padding: 20px;
+            padding-right: 15px;
+            color: $color-palette-primary;
         }
     }
 }

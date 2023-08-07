@@ -50,8 +50,6 @@ export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => 
                             })
                             .freezeScroll(true)
                             .run();
-
-                        return true;
                     },
                 closeAIPrompt:
                     () =>
