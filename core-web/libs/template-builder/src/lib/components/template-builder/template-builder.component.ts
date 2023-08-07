@@ -181,16 +181,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             helper: 'clone'
         });
 
-        this.addBox.nativeElement.ddElement.on('dragstart', () => {
-            this.addBoxIsDragging = true;
-            this.cd.detectChanges();
-        });
-
-        this.addBox.nativeElement.ddElement.on('dragstop', () => {
-            this.addBoxIsDragging = false;
-            this.cd.detectChanges();
-        });
-
         // Adding subgrids on load
         Array.from(this.grid.el.querySelectorAll('.grid-stack')).forEach((el) => {
             const subgrid = GridStack.addGrid(el as HTMLElement, subGridOptions);
@@ -424,5 +414,14 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 ...this.boxOptions
             };
         }
+    }
+    /**
+     * @description Set the current value of dragging add box
+     *
+     * @param {boolean} isDragging
+     * @memberof TemplateBuilderComponent
+     */
+    setAddBoxIsDragging(isDragging: boolean): void {
+        this.addBoxIsDragging = isDragging;
     }
 }

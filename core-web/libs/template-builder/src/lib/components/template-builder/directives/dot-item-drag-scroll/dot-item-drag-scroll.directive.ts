@@ -1,4 +1,13 @@
-import { Directive, ElementRef, Host, HostListener, OnInit, Optional } from '@angular/core';
+import {
+    Directive,
+    ElementRef,
+    EventEmitter,
+    Host,
+    HostListener,
+    OnInit,
+    Optional,
+    Output
+} from '@angular/core';
 
 import { take } from 'rxjs/operators';
 
@@ -16,6 +25,8 @@ export class DotItemDragScrollDirective implements OnInit {
     container: HTMLElement;
     currentElement: HTMLElement;
     scrollDirection: SCROLL_DIRECTION = SCROLL_DIRECTION.NONE;
+
+    @Output() dragging = new EventEmitter<boolean>(false);
 
     @HostListener('window:mousemove', ['$event'])
     onMouseMove() {
@@ -74,11 +85,13 @@ export class DotItemDragScrollDirective implements OnInit {
         this.el.nativeElement?.ddElement.on('dragstart', ({ target }) => {
             this.currentElement = target.ddElement.ddDraggable?.helper || this.el.nativeElement;
             this.isDragging = true;
+            this.dragging.emit(true);
         });
 
         this.el.nativeElement?.ddElement.on('dragstop', () => {
             this.isDragging = false;
             this.scrollDirection = SCROLL_DIRECTION.NONE;
+            this.dragging.emit(false);
         });
     }
 }
