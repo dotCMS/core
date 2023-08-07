@@ -2,25 +2,25 @@ package com.dotcms.cli.common;
 
 import io.quarkus.security.ForbiddenException;
 import io.quarkus.security.UnauthorizedException;
-import java.util.concurrent.CompletionException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
 public class ExceptionHandler {
 
-     public static Exception handle(Exception ex){
-         if(ex instanceof CompletionException){
-            ex = (Exception) ex.getCause();
-         }
-         if(ex instanceof SecurityException){
-             ex = handle((SecurityException)ex);
-         }
-         if(ex instanceof WebApplicationException){
-             ex = handle((WebApplicationException) ex);
-         }
+    public static Exception handle(Exception ex) {
 
-         return ex;
-     }
+        while (ex instanceof RuntimeException && ex.getCause() != null ){
+            ex = (Exception) ex.getCause();
+        }
+
+        if (ex instanceof SecurityException) {
+            ex = handle((SecurityException) ex);
+        }
+        if (ex instanceof WebApplicationException) {
+            ex = handle((WebApplicationException) ex);
+        }
+        return ex;
+    }
 
      private static WebApplicationException handle(WebApplicationException in){
          Response response = in.getResponse();

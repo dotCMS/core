@@ -56,7 +56,6 @@ class CustomConfiguration {
                 return factory.create()
                         .setCaseInsensitiveEnumValuesAllowed(true)
                         .setExecutionExceptionHandler((ex, commandLine, parseResult) -> {
-
                                 final Object object = commandLine.getCommand();
                                 if (object instanceof DotCommand) {
                                         final DotCommand command = (DotCommand) object;
@@ -67,7 +66,6 @@ class CustomConfiguration {
                                 } else {
                                         commandLine.getErr().println(ex.getMessage());
                                 }
-
                                 return ExitCode.SOFTWARE;
                         }).setExitCodeExceptionMapper(t -> {
                                // customize exit code

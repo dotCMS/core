@@ -18,7 +18,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
 
 @QuarkusTest
-public class FilesPullCommandTest extends CommandTest {
+class FilesPullCommandTest extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;

@@ -156,21 +156,21 @@ public class OutputOptionMixin implements MessageWriter {
             CommandLine.UnmatchedArgumentException.printSuggestions(
                     (CommandLine.ParameterException) ex, out());
         }
-
-        //Yeah, this doesn't look like the right logic
-        //in the sense that we're printing out the error only when the showErrors is false
-        //But there's a reason for that.
-        //ShowErrors is on when we want to see the full stack trace and this block is meant to be used to show a shorten output
-        if (!isShowErrors()) {
-            if (null != ex) {
-                ex = ExceptionHandler.handle(ex);
-                message = String.format("%s %s  ", message,
-                        ex.getMessage() != null ? abbreviate(ex.getMessage(), "...", 200)
-                                : "No error message was provided");
+            //Yeah, this doesn't look like the right logic
+            //in the sense that we're printing out the error only when the showErrors is false
+            //But there's a reason for that.
+            //ShowErrors is on when we want to see the full stack trace and this block is meant to be used to show a shorten output
+            if (!isShowErrors()) {
+                if (null != ex) {
+                    ex = ExceptionHandler.handle(ex);
+                    message = String.format("%s %s  ", message,
+                            ex.getMessage() != null ? abbreviate(ex.getMessage(), "...", 200)
+                                    : "No error message was provided");
+                }
+                error(message);
+                info("@|bold,yellow run with -e or --errors for full details on the exception.|@");
             }
-            error(message);
-            info("@|bold,yellow run with -e or --errors for full details on the exception.|@");
-        }
+
         final CommandLine cmd = mixee.commandLine();
         return cmd.getExitCodeExceptionMapper() != null ? cmd.getExitCodeExceptionMapper()
                 .getExitCode(ex)
