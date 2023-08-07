@@ -1,0 +1,71 @@
+name: Release Candidate Process
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to use for the release candidate'
+        required: true
+        default: 'master'
+      initial_sha:
+        description: 'Initial commit sha'
+        required: true
+      last_sha:
+        description: 'Last commit sha'
+        required: true
+      labels_json:
+        description: 'Labels JSON to add/remove'
+        required: false
+        default: '["Release Candidate"]'
+      label_operation:
+        description: 'Label operation (ADD or REMOVE) to perform'
+        type: choice
+        options:
+          - Add
+          - Remove
+          - None
+        required: true
+        default: 'ADD'
+      tag_creation:
+        description: 'Tag creation flag'
+        type: choice
+        options:
+          - Yes
+          - No
+        required: true
+        default: 'YES'
+
+jobs:
+  release-candidate-process:
+    name: Release process automation
+    runs-on: ubuntu-latest
+    steps:
+      -
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 0
+      -
+        id: changelog
+        uses: ./.github/actions/rc-changelog
+        with:
+          initial_sha: ${{ github.event.inputs.initial_sha }}
+          last_sha: ${{ github.event.inputs.last_sha }}
+          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+      -
+        uses: ./.github/actions/issue-labeler
+        with:
+          issues_json: ${{ steps.changelog.outputs.issues_flat }}
+          labels_json: ${{ github.event.inputs.labels_json }}
+          operation: ${{ github.event.inputs.label_operation }}
+          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+        if: ${{ github.event.inputs.label_operation != 'None' }}
+      -
+        run: |
+          git fetch --tags
+          git reset --hard ${{ github.event.inputs.last_sha }}
+          git tag -d $RELEASE_CANDIDATE_TAG
+          git push origin :refs/tags/$RELEASE_CANDIDATE_TAG
+          git tag RELEASE_CANDIDATE_TAG
+          git push origin $RELEASE_CANDIDATE_TAG
+        env:
+          RELEASE_CANDIDATE_TAG=rc
