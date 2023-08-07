@@ -131,7 +131,7 @@ public class PullBase {
 
         // If there are no unique live languages or working languages, fallback to the default language available
         if (uniqueLiveLanguages.isEmpty() && uniqueWorkingLanguages.isEmpty()) {
-            FilesUtils.FallbackDefaultLanguage(languages, uniqueLiveLanguages);
+            FilesUtils.fallbackDefaultLanguage(languages, uniqueLiveLanguages);
         }
 
         return new NodeLanguages(uniqueLiveLanguages, uniqueWorkingLanguages);

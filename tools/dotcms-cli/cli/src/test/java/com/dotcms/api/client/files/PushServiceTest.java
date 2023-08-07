@@ -1,6 +1,6 @@
 package com.dotcms.api.client.files;
 
-import static com.dotcms.common.AssetsUtils.BuildRemoteAssetURL;
+import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
 
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.AuthenticationContext;
@@ -469,7 +469,7 @@ public class PushServiceTest {
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
         // Building the remote asset path
-        final var remoteAssetPath = BuildRemoteAssetURL(siteName, folderPath, assetName);
+        final var remoteAssetPath = buildRemoteAssetURL(siteName, folderPath, assetName);
 
         // Reading the file and preparing the data to be pushed
         try (InputStream inputStream = getClass().getResourceAsStream(String.format("/%s", assetName))) {

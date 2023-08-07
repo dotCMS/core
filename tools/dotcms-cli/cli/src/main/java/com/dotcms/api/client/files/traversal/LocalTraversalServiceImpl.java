@@ -21,7 +21,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
-import static com.dotcms.common.AssetsUtils.ParseLocalPath;
+import static com.dotcms.common.AssetsUtils.parseLocalPath;
 
 /**
  * Service for traversing a file system directory and building a hierarchical tree representation of
@@ -66,7 +66,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
         logger.debug(String.format("Traversing file system folder: %s - in workspace: %s",
                 source, workspace.getAbsolutePath()));
 
-        final var localPathStructure = ParseLocalPath(workspace, new File(source));
+        final var localPathStructure = parseLocalPath(workspace, new File(source));
 
         // Initial check to see if the site exist
         var siteExists = true;
@@ -131,7 +131,8 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
         // Filter the tree by status and language
         TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, language, generateEmptyFolders, false);
 
-        var rootPath = Paths.get(destination, AssetsUtils.StatusToString(isLive), language, rootNode.folder().host());
+        var rootPath = Paths.get(destination, AssetsUtils.statusToString(isLive), language,
+                rootNode.folder().host());
 
         // ---
         var forkJoinPool = ForkJoinPool.commonPool();

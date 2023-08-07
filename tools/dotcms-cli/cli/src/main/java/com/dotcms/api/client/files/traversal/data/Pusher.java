@@ -66,7 +66,7 @@ public class Pusher {
 
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
-        final var remoteAssetPath = BuildRemoteAssetURL(siteName, folderPath, assetName);
+        final var remoteAssetPath = buildRemoteAssetURL(siteName, folderPath, assetName);
 
         // Execute the REST call to archive the asset
         var response = assetAPI.archive(ByPathRequest.builder().assetPath(remoteAssetPath).build());
@@ -105,7 +105,7 @@ public class Pusher {
 
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
-        final var remoteFolderPath = BuildRemoteURL(siteName, folderPath);
+        final var remoteFolderPath = buildRemoteURL(siteName, folderPath);
 
         // Execute the REST call to delete the folder
         var response = assetAPI.deleteFolder(ByPathRequest.builder().assetPath(remoteFolderPath).build());
@@ -124,7 +124,7 @@ public class Pusher {
 
         final var siteAPI = this.clientFactory.getClient(SiteAPI.class);
 
-        var live = StatusToBoolean(status);
+        var live = statusToBoolean(status);
         var newSiteRequest = CreateUpdateSiteRequest.builder().siteName(siteName).build();
 
         // Execute the REST call to push the site
@@ -156,7 +156,7 @@ public class Pusher {
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
         // Building the remote asset path
-        final var remoteAssetPath = BuildRemoteAssetURL(siteName, folderPath, assetName);
+        final var remoteAssetPath = buildRemoteAssetURL(siteName, folderPath, assetName);
 
         // Calculating the local asset path
         var localAssetPath = localPathFromAssetData(workspace, status, language, siteName,
@@ -170,7 +170,7 @@ public class Pusher {
             uploadForm.setDetail(new FileUploadDetail(
                     remoteAssetPath,
                     language,
-                    StatusToBoolean(status)
+                    statusToBoolean(status)
             ));
             uploadForm.setFile(inputStream);
 

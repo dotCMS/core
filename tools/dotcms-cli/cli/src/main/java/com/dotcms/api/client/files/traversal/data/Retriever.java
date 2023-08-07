@@ -17,8 +17,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.dotcms.common.AssetsUtils.BuildRemoteAssetURL;
-import static com.dotcms.common.AssetsUtils.BuildRemoteURL;
+import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
+import static com.dotcms.common.AssetsUtils.buildRemoteURL;
 
 /**
  * Utility class for retrieving folder and asset information from the remote server using REST calls.
@@ -57,7 +57,7 @@ public class Retriever {
 
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
-        final var remoteFolderPath = BuildRemoteURL(siteName, folderPath);
+        final var remoteFolderPath = buildRemoteURL(siteName, folderPath);
 
         // Execute the REST call to retrieve folder contents
         var response = assetAPI.folderByPath(ByPathRequest.builder().assetPath(remoteFolderPath).build());
@@ -77,7 +77,7 @@ public class Retriever {
 
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
-        final var remoteAssetPath = BuildRemoteAssetURL(siteName, folderPath, assetName);
+        final var remoteAssetPath = buildRemoteAssetURL(siteName, folderPath, assetName);
 
         // Execute the REST call to retrieve asset information
         var response = assetAPI.assetByPath(ByPathRequest.builder().assetPath(remoteAssetPath).build());
@@ -114,7 +114,7 @@ public class Retriever {
                                                 final int level, final boolean implicitGlobInclude,
                                                 final boolean explicitGlobInclude, final boolean explicitGlobExclude) {
 
-        final var remoteFolderPath = BuildRemoteURL(siteName, folderPath);
+        final var remoteFolderPath = buildRemoteURL(siteName, folderPath);
 
         // Execute the REST call to retrieve folder contents
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);

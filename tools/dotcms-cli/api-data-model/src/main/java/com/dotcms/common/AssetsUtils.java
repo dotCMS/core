@@ -2,7 +2,6 @@ package com.dotcms.common;
 
 import com.dotcms.model.config.Workspace;
 import com.google.common.base.Strings;
-
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -27,7 +26,7 @@ public class AssetsUtils {
      * @param isLive the status to convert
      * @return the string representation of the status
      */
-    public static String StatusToString(boolean isLive) {
+    public static String statusToString(boolean isLive) {
         return isLive ? STATUS_LIVE : STATUS_WORKING;
     }
 
@@ -38,7 +37,7 @@ public class AssetsUtils {
      * @return the boolean representation of the status. True if the status is live, false otherwise.
      * @throws IllegalArgumentException if the status is neither "live" nor "working"
      */
-    public static boolean StatusToBoolean(final String status) {
+    public static boolean statusToBoolean(final String status) {
         if (status.equalsIgnoreCase(STATUS_LIVE)) {
             return true;
         } else if (status.equalsIgnoreCase(STATUS_WORKING)) {
@@ -55,8 +54,8 @@ public class AssetsUtils {
      * @param folderPath the folder path to build the URL for
      * @return the remote URL
      */
-    public static String BuildRemoteURL(final String site, final String folderPath) {
-        return BuildRemoteAssetURL(site, folderPath, null);
+    public static String buildRemoteURL(final String site, final String folderPath) {
+        return buildRemoteAssetURL(site, folderPath, null);
     }
 
     /**
@@ -67,7 +66,8 @@ public class AssetsUtils {
      * @param assetName  the asset name to build the URL for
      * @return the remote asset URL
      */
-    public static String BuildRemoteAssetURL(final String site, final String folderPath, final String assetName) {
+    public static String buildRemoteAssetURL(final String site, final String folderPath,
+            final String assetName) {
 
         // Determine if the folder path is empty or null
         var emptyFolderPath = folderPath == null
@@ -105,7 +105,7 @@ public class AssetsUtils {
      * @throws IllegalArgumentException if the remotePathToParse is null or empty, or if the site component
      *                                  cannot be determined from the path
      */
-    public static RemotePathStructure ParseRemotePath(String remotePathToParse) {
+    public static RemotePathStructure parseRemotePath(String remotePathToParse) {
 
         if (remotePathToParse == null || remotePathToParse.isEmpty()) {
             var error = "path cannot be null or empty";
@@ -159,7 +159,7 @@ public class AssetsUtils {
      * @throws IllegalArgumentException if the source path is outside the workspace or does not follow the required
      *                                  structure
      */
-    public static List<String> ParseRootPaths(File workspace, File source) {
+    public static List<String> parseRootPaths(File workspace, File source) {
 
         var sourcePath = source.toPath();
         var workspacePath = workspace.toPath();
@@ -324,7 +324,7 @@ public class AssetsUtils {
      * @throws IllegalArgumentException if the source path is outside the workspace or does not contain the
      *                                  required structure
      */
-    public static LocalPathStructure ParseLocalPath(File workspace, File source) {
+    public static LocalPathStructure parseLocalPath(File workspace, File source) {
 
         var sourcePath = source.toPath();
         var workspacePath = workspace.toPath();
@@ -353,7 +353,7 @@ public class AssetsUtils {
             var statusPart = sourcePath.getName(++workspaceCount);
             if (!Strings.isNullOrEmpty(statusPart.getFileName().toString())) {
 
-                StatusToBoolean(statusPart.getFileName().toString());
+                statusToBoolean(statusPart.getFileName().toString());
                 pathStructureBuilder.withStatus(statusPart.getFileName().toString());
 
                 // Finding the language section

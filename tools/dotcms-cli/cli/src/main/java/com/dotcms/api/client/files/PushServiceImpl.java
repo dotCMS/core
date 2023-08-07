@@ -60,7 +60,7 @@ public class PushServiceImpl implements PushService {
         var traversalResult = new ArrayList<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>>();
 
         // Parsing the source in order to get the root or roots for the traversal
-        var roots = AssetsUtils.ParseRootPaths(workspace, source);
+        var roots = AssetsUtils.parseRootPaths(workspace, source);
         for (var root : roots) {
 
             // Traversing the local folder

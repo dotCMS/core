@@ -69,7 +69,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
         logger.debug(String.format("Traversing folder: %s - with depth: %d", path, depth));
 
         // Parsing and validating the given path
-        var dotCMSPath = AssetsUtils.ParseRemotePath(path);
+        var dotCMSPath = AssetsUtils.parseRemotePath(path);
 
         // Setting the depth to -1 will make the traversal go all the way down
         // to the bottom of the tree

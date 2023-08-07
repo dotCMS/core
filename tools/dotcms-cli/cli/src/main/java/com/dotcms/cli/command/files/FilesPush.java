@@ -169,7 +169,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     if (dryRun) {
                         TreePrinter.getInstance().formatByStatus(
                                 sb,
-                                AssetsUtils.StatusToBoolean(localPathStructure.status()),
+                                AssetsUtils.statusToBoolean(localPathStructure.status()),
                                 List.of(localPathStructure.language()),
                                 treeNode,
                                 false,

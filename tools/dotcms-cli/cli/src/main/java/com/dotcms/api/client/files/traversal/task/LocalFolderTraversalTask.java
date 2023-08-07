@@ -20,8 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
 
-import static com.dotcms.common.AssetsUtils.ParseLocalPath;
-import static com.dotcms.common.AssetsUtils.StatusToBoolean;
+import static com.dotcms.common.AssetsUtils.parseLocalPath;
+import static com.dotcms.common.AssetsUtils.statusToBoolean;
 import static com.dotcms.model.asset.BasicMetadataFields.PATH_META_KEY;
 import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 
@@ -96,7 +96,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
 
         TreeNode currentNode = null;
         try {
-            final var localPathStructure = ParseLocalPath(this.workspace, folderOrFile);
+            final var localPathStructure = parseLocalPath(this.workspace, folderOrFile);
             currentNode = gatherSyncInformation(this.workspace, folderOrFile, localPathStructure);
         } catch (Exception e) {
             if (failFast) {
@@ -156,7 +156,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
     private TreeNode gatherSyncInformation(File workspaceFile, File folderOrFile,
                                            AssetsUtils.LocalPathStructure localPathStructure) {
 
-        var live = StatusToBoolean(localPathStructure.status());
+        var live = statusToBoolean(localPathStructure.status());
         var lang = localPathStructure.language();
 
         if (folderOrFile.isDirectory()) {
@@ -205,7 +205,8 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
 
         } else {
 
-            final var parentLocalPathStructure = ParseLocalPath(workspaceFile, folderOrFile.getParentFile());
+            final var parentLocalPathStructure = parseLocalPath(workspaceFile,
+                    folderOrFile.getParentFile());
             var parentFolderViewBuilder = folderViewFromFile(parentLocalPathStructure);
             var parentFolderAssetVersionsViewBuilder = AssetVersionsView.builder();
 
@@ -651,7 +652,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      */
     private AssetView.Builder assetViewFromFile(File workspaceFile, File file) {
 
-        final var localPathStructure = ParseLocalPath(workspaceFile, file);
+        final var localPathStructure = parseLocalPath(workspaceFile, file);
         return assetViewFromFile(localPathStructure);
     }
 
@@ -666,7 +667,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
         var metadata = new HashMap<String, Object>();
         metadata.put(PATH_META_KEY.key(), localPathStructure.folderPath());
 
-        var live = StatusToBoolean(localPathStructure.status());
+        var live = statusToBoolean(localPathStructure.status());
 
         return AssetView.builder().
                 name(localPathStructure.fileName()).

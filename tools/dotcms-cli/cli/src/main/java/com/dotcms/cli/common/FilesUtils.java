@@ -1,7 +1,6 @@
 package com.dotcms.cli.common;
 
 import com.dotcms.model.language.Language;
-
 import java.util.List;
 import java.util.Set;
 
@@ -21,7 +20,7 @@ public class FilesUtils {
      * @param uniqueLiveLanguages the set of unique live languages
      * @throws RuntimeException if no default language is found in the list of languages
      */
-    public static void FallbackDefaultLanguage(
+    public static void fallbackDefaultLanguage(
             final List<Language> languages, Set<String> uniqueLiveLanguages) {
 
         // Get the default language from the list of languages

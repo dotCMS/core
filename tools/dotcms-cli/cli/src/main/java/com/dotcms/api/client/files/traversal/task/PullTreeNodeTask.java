@@ -17,8 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
 
-import static com.dotcms.common.AssetsUtils.BuildRemoteAssetURL;
-import static com.dotcms.common.AssetsUtils.BuildRemoteURL;
+import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
+import static com.dotcms.common.AssetsUtils.buildRemoteURL;
 import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 
 /**
@@ -226,7 +226,7 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
      * @return the remote URL for the folder
      */
     private String generateRemoteFolderURL(final FolderView folder) {
-        return BuildRemoteURL(folder.host(), folder.path());
+        return buildRemoteURL(folder.host(), folder.path());
     }
 
     /**
@@ -237,7 +237,7 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
      * @return the remote URL for the folder
      */
     private String generateRemoteAssetURL(final FolderView folder, final String assetName) {
-        return BuildRemoteAssetURL(folder.host(), folder.path(), assetName);
+        return buildRemoteAssetURL(folder.host(), folder.path(), assetName);
     }
 
 }

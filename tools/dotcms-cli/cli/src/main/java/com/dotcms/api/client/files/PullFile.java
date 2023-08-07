@@ -46,7 +46,7 @@ public class PullFile extends PullBase {
             }
 
             // Parsing and validating the given path
-            var dotCMSPath = AssetsUtils.ParseRemotePath(source);
+            var dotCMSPath = AssetsUtils.parseRemotePath(source);
 
             // Create a simple tree node for the asset to handle
             var folder = FolderView.builder()

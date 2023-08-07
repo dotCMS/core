@@ -84,7 +84,7 @@ public class TreePrinter {
         final var uniqueWorkingLanguages = treeNodeInfo.workingLanguages();
 
         if (uniqueLiveLanguages.isEmpty() && uniqueWorkingLanguages.isEmpty()) {
-            FilesUtils.FallbackDefaultLanguage(languages, uniqueLiveLanguages);
+            FilesUtils.fallbackDefaultLanguage(languages, uniqueLiveLanguages);
         }
 
         // Sort the sets and convert them into lists
@@ -134,7 +134,7 @@ public class TreePrinter {
             throw new IllegalArgumentException(error, e);
         }
 
-        var status = AssetsUtils.StatusToString(isLive);
+        var status = AssetsUtils.statusToString(isLive);
         sb.append("\r ").append(String.format(STATUS_REGULAR_FORMAT, status)).append('\n');
 
         Iterator<String> langIterator = sortedLanguages.iterator();
