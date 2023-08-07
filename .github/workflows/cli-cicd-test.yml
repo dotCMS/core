@@ -68,3 +68,4 @@ jobs:
           
           ls -la ${XML_REPORTS_PATH}
           ls -la ${HTML_REPORTS_PATH}
+          tree ${RESULTS_PATH}
