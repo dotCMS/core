@@ -28,7 +28,7 @@ export class DotTabButtonsComponent {
     protected readonly pageMode = DotPageMode;
     protected readonly dropDownOpenIcon = 'pi pi-angle-up';
     protected readonly dropDownCloseIcon = 'pi pi-angle-down';
-    protected readonly OPEN_MENU = 'openMenu';
+    readonly OPEN_MENU = 'openMenu';
     toggle = false;
     icon = this.dropDownCloseIcon;
 
