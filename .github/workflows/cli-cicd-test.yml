@@ -45,7 +45,7 @@ jobs:
           
           echo "status=$OUTPUT_STATUS" >> $GITHUB_OUTPUT
           
-          ./mvnw surefire-report:report-only surefire-report:failsafe-report-only
+          ./mvnw surefire-report:failsafe-report-only
                
           RESULTS_PATH=${{ github.workspace }}/tools/dotcms-cli/target/test-results
           XML_REPORTS_PATH=${RESULTS_PATH}/xml-reports
@@ -60,7 +60,7 @@ jobs:
             cp -r ${module}/target/surefire-reports ${XML_REPORTS_PATH}/${module}
             cp -r ${module}/target/failsafe-reports ${XML_REPORTS_PATH}/${module}
             mkdir -p ${HTML_REPORTS_PATH}/${module}
-            cp -r ${module}/target/site ${HTML_REPORTS_PATH}/${module}
+            cp -r ${module}/target/site/* ${HTML_REPORTS_PATH}/${module}
           done
 
           echo "results_location=${XML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
