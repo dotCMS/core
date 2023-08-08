@@ -66,7 +66,9 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer>, 
         } else {
             ObjectMapper objectMapper = formatOption.objectMapper();
             final String asString = objectMapper.writeValueAsString(siteView);
-            output.info(asString);
+            if(output.isVerbose()) {
+                output.info(asString);
+            }
 
             final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
             final String fileName = String.format("%s.%s", siteView.hostName(),

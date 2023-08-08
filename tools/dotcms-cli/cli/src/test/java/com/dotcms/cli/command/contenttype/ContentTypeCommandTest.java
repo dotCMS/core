@@ -58,7 +58,7 @@ class ContentTypeCommandTest extends CommandTest {
                 final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "fileAsset", "--workspace", workspace.root().toString());
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "fileAsset", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             //System.out.println(output);

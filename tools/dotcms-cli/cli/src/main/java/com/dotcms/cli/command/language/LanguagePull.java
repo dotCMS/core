@@ -66,8 +66,9 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
                 output.info(asString);
             } else {
                 final String asString = objectMapper.writeValueAsString(language);
-                output.info(asString);
-
+                if(output.isVerbose()) {
+                    output.info(asString);
+                }
                 final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
                 final String fileName = String.format("%s.%s", language.isoCode(), formatOption.getInputOutputFormat().getExtension());
                 final Path path = Path.of(workspace.languages().toString(),fileName);

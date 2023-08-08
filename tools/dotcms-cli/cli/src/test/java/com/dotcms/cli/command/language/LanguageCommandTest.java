@@ -55,7 +55,7 @@ class LanguageCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "1", "--workspace", workspace.root().toString());
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "1", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
@@ -79,7 +79,7 @@ class LanguageCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US", "--workspace", workspace.root().toString());
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
@@ -245,7 +245,7 @@ class LanguageCommandTest extends CommandTest {
             commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "es-ve");
             commandLine.setOut(out);
             //we pull the language with iso code "es-VE" to get its id
-            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE", "--workspace", workspace.root().toString());
+            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);

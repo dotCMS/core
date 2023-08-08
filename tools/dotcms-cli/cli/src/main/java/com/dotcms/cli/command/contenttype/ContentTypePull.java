@@ -69,8 +69,9 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
                     output.info(asString);
                 } else {
                     final String asString = objectMapper.writeValueAsString(contentType);
-                    output.info(asString);
-
+                    if(output.isVerbose()) {
+                        output.info(asString);
+                    }
                     final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
                     final String fileName = String.format("%s.%s",contentType.variable(), formatOption.getInputOutputFormat().getExtension());
                     final Path path = Path.of(workspace.contentTypes().toString(), fileName);
