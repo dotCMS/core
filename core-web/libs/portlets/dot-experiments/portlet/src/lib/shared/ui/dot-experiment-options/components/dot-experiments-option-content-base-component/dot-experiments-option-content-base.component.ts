@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Subject } from 'rxjs';
+
+import { ChangeDetectionStrategy, Component, inject, OnDestroy } from '@angular/core';
 import { FormArray, FormGroup, FormGroupDirective } from '@angular/forms';
 
 @Component({
@@ -6,15 +8,12 @@ import { FormArray, FormGroup, FormGroupDirective } from '@angular/forms';
     template: '',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsOptionContentBaseComponent {
-    parametersList;
-    operatorsList;
+export class DotExperimentsOptionContentBaseComponent implements OnDestroy {
+    parametersList: unknown;
+    operatorsList: unknown;
 
-    form: FormGroup;
-
-    constructor(private readonly formGroupDirective: FormGroupDirective) {
-        this.form = this.formGroupDirective.control as FormGroup;
-    }
+    form: FormGroup = inject(FormGroupDirective).form as FormGroup;
+    destroy$: Subject<boolean> = new Subject<boolean>();
 
     get primaryFormGroup() {
         return this.form.get('primary') as FormGroup;
@@ -30,5 +29,18 @@ export class DotExperimentsOptionContentBaseComponent {
      */
     getConditionsFormArrayItemByIndex(index: number) {
         return this.conditionsFormArray.controls[index] as FormGroup;
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
+
+    /**
+     * Add a new condition to the conditions FormArray
+     * @param {FormGroup} initialCondition
+     **/
+    setInitialCondition(initialCondition: FormGroup): void {
+        this.conditionsFormArray.setControl(0, initialCondition, { emitEvent: true });
     }
 }
