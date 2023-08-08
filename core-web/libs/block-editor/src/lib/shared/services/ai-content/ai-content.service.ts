@@ -46,7 +46,7 @@ export class AiContentService {
                 },
                 {
                     role: 'user',
-                    content: prompt
+                    content: `${prompt} .give me info in HTML format, add also a topic title.`
                 }
             ]
         });

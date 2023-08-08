@@ -191,8 +191,7 @@ export class AIContentPromptView {
             return true;
         }
 
-        // requestAnimationFrame(() => this.update(this.editor.view));
-        setTimeout(() => this.update(this.editor.view));
+        requestAnimationFrame(() => this.update(this.editor.view));
     }
 
     private shouldHideOnScroll(node: HTMLElement): boolean {
