@@ -441,7 +441,12 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     private Map<String, Serializable> filterNonBasicMetadataFields(final Map<String, Serializable> originalMap) {
-        final Set<String> basicMetadataFieldsSet = BasicMetadataFields.keyMap().keySet();
+        final Set<String> basicMetadataConfig = Arrays.stream(
+                        Config.getStringProperty("BASIC_METADATA_KEYS", "").split(",")).map(String::trim)
+                .collect(Collectors.toSet());
+
+        final Set<String> basicMetadataFieldsSet = !basicMetadataConfig.isEmpty()? basicMetadataConfig: BasicMetadataFields.keyMap().keySet();
+
         return originalMap.entrySet().stream().filter(entry -> basicMetadataFieldsSet
                 .contains(entry.getKey()) || entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
                 Collectors.toMap(Entry::getKey, Entry::getValue));
