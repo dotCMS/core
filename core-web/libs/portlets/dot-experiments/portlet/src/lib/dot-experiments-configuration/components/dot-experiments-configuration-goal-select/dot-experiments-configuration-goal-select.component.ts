@@ -145,7 +145,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
                     nonNullable: true,
                     validators: [Validators.required]
                 }),
-                conditions: new FormArray([new FormControl()])
+                conditions: new FormArray([])
             })
         });
     }
@@ -156,19 +156,12 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
             .valueChanges.pipe(takeUntil(this.destroy$))
             .subscribe((value) => {
                 this.defineDefaultName(value);
-                this.removeConditionsByType(value);
+                this.resetGoalConditions();
             });
     }
 
-    private removeConditionsByType(typeValue: GOAL_TYPES): void {
-        const conditionsFormArray = this.form.get('primary.conditions') as FormArray;
-        const goalTypeWithoutConditions: GOAL_TYPES[] = [
-            GOAL_TYPES.EXIT_RATE,
-            GOAL_TYPES.BOUNCE_RATE
-        ];
-        if (goalTypeWithoutConditions.includes(typeValue)) {
-            conditionsFormArray.clear();
-        }
+    private resetGoalConditions(): void {
+        (this.form.get('primary.conditions') as FormArray).clear();
     }
 
     /**

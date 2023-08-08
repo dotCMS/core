@@ -26,7 +26,7 @@ const formMock = new FormGroup({
             validators: [Validators.required]
         }),
         type: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-        conditions: new FormArray([new FormControl()])
+        conditions: new FormArray([])
     })
 });
 
@@ -50,7 +50,7 @@ describe('DotExperimentsGoalConfigurationUrlParameterComponentComponent', () => 
     });
 
     beforeEach(async () => {
-        spectator = createComponent();
+        spectator = createComponent({ detectChanges: false });
     });
 
     it('should be a VALID form if the inputs all filled', () => {
@@ -71,6 +71,8 @@ describe('DotExperimentsGoalConfigurationUrlParameterComponentComponent', () => 
                 ]
             }
         };
+
+        spectator.detectChanges();
 
         spectator.component.form.setValue(formValues);
         spectator.component.form.updateValueAndValidity();
@@ -95,6 +97,8 @@ describe('DotExperimentsGoalConfigurationUrlParameterComponentComponent', () => 
                 ]
             }
         };
+
+        spectator.detectChanges();
 
         spectator.component.form.setValue(formValues);
         spectator.component.form.updateValueAndValidity();
@@ -121,6 +125,8 @@ describe('DotExperimentsGoalConfigurationUrlParameterComponentComponent', () => 
             }
         };
 
+        spectator.detectChanges();
+
         spectator.component.form.setValue(formValues);
         spectator.component.form.updateValueAndValidity();
 
@@ -146,6 +152,8 @@ describe('DotExperimentsGoalConfigurationUrlParameterComponentComponent', () => 
             }
         };
 
+        spectator.detectChanges();
+
         spectator.component.form.setValue(formValues);
         spectator.component.form.updateValueAndValidity();
 
@@ -154,8 +162,9 @@ describe('DotExperimentsGoalConfigurationUrlParameterComponentComponent', () => 
     });
 
     it('should show render OPERATOR Input, PARAMETER input and VALUE form inputs', () => {
-        expect(spectator.query(byTestId('parameter-input'))).toExist();
-        expect(spectator.query(byTestId('parameter-input'))).toBeInstanceOf(HTMLInputElement);
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('name-input'))).toExist();
+        expect(spectator.query(byTestId('name-input'))).toBeInstanceOf(HTMLInputElement);
         expect(spectator.query(byTestId('operator-input'))).toExist();
         expect(spectator.query(byTestId('value-input'))).toExist();
     });

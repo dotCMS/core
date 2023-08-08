@@ -119,12 +119,12 @@ export type Goals = Record<GoalsLevels, Goal>;
 
 interface ReachPageGoalCondition {
     parameter: GOAL_PARAMETERS | string;
-    operator: GOAL_OPERATORS | null;
+    operator: GOAL_OPERATORS;
     value: string;
 }
 interface UrlParameterGoalCondition {
     parameter: GOAL_PARAMETERS;
-    operator: GOAL_OPERATORS | null;
+    operator: GOAL_OPERATORS;
     value: {
         name: string;
         value: string;

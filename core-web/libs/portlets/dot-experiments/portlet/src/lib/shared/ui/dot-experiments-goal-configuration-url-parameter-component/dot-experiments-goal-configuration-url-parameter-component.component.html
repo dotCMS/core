@@ -8,12 +8,12 @@
         >
             <div class="condition flex" [formGroupName]="i">
                 <div class="field flex-grow-1 flex flex-column w-15rem" formGroupName="value">
-                    <label dotFieldRequired for="value">{{
+                    <label dotFieldRequired for="name">{{
                         'experiments.goal.url_parameter.form.conditions.parameter.label' | dm
                     }}</label>
                     <input
                         id="name"
-                        data-testId="parameter-input"
+                        data-testId="name-input"
                         dotAutofocus
                         formControlName="name"
                         name="value"
