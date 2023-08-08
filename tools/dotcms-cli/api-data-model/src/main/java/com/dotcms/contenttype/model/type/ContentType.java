@@ -49,7 +49,7 @@ public abstract class ContentType {
     public static final String SYSTEM_HOST = "SYSTEM_HOST";
     public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
 
-    String TYPE = "ContentType";
+    final String TYPE = "ContentType";
 
     @Value.Derived
     public String dotCMSObjectType() {
