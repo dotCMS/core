@@ -2,28 +2,28 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.command.CommandTest;
-import com.dotcms.cli.command.contenttype.ContentTypeCommand;
-import com.dotcms.cli.command.contenttype.ContentTypePull;
-import com.dotcms.cli.command.language.LanguageCommand;
-import com.dotcms.cli.command.language.LanguagePull;
-import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import io.quarkus.test.junit.QuarkusTest;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.*;
-import org.wildfly.common.Assert;
-import picocli.CommandLine;
-
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.UUID;
+import java.util.stream.Stream;
+import javax.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.wildfly.common.Assert;
+import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
@@ -269,6 +269,126 @@ class SiteCommandTest extends CommandTest {
         } finally {
             workspaceManager.destroy(workspace);
         }
+    }
+
+    /**
+     * <b>Command to test:</b> site pull <br>
+     * <b>Given Scenario:</b> Test the site pull command. This test checks if the JSON site
+     * file has a "dotCMSObjectType" field with the value "Site". <br>
+     * <b>Expected Result:</b> The JSON site file should have a
+     * "dotCMSObjectType" field with the value "Site".
+     *
+     * @throws IOException if there is an error reading the JSON site file
+     */
+    @Test
+    void Test_Command_Site_Pull_Checking_JSON_DotCMS_Type() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
+
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            int status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName,
+                    "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Reading the JSON site file to check if the json has a: "dotCMSObjectType" : "Site"
+            final var siteFilePath = Path.of(workspace.sites().toString(), newSiteName + ".json");
+            var json = Files.readString(siteFilePath);
+            Assertions.assertTrue(json.contains("\"dotCMSObjectType\" : \"Site\""));
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> site pull <br>
+     * <b>Given Scenario:</b> Test the site pull command. This test checks if the YAML site
+     * file has a "dotCMSObjectType" field with the value "Site". <br>
+     * <b>Expected Result:</b> The YAML site file should have a
+     * "dotCMSObjectType" field with the value "Site".
+     *
+     * @throws IOException if there is an error reading the YAML site file
+     */
+    @Test
+    void Test_Command_Site_Pull_Checking_YAML_DotCMS_Type() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
+
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            int status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName,
+                    "-fmt", "YAML", "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Reading the YAML site file to check if the yaml has a: "dotCMSObjectType" : "Site"
+            final var siteFilePath = Path.of(workspace.sites().toString(), newSiteName + ".yml");
+            var json = Files.readString(siteFilePath);
+            Assertions.assertTrue(json.contains("dotCMSObjectType: \"Site\""));
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Creates a temporary folder with a random name.
+     *
+     * @return The path to the created temporary folder.
+     * @throws IOException If an I/O error occurs while creating the temporary folder.
+     */
+    private Path createTempFolder() throws IOException {
+
+        String randomFolderName = "folder-" + UUID.randomUUID();
+        return Files.createTempDirectory(randomFolderName);
+    }
+
+    /**
+     * Deletes a temporary directory and all its contents.
+     *
+     * @param folderPath The path to the temporary directory to be deleted.
+     * @throws IOException If an I/O error occurs while deleting the directory or its contents.
+     */
+    private void deleteTempDirectory(Path folderPath) throws IOException {
+        Files.walkFileTree(folderPath, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Files.delete(file); // Deletes the file
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                    throws IOException {
+                Files.delete(dir); // Deletes the directory after its content has been deleted
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
 }

@@ -5,8 +5,10 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.Workflow;
 import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindContext;
@@ -46,6 +48,13 @@ public abstract class ContentType {
 
     public static final String SYSTEM_HOST = "SYSTEM_HOST";
     public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
+
+    String TYPE = "ContentType";
+
+    @Value.Derived
+    public String dotCMSObjectType() {
+        return TYPE;
+    }
 
     @Nullable
     public abstract String id();

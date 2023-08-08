@@ -14,6 +14,13 @@ import org.immutables.value.Value;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractSiteView  {
 
+    String TYPE = "Site";
+
+    @Value.Derived
+    default String dotCMSObjectType() {
+        return TYPE;
+    }
+
     @Nullable
     String inode();
 

@@ -15,22 +15,27 @@ import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.model.config.Workspace;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.junit.jupiter.api.*;
-import org.wildfly.common.Assert;
-import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
-
-import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
+import java.util.UUID;
+import java.util.stream.Stream;
+import javax.inject.Inject;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.wildfly.common.Assert;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
 public class ContentTypeCommandTest extends CommandTest {
@@ -107,6 +112,80 @@ public class ContentTypeCommandTest extends CommandTest {
             } finally {
                 workspaceManager.destroy(workspace);
             }
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> content-type pull <br>
+     * <b>Given Scenario:</b> Checks if the JSON content type
+     * file has a "dotCMSObjectType" field with the value "ContentType". <br>
+     * <b>Expected Result:</b> The JSON content type file should have a
+     * "dotCMSObjectType" field with the value "ContentType".
+     *
+     * @throws IOException if there is an error reading the JSON content type file
+     */
+    @Test
+    void Test_Command_Content_Type_Pull_Checking_JSON_DotCMS_Type() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final String contentTypeVarName = "FileAsset";
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    contentTypeVarName,
+                    "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Reading the JSON content type file to check if the json has a: "dotCMSObjectType" : "ContentType"
+            final var contentTypeFilePath = Path.of(workspace.contentTypes().toString(),
+                    contentTypeVarName + ".json");
+            var json = Files.readString(contentTypeFilePath);
+            Assertions.assertTrue(json.contains("\"dotCMSObjectType\" : \"ContentType\""));
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> content-type pull <br>
+     * <b>Given Scenario:</b> Checks if the YAML content type
+     * file has a "dotCMSObjectType" field with the value "ContentType". <br>
+     * <b>Expected Result:</b> The YAML content type file should have a
+     * "dotCMSObjectType" field with the value "ContentType".
+     *
+     * @throws IOException if there is an error reading the YAML content type file
+     */
+    @Test
+    void Test_Command_Content_Type_Pull_Checking_YAML_DotCMS_Type() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final String contentTypeVarName = "FileAsset";
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    contentTypeVarName,
+                    "-fmt", "YAML", "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Reading the YAML content type file to check if the yaml has a: "dotCMSObjectType" : "ContentType"
+            final var contentTypeFilePath = Path.of(workspace.contentTypes().toString(),
+                    contentTypeVarName + ".yml");
+            var json = Files.readString(contentTypeFilePath);
+            Assertions.assertTrue(json.contains("dotCMSObjectType: \"ContentType\""));
+        } finally {
+            deleteTempDirectory(tempFolder);
         }
     }
 
@@ -249,4 +328,41 @@ public class ContentTypeCommandTest extends CommandTest {
             workspaceManager.destroy(workspace);
         }
     }
+
+    /**
+     * Creates a temporary folder with a random name.
+     *
+     * @return The path to the created temporary folder.
+     * @throws IOException If an I/O error occurs while creating the temporary folder.
+     */
+    private Path createTempFolder() throws IOException {
+
+        String randomFolderName = "folder-" + UUID.randomUUID();
+        return Files.createTempDirectory(randomFolderName);
+    }
+
+    /**
+     * Deletes a temporary directory and all its contents.
+     *
+     * @param folderPath The path to the temporary directory to be deleted.
+     * @throws IOException If an I/O error occurs while deleting the directory or its contents.
+     */
+    private void deleteTempDirectory(Path folderPath) throws IOException {
+        Files.walkFileTree(folderPath, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Files.delete(file); // Deletes the file
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                    throws IOException {
+                Files.delete(dir); // Deletes the directory after its content has been deleted
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
 }

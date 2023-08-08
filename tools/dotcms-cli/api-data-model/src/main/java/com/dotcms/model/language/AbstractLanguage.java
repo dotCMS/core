@@ -12,6 +12,13 @@ import org.immutables.value.Value;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractLanguage {
 
+    String TYPE = "Language";
+
+    @Value.Derived
+    default String dotCMSObjectType() {
+        return TYPE;
+    }
+
     Optional<Long> id();
 
     Optional<String> languageCode();
