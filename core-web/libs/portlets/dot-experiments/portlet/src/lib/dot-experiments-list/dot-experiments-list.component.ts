@@ -2,7 +2,7 @@ import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, inject, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -19,17 +19,17 @@ import {
     ExperimentsStatusList,
     SidebarStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsCreateComponent } from './components/dot-experiments-create/dot-experiments-create.component';
-import { DotExperimentsEmptyExperimentsComponent } from './components/dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 import { DotExperimentsListSkeletonComponent } from './components/dot-experiments-list-skeleton/dot-experiments-list-skeleton.component';
 import { DotExperimentsListTableComponent } from './components/dot-experiments-list-table/dot-experiments-list-table.component';
 import { DotExperimentsStatusFilterComponent } from './components/dot-experiments-status-filter/dot-experiments-status-filter.component';
 import { DotExperimentsListStore, VmListExperiments } from './store/dot-experiments-list-store';
 
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
+import { DotMessageService } from '@dotcms/data-access';
 
 @Component({
     standalone: true,
@@ -38,7 +38,6 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         AsyncPipe,
         NgIf,
         DotExperimentsListSkeletonComponent,
-        DotExperimentsEmptyExperimentsComponent,
         DotExperimentsStatusFilterComponent,
         DotExperimentsListTableComponent,
         DotExperimentsUiHeaderComponent,
@@ -46,7 +45,8 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         DotMessagePipe,
         ButtonModule,
         ConfirmDialogModule,
-        DotAddToBundleModule
+        DotAddToBundleModule,
+        DotEmptyContainerComponent
     ],
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],
@@ -60,6 +60,11 @@ export class DotExperimentsListComponent {
     );
     statusOptionList = ExperimentsStatusList;
     confirmDialogKey = CONFIGURATION_CONFIRM_DIALOG_KEY;
+    private dotMessageService: DotMessageService = inject(DotMessageService);
+    protected readonly emptyConfiguration: PrincipalConfiguration = {
+        title: this.dotMessageService.get('experimentspage.not.experiments.founds'),
+        icon: 'pi-filter-fill rotate-180'
+    };
     private componentRef: ComponentRef<DotExperimentsCreateComponent>;
 
     constructor(
