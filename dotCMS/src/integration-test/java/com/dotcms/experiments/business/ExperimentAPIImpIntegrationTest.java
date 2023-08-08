@@ -28,6 +28,7 @@ import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.analytics.model.AnalyticsProperties;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -37,8 +38,11 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
@@ -63,10 +67,15 @@ import com.dotcms.util.network.IPUtils;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -76,6 +85,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -86,6 +97,7 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.API;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -3549,6 +3561,178 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to update with a User with not permission to edit the Experiment's Page
+     * Should: Throw a {@link DotSecurityException}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingExperimentWithNoPagePermission() throws DotDataException, DotSecurityException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset reachPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(reachPage.getPageUrl()))
+                .build();
+        final Experiment experiment = createExperiment(experimentPage, metric,
+                new String[]{RandomString.make(15)});
+
+        final Experiment experimentUpdated = Experiment.builder().from(experiment)
+                .description("Updating the Experiment")
+                .build();
+
+        try {
+            APILocator.getExperimentsAPI().save(experimentUpdated, limitedUser);
+            throw new AssertionError("Should throw a DotSecurityException");
+        } catch (DotSecurityException e) {
+            assertEquals("You don't have permission to save the Experiment.", e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to update with a User with:
+     *
+     * - Read permission to the Experiment's Page
+     * - Edit rights for Template-Layouts on the site
+     *
+     * Should: Throw a {@link DotSecurityException}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingExperimentWithReadPagePermission() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_EDIT);
+
+        final HTMLPageAsset reachPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(reachPage.getPageUrl()))
+                .build();
+        final Experiment experiment = createExperiment(experimentPage, metric,
+                new String[]{RandomString.make(15)});
+
+        final Experiment experimentUpdated = Experiment.builder().from(experiment)
+                .description("Updating the Experiment")
+                .build();
+
+        try {
+            APILocator.getExperimentsAPI().save(experimentUpdated, limitedUser);
+            throw new AssertionError("Should throw a DotSecurityException");
+        } catch (DotSecurityException e) {
+            assertEquals("You don't have permission to save the Experiment.", e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to update with a User with:
+     *
+     * - Edit permission to the Experiment's Page
+     * - But not Edit rights for Template-Layouts on the site
+     *
+     * Should: Throw a {@link DotSecurityException}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingExperimentWithEditPagePermissionButNoTemplateLayoutPermission() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_EDIT);
+
+        final HTMLPageAsset reachPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(reachPage.getPageUrl()))
+                .build();
+        final Experiment experiment = createExperiment(experimentPage, metric,
+                new String[]{RandomString.make(15)});
+
+        final Experiment experimentUpdated = Experiment.builder().from(experiment)
+                .description("Updating the Experiment")
+                .build();
+
+        try {
+            APILocator.getExperimentsAPI().save(experimentUpdated, limitedUser);
+            throw new AssertionError("Should throw a DotSecurityException");
+        } catch (DotSecurityException e) {
+            assertEquals("You don't have permission to save the Experiment.", e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to update with a User with:
+     *
+     * - Edit permission to the Experiment's Page
+     * - Edit rights for Template-Layouts on the site
+     *
+     * Should: Update the Experiment
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingExperimentWithNotAdminUser() throws DotDataException, DotSecurityException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_EDIT);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_EDIT);
+
+        final HTMLPageAsset reachPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(reachPage.getPageUrl()))
+                .build();
+        final Experiment experiment = createExperiment(experimentPage, metric,
+                new String[]{RandomString.make(15)});
+
+        final Experiment experimentUpdated = Experiment.builder().from(experiment)
+                .description("Updating the Experiment")
+                .build();
+
+        final Experiment experimentSaved = APILocator.getExperimentsAPI().save(experimentUpdated, limitedUser);
+
+        assertEquals("Updating the Experiment", experimentSaved.description().orElseThrow());
+    }
+
+    /**
      * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have 3 pages: A, B and Experiment's page
@@ -6159,6 +6343,546 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
 
         }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User without permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to promote a variant
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToPromoteVariantWithNoPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
+                PermissionAPI.PERMISSION_PUBLISH);
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        try {
+            APILocator.getExperimentsAPI()
+                    .promoteVariant(experiment.id().get(), variantName, limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to promote a Variant. Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals("You don't have permission to get the Experiment. Experiment Id: " + experiment.getIdentifier(),
+                    cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User with READ permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to promote a variant
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToPromoteVariantWithReadPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        try {
+            APILocator.getExperimentsAPI()
+                    .promoteVariant(experiment.id().get(), variantName, limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to promote a Variant. Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals("You don't have permission to get the Experiment. Experiment Id: " + experiment.getIdentifier(),
+                    cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User with EDIT permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to promote a variant
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToPromoteVariantWithEditPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        try {
+            APILocator.getExperimentsAPI()
+                    .promoteVariant(experiment.id().get(), variantName, limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to promote a Variant. Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+            final String causeExpectedMessage = String.format(
+                    "User %s doesn't have permission to publish the Experiment's page. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().orElseThrow());
+
+            assertEquals(causeExpectedMessage, cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User with PUBLISH permission on the Experiment's Page but no Publish rights for Template-Layouts on the site
+     * try to promote a variant
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToPromoteVariantWithPublishPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_EDIT, PermissionAPI.PERMISSION_PUBLISH);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        try {
+            APILocator.getExperimentsAPI()
+                    .promoteVariant(experiment.id().get(), variantName, limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to promote a Variant. Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+            final String causeExpectedMessage = String.format(
+                    "User %s doesn't have Publish permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().orElseThrow());
+
+            assertEquals(causeExpectedMessage, cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User without permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to start the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToStartExperimentWithNoPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
+                PermissionAPI.PERMISSION_PUBLISH);
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+        try {
+            APILocator.getExperimentsAPI().start(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to start the Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals("You don't have permission to get the Experiment. Experiment Id: " + experiment.getIdentifier(),
+                    cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User with READ permission on the page and Publish rights for Template-Layouts on the site
+     * try to start the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToStartExperimentWithReadPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        try {
+            APILocator.getExperimentsAPI().start(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to start the Experiment Id: "
+                    + experiment.id().get();
+
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals("You don't have permission to get the Experiment. Experiment Id: " + experiment.getIdentifier(),
+                    cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User with EDIT permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to start the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToStartExperimentWithEditPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+
+        try {
+            APILocator.getExperimentsAPI().start(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to start the Experiment Id: "
+                    + experiment.id().get();
+
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+            final String causeExpectedMessage = String.format(
+                    "User %s doesn't have EDIT permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().orElseThrow());
+
+            assertEquals(causeExpectedMessage, cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User with EDIT permission on the page try to promote a variant
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToPromoteVariantWithEditPermissionOnThePageAndTemplateLayoutPermission() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ,
+                PermissionAPI.PERMISSION_EDIT);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        try {
+            APILocator.getExperimentsAPI()
+                    .promoteVariant(experiment.id().get(), variantName, limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to promote a Variant. Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            final String errorMessageExpected = String.format(
+                    "User %s doesn't have permission to publish the Experiment's page. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().orElseThrow());
+
+            assertEquals(errorMessageExpected, cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When:
+     * - Crate an Experiment with two {@link Variant}.
+     * - Create two {@link Contentlet} and create a version into the NO DEFAULT Experiment's  {@link Variant} also
+     * create version to the DEFAULT Variant, Save and publish them.
+     * - Make any change to the {@link Contentlet} and just save.
+     *
+     * With a Not Admin User with the follow permissions
+     * - Publish rights on the Page
+     * - Publish rights for Template-Layouts on the site
+     *
+     * Do:
+     *
+     * - Start the Experiment
+     * - Promote the {@link Variant} with No Admin User
+     *
+     * Should:
+     * - Copy both version of the specific Variant  and turn it into the WORKING/LIVE DEFAULT Variant
+     */
+    @Test
+    public void promoteWithNotAdminUser() throws DotDataException, DotSecurityException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet1")
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet2")
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .page(experimentPage)
+                .addVariant("Test Variant")
+                .nextPersisted();
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Contentlet contentlet1Variant = ContentletDataGen.createNewVersion(contentlet1,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet1_variant"
+                ));
+        final Contentlet contentlet2Variant = ContentletDataGen.createNewVersion(contentlet2,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet2_variant"
+                ));
+
+        APILocator.getContentletAPI().publish(contentlet1, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2, APILocator.systemUser(), false);
+
+        APILocator.getContentletAPI().publish(contentlet1Variant, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2Variant, APILocator.systemUser(), false);
+
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        try {
+
+            ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
+            ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
+            ContentletDataGen.update(contentlet1Variant,
+                    map("title", "WORKING contentlet1_variant"));
+            ContentletDataGen.update(contentlet2Variant,
+                    map("title", "WORKING contentlet2_variant"));
+
+            addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                    PermissionAPI.PERMISSION_READ,
+                    PermissionAPI.PERMISSION_EDIT, PermissionAPI.PERMISSION_PUBLISH);
+            addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
+                    PermissionAPI.PERMISSION_PUBLISH);
+
+            APILocator.getExperimentsAPI()
+                    .promoteVariant(experiment.id().orElseThrow(), variantName, limitedUser);
+
+
+            checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT,
+                    "WORKING contentlet1_variant",
+                    titleField);
+            checkVersion(contentlet1, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet1_variant",
+                    titleField);
+
+            checkVersion(contentlet1, false, variant, "WORKING contentlet1_variant", titleField);
+            checkVersion(contentlet1, true, variant, "LIVE contentlet1_variant", titleField);
+
+            checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT,
+                    "WORKING contentlet2_variant",
+                    titleField);
+            checkVersion(contentlet2, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet2_variant",
+                    titleField);
+
+            checkVersion(contentlet2, true, variant, "LIVE contentlet2_variant", titleField);
+            checkVersion(contentlet2, false, variant, "WORKING contentlet2_variant", titleField);
+        } finally {
+
+            final Experiment experimentFromDataBase = APILocator.getExperimentsAPI()
+                    .find(experiment.getIdentifier(), APILocator.systemUser())
+                    .orElseThrow();
+
+            if (experimentFromDataBase.status() == Experiment.Status.RUNNING) {
+                APILocator.getExperimentsAPI()
+                        .end(experiment.id().orElseThrow(), APILocator.systemUser());
+            }
+        }
+    }
+
+    private static void addPermission(final Permissionable permissionable,
+            final User limitedUser, final String permissionType, final int... permissions) throws DotDataException {
+
+        final int permission = Arrays.stream(permissions).sum();
+
+        final Permission permissionObject = new Permission(permissionType,
+                permissionable.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                permission, true);
+
+        try {
+            APILocator.getPermissionAPI().save(permissionObject, permissionable,
+                    APILocator.systemUser(), false);
+        } catch (DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void checkVersion(final Contentlet contentlet, final boolean live,
+            final Variant defaultVariant, final String value, final Field titleField)
+            throws DotDataException, DotSecurityException {
+
+        checkVersion(contentlet, live, defaultVariant, APILocator.getLanguageAPI().getDefaultLanguage(),
+                value, titleField);
+    }
+    private static void checkVersion(Contentlet contentlet, boolean live, Variant variant,
+            final Language language, final String  value, Field titleField)
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet contentlet1DefaultVariantFromDataBase = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(),
+                        live, language.getId(), variant.name(), APILocator.systemUser(), false);
+
+        Assert.assertEquals(value, contentlet1DefaultVariantFromDataBase
+                .getStringProperty(titleField.variable()));
     }
 
 }
