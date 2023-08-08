@@ -37,7 +37,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
 
     private domIdMenuAttached = '';
     private destroy$ = new Subject<boolean>();
-    private scrollElement: HTMLElement;
+    private scrollElement?: HTMLElement;
     vm$: Observable<DotPagesState> = this.store.vm$;
 
     dotStateLabels = {
@@ -71,7 +71,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     ngAfterViewInit(): void {
         this.scrollElement = document.querySelector('dot-pages');
 
-        this.scrollElement.addEventListener('scroll', () => {
+        this.scrollElement?.addEventListener('scroll', () => {
             this.closeContextMenu();
             this.tableScroll.emit();
         });
@@ -85,7 +85,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
-        this.scrollElement.removeAllListeners('scroll');
+        this.scrollElement?.removeAllListeners('scroll');
     }
 
     /**
@@ -189,7 +189,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     }
 
     scrollToTop(): void {
-        this.scrollElement.scroll({
+        this.scrollElement?.scroll({
             top: 0,
             left: 0,
             behavior: 'smooth'
