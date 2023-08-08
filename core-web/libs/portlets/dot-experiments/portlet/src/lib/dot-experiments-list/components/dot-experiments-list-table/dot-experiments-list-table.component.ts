@@ -15,10 +15,10 @@ import { MenuModule } from 'primeng/menu';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotExperiment, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.pipe';
-import { DotMessageService } from '@dotcms/data-access';
 
 @Component({
     standalone: true,

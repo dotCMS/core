@@ -11,6 +11,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { tap } from 'rxjs/operators';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
@@ -29,7 +30,6 @@ import { DotExperimentsStatusFilterComponent } from './components/dot-experiment
 import { DotExperimentsListStore, VmListExperiments } from './store/dot-experiments-list-store';
 
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
-import { DotMessageService } from '@dotcms/data-access';
 
 @Component({
     standalone: true,
