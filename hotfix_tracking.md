@@ -92,3 +92,4 @@ This maintenance release includes the following code fixes:
 74. https://github.com/dotCMS/core/issues/25224 : PP - Integrity Checker, fixing conflicts is setting up identifier columns as null #25224
 75. https://github.com/dotCMS/core/issues/25121 : Pages - Block Editor - NPE #25121
 76. https://github.com/dotCMS/core/issues/23948 : Stop redirecting all BE page traffic to edit mode #23948
+77. https://github.com/dotCMS/core/issues/25720 : Adding insert order to sql query #25723

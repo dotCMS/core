@@ -22,7 +22,7 @@ public class Task230119MigrateContentToProperPersonaTagAndRemoveDupTags extends 
             + "AND t.tagname LIKE '%:persona';";
     final String DELETE_BAD_RELS_MSSQL = "DELETE ti FROM tag_inode ti JOIN tag ON ti.tag_id = tag.tag_id\n"
             + "WHERE tag.tagname LIKE '%:persona';";
-    final String SQL = "INSERT INTO tag_inode\n"
+    final String SQL = "INSERT INTO tag_inode (tag_id, inode, field_var_name, mod_date)\n"
             + "SELECT tag.tag_id, aux.inode, aux.field_var_name, aux.mod_date\n"
             + "FROM (SELECT tag_inode.*, tag.tagname\n"
             + "      FROM tag_inode\n"
