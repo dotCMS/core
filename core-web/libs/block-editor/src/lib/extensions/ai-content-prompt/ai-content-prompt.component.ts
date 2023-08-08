@@ -35,12 +35,13 @@ export class AIContentPromptComponent {
         if (textPrompt) {
             this.formValues.emit({ textPrompt });
 
+            this.hide.emit(true);
+
             this.aiContentService
                 .getIAContent(textPrompt)
                 .pipe(catchError(() => of(null)))
-                .subscribe((response) => {
-                    console.warn('openai response____', response);
-                    this.hide.emit(true);
+                .subscribe(() => {
+                    // this.aiResponse.emit(response);
                 });
         }
     }

@@ -77,9 +77,9 @@ export class AIContentPromptView {
 
         document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
 
-        this.component.instance.aiResponse.pipe(takeUntil(this.$destroy)).subscribe((response) => {
-            this.insertAINode(response);
-        });
+        // this.component.instance.aiResponse.pipe(takeUntil(this.$destroy)).subscribe((response) => {
+        //     this.insertAINode(response);
+        // });
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -202,9 +202,9 @@ export class AIContentPromptView {
         return this.tippy?.state.isMounted && this.tippy?.popper.contains(node);
     }
 
-    insertAINode(response: string) {
-        this.editor.commands.showGeneratedContent(response);
-    }
+    // insertAINode(response: string) {
+    //     this.editor.commands.showGeneratedContent(response);
+    // }
 }
 
 export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
