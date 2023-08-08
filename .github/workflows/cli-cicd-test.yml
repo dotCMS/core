@@ -45,7 +45,7 @@ jobs:
           
           echo "status=$OUTPUT_STATUS" >> $GITHUB_OUTPUT
           
-          ./mvnw surefire-report:failsafe-report-only
+          ./mvnw surefire-report:failsafe-report-only 
                
           RESULTS_PATH=${{ github.workspace }}/tools/dotcms-cli/target/test-results
           XML_REPORTS_PATH=${RESULTS_PATH}/xml-reports
@@ -81,3 +81,4 @@ jobs:
           tests_results_report_location: ${{ steps.run-cli-tests.outputs.results_report_location }} # actual reports made from XML files, probably in HTML format
           tests_results_repo: tools-test-results
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+
