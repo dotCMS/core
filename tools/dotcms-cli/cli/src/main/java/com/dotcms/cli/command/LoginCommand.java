@@ -45,12 +45,8 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
     @Override
     public Integer call() {
         output.info(String.format("Logging in as [@|bold,cyan %s|@]. ",user));
-        try {
-            authenticationContext.login(user, password);
-            output.info(String.format("@|bold,green Successfully logged-in as |@[@|bold,blue %s|@]", user));
-        }catch (Exception wae){
-            return output.handleCommandException(wae,"Unable to login. ");
-        }
+        authenticationContext.login(user, password);
+        output.info(String.format("@|bold,green Successfully logged-in as |@[@|bold,blue %s|@]", user));
         return ExitCode.OK;
     }
 

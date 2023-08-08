@@ -58,7 +58,7 @@ public class InstanceCommand implements Callable<Integer>, DotCommand {
     String activate;
 
     @Override
-    public Integer call() {
+    public Integer call() throws IOException {
 
         final Map<String, URI> servers = clientConfig.servers();
         if (servers.isEmpty()) {
@@ -98,12 +98,8 @@ public class InstanceCommand implements Callable<Integer>, DotCommand {
                 } else {
                     ServiceBean serviceBean = optional.get();
                     serviceBean = serviceBean.withActive(true);
-                    try {
-                        serviceManager.persist(serviceBean);
-                        output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active one.", activate));
-                    } catch (IOException e) {
-                        return output.handleCommandException(e,"Unable to persist the new selected service ");
-                    }
+                    serviceManager.persist(serviceBean);
+                    output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active one.", activate));
                 }
             }
         }
