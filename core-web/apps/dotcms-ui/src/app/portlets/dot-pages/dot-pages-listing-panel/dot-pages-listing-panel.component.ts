@@ -69,7 +69,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     }
 
     ngAfterViewInit(): void {
-        this.scrollElement = this.table.el.nativeElement.querySelector('.p-datatable-wrapper');
+        this.scrollElement = document.querySelector('dot-pages');
 
         this.scrollElement.addEventListener('scroll', () => {
             this.closeContextMenu();
@@ -78,7 +78,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
 
         this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
             this.store.getPages({ offset: 0 });
-            this.scrollElement.scrollTop = 0; // To reset the scroll so it shows the data it retrieves
+            this.scrollToTop(); // To reset the scroll so it shows the data it retrieves
         });
     }
 
@@ -186,5 +186,13 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
         this.store.setArchived(archived);
         this.store.getPages({ offset: 0 });
         this.store.setSessionStorageFilterParams();
+    }
+
+    scrollToTop(): void {
+        this.scrollElement.scroll({
+            top: 0,
+            left: 0,
+            behavior: 'smooth'
+        });
     }
 }
