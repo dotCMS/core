@@ -58,14 +58,7 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
 
     @Override
     public Integer call() throws Exception {
-            final Optional<Language> result = super.findExistingLanguage(languageIdOrIso);
-
-            if (result.isEmpty()){
-                output.error(String.format(
-                        "A language with id or ISO code [%s] could not be found.", languageIdOrIso));
-                return CommandLine.ExitCode.SOFTWARE;
-            }
-            final Language language = result.get();
+            final Language language = findExistingLanguage(languageIdOrIso);
             final ObjectMapper objectMapper = formatOption.objectMapper();
 
             if(shortOutputOption.isShortOutput()) {

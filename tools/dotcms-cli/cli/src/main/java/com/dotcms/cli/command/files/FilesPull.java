@@ -2,21 +2,23 @@ package com.dotcms.cli.command.files;
 
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.files.PullService;
-import com.dotcms.api.traversal.RemoteFolderTraversalService;
+import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.common.AssetsUtils;
+import com.dotcms.common.LocationUtils;
 import com.dotcms.model.asset.AssetVersionsView;
-import com.dotcms.model.asset.SearchByPathRequest;
+import com.dotcms.model.asset.ByPathRequest;
+import java.io.File;
 import java.io.IOException;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import org.apache.commons.lang3.tuple.Pair;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -30,15 +32,16 @@ import java.util.concurrent.CompletableFuture;
 public class FilesPull extends AbstractFilesCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "pull";
-    
+
     @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "source",
             description = "dotCMS path to the directory or file to pull "
                     + "- Format: //{site}/{folder} or //{site}/{folder}/{file}")
     String source;
 
-    @CommandLine.Parameters(index = "1", arity = "1", paramLabel = "destination", defaultValue = "",
-            description = "Local root directory of the CLI project.")
-    String destination;
+    @CommandLine.Parameters(index = "1", arity = "0..1", paramLabel = "workspace",
+            description = "Local directory withing the CLI project workspace. " +
+                    "Defaults to the current directory.")
+    File workspace;
 
     @CommandLine.Option(names = {"-r", "--recursive"}, defaultValue = "true",
             description = "Pulls directories and their contents recursively.")
@@ -53,6 +56,18 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                     "When this option is enabled, the pull process will not create empty folders. "
                             + "By default, this option is disabled, and empty folders will not be created.")
     boolean includeEmptyFolders;
+
+    @CommandLine.Option(names = {"-ff", "--fail-fast"}, defaultValue = "false",
+            description =
+                    "Stop at first failure and exit the command. By default, this option is disabled, "
+                            + "and the command will continue on error.")
+    boolean failFast;
+
+    @CommandLine.Option(names = {"--retry-attempts"}, defaultValue = "0",
+            description =
+                    "Number of retry attempts on errors. By default, this option is disabled, "
+                            + "and the command will not retry on error.")
+    int retryAttempts;
 
     @CommandLine.Option(names = {"-ef", "--excludeFolder"},
             paramLabel = "patterns",
@@ -79,7 +94,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     String includeAssetPatternsOption;
 
     @Inject
-    RemoteFolderTraversalService folderTraversalService;
+    RemoteTraversalService remoteTraversalService;
 
     @Inject
     PullService pullAssetsService;
@@ -89,19 +104,23 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
 
 
-            if (AssetsUtils.URLIsFolder(source)) {
+            // Calculating the workspace path for files
+            var workspaceFilesFolder = getOrCreateWorkspaceFilesDirectory(workspace);
+
+            if (LocationUtils.isFolderURL(source)) { // Handling folders
 
                 var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
                 var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);
                 var excludeFolderPatterns = parsePatternOption(excludeFolderPatternsOption);
                 var excludeAssetPatterns = parsePatternOption(excludeAssetPatternsOption);
 
-                CompletableFuture<TreeNode> folderTraversalFuture = CompletableFuture.supplyAsync(
+                CompletableFuture<Pair<List<Exception>, TreeNode>> folderTraversalFuture = CompletableFuture.supplyAsync(
                         () -> {
                             // Service to handle the traversal of the folder
-                            return folderTraversalService.traverse(
+                            return remoteTraversalService.traverseRemoteFolder(
                                     source,
                                     recursive ? null : 0,
+                                    true,
                                     includeFolderPatterns,
                                     includeAssetPatterns,
                                     excludeFolderPatterns,
@@ -131,9 +150,10 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
                 // ---
                 // Now we need to pull the contents based on the tree we found
-                pullAssetsService.pullTree(output, result, destination, override, includeEmptyFolders);
+                pullAssetsService.pullTree(output, result.getRight(), workspaceFilesFolder, override,
+                        includeEmptyFolders, failFast, retryAttempts);
 
-            } else {
+            } else { // Handling single files
 
                 CompletableFuture<AssetVersionsView> assetInformationFuture = CompletableFuture.supplyAsync(
                         () -> retrieveAssetInformation(source)
@@ -154,17 +174,17 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 // (assetInformationFuture and animationFuture) have completed.
                 CompletableFuture.allOf(assetInformationFuture, animationFuture).join();
                 final var result = assetInformationFuture.get();
-
                 if (result == null) {
                     output.error(String.format("Error occurred while pulling asset info: [%s].", source));
                     return CommandLine.ExitCode.SOFTWARE;
                 }
 
                 // Handle the pull of a single file
-                pullAssetsService.pullFile(output, result, source, destination, override);
+                pullAssetsService.pullFile(output, result, source, workspaceFilesFolder, override,
+                        failFast, retryAttempts);
             }
 
-            output.info("\n\nPull process finished successfully.");
+            output.info(String.format("%n%nOutput has been written to [%s]", workspaceFilesFolder.getAbsolutePath()));
 
 
         return CommandLine.ExitCode.OK;
@@ -182,7 +202,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
         // Execute the REST call to retrieve asset information
-        var response = assetAPI.assetByPath(SearchByPathRequest.builder().assetPath(source).build());
+        var response = assetAPI.assetByPath(ByPathRequest.builder().assetPath(source).build());
         return response.entity();
     }
 

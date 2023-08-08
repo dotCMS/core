@@ -41,14 +41,8 @@ public class LanguageRemove extends AbstractLanguageCommand implements Callable<
     @Override
     public Integer call() throws Exception {
 
-        final Optional<Language> result = super.findExistingLanguage(languageIdOrIso);
+        final Language language = findExistingLanguage(languageIdOrIso);
 
-        if (result.isEmpty()){
-            output.error(String.format(
-                    "A language with id or ISO code [%s] could not be found.", languageIdOrIso));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
-        final Language language = result.get();
         output.info("Attempting to delete the following language:");
         output.info(shortFormat(language));
 
