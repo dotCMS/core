@@ -21,12 +21,3 @@ export const TIPPY_OPTIONS: Partial<Props> = {
         ]
     }
 };
-
-export const AI_PROMPT_DYNAMIC_CONTROLS = [
-    {
-        key: 'textPrompt',
-        label: '',
-        type: 'text',
-        required: true
-    }
-];

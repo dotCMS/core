@@ -9,12 +9,11 @@ import { ComponentRef } from '@angular/core';
 import { takeUntil } from 'rxjs/operators';
 
 import { Editor, posToDOMRect } from '@tiptap/core';
-import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
 import { getNodePosition } from '../../bubble-menu/utils';
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
 import { AI_CONTENT_PROMPT_PLUGIN_KEY } from '../ai-content-prompt.extension';
-import { AI_PROMPT_DYNAMIC_CONTROLS, TIPPY_OPTIONS } from '../utils';
+import { TIPPY_OPTIONS } from '../utils';
 
 interface AIContentPromptProps {
     pluginKey: PluginKey;
@@ -33,7 +32,7 @@ export type AIContentPromptViewProps = AIContentPromptProps & {
     view: EditorView;
 };
 
-export class AIContentPromptView extends BubbleMenuView {
+export class AIContentPromptView {
     public editor: Editor;
 
     public node: Node;
@@ -55,8 +54,6 @@ export class AIContentPromptView extends BubbleMenuView {
     constructor(props: AIContentPromptViewProps) {
         const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
 
-        super(props);
-
         this.editor = editor;
         this.element = element;
         this.view = view;
@@ -68,13 +65,9 @@ export class AIContentPromptView extends BubbleMenuView {
         this.pluginKey = pluginKey;
         this.component = component;
 
-        this.component.instance.buildForm(AI_PROMPT_DYNAMIC_CONTROLS);
-
         this.component.instance.formValues.pipe(takeUntil(this.$destroy)).subscribe((data) => {
             this.editor.commands.updateValue(data);
         });
-
-        this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
 
         this.component.instance.hide.pipe(takeUntil(this.$destroy)).subscribe(() => {
             this.editor.commands.closeAIPrompt();
@@ -103,8 +96,6 @@ export class AIContentPromptView extends BubbleMenuView {
         }
 
         if (next.open) {
-            this.component.instance.buildForm(next.form || AI_PROMPT_DYNAMIC_CONTROLS);
-        } else {
             this.component.instance.cleanForm();
         }
 
@@ -184,7 +175,7 @@ export class AIContentPromptView extends BubbleMenuView {
 
     destroy() {
         this.tippy?.destroy();
-        takeUntil(this.$destroy);
+        this.$destroy.next(true);
         this.$destroy.complete();
         this.editor.off('focus', this.focusHandler);
     }
@@ -200,6 +191,7 @@ export class AIContentPromptView extends BubbleMenuView {
             return true;
         }
 
+        // requestAnimationFrame(() => this.update(this.editor.view));
         setTimeout(() => this.update(this.editor.view));
     }
 

@@ -6,7 +6,6 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { catchError } from 'rxjs/operators';
 
 import { AiContentService } from '../../shared/services/ai-content/ai-content.service';
-import { DynamicControl } from '../bubble-form/model/index';
 
 interface FormValues {
     textPrompt: string;
@@ -26,9 +25,9 @@ export class AIContentPromptComponent {
     loading = false;
     form: FormGroup;
 
-    dynamicControls: DynamicControl<unknown>[] = [];
-
-    constructor(private fb: FormBuilder, private aiContentService: AiContentService) {}
+    constructor(private fb: FormBuilder, private aiContentService: AiContentService) {
+        this.buildForm();
+    }
 
     onSubmit() {
         const textPrompt = this.form.value.textPrompt;
@@ -38,18 +37,18 @@ export class AIContentPromptComponent {
 
             this.aiContentService
                 .getIAContent(textPrompt)
-                .pipe(
-                    catchError((error) => {
-                        console.warn('error', error);
-
-                        return of(null);
-                    })
-                )
+                .pipe(catchError(() => of(null)))
                 .subscribe((response) => {
                     console.warn('openai response____', response);
                     this.hide.emit(true);
                 });
         }
+    }
+
+    buildForm() {
+        this.form = this.fb.group({
+            textPrompt: ['', Validators.required]
+        });
     }
 
     setFormValue({ textPrompt = '' }) {
@@ -60,18 +59,7 @@ export class AIContentPromptComponent {
         this.input.nativeElement.focus();
     }
 
-    buildForm(controls: DynamicControl<unknown>[]) {
-        this.dynamicControls = controls;
-        this.form = this.fb.group({});
-        this.dynamicControls.forEach((control) => {
-            this.form.addControl(
-                control.key as keyof FormValues,
-                this.fb.control(control.value || null, control.required ? Validators.required : [])
-            );
-        });
-    }
-
     cleanForm() {
-        this.form = null;
+        this.form.reset();
     }
 }

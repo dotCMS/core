@@ -5,20 +5,18 @@
     (ngSubmit)="onSubmit()"
     autocomplete="off"
 >
-    <div *ngFor="let control of dynamicControls">
-        <ng-container>
-            <span class="p-input-icon-right">
-                <input
-                    #input
-                    [formControlName]="control.key"
-                    type="text"
-                    pInputText
-                    placeholder="Ask AI to write something"
-                />
-                <button type="submit">
-                    <i class="pi pi-send"></i>
-                </button>
-            </span>
-        </ng-container>
+    <div>
+        <span class="p-input-icon-right">
+            <input
+                #input
+                [formControlName]="control.key"
+                type="text"
+                pInputText
+                placeholder="Ask AI to write something"
+            />
+            <button type="submit">
+                <i class="pi pi-send"></i>
+            </button>
+        </span>
     </div>
 </form>

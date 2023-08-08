@@ -63,10 +63,7 @@ export class AiContentService {
                     return throwError('Error fetching AI content');
                 }),
                 map((response) => {
-                    let messageResponse = '';
-                    if (response.choices && response.choices.length > 0) {
-                        messageResponse = response.choices[0].message.content;
-                    }
+                    const messageResponse = response.choices?.[0]?.message?.content ?? '';
 
                     return messageResponse;
                 })
