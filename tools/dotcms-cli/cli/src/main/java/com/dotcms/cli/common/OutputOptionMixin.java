@@ -162,6 +162,7 @@ public class OutputOptionMixin implements MessageWriter {
             //ShowErrors is on when we want to see the full stack trace and this block is meant to be used to show a shorten output
             if (!isShowErrors()) {
                 if (null != ex) {
+                    //Extract the proper exception and remove all server side noise
                     ex = ExceptionHandler.handle(ex);
                     message = String.format("%s %s  ", message,
                             ex.getMessage() != null ? abbreviate(ex.getMessage(), "...", 200)

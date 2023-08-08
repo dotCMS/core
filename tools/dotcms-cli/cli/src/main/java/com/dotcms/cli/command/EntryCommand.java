@@ -69,6 +69,7 @@ class CustomConfiguration {
                                 return ExitCode.SOFTWARE;
                         }).setExitCodeExceptionMapper(t -> {
                                // customize exit code
+                              // We usually throw an IllegalArgumentException to detonate that a invalid param has been passed
                                 if (t instanceof ParameterException || t instanceof IllegalArgumentException) {
                                         return ExitCode.USAGE;
                                 }
