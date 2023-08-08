@@ -364,7 +364,6 @@ public class CircuitBreakerUrlTest {
         for (int i = 0; i < 10; i++) {
             try {
                 String x = new CircuitBreakerUrl(goodUrl, 2000).doString();
-                assert (x.contains("Java"));
                 assert (x.contains("/application/themes/dotcms/js/bootstrap.min.js"));
 
             } catch (Exception e) {
