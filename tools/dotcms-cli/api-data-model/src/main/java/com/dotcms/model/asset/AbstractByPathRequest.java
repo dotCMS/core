@@ -6,8 +6,8 @@ import org.immutables.value.Value;
 
 @ValueType
 @Value.Immutable
-@JsonDeserialize(as = SearchByPathRequest.class)
-public interface AbstractSearchByPathRequest {
+@JsonDeserialize(as = ByPathRequest.class)
+public interface AbstractByPathRequest {
 
     String assetPath();
 }
