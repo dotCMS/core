@@ -54,6 +54,7 @@ import java.util.stream.Stream;
  */
 public class FileMetadataAPIImpl implements FileMetadataAPI {
 
+    public static final String BASIC_METADATA_OVERRIDE_KEYS = "BASIC_METADATA_OVERRIDE_KEYS";
     private final FileStorageAPI fileStorageAPI;
     private final MetadataCache metadataCache;
 
@@ -442,7 +443,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      */
     private Map<String, Serializable> filterNonBasicMetadataFields(final Map<String, Serializable> originalMap) {
         final Set<String> basicMetadataConfig = Arrays.stream(
-                        Config.getStringProperty("BASIC_METADATA_KEYS", "").split(",")).map(String::trim)
+                        Config.getStringProperty(BASIC_METADATA_OVERRIDE_KEYS, "").split(",")).map(String::trim)
                 .collect(Collectors.toSet());
 
         final Set<String> basicMetadataFieldsSet = !basicMetadataConfig.isEmpty()? basicMetadataConfig: BasicMetadataFields.keyMap().keySet();
