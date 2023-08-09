@@ -6539,7 +6539,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * Method to test: {@link ExperimentsAPIImpl#start(String, String, User)}
      * When: A User without permission on the Experiment's Page and Publish rights for Template-Layouts on the site
      * try to start the Experiment
      * Should: thrown a {@link DotSecurityException}
@@ -6582,7 +6582,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)}
      * When: A User with READ permission on the page and Publish rights for Template-Layouts on the site
      * try to start the Experiment
      * Should: thrown a {@link DotSecurityException}
@@ -6627,7 +6627,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)}
      * When: A User with EDIT permission on the Experiment's Page and Publish rights for Template-Layouts on the site
      * try to start the Experiment
      * Should: thrown a {@link DotSecurityException}
@@ -6675,7 +6675,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)}
      * When: A User with PUBLISH permission on the Experiment's Page and not Publish rights for Template-Layouts on the site
      * try to start the Experiment
      * Should: thrown a {@link DotSecurityException}
@@ -6719,6 +6719,223 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             assertEquals(causeExpectedMessage, cause.getMessage());
         }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#end(String, User)}
+     * When: A User without permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to end the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToEndExperimentWithNoPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
+                PermissionAPI.PERMISSION_PUBLISH);
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+        try {
+            APILocator.getExperimentsAPI().end(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to end the Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals("You don't have permission to get the Experiment. Experiment Id: " + experiment.id().get(),
+                    cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#end(String, User)}
+     * When: A User with READ permission on the page and Publish rights for Template-Layouts on the site
+     * try to end the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToEndExperimentWithReadPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        try {
+            APILocator.getExperimentsAPI().end(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to end the Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals("You don't have permission to get the Experiment. Experiment Id: " + experiment.id().get(),
+                    cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#end(String, String, User)}
+     * When: A User with EDIT permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to end the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToEndExperimentWithEditPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        try {
+            APILocator.getExperimentsAPI().end(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to end the Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals(String.format("User %s doesn't have permission to publish the Experiment's page. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().get()), cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#end(String, String, User)}
+     * When: A User with PUBLISH permission on the Experiment's Page and not Publish rights for Template-Layouts on the site
+     * try to end the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToEndExperimentWithNotTemplateLayoutsPermissions() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT, PermissionAPI.PERMISSION_PUBLISH);
+
+        try {
+            APILocator.getExperimentsAPI().end(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to end the Experiment Id: "
+                    + experiment.id().get();
+
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+            final String causeExpectedMessage = String.format(
+                    "User %s doesn't have PUBLISH permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().orElseThrow());
+
+            assertEquals(causeExpectedMessage, cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#end(String, String, User)}
+     * When: A Not Admin User with PUBLISH permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to end the Experiment
+     * Should: End the Experiment
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToEndExperimentWithNotAdminUser() throws DotDataException, DotSecurityException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT, PermissionAPI.PERMISSION_PUBLISH);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        APILocator.getExperimentsAPI().start(experiment.id().get(), limitedUser);
+
+        APILocator.getExperimentsAPI().end(experiment.id().get(), limitedUser);
+
+        final Optional<Experiment> experimentFromdataBase = APILocator.getExperimentsAPI()
+                .find(experiment.id().get(), APILocator.systemUser());
+
+        assertEquals(Experiment.Status.ENDED, experimentFromdataBase.get().status());
     }
 
     /**

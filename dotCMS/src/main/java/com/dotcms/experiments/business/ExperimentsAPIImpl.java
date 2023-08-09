@@ -479,14 +479,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @WrapInTransaction
     public Experiment start(String experimentId, User user)
             throws DotDataException, DotSecurityException {
-        DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                invalidLicenseMessageSupplier);
-        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
 
         try {
+            DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
+                    invalidLicenseMessageSupplier);
+            DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+
             final Experiment persistedExperiment = find(experimentId, user).orElseThrow(
                     () -> new IllegalArgumentException("Experiment with provided id not found")
             );
+
 
             validateExperimentPagePermissions(user, persistedExperiment, PermissionLevel.PUBLISH,
                     String.format("User %s doesn't have PUBLISH permission on the Experiment Page's. Experiment Id: %s",
@@ -552,7 +554,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             }
 
             return toReturn;
-        } catch (Exception e) {
+        } catch (DotSecurityException e) {
             final String message = "You don't have permission to start the Experiment Id: " + experimentId;
             Logger.error(this, message + "\n" + e.getMessage());
             throw new DotSecurityException(message, e);
@@ -799,37 +801,43 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @WrapInTransaction
     public Experiment end(String experimentId, User user)
             throws DotDataException, DotSecurityException {
-        DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                invalidLicenseMessageSupplier);
-        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+        try {
+            DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
+                    invalidLicenseMessageSupplier);
+            DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
 
-        final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
+            final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
 
-        DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),()-> "Experiment with provided id not found",
-                DoesNotExistException.class);
+            DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),()-> "Experiment with provided id not found",
+                    DoesNotExistException.class);
 
-        final Experiment experimentFromFactory = persistedExperimentOpt.get();
-        validatePageEditPermissions(user, experimentFromFactory,
-                "You don't have permission to archive the Experiment. "
-                        + "Experiment Id: " + persistedExperimentOpt.get().id());
+            final Experiment experimentFromFactory = persistedExperimentOpt.get();
 
-        DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING, ()->
-                        "Only RUNNING experiments can be ended", DotStateException.class);
+            validatePagePublishPermissions(user, experimentFromFactory);
+            validatePublishTemplateLayoutPermissions(user, experimentFromFactory);
 
-        DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
-                ()-> "Scheduling not valid.", DotStateException.class);
+            DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING, ()->
+                            "Only RUNNING experiments can be ended", DotStateException.class);
 
-        final Scheduling endedScheduling = Scheduling.builder().from(persistedExperimentOpt.get()
-                .scheduling().get()).endDate(Instant.now().plus(1, ChronoUnit.MINUTES))
-                .build();
+            DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
+                    ()-> "Scheduling not valid.", DotStateException.class);
 
-        final Experiment ended = persistedExperimentOpt.get().withStatus(ENDED)
-                .withScheduling(endedScheduling);
-        final Experiment saved = save(ended, user);
+            final Scheduling endedScheduling = Scheduling.builder().from(persistedExperimentOpt.get()
+                    .scheduling().get()).endDate(Instant.now().plus(1, ChronoUnit.MINUTES))
+                    .build();
 
-        cacheRunningExperiments();
+            final Experiment ended = persistedExperimentOpt.get().withStatus(ENDED)
+                    .withScheduling(endedScheduling);
+            final Experiment saved = save(ended, user);
 
-        return saved;
+            cacheRunningExperiments();
+
+            return saved;
+        } catch (DotSecurityException e) {
+            final String message = "You don't have permission to end the Experiment Id: " + experimentId;
+            Logger.error(this, message + "\n" + e.getMessage());
+            throw new DotSecurityException(message, e);
+        }
     }
 
     @WrapInTransaction
