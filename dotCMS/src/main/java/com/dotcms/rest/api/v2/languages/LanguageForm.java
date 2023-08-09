@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v2.languages;
 
 import com.dotcms.rest.api.Validated;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -46,6 +47,9 @@ public class LanguageForm extends Validated {
         return isoCode;
     }
 
+    @JsonIgnoreProperties(value = {
+            "defaultLanguage"
+    })
     public static final class Builder {
 
         @JsonProperty

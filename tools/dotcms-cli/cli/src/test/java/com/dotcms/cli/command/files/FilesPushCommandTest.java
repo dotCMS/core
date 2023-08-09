@@ -26,7 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 
 @QuarkusTest
-public class FilesPushCommandTest extends CommandTest {
+class FilesPushCommandTest extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;
@@ -36,16 +36,6 @@ public class FilesPushCommandTest extends CommandTest {
 
     @InjectMocks
     PushService pushService;
-
-    @BeforeAll
-    public static void beforeAll() {
-        disableAnsi();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        enableAnsi();
-    }
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -65,14 +55,14 @@ public class FilesPushCommandTest extends CommandTest {
     }
 
     @Test
-    public void testPushNoWorkspace() throws IOException {
+    void testPushNoWorkspace() throws IOException {
 
         // Create a temporal folder for the push
         var tempFolder = createTempFolder();
 
         try {
 
-            final CommandLine commandLine = getFactory().create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -86,7 +76,7 @@ public class FilesPushCommandTest extends CommandTest {
     }
 
     @Test
-    public void testPush() throws IOException {
+    void testPush() throws IOException {
 
         // Create a temporal folder for the push
         var tempFolder = createTempFolder();
@@ -95,7 +85,7 @@ public class FilesPushCommandTest extends CommandTest {
 
         try {
 
-            final CommandLine commandLine = getFactory().create();
+            final CommandLine commandLine = createCommand();;
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -109,7 +99,7 @@ public class FilesPushCommandTest extends CommandTest {
     }
 
     @Test
-    public void testPushDryRun() throws IOException {
+    void testPushDryRun() throws IOException {
 
         // Create a temporal folder for the push
         var tempFolder = createTempFolder();
@@ -118,7 +108,7 @@ public class FilesPushCommandTest extends CommandTest {
 
         try {
 
-            final CommandLine commandLine = getFactory().create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -133,7 +123,7 @@ public class FilesPushCommandTest extends CommandTest {
     }
 
     @Test
-    public void testPushRemoveAssets() throws IOException {
+    void testPushRemoveAssets() throws IOException {
 
         // Create a temporal folder for the push
         var tempFolder = createTempFolder();
@@ -142,7 +132,7 @@ public class FilesPushCommandTest extends CommandTest {
 
         try {
 
-            final CommandLine commandLine = getFactory().create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -157,7 +147,7 @@ public class FilesPushCommandTest extends CommandTest {
     }
 
     @Test
-    public void testPushRemoveAssets2() throws IOException {
+    void testPushRemoveAssets2() throws IOException {
 
         // Create a temporal folder for the push
         var tempFolder = createTempFolder();
@@ -166,7 +156,7 @@ public class FilesPushCommandTest extends CommandTest {
 
         try {
 
-            final CommandLine commandLine = getFactory().create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -181,7 +171,7 @@ public class FilesPushCommandTest extends CommandTest {
     }
 
     @Test
-    public void testPushRemoveFolders() throws IOException {
+    void testPushRemoveFolders() throws IOException {
 
         // Create a temporal folder for the push
         var tempFolder = createTempFolder();
@@ -190,7 +180,7 @@ public class FilesPushCommandTest extends CommandTest {
 
         try {
 
-            final CommandLine commandLine = getFactory().create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -205,7 +195,7 @@ public class FilesPushCommandTest extends CommandTest {
     }
 
     @Test
-    public void testPushRemoveFolders2() throws IOException {
+    void testPushRemoveFolders2() throws IOException {
 
         // Create a temporal folder for the push
         var tempFolder = createTempFolder();
@@ -214,7 +204,7 @@ public class FilesPushCommandTest extends CommandTest {
 
         try {
 
-            final CommandLine commandLine = getFactory().create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -229,7 +219,7 @@ public class FilesPushCommandTest extends CommandTest {
     }
 
     @Test
-    public void testPushFailFast() throws IOException {
+    void testPushFailFast() throws IOException {
 
         // Create a temporal folder for the push
         var tempFolder = createTempFolder();
@@ -238,7 +228,7 @@ public class FilesPushCommandTest extends CommandTest {
 
         try {
 
-            final CommandLine commandLine = getFactory().create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -253,7 +243,7 @@ public class FilesPushCommandTest extends CommandTest {
     }
 
     @Test
-    public void testPushFailFast2() throws IOException {
+    void testPushFailFast2() throws IOException {
 
         // Create a temporal folder for the push
         var tempFolder = createTempFolder();
@@ -262,7 +252,7 @@ public class FilesPushCommandTest extends CommandTest {
 
         try {
 
-            final CommandLine commandLine = getFactory().create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -277,7 +267,7 @@ public class FilesPushCommandTest extends CommandTest {
     }
 
     @Test
-    public void testPushRetryAttemptsNoValue() throws IOException {
+    void testPushRetryAttemptsNoValue() throws IOException {
 
         // Create a temporal folder for the push
         var tempFolder = createTempFolder();
@@ -286,7 +276,7 @@ public class FilesPushCommandTest extends CommandTest {
 
         try {
 
-            final CommandLine commandLine = getFactory().create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -301,7 +291,7 @@ public class FilesPushCommandTest extends CommandTest {
     }
 
     @Test
-    public void testPushRetryAttempts() throws IOException {
+    void testPushRetryAttempts() throws IOException {
 
         // Create a temporal folder for the push
         var tempFolder = createTempFolder();
@@ -310,7 +300,7 @@ public class FilesPushCommandTest extends CommandTest {
 
         try {
 
-            final CommandLine commandLine = getFactory().create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);

@@ -44,25 +44,22 @@ public abstract class AbstractLanguageCommand {
      * @param languageIsoOrId
      * @return
      */
-    Optional<Language> findExistingLanguage(final String languageIsoOrId){
-        if (null != languageIsoOrId) {
-            final Language language;
-            final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
-            try {
-                if (StringUtils.isNumeric(languageIsoOrId)) {
-                    language = languageAPI.findById(languageIsoOrId).entity();
-                } else {
-                    language = languageAPI.getFromLanguageIsoCode(languageIsoOrId).entity();
-                }
+    Language findExistingLanguage(final String languageIsoOrId) throws NotFoundException {
 
-                if (language.id().isPresent() && language.id().get() > 0) {
-                    return Optional.of(language);
-                }
-            } catch (NotFoundException nfe){
-                output.error("Language not found: " + languageIsoOrId);
-            }
+        final Language language;
+        final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
+
+        if (StringUtils.isNumeric(languageIsoOrId)) {
+            language = languageAPI.findById(languageIsoOrId).entity();
+        } else {
+            language = languageAPI.getFromLanguageIsoCode(languageIsoOrId).entity();
         }
-        return Optional.empty();
+        final Optional<Long> id = language.id();
+        if (id.isPresent() && id.get() > 0) {
+            return language;
+        }
+        throw new NotFoundException(String.format("Language [%s] Not found.", languageIsoOrId));
+
     }
 
 }

@@ -2,7 +2,9 @@ package com.dotcms.cli.command.files;
 
 import com.dotcms.api.client.files.PushService;
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import picocli.CommandLine;
@@ -26,7 +28,7 @@ import static com.dotcms.cli.command.files.TreePrinter.*;
                 "" // empty string here so we can have a new line
         }
 )
-public class FilesPush extends AbstractFilesCommand implements Callable<Integer> {
+public class FilesPush extends AbstractFilesCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "push";
 
@@ -71,8 +73,6 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Integer call() throws Exception {
 
-        try {
-            
             // Getting the workspace
             var workspace = getWorkspaceDirectory(source);
 
@@ -192,11 +192,17 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                 }
             }
 
-        } catch (Exception e) {
-            return handleFolderTraversalExceptions(source.getAbsolutePath(), e);
-        }
-
         return CommandLine.ExitCode.OK;
     }
 
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

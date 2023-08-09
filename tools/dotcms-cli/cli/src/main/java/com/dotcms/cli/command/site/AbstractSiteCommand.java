@@ -50,24 +50,20 @@ public abstract class AbstractSiteCommand {
         );
     }
 
-     Optional<SiteView> findSite(String siteNameOrId) {
-        if (null != siteNameOrId) {
-            final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-             try {
-                 if (siteNameOrId.replace("-", "").matches("[a-fA-F0-9]{32}")) {
-                     final ResponseEntityView<SiteView> byId = siteAPI.findById(siteNameOrId);
-                     final SiteView siteView = byId.entity();
-                     return Optional.of(siteView);
-                 }
+    SiteView findSite(String siteNameOrId) throws NotFoundException {
 
-                 final ResponseEntityView<SiteView> byId = siteAPI.findByName(GetSiteByNameRequest.builder().siteName(siteNameOrId).build());
-                 final SiteView siteView = byId.entity();
-                 return Optional.of(siteView);
-             } catch (NotFoundException nfe){
-                 output.error(String.format("Unable to find Site with name or id [%s].", siteNameOrId));
-             }
+        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+        if (siteNameOrId.replace("-", "").matches("[a-fA-F0-9]{32}")) {
+            final ResponseEntityView<SiteView> byId = siteAPI.findById(siteNameOrId);
+            return byId.entity();
         }
-        return Optional.empty();
+
+        final ResponseEntityView<SiteView> byId = siteAPI.findByName(
+                GetSiteByNameRequest.builder().siteName(siteNameOrId).build());
+        return byId.entity();
+
+
     }
 
 }

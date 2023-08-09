@@ -4,19 +4,21 @@ import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.files.PullService;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.LocationUtils;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
-import org.apache.commons.lang3.tuple.Pair;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import org.apache.commons.lang3.tuple.Pair;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -27,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
                 "" // empty string here so we can have a new line
         }
 )
-public class FilesPull extends AbstractFilesCommand implements Callable<Integer> {
+public class FilesPull extends AbstractFilesCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "pull";
 
@@ -100,7 +102,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Integer call() throws Exception {
 
-        try {
+
 
             // Calculating the workspace path for files
             var workspaceFilesFolder = getOrCreateWorkspaceFilesDirectory(workspace);
@@ -143,8 +145,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 final var result = folderTraversalFuture.get();
 
                 if (result == null) {
-                    output.error(String.format("Error occurred while pulling folder info: [%s].", source));
-                    return CommandLine.ExitCode.SOFTWARE;
+                    throw new IOException(String.format("Error occurred while pulling folder info: [%s].", source));
                 }
 
                 // ---
@@ -183,11 +184,8 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                         failFast, retryAttempts);
             }
 
-            output.info(String.format("\n\nOutput has been written to [%s]", workspaceFilesFolder.getAbsolutePath()));
+            output.info(String.format("%n%nOutput has been written to [%s]", workspaceFilesFolder.getAbsolutePath()));
 
-        } catch (Exception e) {
-            return handleFolderTraversalExceptions(source, e);
-        }
 
         return CommandLine.ExitCode.OK;
     }
@@ -206,6 +204,16 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
         // Execute the REST call to retrieve asset information
         var response = assetAPI.assetByPath(ByPathRequest.builder().assetPath(source).build());
         return response.entity();
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 
 }
