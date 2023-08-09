@@ -11,6 +11,7 @@ import {
     ViewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
@@ -36,7 +37,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         OverlayPanelModule,
         PanelModule,
         DividerModule,
-        DotMessagePipe
+        DotMessagePipe,
+        RouterLink
     ],
     providers: [DotDevicesService],
     selector: 'dot-device-selector-seo',
@@ -48,6 +50,8 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
     @ViewChild('op') overlayPanel: OverlayPanel;
+    previewUrl: string;
+    protected readonly linkToAddDevice = '/c/c_Devices';
 
     options$: Observable<DotDevice[]>;
     socialMediaTiles = [
@@ -144,5 +148,16 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
             toArray()
         );
+    }
+
+    @Input()
+    set apiLink(value: string) {
+        if (value) {
+            const frontEndUrl = `${value.replace('api/v1/page/render', '')}`;
+
+            this.previewUrl = `${frontEndUrl}${
+                frontEndUrl.indexOf('?') != -1 ? '&' : '?'
+            }disabledNavigateMode=true`;
+        }
     }
 }
