@@ -2,6 +2,7 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.command.CommandTest;
+import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import io.quarkus.test.junit.QuarkusTest;
@@ -297,9 +298,11 @@ class SiteCommandTest extends CommandTest {
             commandLine.setOut(out);
             commandLine.setErr(out);
 
+            // Creating a new site
             int status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
+            // Pulling the site
             status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName,
                     "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
@@ -308,6 +311,11 @@ class SiteCommandTest extends CommandTest {
             final var siteFilePath = Path.of(workspace.sites().toString(), newSiteName + ".json");
             var json = Files.readString(siteFilePath);
             Assertions.assertTrue(json.contains("\"dotCMSObjectType\" : \"Site\""));
+
+            // And now pushing the site back to the server to make sure the structure is still correct
+            status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    siteFilePath.toAbsolutePath().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
         }
@@ -339,17 +347,27 @@ class SiteCommandTest extends CommandTest {
             commandLine.setOut(out);
             commandLine.setErr(out);
 
+            // Creating a new site
             int status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
+            // Pulling the site
             status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName,
-                    "-fmt", "YAML", "--workspace", workspace.root().toString());
+                    "-fmt", InputOutputFormat.YAML.toString(), "--workspace",
+                    workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             // Reading the YAML site file to check if the yaml has a: "dotCMSObjectType" : "Site"
             final var siteFilePath = Path.of(workspace.sites().toString(), newSiteName + ".yml");
             var json = Files.readString(siteFilePath);
             Assertions.assertTrue(json.contains("dotCMSObjectType: \"Site\""));
+
+            // And now pushing the site back to the server to make sure the structure is still correct
+            status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    siteFilePath.toAbsolutePath().toString(), "-fmt",
+                    InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
         } finally {
             deleteTempDirectory(tempFolder);
         }

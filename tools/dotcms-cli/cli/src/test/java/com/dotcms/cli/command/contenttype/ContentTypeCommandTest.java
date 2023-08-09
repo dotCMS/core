@@ -6,6 +6,7 @@ import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
+import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
@@ -136,8 +137,10 @@ public class ContentTypeCommandTest extends CommandTest {
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
+
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+
+            int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
                     contentTypeVarName,
                     "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
@@ -147,6 +150,11 @@ public class ContentTypeCommandTest extends CommandTest {
                     contentTypeVarName + ".json");
             var json = Files.readString(contentTypeFilePath);
             Assertions.assertTrue(json.contains("\"dotCMSObjectType\" : \"ContentType\""));
+
+            // And now pushing the content type back to the server to make sure the structure is still correct
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    contentTypeFilePath.toAbsolutePath().toString());
+            Assertions.assertEquals(ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
         }
@@ -173,10 +181,13 @@ public class ContentTypeCommandTest extends CommandTest {
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
+
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+
+            int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
                     contentTypeVarName,
-                    "-fmt", "YAML", "--workspace", workspace.root().toString());
+                    "-fmt", InputOutputFormat.YAML.toString(), "--workspace",
+                    workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             // Reading the YAML content type file to check if the yaml has a: "dotCMSObjectType" : "ContentType"
@@ -184,6 +195,12 @@ public class ContentTypeCommandTest extends CommandTest {
                     contentTypeVarName + ".yml");
             var json = Files.readString(contentTypeFilePath);
             Assertions.assertTrue(json.contains("dotCMSObjectType: \"ContentType\""));
+
+            // And now pushing the content type back to the server to make sure the structure is still correct
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    contentTypeFilePath.toAbsolutePath().toString(), "-fmt",
+                    InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
         }

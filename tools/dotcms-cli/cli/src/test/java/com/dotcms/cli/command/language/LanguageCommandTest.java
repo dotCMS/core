@@ -124,8 +124,10 @@ public class LanguageCommandTest extends CommandTest {
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
+
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US",
+
+            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US",
                     "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
@@ -133,6 +135,11 @@ public class LanguageCommandTest extends CommandTest {
             final var languageFilePath = Path.of(workspace.languages().toString(), "en-us.json");
             var json = Files.readString(languageFilePath);
             Assertions.assertTrue(json.contains("\"dotCMSObjectType\" : \"Language\""));
+
+            // And now pushing the language back to dotCMS to make sure the structure is still correct
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "-f",
+                    languageFilePath.toAbsolutePath().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
         }
@@ -157,15 +164,24 @@ public class LanguageCommandTest extends CommandTest {
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
+
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US",
-                    "-fmt", "YAML", "--workspace", workspace.root().toString());
+
+            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US",
+                    "-fmt", InputOutputFormat.YAML.toString(), "--workspace",
+                    workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             // Reading the YAML language file to check if the yaml has a: "dotCMSObjectType" : "Language"
             final var languageFilePath = Path.of(workspace.languages().toString(), "en-us.yml");
             var json = Files.readString(languageFilePath);
             Assertions.assertTrue(json.contains("dotCMSObjectType: \"Language\""));
+
+            // And now pushing the language back to dotCMS to make sure the structure is still correct
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "-f",
+                    languageFilePath.toAbsolutePath().toString(), "-fmt",
+                    InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
         }

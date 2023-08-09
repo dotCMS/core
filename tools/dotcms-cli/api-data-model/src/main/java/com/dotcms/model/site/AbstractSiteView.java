@@ -1,8 +1,10 @@
 package com.dotcms.model.site;
 
 import com.dotcms.model.annotation.ValueType;
+import com.dotcms.model.views.CommonViews;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.Date;
 import javax.annotation.Nullable;
@@ -16,6 +18,7 @@ public interface AbstractSiteView  {
 
     String TYPE = "Site";
 
+    @JsonView(CommonViews.InternalView.class)
     @Value.Derived
     default String dotCMSObjectType() {
         return TYPE;
