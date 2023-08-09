@@ -2,7 +2,7 @@ import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, inject, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -60,7 +60,7 @@ export class DotExperimentsListComponent {
     );
     statusOptionList = ExperimentsStatusList;
     confirmDialogKey = CONFIGURATION_CONFIRM_DIALOG_KEY;
-    private dotMessageService: DotMessageService = inject(DotMessageService);
+
     protected readonly emptyConfiguration: PrincipalConfiguration = {
         title: this.dotMessageService.get('experimentspage.not.experiments.founds'),
         icon: 'pi-filter-fill rotate-180'
@@ -69,7 +69,8 @@ export class DotExperimentsListComponent {
 
     constructor(
         private readonly dotExperimentsListStore: DotExperimentsListStore,
-        private readonly router: Router
+        private readonly router: Router,
+        private readonly dotMessageService: DotMessageService
     ) {}
 
     /**
