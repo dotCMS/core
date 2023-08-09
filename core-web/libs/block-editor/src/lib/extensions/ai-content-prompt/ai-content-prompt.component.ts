@@ -21,6 +21,7 @@ export class AIContentPromptComponent {
 
     @Output() formValues = new EventEmitter<FormValues>();
     @Output() hide = new EventEmitter<boolean>();
+    @Output() aiResponse = new EventEmitter<string>();
 
     loading = false;
     form: FormGroup;
@@ -40,8 +41,8 @@ export class AIContentPromptComponent {
             this.aiContentService
                 .getIAContent(textPrompt)
                 .pipe(catchError(() => of(null)))
-                .subscribe(() => {
-                    // this.aiResponse.emit(response);
+                .subscribe((response) => {
+                    this.aiResponse.emit(response);
                 });
         }
     }

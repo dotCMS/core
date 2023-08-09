@@ -78,6 +78,10 @@ export class AIContentPromptView {
         document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
 
         document.body.addEventListener('mousedown', this.handleOutsideClick, { capture: true });
+
+        this.component.instance.aiResponse.pipe(takeUntil(this.$destroy)).subscribe((response) => {
+            this.insertAINode(response);
+        });
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -190,6 +194,10 @@ export class AIContentPromptView {
             this.editor.commands.closeAIPrompt();
         }
     };
+
+    insertAINode(response: string) {
+        this.editor.commands.showGeneratedContent(response);
+    }
 
     private tippyRect(node, type) {
         const domRect = document.querySelector('#ai-text-prompt')?.getBoundingClientRect();
