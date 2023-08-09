@@ -77,9 +77,7 @@ export class AIContentPromptView {
 
         document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
 
-        // this.component.instance.aiResponse.pipe(takeUntil(this.$destroy)).subscribe((response) => {
-        //     this.insertAINode(response);
-        // });
+        document.body.addEventListener('mousedown', this.handleOutsideClick, { capture: true });
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -182,7 +180,16 @@ export class AIContentPromptView {
         this.$destroy.next(true);
         this.$destroy.complete();
         this.editor.off('focus', this.focusHandler);
+        document.body.removeEventListener('mousedown', this.handleOutsideClick);
     }
+
+    handleOutsideClick = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+
+        if (!this.tippy.popper.contains(target)) {
+            this.editor.commands.closeAIPrompt();
+        }
+    };
 
     private tippyRect(node, type) {
         const domRect = document.querySelector('#ai-text-prompt')?.getBoundingClientRect();
@@ -201,10 +208,6 @@ export class AIContentPromptView {
     private shouldHideOnScroll(node: HTMLElement): boolean {
         return this.tippy?.state.isMounted && this.tippy?.popper.contains(node);
     }
-
-    // insertAINode(response: string) {
-    //     this.editor.commands.showGeneratedContent(response);
-    // }
 }
 
 export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
