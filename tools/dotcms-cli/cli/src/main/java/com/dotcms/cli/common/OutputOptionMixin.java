@@ -1,17 +1,17 @@
 package com.dotcms.cli.common;
 
-import io.quarkus.devtools.messagewriter.MessageWriter;
-import picocli.CommandLine;
-import picocli.CommandLine.Help.ColorScheme;
-import picocli.CommandLine.Model.CommandSpec;
+import static io.quarkus.devtools.messagewriter.MessageIcons.ERROR_ICON;
+import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
+import static org.apache.commons.lang3.StringUtils.*;
 
+import io.quarkus.devtools.messagewriter.MessageWriter;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-
-import static io.quarkus.devtools.messagewriter.MessageIcons.ERROR_ICON;
-import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
+import picocli.CommandLine;
+import picocli.CommandLine.Help.ColorScheme;
+import picocli.CommandLine.Model.CommandSpec;
 
 public class OutputOptionMixin implements MessageWriter {
 
@@ -151,13 +151,30 @@ public class OutputOptionMixin implements MessageWriter {
     }
 
     public int handleCommandException(Exception ex, String message) {
-        CommandLine cmd = mixee.commandLine();
         printStackTrace(ex);
         if (ex instanceof CommandLine.ParameterException) {
-            CommandLine.UnmatchedArgumentException.printSuggestions((CommandLine.ParameterException) ex, out());
+            CommandLine.UnmatchedArgumentException.printSuggestions(
+                    (CommandLine.ParameterException) ex, out());
         }
-        error(message);
-        return cmd.getExitCodeExceptionMapper() != null ? cmd.getExitCodeExceptionMapper().getExitCode(ex)
+            //Yeah, this doesn't look like the right logic
+            //in the sense that we're printing out the error only when the showErrors is false
+            //But there's a reason for that.
+            //ShowErrors is on when we want to see the full stack trace and this block is meant to be used to show a shorten output
+            if (!isShowErrors()) {
+                if (null != ex) {
+                    //Extract the proper exception and remove all server side noise
+                    ex = ExceptionHandler.handle(ex);
+                    message = String.format("%s %s  ", message,
+                            ex.getMessage() != null ? abbreviate(ex.getMessage(), "...", 200)
+                                    : "No error message was provided");
+                }
+                error(message);
+                info("@|bold,yellow run with -e or --errors for full details on the exception.|@");
+            }
+
+        final CommandLine cmd = mixee.commandLine();
+        return cmd.getExitCodeExceptionMapper() != null ? cmd.getExitCodeExceptionMapper()
+                .getExitCode(ex)
                 : mixee.exitCodeOnInvalidInput();
     }
 
