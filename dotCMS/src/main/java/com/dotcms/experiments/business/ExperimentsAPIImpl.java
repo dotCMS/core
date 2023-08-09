@@ -220,7 +220,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throws DotDataException, DotSecurityException {
 
         try {
-            validatePageEditPermissions(user, experiment,
+            validateExperimentPagePermissions(user, experiment, PermissionLevel.EDIT,
                     "You don't have permission to Edit the Page");
 
             validateEditTemplateLayoutPermissions(user, experiment);
@@ -488,11 +488,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     () -> new IllegalArgumentException("Experiment with provided id not found")
             );
 
-            validatePageEditPermissions(user, persistedExperiment,
-                    "You don't have permission to start the Experiment. "
-                            + "Experiment Id: " + persistedExperiment.id());
+            validateExperimentPagePermissions(user, persistedExperiment, PermissionLevel.PUBLISH,
+                    String.format("User %s doesn't have PUBLISH permission on the Experiment Page's. Experiment Id: %s",
+                            user.getUserId(), persistedExperiment.id().get()));
 
-            validateEditTemplateLayoutPermissions(user, persistedExperiment);
+            validatePublishTemplateLayoutPermissions(user, persistedExperiment);
 
             DotPreconditions.isTrue(persistedExperiment.status() != Status.RUNNING ||
                             persistedExperiment.status() != Status.SCHEDULED,
@@ -1271,7 +1271,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private void validatePublishTemplateLayoutPermissions(final User user, final Experiment experiment)
             throws DotDataException, DotSecurityException {
         final String errorMessage = String.format(
-                "User %s doesn't have Publish permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
+                "User %s doesn't have PUBLISH permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
                 user.getUserId(), experiment.id().orElseThrow());
 
         validateTemplateLayoutPermissions(user, experiment, PermissionLevel.PUBLISH, errorMessage);
@@ -1413,7 +1413,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private void validatePageEditPermissions(final User user, final Experiment persistedExperiment,
             final String errorMessage)
             throws DotDataException, DotSecurityException {
-        validateExperimentPagePermissions(user, persistedExperiment, PermissionLevel.EDIT, errorMessage);
+        
+        try {
+            validateExperimentPagePermissions(user, persistedExperiment, PermissionLevel.EDIT,
+                    errorMessage);
+        } catch (DotSecurityException e) {
+            Logger.error(this, errorMessage);
+            throw e;
+        }
     }
 
     private void validateExperimentPagePermissions(final User user,
@@ -1428,7 +1435,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         if (!permissionAPI.doesUserHavePermission(parentPage, permissionLevel.getType(),
                 user)) {
-            Logger.error(this, errorMessage);
             throw new DotSecurityException(errorMessage);
         }
     }

@@ -6531,7 +6531,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             final Throwable cause = e.getCause();
             final String causeExpectedMessage = String.format(
-                    "User %s doesn't have Publish permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
+                    "User %s doesn't have PUBLISH permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
                     limitedUser.getUserId(), experiment.id().orElseThrow());
 
             assertEquals(causeExpectedMessage, cause.getMessage());
@@ -6652,6 +6652,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                 PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
 
         try {
             APILocator.getExperimentsAPI().start(experiment.id().get(), limitedUser);
@@ -6666,7 +6667,54 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             final Throwable cause = e.getCause();
             final String causeExpectedMessage = String.format(
-                    "User %s doesn't have EDIT permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
+                    "User %s doesn't have PUBLISH permission on the Experiment Page's. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().orElseThrow());
+
+            assertEquals(causeExpectedMessage, cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User with PUBLISH permission on the Experiment's Page and not Publish rights for Template-Layouts on the site
+     * try to start the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToStartExperimentWithNotTemplateLayoutsPermissions() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT, PermissionAPI.PERMISSION_PUBLISH);
+
+        try {
+            APILocator.getExperimentsAPI().start(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to start the Experiment Id: "
+                    + experiment.id().get();
+
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+            final String causeExpectedMessage = String.format(
+                    "User %s doesn't have PUBLISH permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
                     limitedUser.getUserId(), experiment.id().orElseThrow());
 
             assertEquals(causeExpectedMessage, cause.getMessage());
