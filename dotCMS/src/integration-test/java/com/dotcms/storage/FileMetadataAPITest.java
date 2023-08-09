@@ -9,6 +9,7 @@ import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
 import static com.dotcms.rest.api.v1.temp.TempFileAPITest.mockHttpServletRequest;
 import static com.dotcms.storage.FileMetadataAPI.BINARY_METADATA_VERSION;
+import static com.dotcms.storage.FileMetadataAPIImpl.BASIC_METADATA_OVERRIDE_KEYS;
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
 import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
 import static org.junit.Assert.assertEquals;
@@ -93,6 +94,30 @@ public class FileMetadataAPITest {
 
             final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
             assertTrue(fileAssetContent.get(FileAssetAPI.META_DATA_FIELD) instanceof Map);
+    }
+
+    /**
+     * <b>Method to test:</b> {@link FileMetadataAPI#generateContentletMetadata(Contentlet)} <br>
+     * <b>Given scenario:</b> The property {@link FileMetadataAPIImpl#BASIC_METADATA_OVERRIDE_KEYS} is set<br>
+     * <b>Expected Result:</b> The basic metadata must get the value set in {@link FileMetadataAPIImpl#BASIC_METADATA_OVERRIDE_KEYS}
+     * @throws Exception
+     */
+    @Test
+    public void Test_Get_BasicMetadataWhenOverridePropertyIsSet() throws Exception {
+        prepareIfNecessary();
+        Config.setProperty(BASIC_METADATA_OVERRIDE_KEYS, "keywords");
+
+        try {
+            final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
+            Metadata metadata = fileMetadataAPI.generateContentletMetadata(
+                    fileAssetContent).getBasicMetadataMap().get("fileAsset");
+
+            assertNotNull(metadata);
+            assertEquals(1, metadata.getMap().size());
+            assertEquals("keyword1,keyword2", metadata.getMap().get("keywords"));
+        } finally {
+            Config.setProperty(BASIC_METADATA_OVERRIDE_KEYS, null);
+        }
     }
 
     /**
