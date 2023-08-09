@@ -1,7 +1,10 @@
 package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.InteractiveOptionMixin;
+import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.Prompt;
 import com.dotcms.model.language.Language;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -13,6 +16,7 @@ import picocli.CommandLine.Parameters;
 @ActivateRequestContext
 @CommandLine.Command(
         name = LanguageRemove.NAME,
+        aliases = LanguageRemove.ALIAS,
         header = "@|bold,blue Remove a language|@",
         description = {
                 " Remove a language given its id or iso (e.g.: en-us)",
@@ -23,26 +27,22 @@ import picocli.CommandLine.Parameters;
  * Command to delete a language given its id or iso (e.g.: en-us)
  * @author nollymar
  */
-public class LanguageRemove extends AbstractLanguageCommand implements Callable<Integer> {
+public class LanguageRemove extends AbstractLanguageCommand implements Callable<Integer>, DotCommand {
 
     @CommandLine.Mixin
     InteractiveOptionMixin interactiveOption;
 
     static final String NAME = "remove";
+    static final String ALIAS = "rm";
+
     @Parameters(index = "0", arity = "1", description = "Language Id or Iso.")
     String languageIdOrIso;
 
     @Override
     public Integer call() throws Exception {
 
-        final Optional<Language> result = super.findExistingLanguage(languageIdOrIso);
+        final Language language = findExistingLanguage(languageIdOrIso);
 
-        if (result.isEmpty()){
-            output.error(String.format(
-                    "A language with id or ISO code [%s] could not be found.", languageIdOrIso));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
-        final Language language = result.get();
         output.info("Attempting to delete the following language:");
         output.info(shortFormat(language));
 
@@ -59,9 +59,19 @@ public class LanguageRemove extends AbstractLanguageCommand implements Callable<
 
     private boolean isDeleteConfirmed() {
         if(interactiveOption.isInteractive()){
-            return BooleanUtils.toBoolean(
-                    System.console().readLine("\nAre you sure you want to continue? [y/n]: "));
+           return Prompt.yesOrNo(false,"Are you sure you want to continue ");
         }
         return true;
     }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
+
 }
