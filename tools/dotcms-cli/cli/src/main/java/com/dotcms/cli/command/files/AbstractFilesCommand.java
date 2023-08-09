@@ -37,61 +37,6 @@ public abstract class AbstractFilesCommand {
     Logger logger;
 
     /**
-     * Handles exceptions thrown during the execution of the files commands.
-     *
-     * @param folderPath the path of the folder that was being pulled
-     * @param throwable  the exception that was thrown
-     * @return the exit code to be used for the command line interface
-     */
-    protected int handleFolderTraversalExceptions(String folderPath, Throwable throwable) {
-
-        // This checks if the given Throwable is a TraversalTaskException.
-        // If so, it will return the inner cause Throwable in order to improve the error message displayed to the user.
-        var traversalTaskException = findCause(throwable, TraversalTaskException.class);
-        if (traversalTaskException != null) {
-            throwable = traversalTaskException.getCause();
-        }
-
-        logger.debug(String.format("Error occurred while processing: [%s] with message: [%s].",
-                folderPath, throwable.getMessage()), throwable);
-
-        if (throwable instanceof CompletionException) {
-
-            Throwable cause = throwable.getCause();
-            if (cause instanceof IllegalArgumentException) {
-
-                output.error(String.format(
-                        "Error occurred while processing: [%s] with message: [%s].",
-                        folderPath, cause.getMessage()));
-                return CommandLine.ExitCode.USAGE;
-            } else {
-
-                output.error(String.format(
-                        "Error occurred while processing: [%s] with message: [%s].",
-                        folderPath, throwable.getMessage()));
-                return CommandLine.ExitCode.SOFTWARE;
-            }
-        } else if (throwable instanceof IllegalArgumentException) {
-
-            output.error(String.format(
-                    "Error occurred while processing: [%s] with message: [%s].",
-                    folderPath, throwable.getMessage()));
-            return CommandLine.ExitCode.USAGE;
-        } else if (throwable instanceof NotFoundException) {
-
-            output.error(String.format(
-                    "Error occurred while processing: [%s] with message: [%s].",
-                    folderPath, throwable.getMessage()));
-            return CommandLine.ExitCode.SOFTWARE;
-        } else {
-            output.error(String.format(
-                    "Error occurred while processing: [%s] with message: [%s].",
-                    folderPath, throwable.getMessage()));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
-    }
-
-    /**
      * Parses the pattern option string into a set of patterns.
      *
      * @param patterns the pattern option string containing patterns separated by commas
@@ -162,23 +107,5 @@ public abstract class AbstractFilesCommand {
         throw new IllegalArgumentException(String.format("Not valid workspace found from path: [%s]", fromPath));
     }
 
-    /**
-     * Returns the cause of a given Throwable that matches the specified cause type.
-     *
-     * @param t         the Throwable to search the cause from
-     * @param causeType the type of the cause to search for
-     * @return the Throwable that matches the cause type, or null if no match is found
-     */
-    public static Throwable findCause(Throwable t, Class<? extends Throwable> causeType) {
-
-        while (t != null) {
-            if (causeType.isInstance(t)) {
-                return t;
-            }
-            t = t.getCause();
-        }
-
-        return null;
-    }
 
 }

@@ -3,7 +3,9 @@ package com.dotcms.cli.command.files;
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.language.Language;
 import org.apache.commons.lang3.tuple.Pair;
 import picocli.CommandLine;
@@ -27,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
                 "" // empty string here so we can have a new line
         }
 )
-public class FilesLs extends AbstractFilesCommand implements Callable<Integer> {
+public class FilesLs extends AbstractFilesCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "ls";
 
@@ -81,7 +83,6 @@ public class FilesLs extends AbstractFilesCommand implements Callable<Integer> {
         var excludeFolderPatterns = parsePatternOption(excludeFolderPatternsOption);
         var excludeAssetPatterns = parsePatternOption(excludeAssetPatternsOption);
 
-        try {
 
             CompletableFuture<Pair<List<Exception>, TreeNode>> folderTraversalFuture = CompletableFuture.supplyAsync(
                     () -> {
@@ -129,11 +130,19 @@ public class FilesLs extends AbstractFilesCommand implements Callable<Integer> {
 
             output.info(sb.toString());
 
-        } catch (Exception e) {
-            return handleFolderTraversalExceptions(folderPath, e);
-        }
 
-        return CommandLine.ExitCode.OK;
+            return CommandLine.ExitCode.OK;
     }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
+
 
 }

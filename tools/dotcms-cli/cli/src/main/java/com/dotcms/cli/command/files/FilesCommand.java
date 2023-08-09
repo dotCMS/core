@@ -1,5 +1,6 @@
 package com.dotcms.cli.command.files;
 
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import picocli.CommandLine;
@@ -27,7 +28,7 @@ import java.util.concurrent.Callable;
                 FilesPush.class
         }
 )
-public class FilesCommand implements Callable<Integer> {
+public class FilesCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "files";
 
@@ -48,4 +49,15 @@ public class FilesCommand implements Callable<Integer> {
         spec.commandLine().usage(output.out());
         return CommandLine.ExitCode.OK;
     }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
+
 }
