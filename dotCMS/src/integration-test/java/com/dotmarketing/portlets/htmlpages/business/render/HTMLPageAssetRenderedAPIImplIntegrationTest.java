@@ -87,10 +87,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-
-
-
-
 public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTestBase {
 
     private HttpServletRequest request;
@@ -1717,7 +1713,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "            const pattern = new RegExp(experimentsData.experiments[i].redirectPattern);\n"
                 + "\n"
                 + "            if (additionalValidation(experimentsData.experiments[i]) &&\n"
-                + "                pattern.test(location.href)) {\n"
+                + "                pattern.test(location.href.toLowerCase())) {\n"
                 + "\n"
                 + "                const param = experimentsData.experiments[i].variant.name === 'DEFAULT' ?\n"
                 + "                    '' : getParams(experimentsData.experiments[i]);\n"
