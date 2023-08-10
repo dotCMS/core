@@ -50,10 +50,12 @@ public class PreventSessionFixationUtil {
 
         HttpSession session = request.getSession(false);
 
+        Logger.info(this, "========== Preventing the session fixation method ==========");
+        Logger.info(this, "Incoming Session ID = " + (null != session ? session.getId() : "- null session -"));
+
         if(Config.getBooleanProperty("PREVENT_SESSION_FIXATION_ON_LOGIN", true)) {
 
             Logger.debug(this, ()-> "Preventing the session fixation");
-            Logger.info(this, "========== Preventing the session fixation ==========");
             Logger.info(this, "createSessionIfDoesNotExists = " + createSessionIfDoesNotExists);
 
             final Map<String, Object> sessionMap  = new HashMap<>();
@@ -131,6 +133,13 @@ public class PreventSessionFixationUtil {
         if (null != session) {
             Logger.info(this, "--- New Session ID = " + session.getId());
             Logger.info(this, "--- Has any attributes? = " + session.getAttributeNames().hasMoreElements());
+
+            final Enumeration<String> keys = session.getAttributeNames();
+            while (keys.hasMoreElements()) {
+                final String key = keys.nextElement();
+                final Object value = session.getAttribute(key);
+                Logger.info(this, "----> The Attr '" + key + "' = " + value);
+            }
         }
         return session;
     } // preventSessionFixation.
