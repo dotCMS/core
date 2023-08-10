@@ -1,2 +1,39 @@
 @use "variables" as *;
 @import "mixins";
+
+#input-text-base {
+    background-color: $white;
+    height: $field-height-md;
+    border-radius: $field-border-radius;
+    border: 1.5px solid $color-palette-gray-400;
+    padding: 0 $spacing-1;
+    color: $color-palette-gray-700;
+    font-size: $font-size-md;
+    font-weight: 400;
+    line-height: 140%;
+
+    &.p-filled {
+        color: $black;
+    }
+}
+
+#input-text-sm {
+    height: $field-height-sm;
+    font-size: $font-size-sm;
+}
+
+#input-text-states {
+    &:enabled:hover {
+        border: 1.5px solid $color-palette-primary-400;
+    }
+    &:enabled:active,
+    &:enabled:focus {
+        border: 1.5px solid $color-palette-primary-400;
+        @include field-focus;
+    }
+
+    &:disabled {
+        border: 1.5px solid $color-palette-gray-200;
+        background: $color-palette-gray-100;
+    }
+}
