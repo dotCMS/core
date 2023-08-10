@@ -26,7 +26,7 @@ export default {
     }
 } as Meta;
 
-export const InputNumberTemplate = `
+const InputNumberTemplate = `
   <p-inputNumber [(ngModel)]="val" mode="decimal"></p-inputNumber>
 `;
 
