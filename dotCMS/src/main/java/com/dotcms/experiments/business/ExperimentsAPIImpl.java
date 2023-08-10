@@ -719,11 +719,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final boolean generateNewRunId)
             throws DotSecurityException, DotDataException {
 
-        // TODO THIS CHANGES ARE NOT BEING TAKEN ON THE RECEIVER
-
         final Experiment experimentToSave = generateNewRunId
-                ? Experiment.builder().from(persistedExperiment)
-                    .runningIds(getRunningIds(persistedExperiment)).build()
+                ? Experiment.builder().from(persistedExperiment).runningIds(getRunningIds(persistedExperiment)).build()
                 : persistedExperiment;
 
         Experiment running = save(experimentToSave, user);
