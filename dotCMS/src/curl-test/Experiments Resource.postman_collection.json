@@ -5684,7 +5684,7 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"{\\\"name\\\":\\\"testName\\\",\\\"value\\\":\\\"testValue\\\"}\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"REGEX\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"visitBefore\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"^(http|https):\\\\/\\\\/(localhost|127.0.0.1|\\\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\\\.)+[a-zA-Z]{2,})(:\\\\d{1,5})?\\\\/my-page(\\\\/?\\\\?.*)?$\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"^(http|https):\\\\/\\\\/(localhost|127.0.0.1|\\\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\\\.)+[a-z]{2,})(:\\\\d{1,5})?\\\\/my-page(\\\\/?\\\\?.*)?$\");",
 											"",
 											"});",
 											"",
