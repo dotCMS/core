@@ -1,4 +1,33 @@
-export const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
+import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { InputText, InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+
+export default {
+    title: 'PrimeNG/Form/InputText/Default',
+    component: InputText,
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'InputText renders a text field to enter data.: https://primeng.org/inputtext'
+            }
+        }
+    },
+    decorators: [
+        moduleMetadata({
+            imports: [InputTextModule, BrowserAnimationsModule, PasswordModule]
+        })
+    ],
+    args: {
+        checked: false
+    }
+} as Meta;
+
+const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
 <div class="flex flex-column gap-2">
     <label htmlFor="username">Username</label>
     <input id="username" pInputText aria-describedby="username-help" placeholder="Placeholder" autocomplete="off" />
@@ -62,18 +91,21 @@ export const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
 </div>
 `;
 
-export const InputTextAreaTemplate = `
-  <textarea pInputTextarea [rows]="5" [cols]="30" placeholder="Some placeholder"></textarea>
-`;
+const Template: Story<InputText> = (props: InputText) => {
+    const template = InputTextTemplate;
 
-export const InputTextAreaTemplateAutoRezise = `
-  <textarea [rows]="5" [cols]="30" pInputTextarea autoResize="autoResize"></textarea>
-`;
+    return {
+        props,
+        template
+    };
+};
 
-export const InputSwitchTemplate = `<p-inputSwitch [(ngModel)]="checked"></p-inputSwitch>`;
+export const Basic: Story = Template.bind({});
 
-export const InputNumberTemplate = `
-  <p-inputNumber [(ngModel)]="val" mode="decimal"></p-inputNumber>
-`;
-
-export const InputMaskTemplate = `<p-inputMask [(ngModel)]="val" mask="99-9999" placeholder="99-9999"></p-inputMask>`;
+Basic.parameters = {
+    docs: {
+        source: {
+            code: InputTextTemplate
+        }
+    }
+};

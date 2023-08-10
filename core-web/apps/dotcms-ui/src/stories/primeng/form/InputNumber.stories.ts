@@ -5,8 +5,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { InputNumberModule } from 'primeng/inputnumber';
 
-import { InputNumberTemplate } from './templates';
-
 export default {
     title: 'PrimeNG/Form/InputText/InputNumber',
     component: InputNumberModule,
@@ -14,7 +12,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'InputNumber is an input component to provide numerical input: https://primefaces.org/primeng/showcase/#/inputnumber'
+                    'InputNumber is an input component to provide numerical input: https://primeng.org/inputnumber'
             }
         }
     },
@@ -27,6 +25,10 @@ export default {
         checked: false
     }
 } as Meta;
+
+export const InputNumberTemplate = `
+  <p-inputNumber [(ngModel)]="val" mode="decimal"></p-inputNumber>
+`;
 
 const Template: Story<{
     checked: boolean;

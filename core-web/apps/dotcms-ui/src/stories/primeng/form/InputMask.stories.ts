@@ -5,8 +5,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { InputMask, InputMaskModule } from 'primeng/inputmask';
 
-import { InputMaskTemplate } from './templates';
-
 export default {
     title: 'PrimeNG/Form/InputText/InputMask',
     component: InputMask,
@@ -14,7 +12,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'InputMask component is used to enter input in a certain format such as numeric, date, currency, email and phone.: https://primefaces.org/primeng/showcase/#/inputmask'
+                    'InputMask component is used to enter input in a certain format such as numeric, date, currency, email and phone.: https://primeng.org/inputmask'
             }
         }
     },
@@ -27,6 +25,8 @@ export default {
         val: ''
     }
 } as Meta;
+
+const InputMaskTemplate = `<p-inputMask [(ngModel)]="val" mask="99-9999" placeholder="99-9999"></p-inputMask>`;
 
 const Template: Story<InputMask> = (props: InputMask) => {
     const template = InputMaskTemplate;

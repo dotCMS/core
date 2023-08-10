@@ -11,7 +11,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'RadioButton is an extension to standard radio button element with theming: https://primefaces.org/primeng/showcase/#/radiobutton'
+                    'RadioButton is an extension to standard radio button element with theming: https://primeng.org/radiobutton'
             }
         }
     },

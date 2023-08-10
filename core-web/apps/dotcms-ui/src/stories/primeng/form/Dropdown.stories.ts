@@ -13,7 +13,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'Dropdown is used to select an item from a list of options: https://primefaces.org/primeng/showcase/#/dropdown'
+                    'Dropdown is used to select an item from a list of options: https://primeng.org/dropdown'
             }
         }
     },
