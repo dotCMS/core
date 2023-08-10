@@ -1,7 +1,7 @@
 export const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
 <div class="flex flex-column gap-2">
     <label htmlFor="username">Username</label>
-    <input id="username" pInputText aria-describedby="username-help" />
+    <input id="username" pInputText aria-describedby="username-help" placeholder="Some Cool Username" autocomplete="off" />
     <small id="username-help">Enter your username to reset your password.</small>
 </div>
 <div class="flex flex-column gap-2">
@@ -11,6 +11,8 @@ export const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
         id="username-error"
         pInputText
         aria-describedby="username-help-error"
+        placeholder="Some Cool Username"
+        autocomplete="off"
     />
     <small id="username-help-error">Please enter a valid username</small>
 </div>
@@ -21,6 +23,8 @@ export const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
         pInputText
         aria-describedby="username-help-disabled"
         disabled
+        placeholder="Disabled"
+        autocomplete="off"
     />
 </div>
 </div>
@@ -28,7 +32,7 @@ export const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
 <div class="flex flex-column gap-3">
 <div class="flex flex-column gap-2">
     <label htmlFor="username">Username</label>
-    <input class="p-inputtext-sm" id="username" pInputText aria-describedby="username-help" />
+    <input class="p-inputtext-sm" id="username" pInputText aria-describedby="username-help" placeholder="Some Cool Username" autocomplete="off" />
     <small id="username-help">Enter your username to reset your password.</small>
 </div>
 <div class="flex flex-column gap-2">
@@ -38,6 +42,8 @@ export const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
         id="username-error"
         pInputText
         aria-describedby="username-help-error"
+        placeholder="Some Cool Username"
+        autocomplete="off"
     />
     <small id="username-help-error">Please enter a valid username</small>
 </div>
@@ -49,6 +55,8 @@ export const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
         pInputText
         aria-describedby="username-help-disabled"
         disabled
+        placeholder="Disabled"
+        autocomplete="off"
     />
 </div>
 </div>

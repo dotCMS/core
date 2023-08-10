@@ -2,7 +2,6 @@
 
 @use "misc";
 
-@use "components/autocomplete";
 @use "components/avatar";
 @use "components/badge";
 @use "components/breadcrumb";
@@ -18,10 +17,8 @@
 @use "components/dynamicdialog";
 @use "components/dropdown";
 @use "components/float-label";
+@use "components/form";
 @use "components/inplace";
-@use "components/input-group";
-@use "components/inputswitch";
-@use "components/inputtext";
 @use "components/listbox";
 @use "components/menu";
 @use "components/message";
