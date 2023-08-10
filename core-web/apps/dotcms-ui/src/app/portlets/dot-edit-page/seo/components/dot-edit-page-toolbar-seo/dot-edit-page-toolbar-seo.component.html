@@ -38,14 +38,14 @@
 
     <div class="lower-toolbar-right w-6">
         <p-checkbox
-            class="flex w-7 dot-edit__what-changed-button"
+            class="flex dot-edit__what-changed-button"
             *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
             [binary]="true"
             [label]="'dot.common.whats.changed' | dm"
             (onChange)="whatschange.emit($event.checked)"
         ></p-checkbox>
         <dot-edit-page-view-as-controller-seo
-            class="flex w-5 gap-2"
+            class="flex gap-2"
             [pageState]="pageState"
             [variant]="variant"
         >

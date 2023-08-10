@@ -14,16 +14,6 @@ import java.util.Optional;
 @QuarkusTest
 public class InstanceCommandTest extends CommandTest {
 
-    @BeforeAll
-    public static void beforeAll() {
-        disableAnsi();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        enableAnsi();
-    }
-
     @BeforeEach
     public void setupTest() throws IOException {
         resetServiceProfiles();
@@ -37,7 +27,7 @@ public class InstanceCommandTest extends CommandTest {
     @Order(2)
     void Test_Command_Instance_Pass_Only_List_Param() {
 
-            final CommandLine commandLine = factory.create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -60,7 +50,7 @@ public class InstanceCommandTest extends CommandTest {
     void Test_Command_Instance_Pass_Activate_Param_No_Profile() {
         final String[] options = {"-act", "--activate"};
         for (final String option : options) {
-            final CommandLine commandLine = factory.create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setErr(out);
@@ -82,7 +72,7 @@ public class InstanceCommandTest extends CommandTest {
         final String instance = "lol";
         final String[] options = {"-act", "--activate"};
         for (final String option : options) {
-            final CommandLine commandLine = factory.create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setErr(out);
@@ -118,7 +108,7 @@ public class InstanceCommandTest extends CommandTest {
 
         final String[] options = {"-act", "--activate"};
         for (final String option : options) {
-            final CommandLine commandLine = factory.create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);

@@ -10,7 +10,6 @@
 
     <dot-language-selector
         [pTooltip]="pageState.viewAs.language.language"
-        [readonly]="!!variant"
         [value]="pageState.viewAs.language"
         (selected)="changeLanguageHandler($event)"
         appendTo="body"
@@ -21,7 +20,6 @@
     <dot-persona-selector
         [disabled]="(dotPageStateService.haveContent$ | async) === false"
         [pageState]="pageState"
-        [readonly]="!!variant"
         (delete)="deletePersonalization($event)"
         (selected)="changePersonaHandler($event)"
     ></dot-persona-selector>
@@ -29,7 +27,6 @@
 
 <ng-template #language>
     <dot-language-selector
-        [readonly]="!!variant"
         [value]="pageState.viewAs.language"
         (selected)="changeLanguageHandler($event)"
     ></dot-language-selector>
