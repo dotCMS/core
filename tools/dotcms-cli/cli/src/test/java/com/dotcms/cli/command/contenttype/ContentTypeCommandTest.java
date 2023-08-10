@@ -26,20 +26,10 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
-import java.util.stream.Stream;
-import javax.inject.Inject;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.wildfly.common.Assert;
-import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
 import java.util.UUID;
 import java.util.stream.Stream;
 import javax.inject.Inject;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
@@ -70,17 +60,18 @@ class ContentTypeCommandTest extends CommandTest {
     void Test_Command_Content_Type_Pull_Option() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
         final CommandLine commandLine = createCommand();
-                final StringWriter writer = new StringWriter();
+        final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "fileAsset", "--verbose", "--workspace", workspace.root().toString());
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    "fileAsset", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             //System.out.println(output);
             final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
             final ContentType contentType = objectMapper.readValue(output, ContentType.class);
             Assertions.assertNotNull(contentType.variable());
-          //  System.out.println(workspace);
+            //  System.out.println(workspace);
         } finally {
             workspaceManager.destroy(workspace);
         }
@@ -94,11 +85,13 @@ class ContentTypeCommandTest extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String contentTypeVarName = "FileAsset";
-            int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, contentTypeVarName, "--format", "YML", "--workspace", workspace.root().toString());
+            int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    contentTypeVarName, "--format", "YML", "--workspace",
+                    workspace.root().toString());
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             System.out.println(output);
-            try{
+            try {
                 final String fileName = String.format("%s.yml", contentTypeVarName);
                 final Path path = Path.of(workspace.contentTypes().toString(), fileName);
                 Assert.assertTrue(Files.exists(path));
@@ -106,7 +99,8 @@ class ContentTypeCommandTest extends CommandTest {
                 final ObjectMapper objectMapper = new YAMLMapperSupplier().get();
                 final ContentType contentType = objectMapper.readValue(bytes, ContentType.class);
                 Assertions.assertNotNull(contentType.variable());
-                status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME, fileName, "--format", "YML", "--workspace", workspace.root().toString());
+                status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                        fileName, "--format", "YML", "--workspace", workspace.root().toString());
                 Assertions.assertEquals(ExitCode.OK, status);
             } finally {
                 workspaceManager.destroy(workspace);
@@ -213,7 +207,8 @@ class ContentTypeCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,  "--interactive=false");
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--interactive=false");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("varName:"));
@@ -229,7 +224,8 @@ class ContentTypeCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME, "--name", "FileAsset", "--page", "0", "--pageSize", "10");
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--name", "FileAsset", "--page", "0", "--pageSize", "10");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("varName:"));
@@ -238,13 +234,14 @@ class ContentTypeCommandTest extends CommandTest {
 
     /**
      * Push CT from a file
+     *
      * @throws IOException
      */
     @Test
     void Test_Push_New_Content_Type_From_File_Then_Remove() throws IOException {
-        final long identifier =  System.currentTimeMillis();
+        final long identifier = System.currentTimeMillis();
 
-        final String varName = "__var__"+identifier;
+        final String varName = "__var__" + identifier;
 
         final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
                 .baseType(BaseContentType.CONTENT)
@@ -258,7 +255,7 @@ class ContentTypeCommandTest extends CommandTest {
                 .folder("SYSTEM_FOLDER")
                 .addFields(
                         ImmutableBinaryField.builder()
-                                .name("__bin_var__"+identifier)
+                                .name("__bin_var__" + identifier)
                                 .fixed(false)
                                 .listed(true)
                                 .searchable(true)
@@ -283,20 +280,23 @@ class ContentTypeCommandTest extends CommandTest {
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
-                final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                final int status = commandLine.execute(ContentTypeCommand.NAME,
+                        ContentTypePush.NAME,
                         jsonFile.getAbsolutePath(), "--workspace", workspace.root().toString());
                 Assertions.assertEquals(ExitCode.OK, status);
                 final String output = writer.toString();
                 System.out.println(output);
             }
 
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeRemove.NAME, varName,
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeRemove.NAME,
+                    varName,
                     "--cli-test", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.OK, status);
 
             //A simple Thread.sleep() could do it too but Sonar strongly recommends we stay away from doing that.
             int count = 0;
-            while (ExitCode.SOFTWARE != commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+            while (ExitCode.SOFTWARE != commandLine.execute(ContentTypeCommand.NAME,
+                    ContentTypePull.NAME,
                     varName, "--workspace", workspace.root().toString())) {
                 System.out.println("Waiting for content type to be removed");
                 count++;
@@ -310,8 +310,10 @@ class ContentTypeCommandTest extends CommandTest {
     }
 
     /**
-     * Given scenario: Despite the number of times the same content type is pulled, it should only be created once
-     * Expected result: The WorkspaceManager should be able to create and destroy a workspace
+     * Given scenario: Despite the number of times the same content type is pulled, it should only
+     * be created once Expected result: The WorkspaceManager should be able to create and destroy a
+     * workspace
+     *
      * @throws IOException
      */
     @Test
@@ -322,9 +324,9 @@ class ContentTypeCommandTest extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String contentTypeVarName = "Image";
-            for (int i=0; i<= 5; i++) {
+            for (int i = 0; i <= 5; i++) {
                 int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
-                contentTypeVarName, "--workspace", workspace.root().toString());
+                        contentTypeVarName, "--workspace", workspace.root().toString());
                 Assertions.assertEquals(ExitCode.OK, status);
                 System.out.println("CT Pulled: " + i);
             }

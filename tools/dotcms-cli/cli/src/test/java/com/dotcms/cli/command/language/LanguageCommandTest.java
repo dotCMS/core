@@ -110,7 +110,7 @@ class LanguageCommandTest extends CommandTest {
         var tempFolder = createTempFolder();
 
         final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
 
@@ -150,7 +150,7 @@ class LanguageCommandTest extends CommandTest {
         var tempFolder = createTempFolder();
 
         final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
 
