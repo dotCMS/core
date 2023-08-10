@@ -26,6 +26,14 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
+import java.util.stream.Stream;
+import javax.inject.Inject;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.wildfly.common.Assert;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 import java.util.UUID;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -39,23 +47,13 @@ import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-public class ContentTypeCommandTest extends CommandTest {
+class ContentTypeCommandTest extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;
 
     @Inject
     WorkspaceManager workspaceManager;
-
-    @BeforeAll
-    public static void beforeAll() {
-        disableAnsi();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        enableAnsi();
-    }
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -71,11 +69,11 @@ public class ContentTypeCommandTest extends CommandTest {
     @Test
     void Test_Command_Content_Type_Pull_Option() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
                 final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "fileAsset", "--workspace", workspace.root().toString());
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "fileAsset", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             //System.out.println(output);
@@ -91,7 +89,7 @@ public class ContentTypeCommandTest extends CommandTest {
     @Test
     void Test_Command_Content_Type_Pull_Then_Push_YML() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -134,7 +132,7 @@ public class ContentTypeCommandTest extends CommandTest {
         final String contentTypeVarName = "FileAsset";
 
         final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
 
@@ -178,7 +176,7 @@ public class ContentTypeCommandTest extends CommandTest {
         final String contentTypeVarName = "FileAsset";
 
         final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
 
@@ -211,7 +209,7 @@ public class ContentTypeCommandTest extends CommandTest {
      */
     @Test
     void Test_Command_Content_List_Option() {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -227,7 +225,7 @@ public class ContentTypeCommandTest extends CommandTest {
      */
     @Test
     void Test_Command_Content_Filter_Option() {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -281,7 +279,7 @@ public class ContentTypeCommandTest extends CommandTest {
         Files.writeString(jsonFile.toPath(), asString);
         final Workspace workspace = workspaceManager.getOrCreate();
         try {
-            final CommandLine commandLine = getFactory().create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -319,7 +317,7 @@ public class ContentTypeCommandTest extends CommandTest {
     @Test
     void Test_Pull_Same_Content_Type_Multiple_Times() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
