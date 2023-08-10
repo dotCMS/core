@@ -191,8 +191,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     scrollToTop(): void {
         this.scrollElement?.scroll({
             top: 0,
-            left: 0,
-            behavior: 'smooth'
+            left: 0
         });
     }
 }
