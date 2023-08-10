@@ -551,7 +551,7 @@ export class DotExperimentsListStore
 
     private getConfigurationOptionLabel(status: DotExperimentStatus): string {
         return status === DotExperimentStatus.DRAFT
-            ? this.dotMessageService.get('Edit')
-            : this.dotMessageService.get('View');
+            ? this.dotMessageService.get('experiments.action.edit')
+            : this.dotMessageService.get('experiments.action.view');
     }
 }
