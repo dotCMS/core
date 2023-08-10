@@ -34,6 +34,12 @@ jobs:
         name: Run cli tests
         working-directory: ./tools/dotcms-cli/
         run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BUILD_ID="${{ github.head_ref }}"
+          else
+            BUILD_ID=$(basename "${{ github.ref }}")
+          fi
+          
           ./mvnw clean verify
           EXIT=$?
           
@@ -45,15 +51,21 @@ jobs:
           
           echo "status=$OUTPUT_STATUS" >> $GITHUB_OUTPUT
           
-          ./mvnw surefire-report:failsafe-report-only 
+          ./mvnw surefire-report:report-only surefire-report:failsafe-report-only  
                
-          RESULTS_PATH=${{ github.workspace }}/tools/dotcms-cli/target/test-results
+          DOT_CLI_PATH=${{ github.workspace }}/tools/dotcms-cli
+          RESULTS_PATH=${DOT_CLI_PATH}/target/test-results
           XML_REPORTS_PATH=${RESULTS_PATH}/xml-reports
           HTML_REPORTS_PATH=${RESULTS_PATH}/html-reports
-          
-          POM_FILE=${{ github.workspace }}/tools/dotcms-cli/pom.xml
+          POM_FILE=${DOT_CLI_PATH}/pom.xml
+          CICD_RES_PATH=${{ github.workspace }}/cicd/resources
                
-          MODULES=$(grep "<module>" $POM_FILE | sed 's/<module>//' | sed 's/<\/module>//')          
+          INDEX_FILE=${HTML_REPORTS_PATH}/index.html
+          mkdir -p ${HTML_REPORTS_PATH}
+          touch ${INDEX_FILE}
+          cat ${CICD_RES_PATH}/cli/cli-results-header.html >> ${INDEX_FILE}
+          
+          MODULES=$(grep "<module>" $POM_FILE | sed 's/<module>//' | sed 's/<\/module>//')
           for module in $MODULES
           do
             mkdir -p ${XML_REPORTS_PATH}/${module}
@@ -61,8 +73,16 @@ jobs:
             cp -r ${module}/target/failsafe-reports ${XML_REPORTS_PATH}/${module}
             mkdir -p ${HTML_REPORTS_PATH}/${module}
             cp -r ${module}/target/site/* ${HTML_REPORTS_PATH}/${module}
+            
+            for report in surefire failsafe
+            do
+              echo "<tr><td>${module}</td><td><a href=\"${module}/site/${report}-report.html\">${report} report</a></td></tr>" >> ${INDEX_FILE}
+            done
           done
+          
+          cat ${CICD_RES_PATH}/cli/cli-results-footer.html >> ${INDEX_FILE}
 
+          echo "BUILD_ID=${BUILD_ID}" >> "$GITHUB_ENV"
           echo "results_location=${XML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
           echo "results_report_location=${HTML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
           
@@ -81,4 +101,5 @@ jobs:
           tests_results_report_location: ${{ steps.run-cli-tests.outputs.results_report_location }} # actual reports made from XML files, probably in HTML format
           tests_results_repo: tools-test-results
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          include: RESULTS
 
