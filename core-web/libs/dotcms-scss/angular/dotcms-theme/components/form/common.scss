@@ -37,3 +37,8 @@
         background: $color-palette-gray-100;
     }
 }
+
+#input-text-area {
+    padding: $spacing-1;
+    min-height: $text-area-min-height;
+}
