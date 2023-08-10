@@ -5,6 +5,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
 
+import { InputSwitchTemplate } from './templates';
+
 export default {
     title: 'PrimeNG/Form/InputSwitch',
     component: InputSwitch,
@@ -25,8 +27,6 @@ export default {
         checked: false
     }
 } as Meta;
-
-const InputSwitchTemplate = `<p-inputSwitch [(ngModel)]="checked"></p-inputSwitch>`;
 
 const Template: Story<InputSwitch> = (props: InputSwitch) => {
     const template = InputSwitchTemplate;

@@ -7,6 +7,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
+import { InputTextAreaTemplate, InputTextAreaTemplateAutoRezise } from './templates';
+
 export default {
     title: 'PrimeNG/Form/InputTextArea',
     component: InputTextareaModule,
@@ -24,14 +26,6 @@ export default {
         })
     ]
 } as Meta;
-
-const InputTextAreaTemplate = `
-  <textarea pInputTextarea [rows]="5" [cols]="30" placeholder="Some placeholder"></textarea>
-`;
-
-const InputTextAreaTemplateAutoRezise = `
-  <textarea [rows]="5" [cols]="30" pInputTextarea autoResize="autoResize"></textarea>
-`;
 
 const Template: Story<never> = (props: never) => {
     const template = InputTextAreaTemplate;
