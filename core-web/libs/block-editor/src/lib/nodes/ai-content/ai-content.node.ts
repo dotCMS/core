@@ -27,10 +27,6 @@ export const AIContentNode = Node.create({
         ];
     },
 
-    renderHTML() {
-        return ['div'];
-    },
-
     addOptions() {
         return {
             inline: false
@@ -38,7 +34,7 @@ export const AIContentNode = Node.create({
     },
 
     inline() {
-        return false;
+        return this.options.inline;
     },
 
     group() {
@@ -47,6 +43,7 @@ export const AIContentNode = Node.create({
 
     addCommands() {
         return {
+            ...this.parent?.(),
             showGeneratedContent:
                 (content?: string) =>
                 ({ commands }) => {
@@ -58,6 +55,10 @@ export const AIContentNode = Node.create({
         };
     },
 
+    renderHTML() {
+        return ['div'];
+    },
+
     addNodeView() {
         return ({ node }) => {
             const dom = document.createElement('div');
@@ -65,6 +66,8 @@ export const AIContentNode = Node.create({
 
             div.contentEditable = 'false';
             div.innerHTML = node.attrs.content || '';
+
+            dom.classList.add('ai-content-container');
             dom.append(div);
 
             return { dom };
