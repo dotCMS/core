@@ -42,3 +42,8 @@
     padding: $spacing-1;
     min-height: $text-area-min-height;
 }
+
+#input-text-extend {
+    @extend #input-text-base;
+    @extend #input-text-states;
+}

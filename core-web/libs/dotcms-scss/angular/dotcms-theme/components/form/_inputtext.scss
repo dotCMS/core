@@ -1,8 +1,7 @@
 @import "common";
 
 .p-inputtext {
-    @extend #input-text-base;
-    @extend #input-text-states;
+    @extend #input-text-extend;
 
     &.p-inputtext-sm {
         @extend #input-text-sm;

@@ -56,7 +56,7 @@
                         input {
                             width: 100%;
                             text-overflow: ellipsis;
-                            @extend #p-inputtext-extend;
+                            @extend #input-text-extend;
                         }
                     }
                 }
