@@ -289,6 +289,33 @@ export class DotExperimentsListStore
         );
     });
 
+    readonly cancelSchedule = this.effect((experiment$: Observable<DotExperiment>) => {
+        return experiment$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
+            switchMap((experiment) =>
+                this.dotExperimentsService.cancelSchedule(experiment.id).pipe(
+                    tapResponse(
+                        () => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.notification.cancel.schedule-title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.notification.cancel.schedule',
+                                    experiment.name
+                                )
+                            });
+                            this.loadExperiments(this.dotExperimentsStore.getPageId$);
+                        },
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                    )
+                )
+            )
+        );
+    });
+
     readonly archiveExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
         return experiment$.pipe(
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
@@ -411,6 +438,48 @@ export class DotExperimentsListStore
         pushPublishEnvironments: DotEnvironment[]
     ): MenuItem[] {
         return [
+            // Go to Configuration Action
+            {
+                id: 'dot-experiments-go-to-configuration',
+                label: this.getConfigurationOptionLabel(experiment.status),
+                visible: AllowedActionsByExperimentStatus['configuration'].includes(
+                    experiment.status
+                ),
+                routerLink: [
+                    '/edit-page/experiments/',
+                    experiment.pageId,
+                    experiment.id,
+                    'configuration'
+                ],
+                queryParamsHandling: 'merge',
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                }
+            },
+            // Cancel Scheduling
+            {
+                id: 'dot-experiments-cancel-scheduling',
+                label: this.dotMessageService.get('experiments.configure.scheduling.cancel'),
+                visible: AllowedActionsByExperimentStatus['cancelSchedule'].includes(
+                    experiment.status
+                ),
+                command: () =>
+                    this.confirmationService.confirm({
+                        key: CONFIGURATION_CONFIRM_DIALOG_KEY,
+                        header: this.dotMessageService.get(
+                            'experiments.configure.scheduling.cancel'
+                        ),
+                        message: this.dotMessageService.get(
+                            'experiments.action.cancel.schedule-confirm'
+                        ),
+                        acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+                        rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                        rejectButtonStyleClass: 'p-button-secondary',
+                        accept: () => this.cancelSchedule(experiment)
+                    })
+            },
             // Delete Action
             {
                 id: 'dot-experiments-delete',
@@ -429,26 +498,6 @@ export class DotExperimentsListStore
                         accept: () => this.deleteExperiment(experiment),
                         key: CONFIGURATION_CONFIRM_DIALOG_KEY
                     })
-            },
-            // Go to Configuration Action
-            {
-                id: 'dot-experiments-go-to-configuration',
-                label: this.dotMessageService.get('experiments.action.configuration'),
-                visible: AllowedActionsByExperimentStatus['configuration'].includes(
-                    experiment.status
-                ),
-                routerLink: [
-                    '/edit-page/experiments/',
-                    experiment.pageId,
-                    experiment.id,
-                    'configuration'
-                ],
-                queryParamsHandling: 'merge',
-                queryParams: {
-                    mode: null,
-                    variantName: null,
-                    experimentId: null
-                }
             },
             // Archive Action
             {
@@ -498,5 +547,11 @@ export class DotExperimentsListStore
                 command: () => this.showAddToBundle(experiment.id)
             }
         ];
+    }
+
+    private getConfigurationOptionLabel(status: DotExperimentStatus): string {
+        return status === DotExperimentStatus.DRAFT
+            ? this.dotMessageService.get('Edit')
+            : this.dotMessageService.get('View');
     }
 }
