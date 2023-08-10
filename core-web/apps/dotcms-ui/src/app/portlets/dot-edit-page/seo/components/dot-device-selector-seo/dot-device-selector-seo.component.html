@@ -19,7 +19,7 @@
                             <div class="device-list-item__content">
                                 <span class="device-list-item__name">{{ option.name }}</span>
                                 <span class="device-list-item__dimensions">
-                                    {{ option.cssHeight }} x {{ option.cssWidth }}
+                                    {{ option.cssHeight | number }} x {{ option.cssWidth | number }}
                                 </span>
                             </div>
                         </button>
@@ -31,14 +31,12 @@
                         *ngFor="let option of options$ | async"
                         data-testId="device-selector-option"
                     >
-                        <button
-                            class="device-list__button"
-                            (click)="change(option); op.toggle($event)"
-                        >
+                        <button class="device-list__button" (click)="change(option)">
                             <div class="device-list-item__content">
-                                <span>{{ option.name }}</span>
+                                <span class="device-list-item__name">{{ option.name }}</span>
                                 <span class="device-list-item__dimensions"
-                                    >{{ option.cssHeight }} x {{ option.cssWidth }}</span
+                                    >{{ option.cssHeight | number }} x
+                                    {{ option.cssWidth | number }}</span
                                 >
                             </div>
                         </button>
@@ -61,7 +59,7 @@
                         *ngFor="let tile of socialMediaTiles"
                     >
                         <i [class]="tile.icon"></i>
-                        {{ tile.label }}
+                        <span class="device-list-item__name">{{ tile.label }}</span>
                     </li>
                 </ul>
             </div>
@@ -77,7 +75,7 @@
                 <ul class="device-list">
                     <li class="device-list-item device-list-item-media">
                         <i class="pi pi-google"></i>
-                        Google
+                        <span class="device-list-item__name">Google</span>
                     </li>
                 </ul>
             </div>
@@ -88,9 +86,3 @@
         </div>
     </div>
 </p-overlayPanel>
-<p-button
-    (click)="op.toggle($event)"
-    icon="pi pi-angle-down"
-    styleClass=" p-button-text"
-    data-testId="device-selector-button"
-></p-button>

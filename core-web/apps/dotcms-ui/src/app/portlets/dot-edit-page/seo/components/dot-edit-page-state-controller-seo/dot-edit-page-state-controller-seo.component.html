@@ -1,18 +1,19 @@
-<p-selectButton
-    class="p-button-tabbed"
-    [(ngModel)]="mode"
-    [options]="options"
-    (onChange)="stateSelectorHandler($event.value)"
-    data-testId="selectButton"
-></p-selectButton>
-
 <dot-device-selector-seo
+    #deviceSelector
     [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
     (selected)="changeDeviceHandler($event)"
     appendTo="body"
     tooltipPosition="bottom"
     tooltipStyleClass="dot-device-selector__dialog"
 ></dot-device-selector-seo>
+
+<dot-tab-buttons
+    [mode]="mode"
+    [options]="options"
+    (openMenu)="deviceSelector.openMenu($event)"
+    (clickOption)="stateSelectorHandler($event.target.value)"
+    data-testId="dot-tabs-buttons"
+></dot-tab-buttons>
 <ng-container *ngIf="!variant">
     <p-inputSwitch
         #locker

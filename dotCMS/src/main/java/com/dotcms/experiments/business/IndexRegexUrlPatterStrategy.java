@@ -27,7 +27,7 @@ public class IndexRegexUrlPatterStrategy implements RegexUrlPatterStrategy {
             final String uriWithoutIndex = htmlPageAsset.getURI().substring(0,
                     htmlPageAsset.getURI().length() - INDEX.length());
 
-            final String uriForRegex = getUriForRegex(uriWithoutIndex) + "(\\/[iI][nN][dD][eE][xX]|\\/)?";
+            final String uriForRegex = getUriForRegex(uriWithoutIndex) + "(\\/index|\\/)?";
             return String.format(REDIRECT_REGEX_TEMPLATE, uriForRegex);
         } catch (DotDataException e) {
             throw new RegexUrlPatterStrategyException(e);

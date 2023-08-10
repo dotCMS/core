@@ -1,7 +1,9 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.WorkspaceMixin;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.ResponseEntityView;
@@ -33,7 +35,7 @@ import picocli.CommandLine;
              "" // empty line left here on purpose to make room at the end
      }
 )
-public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
+public class SitePush extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "push";
 
@@ -130,4 +132,13 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
         return false;
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

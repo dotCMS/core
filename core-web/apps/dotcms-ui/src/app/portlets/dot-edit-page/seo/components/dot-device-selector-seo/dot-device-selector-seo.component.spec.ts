@@ -20,7 +20,8 @@ import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.compone
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-device-selector-seo></dot-device-selector-seo> `
+    template: `<button (click)="op.openMenu($event)" type="text"></button>
+        <dot-device-selector-seo #op></dot-device-selector-seo> `
 })
 class TestHostComponent {}
 
@@ -77,14 +78,13 @@ describe('DotDeviceSelectorSeoComponent', () => {
         component = de.componentInstance;
         TestBed.inject(DotDevicesService);
         spyOn(component, 'getOptions').and.returnValue(of(mockDotDevices));
+
+        fixtureHost.detectChanges();
     });
 
     it('should emit selected device on change', async () => {
-        const selectorButton: DebugElement = de.query(
-            By.css('[data-testId="device-selector-button"]')
-        );
-
-        selectorButton.nativeElement.click();
+        const buttonEl = fixtureHost.debugElement.query(By.css('button')).nativeElement;
+        buttonEl.click();
 
         await fixtureHost.whenStable();
         fixtureHost.detectChanges();
@@ -101,11 +101,9 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should set user devices', async () => {
-        const selectorButton: DebugElement = de.query(
-            By.css('[data-testId="device-selector-button"]')
-        );
+        const buttonEl = fixtureHost.debugElement.query(By.css('button')).nativeElement;
+        buttonEl.click();
 
-        selectorButton.nativeElement.click();
         await fixtureHost.whenStable();
         fixtureHost.detectChanges();
 
@@ -116,28 +114,24 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should open the overlayPanel', () => {
-        const selectorButton: DebugElement = de.query(
-            By.css('[data-testId="device-selector-button"]')
-        );
+        const buttonEl = fixtureHost.debugElement.query(By.css('button')).nativeElement;
+        buttonEl.click();
+
         const devicesSelector: DebugElement = de.query(
             By.css('[data-testId="dot-devices-selector"]')
         );
-
-        selectorButton.nativeElement.click();
 
         fixtureHost.detectChanges();
         expect(devicesSelector).toBeDefined();
     });
 
     it('should close the overlayPanel', () => {
-        const selectorButton: DebugElement = de.query(
-            By.css('[data-testId="device-selector-button"]')
-        );
+        const buttonEl = fixtureHost.debugElement.query(By.css('button')).nativeElement;
+        buttonEl.click();
+
         const devicesSelector: DebugElement = de.query(
             By.css('[data-testId="dot-devices-selector"]')
         );
-
-        selectorButton.nativeElement.click();
 
         fixtureHost.detectChanges();
         expect(devicesSelector).toBeNull();

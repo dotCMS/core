@@ -4,8 +4,6 @@ import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
-import com.dotcms.cli.command.contenttype.ContentTypeCommand;
-import com.dotcms.cli.command.contenttype.ContentTypePull;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
@@ -21,9 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 import javax.inject.Inject;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
@@ -31,21 +27,12 @@ import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-public class LanguageCommandTest extends CommandTest {
+class LanguageCommandTest extends CommandTest {
+
     @Inject
     AuthenticationContext authenticationContext;
     @Inject
     WorkspaceManager workspaceManager;
-
-    @BeforeAll
-    public static void beforeAll() {
-        disableAnsi();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        enableAnsi();
-    }
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -64,11 +51,11 @@ public class LanguageCommandTest extends CommandTest {
     @Test
     void Test_Command_Language_Pull_By_Id() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "1", "--workspace", workspace.root().toString());
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "1", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
@@ -88,11 +75,11 @@ public class LanguageCommandTest extends CommandTest {
     @Test
     void Test_Command_Language_Pull_By_IsoCode() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US", "--workspace", workspace.root().toString());
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
@@ -111,7 +98,7 @@ public class LanguageCommandTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Find() {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -129,7 +116,7 @@ public class LanguageCommandTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Push_byIsoCode() {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -147,7 +134,7 @@ public class LanguageCommandTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Push_byIsoCodeWithoutCountry() {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -166,7 +153,7 @@ public class LanguageCommandTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Push_byFile_JSON() throws IOException {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             //Create a JSON file with the language to push
@@ -191,7 +178,7 @@ public class LanguageCommandTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Push_byFile_YAML() throws IOException {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             //Create a YAML file with the language to push
@@ -223,7 +210,7 @@ public class LanguageCommandTest extends CommandTest {
     @Test
     void Test_Command_Language_Remove_byIsoCode() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -251,14 +238,14 @@ public class LanguageCommandTest extends CommandTest {
     @Test
     void Test_Command_Language_Remove_byId() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             //A language with iso code "es-VE" is pushed (we are validating that the iso code is not case-sensitive)
             commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "es-ve");
             commandLine.setOut(out);
             //we pull the language with iso code "es-VE" to get its id
-            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE", "--workspace", workspace.root().toString());
+            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
@@ -285,7 +272,7 @@ public class LanguageCommandTest extends CommandTest {
     @Test
     void Test_Pull_Same_Language_Multiple_Times() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
