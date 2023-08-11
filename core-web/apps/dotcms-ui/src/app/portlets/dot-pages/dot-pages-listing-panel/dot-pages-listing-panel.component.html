@@ -19,7 +19,7 @@
         [showFirstLastIcon]="false"
         (onLazyLoad)="loadPagesLazy($event)"
         (onRowSelect)="onRowSelect($event)"
-        (onPage)="scrollToTop()"
+        (onPage)="pageChange.emit()"
         selectionMode="single"
         sortField="modDate"
     >
