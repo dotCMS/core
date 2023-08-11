@@ -1,6 +1,7 @@
 import { moduleMetadata } from '@storybook/angular';
 import { Meta, Story } from '@storybook/angular/types-6-0';
 
+import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { RadioButtonModule } from 'primeng/radiobutton';
@@ -17,7 +18,7 @@ export default {
     },
     decorators: [
         moduleMetadata({
-            imports: [RadioButtonModule, BrowserAnimationsModule]
+            imports: [RadioButtonModule, BrowserAnimationsModule, FormsModule]
         })
     ],
     args: {
