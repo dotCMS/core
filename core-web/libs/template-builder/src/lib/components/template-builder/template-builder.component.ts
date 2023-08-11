@@ -105,7 +105,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     @ViewChildren(AddWidgetComponent) addWidget: QueryList<AddWidgetComponent>;
 
-    private scrollDirection: SCROLL_DIRECTION = SCROLL_DIRECTION.NONE;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     public rows$: Observable<DotLayoutBody>;
     public vm$: Observable<DotTemplateBuilderState> = this.store.vm$;
@@ -118,7 +117,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public readonly boxOptions = boxInitialOptions;
     private dotLayout: DotLayout;
 
-    private draggingElement: HTMLElement | null;
+    public draggingElement: HTMLElement | null;
+    public scrollDirection: SCROLL_DIRECTION = SCROLL_DIRECTION.NONE;
 
     grid!: GridStack;
     addBoxIsDragging = false;
