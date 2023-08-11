@@ -1,7 +1,10 @@
 package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.InteractiveOptionMixin;
+import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.Prompt;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import java.util.List;
@@ -19,7 +22,7 @@ import picocli.CommandLine;
                 "Use @|yellow --name|@ in conjunction with @|bold,blue Filter/Search|@ Options."
         }
 )
-public class ContentTypeFind extends AbstractContentTypeCommand implements Callable<Integer> {
+public class ContentTypeFind extends AbstractContentTypeCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "find";
 
@@ -78,6 +81,10 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
             final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.getContentTypes(
                     null, page, null, "variable", null, null, null);
             final List<ContentType> types = responseEntityView.entity();
+            if (types.isEmpty()) {
+                output.info("@|yellow No content-types were returned, Check you have access permissions.|@");
+                break;
+            }
             for (final ContentType contentType : types) {
                 output.info(shortFormat(contentType));
             }
@@ -86,7 +93,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
             }
             page++;
 
-            if(interactiveOption.isInteractive() && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:"))){
+            if(interactiveOption.isInteractive() && !Prompt.yesOrNo(true,"Load next page? y/n:")){
                 break;
             }
 
@@ -110,6 +117,16 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
             }
         }
         return CommandLine.ExitCode.OK;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 
 }

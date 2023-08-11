@@ -1,5 +1,12 @@
 @use "variables" as *;
 
+:host {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    flex-wrap: wrap;
+}
 .message__title,
 .message__subtitle {
     margin: 0;

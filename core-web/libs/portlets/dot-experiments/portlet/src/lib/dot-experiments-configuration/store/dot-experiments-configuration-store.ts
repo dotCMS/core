@@ -926,9 +926,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                         message: this.dotMessageService.get(
                             'experiments.action.stop.delete-confirm'
                         ),
-                        acceptLabel: this.dotMessageService.get('stop'),
+                        acceptLabel: this.dotMessageService.get('experiments.action.end'),
                         rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
-                        rejectButtonStyleClass: 'p-button-secondary',
+                        rejectButtonStyleClass: 'p-button-outlined',
                         accept: () => {
                             this.stopExperiment(experiment);
                         }

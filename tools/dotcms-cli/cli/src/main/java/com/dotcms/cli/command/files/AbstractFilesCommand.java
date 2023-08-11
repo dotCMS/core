@@ -1,20 +1,25 @@
 package com.dotcms.cli.command.files;
 
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.CompletionException;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.Workspace;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
-public abstract class AbstractFilesCommand {
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CompletionException;
 
-    @Inject
-    Logger logger;
+public abstract class AbstractFilesCommand {
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
@@ -25,53 +30,11 @@ public abstract class AbstractFilesCommand {
     @Inject
     protected RestClientFactory clientFactory;
 
-    /**
-     * Handles exceptions thrown during the execution of the "tree" and "ls" commands.
-     *
-     * @param folderPath the path of the folder that was being pulled
-     * @param throwable  the exception that was thrown
-     * @return the exit code to be used for the command line interface
-     */
-    protected int handleFolderTraversalExceptions(String folderPath, Throwable throwable) {
+    @Inject
+    protected WorkspaceManager workspaceManager;
 
-        logger.debug(String.format("Error occurred while processing: [%s] with message: [%s].",
-                folderPath, throwable.getMessage()), throwable);
-
-        if (throwable instanceof CompletionException) {
-
-            Throwable cause = throwable.getCause();
-            if (cause instanceof IllegalArgumentException) {
-
-                output.error(String.format(
-                        "Error occurred while processing: [%s] with message: [%s].",
-                        folderPath, cause.getMessage()));
-                return CommandLine.ExitCode.USAGE;
-            } else {
-
-                output.error(String.format(
-                        "Error occurred while processing: [%s] with message: [%s].",
-                        folderPath, throwable.getMessage()));
-                return CommandLine.ExitCode.SOFTWARE;
-            }
-        } else if (throwable instanceof IllegalArgumentException) {
-
-            output.error(String.format(
-                    "Error occurred while processing: [%s] with message: [%s].",
-                    folderPath, throwable.getMessage()));
-            return CommandLine.ExitCode.USAGE;
-        } else if (throwable instanceof NotFoundException) {
-
-            output.error(String.format(
-                    "Error occurred while processing: [%s] with message: [%s].",
-                    folderPath, throwable.getMessage()));
-            return CommandLine.ExitCode.SOFTWARE;
-        } else {
-            output.error(String.format(
-                    "Error occurred while processing: [%s] with message: [%s].",
-                    folderPath, throwable.getMessage()));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
-    }
+    @Inject
+    Logger logger;
 
     /**
      * Parses the pattern option string into a set of patterns.
@@ -93,5 +56,56 @@ public abstract class AbstractFilesCommand {
 
         return patternsSet;
     }
+
+    /**
+     * Returns the directory where workspace files are stored. If the directory does not exist,
+     * it will be created.
+     *
+     * @param fromFile the file object representing a directory within the workspace, or null if not specified
+     * @return the workspace files directory
+     * @throws IOException if an I/O error occurs while creating the directory
+     */
+    protected File getOrCreateWorkspaceFilesDirectory(final File fromFile) throws IOException {
+
+        String fromPath;
+        if (fromFile == null) {
+            // If the workspace is not specified, we use the current directory
+            fromPath = Paths.get("").toAbsolutePath().normalize().toString();
+        } else {
+            fromPath = fromFile.getAbsolutePath();
+        }
+
+        final Path path = Paths.get(fromPath);
+        final Workspace workspace = workspaceManager.getOrCreate(path);
+        return workspace.files().toFile();
+    }
+
+    /**
+     * Returns the directory where the workspace is.
+     *
+     * @param fromFile the file object representing a directory within the workspace, or null if not specified
+     * @return the workspace files directory
+     * @throws IllegalArgumentException if a valid workspace is not found from the provided path
+     */
+    protected File getWorkspaceDirectory(final File fromFile) {
+
+        String fromPath;
+        if (fromFile == null) {
+            // If the workspace is not specified, we use the current directory
+            fromPath = Paths.get("").toAbsolutePath().normalize().toString();
+        } else {
+            fromPath = fromFile.getAbsolutePath();
+        }
+
+        final Path path = Paths.get(fromPath);
+        final var workspace = workspaceManager.findWorkspace(path);
+
+        if (workspace.isPresent()) {
+            return workspace.get().root().toFile();
+        }
+
+        throw new IllegalArgumentException(String.format("Not valid workspace found from path: [%s]", fromPath));
+    }
+
 
 }

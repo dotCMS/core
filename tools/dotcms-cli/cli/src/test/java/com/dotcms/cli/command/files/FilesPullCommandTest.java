@@ -18,20 +18,10 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
 
 @QuarkusTest
-public class FilesPullCommandTest extends CommandTest {
+class FilesPullCommandTest extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;
-
-    @BeforeAll
-    public static void beforeAll() {
-        disableAnsi();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        enableAnsi();
-    }
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -44,7 +34,7 @@ public class FilesPullCommandTest extends CommandTest {
     @Test
     void Test_Command_Files_Pull_Option_Not_Found() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -57,7 +47,7 @@ public class FilesPullCommandTest extends CommandTest {
     @Test
     void Test_Command_Files_Pull_Option_Invalid_Protocol() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -73,7 +63,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -91,7 +81,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -109,7 +99,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -128,7 +118,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -147,7 +137,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -166,7 +156,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -185,7 +175,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -204,7 +194,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -223,7 +213,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -242,7 +232,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -261,7 +251,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -280,7 +270,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -299,7 +289,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -318,7 +308,7 @@ public class FilesPullCommandTest extends CommandTest {
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -333,7 +323,7 @@ public class FilesPullCommandTest extends CommandTest {
 
     private Path createTempFolder() throws IOException {
 
-        String randomFolderName = "folder-" + UUID.randomUUID().toString();
+        String randomFolderName = "folder-" + UUID.randomUUID();
         return Files.createTempDirectory(randomFolderName);
     }
 
