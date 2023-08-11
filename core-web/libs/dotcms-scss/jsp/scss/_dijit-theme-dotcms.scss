@@ -3,45 +3,45 @@
 // Common
 $field-animation-speed: 0.1s;
 $field-border-color: $color-palette-gray-400;
-$field-border-size: 1px;
+$field-border-size: 1.5px;
 $field-padding: $spacing-1;
 $field-placeholder-color: $color-palette-gray-500;
 
-$field-normal-bgcolor: $color-palette-gray-400;
+$field-normal-bgcolor: $white;
 $field-normal-textcolor: $font-color-base;
-$field-normal-border: solid $field-border-size $color-palette-gray-500;
-$field-normal-arrow-color: $color-palette-gray-700;
+$field-normal-border: solid $field-border-size $color-palette-gray-400;
+$field-normal-arrow-color: $color-palette-primary;
 
-$field-hover-bgcolor: $color-palette-gray-200;
+$field-hover-bgcolor: $white;
 $field-hover-textcolor: $font-color-base;
-$field-hover-border: solid $field-border-size $color-palette-primary;
+$field-hover-border: solid $field-border-size $color-palette-primary-400;
 $field-hover-arrow-color: $color-palette-primary;
 $field-hoverarrow-arrow-color: $color-palette-primary;
-$field-hoverarrow-arrow-border: solid $field-border-size $color-palette-gray-800;
-$field-hoverarrow-arrow-bgcolor: $color-palette-secondary-op-20;
+$field-hoverarrow-arrow-border: solid $field-border-size $color-palette-primary-400;
+$field-hoverarrow-arrow-bgcolor: $white;
 
 $field-active-bgcolor: $white;
 $field-active-textcolor: $font-color-base;
 $field-active-border: $field-hover-border;
 $field-active-arrow-color: $color-palette-primary;
 $field-activearrow-arrow-color: $white;
-$field-activearrow-arrow-border: solid $field-border-size $color-palette-primary;
-$field-activearrow-arrow-bgcolor: $color-palette-primary;
+$field-activearrow-arrow-border: solid $field-border-size $color-palette-primary-400;
+$field-activearrow-arrow-bgcolor: $white;
 
-$field-disabled-bgcolor: $white;
-$field-disabled-textcolor: $color-palette-gray-500;
-$field-disabled-border: solid $field-border-size #e3e4e6;
-$field-disabled-arrow-color: $color-palette-gray-500;
+$field-disabled-bgcolor: $color-palette-gray-100;
+$field-disabled-textcolor: $color-palette-gray-700;
+$field-disabled-border: solid $field-border-size $color-palette-gray-200;
+$field-disabled-arrow-color: $color-palette-gray-700;
 
-$field-focused-bgcolor: $color-palette-gray-400;
+$field-focused-bgcolor: $white;
 $field-focused-textcolor: $font-color-base;
-$field-focused-border: solid 2px $color-palette-primary;
+$field-focused-border: solid $field-border-size $color-palette-primary-400;
 $field-focused-arrow-color: $color-palette-primary;
 $field-focusedarrow-arrow-color: $color-palette-primary;
-$field-focusedarrow-arrow-border: solid $field-border-size $color-palette-primary;
-$field-focusedarrow-arrow-bgcolor: $field-hoverarrow-arrow-bgcolor;
+$field-focusedarrow-arrow-border: solid $field-border-size $color-palette-primary-400;
+$field-focusedarrow-arrow-bgcolor: $white;
 
-$field-error-border: solid 1px $error;
+$field-error-border: solid $field-border-size $color-alert-red;
 
 // Button
 

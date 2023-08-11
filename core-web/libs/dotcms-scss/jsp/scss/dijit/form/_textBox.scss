@@ -45,6 +45,7 @@
     &Focused {
         border: $textbox-focused-border;
         background-color: $textbox-focused-bgcolor;
+        @include field-focus;
 
         .dijitInputInner {
             color: $textbox-focused-textcolor;
