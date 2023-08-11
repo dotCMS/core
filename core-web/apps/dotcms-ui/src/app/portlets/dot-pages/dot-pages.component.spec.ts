@@ -375,7 +375,7 @@ describe('DotPagesComponent', () => {
     });
 
     it('should call scrollToTop method from DotPagesListingPanel', () => {
-        const elem = de.query(By.css('dot-pages-listing-panel'));
+        const elem = de.query(By.css('[data-testId="pages-listing-panel"]'));
         elem.triggerEventHandler('pageChange');
 
         expect(component.scrollToTop).toHaveBeenCalled();
