@@ -164,6 +164,7 @@ public class SessionMonitor implements ServletRequestListener,
             }
             if (UtilMethods.isSet(userId) && !UserAPI.CMS_ANON_USER_ID.equalsIgnoreCase(userId)) {
                 session.setAttribute(DOT_CLUSTER_SESSION, true);
+                Logger.info(this, "!!!!! dotCMS has recognized this Session and added the DOT_CLUSTER_SESSION attribute !!!!!");
             }
         }
         event.getServletContext().setAttribute(WebKeys.USER_SESSIONS, this);
