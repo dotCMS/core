@@ -34,6 +34,23 @@ const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
     <small id="username-help">Enter your username to reset your password.</small>
 </div>
 <div class="flex flex-column gap-2">
+    <label htmlFor="username-icon-right">Username</label>
+    <span class="p-input-icon-right" style="width:fit-content;">
+        <i class="pi pi-times"></i>
+        <input id="username-icon-right" pInputText aria-describedby="username-icon-right-help" placeholder="Placeholder" autocomplete="off" />
+    </span>
+    <small id="username-icon-right-help">Enter your username to reset your password.</small>
+</div>
+<div class="flex flex-column gap-2">
+    <label htmlFor="username-icon-right-double">Username</label>
+    <span class="p-input-icon-right" style="width:fit-content;">
+        <i class="pi pi-times"></i>
+        <i class="pi pi-search"></i>
+        <input id="username-icon-right-double" pInputText aria-describedby="username-icon-right-double-help" placeholder="Placeholder" autocomplete="off" />
+    </span>
+    <small id="username-icon-right-double-help">Enter your username to reset your password.</small>
+</div>
+<div class="flex flex-column gap-2">
     <label htmlFor="username-error">Username</label>
     <input
         class="ng-invalid ng-dirty"
@@ -63,6 +80,23 @@ const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
     <label htmlFor="username">Username</label>
     <input class="p-inputtext-sm" id="username" pInputText aria-describedby="username-help" placeholder="Placeholder" autocomplete="off" />
     <small id="username-help">Enter your username to reset your password.</small>
+</div>
+<div class="flex flex-column gap-2">
+    <label htmlFor="username-icon-right">Username</label>
+    <span class="p-input-icon-right" style="width:fit-content;">
+        <i class="pi pi-times"></i>
+        <input id="username-icon-right" class="p-inputtext-sm" pInputText aria-describedby="username-icon-right-help" placeholder="Placeholder" autocomplete="off" />
+    </span>
+    <small id="username-icon-right-help">Enter your username to reset your password.</small>
+</div>
+<div class="flex flex-column gap-2">
+    <label htmlFor="username-icon-right-double">Username</label>
+    <span class="p-input-icon-right" style="width:fit-content;">
+        <i class="pi pi-times"></i>
+        <i class="pi pi-search"></i>
+        <input id="username-icon-right-double" class="p-inputtext-sm" pInputText aria-describedby="username-icon-right-double-help" placeholder="Placeholder" autocomplete="off" />
+    </span>
+    <small id="username-icon-right-double-help">Enter your username to reset your password.</small>
 </div>
 <div class="flex flex-column gap-2">
     <label htmlFor="username-error">Username</label>
