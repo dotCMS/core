@@ -51,7 +51,10 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Output() selected = new EventEmitter<DotDevice>();
     @ViewChild('op') overlayPanel: OverlayPanel;
     previewUrl: string;
-    protected readonly linkToAddDevice = '/c/c_Devices';
+    protected linkToAddDevice = '/c/content';
+    protected linkToEditDeviceQueryParams = {
+        devices: null
+    };
 
     options$: Observable<DotDevice[]>;
     socialMediaTiles = [
@@ -144,7 +147,11 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     public getOptions(): Observable<DotDevice[]> {
         return this.dotDevicesService.get().pipe(
             take(1),
-            mergeMap((devices: DotDevice[]) => devices),
+            mergeMap((devices: DotDevice[]) => {
+                this.linkToEditDeviceQueryParams.devices = devices[0].stInode;
+
+                return devices;
+            }),
             filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
             toArray()
         );

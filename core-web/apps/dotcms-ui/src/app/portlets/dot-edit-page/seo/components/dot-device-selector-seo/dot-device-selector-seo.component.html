@@ -9,7 +9,11 @@
                 <h3 class="dot-device-selector__header-title">
                     {{ 'editpage.device.selector.title' | dm }}
                 </h3>
-                <a [routerLink]="linkToAddDevice" data-testId="dot-device-link-add">
+                <a
+                    [routerLink]="linkToAddDevice"
+                    [queryParams]="linkToEditDeviceQueryParams"
+                    data-testId="dot-device-link-add"
+                >
                     <p-button
                         icon="pi pi-plus"
                         styleClass="p-button-rounded p-button-text"

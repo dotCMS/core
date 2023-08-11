@@ -148,6 +148,6 @@ describe('DotDeviceSelectorSeoComponent', () => {
         fixtureHost.detectChanges();
 
         const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
-        expect(link.properties.href).toContain('/c/c_Devices');
+        expect(link.properties.href).toContain('/c/content');
     });
 });
