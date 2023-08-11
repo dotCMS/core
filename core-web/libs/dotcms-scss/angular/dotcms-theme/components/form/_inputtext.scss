@@ -18,7 +18,36 @@
         color: $black;
     }
 
-    &.p-dropdown-filter {
+    &.p-dropdown-filter,
+    &.p-autocomplete-input {
         color: $black;
+    }
+}
+
+.p-input-icon-right {
+    i {
+        color: $color-palette-primary;
+        cursor: pointer;
+        right: $spacing-1;
+    }
+    &:has(.p-inputtext.p-inputtext-sm) {
+        i {
+            font-size: $font-size-sm;
+            // 1 rem is the main font size, so we need to calculate the difference between the main font size and the small font size
+            // and then subtract that from the top margin (setted by primeNG) to keep the icon vertically centered on small version
+            margin-top: calc($font-size-md - $font-size-sm - $spacing-1);
+        }
+    }
+
+    i:nth-of-type(1) {
+        right: $spacing-1;
+    }
+
+    i:nth-of-type(2) {
+        right: $spacing-5;
+    }
+
+    .p-inputtext {
+        padding-right: $spacing-6;
     }
 }
