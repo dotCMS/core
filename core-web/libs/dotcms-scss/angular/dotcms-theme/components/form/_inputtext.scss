@@ -1,3 +1,4 @@
+@use "variables" as *;
 @import "common";
 
 .p-inputtext {
@@ -9,5 +10,15 @@
 
     &.p-inputtextarea {
         @extend #input-text-area;
+    }
+
+    &.p-dropdown-label,
+    &.p-autocomplete-multiple-container {
+        height: unset; // Some components use input text underneath but they have their own height
+        color: $black;
+    }
+
+    &.p-dropdown-filter {
+        color: $black;
     }
 }
