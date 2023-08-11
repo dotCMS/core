@@ -38,7 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class PushServiceTest {
+class PushServiceIntegrationTest {
 
     @Inject
     AuthenticationContext authenticationContext;

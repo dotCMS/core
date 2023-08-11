@@ -43,7 +43,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class PullServiceTest {
+class PullServiceIntegrationTest {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;
