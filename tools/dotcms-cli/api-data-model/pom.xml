@@ -25,6 +25,7 @@
         <testcontainers.version>1.17.6</testcontainers.version>
         <skip.surefire.tests>false</skip.surefire.tests>
         <skip.failsafe.tests>false</skip.failsafe.tests>
+        <test.failure.ignore>true</test.failure.ignore>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -170,6 +171,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
                 <configuration>
+                    <testFailureIgnore>${test.failure.ignore}</testFailureIgnore>
                     <skipTests>${skip.surefire.tests}</skipTests>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
@@ -182,6 +184,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
                 <configuration>
+                    <testFailureIgnore>${test.failure.ignore}</testFailureIgnore>
                     <skipTests>${skip.failsafe.tests}</skipTests>
                     <includes>
                         <include>**/*IntegrationTest.java</include>

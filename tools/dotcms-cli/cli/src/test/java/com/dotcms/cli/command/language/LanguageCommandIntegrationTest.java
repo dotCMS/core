@@ -275,7 +275,7 @@ class LanguageCommandIntegrationTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final String lang = "en-US";
+            final String lang = "en-US".toLowerCase();
             for (int i=0; i<= 5; i++) {
                 final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, lang, "--workspace", workspace.root().toString());
                 Assertions.assertEquals(CommandLine.ExitCode.OK, status);
@@ -284,7 +284,7 @@ class LanguageCommandIntegrationTest extends CommandTest {
 
             final String fileName = String.format("%s.json", lang);
             final Path path = Path.of(workspace.languages().toString(), fileName);
-            Assertions.assertTrue(Files.exists(path));
+            Assertions.assertTrue(Files.exists(path),String.format("The file [%s] should exist", path));
 
             try (Stream<Path> walk = Files.walk(workspace.languages())) {
                 long count = walk.filter(p -> Files.isRegularFile(p) && p.getFileName().toString()
