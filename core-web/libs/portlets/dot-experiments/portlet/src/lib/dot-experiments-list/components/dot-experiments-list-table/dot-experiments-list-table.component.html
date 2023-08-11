@@ -51,10 +51,7 @@
 </div>
 
 <ng-template #noExperimentsFilteredTpl>
-    <dot-experiments-empty-experiments
-        [showButton]="false"
-        description="{{ 'experimentspage.not.experiments.found.filtered' | dm }}"
-    />
+    <dot-empty-container [configuration]="emptyConfiguration" [hideContactUsLink]="true" />
 </ng-template>
 
 <p-confirmPopup />
