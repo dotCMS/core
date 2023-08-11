@@ -13,9 +13,7 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
@@ -34,16 +32,6 @@ class SiteCommandIntegrationTest extends CommandTest {
     @Inject
     WorkspaceManager workspaceManager;
 
-    @BeforeAll
-    public static void beforeAll() {
-        disableAnsi();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        enableAnsi();
-    }
-
     @BeforeEach
     public void setupTest() throws IOException {
         resetServiceProfiles();
@@ -58,7 +46,7 @@ class SiteCommandIntegrationTest extends CommandTest {
      */
     @Test
     void Test_Command_Current_Site() {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -75,7 +63,7 @@ class SiteCommandIntegrationTest extends CommandTest {
      */
     @Test
     void Test_Command_Site_List_All() {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -92,7 +80,7 @@ class SiteCommandIntegrationTest extends CommandTest {
      */
     @Test
     void Test_Command_Site_Find_By_Name() {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -113,7 +101,7 @@ class SiteCommandIntegrationTest extends CommandTest {
 
         final Workspace workspace = workspaceManager.getOrCreate();
         final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -146,7 +134,7 @@ class SiteCommandIntegrationTest extends CommandTest {
      */
     @Test
     void Test_Command_Copy() {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -166,7 +154,7 @@ class SiteCommandIntegrationTest extends CommandTest {
     void Test_Command_Create_Then_Pull_Then_Push() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
         final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -195,7 +183,7 @@ class SiteCommandIntegrationTest extends CommandTest {
 
             Assertions.assertTrue(output.contains("archived successfully."));
             Assertions.assertTrue(output.contains("removed successfully."));
-            Assertions.assertTrue(output.contains("Failed pulling Site:"));
+            Assertions.assertTrue(output.contains("404"));
 
         } finally {
             workspaceManager.destroy(workspace);
@@ -221,7 +209,7 @@ class SiteCommandIntegrationTest extends CommandTest {
 
         final Path path = Files.createTempFile("test", "json");
         Files.write(path, siteDescriptor.getBytes());
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -242,7 +230,7 @@ class SiteCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Pull_Same_Site_Multiple_Times() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);

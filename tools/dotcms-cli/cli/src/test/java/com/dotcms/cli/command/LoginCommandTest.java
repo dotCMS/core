@@ -4,9 +4,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -14,17 +12,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-public class LoginCommandTest extends CommandTest {
-
-    @BeforeAll
-    public static void beforeAll() {
-        disableAnsi();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        enableAnsi();
-    }
+class LoginCommandTest extends CommandTest {
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -37,7 +25,7 @@ public class LoginCommandTest extends CommandTest {
     @Test
     @Order(1)
     void Test_Command_Login_No_Params()  {
-        final CommandLine commandLine = factory.create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try(PrintWriter out = new PrintWriter(writer)){
             commandLine.setErr(out);
@@ -64,7 +52,7 @@ public class LoginCommandTest extends CommandTest {
         };
 
         for (final String [] option:options) {
-            final CommandLine commandLine = factory.create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try(PrintWriter out = new PrintWriter(writer)){
                 commandLine.setOut(out);
@@ -91,7 +79,7 @@ public class LoginCommandTest extends CommandTest {
 
         for (final String [] option:options) {
 
-            final CommandLine commandLine = factory.create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try(PrintWriter out = new PrintWriter(writer)){
                 commandLine.setErr(out);
@@ -99,7 +87,7 @@ public class LoginCommandTest extends CommandTest {
                 Assertions.assertEquals(ExitCode.SOFTWARE, status);
                 final String output = writer.toString();
                 Assertions.assertTrue(output.contains("[ERROR]"));
-                Assertions.assertTrue(output.contains("Unable to login."));
+                Assertions.assertTrue(output.contains("HTTP 401 Unauthorized: Authentication failed or Permission is denied"));
             }
         }
 

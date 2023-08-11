@@ -19,30 +19,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 import javax.inject.Inject;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-public class LanguageCommandIntegrationTest extends CommandTest {
+class LanguageCommandIntegrationTest extends CommandTest {
     @Inject
     AuthenticationContext authenticationContext;
     @Inject
     WorkspaceManager workspaceManager;
-
-    @BeforeAll
-    public static void beforeAll() {
-        disableAnsi();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        enableAnsi();
-    }
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -61,11 +49,11 @@ public class LanguageCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Language_Pull_By_Id() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "1", "--workspace", workspace.root().toString());
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "1", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
@@ -85,11 +73,11 @@ public class LanguageCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Language_Pull_By_IsoCode() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US", "--workspace", workspace.root().toString());
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
@@ -108,7 +96,7 @@ public class LanguageCommandIntegrationTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Find() {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -126,7 +114,7 @@ public class LanguageCommandIntegrationTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Push_byIsoCode() {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -144,7 +132,7 @@ public class LanguageCommandIntegrationTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Push_byIsoCodeWithoutCountry() {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -163,7 +151,7 @@ public class LanguageCommandIntegrationTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Push_byFile_JSON() throws IOException {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             //Create a JSON file with the language to push
@@ -188,7 +176,7 @@ public class LanguageCommandIntegrationTest extends CommandTest {
      */
     @Test
     void Test_Command_Language_Push_byFile_YAML() throws IOException {
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             //Create a YAML file with the language to push
@@ -220,7 +208,7 @@ public class LanguageCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Language_Remove_byIsoCode() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -248,14 +236,14 @@ public class LanguageCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Language_Remove_byId() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             //A language with iso code "es-VE" is pushed (we are validating that the iso code is not case-sensitive)
             commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "es-ve");
             commandLine.setOut(out);
             //we pull the language with iso code "es-VE" to get its id
-            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE", "--workspace", workspace.root().toString());
+            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
@@ -282,11 +270,11 @@ public class LanguageCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Pull_Same_Language_Multiple_Times() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final String lang = "en-US".toLowerCase();
+            final String lang = "en-US";
             for (int i=0; i<= 5; i++) {
                 final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, lang, "--workspace", workspace.root().toString());
                 Assertions.assertEquals(CommandLine.ExitCode.OK, status);
@@ -295,7 +283,7 @@ public class LanguageCommandIntegrationTest extends CommandTest {
 
             final String fileName = String.format("%s.json", lang);
             final Path path = Path.of(workspace.languages().toString(), fileName);
-            Assertions.assertTrue(Files.exists(path),String.format("The file [%s] should exist", path));
+            Assert.assertTrue(Files.exists(path));
 
             try (Stream<Path> walk = Files.walk(workspace.languages())) {
                 long count = walk.filter(p -> Files.isRegularFile(p) && p.getFileName().toString()

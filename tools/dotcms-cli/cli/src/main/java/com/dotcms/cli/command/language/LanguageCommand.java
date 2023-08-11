@@ -1,5 +1,6 @@
 package com.dotcms.cli.command.language;
 
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import java.util.List;
@@ -28,7 +29,7 @@ import picocli.CommandLine;
  * Super command for language operations
  * @author nollymar
  */
-public class LanguageCommand implements Callable<Integer> {
+public class LanguageCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "language";
     static final String ALIAS = "lang";
@@ -47,9 +48,19 @@ public class LanguageCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
+        output.throwIfUnmatchedArguments(spec.commandLine());
         spec.commandLine().usage(System.out);
         output.info("Listing languages (default action)");
         return spec.commandLine().execute(NAME, LanguageFind.NAME);
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

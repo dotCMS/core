@@ -16,20 +16,10 @@ import java.util.Optional;
 
 
 @QuarkusTest
-public class StatusCommandTest extends CommandTest {
+class StatusCommandTest extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;
-
-    @BeforeAll
-    public static void beforeAll() {
-        disableAnsi();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        enableAnsi();
-    }
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -51,7 +41,7 @@ public class StatusCommandTest extends CommandTest {
         final Optional<ServiceBean> selected = serviceManager.selected();
         Assertions.assertTrue(selected.isEmpty());
 
-        final CommandLine commandLine = factory.create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -72,7 +62,7 @@ public class StatusCommandTest extends CommandTest {
 
         resetServiceProfiles();
 
-        final CommandLine commandLine = factory.create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -99,7 +89,7 @@ public class StatusCommandTest extends CommandTest {
                         CredentialsBean.builder().user(user).token(token.toCharArray()).build())
                 .build());
 
-        final CommandLine commandLine = factory.create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -132,7 +122,7 @@ public class StatusCommandTest extends CommandTest {
         final Optional<ServiceBean> selected = serviceManager.selected();
         Assertions.assertTrue(selected.isPresent());
 
-        final CommandLine commandLine = factory.create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);

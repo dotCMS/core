@@ -21,16 +21,6 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Inject
     AuthenticationContext authenticationContext;
 
-    @BeforeAll
-    public static void beforeAll() {
-        disableAnsi();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        enableAnsi();
-    }
-
     @BeforeEach
     public void setupTest() throws IOException {
         resetServiceProfiles();
@@ -42,7 +32,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Invalid_Protocol() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -55,7 +45,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Valid_Protocol() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -68,7 +58,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Valid_Protocol2() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -81,7 +71,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Exclude_Empty() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -95,7 +85,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Exclude_Empty2() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -109,7 +99,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Folders() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -123,7 +113,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Folders2() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -137,7 +127,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Folders3() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -151,7 +141,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Folders4() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -165,7 +155,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Folders_Missing_Parameter() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -179,7 +169,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Folders_Missing_Parameter2() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -193,7 +183,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Assets() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -207,7 +197,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Assets2() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -221,7 +211,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Assets3() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -235,7 +225,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Assets4() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -249,7 +239,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Assets_Missing_Parameter() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -263,7 +253,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Assets_Missing_Parameter2() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -277,7 +267,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Folders() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -291,7 +281,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Folders2() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -305,7 +295,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Folders3() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -319,7 +309,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Folders4() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -333,7 +323,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Folders_Missing_Parameter() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -347,7 +337,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Folders_Missing_Parameter2() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -361,7 +351,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Assets() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -375,7 +365,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Assets2() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -389,7 +379,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Assets3() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -403,7 +393,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Assets4() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -417,7 +407,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Assets_Missing_Parameter() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
@@ -431,7 +421,7 @@ public class FilesTreeCommandIntegrationTest extends CommandTest {
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Assets_Missing_Parameter2() {
 
-        final CommandLine commandLine = getFactory().create();
+        final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);

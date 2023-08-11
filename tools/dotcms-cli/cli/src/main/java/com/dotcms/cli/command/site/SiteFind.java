@@ -1,13 +1,15 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.InteractiveOptionMixin;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.Site;
 import java.util.List;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
-import org.apache.commons.lang3.BooleanUtils;
+import com.dotcms.cli.common.Prompt;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -19,7 +21,7 @@ import picocli.CommandLine;
              "" // This is needed to add a new line after the description.
     }
 )
-public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
+public class SiteFind extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
     static final String NAME = "find";
 
     static class FilterOptions {
@@ -70,6 +72,10 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
             final ResponseEntityView<List<Site>> response = siteAPI.getSites(null, null, live, false, page, pageSize);
 
             final List<Site> sites = response.entity();
+            if (sites.isEmpty()) {
+                output.info("@|yellow No sites were returned, Check you have access permissions.|@");
+                break;
+            }
 
             for (final Site site : sites) {
                 output.info(shortFormat(site));
@@ -92,7 +98,7 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
                 }
                 page++;
             }
-            if(interactiveOption.isInteractive() && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:" ))){
+            if(interactiveOption.isInteractive() && !Prompt.yesOrNo(true,"Load next page? y/n: ")){
                 break;
             }
         }
@@ -109,4 +115,16 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
 
         return CommandLine.ExitCode.OK;
     }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
+
+
 }
