@@ -219,6 +219,11 @@
             initialWidth : '100%',
             autoHeight : true,
             escapeHTMLInData : false,
+			onClick: function(event) {
+				if (event.dispatch !== 'doclick') {
+					grid.selection.clear();
+				}
+			},
             structure : layout,
             plugins : {
                 pagination : {
@@ -238,6 +243,28 @@
         dojo.query("#catHolder").addClass('view-categories__categories-list');
     }
 
+	function onSelectedCategoryRow(event) {
+		var selectedItems = grid.selection.selected.filter(item => item).length;
+		var perPage = grid.rowsPerPage;
+		var totalCats = grid.store._numRows;
+		document.getElementById("fullCommand").value = "false";
+		if(selectedItems === perPage) {
+			var html = '' +
+					'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "all")) %> ' + selectedItems + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "categories-on-this-page-are-selected")) %>';
+			if (perPage < totalCats) {
+				html += ' <a href="javascript: selectAllCategories()" style="text-decoration: underline;"> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Select-all" )) %> ' + totalCats + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "category-s" )) %>.</a>';
+			}
+			dojo.byId("warningDiv").innerHTML = html;
+		} else {
+			dojo.byId("warningDiv").innerHTML = '';
+		}
+	}
+	function bindGridEvents() {
+		dojo.connect(grid.selection, 'onSelected', onSelectedCategoryRow)
+		dojo.connect(grid.selection, 'onDeselected', onSelectedCategoryRow)
+		// when Select All checkbox is changed
+		dojo.connect(grid.rowSelectCell, 'toggleAllSelection', onSelectedCategoryRow)
+	}
 
 
     dojo.addOnLoad(function() {
@@ -257,29 +284,10 @@
         createStore();
         createGrid();
         grid.startup();
+		bindGridEvents();
 
         dojo.connect(dijit.byId("add_category_dialog"), "hide", function (evt) {
             dojo.byId("savedMessage").innerHTML = "";
-        });
-
-        dojo.connect(dijit.byId("catHolder_rowSelector_-1"), "onclick", function (evt) {
-            var selectedItems = grid.selection.getSelected();
-            var perPage = grid.rowsPerPage;
-            var totalCats = grid.store._numRows;
-
-            if(selectedItems.length>1) {
-
-                var html = '' +
-                    '   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "all")) %> ' + selectedItems.length + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "categories-on-this-page-are-selected")) %>';
-                if (perPage < totalCats) {
-                    html += ' <a href="javascript: selectAllCategories()" style="text-decoration: underline;"> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Select-all" )) %> ' + totalCats + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "category-s" )) %>.</a>';
-                }
-                dojo.byId("warningDiv").innerHTML = html;
-            } else if(selectedItems.length==1){
-                dojo.byId("warningDiv").innerHTML = '';
-            } else {
-                dojo.byId("warningDiv").innerHTML = '';
-            }
         });
     });
 
@@ -311,6 +319,7 @@
         createStore(params);
         createGrid();
         grid.startup();
+		bindGridEvents();
 
         if(!importing) {
             dojo.hash(params);
@@ -322,6 +331,7 @@
         createStore(params);
         createGrid();
         grid.startup();
+		bindGridEvents();
     }
 
     function showEditButtonsRow() {
@@ -598,8 +608,9 @@
 
         var items = grid.selection.getSelected();
         var full = dojo.byId("fullCommand").value;
+		var allItemsOnFirstPageSelected = grid.selection.selected.filter(item => item).length === grid.rowsPerPage;
 
-        if(full=="true") {
+        if(full=="true" && allItemsOnFirstPageSelected) {
             deleteFunction = function() {
                 var dia = dijit.byId('dotDeleteCategoriesDialog');
                 dia.show();

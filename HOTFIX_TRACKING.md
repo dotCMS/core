@@ -159,3 +159,5 @@ This maintenance release includes the following code fixes:
 133. https://github.com/dotCMS/core/issues/23948 : Stop redirecting all BE page traffic to edit mode #23948
 
 **Release-22.03.9**
+
+134. https://github.com/dotCMS/core/issues/20400 : Using 'select all' on categories before deleting will delete even deselected items #20400
