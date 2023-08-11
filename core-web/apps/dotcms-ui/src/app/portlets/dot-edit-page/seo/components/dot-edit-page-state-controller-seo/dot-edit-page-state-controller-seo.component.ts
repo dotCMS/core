@@ -71,6 +71,7 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
     @Input() pageState: DotPageRenderState;
     @Output() modeChange = new EventEmitter<DotPageMode>();
     @Input() variant: DotVariantData | null = null;
+    @Input() apiLink: string;
 
     lock: boolean;
     lockWarn = false;

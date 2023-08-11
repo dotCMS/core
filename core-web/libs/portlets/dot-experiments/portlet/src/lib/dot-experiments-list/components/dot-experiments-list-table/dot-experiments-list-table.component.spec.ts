@@ -140,6 +140,20 @@ describe('DotExperimentsListTableComponent', () => {
             expect(spectator.query(byTestId('experiment-row__modDate'))).toHaveText('1 hour ago');
         });
 
+        it('should emit action when a row is clicked', () => {
+            jest.spyOn(spectator.component.goToContainer, 'emit');
+            const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                { status: DotExperimentStatus.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] }
+            ];
+
+            spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
+
+            spectator.click(byTestId('experiment-row'));
+            expect(spectator.component.goToContainer.emit).toHaveBeenCalledWith(
+                DRAFT_EXPERIMENT_MOCK
+            );
+        });
+
         describe('Actions icons', () => {
             it('should has the MenuItems rendered as action of the row', () => {
                 const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
