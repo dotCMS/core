@@ -14,8 +14,6 @@
     }
 
     &EditBoxDisplayMode {
-        transition: all $field-animation-speed;
-
         &Hover {
             border-radius: 2px;
             border: solid $inlineeditbox-hover-border-size $inlineeditbox-hover-border-color;
