@@ -125,9 +125,13 @@
 
 
     if (!InodeUtils.isSet(structureSelected)) {
-
         structureSelected = "catchall";
+    }
 
+    String devices = (String) request.getParameter("devices");
+
+    if (devices != null) {
+        structureSelected = devices;
     }
 
 

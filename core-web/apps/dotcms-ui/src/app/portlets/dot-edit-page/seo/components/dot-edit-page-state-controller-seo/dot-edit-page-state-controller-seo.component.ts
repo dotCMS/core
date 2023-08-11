@@ -33,7 +33,7 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotTabButtonsComponent, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 
@@ -61,7 +61,8 @@ enum DotConfirmationType {
         TooltipModule,
         ButtonModule,
         DotDeviceSelectorSeoComponent,
-        DotEditPageLockInfoSeoComponent
+        DotEditPageLockInfoSeoComponent,
+        DotTabButtonsComponent
     ]
 })
 export class DotEditPageStateControllerSeoComponent implements OnChanges {
@@ -70,6 +71,7 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
     @Input() pageState: DotPageRenderState;
     @Output() modeChange = new EventEmitter<DotPageMode>();
     @Input() variant: DotVariantData | null = null;
+    @Input() apiLink: string;
 
     lock: boolean;
     lockWarn = false;
