@@ -2648,16 +2648,21 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final Experiment experiment = new ExperimentDataGen().page(htmlPageAsset).nextPersisted();
         APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
 
-        final Contentlet contentlet = APILocator.getContentletAPI()
-                .find(htmlPageAsset.getInode(), APILocator.systemUser(), false);
         try {
-            APILocator.getContentletAPI().unpublish(contentlet, APILocator.systemUser(), false);
-            throw new AssertionError("Should throw an exception");
-        } catch (RunningExperimentUnpublishException e) {
-            final String expectedMessage = String.format("Cannot unpublish a Page %s because it has a RUNNING Experiment: %s",
-                    htmlPageAsset.getIdentifier(), experiment.id().get());
+            final Contentlet contentlet = APILocator.getContentletAPI()
+                    .find(htmlPageAsset.getInode(), APILocator.systemUser(), false);
+            try {
+                APILocator.getContentletAPI().unpublish(contentlet, APILocator.systemUser(), false);
+                throw new AssertionError("Should throw an exception");
+            } catch (RunningExperimentUnpublishException e) {
+                final String expectedMessage = String.format(
+                        "Cannot unpublish a Page %s because it has a RUNNING Experiment: %s",
+                        htmlPageAsset.getIdentifier(), experiment.id().get());
 
-            assertEquals(expectedMessage, e.getMessage());
+                assertEquals(expectedMessage, e.getMessage());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
         }
 
     }
