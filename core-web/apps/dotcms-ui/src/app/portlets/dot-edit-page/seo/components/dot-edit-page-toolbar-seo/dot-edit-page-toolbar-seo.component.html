@@ -32,6 +32,7 @@
         <dot-edit-page-state-controller-seo
             [pageState]="pageState"
             [variant]="variant"
+            [apiLink]="apiLink"
             (modeChange)="stateChange()"
         ></dot-edit-page-state-controller-seo>
     </div>
@@ -56,7 +57,6 @@
 <ng-template #defaultHeaderLeftTpl>
     <dot-edit-page-info-seo
         class="flex gap-2"
-        [apiLink]="apiLink"
         [title]="pageState.page.title"
         [url]="pageState.page.pageURI"
     ></dot-edit-page-info-seo>

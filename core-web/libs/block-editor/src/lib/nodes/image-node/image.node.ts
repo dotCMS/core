@@ -23,6 +23,14 @@ declare module '@tiptap/core' {
 export const ImageNode = Image.extend({
     name: 'dotImage',
 
+    addOptions() {
+        return {
+            inline: false,
+            allowBase64: true,
+            HTMLAttributes: {}
+        };
+    },
+
     addAttributes() {
         return {
             src: {
