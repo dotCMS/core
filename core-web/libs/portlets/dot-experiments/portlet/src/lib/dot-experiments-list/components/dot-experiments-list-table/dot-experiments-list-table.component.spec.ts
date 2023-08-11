@@ -9,6 +9,7 @@ import { Table } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
+import { DotEmptyContainerComponent } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
     getExperimentMock,
@@ -17,8 +18,6 @@ import {
 import { DotFormatDateService } from '@services/dot-format-date-service';
 
 import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
-
-import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 
 const MOCK_MENU_ITEMS: MenuItem[] = [
     // Delete Action
@@ -76,7 +75,6 @@ const messageServiceMock = new MockDotMessageService({
 
 describe('DotExperimentsListTableComponent', () => {
     let spectator: Spectator<DotExperimentsListTableComponent>;
-    let dotExperimentsEmpty: DotExperimentsEmptyExperimentsComponent | null;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsListTableComponent,
@@ -101,9 +99,8 @@ describe('DotExperimentsListTableComponent', () => {
     describe('Input experiments', () => {
         it('should show empty component with no experiments found', () => {
             spectator.setInput('experimentGroupedByStatus', []);
-            dotExperimentsEmpty = spectator.query(DotExperimentsEmptyExperimentsComponent);
 
-            expect(dotExperimentsEmpty).toExist();
+            expect(spectator.query(DotEmptyContainerComponent)).toExist();
         });
 
         it('should show 2 instances of NgPrime Table component', () => {

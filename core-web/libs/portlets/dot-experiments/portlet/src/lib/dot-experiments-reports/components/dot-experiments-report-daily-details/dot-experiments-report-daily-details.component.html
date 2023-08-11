@@ -95,7 +95,7 @@
                 [ngClass]="{ 'prospect-winner': row.isWinner }"
             >
                 <button
-                    class="p-button-sm p-button-secondary"
+                    class="p-button-sm p-button-outlined"
                     *ngIf="!promotedVariantId && row.id !== defaultVariantId"
                     [label]="'experiments.reports.promote' | dm"
                     (click)="promoteVariant($event, experimentId, row)"
@@ -115,4 +115,3 @@
         </div>
     </ng-template>
 </dot-experiments-details-table>
-<p-confirmPopup></p-confirmPopup>
