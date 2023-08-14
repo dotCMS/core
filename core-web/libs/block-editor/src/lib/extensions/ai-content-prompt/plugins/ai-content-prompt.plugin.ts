@@ -47,7 +47,7 @@ export class AIContentPromptView {
 
     public pluginKey: PluginKey;
 
-    public component?: ComponentRef<AIContentPromptComponent>;
+    public component: ComponentRef<AIContentPromptComponent>;
 
     private $destroy = new Subject<boolean>();
 
@@ -61,7 +61,6 @@ export class AIContentPromptView {
         this.tippyOptions = tippyOptions;
 
         this.element.remove();
-        this.element.style.visibility = 'visible';
         this.pluginKey = pluginKey;
         this.component = component;
 
@@ -74,8 +73,6 @@ export class AIContentPromptView {
         });
 
         this.editor.on('focus', this.focusHandler);
-
-        document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
 
         document.body.addEventListener('mousedown', this.handleOutsideClick, { capture: true });
     }
@@ -132,8 +129,8 @@ export class AIContentPromptView {
         }
 
         this.tippy = tippy(editorElement.parentElement, {
-            ...this.tippyOptions,
             ...TIPPY_OPTIONS,
+            ...this.tippyOptions,
             content: this.element,
             onShow: (instance) => {
                 (instance.popper as HTMLElement).style.width = '100%';
@@ -155,15 +152,10 @@ export class AIContentPromptView {
         }
 
         if (open) {
-            this.editor.commands.closeForm();
             requestAnimationFrame(() => {
                 this.component.instance.input.nativeElement.focus();
             });
-        } else {
-            this.editor.commands.closeForm();
         }
-
-        setTimeout(() => this.update(this.editor.view));
     };
 
     show() {
@@ -186,7 +178,7 @@ export class AIContentPromptView {
     handleOutsideClick = (event: MouseEvent) => {
         const target = event.target as HTMLElement;
 
-        if (!this.tippy.popper.contains(target)) {
+        if (!this.tippy?.popper.contains(target)) {
             this.editor.commands.closeAIPrompt();
         }
     };
@@ -195,18 +187,6 @@ export class AIContentPromptView {
         const domRect = document.querySelector('#ai-text-prompt')?.getBoundingClientRect();
 
         return domRect || getNodePosition(node, type);
-    }
-
-    private hanlderScroll(e: Event) {
-        if (this.shouldHideOnScroll(e.target as HTMLElement)) {
-            return true;
-        }
-
-        requestAnimationFrame(() => this.update(this.editor.view));
-    }
-
-    private shouldHideOnScroll(node: HTMLElement): boolean {
-        return this.tippy?.state.isMounted && this.tippy?.popper.contains(node);
     }
 }
 

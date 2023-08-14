@@ -30,9 +30,7 @@ interface OpenAIResponse {
     choices: Choice[];
 }
 
-@Injectable({
-    providedIn: 'root'
-})
+@Injectable()
 export class AiContentService {
     constructor(private http: HttpClient) {}
 
