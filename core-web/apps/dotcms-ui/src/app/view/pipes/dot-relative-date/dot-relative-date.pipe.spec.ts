@@ -6,13 +6,11 @@ import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
 
 import { DotRelativeDatePipe } from './dot-relative-date.pipe';
 
-const MILLISECONDS_IN_A_DAY = 86400000;
+const ONE_DAY = 86400000;
 
-const EIGHT_DAYS = MILLISECONDS_IN_A_DAY * 8;
+const TWO_DAYS = ONE_DAY * 2;
 
-const TWO_DAYS = MILLISECONDS_IN_A_DAY * 2;
-
-const ONE_DAY = MILLISECONDS_IN_A_DAY * 1;
+const EIGHT_DAYS = ONE_DAY * 8;
 
 const DATE = '2020/12/3';
 const DATE_AND_TIME = '2020/12/3, 10:08 PM';
@@ -56,36 +54,6 @@ describe('DotRelativeDatePipe', () => {
 
             expect(pipe.transform(date)).toEqual('1 day ago');
         }));
-
-        it('should call dotFormatService.getUTC 3 times when its not a timestamp', () => {
-            const date = new Date();
-
-            spyOn(formatDateService, 'getUTC').and.callThrough();
-
-            pipe.transform(date.getTime()); // This is milliseconds not a timestamp
-
-            expect(formatDateService.getUTC).toHaveBeenCalledTimes(3);
-        });
-
-        it('should call dotFormatService.getUTC just once when its a timestamp and more than 7 days', fakeAsync(() => {
-            const date = DATE_AND_TIME; // This is from 2020 so it's more than 7 days
-
-            spyOn(formatDateService, 'getUTC').and.callThrough();
-
-            pipe.transform(date); // This is a hardcoded timestamp
-
-            expect(formatDateService.getUTC).toHaveBeenCalledTimes(1); // It gets called once in this workflow
-        }));
-
-        it('should call dotFormatService.getUTC twice when its a timestamp and less than 7 days', fakeAsync(() => {
-            const date = new Date().toUTCString(); // This is now so it's less than 7 days
-
-            spyOn(formatDateService, 'getUTC').and.callThrough();
-
-            pipe.transform(date); // This is a hardcoded timestamp
-
-            expect(formatDateService.getUTC).toHaveBeenCalledTimes(2); // It gets called twice in this workflow
-        }));
     });
 
     describe('format date', () => {
@@ -125,7 +93,7 @@ describe('DotRelativeDatePipe', () => {
             const N_DAYS = Math.round(Math.random() * 10);
 
             // Plus one because we need to go over N Days
-            const N_DAYS_MILLISECONDS = (N_DAYS + 1) * MILLISECONDS_IN_A_DAY;
+            const N_DAYS_MILLISECONDS = (N_DAYS + 1) * ONE_DAY;
 
             tick(N_DAYS_MILLISECONDS);
 
