@@ -93,3 +93,4 @@ This maintenance release includes the following code fixes:
 75. https://github.com/dotCMS/core/issues/25121 : Pages - Block Editor - NPE #25121
 76. https://github.com/dotCMS/core/issues/23948 : Stop redirecting all BE page traffic to edit mode #23948
 77. https://github.com/dotCMS/core/issues/25720 : Adding insert order to sql query #25723
+78. https://github.com/dotCMS/core/issues/25775 : OPTIONS requests to /api/\* return HTTP 500, causing CORS failures #25775

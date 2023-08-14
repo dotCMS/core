@@ -557,6 +557,7 @@ dependencies {
     implementation 'com.jayway.jsonpath:json-path:2.4.0'
     implementation 'com.sun.activation:javax.activation:1.2.0'
     implementation 'jakarta.xml.bind:jakarta.xml.bind-api:2.3.3'
+    implementation 'com.sun.xml.ws:jaxws-ri:2.3.2'
 
     //https://mvnrepository.com/artifact/org.postgresql/postgresql
     compileOnly (group: 'org.postgresql', name: 'postgresql', version: '42.5.1') {
