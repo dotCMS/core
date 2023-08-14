@@ -1,5 +1,5 @@
 import { Node } from 'prosemirror-model';
-import { EditorState, NodeSelection, Plugin, PluginKey, Transaction } from 'prosemirror-state';
+import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
 import tippy, { Instance, Props } from 'tippy.js';
@@ -8,9 +8,8 @@ import { ComponentRef } from '@angular/core';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { Editor, posToDOMRect } from '@tiptap/core';
+import { Editor } from '@tiptap/core';
 
-import { getNodePosition } from '../../bubble-menu/utils';
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
 import { AI_CONTENT_PROMPT_PLUGIN_KEY } from '../ai-content-prompt.extension';
 import { TIPPY_OPTIONS } from '../utils';
@@ -81,13 +80,6 @@ export class AIContentPromptView {
         const next = this.pluginKey?.getState(view.state);
         const prev = prevState ? this.pluginKey?.getState(prevState) : { open: false };
 
-        const { state } = view;
-        const { doc, selection } = state;
-
-        const { ranges } = selection;
-        const from = Math.min(...ranges.map((range) => range.$from.pos));
-        const to = Math.max(...ranges.map((range) => range.$to.pos));
-
         if (next?.open === prev?.open) {
             this.tippy?.popperInstance?.forceUpdate();
 
@@ -102,18 +94,7 @@ export class AIContentPromptView {
 
         this.tippy?.setProps({
             getReferenceClientRect: () => {
-                if (selection instanceof NodeSelection) {
-                    const node = view.nodeDOM(from) as HTMLElement;
-
-                    if (node) {
-                        this.node = doc.nodeAt(from);
-                        const type = this.node.type.name;
-
-                        return this.tippyRect(node, type);
-                    }
-                }
-
-                return posToDOMRect(view, from, to);
+                return this.tippyRect();
             }
         });
 
@@ -183,10 +164,8 @@ export class AIContentPromptView {
         }
     };
 
-    private tippyRect(node, type) {
-        const domRect = document.querySelector('#ai-text-prompt')?.getBoundingClientRect();
-
-        return domRect || getNodePosition(node, type);
+    private tippyRect() {
+        return document.querySelector('#ai-text-prompt')?.getBoundingClientRect();
     }
 }
 
@@ -208,7 +187,7 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
                 oldState: EditorState
             ): PluginState {
                 const { open, form } = transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
-                const state = AI_CONTENT_PROMPT_PLUGIN_KEY?.getState(oldState);
+                const state = AI_CONTENT_PROMPT_PLUGIN_KEY.getState(oldState);
 
                 if (typeof open === 'boolean') {
                     return { open, form };
