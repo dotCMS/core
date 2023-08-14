@@ -183,10 +183,14 @@ export enum GOAL_PARAMETERS {
 /**
  * Default condition by type of goal in Goal Selection Sidebar
  */
-export const ConditionDefaultByTypeOfGoal: Partial<Record<GOAL_TYPES, GOAL_PARAMETERS>> = {
-    [GOAL_TYPES.BOUNCE_RATE]: GOAL_PARAMETERS.URL,
-    [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.REFERER,
-    [GOAL_TYPES.CLICK_ON_ELEMENT]: GOAL_PARAMETERS.URL
+export const ConditionDefaultByTypeOfGoal: Partial<Record<GOAL_TYPES, string>> = {
+    [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.URL,
+    [GOAL_TYPES.URL_PARAMETER]: 'queryParameter'
+};
+
+export const AllowedConditionOperatorsByTypeOfGoal = {
+    [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.URL,
+    [GOAL_TYPES.URL_PARAMETER]: 'queryParameter'
 };
 
 const dotCMSThemeColors = {

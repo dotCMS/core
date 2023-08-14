@@ -13,8 +13,8 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
+    AllowedConditionOperatorsByTypeOfGoal,
     ComponentStatus,
-    ConditionDefaultByTypeOfGoal,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatus,
@@ -126,7 +126,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                   ...experiment.goals,
                   primary: {
                       ...experiment.goals.primary,
-                      ...this.removeDefaultGoalCondition(experiment.goals.primary)
+                      ...this.formatConditionsByGoal(experiment.goals.primary)
                   }
               }
             : null;
@@ -884,14 +884,14 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
     }
 
-    private removeDefaultGoalCondition(goal: Goal): Goal {
+    private formatConditionsByGoal(goal: Goal): Goal {
         const { type, conditions } = goal;
 
         return {
             ...goal,
             conditions: [
                 ...conditions.filter((condition) => {
-                    return ConditionDefaultByTypeOfGoal[type] !== condition.parameter;
+                    return AllowedConditionOperatorsByTypeOfGoal[type] === condition.parameter;
                 })
             ]
         };
