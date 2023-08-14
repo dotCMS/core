@@ -1,9 +1,12 @@
-package com.dotcms.api.traversal;
+package com.dotcms.api.client.files.traversal.data;
 
 import com.dotcms.api.AssetAPI;
+import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.model.asset.AssetVersionsView;
+import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FolderView;
-import com.dotcms.model.asset.SearchByPathRequest;
+import com.dotcms.model.language.Language;
 import com.google.common.collect.ImmutableList;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -14,16 +17,72 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.dotcms.common.AssetsUtils.BuildRemoteURL;
+import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
+import static com.dotcms.common.AssetsUtils.buildRemoteURL;
 
 /**
- * An application-scoped bean that provides a method to retrieve folder contents via REST API.
+ * Utility class for retrieving folder and asset information from the remote server using REST calls.
  */
 @ApplicationScoped
 public class Retriever {
 
     @Inject
     protected RestClientFactory clientFactory;
+
+    /**
+     * Retrieves a language from the remote server.
+     *
+     * @param language the language to retrieve
+     * @return the retrieved language
+     */
+    @ActivateRequestContext
+    public Language retrieveLanguage(String language) {
+
+        final LanguageAPI languageAPI = this.clientFactory.getClient(LanguageAPI.class);
+
+        // Execute the REST call to retrieve the language from the language code
+        var response = languageAPI.getFromLanguageIsoCode(language);
+        return response.entity();
+    }
+
+    /**
+     * Retrieves folder information from the remote server.
+     *
+     * @param siteName   the name of the site
+     * @param folderPath the folder path
+     * @return the FolderView object representing the folder information
+     */
+    @ActivateRequestContext
+    public FolderView retrieveFolderInformation(String siteName, String folderPath) {
+
+        final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
+
+        final var remoteFolderPath = buildRemoteURL(siteName, folderPath);
+
+        // Execute the REST call to retrieve folder contents
+        var response = assetAPI.folderByPath(ByPathRequest.builder().assetPath(remoteFolderPath).build());
+        return response.entity();
+    }
+
+    /**
+     * Retrieves asset information from the remote server.
+     *
+     * @param siteName   the name of the site
+     * @param folderPath the folder path
+     * @param assetName  the name of the asset
+     * @return the AssetVersionsView object representing the asset information
+     */
+    @ActivateRequestContext
+    public AssetVersionsView retrieveAssetInformation(final String siteName, String folderPath, final String assetName) {
+
+        final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
+
+        final var remoteAssetPath = buildRemoteAssetURL(siteName, folderPath, assetName);
+
+        // Execute the REST call to retrieve asset information
+        var response = assetAPI.assetByPath(ByPathRequest.builder().assetPath(remoteAssetPath).build());
+        return response.entity();
+    }
 
     /**
      * Retrieves the contents of a folder
@@ -51,15 +110,15 @@ public class Retriever {
      * @return an {@code FolderView} object containing the metadata for the requested folder
      */
     @ActivateRequestContext
-    public FolderView retrieveFolderContents(String siteName, String folderPath,
-                                             final int level, final boolean implicitGlobInclude,
-                                             final boolean explicitGlobInclude, final boolean explicitGlobExclude) {
+    public FolderView retrieveFolderInformation(String siteName, String folderPath,
+                                                final int level, final boolean implicitGlobInclude,
+                                                final boolean explicitGlobInclude, final boolean explicitGlobExclude) {
 
-        final var remoteFolderPath = BuildRemoteURL(siteName, folderPath);
+        final var remoteFolderPath = buildRemoteURL(siteName, folderPath);
 
         // Execute the REST call to retrieve folder contents
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
-        var response = assetAPI.folderByPath(SearchByPathRequest.builder().assetPath(remoteFolderPath).build());
+        var response = assetAPI.folderByPath(ByPathRequest.builder().assetPath(remoteFolderPath).build());
 
         var foundFolder = response.entity();
         foundFolder = foundFolder.withLevel(level);
@@ -84,4 +143,6 @@ public class Retriever {
 
         return foundFolder;
     }
+
 }
+

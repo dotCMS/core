@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "69009bbf-a168-4d81-9d42-112e62d757c7",
+		"_postman_id": "640b5b1c-b129-4c2b-8c8b-20513d0b24f2",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "1549189"
@@ -1876,7 +1876,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\t\t\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":\"\",\n                    \"columns\":[\n                        {\n                            \"styleClass\":\"\",\n                            \"leftOffset\":1,\n                            \"width\":1,\n                            \"containers\":[\n                                {\"identifier\":\"{{keep_content_container_id}}\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }    \n    },\n    \"themeId\": \"SYSTEM_THEME\"\n}",
+									"raw": "{\t\t\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":\"\",\n                    \"columns\":[\n                        {\n                            \"styleClass\":\"\",\n                            \"leftOffset\":1,\n                            \"width\":1,\n                            \"containers\":[\n                                {\"identifier\":\"{{keep_content_container_id}}\", \"uuid\": \"1\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }    \n    },\n    \"themeId\": \"SYSTEM_THEME\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -5682,9 +5682,9 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"queryParameter\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"{\\\"name\\\":\\\"testName\\\",\\\"value\\\":\\\"testValue\\\"}\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"CONTAINS\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"REGEX\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"visitBefore\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"/my-page\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"^(http|https):\\\\/\\\\/(localhost|127.0.0.1|\\\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\\\.)+[a-z]{2,})(:\\\\d{1,5})?\\\\/my-page(\\\\/?\\\\?.*)?$\");",
 											"",
 											"});",
 											"",
