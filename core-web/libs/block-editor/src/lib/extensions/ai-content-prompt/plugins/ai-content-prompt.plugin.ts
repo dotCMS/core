@@ -190,7 +190,7 @@ export class AIContentPromptView {
     handleOutsideClick = (event: MouseEvent) => {
         const target = event.target as HTMLElement;
 
-        if (!this.tippy.popper.contains(target)) {
+        if (!this.tippy?.popper.contains(target)) {
             this.editor.commands.closeAIPrompt();
         }
     };
