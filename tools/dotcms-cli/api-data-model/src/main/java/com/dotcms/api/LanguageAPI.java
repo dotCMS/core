@@ -4,6 +4,8 @@ import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.language.Language;
+import com.dotcms.model.views.CommonViews;
+import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -59,7 +61,8 @@ public interface LanguageAPI {
     @Operation(
             summary = " Creates a new language in the system"
     )
-    ResponseEntityView<Language> create(Language language);
+    ResponseEntityView<Language> create(
+            @JsonView(CommonViews.ExternalView.class) Language language);
 
     @POST
     @Path("/{languageTag}")
@@ -73,7 +76,8 @@ public interface LanguageAPI {
     @Operation(
             summary = " Updates an existing language in the system"
     )
-    ResponseEntityView<Language> update(@PathParam("languageId") String languageId, Language language);
+    ResponseEntityView<Language> update(@PathParam("languageId") String languageId,
+            @JsonView(CommonViews.ExternalView.class) Language language);
 
     @DELETE
     @Path("/{languageId}")
