@@ -15,8 +15,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.UUID;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
@@ -87,6 +91,88 @@ class LanguageCommandTest extends CommandTest {
             Assertions.assertEquals(1, result.id().get());
         } finally {
             workspaceManager.destroy(workspace);
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> language pull <br>
+     * <b>Given Scenario:</b> Test the language pull command by iso code (en-US). This test checks
+     * if the JSON language file has a "dotCMSObjectType" field with the value "Language". <br>
+     * <b>Expected Result:</b> The language returned should be English, and the JSON language file
+     * should have a "dotCMSObjectType" field with the value "Language".
+     *
+     * @throws IOException if there is an error reading the JSON language file
+     */
+    @Test
+    void Test_Command_Language_Pull_By_IsoCode_Checking_JSON_DotCMS_Type() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+
+            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US",
+                    "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Reading the JSON language file to check if the json has a: "dotCMSObjectType" : "Language"
+            final var languageFilePath = Path.of(workspace.languages().toString(), "en-us.json");
+            var json = Files.readString(languageFilePath);
+            Assertions.assertTrue(json.contains("\"dotCMSObjectType\" : \"Language\""));
+
+            // And now pushing the language back to dotCMS to make sure the structure is still correct
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "-f",
+                    languageFilePath.toAbsolutePath().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> language pull <br>
+     * <b>Given Scenario:</b> Test the language pull command by iso code (en-US). This test checks
+     * if the YAML language file has a "dotCMSObjectType" field with the value "Language". <br>
+     * <b>Expected Result:</b> The language returned should be English, and the YAML language file
+     * should have a "dotCMSObjectType" field with the value "Language".
+     *
+     * @throws IOException if there is an error reading the YAML language file
+     */
+    @Test
+    void Test_Command_Language_Pull_By_IsoCode_Checking_YAML_DotCMS_Type() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+
+            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US",
+                    "-fmt", InputOutputFormat.YAML.toString(), "--workspace",
+                    workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Reading the YAML language file to check if the yaml has a: "dotCMSObjectType" : "Language"
+            final var languageFilePath = Path.of(workspace.languages().toString(), "en-us.yml");
+            var json = Files.readString(languageFilePath);
+            Assertions.assertTrue(json.contains("dotCMSObjectType: \"Language\""));
+
+            // And now pushing the language back to dotCMS to make sure the structure is still correct
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "-f",
+                    languageFilePath.toAbsolutePath().toString(), "-fmt",
+                    InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+        } finally {
+            deleteTempDirectory(tempFolder);
         }
     }
 
@@ -296,6 +382,42 @@ class LanguageCommandTest extends CommandTest {
         } finally {
             workspaceManager.destroy(workspace);
         }
+    }
+
+    /**
+     * Creates a temporary folder with a random name.
+     *
+     * @return The path to the created temporary folder.
+     * @throws IOException If an I/O error occurs while creating the temporary folder.
+     */
+    private Path createTempFolder() throws IOException {
+
+        String randomFolderName = "folder-" + UUID.randomUUID();
+        return Files.createTempDirectory(randomFolderName);
+    }
+
+    /**
+     * Deletes a temporary directory and all its contents.
+     *
+     * @param folderPath The path to the temporary directory to be deleted.
+     * @throws IOException If an I/O error occurs while deleting the directory or its contents.
+     */
+    private void deleteTempDirectory(Path folderPath) throws IOException {
+        Files.walkFileTree(folderPath, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Files.delete(file); // Deletes the file
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                    throws IOException {
+                Files.delete(dir); // Deletes the directory after its content has been deleted
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
 }
