@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import formatDistanceStrict from 'date-fns/formatDistanceStrict';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -357,10 +356,13 @@ describe('DotListingDataTableComponent', () => {
                         const textContent = cells[cellIndex].textContent;
                         const itemContent =
                             comp.columns[cellIndex].format === 'date'
-                                ? formatDistanceStrict(
-                                      item[comp.columns[cellIndex].fieldName],
-                                      new Date()
-                                  )
+                                ? new Date(
+                                      item[comp.columns[cellIndex].fieldName]
+                                  ).toLocaleDateString('US-en', {
+                                      month: '2-digit',
+                                      day: '2-digit',
+                                      year: 'numeric'
+                                  })
                                 : item[comp.columns[cellIndex].fieldName];
                         expect(textContent).toContain(itemContent);
                     }
