@@ -20,8 +20,11 @@
     border: 0 none;
 }
 
-.p-calendar-w-btn .p-inputtext:enabled:focus {
+.p-calendar-w-btn .p-inputtext:enabled:focus,
+.p-component.p-inputtext:enabled:hover {
     box-shadow: none;
+    outline: none;
+    border: 0 none;
 }
 
 .p-calendar-w-btn .p-datepicker-trigger.p-button {
