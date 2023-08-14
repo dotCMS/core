@@ -2,6 +2,8 @@ package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.cli.command.DotCommand;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.language.Language;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -23,7 +25,7 @@ import picocli.CommandLine;
  * Command to list all languages
  * @author nollymar
  */
-public class LanguageFind extends AbstractLanguageCommand implements Callable<Integer> {
+public class LanguageFind extends AbstractLanguageCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "find";
 
@@ -41,4 +43,15 @@ public class LanguageFind extends AbstractLanguageCommand implements Callable<In
 
         return CommandLine.ExitCode.OK;
     }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
+
 }

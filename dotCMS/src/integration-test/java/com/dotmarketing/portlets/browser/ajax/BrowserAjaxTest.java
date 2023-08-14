@@ -1,15 +1,20 @@
 package com.dotmarketing.portlets.browser.ajax;
 
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.*;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.ThreadUtilsTest;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.ThreadUtils;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.servlet.SessionMessages;
 import org.junit.BeforeClass;
@@ -246,6 +251,37 @@ public class BrowserAjaxTest {
         when(containerMock.getBean(WebContextFactory.WebContextBuilder.class)).thenReturn(webContextBuilderMock);
 
         WebContextFactory.attach(containerMock);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#openFolderContent(String, String, boolean, long)}</li>
+     *     <li><b>Given Scenario:</b> Opening a Folder to view their items</li>
+     *     <li><b>Expected Result:</b> The items should be sorted by modDate descending by default</li>
+     * </ul>
+     * @throws Exception
+     */
+    @Test
+    public void test_openFolderContent_defaultBehavior() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Folder mainFolder = new FolderDataGen().site(host).nextPersisted();
+
+        final Link link = new LinkDataGen().parent(mainFolder).nextPersisted(false);
+        ThreadUtils.sleep(1000);
+        final Template templateDataGen = new TemplateDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(mainFolder, templateDataGen).nextPersisted();
+        ThreadUtils.sleep(1000);
+        final Folder subFolder = new FolderDataGen().parent(mainFolder).nextPersisted();
+
+
+        final BrowserAjax browserAjax = new BrowserAjax();
+        final List<Map<String, Object>> folderContent = browserAjax.openFolderContent(mainFolder.getIdentifier(),
+                "",false,APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        //The order should be subfolder, page, link.
+        assertTrue(folderContent.get(0).get("identifier").equals(subFolder.getIdentifier()));
+        assertTrue(folderContent.get(1).get("identifier").equals(page.getIdentifier()));
+        assertTrue(folderContent.get(2).get("identifier").equals(link.getIdentifier()));
     }
 
 }

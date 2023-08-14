@@ -9,10 +9,10 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-public class UtilsTest {
+class UtilsTest {
 
     @Test
-    public void testSha256toUnixHash_withValidFile_returnsCorrectHash() throws Exception {
+    void testSha256toUnixHash_withValidFile_returnsCorrectHash() throws Exception {
 
         Path path = null;
 
@@ -32,7 +32,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testSha256toUnixHash_withValidFile_afterRename_returnsSameHash() throws Exception {
+    void testSha256toUnixHash_withValidFile_afterRename_returnsSameHash() throws Exception {
 
         Path originalPath = null;
         Path renamePath = null;
@@ -62,7 +62,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testSha256toUnixHash_withNonExistentFile_throwsIOException() {
+    void testSha256toUnixHash_withNonExistentFile_throwsIOException() {
 
         Path path = Path.of("nonexistent.txt");
 
@@ -75,7 +75,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testSha256toUnixHash_withNullPath_throwsNullPointerException() {
+    void testSha256toUnixHash_withNullPath_throwsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> Utils.Sha256toUnixHash(null));
     }
 
