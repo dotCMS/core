@@ -2544,6 +2544,4 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
     }
 
-
-
 }

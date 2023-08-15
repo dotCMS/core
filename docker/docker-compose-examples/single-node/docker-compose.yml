@@ -34,7 +34,7 @@ services:
       - opensearch-net
 
   dotcms:
-    image: dotcms/dotcms:23.06_49c1789e_SNAPSHOT
+    image: dotcms/dotcms:latest
     environment:
         CMS_JAVA_OPTS: '-Xmx1g '
         LANG: 'C.UTF-8'
@@ -57,7 +57,7 @@ services:
       - opensearch-net
     ports:
       - "8082:8082"
-      - "8444:8443"
+      - "8443:8443"
 
   db:
     image: postgres:15
