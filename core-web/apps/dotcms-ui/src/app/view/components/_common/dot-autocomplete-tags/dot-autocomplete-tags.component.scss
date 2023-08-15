@@ -1,5 +1,5 @@
 @use "variables" as *;
-@import "dotcms-theme/extends/inputtext.extends";
+@import "dotcms-theme/components/form/common";
 
 :host {
     min-height: 6.85rem;
