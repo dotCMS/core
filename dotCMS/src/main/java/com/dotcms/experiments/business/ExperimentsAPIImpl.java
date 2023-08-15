@@ -593,35 +593,37 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Optional<Experiment> runningExperimentOnPage = getRunningExperimentsOnPage(
                 user, persistedExperiment);
 
-        if(runningExperimentOnPage.isPresent()) {
-            final boolean meantToRunNow = persistedExperiment.scheduling().isEmpty();
-
-            if(meantToRunNow) {
-                end(runningExperimentOnPage.get().id().orElseThrow(), user);
-            }
-
-            final Experiment runningExperiment = runningExperimentOnPage.get();
-            if(conflictingStartOrEndDate(runningExperiment.scheduling().orElseThrow(),
-                    persistedExperiment.scheduling().orElseThrow())) {
-                end(runningExperiment.id().orElseThrow(), user);
-            }
-        }
-
         Experiment toReturn;
 
         if(emptyScheduling(persistedExperiment)) {
             final Scheduling scheduling = startNowScheduling();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
+
+            if(runningExperimentOnPage.isPresent()) {
+                endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
+            }
             cancelScheduledExperimentsUponConflicts(experimentToSave, user);
             toReturn = innerStart(experimentToSave, user, false);
         } else {
             Scheduling scheduling = persistedExperiment.scheduling().get();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
+
+            if(runningExperimentOnPage.isPresent()) {
+                endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
+            }
             cancelScheduledExperimentsUponConflicts(experimentToSave, user);
             toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
         }
 
         return toReturn;
+    }
+
+    private void endRunningExperimentIfNeeded(User user, Experiment runningExperimentOnPage,
+            Experiment persistedExperiment) throws DotDataException, DotSecurityException {
+        if(conflictingStartOrEndDate(runningExperimentOnPage.scheduling().orElseThrow(),
+                persistedExperiment.scheduling().orElseThrow())) {
+            end(runningExperimentOnPage.id().orElseThrow(), user);
+        }
     }
 
     private Optional<Experiment> getRunningExperimentsOnPage(User user, Experiment persistedExperiment)
