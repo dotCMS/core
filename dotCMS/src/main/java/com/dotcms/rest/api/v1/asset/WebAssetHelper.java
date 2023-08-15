@@ -364,7 +364,7 @@ public class WebAssetHelper {
                 .resolve(path, user);
         final Host host = assetAndPath.resolvedHost();
         final Folder folder = assetAndPath.resolvedFolder();
-        String assetName = assetAndPath.asset();
+        final String assetName = assetAndPath.asset();
 
         if (null == assetName) {
             throw new IllegalArgumentException("Unspecified Asset name.");
