@@ -22,11 +22,10 @@
             tooltipPosition="bottom"
         ></div>
     </div>
-
-    <dot-icon-button
+    <p-button
         id="{{ actionButtonId }}"
         (click)="showActionMenu.emit($event)"
-        icon="more_vert"
-        size="32"
-    ></dot-icon-button>
+        icon="pi pi-ellipsis-v"
+        styleClass="p-button-rounded p-button-text p-button-sm"
+    ></p-button>
 </p-card>

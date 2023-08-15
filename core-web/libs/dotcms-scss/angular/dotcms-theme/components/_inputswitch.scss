@@ -1,8 +1,9 @@
 @use "variables" as *;
 
-.p-inputswitch {
+.p-inputswitch.p-component {
     width: 2.75rem;
     height: $spacing-3;
+    display: block;
 }
 
 .p-inputswitch .p-inputswitch-slider {

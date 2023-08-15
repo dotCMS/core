@@ -1,9 +1,9 @@
 import { expect, it } from '@jest/globals';
-import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
-import { GridItemHTMLElement } from 'gridstack';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { By } from '@angular/platform-browser';
 
 import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -17,7 +17,7 @@ import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing'
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
-import { DotGridStackWidget } from './models/models';
+import { DotGridStackWidget, SCROLL_DIRECTION } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
@@ -32,15 +32,28 @@ global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
 
+const mockRect = {
+    top: 120,
+    bottom: 100,
+    x: 146,
+    y: 50,
+    width: 440,
+    height: 240,
+    right: 586,
+    left: 146,
+    toJSON: jest.fn()
+};
+
 describe('TemplateBuilderComponent', () => {
-    let spectator: SpectatorHost<TemplateBuilderComponent>;
+    let spectator: Spectator<TemplateBuilderComponent>;
     let store: DotTemplateBuilderStore;
     const mockContainer = containersMock[0];
     let dialog: DialogService;
     let openDialogMock: jest.SpyInstance;
 
-    const createHost = createHostFactory({
+    const createComponent = createComponentFactory({
         component: TemplateBuilderComponent,
+
         imports: [
             NgFor,
             NgIf,
@@ -69,34 +82,33 @@ describe('TemplateBuilderComponent', () => {
             }
         ]
     });
-    beforeEach(() => {
-        spectator = createHost(
-            `<dotcms-template-builder [containerMap]="containerMap" [layout]="layout" [themeId]="themeId" ></dotcms-template-builder>`,
-            {
-                hostProps: {
-                    layout: {
-                        body: FULL_DATA_MOCK,
-                        header: true,
-                        footer: true,
-                        sidebar: {
-                            location: 'left',
-                            width: 'small',
-                            containers: []
-                        },
-                        width: 'Mobile',
-                        title: 'Test Title'
-                    },
-                    themeId: '123',
-                    containerMap: CONTAINER_MAP_MOCK
-                }
-            }
-        );
 
-        store = spectator.inject(DotTemplateBuilderStore);
+    beforeEach(() => {
+        spectator = createComponent({
+            props: {
+                layout: {
+                    body: FULL_DATA_MOCK,
+                    header: true,
+                    footer: true,
+                    sidebar: {
+                        location: 'left',
+                        width: 'small',
+                        containers: []
+                    },
+                    width: 'Mobile',
+                    title: 'Test Title'
+                },
+                themeId: '123',
+                containerMap: CONTAINER_MAP_MOCK
+            }
+        });
+
+        store = spectator.inject(DotTemplateBuilderStore, true);
         dialog = spectator.inject(DialogService);
         openDialogMock = jest.spyOn(dialog, 'open');
         spectator.detectChanges();
     });
+
     it('should not trigger a template change when store is initialized', () => {
         // Store init is called on init
         const changeMock = jest.spyOn(spectator.component.templateChange, 'emit');
@@ -119,27 +131,35 @@ describe('TemplateBuilderComponent', () => {
         const totalBoxes = FULL_DATA_MOCK.rows.reduce((acc, row) => {
             return acc + row.columns.length;
         }, 0);
-
-        expect(spectator.queryAll(byTestId('box')).length).toBe(totalBoxes);
+        expect(spectator.queryAll(byTestId(/builder-box-\d+/g)).length).toBe(totalBoxes);
     });
 
     it('should trigger removeColumn on store when triggering removeColumn', (done) => {
-        const removeColMock = jest.spyOn(store, 'removeColumn');
+        jest.spyOn(store, 'removeColumn');
+        jest.spyOn(spectator.component, 'removeColumn');
 
-        let widgetToDelete: DotGridStackWidget;
-        let rowId: string;
-        let elementToDelete: GridItemHTMLElement;
+        const builderBox1 = spectator.debugElement.query(By.css('[data-testId="builder-box-1"]'));
 
-        store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
-            widgetToDelete = items[0].subGridOpts.children[0];
-            rowId = items[0].id as string;
-            elementToDelete = document.createElement('div');
+        spectator.triggerEventHandler(builderBox1, 'deleteColumn', undefined);
+        expect(spectator.component.removeColumn).toHaveBeenCalled();
 
-            spectator.component.removeColumn(widgetToDelete, elementToDelete, rowId);
+        const box1 = spectator.debugElement.query(By.css('[data-testId="box-1"]'));
+        const rowId = box1.nativeElement
+            .closest('dotcms-template-builder-row')
+            .getAttribute('gs-id');
 
-            expect(removeColMock).toHaveBeenCalledWith({ ...widgetToDelete, parentId: rowId });
-            done();
+        const box1Id = box1.nativeElement.getAttribute('gs-id');
+
+        spectator.component.removeColumn(
+            { id: box1Id, parentId: rowId },
+            box1.nativeElement,
+            rowId
+        );
+        expect(store.removeColumn).toHaveBeenCalledWith({
+            ...{ id: box1Id, parentId: rowId },
+            parentId: rowId
         });
+        done();
     });
 
     it('should call addContainer from store when triggering addContainer', (done) => {
@@ -213,13 +233,25 @@ describe('TemplateBuilderComponent', () => {
         expect(spectator.queryAll('.template-builder-row--wont-fit').length).toBe(1);
     });
 
+    it('should trigger fixGridStackNodeOptions when triggering mousemove on main div', () => {
+        const fixGridStackNodeOptionsMock = jest.spyOn(
+            spectator.component,
+            'fixGridStackNodeOptions'
+        );
+        const mainDiv = spectator.query(byTestId('template-builder-main'));
+
+        mainDiv.dispatchEvent(new MouseEvent('mousemove'));
+
+        expect(fixGridStackNodeOptionsMock).toHaveBeenCalled();
+    });
+
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
 
             spectator.detectChanges();
 
-            store.init({
+            store.setState({
                 rows: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
                 layoutProperties: {
                     header: true,
@@ -253,6 +285,71 @@ describe('TemplateBuilderComponent', () => {
                 });
                 done();
             });
+        });
+    });
+
+    describe('Scroll on Drag', () => {
+        beforeEach(() => {
+            spectator.component.templateContainerRef = {
+                nativeElement: document.createElement('div')
+            };
+
+            spectator.detectChanges();
+        });
+
+        it('should not scroll if draggingElement is null', () => {
+            spectator.component.draggingElement = null;
+            spectator.component.onMouseMove();
+            expect(spectator.component.scrollDirection).toBe(SCROLL_DIRECTION.NONE);
+        });
+
+        it('should scroll up if the element is close to the top of the container', () => {
+            const spy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 1);
+            spectator.component.draggingElement = document.createElement('div');
+            jest.spyOn(
+                spectator.component.draggingElement,
+                'getBoundingClientRect'
+            ).mockReturnValue({
+                ...mockRect,
+                top: 0
+            });
+            jest.spyOn(
+                spectator.component.templateContaniner,
+                'getBoundingClientRect'
+            ).mockReturnValue({
+                ...mockRect,
+                top: 0
+            });
+
+            spectator.component.onMouseMove();
+            expect(spectator.component.scrollDirection).toBe(SCROLL_DIRECTION.UP);
+            expect(spy).toHaveBeenCalled();
+        });
+
+        it('should scroll down if the element is close to the bottom of the container', () => {
+            const spy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 1);
+            spectator.component.draggingElement = document.createElement('div');
+            jest.spyOn(
+                spectator.component.draggingElement,
+                'getBoundingClientRect'
+            ).mockReturnValue({
+                ...mockRect,
+                top: 500,
+                bottom: 0
+            });
+            jest.spyOn(
+                spectator.component.templateContaniner,
+                'getBoundingClientRect'
+            ).mockReturnValue({
+                ...mockRect,
+                top: 100,
+                bottom: 0
+            });
+
+            spectator.component.onMouseMove();
+
+            expect(spectator.component.scrollDirection).toBe(SCROLL_DIRECTION.DOWN);
+            expect(spy).toHaveBeenCalled();
         });
     });
 });

@@ -18,8 +18,8 @@ import { TabViewModule } from 'primeng/tabview';
 import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, DotExperimentVariantDetail } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotExperimentVariantDetail } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
@@ -44,7 +44,6 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         LowerCasePipe,
         PercentPipe,
         NgClass,
-        //dotCMS
         DotExperimentsUiHeaderComponent,
         DotPipesModule,
         DotExperimentsExperimentSummaryComponent,
@@ -52,15 +51,13 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         DotExperimentsReportsChartComponent,
         DotExperimentsDetailsTableComponent,
         DotDynamicDirective,
-        //PrimeNg
+        DotMessagePipe,
+        DotExperimentsReportDailyDetailsComponent,
         TagModule,
         ButtonModule,
         TitleCasePipe,
-        DotIconModule,
         ConfirmPopupModule,
-        DotMessagePipe,
-        TabViewModule,
-        DotExperimentsReportDailyDetailsComponent
+        TabViewModule
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],
@@ -69,11 +66,17 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
 })
 export class DotExperimentsReportsComponent implements OnInit {
     vm$: Observable<VmReportExperiment> = this.store.vm$;
-    protected readonly defaultVariantId = DEFAULT_VARIANT_ID;
+
     private dotMessageService = inject(DotMessageService);
-    readonly chartConfig: { xAxisLabel: string; yAxisLabel: string } = {
+
+    readonly axisLabelsProbabilityChart: { xAxisLabel: string; yAxisLabel: string } = {
         xAxisLabel: this.dotMessageService.get('experiments.chart.xAxisLabel'),
         yAxisLabel: this.dotMessageService.get('experiments.chart.yAxisLabel')
+    };
+
+    readonly axisLabelsBayesianChart: { xAxisLabel: string; yAxisLabel: string } = {
+        xAxisLabel: this.dotMessageService.get('experiments.chart.xAxisLabel.bayesian'),
+        yAxisLabel: this.dotMessageService.get('experiments.chart.yAxisLabel.bayesian')
     };
 
     constructor(

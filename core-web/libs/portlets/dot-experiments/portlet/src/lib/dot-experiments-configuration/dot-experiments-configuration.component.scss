@@ -23,19 +23,3 @@
         }
     }
 }
-
-::ng-deep {
-    .p-button {
-        &:disabled {
-            background-color: transparent;
-        }
-
-        &.p-button-outlined {
-            padding-left: $spacing-3;
-            padding-right: $spacing-3;
-            border-color: $color-palette-secondary-500;
-            color: $color-palette-secondary-500;
-            min-width: 60px;
-        }
-    }
-}
