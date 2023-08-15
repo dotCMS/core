@@ -69,7 +69,7 @@
 
 #outlined-primary-severity {
     background-color: transparent;
-    border: 1.5px solid $color-palette-primary;
+    border: $field-border-size solid $color-palette-primary;
 
     .p-button-label,
     .p-button-icon,
@@ -97,7 +97,7 @@
 
 #outlined-secondary-severity {
     background-color: transparent;
-    border: 1.5px solid $color-palette-secondary;
+    border: $field-border-size solid $color-palette-secondary;
 
     .p-button-label,
     .p-button-icon,
@@ -216,5 +216,5 @@
 }
 
 #button-disabled-outlined {
-    border: 1.5px solid $color-palette-gray-300;
+    border: $field-border-size solid $color-palette-gray-300;
 }

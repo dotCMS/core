@@ -5,7 +5,7 @@
     background-color: $white;
     height: $field-height-md;
     border-radius: $field-border-radius;
-    border: 1.5px solid $color-palette-gray-400;
+    border: $field-border-size solid $color-palette-gray-400;
     padding: 0 $spacing-1;
     color: $color-palette-gray-700;
     font-size: $font-size-md;
@@ -24,16 +24,16 @@
 
 #input-text-states {
     &:enabled:hover {
-        border: 1.5px solid $color-palette-primary-400;
+        border: $field-border-size solid $color-palette-primary-400;
     }
     &:enabled:active,
     &:enabled:focus {
-        border: 1.5px solid $color-palette-primary-400;
+        border: $field-border-size solid $color-palette-primary-400;
         @include field-focus;
     }
 
     &:disabled {
-        border: 1.5px solid $color-palette-gray-200;
+        border: $field-border-size solid $color-palette-gray-200;
         background: $color-palette-gray-100;
     }
 }
