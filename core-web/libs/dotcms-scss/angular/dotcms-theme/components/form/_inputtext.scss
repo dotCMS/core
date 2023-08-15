@@ -26,25 +26,25 @@
 }
 
 .p-input-icon-right {
-    i {
+    i.pi {
         color: $color-palette-primary;
         cursor: pointer;
         right: $spacing-1;
+        margin-top: 0;
+        transform: translateY(-50%);
+        -moz-transform: translateY(-50%);
     }
     &:has(.p-inputtext.p-inputtext-sm) {
         i {
             font-size: $font-size-sm;
-            // 1 rem is the main font size, so we need to calculate the difference between the main font size and the small font size
-            // and then subtract that from the top margin (setted by primeNG) to keep the icon vertically centered on small version
-            margin-top: calc($font-size-md - $font-size-sm - $spacing-1);
         }
     }
 
-    i:nth-of-type(1) {
+    i.pi:nth-of-type(1) {
         right: $spacing-1;
     }
 
-    i:nth-of-type(2) {
+    i.pi:nth-of-type(2) {
         right: $spacing-5;
     }
 
