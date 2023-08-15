@@ -712,7 +712,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(persistedExperiment.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
                 DotStateException.class);
 
-        return innerStart(persistedExperiment, user, true);
+        final Experiment readyToStart = save(Experiment.builder().from(persistedExperiment)
+                        .status(RUNNING).build(), user);
+
+        return innerStart(readyToStart, user, true);
     }
 
     private Experiment innerStart(final Experiment persistedExperiment, final User user,
@@ -752,8 +755,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private void publishContentOnExperimentVariants(final User user,
             final Experiment runningExperiment)
             throws DotDataException, DotSecurityException {
-        DotPreconditions.isTrue(runningExperiment.status().equals(RUNNING),
-                "Experiment needs to be RUNNING");
 
         final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
                 runningExperiment.trafficProportion().variants().stream()
