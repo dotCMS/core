@@ -24,11 +24,15 @@
 }
 
 #input-text-states {
-    &:enabled:hover {
+    &:enabled:hover,
+    &:hover {
         border: $field-border-size solid $color-palette-primary-400;
     }
+
     &:enabled:active,
-    &:enabled:focus {
+    &:enabled:focus,
+    &:active,
+    &:focus {
         border: $field-border-size solid $color-palette-primary-400;
         @include field-focus;
     }

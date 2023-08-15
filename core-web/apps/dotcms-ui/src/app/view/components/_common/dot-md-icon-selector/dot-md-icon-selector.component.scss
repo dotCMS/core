@@ -1,17 +1,13 @@
 @use "variables" as *;
+@import "dotcms-theme/components/form/common";
+@import "mixins";
 
 dot-material-icon-picker {
-    border: solid 1px $color-palette-gray-500;
-    border-radius: $border-radius-xs;
-    transition: border-color $basic-speed ease-in;
+    @extend #input-text-extend;
 
     &.is-open {
-        box-shadow: inset 0 0 0 1px $color-palette-primary;
-        border-color: $color-palette-primary;
-    }
-
-    &:hover {
-        border-color: $color-palette-primary;
+        border: $field-border-size solid $color-palette-primary-400;
+        @include field-focus;
     }
 
     &::ng-deep {
@@ -20,10 +16,14 @@ dot-material-icon-picker {
         .dot-material-icon__preview {
             border: 0;
             background: none;
+            height: calc(
+                $field-height - ($field-border-size * 2)
+            ); // All of this is relative so it's not really taking the height of the field and we need to center the icon
         }
 
         .dot-material-icon__input {
             padding: $spacing-2;
+            font-size: $font-size-md;
 
             &:focus {
                 outline: none;
@@ -32,7 +32,6 @@ dot-material-icon-picker {
 
         .dot-material-icon__preview {
             font-size: $font-size-xl;
-            margin-left: $spacing-2;
         }
 
         .dot-material-icon__button mwc-icon {

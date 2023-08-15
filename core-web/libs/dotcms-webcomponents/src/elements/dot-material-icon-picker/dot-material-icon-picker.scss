@@ -1,3 +1,5 @@
+@import "../../../../dotcms-scss/shared/common";
+
 dot-material-icon-picker {
     display: flex;
 }
@@ -7,6 +9,9 @@ dot-material-icon-picker {
     flex-direction: column;
     flex-grow: 1;
     position: relative;
+    height: calc(
+        $field-height - ($field-border-size * 2)
+    ); // All of this is relative so it's not really taking the height of the field and we need to center the icon
 }
 
 .dot-material-icon__select-options-container {
