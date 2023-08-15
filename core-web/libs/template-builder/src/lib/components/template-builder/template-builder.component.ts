@@ -6,6 +6,7 @@ import {
     GridStackWidget,
     numberOrString
 } from 'gridstack';
+import { DDElementHost } from 'gridstack/dist/dd-element';
 import { Observable, Subject, combineLatest } from 'rxjs';
 
 import {
@@ -15,6 +16,7 @@ import {
     Component,
     ElementRef,
     EventEmitter,
+    HostListener,
     Input,
     OnDestroy,
     OnInit,
@@ -48,7 +50,8 @@ import {
     DotGridStackNode,
     DotGridStackWidget,
     DotTemplateBuilderState,
-    DotTemplateLayoutProperties
+    DotTemplateLayoutProperties,
+    SCROLL_DIRECTION
 } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import {
@@ -84,8 +87,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @Output()
     templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter<DotTemplateDesigner>();
 
-    @Output() fullyLoaded = new EventEmitter<void>();
-
     @ViewChild('templateContainerRef')
     templateContainerRef!: ElementRef<HTMLDivElement>;
 
@@ -102,18 +103,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @ViewChild('addBox')
     addBox: AddWidgetComponent;
 
-    get layoutProperties(): DotTemplateLayoutProperties {
-        return {
-            header: this.layout.header,
-            footer: this.layout.footer,
-            sidebar: this.layout.sidebar ?? {
-                location: ''
-            }
-        };
-    }
+    @ViewChildren(AddWidgetComponent) addWidget: QueryList<AddWidgetComponent>;
 
-    public rows$: Observable<DotLayoutBody>;
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    public rows$: Observable<DotLayoutBody>;
     public vm$: Observable<DotTemplateBuilderState> = this.store.vm$;
 
     public readonly rowIcon = rowIcon;
@@ -124,8 +117,57 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public readonly boxOptions = boxInitialOptions;
     private dotLayout: DotLayout;
 
+    public draggingElement: HTMLElement | null;
+    public scrollDirection: SCROLL_DIRECTION = SCROLL_DIRECTION.NONE;
+
     grid!: GridStack;
     addBoxIsDragging = false;
+
+    get layoutProperties(): DotTemplateLayoutProperties {
+        return {
+            header: this.layout.header,
+            footer: this.layout.footer,
+            sidebar: this.layout.sidebar ?? {
+                location: ''
+            }
+        };
+    }
+
+    @HostListener('window:mousemove', ['$event'])
+    onMouseMove() {
+        if (this.draggingElement) {
+            const containerRect = this.templateContaniner.getBoundingClientRect();
+            const elementRect = this.draggingElement.getBoundingClientRect();
+            const scrollSpeed = 10;
+            const scrollThreshold = 100;
+
+            const scrollUp = elementRect.top - containerRect.top - scrollThreshold < 0;
+            const scrollDown = elementRect.bottom - containerRect.bottom + scrollThreshold > 0;
+
+            if (scrollUp || scrollDown) {
+                const direction = scrollUp ? SCROLL_DIRECTION.UP : SCROLL_DIRECTION.DOWN;
+
+                // Prevents multiple intervals from being created
+                if (this.scrollDirection === direction) {
+                    return;
+                }
+
+                this.scrollDirection = direction;
+                const scrollStep = () => {
+                    const distance = direction === SCROLL_DIRECTION.UP ? -scrollSpeed : scrollSpeed;
+                    this.templateContaniner.scrollBy(0, distance);
+
+                    if (this.scrollDirection === direction) {
+                        requestAnimationFrame(scrollStep);
+                    }
+                };
+
+                requestAnimationFrame(scrollStep);
+            } else {
+                this.scrollDirection = SCROLL_DIRECTION.NONE;
+            }
+        }
+    }
 
     get templateContaniner(): HTMLElement {
         return this.templateContainerRef.nativeElement;
@@ -184,31 +226,23 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         // Adding subgrids on load
         Array.from(this.grid.el.querySelectorAll('.grid-stack')).forEach((el) => {
             const subgrid = GridStack.addGrid(el as HTMLElement, subGridOptions);
-
-            subgrid.on('change', (_: Event, nodes: GridStackNode[]) => {
-                this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
-            });
-            subgrid.on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
-                this.store.subGridOnDropped(oldNode, newNode);
-            });
-
-            subgrid.on('resizestart', (_: Event, el: GridItemHTMLElement) => {
-                this.store.setResizingRowID(el.gridstackNode.grid.parentGridItem.id);
-            });
-            subgrid.on('resizestop', () => {
-                this.store.setResizingRowID(null);
-            });
+            this.setSubGridEvent(subgrid);
         });
 
-        this.grid.on('dropped', (_: Event, previousNode: GridStackNode, newNode: GridStackNode) => {
-            if (!newNode.el || previousNode) return;
+        this.grid
+            .on('dropped', (_: Event, previousNode: GridStackNode, newNode: GridStackNode) => {
+                if (!newNode.el || previousNode) return;
 
-            newNode.grid?.removeWidget(newNode.el, true, false);
+                newNode.grid?.removeWidget(newNode.el, true, false);
 
-            this.store.addRow({
-                y: newNode.y
-            });
-        });
+                this.store.addRow({
+                    y: newNode.y
+                });
+            })
+            .on('dragstart', ({ target }) => {
+                this.draggingElement = target as HTMLElement;
+            })
+            .on('dragstop', () => this.onDragStop());
 
         this.boxes.changes.subscribe(() => {
             this.boxes.forEach((ref) => {
@@ -235,24 +269,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                         const newGridElement = row.el.querySelector('.grid-stack') as HTMLElement;
 
                         // Adding subgrids on drop row
-                        GridStack.addGrid(newGridElement, subGridOptions)
-                            .on(
-                                'dropped',
-                                (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
-                                    this.store.subGridOnDropped(oldNode, newNode);
-                                }
-                            )
-                            .on('change', (_: Event, nodes: GridStackNode[]) => {
-                                this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
-                            })
-                            .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
-                                this.store.setResizingRowID(
-                                    el.gridstackNode.grid.parentGridItem.id
-                                );
-                            })
-                            .on('resizestop', () => {
-                                this.store.setResizingRowID(null);
-                            });
+                        const subgrid = GridStack.addGrid(newGridElement, subGridOptions);
+                        this.setSubGridEvent(subgrid);
                     }
 
                     layout.push(row);
@@ -262,16 +280,24 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             this.grid.load(layout); // efficient that does diffs only
         });
 
-        this.fullyLoaded.emit();
+        this.addWidget.toArray().forEach(({ nativeElement }) => {
+            nativeElement.ddElement
+                .on('dragstart', ({ target }) => {
+                    const helper = (target as DDElementHost).ddElement.ddDraggable?.helper;
+                    this.draggingElement = (helper || target) as HTMLElement;
+                    this.setAddBoxIsDragging(true);
+                })
+                .on('dragstop', () => {
+                    this.onDragStop();
+                    this.setAddBoxIsDragging(false);
+                });
+        });
     }
 
     ngOnDestroy(): void {
         this.grid.destroy(true);
         this.destroy$.next(true);
         this.destroy$.complete();
-
-        this.addBox.nativeElement.ddElement.off('dragstart');
-        this.addBox.nativeElement.ddElement.off('dragstop');
     }
 
     /**
@@ -423,5 +449,37 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      */
     setAddBoxIsDragging(isDragging: boolean): void {
         this.addBoxIsDragging = isDragging;
+    }
+
+    /**
+     * @description This method sets the gridstack options
+     *
+     * @param {GridStack} subGrid
+     * @memberof TemplateBuilderComponent
+     */
+    setSubGridEvent(subGrid: GridStack): void {
+        subGrid
+            .on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
+                this.store.subGridOnDropped(oldNode, newNode);
+                this.onDragStop();
+            })
+            .on('change', (_: Event, nodes: GridStackNode[]) => {
+                this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
+            })
+            .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
+                this.store.setResizingRowID(el.gridstackNode.grid.parentGridItem.id);
+            })
+            .on('resizestop', () => {
+                this.store.setResizingRowID(null);
+            })
+            .on('dragstart', ({ target }) => {
+                this.draggingElement = target as HTMLElement;
+            })
+            .on('dragstop', () => this.onDragStop());
+    }
+
+    onDragStop() {
+        this.draggingElement = null;
+        this.scrollDirection = SCROLL_DIRECTION.NONE;
     }
 }

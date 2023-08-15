@@ -2,14 +2,19 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.command.CommandTest;
+import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.UUID;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -41,8 +46,8 @@ class SiteCommandTest extends CommandTest {
     }
 
     /**
-     * Given scenario: Simply call current site
-     * Expected Result: Verify the command completes successfully
+     * Given scenario: Simply call current site Expected Result: Verify the command completes
+     * successfully
      */
     @Test
     void Test_Command_Current_Site() {
@@ -58,8 +63,8 @@ class SiteCommandTest extends CommandTest {
     }
 
     /**
-     * Given scenario: Simply call list all
-     * Expected Result: Verify the command completes successfully
+     * Given scenario: Simply call list all Expected Result: Verify the command completes
+     * successfully
      */
     @Test
     void Test_Command_Site_List_All() {
@@ -67,7 +72,8 @@ class SiteCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--interactive=false");
+            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                    "--interactive=false");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("name:"));
@@ -75,8 +81,8 @@ class SiteCommandTest extends CommandTest {
     }
 
     /**
-     * Given scenario: Simply call find by name command
-     * Expected Result: Verify the command completes successfully
+     * Given scenario: Simply call find by name command Expected Result: Verify the command
+     * completes successfully
      */
     @Test
     void Test_Command_Site_Find_By_Name() {
@@ -84,7 +90,8 @@ class SiteCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
+            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name",
+                    siteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("name:"));
@@ -93,8 +100,8 @@ class SiteCommandTest extends CommandTest {
 
 
     /**
-     * Given scenario: Simply call create command
-     * Expected Result: Verify the command completes successfully Then test delete and verify it's gone
+     * Given scenario: Simply call create command Expected Result: Verify the command completes
+     * successfully Then test delete and verify it's gone
      */
     @Test
     void Test_Command_Site_Push_Publish_UnPublish_Then_Archive() throws IOException {
@@ -120,7 +127,8 @@ class SiteCommandTest extends CommandTest {
             status = commandLine.execute(SiteCommand.NAME, SiteUnarchive.NAME, newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName, "--workspace", workspace.root().toString());
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName,
+                    "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
         } finally {
@@ -129,8 +137,8 @@ class SiteCommandTest extends CommandTest {
     }
 
     /**
-     * Given scenario: Simply call create command followed by copy
-     * Expected Result: We simply verify the command completes successfully
+     * Given scenario: Simply call create command followed by copy Expected Result: We simply verify
+     * the command completes successfully
      */
     @Test
     void Test_Command_Copy() {
@@ -138,7 +146,8 @@ class SiteCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCommand.NAME, SiteCopy.NAME, "--idOrName", siteName);
+            final int status = commandLine.execute(SiteCommand.NAME, SiteCopy.NAME, "--idOrName",
+                    siteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("New Copy Site is"));
@@ -146,8 +155,10 @@ class SiteCommandTest extends CommandTest {
     }
 
     /**
-     * Given scenario: Create a new site, pull it, push it, and pull it again.
-     * Expected Result: The site should be created. Pulled so we can test push. At the end we delete it and verify it's gone.
+     * Given scenario: Create a new site, pull it, push it, and pull it again. Expected Result: The
+     * site should be created. Pulled so we can test push. At the end we delete it and verify it's
+     * gone.
+     *
      * @throws IOException
      */
     @Test
@@ -171,11 +182,13 @@ class SiteCommandTest extends CommandTest {
 
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SiteRemove.NAME, newSiteName, "--cli-test");
+            status = commandLine.execute(SiteCommand.NAME, SiteRemove.NAME, newSiteName,
+                    "--cli-test");
 
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName, "--workspace", workspace.root().toString());
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName,
+                    "--workspace", workspace.root().toString());
 
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
 
@@ -191,8 +204,9 @@ class SiteCommandTest extends CommandTest {
     }
 
     /**
-     * Given scenario: Create a new site, pull it, push it, and pull it again.
-     * Expected Results: The site should be created. Pulled so we can test push.
+     * Given scenario: Create a new site, pull it, push it, and pull it again. Expected Results: The
+     * site should be created. Pulled so we can test push.
+     *
      * @throws IOException
      */
     @Test
@@ -205,7 +219,7 @@ class SiteCommandTest extends CommandTest {
                 + "  \"modUser\" : \"dotcms.org.1\",\n"
                 + "  \"live\" : true,\n"
                 + "  \"working\" : true\n"
-                + "}",newSiteName);
+                + "}", newSiteName);
 
         final Path path = Files.createTempFile("test", "json");
         Files.write(path, siteDescriptor.getBytes());
@@ -214,7 +228,8 @@ class SiteCommandTest extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             commandLine.setErr(out);
-            int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME, path.toFile().getAbsolutePath());
+            int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    path.toFile().getAbsolutePath());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
@@ -223,8 +238,10 @@ class SiteCommandTest extends CommandTest {
     }
 
     /**
-     * Given scenario: Despite the number of times the same Site gets pulled, it should only be created once locally
-     * Expected result: The WorkspaceManager should be able to create and destroy a workspace
+     * Given scenario: Despite the number of times the same Site gets pulled, it should only be
+     * created once locally Expected result: The WorkspaceManager should be able to create and
+     * destroy a workspace
+     *
      * @throws IOException
      */
     @Test
@@ -234,8 +251,9 @@ class SiteCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            for (int i=0; i<= 5; i++) {
-                int status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, siteName, "--workspace", workspace.root().toString());
+            for (int i = 0; i <= 5; i++) {
+                int status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, siteName,
+                        "--workspace", workspace.root().toString());
                 Assertions.assertEquals(CommandLine.ExitCode.OK, status);
                 System.out.println("Site Pulled: " + i);
             }
@@ -253,6 +271,143 @@ class SiteCommandTest extends CommandTest {
         } finally {
             workspaceManager.destroy(workspace);
         }
+    }
+
+    /**
+     * <b>Command to test:</b> site pull <br>
+     * <b>Given Scenario:</b> Test the site pull command. This test checks if the JSON site
+     * file has a "dotCMSObjectType" field with the value "Site". <br>
+     * <b>Expected Result:</b> The JSON site file should have a
+     * "dotCMSObjectType" field with the value "Site".
+     *
+     * @throws IOException if there is an error reading the JSON site file
+     */
+    @Test
+    void Test_Command_Site_Pull_Checking_JSON_DotCMS_Type() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // Creating a new site
+            int status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Pulling the site
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName,
+                    "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Reading the JSON site file to check if the json has a: "dotCMSObjectType" : "Site"
+            final var siteFilePath = Path.of(workspace.sites().toString(), newSiteName + ".json");
+            var json = Files.readString(siteFilePath);
+            Assertions.assertTrue(json.contains("\"dotCMSObjectType\" : \"Site\""));
+
+            // And now pushing the site back to the server to make sure the structure is still correct
+            status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    siteFilePath.toAbsolutePath().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> site pull <br>
+     * <b>Given Scenario:</b> Test the site pull command. This test checks if the YAML site
+     * file has a "dotCMSObjectType" field with the value "Site". <br>
+     * <b>Expected Result:</b> The YAML site file should have a
+     * "dotCMSObjectType" field with the value "Site".
+     *
+     * @throws IOException if there is an error reading the YAML site file
+     */
+    @Test
+    void Test_Command_Site_Pull_Checking_YAML_DotCMS_Type() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // Creating a new site
+            int status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Pulling the site
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName,
+                    "-fmt", InputOutputFormat.YAML.toString(), "--workspace",
+                    workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Reading the YAML site file to check if the yaml has a: "dotCMSObjectType" : "Site"
+            final var siteFilePath = Path.of(workspace.sites().toString(), newSiteName + ".yml");
+            var json = Files.readString(siteFilePath);
+            Assertions.assertTrue(json.contains("dotCMSObjectType: \"Site\""));
+
+            // And now pushing the site back to the server to make sure the structure is still correct
+            status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    siteFilePath.toAbsolutePath().toString(), "-fmt",
+                    InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Creates a temporary folder with a random name.
+     *
+     * @return The path to the created temporary folder.
+     * @throws IOException If an I/O error occurs while creating the temporary folder.
+     */
+    private Path createTempFolder() throws IOException {
+
+        String randomFolderName = "folder-" + UUID.randomUUID();
+        return Files.createTempDirectory(randomFolderName);
+    }
+
+    /**
+     * Deletes a temporary directory and all its contents.
+     *
+     * @param folderPath The path to the temporary directory to be deleted.
+     * @throws IOException If an I/O error occurs while deleting the directory or its contents.
+     */
+    private void deleteTempDirectory(Path folderPath) throws IOException {
+        Files.walkFileTree(folderPath, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Files.delete(file); // Deletes the file
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                    throws IOException {
+                Files.delete(dir); // Deletes the directory after its content has been deleted
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
 }

@@ -935,7 +935,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                     });
                 }
             },
-            // Schedule experiment
+            // Cancel Schedule
             {
                 label: this.dotMessageService.get('experiments.configure.scheduling.cancel'),
                 visible: experiment?.status === DotExperimentStatus.SCHEDULED,

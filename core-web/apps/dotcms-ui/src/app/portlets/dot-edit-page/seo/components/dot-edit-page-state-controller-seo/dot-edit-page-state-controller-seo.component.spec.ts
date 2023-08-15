@@ -7,6 +7,7 @@ import { DecimalPipe } from '@angular/common';
 import { Component, DebugElement, LOCALE_ID } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { SelectButtonModule } from 'primeng/selectbutton';
@@ -124,7 +125,8 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 TooltipModule,
                 DotPipesModule,
                 DotEditPageStateControllerSeoComponent,
-                DotEditPageLockInfoSeoComponent
+                DotEditPageLockInfoSeoComponent,
+                RouterTestingModule
             ]
         });
     }));
