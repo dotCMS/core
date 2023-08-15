@@ -51,15 +51,20 @@ public class ContentUtils {
 	    }
 
 
-		/**
-		 * Will pull a single piece of content for you based on the inode or identifier. It will always
-		 * try to retrieve the live content unless in EDIT_MODE in the backend of dotCMS when passing in an
-		 * identifier.  If it is an inode this is ignored.
-		 * Will return NULL if not found
-		 * @param inodeOrIdentifier Can be either an Inode or Indentifier of content.
-		 * @return NULL if not found
-		 */
-		public static Contentlet find(String inodeOrIdentifier, User user, boolean EDIT_OR_PREVIEW_MODE, long sessionLang){
+	/**
+	 * Pulls a single piece of content based on its Inode or Identifier. It will always try to retrieve the live
+	 * content unless the process calling this method is in EDIT or PREVIEW Mode in the back-end of dotCMS when
+	 * passing in an Identifier. If it is an Inode, this is ignored. This method will return {@code null} if the
+	 * Contentlet is not found.
+	 *
+	 * @param inodeOrIdentifier    The Inode or Identifier of the {@link Contentlet} being requested.
+	 * @param user                 The {@link User} used to retrieve the Contentlet's data.
+	 * @param EDIT_OR_PREVIEW_MODE If the current access mode is EDIT or PREVIEW, set this to {@code true}.
+	 * @param sessionLang          The language ID of the current session.
+	 *
+	 * @return The requested {@link Contentlet} object.
+	 */
+	public static Contentlet find(final String inodeOrIdentifier, final User user, final boolean EDIT_OR_PREVIEW_MODE, final long sessionLang){
 			return find(inodeOrIdentifier,user,null,EDIT_OR_PREVIEW_MODE, sessionLang);
 		}
 
@@ -74,11 +79,24 @@ public class ContentUtils {
             
             return contentlet;
 	    }
-		
-		
-		
-        public static Contentlet find(final String inodeOrIdentifierIn, User user, String tmDate, boolean EDIT_OR_PREVIEW_MODE,
-                        long sessionLang) {
+
+
+	/**
+	 * Pulls a single piece of content based on its Inode or Identifier. It will always try to retrieve the live
+	 * content unless the process calling this method is in EDIT or PREVIEW Mode in the back-end of dotCMS when
+	 * passing in an Identifier. If it is an Inode, this is ignored. This method will return {@code null} if the
+	 * Contentlet is not found.
+	 *
+	 * @param inodeOrIdentifierIn  The Inode or Identifier of the {@link Contentlet} being requested.
+	 * @param user                 The {@link User} used to retrieve the Contentlet's data.
+	 * @param tmDate               Optional, the specific date for retrieving a specific Time Machine version.
+	 * @param EDIT_OR_PREVIEW_MODE If the current access mode is EDIT or PREVIEW, set this to {@code true}.
+	 * @param sessionLang          The language ID of the current session.
+	 *
+	 * @return The requested {@link Contentlet} object.
+	 */
+	public static Contentlet find(final String inodeOrIdentifierIn, final User user, final String tmDate, final boolean EDIT_OR_PREVIEW_MODE,
+								  final long sessionLang) {
             final String inodeOrIdentifier = RecurrenceUtil.getBaseEventIdentifier(inodeOrIdentifierIn);
             final String[] recDates = RecurrenceUtil.getRecurrenceDates(inodeOrIdentifier);
             try {
@@ -104,22 +122,26 @@ public class ContentUtils {
                     
                     // timemachine content to be published in the future, return the working version
                     if (UtilMethods.isSet(ident.getSysPublishDate()) && ffdate.after(ident.getSysPublishDate())) {
-                        return APILocator.getContentletAPI()
-                                        .findContentletByIdentifierOrFallback(inodeOrIdentifier, false, sessionLang, user, true)
+						return conAPI.findContentletByIdentifierOrFallback(inodeOrIdentifier, false, sessionLang, user, true)
                                         .orElse(null);
                     }
                 }
 
-                contentlet = APILocator.getContentletAPI().findContentletByIdentifierOrFallback(inodeOrIdentifier,
-                                EDIT_OR_PREVIEW_MODE, sessionLang, user, true).orElse(null);
+				// If content is being viewed in EDIT_OR_PREVIEW_MODE, we need to get the working version. Otherwise, we
+				// need the live version. That's why we're negating it when calling the API
+				contentlet = conAPI.findContentletByIdentifierOrFallback(inodeOrIdentifier,
+						!EDIT_OR_PREVIEW_MODE, sessionLang, user, true).orElse(null);
 
                 return fixRecurringDates(contentlet, recDates);
 
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 String msg = e.getMessage();
                 msg = (msg.contains("\n")) ? msg.substring(0, msg.indexOf("\n")) : msg;
-                Logger.warn(ContentUtils.class, msg);
-                Logger.debug(ContentUtils.class, e.getMessage(), e);
+				final String errorMsg = String.format("An error occurred when User '%s' attempted to find Contentlet " +
+								"with Inode/ID '%s' [lang=%s, tmDate=%s]: %s",
+						user.getUserId(), inodeOrIdentifier, sessionLang, tmDate, msg);
+				Logger.warn(ContentUtils.class, errorMsg);
+				Logger.debug(ContentUtils.class, errorMsg, e);
                 return null;
             }
 
