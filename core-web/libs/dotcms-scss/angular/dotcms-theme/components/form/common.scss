@@ -23,23 +23,35 @@
     border-radius: $border-radius-sm;
 }
 
+#form-field-hover {
+    border: $field-border-size solid $color-palette-primary-400;
+}
+
+#form-field-focus {
+    border: $field-border-size solid $color-palette-primary-400;
+    @include field-focus;
+}
+
+#form-field-disabled {
+    border: $field-border-size solid $color-palette-gray-200;
+    background: $color-palette-gray-100;
+}
+
 #form-field-states {
     &:enabled:hover,
     &:hover {
-        border: $field-border-size solid $color-palette-primary-400;
+        @extend #form-field-hover;
     }
 
     &:enabled:active,
     &:enabled:focus,
     &:active,
     &:focus {
-        border: $field-border-size solid $color-palette-primary-400;
-        @include field-focus;
+        @extend #form-field-focus;
     }
 
     &:disabled {
-        border: $field-border-size solid $color-palette-gray-200;
-        background: $color-palette-gray-100;
+        @extend #form-field-disabled;
     }
 }
 

@@ -1,39 +1,32 @@
 @use "variables" as *;
+@import "common";
 
 .p-multiselect {
-    background: $white;
-    border: 1px solid $input-border-color;
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
-        background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
-    border-radius: $border-radius-xs;
+    @extend #form-field-base;
     min-width: 13rem;
 }
 
 .p-multiselect:not(.p-multiselect-open):hover {
-    border-color: $input-border-color-hover;
+    @extend #form-field-hover;
 }
 
-.p-multiselect:not(.p-disabled).p-focus {
-    outline: 0 none;
-    outline-offset: 0;
-    box-shadow: $input-inset-shadow;
-    border-color: $color-palette-primary;
+.p-multiselect:not(.p-disabled).p-focus,
+.p-multiselect.p-multiselect-open {
+    @extend #form-field-focus;
 }
 
-.p-multiselect .p-multiselect-label {
-    border: 0 none;
-    padding: $spacing-2 $spacing-2;
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
-        background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
+.p-multiselect-label-container {
+    display: flex;
+    align-items: center;
 }
 
-.p-multiselect .p-multiselect-label.p-placeholder {
+.p-multiselect .p-multiselect-label:not(.p-placeholder) {
     color: $black;
 }
 
 .p-multiselect .p-multiselect-trigger {
     background: transparent;
-    color: $black;
+    color: $color-palette-primary;
     width: 2.357rem;
     border-top-right-radius: $border-radius-xs;
     border-bottom-right-radius: $border-radius-xs;
@@ -72,11 +65,6 @@
 
 .p-multiselect-panel .p-multiselect-header .p-checkbox {
     margin-right: $spacing-1;
-}
-
-.p-multiselect.p-multiselect-open {
-    border-color: $input-border-color-hover;
-    box-shadow: $input-inset-shadow;
 }
 
 .p-multiselect-panel .p-multiselect-header .p-multiselect-close {

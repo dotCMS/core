@@ -1,7 +1,7 @@
 @use "variables" as *;
 @import "common";
 
-.p-inputtext {
+.p-inputtext:not(.p-dropdown-label) {
     @extend #form-field-extend;
 
     &.p-inputtext-sm {
