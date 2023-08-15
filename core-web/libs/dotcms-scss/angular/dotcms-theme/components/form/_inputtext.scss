@@ -2,16 +2,17 @@
 @import "common";
 
 .p-inputtext {
-    @extend #input-text-extend;
+    @extend #form-field-extend;
 
     &.p-inputtext-sm {
-        @extend #input-text-sm;
+        @extend #form-field-sm;
     }
 
     &.p-inputtextarea {
-        @extend #input-text-area;
+        @extend #form-field-text-area;
     }
 
+    // This styles should be moved to the respective components when they are available
     &.p-dropdown-label,
     &.p-autocomplete-multiple-container {
         height: unset; // Some components use input text underneath but they have their own height

@@ -3,7 +3,7 @@
 @import "mixins";
 
 dot-material-icon-picker {
-    @extend #input-text-extend;
+    @extend #form-field-extend;
 
     &.is-open {
         border: $field-border-size solid $color-palette-primary-400;

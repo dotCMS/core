@@ -9,7 +9,7 @@ dot-binary-file {
             display: flex;
 
             input {
-                @extend #input-text-extend;
+                @extend #form-field-extend;
                 border-top-left-radius: $border-radius-xs;
                 border-bottom-left-radius: $border-radius-xs;
                 padding: 1.07rem;

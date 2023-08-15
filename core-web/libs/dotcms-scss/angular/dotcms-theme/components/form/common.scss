@@ -1,7 +1,7 @@
 @use "variables" as *;
 @import "mixins";
 
-#input-text-base {
+#form-field-base {
     background-color: $white;
     height: $field-height-md;
     border-radius: $field-border-radius;
@@ -17,13 +17,13 @@
     }
 }
 
-#input-text-sm {
+#form-field-sm {
     height: $field-height-sm;
     font-size: $font-size-sm;
     border-radius: $border-radius-sm;
 }
 
-#input-text-states {
+#form-field-states {
     &:enabled:hover,
     &:hover {
         border: $field-border-size solid $color-palette-primary-400;
@@ -43,12 +43,12 @@
     }
 }
 
-#input-text-area {
+#form-field-text-area {
     padding: $spacing-1;
     min-height: $text-area-min-height;
 }
 
-#input-text-extend {
-    @extend #input-text-base;
-    @extend #input-text-states;
+#form-field-extend {
+    @extend #form-field-base;
+    @extend #form-field-states;
 }
