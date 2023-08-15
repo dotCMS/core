@@ -109,6 +109,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -446,25 +448,58 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @WrapInTransaction
     public void delete(final String id, final User user)
             throws DotDataException, DotSecurityException {
+        innerDelete(id, user, (experiment)-> {
+            if(experiment.status() != DRAFT &&
+                    experiment.status() != Status.SCHEDULED) {
+                throw new DotStateException("Only DRAFT or SCHEDULED experiments can be deleted");
+            }
+        });
+
+    }
+
+    @Override
+    @WrapInTransaction
+    public void forceDelete(final String id, final User user)
+            throws DotDataException, DotSecurityException {
+        innerDelete(id, user, null);
+    }
+
+    @WrapInTransaction
+    private void innerDelete(final String id, final User user, final Consumer<Experiment> extraValidation)
+            throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 invalidLicenseMessageSupplier);
         DotPreconditions.checkArgument(UtilMethods.isSet(id), "id must be provided.");
 
-        final Optional<Experiment> persistedExperiment =  find(id, user);
+        final Optional<Experiment> persistedExperimentOptional =  find(id, user);
 
-        DotPreconditions.isTrue(persistedExperiment.isPresent(),()-> "Experiment with provided id not found",
+        DotPreconditions.isTrue(persistedExperimentOptional.isPresent(),()-> "Experiment with provided id not found",
                 DoesNotExistException.class);
 
-        validatePageEditPermissions(user, persistedExperiment.get(),
-                "You don't have permission to delete the Experiment. "
-                        + "Experiment Id: " + persistedExperiment.get().id());
+        final Experiment persistedExperiment = persistedExperimentOptional.get();
 
-        if(persistedExperiment.get().status() != DRAFT &&
-                persistedExperiment.get().status() != Status.SCHEDULED) {
-            throw new DotStateException("Only DRAFT or SCHEDULED experiments can be deleted");
+        validatePageEditPermissions(user, persistedExperiment,
+                "You don't have permission to delete the Experiment. "
+                        + "Experiment Id: " + persistedExperiment.id());
+
+        if (extraValidation != null) {
+            extraValidation.accept(persistedExperiment);
         }
 
-        factory.delete(persistedExperiment.get());
+        persistedExperiment.trafficProportion().variants().stream()
+                .filter(variant -> !VariantAPI.DEFAULT_VARIANT.name().equals(variant.id()))
+                .forEach(variant -> deleteVariant(variant));
+
+        factory.delete(persistedExperiment);
+    }
+
+    private void deleteVariant(ExperimentVariant variant) {
+        try {
+            variantAPI.archive(variant.id());
+            variantAPI.delete(variant.id());
+        } catch (DotDataException e) {
+            Logger.error(this, "Error deleting variant", e);
+        }
     }
 
     @Override

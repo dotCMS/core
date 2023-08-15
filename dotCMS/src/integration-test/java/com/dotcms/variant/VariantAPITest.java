@@ -8,6 +8,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -27,10 +28,12 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -38,6 +41,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -212,8 +216,34 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test
-    public void delete() throws DotDataException {
+    public void delete() throws DotDataException, DotSecurityException {
         final Variant variant = new VariantDataGen().archived(true).nextPersisted();
+
+        final Field textField = new FieldDataGen()
+                .name("text")
+                .velocityVarName("text")
+                .type(TextField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(textField)
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .setProperty(textField.variable(), "LIVE")
+                .variant(variant)
+                .nextPersisted();
+
+        ContentletDataGen.publish(contentlet);
+        ContentletDataGen.update(contentlet, map(textField.variable(), "WORKING"));
+
+        final Identifier identifier = APILocator.getIdentifierAPI()
+                .find(contentlet.getIdentifier());
+        final List<Contentlet> allVersionsBeforeDeleted = APILocator.getContentletAPI()
+                .findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(),
+                        false);
+
+        assertEquals(2, allVersionsBeforeDeleted.size());
 
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
@@ -222,6 +252,12 @@ public class VariantAPITest {
 
         results = getResults(variant);
         assertTrue(results.isEmpty());
+
+        final List<Contentlet> allVersionsAfterDeleted = APILocator.getContentletAPI()
+                .findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(),
+                        false);
+
+        assertTrue(allVersionsAfterDeleted.isEmpty());
     }
 
     /**
@@ -1292,6 +1328,76 @@ public class VariantAPITest {
                 .getPageMultiTrees(htmlPageAsset.getIdentifier(), variant.name(), false);
 
         assertTrue(pageMultiTrees.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#delete(String)}
+     * When:
+     * - Create a Page
+     * - Create a Variant and an Experiment
+     * - Add a Contentlet inside the page just for the Specific Variant
+     * - Remove The Variant
+     *
+     * Should: remove the Variant and the MultiTree registers
+     */
+    @Test
+    public void removeMultiTreeAfterRemoveVariant() throws DotDataException, DotSecurityException {
+        final Variant variant = new VariantDataGen().archived(true).nextPersisted();
+
+        final Field textField = new FieldDataGen()
+                .name("text")
+                .velocityVarName("text")
+                .type(TextField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(textField)
+                .nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .setProperty(textField.variable(), "CONTENT 1")
+                .variant(variant)
+                .nextPersisted();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .setProperty(textField.variable(), "CONTENT 3")
+                .variant(variant)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setVariant(variant)
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setVariant(variant)
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        checkMultiTreeCount(variant, 2);
+
+        APILocator.getVariantAPI().delete(variant.name());
+
+        checkMultiTreeCount(variant, 0);
+    }
+
+    private static void checkMultiTreeCount(Variant variant, int expected) throws DotDataException {
+        final List<Map<String, Object>> loadObjectResultsBeforeDeleted = new DotConnect().setSQL(
+                        "SELECT count(*) FROM multi_tree WHERE variant_id= ?")
+                .addParam(variant.name()).loadObjectResults();
+
+        assertEquals(1, loadObjectResultsBeforeDeleted.size());
+        final int count = Integer.parseInt(loadObjectResultsBeforeDeleted.get(0).get("count").toString());
+        assertEquals(expected, count);
     }
 }
 

@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Logger;
@@ -105,6 +106,24 @@ public class VariantAPIImpl implements VariantAPI {
         Logger.debug(this, ()-> "Deleting Variant: " + variant);
 
         variantFactory.delete(id);
+
+        try {
+            APILocator.getContentletAPI().getAllContentByVariants(APILocator.systemUser(), false , variant.name())
+                    .stream()
+                    .forEach(contentlet -> deleteContentlet(contentlet));
+        } catch (DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+
+    }
+
+    private static void deleteContentlet(Contentlet contentlet) {
+        try {
+            APILocator.getContentletAPI().archive(contentlet, APILocator.systemUser(), false);
+            APILocator.getContentletAPI().delete(contentlet, APILocator.systemUser(), false);
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     /**
