@@ -67,6 +67,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -161,11 +162,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 && UtilMethods.isSet(pageAsContent.getIdentifier()),
                 DotStateException.class, ()->"Invalid Page provided");
 
-        if(!permissionAPI.doesUserHavePermission(pageAsContent, PermissionLevel.EDIT.getType(), user)) {
-            Logger.error(this, "You don't have permission to save the Experiment."
-                    + " Experiment name: " + experiment.name() + ". Page Id: " + experiment.pageId());
-            throw new DotSecurityException("You don't have permission to save the Experiment.");
-        }
+        validatePermissionToEdit(experiment, user, pageAsContent);
 
         Experiment.Builder builder = Experiment.builder().from(experiment);
 
@@ -217,6 +214,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return savedExperiment.get();
+    }
+
+    private void validatePermissionToEdit(Experiment experiment, User user, Contentlet pageAsContent)
+            throws DotDataException, DotSecurityException {
+
+        try {
+            validateExperimentPagePermissions(user, experiment, PermissionLevel.EDIT,
+                    "You don't have permission to Edit the Page");
+
+            validateEditTemplateLayoutPermissions(user, experiment);
+        } catch (DotSecurityException e) {
+            Logger.error(this, "You don't have permission to save the Experiment."
+                    + " Experiment name: " + experiment.name() + ". Page Id: " + experiment.pageId() +
+                    "\n" + e.getMessage());
+            throw new DotSecurityException("You don't have permission to save the Experiment.");
+        }
     }
 
     private static boolean isExistingSchedulingChanging(Experiment experimentToSave,
@@ -371,9 +384,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         Optional<Experiment> experiment =  factory.find(id);
 
         if(experiment.isPresent()) {
-            validatePermissions(user, experiment.get(),
+            validatePageEditPermissions(user, experiment.get(),
                     "You don't have permission to get the Experiment. "
-                            + "Experiment Id: " + experiment.get().id());
+                            + "Experiment Id: " + experiment.get().id().get());
 
             experiment = Optional.of(addTargetingConditions(experiment.get(), user));
         }
@@ -417,7 +430,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(persistedExperiment.isPresent(),()-> "Experiment with provided id not found",
                 DoesNotExistException.class);
 
-        validatePermissions(user, persistedExperiment.get(),
+        validatePageEditPermissions(user, persistedExperiment.get(),
                 "You don't have permission to archive the Experiment. "
                         + "Experiment Id: " + persistedExperiment.get().id());
 
@@ -442,7 +455,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(persistedExperiment.isPresent(),()-> "Experiment with provided id not found",
                 DoesNotExistException.class);
 
-        validatePermissions(user, persistedExperiment.get(),
+        validatePageEditPermissions(user, persistedExperiment.get(),
                 "You don't have permission to delete the Experiment. "
                         + "Experiment Id: " + persistedExperiment.get().id());
 
@@ -466,67 +479,86 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @WrapInTransaction
     public Experiment start(String experimentId, User user)
             throws DotDataException, DotSecurityException {
-        DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                invalidLicenseMessageSupplier);
-        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
 
-        final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
-                ()-> new IllegalArgumentException("Experiment with provided id not found")
-        );
+        try {
+            DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
+                    invalidLicenseMessageSupplier);
+            DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
 
-        validatePermissions(user, persistedExperiment,
-                "You don't have permission to start the Experiment. "
-                        + "Experiment Id: " + persistedExperiment.id());
+            final Experiment persistedExperiment = find(experimentId, user).orElseThrow(
+                    () -> new IllegalArgumentException("Experiment with provided id not found")
+            );
 
-        DotPreconditions.isTrue(persistedExperiment.status()!=Status.RUNNING ||
-                        persistedExperiment.status() != Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
-                DotStateException.class);
 
-        DotPreconditions.isTrue(persistedExperiment.status()== DRAFT
-                ,()-> "Only DRAFT experiments can be started",
-                DotStateException.class);
+            validateExperimentPagePermissions(user, persistedExperiment, PermissionLevel.PUBLISH,
+                    String.format("User %s doesn't have PUBLISH permission on the Experiment Page's. Experiment Id: %s",
+                            user.getUserId(), persistedExperiment.id().get()));
 
-        DotPreconditions.checkState(hasAtLeastOneVariant(persistedExperiment), "The Experiment needs at "
-                + "least one Page Variant in order to be started.");
+            validatePublishTemplateLayoutPermissions(user, persistedExperiment);
 
-        DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
-                + "have the Goal set.");
+            DotPreconditions.isTrue(persistedExperiment.status() != Status.RUNNING ||
+                            persistedExperiment.status() != Status.SCHEDULED,
+                    () -> "Cannot start an already started Experiment.",
+                    DotStateException.class);
 
-        Optional<Experiment> runningExperimentOnPage = getRunningExperimentsOnPage(
-                user, persistedExperiment);
+            DotPreconditions.isTrue(persistedExperiment.status() == DRAFT
+                    , () -> "Only DRAFT experiments can be started",
+                    DotStateException.class);
 
-        if(runningExperimentOnPage.isPresent()) {
-            final boolean meantToRunNow = persistedExperiment.scheduling().isEmpty();
+            DotPreconditions.checkState(hasAtLeastOneVariant(persistedExperiment),
+                    "The Experiment needs at "
+                            + "least one Page Variant in order to be started.");
 
-            if(meantToRunNow) {
-                throw new DotStateException("There is a running Experiment on the same page. Name: "
-                        + runningExperimentOnPage.get().name());
+            DotPreconditions.checkState(persistedExperiment.goals().isPresent(),
+                    "The Experiment needs to "
+                            + "have the Goal set.");
+
+            Optional<Experiment> runningExperimentOnPage = getRunningExperimentsOnPage(
+                    user, persistedExperiment);
+
+            if (runningExperimentOnPage.isPresent()) {
+                final boolean meantToRunNow = persistedExperiment.scheduling().isEmpty();
+
+                if (meantToRunNow) {
+                    throw new DotStateException(
+                            "There is a running Experiment on the same page. Name: "
+                                    + runningExperimentOnPage.get().name());
+                }
+
+                final Experiment runningExperiment = runningExperimentOnPage.get();
+                DotPreconditions.isTrue(runningExperiment.scheduling().orElseThrow().endDate()
+                                .orElseThrow().isBefore(
+                                        persistedExperiment.scheduling().orElseThrow().startDate()
+                                                .orElseThrow()),
+                        () -> "Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. "
+                                + "Overlapping with Experiment: "
+                                + runningExperiment.name(),
+                        DotStateException.class);
             }
 
-            final Experiment runningExperiment = runningExperimentOnPage.get();
-            DotPreconditions.isTrue(runningExperiment.scheduling().orElseThrow().endDate()
-                    .orElseThrow().isBefore(persistedExperiment.scheduling().orElseThrow().startDate().orElseThrow()),
-                    ()-> "Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. "
-                            + "Overlapping with Experiment: "
-                            + runningExperiment.name(),
-                    DotStateException.class);
+            Experiment toReturn;
+
+            if (emptyScheduling(persistedExperiment)) {
+                final Scheduling scheduling = startNowScheduling();
+                final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling)
+                        .withStatus(RUNNING);
+                validateNoConflictsWithScheduledExperiments(experimentToSave, user);
+                toReturn = innerStart(experimentToSave, user, true);
+            } else {
+                Scheduling scheduling = persistedExperiment.scheduling().get();
+                final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling)
+                        .withStatus(SCHEDULED);
+                validateNoConflictsWithScheduledExperiments(experimentToSave, user);
+                toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED),
+                        user);
+            }
+
+            return toReturn;
+        } catch (DotSecurityException e) {
+            final String message = "You don't have permission to start the Experiment Id: " + experimentId;
+            Logger.error(this, message + "\n" + e.getMessage());
+            throw new DotSecurityException(message, e);
         }
-
-        Experiment toReturn;
-
-        if(emptyScheduling(persistedExperiment)) {
-            final Scheduling scheduling = startNowScheduling();
-            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
-            validateNoConflictsWithScheduledExperiments(experimentToSave, user);
-            toReturn = innerStart(experimentToSave, user, true);
-        } else {
-            Scheduling scheduling = persistedExperiment.scheduling().get();
-            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
-            validateNoConflictsWithScheduledExperiments(experimentToSave, user);
-            toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
-        }
-
-        return toReturn;
     }
 
     @Override
@@ -540,7 +572,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 ()-> new IllegalArgumentException("Experiment with provided id not found")
         );
 
-        validatePermissions(user, persistedExperiment,
+        validatePageEditPermissions(user, persistedExperiment,
                 "You don't have permission to start the Experiment. "
                         + "Experiment Id: " + persistedExperiment.id());
 
@@ -705,7 +737,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 ()-> new IllegalArgumentException("Experiment with provided id not found")
         );
 
-        validatePermissions(user, persistedExperiment,
+        validatePageEditPermissions(user, persistedExperiment,
                 "You don't have permission to start the Experiment. "
                         + "Experiment Id: " + persistedExperiment.id());
 
@@ -770,37 +802,43 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @WrapInTransaction
     public Experiment end(String experimentId, User user)
             throws DotDataException, DotSecurityException {
-        DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                invalidLicenseMessageSupplier);
-        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+        try {
+            DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
+                    invalidLicenseMessageSupplier);
+            DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
 
-        final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
+            final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
 
-        DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),()-> "Experiment with provided id not found",
-                DoesNotExistException.class);
+            DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),()-> "Experiment with provided id not found",
+                    DoesNotExistException.class);
 
-        final Experiment experimentFromFactory = persistedExperimentOpt.get();
-        validatePermissions(user, experimentFromFactory,
-                "You don't have permission to archive the Experiment. "
-                        + "Experiment Id: " + persistedExperimentOpt.get().id());
+            final Experiment experimentFromFactory = persistedExperimentOpt.get();
 
-        DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING, ()->
-                        "Only RUNNING experiments can be ended", DotStateException.class);
+            validatePagePublishPermissions(user, experimentFromFactory);
+            validatePublishTemplateLayoutPermissions(user, experimentFromFactory);
 
-        DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
-                ()-> "Scheduling not valid.", DotStateException.class);
+            DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING, ()->
+                            "Only RUNNING experiments can be ended", DotStateException.class);
 
-        final Scheduling endedScheduling = Scheduling.builder().from(persistedExperimentOpt.get()
-                .scheduling().get()).endDate(Instant.now().plus(1, ChronoUnit.MINUTES))
-                .build();
+            DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
+                    ()-> "Scheduling not valid.", DotStateException.class);
 
-        final Experiment ended = persistedExperimentOpt.get().withStatus(ENDED)
-                .withScheduling(endedScheduling);
-        final Experiment saved = save(ended, user);
+            final Scheduling endedScheduling = Scheduling.builder().from(persistedExperimentOpt.get()
+                    .scheduling().get()).endDate(Instant.now().plus(1, ChronoUnit.MINUTES))
+                    .build();
 
-        cacheRunningExperiments();
+            final Experiment ended = persistedExperimentOpt.get().withStatus(ENDED)
+                    .withScheduling(endedScheduling);
+            final Experiment saved = save(ended, user);
 
-        return saved;
+            cacheRunningExperiments();
+
+            return saved;
+        } catch (DotSecurityException e) {
+            final String message = "You don't have permission to end the Experiment Id: " + experimentId;
+            Logger.error(this, message + "\n" + e.getMessage());
+            throw new DotSecurityException(message, e);
+        }
     }
 
     @WrapInTransaction
@@ -1195,26 +1233,93 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public Experiment promoteVariant(String experimentId, String variantName, User user)
             throws DotDataException, DotSecurityException {
 
-        final Experiment persistedExperiment = find(experimentId, user)
-                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+        try {
+            final Experiment persistedExperiment = find(experimentId, user)
+                    .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
-        DotPreconditions.isTrue(persistedExperiment.status().equals(Status.RUNNING) ||
-                persistedExperiment.status().equals(ENDED),
-                ()->"Experiment must be running or ended to promote a variant",
-                DotStateException.class);
+            validatePagePublishPermissions(user, persistedExperiment);
+            validatePublishTemplateLayoutPermissions(user, persistedExperiment);
 
-        DotPreconditions.isTrue(variantName!= null &&
-                        variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
-                IllegalArgumentException.class);
+            DotPreconditions.isTrue(persistedExperiment.status().equals(Status.RUNNING) ||
+                    persistedExperiment.status().equals(ENDED),
+                    ()->"Experiment must be running or ended to promote a variant",
+                    DotStateException.class);
 
-        final Variant variantToPromote = variantAPI.get(variantName)
-                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+            DotPreconditions.isTrue(variantName!= null &&
+                            variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                    IllegalArgumentException.class);
+
+            final Variant variantToPromote = variantAPI.get(variantName)
+                    .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+
+            final Experiment withUpdatedVariants = getUpdatedVariants(user, persistedExperiment,
+                    variantToPromote);
+
+            Experiment savedExperiment = save(withUpdatedVariants, user);
+
+            if(withUpdatedVariants.status()==RUNNING) {
+                savedExperiment = end(withUpdatedVariants.id().orElseThrow(), user);
+            }
+
+            return savedExperiment;
+        } catch (final DotSecurityException e) {
+            final String message = "You don't have permission to promote a Variant. Experiment Id: "
+                    + experimentId;
+            Logger.error(this, message + "\n" + e.getMessage());
+            throw new DotSecurityException(message, e);
+        }
+    }
+
+    private void validateEditTemplateLayoutPermissions(final User user, final Experiment experiment)
+            throws DotDataException, DotSecurityException {
+        final String errorMessage = String.format(
+                "User %s doesn't have EDIT permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
+                user.getUserId(), experiment.id().orElseGet(() -> "NO ID"));
+        validateTemplateLayoutPermissions(user, experiment, PermissionLevel.EDIT, errorMessage);
+    }
+    private void validatePublishTemplateLayoutPermissions(final User user, final Experiment experiment)
+            throws DotDataException, DotSecurityException {
+        final String errorMessage = String.format(
+                "User %s doesn't have PUBLISH permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
+                user.getUserId(), experiment.id().orElseThrow());
+
+        validateTemplateLayoutPermissions(user, experiment, PermissionLevel.PUBLISH, errorMessage);
+    }
+
+    private void validateTemplateLayoutPermissions(final User user, final Experiment experiment,
+            final PermissionLevel permissionLevel, final String errorMessage) throws DotDataException, DotSecurityException {
+
+        final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(experiment);
+        final Host host = APILocator.getHostAPI().find(htmlPageAsset.getHost(), APILocator.systemUser(),
+                false);
+
+        if (!permissionAPI.doesUserHavePermissions(host.getIdentifier(),
+                PermissionableType.TEMPLATE_LAYOUTS, permissionLevel.getType(), user)) {
+
+            throw new DotSecurityException(errorMessage);
+        }
+    }
+
+    private HTMLPageAsset getHtmlPageAsset(Experiment experiment) throws DotDataException {
+        final Contentlet pageAsContent = contentletAPI
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), DEFAULT_VARIANT.name());
+
+        final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI()
+                .fromContentlet(pageAsContent);
+        return htmlPageAsset;
+    }
+
+    private Experiment getUpdatedVariants(final User user, final Experiment persistedExperiment,
+            final Variant variantToPromote) {
+
+        final String variantName = variantToPromote.name();
+        final User systemUser = APILocator.systemUser();
 
         final TreeSet<ExperimentVariant> variantsAfterPromotion =
                 persistedExperiment.trafficProportion()
                         .variants().stream().map((variant) -> {
                             if (variant.id().equals(variantName)) {
-                                Try.run(()->variantAPI.promote(variantToPromote, user))
+                                Try.run(()-> variantAPI.promote(variantToPromote, systemUser))
                                         .getOrElseThrow(()-> new DotRuntimeException("Unable to promote variant. Variant name: " + variantName));
                                 return variant.withPromoted(true);
                             } else {
@@ -1225,13 +1330,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion()
                 .withVariants(variantsAfterPromotion);
         Experiment withUpdatedVariants = persistedExperiment.withTrafficProportion(trafficProportion);
-
-        withUpdatedVariants = save(withUpdatedVariants, user);
-
-        if(withUpdatedVariants.status()==RUNNING) {
-            withUpdatedVariants = end(withUpdatedVariants.id().orElseThrow(), user);
-        }
-
         return withUpdatedVariants;
     }
 
@@ -1246,7 +1344,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 DoesNotExistException.class);
 
         final Experiment experimentFromFactory = persistedExperimentOpt.get();
-        validatePermissions(user, experimentFromFactory,
+        validatePageEditPermissions(user, experimentFromFactory,
                 "You don't have permission to cancel the Experiment. "
                         + "Experiment Id: " + persistedExperimentOpt.get().id());
 
@@ -1313,16 +1411,39 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return experiment.trafficProportion().variants().size()>1;
     }
 
-    private void validatePermissions(final User user, final Experiment persistedExperiment,
+    private void validatePagePublishPermissions(final User user, final Experiment experiment)
+            throws DotDataException, DotSecurityException {
+        final String messageFormat = "User %s doesn't have permission to publish the Experiment's page. Experiment Id: %s";
+
+        final String errorMessage = String.format(messageFormat, user.getUserId(), experiment.id().orElseThrow());
+        validateExperimentPagePermissions(user, experiment, PermissionLevel.PUBLISH, errorMessage);
+    }
+
+    private void validatePageEditPermissions(final User user, final Experiment persistedExperiment,
             final String errorMessage)
             throws DotDataException, DotSecurityException {
+        
+        try {
+            validateExperimentPagePermissions(user, persistedExperiment, PermissionLevel.EDIT,
+                    errorMessage);
+        } catch (DotSecurityException e) {
+            Logger.error(this, errorMessage);
+            throw e;
+        }
+    }
+
+    private void validateExperimentPagePermissions(final User user,
+            final Experiment persistedExperiment,
+            final PermissionLevel permissionLevel,
+            final String errorMessage)
+            throws DotDataException, DotSecurityException {
+
         PermissionableProxy parentPage = new PermissionableProxy();
         parentPage.setIdentifier(persistedExperiment.pageId());
         parentPage.setType("htmlpage");
 
-        if (!permissionAPI.doesUserHavePermission(parentPage, PermissionLevel.EDIT.getType(),
+        if (!permissionAPI.doesUserHavePermission(parentPage, permissionLevel.getType(),
                 user)) {
-            Logger.error(this, errorMessage);
             throw new DotSecurityException(errorMessage);
         }
     }
