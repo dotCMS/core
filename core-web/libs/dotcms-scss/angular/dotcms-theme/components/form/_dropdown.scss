@@ -1,28 +1,17 @@
 @use "variables" as *;
+@import "common";
 
 .p-dropdown {
-    background: $white;
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
-        background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
-    border-radius: $field-border-radius;
-    border: 1px solid $color-palette-gray-500;
-    padding: $spacing-2;
-    margin-left: 0;
-}
-
-.p-dropdown.p-dropdown-open {
-    background: $color-palette-primary-200;
+    @extend #form-field-base;
 }
 
 .p-dropdown:not(.p-disabled):hover {
-    background: $color-palette-primary-200;
-    border-color: $input-border-color-hover;
+    @extend #form-field-hover;
 }
 
-.p-dropdown:not(.p-disabled).p-focus {
-    outline: 0 none;
-    outline-offset: 0;
-    box-shadow: none;
+.p-dropdown:not(.p-disabled).p-focus,
+.p-dropdown.p-dropdown-open {
+    @extend #form-field-focus;
 }
 
 .p-dropdown.p-dropdown-clearable .p-dropdown-label {
@@ -30,19 +19,12 @@
 }
 
 .p-dropdown .p-dropdown-label {
-    background: transparent;
-    border: 0 none;
-    padding: 0;
-    padding-right: $spacing-2;
+    display: flex;
+    align-items: center;
 }
 
-.p-dropdown .p-dropdown-label.p-placeholder {
+.p-dropdown .p-dropdown-label:not(.p-placeholder) {
     color: $black;
-}
-
-.p-dropdown .p-dropdown-label:enabled:focus {
-    outline: 0 none;
-    box-shadow: none;
 }
 
 .p-dropdown .p-dropdown-trigger {
