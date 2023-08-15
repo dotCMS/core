@@ -124,27 +124,29 @@ class PullServiceTest extends FilesTestHelper {
 
             var basePath = "files/live/en-us/" + testSiteName;
             // Expected folder structure based on the treeNode object
-            Map<String, List<String>> expectedFolders = Map.of(
-                    basePath,
-                    Arrays.asList("folder1", "folder2", "folder3"),
-                    basePath + "/folder1",
-                    Arrays.asList("subFolder1-1", "subFolder1-2", "subFolder1-3"),
-                    basePath + "/folder1/subFolder1-1",
-                    Arrays.asList("subFolder1-1-1", "subFolder1-1-2", "subFolder1-1-3"),
-                    basePath + "/folder1/subFolder1-2",
-                    Arrays.asList("subFolder1-2-1", "subFolder1-2-2", "subFolder1-2-3"),
-                    basePath + "/folder1/subFolder1-3",
-                    Collections.emptyList(),
-                    basePath + "/folder2",
-                    Arrays.asList("subFolder2-1", "subFolder2-2", "subFolder2-3"),
-                    basePath + "/folder2/subFolder2-1",
-                    Arrays.asList("subFolder2-1-1", "subFolder2-1-2", "subFolder2-1-3"),
-                    basePath + "/folder2/subFolder2-2",
-                    Collections.emptyList(),
-                    basePath + "/folder2/subFolder2-3",
-                    Collections.emptyList(),
-                    basePath + "/folder3",
-                    Collections.emptyList()
+            Map<String, List<String>> expectedFolders = Map.ofEntries(
+                    Map.entry(basePath,
+                            Arrays.asList("folder1", "folder2", "folder3", "folder4 withSpace")),
+                    Map.entry(basePath + "/folder1",
+                            Arrays.asList("subFolder1-1", "subFolder1-2", "subFolder1-3")),
+                    Map.entry(basePath + "/folder1/subFolder1-1",
+                            Arrays.asList("subFolder1-1-1", "subFolder1-1-2", "subFolder1-1-3")),
+                    Map.entry(basePath + "/folder1/subFolder1-2",
+                            Arrays.asList("subFolder1-2-1", "subFolder1-2-2", "subFolder1-2-3")),
+                    Map.entry(basePath + "/folder1/subFolder1-3",
+                            Collections.emptyList()),
+                    Map.entry(basePath + "/folder2",
+                            Arrays.asList("subFolder2-1", "subFolder2-2", "subFolder2-3")),
+                    Map.entry(basePath + "/folder2/subFolder2-1",
+                            Arrays.asList("subFolder2-1-1", "subFolder2-1-2", "subFolder2-1-3")),
+                    Map.entry(basePath + "/folder2/subFolder2-2",
+                            Collections.emptyList()),
+                    Map.entry(basePath + "/folder2/subFolder2-3",
+                            Collections.emptyList()),
+                    Map.entry(basePath + "/folder3",
+                            Collections.emptyList()),
+                    Map.entry(basePath + "/folder4 withSpace",
+                            Collections.emptyList())
             );
 
             // Expected folder structure based on the treeNode object
@@ -152,7 +154,8 @@ class PullServiceTest extends FilesTestHelper {
                     basePath, Collections.emptyList(),
                     basePath + "/folder1/subFolder1-1/subFolder1-1-1", Arrays.asList("image1.png", "image4.jpg"),
                     basePath + "/folder2/subFolder2-1/subFolder2-1-1", Arrays.asList("image2.png"),
-                    basePath + "/folder3", Arrays.asList("image 3.png")
+                    basePath + "/folder3", Arrays.asList("image 3.png"),
+                    basePath + "/folder4 withSpace", Arrays.asList("image5.jpg")
             );
 
             // Validate the actual folders against the expected folders

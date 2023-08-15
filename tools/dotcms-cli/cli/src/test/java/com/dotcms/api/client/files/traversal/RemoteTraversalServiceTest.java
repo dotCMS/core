@@ -90,7 +90,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -118,6 +118,11 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
     /**
@@ -222,7 +227,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
         // Folder1
         Assertions.assertEquals(0, treeNode.children().get(0).children().size());
         // Folder2
@@ -254,7 +259,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
         for (var child : treeNode.children()) {
             Assertions.assertFalse(child.folder().implicitGlobInclude());
         }
@@ -297,6 +302,9 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
 
         // Folder 3
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
     }
 
     @Test
@@ -322,7 +330,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
         for (var child : treeNode.children()) {
             Assertions.assertFalse(child.folder().implicitGlobInclude());
         }
@@ -369,6 +377,9 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
 
         // Folder 3
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
     }
 
     @Test
@@ -394,7 +405,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         Assertions.assertTrue(
                 treeNode.children().get(0).folder().explicitGlobInclude());
@@ -439,7 +450,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -467,6 +478,11 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 0 asset)
+        Assertions.assertEquals(0, treeNode.children().get(3).assets().size());
     }
 
     @Test
@@ -492,7 +508,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -520,6 +536,11 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has no asset)
         Assertions.assertEquals(0, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
     @Test
@@ -545,7 +566,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -573,6 +594,11 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
     @Test
@@ -598,7 +624,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -626,6 +652,11 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has no asset)
         Assertions.assertEquals(0, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
     @Test
@@ -651,7 +682,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -679,6 +710,11 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 0 asset)
         Assertions.assertEquals(0, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 0 asset)
+        Assertions.assertEquals(0, treeNode.children().get(3).assets().size());
     }
 
     @Test
@@ -704,7 +740,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
         for (var child : treeNode.children()) {
             Assertions.assertTrue(child.folder().implicitGlobInclude());
         }
@@ -747,6 +783,9 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
 
         // Folder 3
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
     }
 
     @Test
@@ -772,7 +811,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
         for (var child : treeNode.children()) {
             Assertions.assertTrue(child.folder().implicitGlobInclude());
         }
@@ -819,6 +858,9 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
 
         // Folder 3
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
     }
 
     @Test
@@ -844,7 +886,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         Assertions.assertTrue(
                 treeNode.children().get(0).folder().explicitGlobExclude());
@@ -887,7 +929,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -915,6 +957,11 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has no asset)
         Assertions.assertEquals(0, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
     @Test
@@ -940,7 +987,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -968,6 +1015,11 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 0 asset)
+        Assertions.assertEquals(0, treeNode.children().get(3).assets().size());
     }
 
     @Test
@@ -993,7 +1045,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -1021,6 +1073,11 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 0 asset)
         Assertions.assertEquals(0, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 0 asset)
+        Assertions.assertEquals(0, treeNode.children().get(3).assets().size());
     }
 
     @Test
@@ -1046,7 +1103,7 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -1074,6 +1131,11 @@ class RemoteTraversalServiceTest extends FilesTestHelper {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
     /**

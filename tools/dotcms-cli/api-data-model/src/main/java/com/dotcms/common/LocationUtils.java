@@ -24,9 +24,7 @@ public class LocationUtils {
 
         final URI uri;
         try {
-            String encodedURL = url.replace(" ",
-                    URLEncoder.encode(" ", StandardCharsets.UTF_8));
-            uri = new URI(encodedURL);
+            uri = new URI(encodePath(url));
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }
@@ -70,6 +68,17 @@ public class LocationUtils {
 
         return Paths.get(workspace, Workspace.FILES_NAMESPACE, status.toLowerCase(), language.toLowerCase(),
                 siteName, folderPath, assetName);
+    }
+
+    /**
+     * Encodes the given path by replacing spaces with URL-encoded spaces.
+     *
+     * @param path the path to be encoded
+     * @return the encoded path
+     */
+    public static String encodePath(final String path) {
+        return path.replaceAll(" ",
+                URLEncoder.encode(" ", StandardCharsets.UTF_8));
     }
 
 }

@@ -1,5 +1,7 @@
 package com.dotcms.cli.command.files;
 
+import static com.dotcms.common.LocationUtils.encodePath;
+
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.files.PullService;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
@@ -204,8 +206,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
         // Execute the REST call to retrieve asset information
-        String encodedURL = source.replace(" ",
-                URLEncoder.encode(" ", StandardCharsets.UTF_8));
+        String encodedURL = encodePath(source);
         var response = assetAPI.assetByPath(ByPathRequest.builder().assetPath(encodedURL).build());
         return response.entity();
     }

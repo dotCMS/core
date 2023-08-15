@@ -1,12 +1,12 @@
 package com.dotcms.common;
 
+import static com.dotcms.common.LocationUtils.encodePath;
+
 import com.dotcms.model.config.Workspace;
 import com.google.common.base.Strings;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -84,7 +84,7 @@ public class AssetsUtils {
         }
 
         // Build the folder path based on the input parameters
-        final String remoteFolderPath;
+        String remoteFolderPath;
         if (!emptyFolderPath) {
             remoteFolderPath = String.format("//%s/%s", site, cleanedFolderPath);
         } else {
@@ -92,11 +92,10 @@ public class AssetsUtils {
         }
 
         if (assetName != null && !assetName.isEmpty()) {
-            return String.format("%s/%s", remoteFolderPath,
-                    URLEncoder.encode(assetName, StandardCharsets.UTF_8));
+            remoteFolderPath = String.format("%s/%s", remoteFolderPath, assetName);
         }
 
-        return remoteFolderPath;
+        return encodePath(remoteFolderPath);
     }
 
     /**
@@ -117,9 +116,7 @@ public class AssetsUtils {
 
         final URI uri;
         try {
-            String encodedURL = remotePathToParse.replace(" ",
-                    URLEncoder.encode(" ", StandardCharsets.UTF_8));
-            uri = new URI(encodedURL);
+            uri = new URI(encodePath(remotePathToParse));
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }

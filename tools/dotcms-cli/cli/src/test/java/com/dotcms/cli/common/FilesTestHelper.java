@@ -56,6 +56,7 @@ public class FilesTestHelper {
         final String folder1 = "folder1";
         final String folder2 = "folder2";
         final String folder3 = "folder3";
+        final String folder4 = "folder4 withSpace";
 
         // folder1 children
         final String subfolder1_1 = "subFolder1-1";
@@ -95,7 +96,8 @@ public class FilesTestHelper {
                 String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_3),
                 String.format("/%s/%s", folder2, subfolder2_2),
                 String.format("/%s/%s", folder2, subfolder2_3),
-                String.format("/%s", folder3)
+                String.format("/%s", folder3),
+                String.format("/%s", folder4)
         );
 
         // Creating a new test site
@@ -126,6 +128,9 @@ public class FilesTestHelper {
             pushFile(true, "en-us", newSiteName,
                     String.format("/%s", folder3),
                     "image 3.png");
+            pushFile(true, "en-us", newSiteName,
+                    String.format("/%s", folder4),
+                    "image5.jpg");
         }
 
         return newSiteName;

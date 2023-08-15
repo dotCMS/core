@@ -184,11 +184,11 @@ class PushServiceTest extends FilesTestHelper {
             var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
-            Assertions.assertEquals(4, treeNodePushInfo.assetsToPushCount());
-            Assertions.assertEquals(4, treeNodePushInfo.assetsNewCount());
+            Assertions.assertEquals(5, treeNodePushInfo.assetsToPushCount());
+            Assertions.assertEquals(5, treeNodePushInfo.assetsNewCount());
             Assertions.assertEquals(0, treeNodePushInfo.assetsModifiedCount());
             Assertions.assertEquals(0, treeNodePushInfo.assetsToDeleteCount());
-            Assertions.assertEquals(8, treeNodePushInfo.foldersToPushCount());
+            Assertions.assertEquals(9, treeNodePushInfo.foldersToPushCount());
             Assertions.assertEquals(0, treeNodePushInfo.foldersToDeleteCount());
 
             pushService.processTreeNodes(outputOptions, tempFolder.toAbsolutePath().toString(),
@@ -281,10 +281,21 @@ class PushServiceTest extends FilesTestHelper {
 
             // Create a new folder and asset
             var newFolder = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName +
-                    "/folder4/subFolder4-1/subFolder4-1-1";
+                    "/folder5/subFolder5-1/subFolder5-1-1";
             FileUtils.forceMkdir(new File(newFolder));
             try (InputStream inputStream = getClass().getResourceAsStream(String.format("/%s", "image2.png"))) {
                 FileUtils.copyInputStreamToFile(inputStream, new File(newFolder + "/image2.png"));
+            }
+
+            // Create a second new folder and asset, the folder contains a space in the name
+            var newFolderWithSpace =
+                    workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName +
+                            "/folder6 withSpace/subFolder6-1/subFolder6-1-1";
+            FileUtils.forceMkdir(new File(newFolderWithSpace));
+            try (InputStream inputStream = getClass().getResourceAsStream(
+                    String.format("/%s", "image5.jpg"))) {
+                FileUtils.copyInputStreamToFile(inputStream,
+                        new File(newFolderWithSpace + "/image5.jpg"));
             }
 
             // ---
@@ -301,11 +312,11 @@ class PushServiceTest extends FilesTestHelper {
             var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
-            Assertions.assertEquals(2, treeNodePushInfo.assetsToPushCount());
-            Assertions.assertEquals(1, treeNodePushInfo.assetsNewCount());
+            Assertions.assertEquals(3, treeNodePushInfo.assetsToPushCount());
+            Assertions.assertEquals(2, treeNodePushInfo.assetsNewCount());
             Assertions.assertEquals(1, treeNodePushInfo.assetsModifiedCount());
             Assertions.assertEquals(2, treeNodePushInfo.assetsToDeleteCount());
-            Assertions.assertEquals(3, treeNodePushInfo.foldersToPushCount());
+            Assertions.assertEquals(6, treeNodePushInfo.foldersToPushCount());
             Assertions.assertEquals(1, treeNodePushInfo.foldersToDeleteCount());
 
             pushService.processTreeNodes(outputOptions, tempFolder.toAbsolutePath().toString(),
@@ -336,8 +347,17 @@ class PushServiceTest extends FilesTestHelper {
             Assertions.assertEquals(2, updatedTreeNode.children().get(0).children().get(0).children().get(0).assets().size());
             // subFolder2-1-1 (has 0 asset)
             Assertions.assertEquals(0, updatedTreeNode.children().get(1).children().get(0).children().get(0).assets().size());
-            // Folder 4 (has 1 asset)
-            Assertions.assertEquals(1, updatedTreeNode.children().get(2).children().get(0).children().get(0).assets().size());
+            // Folder 4 withSpace (has 1 asset)
+            Assertions.assertEquals(1, updatedTreeNode.children().get(2).assets().size());
+            // Folder 5 (has 1 asset)
+            Assertions.assertEquals(1,
+                    updatedTreeNode.children().get(3).children().get(0).children().get(0).assets()
+                            .size());
+            // Folder 5 withSpace (has 1 asset)
+            Assertions.assertEquals(1,
+                    updatedTreeNode.children().get(4).children().get(0).children().get(0).assets()
+                            .size());
+
             // Make sure folder 3 was deleted
             for (var child : updatedTreeNode.children()) {
                 Assertions.assertNotEquals("folder3", child.folder().name());
