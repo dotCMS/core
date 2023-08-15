@@ -181,13 +181,8 @@ export enum GOAL_PARAMETERS {
 }
 
 /**
- * Default condition by type of goal in Goal Selection Sidebar
+ * Allowed condition operators by type of goal
  */
-export const ConditionDefaultByTypeOfGoal: Partial<Record<GOAL_TYPES, string>> = {
-    [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.URL,
-    [GOAL_TYPES.URL_PARAMETER]: 'queryParameter'
-};
-
 export const AllowedConditionOperatorsByTypeOfGoal = {
     [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.URL,
     [GOAL_TYPES.URL_PARAMETER]: 'queryParameter'
