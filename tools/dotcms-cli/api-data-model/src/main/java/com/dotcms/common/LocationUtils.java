@@ -1,9 +1,10 @@
 package com.dotcms.common;
 
 import com.dotcms.model.config.Workspace;
-
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -23,7 +24,9 @@ public class LocationUtils {
 
         final URI uri;
         try {
-            uri = new URI(url);
+            String encodedURL = url.replace(" ",
+                    URLEncoder.encode(" ", StandardCharsets.UTF_8));
+            uri = new URI(encodedURL);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }

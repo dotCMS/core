@@ -31,6 +31,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -136,7 +138,10 @@ public class WebAssetHelper {
 
         final Host host = assetAndPath.resolvedHost();
         final Folder folder = assetAndPath.resolvedFolder();
-        final String assetName = assetAndPath.asset();
+        String assetName = assetAndPath.asset();
+        if (null != assetName) {
+            assetName = URLDecoder.decode(assetName, StandardCharsets.UTF_8);
+        }
 
         final List<Contentlet> assets;
 
@@ -364,7 +369,10 @@ public class WebAssetHelper {
                 .resolve(path, user);
         final Host host = assetAndPath.resolvedHost();
         final Folder folder = assetAndPath.resolvedFolder();
-        final String assetName = assetAndPath.asset();
+        String assetName = assetAndPath.asset();
+        if (null != assetName) {
+            assetName = URLDecoder.decode(assetName, StandardCharsets.UTF_8);
+        }
 
         if (null == assetName) {
             throw new IllegalArgumentException("Unspecified Asset name.");
@@ -575,7 +583,8 @@ public class WebAssetHelper {
      * @return
      */
     Contentlet updateFileAsset(final File file, final Host host, final Folder folder, final Language lang, final Contentlet contentlet){
-        final String name = file.getName();
+        final String name = URLDecoder.decode(file.getName(),
+                StandardCharsets.UTF_8);
         contentlet.setProperty(FileAssetAPI.TITLE_FIELD, name);
         contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, name);
         contentlet.setProperty(FileAssetAPI.BINARY_FIELD, file);
