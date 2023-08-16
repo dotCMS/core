@@ -928,7 +928,125 @@ export class DotEditContentHtmlService {
 
         metaTagsObject['favicon'] = favicon ? favicon.getAttribute('href') : null;
 
+        const title = document.querySelector('title');
+
+        metaTagsObject['title'] = title ? title.innerHTML : null;
+
         return metaTagsObject;
+    }
+
+    public getMetaTagsResults(metaTagsObject) {
+        const result = [];
+        Object.keys(metaTagsObject).forEach((key) => {
+            if (key === 'favicon') {
+                result.push({
+                    key: 'Favicon',
+                    keyIcon: metaTagsObject[key] ? 'pi-check-circle' : 'pi-exclamation-triangle',
+                    keyColor: metaTagsObject[key] ? '#3ED97A' : '#F65446',
+                    items: [
+                        {
+                            message: metaTagsObject[key] ? 'FavIcon found!' : 'FavIcon not found!',
+                            color: metaTagsObject[key] ? '#3ED97A' : '#F65446',
+                            itemIcon: metaTagsObject[key] ? 'pi-check' : 'pi-times'
+                        }
+                    ],
+                    sort: 2
+                });
+            }
+
+            if (key === 'title') {
+                const itemT = result.find((item) => item.key === 'Title')
+                    ? result.find((item) => item.key === 'Title')
+                    : {
+                          key: 'Title',
+                          items: [],
+                          keyIcon: '',
+                          keyColor: '',
+                          sort: 1
+                      };
+
+                if (metaTagsObject['title'].length > 60) {
+                    itemT.items.push({
+                        message: 'HTML Title found, but but has more than 60 characters.',
+                        color: '#FFB444',
+                        itemIcon: 'pi-exclamation-circle'
+                    });
+                }
+
+                if (metaTagsObject['title'].length < 30) {
+                    itemT.items.push({
+                        message:
+                            'HTML Title found, but but has fewer than 30 characters of content.',
+                        color: '#FFB444',
+                        itemIcon: 'pi-exclamation-circle'
+                    });
+                }
+
+                if (metaTagsObject['title'].length > 30 && metaTagsObject['title'].length < 60) {
+                    itemT.items.push({
+                        message: 'HTML Title found, with an appropriate amount of content!',
+                        color: '#3ED97A',
+                        itemIcon: 'pi-check'
+                    });
+                }
+
+                itemT.keyIcon = itemT.items.every((item) => item.itemIcon === 'pi-check')
+                    ? 'pi-check-circle'
+                    : 'pi-exclamation-circle';
+
+                itemT.keyColor = itemT.items.every((item) => item.itemIcon === 'pi-check')
+                    ? '#3ED97A'
+                    : '#FFB444';
+
+                if (!result.find((item) => item.key === 'Title')) {
+                    result.push(itemT);
+                }
+            }
+
+            if (key === 'og:description' || key === 'description') {
+                const itemD = result.find((item) => item.key === 'Description')
+                    ? result.find((item) => item.key === 'Description')
+                    : {
+                          key: 'Description',
+                          items: [],
+                          keyIcon: '',
+                          keyColor: '',
+                          sort: 3
+                      };
+
+                if (key === 'og:description') {
+                    itemD.items.push({
+                        message: metaTagsObject[key]
+                            ? 'Meta Description found!'
+                            : 'Meta Description found, but is empty!',
+                        color: metaTagsObject[key] ? '#3ED97A' : '#F65446',
+                        itemIcon: metaTagsObject[key] ? 'pi-check' : 'pi-times'
+                    });
+                }
+
+                if (key === 'description' && !metaTagsObject['og:description']) {
+                    itemD.items.push({
+                        message: 'Meta Description not found! Showing Description instead.',
+                        color: '#F65446',
+                        itemIcon: 'pi-times'
+                    });
+                }
+
+                itemD.keyIcon = itemD.items.every((item) => item.itemIcon === 'pi-check')
+                    ? 'pi-check-circle'
+                    : 'pi-exclamation-triangle';
+
+                itemD.keyColor = itemD.items.every((item) => item.itemIcon === 'pi-check')
+                    ? '#3ED97A'
+                    : '#F65446';
+
+                if (!result.find((item) => item.key === 'Description')) {
+                    result.push(itemD);
+                }
+            }
+        });
+
+        return result.sort((a, b) => a.sort - b.sort);
     }
 
     private loadCodeIntoIframe(pageState: DotPageRenderState): void {

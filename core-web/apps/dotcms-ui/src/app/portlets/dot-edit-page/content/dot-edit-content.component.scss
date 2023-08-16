@@ -234,7 +234,6 @@ dot-whats-changed,
 .seo-og-header-item {
     display: flex;
     gap: 1rem;
-    padding: 1rem;
 }
 
 .seo-og-list {
@@ -258,11 +257,16 @@ dot-whats-changed,
         border-radius: 0.75rem;
     }
 
-    .p-card .p-card-header {
+    .seo-og-result .p-card .p-card-header {
         border-bottom: 1px solid var(--gray-scale-400, #d1d4db);
+        padding: 1rem;
     }
 
     .seo-og-result .p-card-body {
+        padding: 1rem;
+    }
+
+    .seo-card .p-card-body {
         padding: 1rem;
     }
 }

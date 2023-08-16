@@ -87,6 +87,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     variantData: Observable<DotVariantData>;
     featureFlagSeo = FeaturedFlags.FEATURE_FLAG_SEO_IMPROVEMENTS;
     seoOGTags = null;
+    seoOGTagsResults = null;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -522,6 +523,9 @@ browse from the page internal links
             this.dotEditContentHtmlService.renderPage(pageState, this.iframe);
             this.isEditMode = false;
             this.seoOGTags = this.dotEditContentHtmlService.getMetaTags();
+            this.seoOGTagsResults = this.dotEditContentHtmlService.getMetaTagsResults(
+                this.seoOGTags
+            );
         }
     }
 
