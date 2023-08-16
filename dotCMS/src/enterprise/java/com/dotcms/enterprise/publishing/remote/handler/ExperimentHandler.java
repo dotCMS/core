@@ -165,7 +165,7 @@ public class ExperimentHandler implements IHandler {
 						if(experiment.status()==Status.RUNNING) {
 							asDraft = asDraft.withScheduling(Optional.empty());
 						}
-						experimentsAPI.save(asDraft, APILocator.systemUser());
+						asDraft = experimentsAPI.save(asDraft, APILocator.systemUser());
 						experimentsAPI.forceStart(asDraft.id().orElseThrow(), APILocator.systemUser());
 					} else if(experiment.status()==Status.ENDED) {
 						experimentsAPI.save(experiment, APILocator.systemUser());
