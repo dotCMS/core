@@ -39,7 +39,7 @@ export default {
     },
     args: {
         options: [
-            { label: 'Select City', value: null },
+            { label: 'Select City', value: null, inactive: true },
             { label: 'New York', value: { id: 1, name: 'New York', code: 'NY' } },
             { label: 'Rome', value: { id: 2, name: 'Rome', code: 'RM' } },
             { label: 'London', value: { id: 3, name: 'London', code: 'LDN' } },
@@ -51,10 +51,12 @@ export default {
 } as Meta;
 
 const DropdownTemplate = `
-    <p><p-dropdown [options]="options" showClear="true" [style]="{'width': width + 'px'}"></p-dropdown></p>
+    <p><p-dropdown [options]="options" showClear="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
+    <p><p-dropdown [options]="options" showClear="true" [editable]="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
+    <p><p-dropdown [options]="options" showClear="true" [filter]="true" filterBy="label" [editable]="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
     <p><p-dropdown [options]="options" [disabled]="true" [style]="{'width': width + 'px'}"></p-dropdown></p>
     <hr />
-    <p><p-dropdown class="p-dropdown-sm" [options]="options" [style]="{'width': width + 'px'}"></p-dropdown></p>
+    <p><p-dropdown class="p-dropdown-sm" [options]="options" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
 `;
 const Template: Story<Dropdown> = (args: Dropdown) => {
     return {
