@@ -748,12 +748,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     @Override
     public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final String variant) throws DotDataException {
+        return findContentletByIdentifierAnyLanguage(identifier, variant, false);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final String variant,
+            final boolean includeDeleted) throws DotDataException{
         try {
-            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, variant, true);
+            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, variant, includeDeleted);
         } catch (Exception e) {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
         }
     }
+
 
     @CloseDBIfOpened
     @Override
