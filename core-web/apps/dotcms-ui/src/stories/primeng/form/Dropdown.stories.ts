@@ -1,6 +1,8 @@
 // also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
+import { moduleMetadata } from '@storybook/angular';
 import { Meta, Story } from '@storybook/angular/types-6-0';
 
+import { NgStyle } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
@@ -17,6 +19,12 @@ export default {
             }
         }
     },
+
+    decorators: [
+        moduleMetadata({
+            imports: [DropdownModule, BrowserAnimationsModule, NgStyle]
+        })
+    ],
     argTypes: {
         width: {
             name: 'width',
@@ -44,16 +52,13 @@ export default {
 
 const DropdownTemplate = `
     <p><p-dropdown [options]="options" showClear="true" [style]="{'width': width + 'px'}"></p-dropdown></p>
-    <p><p-dropdown [options]="options" disabled="true" [style]="{'width': width + 'px'}"></p-dropdown></p>
+    <p><p-dropdown [options]="options" [disabled]="true" [style]="{'width': width + 'px'}"></p-dropdown></p>
     <hr />
     <p><p-dropdown class="p-dropdown-sm" [options]="options" [style]="{'width': width + 'px'}"></p-dropdown></p>
 `;
 const Template: Story<Dropdown> = (args: Dropdown) => {
     return {
         props: args,
-        moduleMetadata: {
-            imports: [DropdownModule, BrowserAnimationsModule]
-        },
         template: DropdownTemplate
     };
 };
