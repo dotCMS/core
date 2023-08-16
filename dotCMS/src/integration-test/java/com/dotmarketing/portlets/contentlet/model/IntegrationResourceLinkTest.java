@@ -244,8 +244,14 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         assertEquals(StringPool.BLANK, link.getIdPath());
     }
 
+    /**
+     * Method to test:  replaceUrlPattern
+     * Given Scenario: need to be able to configure the WYSIWYG image insertion to use the classical file path
+     * ExpectedResult: should be able to return the classical file path
+     * @throws Exception
+     */
     @Test
-    public void test_changePattern_shouldBeToSetClassicalPattern() throws DotDataException, DotSecurityException {
+    public void test_replaceUrlPattern_shouldBeAbleToSetClassicalPattern() throws DotDataException, DotSecurityException {
         Config.setProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}");
 
         final Host host = APILocator.systemHost();
