@@ -1,6 +1,7 @@
 @use "variables" as *;
 
 @import "dotcms-theme/utils/theme-variables";
+@import "dotcms-theme/components/form/common";
 @import "mixins";
 
 :host {
@@ -26,13 +27,35 @@
         }
     }
 
-    ::ng-deep .p-button:enabled {
+    ::ng-deep .p-element.p-button:enabled {
         justify-content: space-between;
         text-align: left;
+        padding: 0;
+        padding-left: $spacing-1;
 
         .p-button-label {
             text-transform: none;
             color: $black;
+        }
+
+        .p-button-icon {
+            @extend #field-trigger;
+            @extend #field-trigger-icon;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        &:hover {
+            @extend #form-field-hover;
+            background-color: transparent;
+        }
+
+        &:active,
+        &:focus {
+            @extend #form-field-focus;
+            background-color: transparent;
         }
     }
 }
