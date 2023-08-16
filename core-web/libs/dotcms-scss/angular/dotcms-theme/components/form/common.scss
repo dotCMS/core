@@ -134,8 +134,18 @@
 #field-panel-item-hover {
     background: $color-palette-primary-100;
 }
+
 #field-panel-item-disabled {
     @extend #form-field-disabled;
     color: $color-palette-gray-500;
     cursor: initial;
+}
+
+#field-panel-item-checkbox {
+    margin-right: $spacing-1;
+
+    .p-checkbox-box {
+        border-radius: $border-radius-sm;
+        border: 2px solid $color-palette-gray-400;
+    }
 }

@@ -26,6 +26,7 @@
 
     .p-multiselect-trigger {
         @extend #field-trigger;
+
         .p-multiselect-trigger-icon {
             @extend #field-trigger-icon;
         }
@@ -74,7 +75,7 @@
         }
 
         .p-checkbox {
-            margin-right: $spacing-1;
+            @extend #field-panel-item-checkbox;
         }
 
         .p-multiselect-close {
@@ -125,7 +126,7 @@
             }
 
             .p-checkbox {
-                margin-right: $spacing-1;
+                @extend #field-panel-item-checkbox;
             }
         }
 
