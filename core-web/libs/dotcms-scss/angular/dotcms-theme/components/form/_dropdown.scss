@@ -9,6 +9,10 @@ p-dropdown.p-inputwrapper-filled {
     }
 }
 
+p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
+    border-color: $color-alert-red;
+}
+
 .p-dropdown {
     @extend #form-field-base;
     padding-right: 0;
@@ -27,7 +31,7 @@ p-dropdown.p-inputwrapper-filled {
     }
 
     .p-element.p-dropdown-label,
-    .p-element.p-dropdown-label {
+    .p-dropdown-label {
         display: flex;
         align-items: center;
         font-size: $font-size-md;
@@ -39,16 +43,10 @@ p-dropdown.p-inputwrapper-filled {
     }
 
     .p-dropdown-trigger {
-        background: $color-palette-gray-200;
-        color: $color-palette-primary;
-        width: 2.1875rem;
-        border-top-right-radius: $border-radius-md;
-        border-bottom-right-radius: $border-radius-md;
+        @extend #field-trigger;
 
         .p-dropdown-trigger-icon {
-            color: $color-palette-primary;
-            padding: $spacing-1 $spacing-1;
-            font-size: $icon-sm;
+            @extend #field-trigger-icon;
         }
     }
 
@@ -71,75 +69,44 @@ p-dropdown.p-dropdown-sm {
         @extend #form-field-sm;
 
         .p-dropdown-trigger {
-            background: $color-palette-gray-200;
-            color: $color-palette-primary;
-            width: 1.875rem;
-            border-top-right-radius: $border-radius-sm;
-            border-bottom-right-radius: $border-radius-sm;
-
-            .p-dropdown-trigger-icon {
-                color: $color-palette-primary;
-                padding: $spacing-1 $spacing-1;
-                font-size: $icon-sm;
-            }
+            @extend #field-trigger-sm;
         }
     }
 }
 
 .p-dropdown-panel {
-    background: $white;
-    color: $black;
-    border: 0 none;
-    border-radius: $border-radius-md;
-    box-shadow: $md-shadow-6;
-    padding: $spacing-1;
-    margin-top: $spacing-1;
+    @extend #field-panel;
 
     .p-dropdown-header {
-        padding: $spacing-2;
-        border-bottom: $field-border-size solid $color-palette-black-op-10;
-        color: $black;
-        background: $white;
-        margin: 0;
-        border-top-right-radius: $border-radius-xs;
-        border-top-left-radius: $border-radius-xs;
+        @extend #field-panel-header;
 
         .p-dropdown-filter-container {
             .p-dropdown-filter {
-                padding-right: $spacing-7;
-                color: $black;
+                @extend #field-panel-filter;
             }
 
             .p-dropdown-filter-icon {
-                right: $spacing-2;
-                color: $color-palette-primary;
+                @extend #field-panel-filter-icon;
             }
         }
     }
 
     .p-dropdown-items {
-        padding: 0;
-
+        @extend #field-panel-items;
         .p-dropdown-item {
-            display: flex;
-            align-items: center;
-            padding: 0 $spacing-2;
-            color: $black;
-            height: $field-height;
+            @extend #field-panel-item;
 
             &.p-highlight {
-                background: $color-palette-primary-200;
+                @extend #field-panel-item-highlight;
             }
 
             &:not(.p-highlight):not(.p-disabled):hover {
-                background: $color-palette-primary-100;
+                @extend #field-panel-item-hover;
             }
 
             &.p-disabled,
             &.p-highlight.p-disabled {
-                @extend #form-field-disabled;
-                color: $color-palette-gray-500;
-                cursor: initial;
+                @extend #field-panel-item-disabled;
             }
         }
 
@@ -162,8 +129,4 @@ p-dropdown.p-dropdown-sm {
     &.p-invalid {
         border-color: $color-alert-red;
     }
-}
-
-p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
-    border-color: $color-alert-red;
 }
