@@ -5,6 +5,9 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 
+/**
+ * Exception thrown when a Page is attempted to be unpublished but it has a RUNNING Experiment
+ */
 public class RunningExperimentUnpublishException extends DotRuntimeException {
 
 

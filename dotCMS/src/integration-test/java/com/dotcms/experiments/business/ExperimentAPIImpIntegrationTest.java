@@ -6161,4 +6161,28 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    @Test
+    public void getRunningExperimentPerPage() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .page(experimentPage)
+                .nextPersisted();
+
+        final Optional<Experiment> runningExperiment = APILocator.getExperimentsAPI()
+                .getRunningExperimentPerPage(experimentPage.getIdentifier());
+
+        assertFalse(runningExperiment.isPresent());
+
+        APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
+
+        final Optional<Experiment> runningExperiment2 = APILocator.getExperimentsAPI()
+                .getRunningExperimentPerPage(experimentPage.getIdentifier());
+
+        assertTrue(runningExperiment2.isPresent());
+    }
+
 }

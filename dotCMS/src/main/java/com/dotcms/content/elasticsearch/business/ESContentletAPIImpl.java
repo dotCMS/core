@@ -3996,10 +3996,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         this.canLock(contentlet, user);
 
         if (contentlet.isHTMLPage()) {
-            final Optional<Experiment> runningExperiment = APILocator.getExperimentsAPI().getRunningExperiments().stream()
-                    .filter(experiment ->
-                            experiment.pageId().equals(contentlet.getIdentifier())
-                    ).findFirst();
+            final Optional<Experiment> runningExperiment = APILocator.getExperimentsAPI()
+                    .getRunningExperimentPerPage(contentlet.getIdentifier());
 
             if (runningExperiment.isPresent()) {
                 throw new RunningExperimentUnpublishException(contentlet, runningExperiment.get());

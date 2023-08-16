@@ -1371,6 +1371,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return toReturn;
     }
 
+    @Override
+    public Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException {
+
+        return getRunningExperiments().stream()
+                .filter(experiment ->
+                        experiment.pageId().equals(pageId)
+                )
+                .findFirst();
+    }
+
     private boolean hasValidLicense(){
         return (licenseValiditySupplierSupplier.hasValidLicense());
     }
