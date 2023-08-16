@@ -162,7 +162,12 @@ export const getBayesianDatasets = (
     results: DotExperimentResults
 ): ChartData<'line'>['datasets'] => {
     const { variants } = results.goals.primary;
-    const { sessions } = results;
+    const { sessions, bayesianResult } = results;
+
+    // If we don't have a suggested winner, return an empty array
+    if (bayesianResult.suggestedWinner === BayesianStatusResponse.NONE) {
+        return [];
+    }
 
     // Iterate through all the variants
     return Object.entries(variants).map(([variantId, variant], index) => {
@@ -171,8 +176,9 @@ export const getBayesianDatasets = (
         const failure = sessions.variants[variantId] - variant.uniqueBySession.count;
         const label = variant.variantDescription;
 
-        // Generate the data for the chart
-        const data: { x: number; y: number }[] = generateProbabilityDensityData(success, failure);
+        // Generate the data for the chart, I need at least 1 failure to generate data
+        const data: { x: number; y: number }[] =
+            failure > 0 ? generateProbabilityDensityData(success, failure) : [];
 
         // Create the dataset
         return {
@@ -188,27 +194,28 @@ export const getBayesianDatasets = (
  * Generates the data for the probability density function of a beta distribution.
  * @param {number} alpha - The alpha parameter of the beta distribution.
  * @param {number} beta - The beta parameter of the beta distribution.
+ * @param {number} step
  * @returns {object[]} An array of objects with x and y values.
  */
 const generateProbabilityDensityData = (
     alpha: number,
-    beta: number
+    beta: number,
+    step: number = 0.01
 ): { x: number; y: number }[] => {
-    const STEP = 0.01;
     // Create a beta distribution object using the alpha and beta parameters.
     const betaDist = new jStat.beta(alpha, beta);
 
     const data = [];
     // Loop through the x values from 0 to 1.
-    for (let i = 0; i <= 1; i += STEP) {
+    for (let i = 0; i <= 1; i += step) {
         // Set the x value to the current value of i.
         const x = i;
         // Set the y value to the value of the pdf at the current value of i.
         const y = betaDist.pdf(x);
+
         // Add the x and y values to the data array.
         data.push({ x, y });
     }
 
-    // Return the data array.
     return data;
 };

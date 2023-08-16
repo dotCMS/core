@@ -13,15 +13,16 @@ import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     BayesianNoWinnerStatus,
+    BayesianStatusResponse,
     ComponentStatus,
     DEFAULT_VARIANT_ID,
     DotExperiment,
     DotExperimentResults,
-    DotExperimentStatus,
     DotExperimentVariantDetail,
     DotResultGoal,
     DotResultVariant,
     ExperimentLineChartDatasetDefaultProperties,
+    MINIMUM_SESSIONS_TO_SHOW_CHART,
     MonthsOfTheYear,
     ReportSummaryLegendByBayesianStatus,
     SummaryLegend,
@@ -56,17 +57,20 @@ const initialState: DotExperimentsReportsState = {
     results: null
 };
 
+interface DotChart {
+    hasEnoughData: boolean;
+    chartData: ChartData<'line'> | null;
+}
 // ViewModel Interfaces
 export interface VmReportExperiment {
     experiment: DotExperiment;
     results: DotExperimentResults;
-    dailyChartData: ChartData<'line'> | null;
-    bayesianChartData: ChartData<'line'> | null;
+    dailyChart: DotChart | null;
+    bayesianChart: DotChart | null;
     detailData: DotExperimentVariantDetail[];
     isLoading: boolean;
     hasEnoughSessions: boolean;
     status: ComponentStatus;
-    showSummary: boolean;
     winnerLegendSummary: SummaryLegend;
     suggestedWinner: DotResultVariant | null;
     promotedVariant: Variant | null;
@@ -100,33 +104,39 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         experiment?.trafficProportion?.variants.find(({ promoted }) => promoted)
     );
 
-    readonly hasEnoughSessions$: Observable<boolean> = this.select(
-        ({ results }) => results != null && results.sessions.total > 0
+    // Bayesian Chart
+    readonly getBayesianChartData$ = this.select(({ results }) =>
+        results ? { datasets: getBayesianDatasets(results) } : null
     );
 
-    readonly setComponentStatus = this.updater(
-        (state: DotExperimentsReportsState, status: ComponentStatus) => ({
-            ...state,
-            status
-        })
-    );
+    readonly hasEnoughDataForShowBayesianChart$: Observable<boolean> = this.select(
+        this.state$,
+        this.getBayesianChartData$,
+        ({ results }, chartData) => {
+            if (results && chartData) {
+                const { datasets } = chartData;
 
-    readonly setExperiment = this.updater(
-        (state: DotExperimentsReportsState, experiment: DotExperiment) => ({
-            ...state,
-            experiment: {
-                ...state.experiment,
-                ...experiment
+                return (
+                    results.bayesianResult.suggestedWinner != BayesianStatusResponse.NONE &&
+                    datasets.every((dataset) => dataset.data.length > 0)
+                );
             }
-        })
+
+            return false;
+        }
     );
 
-    readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
-        Object.values([
-            DotExperimentStatus.ENDED,
-            DotExperimentStatus.RUNNING,
-            DotExperimentStatus.ARCHIVED
-        ]).includes(experiment?.status)
+    readonly bayesianChart$: Observable<DotChart> = this.select(
+        this.getBayesianChartData$,
+        this.hasEnoughDataForShowBayesianChart$,
+        (chartData, hasEnoughData) => {
+            return { hasEnoughData, chartData };
+        }
+    );
+
+    // Daily Chart
+    readonly hasEnoughSessions$: Observable<boolean> = this.select(
+        ({ results }) => results != null && results.sessions.total > MINIMUM_SESSIONS_TO_SHOW_CHART
     );
 
     readonly getDailyChartData$: Observable<ChartData<'line'>> = this.select(({ results }) =>
@@ -138,8 +148,12 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             : null
     );
 
-    readonly getBayesianChartData$ = this.select(({ results }) =>
-        results ? { datasets: getBayesianDatasets(results) } : null
+    readonly dailyChart$: Observable<DotChart> = this.select(
+        this.getDailyChartData$,
+        this.hasEnoughSessions$,
+        (chartData, hasEnoughData) => {
+            return { hasEnoughData, chartData };
+        }
     );
 
     readonly getDetailData$: Observable<DotExperimentVariantDetail[]> = this.select(
@@ -157,6 +171,23 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                   })
                 : [];
         }
+    );
+
+    // Updaters
+    readonly setComponentStatus = this.updater(
+        (state: DotExperimentsReportsState, status: ComponentStatus) => ({
+            ...state,
+            status
+        })
+    );
+    readonly setExperiment = this.updater(
+        (state: DotExperimentsReportsState, experiment: DotExperiment) => ({
+            ...state,
+            experiment: {
+                ...state.experiment,
+                ...experiment
+            }
+        })
     );
 
     readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) =>
@@ -238,9 +269,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         this.state$,
         this.isLoading$,
         this.hasEnoughSessions$,
-        this.showExperimentSummary$,
-        this.getDailyChartData$,
-        this.getBayesianChartData$,
+        this.bayesianChart$,
+        this.dailyChart$,
         this.summaryWinnerLegend$,
         this.getSuggestedWinner$,
         this.getDetailData$,
@@ -249,9 +279,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             { experiment, status, results },
             isLoading,
             hasEnoughSessions,
-            showSummary,
-            dailyChartData,
-            bayesianChartData,
+            bayesianChart,
+            dailyChart,
             winnerLegendSummary,
             suggestedWinner,
             detailData,
@@ -262,9 +291,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             results,
             isLoading,
             hasEnoughSessions,
-            showSummary,
-            dailyChartData,
-            bayesianChartData,
+            bayesianChart,
+            dailyChart,
             winnerLegendSummary: {
                 ...winnerLegendSummary,
                 legend: this.dotMessageService.get(
