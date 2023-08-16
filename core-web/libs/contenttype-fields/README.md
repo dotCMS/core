@@ -10,7 +10,7 @@ This lib uses `Jest` as unit test framework.
 
 ## Running lint
 
-- For run the portlet unit test do: `nx runnx run contenttype-fields:test:lint`.
+- For run the portlet unit test do: `nx run contenttype-fields:test:lint`.
 
 ## Running Storybook
 
