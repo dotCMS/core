@@ -24,6 +24,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -57,6 +58,11 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     public static final String BASIC_METADATA_OVERRIDE_KEYS = "BASIC_METADATA_OVERRIDE_KEYS";
     private final FileStorageAPI fileStorageAPI;
     private final MetadataCache metadataCache;
+
+    private static Lazy<Set<String>> basicMetadataKeySet = Lazy.of(() -> Arrays.stream(
+                    Config.getStringProperty(BASIC_METADATA_OVERRIDE_KEYS,
+                            String.join(",", BasicMetadataFields.keyMap().keySet())).split(","))
+            .map(String::trim).collect(Collectors.toSet()));
 
     public FileMetadataAPIImpl() {
         this(APILocator.getFileStorageAPI(), CacheLocator.getMetadataCache());
@@ -442,12 +448,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     private Map<String, Serializable> filterNonBasicMetadataFields(final Map<String, Serializable> originalMap) {
-        final Set<String> basicMetadataKeySet = Arrays.stream(
-                        Config.getStringProperty(BASIC_METADATA_OVERRIDE_KEYS,
-                                String.join(",", BasicMetadataFields.keyMap().keySet())).split(","))
-                .map(String::trim).collect(Collectors.toSet());
-
-        return originalMap.entrySet().stream().filter(entry -> basicMetadataKeySet
+        return originalMap.entrySet().stream().filter(entry -> basicMetadataKeySet.get()
                 .contains(entry.getKey()) || entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
                 Collectors.toMap(Entry::getKey, Entry::getValue));
     }
