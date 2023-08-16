@@ -213,9 +213,40 @@ const generateProbabilityDensityData = (
         // Set the y value to the value of the pdf at the current value of i.
         const y = betaDist.pdf(x);
 
+        if (!isFinite(y)) {
+            continue;
+        }
+
         // Add the x and y values to the data array.
         data.push({ x, y });
     }
 
-    return data;
+    return arePointsALine(data) ? [] : data;
+};
+
+/**
+ * Check if a set of points are all on the same line.
+ *
+ * @param {Array<{ x: number; y: number }>} points - The array of points to check.
+ * @returns {boolean} - True if all points are on the same line, false otherwise.
+ */
+const arePointsALine = (points: { x: number; y: number }[]): boolean => {
+    if (points.length < 3) {
+        return true;
+    }
+
+    const calculateSlope = (point1: { x: number; y: number }, point2: { x: number; y: number }) => {
+        return (point2.y - point1.y) / (point2.x - point1.x);
+    };
+
+    const referenceSlope = calculateSlope(points[0], points[1]);
+
+    for (let i = 1; i < points.length - 1; i++) {
+        const slope = calculateSlope(points[i], points[i + 1]);
+        if (Math.abs(slope - referenceSlope) > 1e-6) {
+            return false; // Points do not form a line
+        }
+    }
+
+    return true;
 };

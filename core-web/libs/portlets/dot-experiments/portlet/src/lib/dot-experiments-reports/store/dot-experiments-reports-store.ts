@@ -136,7 +136,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
 
     // Daily Chart
     readonly hasEnoughSessions$: Observable<boolean> = this.select(
-        ({ results }) => results != null && results.sessions.total > MINIMUM_SESSIONS_TO_SHOW_CHART
+        ({ results }) => results != null && results.sessions.total >= MINIMUM_SESSIONS_TO_SHOW_CHART
     );
 
     readonly getDailyChartData$: Observable<ChartData<'line'>> = this.select(({ results }) =>
