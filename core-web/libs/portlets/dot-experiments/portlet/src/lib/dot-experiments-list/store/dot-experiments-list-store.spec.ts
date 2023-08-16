@@ -51,13 +51,14 @@ const EXPERIMENT_MOCK_1 = getExperimentMock(1);
 const EXPERIMENT_MOCK_2 = getExperimentMock(2);
 const EXPERIMENT_MOCK_ALL = getExperimentAllMocks();
 
-const MENU_ITEMS_QTY = 6;
-const MENU_ITEMS_DELETE_INDEX = 0;
-const MENU_ITEMS_CONFIGURATION_INDEX = 1;
-const MENU_ITEMS_ARCHIVE_INDEX = 2;
-const MENU_ITEMS_END_INDEX = 3;
-const MENU_ITEMS_PUSH_PUBLISH_INDEX = 4;
-const MENU_ITEMS_ADD_T0_BUNDLE_INDEX = 5;
+const MENU_ITEMS_QTY = 7;
+const MENU_ITEMS_CONFIGURATION_INDEX = 0;
+const MENU_ITEMS_CANCEL_SCHEDULE_INDEX = 1;
+const MENU_ITEMS_DELETE_INDEX = 2;
+const MENU_ITEMS_ARCHIVE_INDEX = 3;
+const MENU_ITEMS_END_INDEX = 4;
+const MENU_ITEMS_PUSH_PUBLISH_INDEX = 5;
+const MENU_ITEMS_ADD_T0_BUNDLE_INDEX = 6;
 
 describe('DotExperimentsListStore', () => {
     let spectator: SpectatorService<DotExperimentsListStore>;
@@ -143,6 +144,14 @@ describe('DotExperimentsListStore', () => {
         });
     });
 
+    it('should change status to Draft when cancel schedule', (done) => {
+        store.cancelSchedule({ ...getExperimentMock(1) });
+        store.state$.subscribe(() => {
+            expect(dotExperimentsService.cancelSchedule).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
+            done();
+        });
+    });
+
     it('should change status to ended', (done) => {
         store.stopExperiment({ ...getExperimentMock(1) });
         store.state$.subscribe(() => {
@@ -211,11 +220,15 @@ describe('DotExperimentsListStore', () => {
                     expect(experiments[0].actionsItemsMenu.length).toEqual(MENU_ITEMS_QTY);
 
                     expect(
-                        experiments[0].actionsItemsMenu[MENU_ITEMS_DELETE_INDEX].visible
-                    ).toEqual(AllowedActionsByExperimentStatus['delete'].includes(status));
+                        experiments[0].actionsItemsMenu[MENU_ITEMS_CANCEL_SCHEDULE_INDEX].visible
+                    ).toEqual(AllowedActionsByExperimentStatus['cancelSchedule'].includes(status));
                     expect(
                         experiments[0].actionsItemsMenu[MENU_ITEMS_CONFIGURATION_INDEX].visible
                     ).toEqual(AllowedActionsByExperimentStatus['configuration'].includes(status));
+                    expect(
+                        experiments[0].actionsItemsMenu[MENU_ITEMS_DELETE_INDEX].visible
+                    ).toEqual(AllowedActionsByExperimentStatus['delete'].includes(status));
+
                     expect(
                         experiments[0].actionsItemsMenu[MENU_ITEMS_ARCHIVE_INDEX].visible
                     ).toEqual(AllowedActionsByExperimentStatus['archive'].includes(status));

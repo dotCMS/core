@@ -18,12 +18,8 @@
         color: $color-palette-primary-500;
     }
 
-    .p-confirm-popup-message {
-        margin-left: $spacing-3;
-    }
-
     .p-confirm-popup-footer {
-        padding: $spacing-2 $spacing-4;
+        padding: $spacing-3;
         display: flex;
         column-gap: $confirm-popup-column-gap;
         justify-content: flex-end;
@@ -75,10 +71,11 @@
     border-bottom-color: transparent;
 }
 
-.p-confirm-popup .p-confirm-popup-content {
+.p-component.p-confirm-popup .p-confirm-popup-content {
     display: flex;
-    align-items: center;
-    padding: $spacing-4;
+    align-items: flex-start;
+    padding: $spacing-3;
+    gap: $spacing-1;
 }
 
 .p-confirm-popup .p-button.p-button-sm {
