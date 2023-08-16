@@ -163,3 +163,4 @@ This maintenance release includes the following code fixes:
 134. https://github.com/dotCMS/core/issues/20400 : Using 'select all' on categories before deleting will delete even deselected items #20400
 135. https://github.com/dotCMS/core/issues/25775 : OPTIONS requests to /api/* return HTTP 500, causing CORS failures #25775
 136. https://github.com/dotCMS/core/issues/25785 : Edit/Preview Mode not showing Draft changes #25785
+137. https://github.com/dotCMS/core/issues/21904 : Tags under specific site aren't listing #21904

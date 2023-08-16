@@ -1,6 +1,7 @@
-package com.dotcms.rest;
+package com.dotcms.rest.tag;
 
 import com.dotcms.rest.api.RestTransform;
+import com.dotcms.rest.tag.RestTag;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.tag.model.Tag;
@@ -37,6 +38,7 @@ public class TagTransform implements RestTransform<Tag, RestTag>{
             .siteId(app.getHostId())
                 .siteName(host.getHostname())
                 .persona(app.isPersona())
+                .id(app.getTagId())
                 .build();
     };
 }

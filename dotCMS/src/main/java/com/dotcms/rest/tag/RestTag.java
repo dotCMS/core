@@ -1,9 +1,10 @@
-package com.dotcms.rest;
+package com.dotcms.rest.tag;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.api.Validated;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 @JsonDeserialize(builder = RestTag.Builder.class)
 public final class RestTag extends Validated  {
@@ -14,6 +15,7 @@ public final class RestTag extends Validated  {
     public final String siteId;
     public final String siteName;
     public final boolean persona;
+    public final String id;
 
 
     private RestTag(Builder builder) {
@@ -22,7 +24,12 @@ public final class RestTag extends Validated  {
         siteId = builder.siteId;
         siteName = builder.siteName;
         persona = builder.persona;
+        id = builder.id;
         checkValid();
+    }
+
+    public String toString() {
+        return ToStringBuilder.reflectionToString( this );
     }
 
     public static final class Builder {
@@ -31,6 +38,7 @@ public final class RestTag extends Validated  {
         @JsonProperty private String siteId;
         @JsonProperty private String siteName;
         @JsonProperty private boolean persona;
+        @JsonProperty private String id;
 
         public Builder() {
         }
@@ -70,6 +78,16 @@ public final class RestTag extends Validated  {
 
         public Builder persona(boolean persona) {
             this.persona = persona;
+            return this;
+        }
+
+        /**
+         * id setter
+         * @param id
+         * @return
+         */
+        public Builder id(String id) {
+            this.id = id;
             return this;
         }
     }
