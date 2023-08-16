@@ -191,31 +191,35 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
             function hanlderPaste(view: EditorView, event: ClipboardEvent) {
                 const { clipboardData } = event;
                 const { files } = clipboardData;
-                const { length } = files;
-                const file = files[0];
                 const text = clipboardData.getData('Text') || '';
-                const type = isImageURL(text) ? 'image' : (getFileType(file) as EditorAssetTypes);
+                const type = getFileType(files[0]) as EditorAssetTypes;
+                const isRegistered = isNodeRegistered(type);
 
-                const { from } = getCursorPosition(view);
-
-                if (!isNodeRegistered(type)) {
-                    return;
-                }
-
-                if (length > 1) {
+                if (type && !isRegistered) {
                     alertErrorMessage(type);
 
                     return;
                 }
 
-                event.preventDefault();
-                event.stopPropagation();
+                // If the text is not an image URL, we don't want to prevent the default behavior.
+                // This allows the user to paste text normally. Nedeed 'cause when you copy and paste
+                // text from Word, the clipboard data event is receiving an image because Word includes
+                // formatting information along with the text.
+                if (text && !isImageURL(text)) {
+                    return;
+                }
 
-                if (isImageURL(text)) {
+                const { from } = getCursorPosition(view);
+
+                if (isImageURL(text) && isNodeRegistered('image')) {
                     editor.chain().insertImage(text, from).addNextLine().run();
                 } else {
+                    const file = files[0];
                     uploadAsset({ view, file, position: from });
                 }
+
+                event.preventDefault();
+                event.stopPropagation();
             }
 
             /**

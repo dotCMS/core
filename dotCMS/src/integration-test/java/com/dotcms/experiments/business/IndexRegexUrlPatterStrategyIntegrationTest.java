@@ -19,7 +19,7 @@ import org.junit.Test;
 
 public class IndexRegexUrlPatterStrategyIntegrationTest {
 
-    private static String EXPECTED_REGEX = "^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/%s(\\/[iI][nN][dD][eE][xX]|\\/)?(\\/?\\?.*)?$";
+    private static String EXPECTED_REGEX = "^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/%s(\\/index|\\/)?(\\/?\\?.*)?$";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -59,12 +59,6 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
         assertFalse(("http://localhost:8080" + folder.getPath() + "index/index").matches(regexPattern));
         assertFalse(("http://localhost" + folder.getPath() + "index/index").matches(regexPattern));
 
-        assertTrue(("http://localhost:8080" + folder.getPath() + "INDEX").matches(regexPattern));
-        assertTrue(("http://localhost" + folder.getPath() + "INDEX").matches(regexPattern));
-
-        assertTrue(("http://localhost:8080" + folder.getPath() + "IndEX").matches(regexPattern));
-        assertTrue(("http://localhost" +folder.getPath() + "IndEX").matches(regexPattern));
-
         assertTrue(("http://localhost:8080" + folder.getPath()).matches(regexPattern));
         assertTrue(("http://localhost" + folder.getPath()).matches(regexPattern));
 
@@ -88,12 +82,6 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
 
         assertFalse(("http://localhost:8080/index").matches(regexPattern));
         assertFalse(("http://localhost/index").matches(regexPattern));
-
-        assertFalse(("http://localhost:8080/INDEX").matches(regexPattern));
-        assertFalse(("http://localhost/INDEX").matches(regexPattern));
-
-        assertFalse(("http://localhost:8080/IndEX").matches(regexPattern));
-        assertFalse(("http://localhost/IndEX").matches(regexPattern));
 
         assertFalse(("http://localhost:8080/").matches(regexPattern));
         assertFalse(("http://localhost/").matches(regexPattern));
@@ -153,12 +141,6 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
         assertFalse(("https://localhost:8080" + folder.getPath() + "index/index").matches(regexPattern));
         assertFalse(("https://localhost" + folder.getPath() + "index/index").matches(regexPattern));
 
-        assertTrue(("https://localhost:8080" + folder.getPath() + "INDEX").matches(regexPattern));
-        assertTrue(("https://localhost" + folder.getPath() + "INDEX").matches(regexPattern));
-
-        assertTrue(("https://localhost:8080" + folder.getPath() + "IndEX").matches(regexPattern));
-        assertTrue(("https://localhost" +folder.getPath() + "IndEX").matches(regexPattern));
-
         assertTrue(("https://localhost:8080" + folder.getPath()).matches(regexPattern));
         assertTrue(("https://localhost" + folder.getPath()).matches(regexPattern));
 
@@ -182,12 +164,6 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
 
         assertFalse(("https://localhost:8080/index").matches(regexPattern));
         assertFalse(("https://localhost/index").matches(regexPattern));
-
-        assertFalse(("https://localhost:8080/INDEX").matches(regexPattern));
-        assertFalse(("https://localhost/INDEX").matches(regexPattern));
-
-        assertFalse(("https://localhost:8080/IndEX").matches(regexPattern));
-        assertFalse(("https://localhost/IndEX").matches(regexPattern));
 
         assertFalse(("https://localhost:8080/").matches(regexPattern));
         assertFalse(("https://localhost/").matches(regexPattern));
@@ -249,12 +225,6 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
         assertFalse(("http://demo.dotcms.com:8080" + folder.getPath() + "index/index").matches(regexPattern));
         assertFalse(("http://demo.dotcms.com" + folder.getPath() + "index/index").matches(regexPattern));
 
-        assertTrue(("http://demo.dotcms.com:8080" + folder.getPath() + "INDEX").matches(regexPattern));
-        assertTrue(("http://demo.dotcms.com" + folder.getPath() + "INDEX").matches(regexPattern));
-
-        assertTrue(("http://demo.dotcms.com:8080" + folder.getPath() + "IndEX").matches(regexPattern));
-        assertTrue(("http://demo.dotcms.com" +folder.getPath() + "IndEX").matches(regexPattern));
-
         assertTrue(("http://demo.dotcms.com:8080" + folder.getPath()).matches(regexPattern));
         assertTrue(("http://demo.dotcms.com" + folder.getPath()).matches(regexPattern));
 
@@ -278,12 +248,6 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
 
         assertFalse(("http://demo.dotcms.com:8080/index").matches(regexPattern));
         assertFalse(("http://demo.dotcms.com/index").matches(regexPattern));
-
-        assertFalse(("http://demo.dotcms.com:8080/INDEX").matches(regexPattern));
-        assertFalse(("http://demo.dotcms.com/INDEX").matches(regexPattern));
-
-        assertFalse(("http://demo.dotcms.com:8080/IndEX").matches(regexPattern));
-        assertFalse(("http://demo.dotcms.com/IndEX").matches(regexPattern));
 
         assertFalse(("http://demo.dotcms.com:8080/").matches(regexPattern));
         assertFalse(("http://demo.dotcms.com/").matches(regexPattern));
@@ -343,11 +307,6 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
         assertFalse(("https://demo.dotcms.com:8080" + folder.getPath() + "index/index").matches(regexPattern));
         assertFalse(("https://demo.dotcms.com" + folder.getPath() + "index/index").matches(regexPattern));
 
-        assertTrue(("https://demo.dotcms.com:8080" + folder.getPath() + "INDEX").matches(regexPattern));
-        assertTrue(("https://demo.dotcms.com" + folder.getPath() + "INDEX").matches(regexPattern));
-
-        assertTrue(("https://demo.dotcms.com:8080" + folder.getPath() + "IndEX").matches(regexPattern));
-        assertTrue(("https://demo.dotcms.com" +folder.getPath() + "IndEX").matches(regexPattern));
 
         assertTrue(("https://demo.dotcms.com:8080" + folder.getPath()).matches(regexPattern));
         assertTrue(("https://demo.dotcms.com" + folder.getPath()).matches(regexPattern));
@@ -372,12 +331,7 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
 
         assertFalse(("https://demo.dotcms.com:8080/index").matches(regexPattern));
         assertFalse(("https://demo.dotcms.com/index").matches(regexPattern));
-
-        assertFalse(("https://demo.dotcms.com:8080/INDEX").matches(regexPattern));
-        assertFalse(("https://demo.dotcms.com/INDEX").matches(regexPattern));
-
-        assertFalse(("https://demo.dotcms.com:8080/IndEX").matches(regexPattern));
-        assertFalse(("https://demo.dotcms.com/IndEX").matches(regexPattern));
+        ;
 
         assertFalse(("https://demo.dotcms.com:8080/").matches(regexPattern));
         assertFalse(("https://demo.dotcms.com/").matches(regexPattern));

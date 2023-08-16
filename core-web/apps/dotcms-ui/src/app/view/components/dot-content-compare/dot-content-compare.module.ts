@@ -18,9 +18,9 @@ import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
 
 import { DotContentCompareBlockEditorComponent } from './components/dot-content-compare-block-editor/dot-content-compare-block-editor.component';
 import { DotContentCompareDialogComponent } from './components/dot-content-compare-dialog/dot-content-compare-dialog.component';
-import { DotTransformVersionLabelPipe } from './pipes/dot-transform-version-label.pipe';
 
 import { DotPipesModule } from '../../pipes/dot-pipes.module';
+import { DotRelativeDatePipe } from '../../pipes/dot-relative-date/dot-relative-date.pipe';
 
 @NgModule({
     declarations: [
@@ -28,8 +28,7 @@ import { DotPipesModule } from '../../pipes/dot-pipes.module';
         DotContentCompareTableComponent,
         DotContentCompareDialogComponent,
         DotContentCompareBlockEditorComponent,
-        DotContentComparePreviewFieldComponent,
-        DotTransformVersionLabelPipe
+        DotContentComparePreviewFieldComponent
     ],
     exports: [DotContentCompareDialogComponent],
     imports: [
@@ -43,7 +42,8 @@ import { DotPipesModule } from '../../pipes/dot-pipes.module';
         DotDiffPipeModule,
         ButtonModule,
         BlockEditorModule,
-        DotPipesModule
+        DotPipesModule,
+        DotRelativeDatePipe
     ],
     providers: [DotContentletService, DotVersionableService]
 })
