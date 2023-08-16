@@ -96,3 +96,5 @@ This maintenance release includes the following code fixes:
 78. https://github.com/dotCMS/core/issues/25775 : OPTIONS requests to /api/\* return HTTP 500, causing CORS failures #25775
 
 **Release-23.01.6**
+
+79. https://github.com/dotCMS/core/issues/25618 : Metadata keywords don't return in response to ES query and Content api #25618
