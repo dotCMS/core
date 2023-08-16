@@ -238,6 +238,11 @@ export class DotPageStateService {
         this.state$.next(this.currentState);
     }
 
+    setSeoTile(seoTitle: string): void {
+        this.currentState.seoTile = seoTitle;
+        this.state$.next(this.currentState);
+    }
+
     /**
      * Update page content status
      *

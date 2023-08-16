@@ -3,6 +3,7 @@
     [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
     [apiLink]="apiLink"
     (selected)="changeDeviceHandler($event)"
+    (changeTile)="changeSeoTile($event)"
     appendTo="body"
     tooltipPosition="bottom"
     tooltipStyleClass="dot-device-selector__dialog"

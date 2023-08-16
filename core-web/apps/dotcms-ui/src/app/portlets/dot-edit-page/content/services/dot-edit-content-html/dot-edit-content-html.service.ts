@@ -911,6 +911,26 @@ export class DotEditContentHtmlService {
         return base;
     }
 
+    public getMetaTags() {
+        const document = this.getEditPageDocument();
+        const metaTags = document.getElementsByTagName('meta');
+        let metaTagsObject = {};
+
+        for (const metaTag of metaTags) {
+            metaTagsObject = {
+                ...metaTagsObject,
+                [metaTag.getAttribute('name') || metaTag.getAttribute('property')]:
+                    metaTag.getAttribute('content')
+            };
+        }
+
+        const favicon = document.querySelector('link[rel="icon"]');
+
+        metaTagsObject['favicon'] = favicon ? favicon.getAttribute('href') : null;
+
+        return metaTagsObject;
+    }
+
     private loadCodeIntoIframe(pageState: DotPageRenderState): void {
         const doc = this.getEditPageDocument();
         const html = this.updateHtml(pageState);

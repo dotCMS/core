@@ -47,9 +47,113 @@
 
     <div class="dot-edit-content__wrapper">
         <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
+        <div class="og-container" *ngIf="pageState.seoTile !== null">
+            <div class="seo-card-container">
+                <div class="seo-card">
+                    <p-card>
+                        <div class="container-g">
+                            <span class="version">Desktop Version</span>
+                            <div class="seo-result">
+                                <div class="seo-title">
+                                    <img
+                                        class="seo-favicon"
+                                        [src]="seoOGTags.favicon"
+                                        alt="favicon"
+                                    />
+                                    <span>{{ pageState.page.hostName }}</span>
+                                </div>
+                                <a class="og-title" href="#">
+                                    {{ seoOGTags['og:title'] }}
+                                </a>
+                                <p class="og-description">
+                                    {{ seoOGTags.description }}
+                                </p>
+                            </div>
+
+                            <span class="version">Mobile Version</span>
+                            <div class="seo-result google-mobile">
+                                <div class="seo-title">
+                                    <img
+                                        class="seo-favicon"
+                                        [src]="seoOGTags.favicon"
+                                        alt="favicon"
+                                    />
+                                    <span>{{ pageState.page.hostName }}</span>
+                                </div>
+                                <a class="og-title" href="#">
+                                    {{ seoOGTags['og:title'] }}
+                                </a>
+                                <p class="og-description">
+                                    {{ seoOGTags.description }}
+                                </p>
+                            </div>
+                        </div>
+                    </p-card>
+                </div>
+                <p-card class="seo-og-result">
+                    <ng-template class="seo-og-header" pTemplate="header">
+                        <div class="seo-og-header-item">
+                            <i class="pi pi-exclamation-triangle" style="color: '#F65446'"></i>
+                            <span>Favicon</span>
+                        </div>
+                    </ng-template>
+                    <ul class="seo-og-list">
+                        <li>
+                            <i class="pi pi-times" style="color: '#F65446'"> </i>
+                            FavIcon not found!
+                        </li>
+                    </ul>
+                </p-card>
+
+                <p-card class="seo-og-result">
+                    <ng-template class="seo-og-header" pTemplate="header">
+                        <div class="seo-og-header-item">
+                            <i class="pi pi-check-circle" style="color: '#3ED97A'"></i>
+                            <span>Description</span>
+                        </div>
+                    </ng-template>
+                    <ul class="seo-og-list">
+                        <li>
+                            <i class="pi pi-check" style="color: '#3ED97A'"></i>
+                            <span>Og:Description Metatag Found!</span>
+                        </li>
+                    </ul>
+                </p-card>
+
+                <p-card class="seo-og-result">
+                    <ng-template class="seo-og-header" pTemplate="header">
+                        <div class="seo-og-header-item">
+                            <i class="pi pi-info-circle" style="color: '#426BF0'"></i>
+                            <span>Read More</span>
+                        </div>
+                    </ng-template>
+                    <ul class="seo-og-list">
+                        <li>
+                            <i class="pi pi-external-link" style="color: '#426BF0'"></i>
+                            <span
+                                >The Open Graph protocol
+                                <a target="_blank" href="https://ogp.me/">https://ogp.me/</a></span
+                            >
+                        </li>
+                        <li>
+                            <i class="pi pi-external-link" style="color: '#426BF0'"></i>
+                            <span
+                                >Sharing Debugger - Meta for Developers
+                                <a
+                                    target="_blank"
+                                    href="https://developers.facebook.com/tools/debug/"
+                                    >https://developers.facebook.com/tools/debug/</a
+                                >
+                            </span>
+                        </li>
+                    </ul>
+                </p-card>
+            </div>
+        </div>
 
         <div
             class="dot-edit__page-wrapper"
+            *ngIf="pageState.seoTile === null"
             [class.dot-edit__page-wrapper--deviced]="pageState.viewAs.device"
         >
             <div

@@ -187,6 +187,10 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
         this.dotPageStateService.setDevice(device);
     }
 
+    changeSeoTile(seoTile: string): void {
+        this.dotPageStateService.setSeoTile(seoTile);
+    }
+
     private canTakeLock(pageState: DotPageRenderState): boolean {
         return pageState.page.canLock && pageState.state.lockedByAnotherUser;
     }

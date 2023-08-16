@@ -3,6 +3,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -56,6 +57,7 @@ const routes: Routes = [
         ButtonModule,
         DialogModule,
         CheckboxModule,
+        CardModule,
         RouterModule.forChild(routes),
         DotContentletEditorModule,
         DotDirectivesModule,
