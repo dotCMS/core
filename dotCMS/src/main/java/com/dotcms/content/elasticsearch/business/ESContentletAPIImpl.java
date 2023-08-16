@@ -3569,7 +3569,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (experimentRunningOnPage.isPresent()) {
             final String message = String.format(
                     "Can't Archive a Page %s because it has a Running Experiment. Experiment ID %s",
-                    liveContentlet.getIdentifier(), experimentRunningOnPage.get().id().get());
+                    workingContentlet.getIdentifier(), experimentRunningOnPage.get().id().get());
 
             throw new DotDataException(message);
         }
