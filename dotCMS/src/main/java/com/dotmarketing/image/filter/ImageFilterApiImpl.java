@@ -112,7 +112,12 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
         }
 
         if (imageFile.getName().toLowerCase().endsWith(".svg")) {
-            return getWidthHeightofSVG(imageFile);
+            try {
+                return getWidthHeightofSVG(imageFile);
+            } catch (Exception e){
+                //If invoking the getWidthHeightofSVG method fails, we will try to get dimensions using the inputStream
+                Logger.debug(this, "Error getting dimensions of SVG file: " + imageFile.getName(), e);
+            }
         }
 
 

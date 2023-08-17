@@ -76,6 +76,21 @@ public class ImageFilterAPIImplTest {
         assert (dim.getHeight() == 772d);
         assert (dim.getWidth() == 1024d);
 
+        url = getClass().getResource("/images/test.svg");
+        incomingFile = new File(url.getFile());
+
+        dim = imageApi.getWidthHeight(incomingFile);
+        assert (dim.getHeight() > 0);
+        assert (dim.getWidth() > 0);
+
+        //We should get dimensions even when the svg file is actually a png
+        url = getClass().getResource("/images/png_as_svg.svg");
+        incomingFile = new File(url.getFile());
+
+        dim = imageApi.getWidthHeight(incomingFile);
+        assert (dim.getHeight() > 0);
+        assert (dim.getWidth() > 0);
+
     }
 
 
