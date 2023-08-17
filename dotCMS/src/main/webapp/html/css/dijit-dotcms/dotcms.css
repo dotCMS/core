@@ -3046,7 +3046,7 @@
 html,
 body {
   font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 14px;
+  font-size: 1rem;
   color: #14151a;
 }
 
@@ -3145,7 +3145,7 @@ body {
 .dijitTextBox,
 .dijitToggleButton {
   border-radius: 0.375rem;
-  font-size: 14px;
+  font-size: 1rem;
   height: 40px;
 }
 
@@ -4972,7 +4972,7 @@ body {
 }
 .dijitMenu .dijitMenuItem .dijitMenuItemIconCell {
   padding-left: 0.5rem;
-  width: 14px;
+  width: 1rem;
 }
 .dijitMenuArrowCell .dijitIcon {
   margin-right: 0.5rem;
@@ -6149,7 +6149,7 @@ select[multiple]:hover {
 #listing-table, .listingTable, .dojoxUploaderFileListTable {
   border-bottom: 1px solid #f3f3f4;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 1rem;
   margin: 0 auto 1rem auto;
   width: 100%;
 }
@@ -11055,7 +11055,7 @@ Resize Handle
   border: none;
   color: #14151a;
   font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 14px;
+  font-size: 1rem;
   line-height: 40px;
 }
 
@@ -11106,7 +11106,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 14px;
+  font-size: 1rem;
   color: #14151a;
 }
 

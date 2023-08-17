@@ -14,6 +14,5 @@ $font-weight-bold: 700;
 
 $font-code: "Menlo", "Monaco", "Consolas";
 $font-default: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-// TODO: This should be 1rem. If use rems boostrap interferes with the font size.
-$font-size-default: 14px;
+$font-size-default: 1rem;
 $font-color-base: $black;
