@@ -83,7 +83,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     allowedContent: string[] = null;
     isEditMode = false;
     paletteCollapsed = false;
-    isEnterpriseLicense = of(false);
+    isEnterpriseLicense$ = of(false);
     variantData: Observable<DotVariantData>;
     featureFlagSeo = FeaturedFlags.FEATURE_FLAG_SEO_IMPROVEMENTS;
 
@@ -170,7 +170,7 @@ browse from the page internal links
     }
 
     ngOnInit() {
-        this.isEnterpriseLicense = this.dotLicenseService.isEnterprise().pipe(take(1));
+        this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise().pipe(take(1));
         this.dotLoadingIndicatorService.show();
         this.setInitalData();
         this.subscribeSwitchSite();
@@ -509,7 +509,7 @@ browse from the page internal links
         this.dotEditContentHtmlService.setCurrentPage(pageState.page);
         this.dotEditContentHtmlService.setCurrentPersona(pageState.viewAs.persona);
         if (this.shouldEditMode(pageState)) {
-            this.isEnterpriseLicense.subscribe((isEnterpriseLicense) => {
+            this.isEnterpriseLicense$.subscribe((isEnterpriseLicense) => {
                 if (isEnterpriseLicense) {
                     this.setAllowedContent(pageState);
                 }

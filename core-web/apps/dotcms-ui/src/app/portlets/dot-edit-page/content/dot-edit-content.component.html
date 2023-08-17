@@ -91,7 +91,7 @@
         </div>
         <div
             class="dot-edit-content__palette"
-            *ngIf="(isEnterpriseLicense | async) && isEditMode && allowedContent"
+            *ngIf="(isEnterpriseLicense$ | async) && isEditMode && allowedContent"
             [class.collapsed]="paletteCollapsed"
             [class.editMode]="isEditMode"
         >
