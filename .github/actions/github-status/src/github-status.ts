@@ -20,10 +20,9 @@ interface LinksSupport {
  * Sends the tests results statsus to Github using its API.
  *
  * @param testType test type
- * @param dbType database type
  * @param testResultsStatus test results status (PASSED or FAILED)
  */
-export const send = async (testType: string, dbType: string, testResultsStatus: string) => {
+export const send = async (testType: string, testResultsStatus: string) => {
   const pullRequest = core.getInput('pull_request')
   if (!pullRequest) {
     core.warning(`This was not triggered from a pull request, so skipping sending status `)
@@ -43,7 +42,7 @@ export const send = async (testType: string, dbType: string, testResultsStatus: 
 
   const pr = (await prResponse.json()) as LinksSupport
   const testsReportUrl = core.getInput('tests_report_url')
-  const status = createStatus(testType, dbType, testResultsStatus, testsReportUrl)
+  const status = createStatus(testType, testResultsStatus, testsReportUrl)
   const statusResponse = await postStatus(pr._links.statuses.href, creds, status)
   if (!statusResponse.ok) {
     core.warning(`Could not send Github status for ${testType} tests`)
@@ -52,40 +51,14 @@ export const send = async (testType: string, dbType: string, testResultsStatus: 
 }
 
 /**
- * Resolves what label to use based on the test type.
- *
- * @param testType test type
- * @param dbType database type
- * @returns status label
- */
-const resolveStastusLabel = (testType: string, dbType: string): string => {
-  switch (testType) {
-    case 'unit':
-      return '[Unit tests results]'
-    case 'integration':
-      return `[Integration tests results] - [${dbType}]`
-    case 'postman':
-      return '[Postman tests results]'
-    default:
-      return ''
-  }
-}
-
-/**
  * Creates a status object based on the provided params.
  *
  * @param testType test type
- * @param dbType database type
  * @param testResultsStatus test results status
  * @param testsReportUrl report url where tests results are located
  * @returns {@link GithubStatus} object to be used when reporting
  */
-const createStatus = (
-  testType: string,
-  dbType: string,
-  testResultsStatus: string,
-  testsReportUrl: string
-): GithubStatus => {
+const createStatus = (testType: string, testResultsStatus: string, testsReportUrl: string): GithubStatus => {
   let statusLabel
   let description
   if (testResultsStatus === 'PASSED') {
@@ -100,7 +73,7 @@ const createStatus = (
     state: statusLabel,
     description,
     target_url: testsReportUrl,
-    context: `Github Actions - ${resolveStastusLabel(testType, dbType)}`
+    context: `Github Actions - [${testType.toUpperCase()} tests results]`
   }
 }
 
