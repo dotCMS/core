@@ -103,3 +103,14 @@ jobs:
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           include: RESULTS
 
+      - id: github-status
+        name: Send Github Status
+        uses: ./.github/actions/github-status
+        with:
+          test_type: unit
+          test_results_status: ${{ steps.run-cli-tests.outputs.status }}
+          pull_request: ${{ github.event.number }}
+          github_user: ${{ env.GITHUB_USER }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          tests_report_url: ${{ steps.github-publish-unit-tests.outputs.test_logs_url }}
+        if: (success() || failure()) && steps.github-publish-unit-tests.outputs.tests_report_url != ''
