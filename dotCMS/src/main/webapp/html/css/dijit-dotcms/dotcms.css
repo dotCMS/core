@@ -5278,8 +5278,7 @@ tt {
   border: 1px solid #c9c9c9;
   border-top: 0;
   padding: 10px 0;
-  -webkit-box-shadow: 0 -1px 6px var(--color-palette-black-op-20);
-  box-shadow: 0 -1px 6px var(--color-palette-black-op-20);
+  box-shadow: -1px 6px var(--color-palette-black-op-20);
 }
 
 #ft {

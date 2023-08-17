@@ -5,14 +5,6 @@
 @import "font-awesome-4.7.0/core";
 @import "font-awesome-4.7.0/icons";
 
-// TODO: remove all this
-@mixin box-shadow($shadow...) {
-    -webkit-box-shadow: $shadow; // iOS <4.3 & Android <4.1
-    box-shadow: $shadow;
-}
-
-// until here
-
 @import "variables";
 
 :root {
