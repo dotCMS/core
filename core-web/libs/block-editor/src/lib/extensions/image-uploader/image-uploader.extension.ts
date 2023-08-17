@@ -5,7 +5,7 @@ import { EditorView } from 'prosemirror-view';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { Extension } from '@tiptap/core';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 import { LoaderComponent, MessageType } from '@dotcms/block-editor';
 
@@ -110,6 +110,24 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
             }
 
             /**
+             * Alert error message when the user try to drop more than one asset.
+             *
+             */
+            function alertErrorMessage(type: EditorAssetTypes) {
+                alert(`Can drop just one ${type} at a time`);
+            }
+
+            /**
+             * Get file type.
+             *
+             * @param {File} file
+             * @return {*}  {string}
+             */
+            function getFileType(file: File): string {
+                return file?.type.split('/')[0] || '';
+            }
+
+            /**
              * Get position from cursor current position when pasting an image
              *
              * @param {EditorView} view
@@ -148,33 +166,69 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                 return true;
                             },
                             paste(view, event: ClipboardEvent) {
-                                if (!isImageBlockAllowed()) {
-                                    return true;
+                                // if (!isImageBlockAllowed()) {
+                                //     return true;
+                                // }
+                                //
+                                // const url = event.clipboardData.getData('Text');
+                                // const { from } = getPositionFromCursor(view);
+                                //
+                                // if (areImageFiles(event)) {
+                                //     // Avoid tiptap image extension default behavior on paste.
+                                //     event.preventDefault();
+                                //     if (event.clipboardData.files.length !== 1) {
+                                //         alert('Can paste just one image at a time');
+                                //
+                                //         return true;
+                                //     }
+                                //
+                                //     const files = Array.from(event.clipboardData.files);
+                                //     uploadImages(view, files, from);
+                                // } else if (checkImageURL(url)) {
+                                //     const node = {
+                                //         attrs: {
+                                //             src: url
+                                //         },
+                                //         type: ImageNode.name
+                                //     };
+                                //     editor.commands.insertContentAt(from, node);
+                                // }
+                                const { clipboardData } = event;
+                                const { files } = clipboardData;
+                                const text = clipboardData.getData('Text') || '';
+                                const type = getFileType(files[0]) as EditorAssetTypes;
+
+                                if (type) {
+                                    alertErrorMessage(type);
+
+                                    return;
                                 }
 
-                                const url = event.clipboardData.getData('Text');
+                                // If the text is not an image URL, we don't want to prevent the default behavior.
+                                // This allows the user to paste text normally. Nedeed 'cause when you copy and paste
+                                // text from Word, the clipboard data event is receiving an image because Word includes
+                                // formatting information along with the text.
+                                if (text && !checkImageURL(text)) {
+                                    return;
+                                }
+
                                 const { from } = getPositionFromCursor(view);
 
-                                if (areImageFiles(event)) {
-                                    // Avoid tiptap image extension default behavior on paste.
-                                    event.preventDefault();
-                                    if (event.clipboardData.files.length !== 1) {
-                                        alert('Can paste just one image at a time');
-
-                                        return true;
-                                    }
-
-                                    const files = Array.from(event.clipboardData.files);
-                                    uploadImages(view, files, from);
-                                } else if (checkImageURL(url)) {
+                                if (checkImageURL(text)) {
                                     const node = {
                                         attrs: {
-                                            src: url
+                                            src: text
                                         },
                                         type: ImageNode.name
                                     };
                                     editor.commands.insertContentAt(from, node);
+                                } else {
+                                    const filesArray = Array.from(event.clipboardData.files);
+                                    uploadImages(view, filesArray, from);
                                 }
+
+                                event.preventDefault();
+                                event.stopPropagation();
                             },
                             drop(view, event: DragEvent) {
                                 if (isImageBlockAllowed() && areImageFiles(event)) {

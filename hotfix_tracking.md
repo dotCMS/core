@@ -98,3 +98,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.6**
 
 79. https://github.com/dotCMS/core/issues/25618 : Metadata keywords don't return in response to ES query and Content api #25618
+80. https://github.com/dotCMS/core/issues/25726 : Block Editor: Copy - Paste Word Doc creates an image instead of a paragraph in Chrome and Mac #25726
