@@ -425,6 +425,15 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             heading3: () => {
                 this.editor.chain().focus().clearNodes().setHeading({ level: 3 }).run();
             },
+            heading4: () => {
+                this.editor.chain().focus().clearNodes().setHeading({ level: 4 }).run();
+            },
+            heading5: () => {
+                this.editor.chain().focus().clearNodes().setHeading({ level: 5 }).run();
+            },
+            heading6: () => {
+                this.editor.chain().focus().clearNodes().setHeading({ level: 6 }).run();
+            },
             paragraph: () => {
                 this.editor.chain().focus().clearNodes().run();
             },

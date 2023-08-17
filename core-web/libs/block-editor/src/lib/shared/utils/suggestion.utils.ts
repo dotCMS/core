@@ -15,12 +15,12 @@ import {
 
 const domSanitizer = new ɵDomSanitizerImpl(document);
 
-const headings: DotMenuItem[] = [...Array(3).keys()].map((level) => {
+const headings: DotMenuItem[] = [...Array(6).keys()].map((level) => {
     const size = level + 1;
 
     return {
         label: `Heading ${size}`,
-        icon: sanitizeUrl(headerIcons[level]),
+        icon: sanitizeUrl(headerIcons[level] || ''),
         id: `heading${size}`,
         attributes: { level: size }
     };

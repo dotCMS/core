@@ -17,6 +17,18 @@
                 <h3 style="text-align: $!element.attrs.textAlign;">
                     #renderContentBlock($element.content)
                 </h3>
+                            #elseif($element.attrs.level == "4")
+                                <h4 style="text-align: $!element.attrs.textAlign;">
+                                    #renderContentBlock($element.content)
+                                </h4>
+                                            #elseif($element.attrs.level == "5")
+                                                <h5 style="text-align: $!element.attrs.textAlign;">
+                                                    #renderContentBlock($element.content)
+                                                </h5>
+                                                            #elseif($element.attrs.level == "6")
+                                                                <h6 style="text-align: $!element.attrs.textAlign;">
+                                                                    #renderContentBlock($element.content)
+                                                                </h6>
             #end
         #elseif( $element.type == "listItem" )
             <li style="text-align: $!element.attrs.textAlign;">

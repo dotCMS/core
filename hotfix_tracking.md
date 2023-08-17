@@ -99,3 +99,4 @@ This maintenance release includes the following code fixes:
 
 79. https://github.com/dotCMS/core/issues/25618 : Metadata keywords don't return in response to ES query and Content api #25618
 80. https://github.com/dotCMS/core/issues/25726 : Block Editor: Copy - Paste Word Doc creates an image instead of a paragraph in Chrome and Mac #25726
+81. https://github.com/dotCMS/core/issues/25660 : Add support for h4, h5, h6 headlines in Block Editor #25660
