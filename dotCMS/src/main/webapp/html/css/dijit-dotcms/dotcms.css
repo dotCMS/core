@@ -10178,15 +10178,13 @@ a.category_higlighted, a.tag_higlighted {
   min-width: 230px;
 }
 
-.view-actions {
-  padding-left: 1.5rem;
+.view-actions .container-fluid {
+  margin: 1rem;
 }
-.view-actions .container-fluid,
-.view-actions .container-fluid > .row:last-child,
-.view-actions > form,
-.view-actions .view-actions__permissions,
-.view-actions .view-actions__sub-actions {
-  height: 90vh;
+.view-actions .container-fluid main.row {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: 1fr 1fr 15rem;
 }
 
 .view-actions__back-btn {
@@ -10203,21 +10201,20 @@ a.category_higlighted, a.tag_higlighted {
   line-height: 28px;
 }
 
-.view-actions__permissions {
-  border-left: 1px solid #d1d4db;
-  position: relative;
-  padding-left: 1.5rem;
-}
-
-.view-actions__sub-actions {
-  border-left: 1px solid #d1d4db;
-}
 .view-actions__sub-actions .listingTable {
   width: 100%;
   margin: 2rem 0;
 }
 .view-actions__sub-actions tr:first-child td {
   border-top: 1px solid #d1d4db;
+}
+
+.view-actions__permissions,
+.view-actions__sub-actions,
+.view-actions__workflow-actions {
+  position: relative;
+  border-left: 1px solid #d1d4db;
+  padding-left: 1.5rem;
 }
 
 .view-actions__permissions h3,
