@@ -198,7 +198,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                 const text = clipboardData.getData('Text') || '';
                                 const type = getFileType(files[0]) as EditorAssetTypes;
 
-                                if (type) {
+                                if (type && files.length > 1) {
                                     alertErrorMessage(type);
 
                                     return;
