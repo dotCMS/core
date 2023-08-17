@@ -112,5 +112,5 @@ jobs:
           pull_request: ${{ github.event.number }}
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          tests_report_url: ${{ steps.github-publish-unit-tests.outputs.test_logs_url }}
-        if: (success() || failure()) && steps.github-publish-unit-tests.outputs.tests_report_url != ''
+          tests_report_url: ${{ steps.publish-test-results.outputs.test_logs_url }}
+        if: (success() || failure()) && steps.publish-test-results.outputs.tests_report_url != ''
