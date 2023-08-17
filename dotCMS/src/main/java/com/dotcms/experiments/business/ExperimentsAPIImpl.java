@@ -605,7 +605,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             cancelScheduledExperimentsUponConflicts(experimentToSave, user);
             toReturn = innerStart(experimentToSave, user, false);
         } else {
-            Scheduling scheduling = persistedExperiment.scheduling().get();
+            Scheduling scheduling = persistedExperiment.scheduling().orElseThrow();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
 
             if(runningExperimentOnPage.isPresent()) {
