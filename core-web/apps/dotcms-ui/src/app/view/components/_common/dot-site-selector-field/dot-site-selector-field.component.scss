@@ -2,6 +2,6 @@
 
 dot-site-selector {
     ::ng-deep .p-button:enabled {
-        border: 1px solid $color-palette-gray;
+        border: $field-border-size solid $color-palette-gray;
     }
 }
