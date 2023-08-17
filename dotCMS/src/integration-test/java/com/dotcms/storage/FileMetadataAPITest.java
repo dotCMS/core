@@ -105,19 +105,15 @@ public class FileMetadataAPITest {
     @Test
     public void Test_Get_BasicMetadataWhenOverridePropertyIsSet() throws Exception {
         prepareIfNecessary();
-        Config.setProperty(BASIC_METADATA_OVERRIDE_KEYS, "keywords");
+        final FileMetadataAPI metadataAPI = new FileMetadataAPIImpl(APILocator.getFileStorageAPI(),
+                CacheLocator.getMetadataCache(), () -> CollectionsUtils.set("keywords"));
+        final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
+        Metadata metadata = metadataAPI.generateContentletMetadata(
+                fileAssetContent).getBasicMetadataMap().get("fileAsset");
 
-        try {
-            final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
-            Metadata metadata = fileMetadataAPI.generateContentletMetadata(
-                    fileAssetContent).getBasicMetadataMap().get("fileAsset");
-
-            assertNotNull(metadata);
-            assertEquals(1, metadata.getMap().size());
-            assertEquals("keyword1,keyword2", metadata.getMap().get("keywords"));
-        } finally {
-            Config.setProperty(BASIC_METADATA_OVERRIDE_KEYS, null);
-        }
+        assertNotNull(metadata);
+        assertEquals(1, metadata.getMap().size());
+        assertEquals("keyword1,keyword2", metadata.getMap().get("keywords"));
     }
 
     /**

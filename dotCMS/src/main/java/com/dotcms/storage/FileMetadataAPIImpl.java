@@ -59,19 +59,25 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     private final FileStorageAPI fileStorageAPI;
     private final MetadataCache metadataCache;
 
-    private static Lazy<Set<String>> basicMetadataKeySet = Lazy.of(() -> Arrays.stream(
-                    Config.getStringProperty(BASIC_METADATA_OVERRIDE_KEYS,
-                            String.join(",", BasicMetadataFields.keyMap().keySet())).split(","))
-            .map(String::trim).collect(Collectors.toSet()));
+    private Lazy<Set<String>> basicMetadataKeySet;
 
     public FileMetadataAPIImpl() {
         this(APILocator.getFileStorageAPI(), CacheLocator.getMetadataCache());
     }
 
+    private FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache) {
+        this(fileStorageAPI, metadataCache, () -> Arrays.stream(
+                        Config.getStringProperty(BASIC_METADATA_OVERRIDE_KEYS,
+                                String.join(",", BasicMetadataFields.keyMap().keySet())).split(","))
+                .map(String::trim).collect(Collectors.toSet()));
+    }
+
     @VisibleForTesting
-    FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache) {
+    FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache,
+            Supplier<? extends Set<String>> basicMetadataKeySetSupplier) {
         this.fileStorageAPI = fileStorageAPI;
         this.metadataCache = metadataCache;
+        this.basicMetadataKeySet = Lazy.of(basicMetadataKeySetSupplier);
     }
 
     /**
