@@ -4866,6 +4866,9 @@ body {
   background-color: #f3f3f4;
   border-left: solid 1.5px #f3f3f4;
 }
+.dijitComboBoxDisabled .dijitArrowButton:before {
+  border-top-color: #6c7389;
+}
 .dijitComboBoxDisabled .dijitPlaceHolder {
   color: #afb3c0;
 }

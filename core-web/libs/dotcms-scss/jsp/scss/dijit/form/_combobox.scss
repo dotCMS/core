@@ -66,6 +66,10 @@
         .dijitArrowButton {
             background-color: $combobox-disabled-bgcolor;
             border-left: $combobox-disabled-arrow-border;
+
+            &:before {
+                border-top-color: $combobox-disabled-arrow-color;
+            }
         }
 
         .dijitPlaceHolder {
