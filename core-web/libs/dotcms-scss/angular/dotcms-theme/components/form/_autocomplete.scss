@@ -1,15 +1,16 @@
 @use "variables" as *;
 @import "common";
 
-.p-button.p-autocomplete-dropdown {
-    padding-left: $spacing-3;
-    padding-right: $spacing-3;
-}
+// .p-button.p-autocomplete-dropdown {
+//     padding-left: $spacing-3;
+//     padding-right: $spacing-3;
+// }
 
 .p-autocomplete {
-    @extend #form-field-base;
+    @extend #form-field-extend;
     min-height: $field-height-md;
     height: auto;
+    padding-right: 0;
 
     .p-autocomplete-loader {
         right: $spacing-2;
@@ -89,23 +90,20 @@ p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
     }
 }
 
-.p-autocomplete-dropdown {
-    background: #fff;
-    border: 1px solid $input-border-color;
-    border-top-right-radius: $border-radius-xs;
-    border-bottom-right-radius: $border-radius-xs;
-    border-left: none;
-    padding: 0;
-    min-width: $spacing-7;
+.p-autocomplete-dropdown.p-element.p-button {
+    @extend #field-trigger;
+    height: inherit;
 
-    &:enabled:hover,
-    &:enabled:focus {
-        background: #f1f1f1;
-        border: 1.5px solid $input-border-color-focus;
-        border-left: none;
+    .p-button-icon {
+        @extend #field-trigger-icon;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .p-button-icon::before {
-        color: gray;
+    &:hover,
+    &:active,
+    &.p-focus {
+        outline: none;
     }
 }
