@@ -1,5 +1,6 @@
 @use "variables" as *;
 @import "common";
+@import "mixins";
 
 p-dropdown.p-inputwrapper-filled {
     .p-dropdown {
@@ -26,15 +27,17 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
         @extend #form-field-focus;
     }
 
-    &.p-dropdown-clearable .p-dropdown-label {
-        padding-right: $spacing-6;
-    }
-
     .p-element.p-dropdown-label,
     .p-dropdown-label {
-        display: flex;
-        align-items: center;
+        padding: $spacing-1 0;
         font-size: $font-size-md;
+        @include truncate-text;
+    }
+
+    &:has(.p-dropdown-clear-icon) {
+        .p-dropdown-label {
+            padding-right: $spacing-5;
+        }
     }
 
     input.p-dropdown-label {

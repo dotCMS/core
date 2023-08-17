@@ -1,5 +1,6 @@
 @use "variables" as *;
 @import "common";
+@import "mixins";
 
 .p-multiselect {
     @extend #form-field-base;
@@ -16,11 +17,11 @@
     }
 
     .p-multiselect-label-container {
-        display: flex;
-        align-items: center;
-
+        padding: $spacing-1 0;
+        padding-right: $spacing-1;
         .p-multiselect-label:not(.p-placeholder) {
             color: $black;
+            @include truncate-text;
         }
     }
 
