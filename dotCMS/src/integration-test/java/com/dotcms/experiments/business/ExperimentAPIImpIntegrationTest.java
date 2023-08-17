@@ -6161,6 +6161,15 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getRunningExperimentPerPage(String)}
+     * When: The Page has a Experiment but is not RUNNING
+     * Should: The Method return a empty Optional but after Start the Experiment the
+     * method should return the Experiment
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void getRunningExperimentPerPage() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
