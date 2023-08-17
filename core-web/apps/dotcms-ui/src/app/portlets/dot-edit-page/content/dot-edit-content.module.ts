@@ -3,7 +3,6 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -43,6 +42,7 @@ import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-htm
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
 
 import { DotEditPageToolbarSeoComponent } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.component';
+import { DotResultsSeoToolComponent } from '../seo/components/dot-results-seo-tool/dot-results-seo-tool.component';
 const routes: Routes = [
     {
         component: DotEditContentComponent,
@@ -57,7 +57,6 @@ const routes: Routes = [
         ButtonModule,
         DialogModule,
         CheckboxModule,
-        CardModule,
         RouterModule.forChild(routes),
         DotContentletEditorModule,
         DotDirectivesModule,
@@ -74,7 +73,8 @@ const routes: Routes = [
         DotPaletteModule,
         DotIconModule,
         DotEditPageToolbarSeoComponent,
-        DotShowHideFeatureDirective
+        DotShowHideFeatureDirective,
+        DotResultsSeoToolComponent
     ],
     exports: [DotEditContentComponent],
     providers: [

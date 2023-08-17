@@ -1,0 +1,124 @@
+@use "variables" as *;
+
+:host {
+    width: 100%;
+    overflow: scroll;
+}
+
+.results-seo-tool__container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.results-seo-tool__main-card {
+    width: 47.6rem;
+    border-radius: $spacing-2;
+    box-shadow: $md-shadow-6;
+    margin: $spacing-6 0;
+}
+
+.results-seo-tool__main-card-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.results-seo-tool__main-card-title {
+    color: $black;
+    font-size: 0.875rem;
+    font-style: normal;
+    font-weight: 700;
+    line-height: normal;
+    margin: $spacing-3 0;
+    display: block;
+}
+
+.results-seo-tool__card-title {
+    color: $black;
+    gap: 1rem;
+    font-size: 1rem;
+    display: flex;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+
+.results-seo-tool__card {
+    border-radius: 0.5rem;
+    border: 1px solid var(--gray-scale-300, #ebecef);
+    padding: 1rem;
+}
+
+.og-title {
+    font-size: 1.25rem;
+    text-decoration: none;
+}
+
+.og-description {
+    color: #000;
+    font-size: 1rem;
+}
+
+.results-seo-tool__card-favicon {
+    border-radius: 6.25rem;
+    background: var(--gray-scale-200, #f4f4f6);
+    padding: 0.38rem;
+}
+
+.google-mobile {
+    width: 24.375rem;
+}
+
+.seo-og-result {
+    width: 47.6rem;
+    margin-bottom: 1.5rem;
+}
+
+.seo-og-header {
+    border-bottom: 1px solid var(--gray-scale-400, #d1d4db);
+}
+
+.og-container {
+    width: 100%;
+    overflow: scroll;
+}
+
+.seo-og-header-item {
+    display: flex;
+    gap: 1rem;
+}
+
+.seo-og-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.seo-og-list li {
+    display: flex;
+    gap: 1rem;
+}
+
+.seo-og-list li:not(:last-child) {
+    margin-bottom: 1rem;
+}
+
+::ng-deep {
+    .p-card {
+        border: 1px solid var(--gray-scale-400, #d1d4db);
+        border-radius: 0.75rem;
+    }
+
+    .seo-og-result .p-card .p-card-header {
+        border-bottom: 1px solid var(--gray-scale-400, #d1d4db);
+        padding: 1rem;
+    }
+
+    .seo-og-result .p-card-body {
+        padding: 1rem;
+    }
+
+    .seo-card .p-card-body {
+        padding: 1rem;
+    }
+}
