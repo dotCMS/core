@@ -110,7 +110,8 @@ public class FileMetadataAPITest {
         final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
         Metadata metadata = metadataAPI.generateContentletMetadata(
                 fileAssetContent).getBasicMetadataMap().get("fileAsset");
-
+        
+        //we get the keywords from the pdf file. It should have this value: keyword1,keyword2
         assertNotNull(metadata);
         assertEquals(1, metadata.getMap().size());
         assertEquals("keyword1,keyword2", metadata.getMap().get("keywords"));
