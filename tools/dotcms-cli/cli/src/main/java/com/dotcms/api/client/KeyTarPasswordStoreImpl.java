@@ -4,6 +4,16 @@ import com.starxg.keytar.Keytar;
 import com.starxg.keytar.KeytarException;
 import javax.enterprise.context.ApplicationScoped;
 
+/**
+ * KeyTarPasswordStoreImpl implements the SecurePasswordStore interface to securely store passwords using the system keychain.
+ * It uses the Keytar library to interface with the native keychain/credential manager of the operating system.
+ * The setPassword method stores the password for the given service and account.
+ * It wraps any KeytarException in a StoreSecureException.
+ * The getPassword method retrieves the password for the given service and account.
+ * It wraps any KeytarException in a StoreSecureException.
+ * The deletePassword method deletes the password for the given service and account.
+ * It wraps any KeytarException in a StoreSecureException.
+ */
 @ApplicationScoped
 public class KeyTarPasswordStoreImpl implements SecurePasswordStore {
 

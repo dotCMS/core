@@ -15,6 +15,14 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * ContainerResource implements the QuarkusTestResourceLifecycleManager interface to manage starting and stopping the Docker containers for testing.
+ * The class has constants for the ports of the Postgres, Elasticsearch, and dotCMS services exposed by Docker Compose.
+ * The static initializer block reads test configuration from MicroProfile Config and creates a DockerComposeContainer.
+ * It configures exposed services, environment variables, and logging.
+ * The start() method starts the Docker Compose container and returns a map with the dotCMS URL for tests to use.
+ * The stop() method stops the Docker Compose container when tests are complete.
+ */
 @QuarkusTest
 public class ContainerResource implements QuarkusTestResourceLifecycleManager {
 

@@ -31,44 +31,6 @@ class HybridServiceManagerTest {
     }
 
     /**
-     * Commenting out this test and replacing it with the one below.
-     * This test is failing because the keytar library is not working on the CI server.
-     * @throws IOException
-     * @throws KeytarException
-     */
-    // @Test
-    void Test_Persist_Then_Recover() throws IOException, KeytarException {
-
-        Keytar instance = Keytar.getInstance();
-        final ServiceBean serviceBeanDefault = ServiceBean.builder().name("default")
-                .active(false)
-                .credentials(
-                        CredentialsBean.builder().user("admin")
-                                .token(FAKE_TOKEN).build())
-                .build();
-
-        serviceManager.persist(serviceBeanDefault);
-        String pass = instance.getPassword("default","admin");
-        String fakeToken = new String(FAKE_TOKEN);
-        Assertions.assertEquals(fakeToken,pass);
-        Optional<ServiceBean> optional = serviceManager.services().stream().filter(serviceBean -> "default".equals(serviceBean.name())).findFirst();
-        Assertions.assertTrue(optional.isPresent());
-        ServiceBean bean = optional.get();
-        Assertions.assertEquals("default",bean.name());
-        Assertions.assertNotNull(bean.credentials());
-        Assertions.assertEquals("admin", bean.credentials().user());
-        Assertions.assertEquals(fakeToken, new String(bean.credentials().token()));
-
-        serviceManager.removeAll();
-
-        optional = serviceManager.services().stream().filter(serviceBean -> "default".equals(serviceBean.name())).findFirst();
-        Assertions.assertFalse(optional.isPresent(),"service instance should have been removed.");
-        Assertions.assertNull(instance.getPassword("default","admin"));
-        Assertions.assertFalse(serviceManager.selected().isPresent());
-
-    }
-
-    /**
      * This test is here to demonstrate that even if the keytar library is not working on the CI server, we still can rely on the yml file for storage.
      * This service manager is injected with a Mock that simulates the keytar library not working.
      * @throws IOException

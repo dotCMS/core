@@ -9,12 +9,12 @@ import java.util.Set;
 
 /**
  * This class is used to load the properties from the application.properties file.
- * It is need it to inject the properties into a static block.
+ * It is needed to inject the properties into a static block.
  */
-public class EnvironmentConfigSource implements ConfigSource {
+public class PropertiesConfigSource implements ConfigSource {
     private Properties properties;
 
-    public EnvironmentConfigSource() {
+    public PropertiesConfigSource() {
         loadPropertiesFromFile();
     }
 
