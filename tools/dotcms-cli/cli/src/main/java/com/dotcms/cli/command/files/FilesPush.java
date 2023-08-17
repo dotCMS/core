@@ -32,9 +32,9 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
     static final String NAME = "push";
 
-    @CommandLine.Parameters(index = "0", arity = "0..1", paramLabel = "source",
+    @CommandLine.Parameters(index = "0", arity = "0..1", paramLabel = "path",
             description = "local directory or file to push")
-    File source;
+    File path;
 
     @CommandLine.Option(names = {"-rf", "--removeFolders"}, defaultValue = "false",
             description =
@@ -74,18 +74,18 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     public Integer call() throws Exception {
 
             // Getting the workspace
-            var workspace = getWorkspaceDirectory(source);
+        var workspace = getWorkspaceDirectory(path);
 
             // If the source is not specified, we use the current directory
-            if (source == null) {
-                source = Paths.get("").toAbsolutePath().normalize().toFile();
+        if (path == null) {
+            path = Paths.get("").toAbsolutePath().normalize().toFile();
             }
 
             CompletableFuture<List<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>>>
                     folderTraversalFuture = CompletableFuture.supplyAsync(
                     () -> {
                         // Service to handle the traversal of the folder
-                        return pushService.traverseLocalFolders(output, workspace, source,
+                        return pushService.traverseLocalFolders(output, workspace, path,
                                 removeAssets, removeFolders, true, true);
                     });
 
@@ -107,7 +107,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
             if (result == null) {
                 output.error(String.format(
-                        "Error occurred while pushing folder info: [%s].", source));
+                        "Error occurred while pushing folder info: [%s].", path));
                 return CommandLine.ExitCode.SOFTWARE;
             }
 

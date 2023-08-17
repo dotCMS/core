@@ -1,5 +1,7 @@
 package com.dotcms.cli.command.files;
 
+import static com.dotcms.common.LocationUtils.encodePath;
+
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.files.PullService;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
@@ -12,6 +14,8 @@ import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -33,10 +37,10 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
     static final String NAME = "pull";
 
-    @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "source",
+    @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "path",
             description = "dotCMS path to the directory or file to pull "
                     + "- Format: //{site}/{folder} or //{site}/{folder}/{file}")
-    String source;
+    String path;
 
     @CommandLine.Parameters(index = "1", arity = "0..1", paramLabel = "workspace",
             description = "Local directory withing the CLI project workspace. " +
@@ -102,12 +106,10 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Integer call() throws Exception {
 
-
-
-            // Calculating the workspace path for files
+        // Calculating the workspace path for files
             var workspaceFilesFolder = getOrCreateWorkspaceFilesDirectory(workspace);
 
-            if (LocationUtils.isFolderURL(source)) { // Handling folders
+        if (LocationUtils.isFolderURL(path)) { // Handling folders
 
                 var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
                 var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);
@@ -118,7 +120,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                         () -> {
                             // Service to handle the traversal of the folder
                             return remoteTraversalService.traverseRemoteFolder(
-                                    source,
+                                    path,
                                     recursive ? null : 0,
                                     true,
                                     includeFolderPatterns,
@@ -145,7 +147,8 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 final var result = folderTraversalFuture.get();
 
                 if (result == null) {
-                    throw new IOException(String.format("Error occurred while pulling folder info: [%s].", source));
+                    throw new IOException(
+                            String.format("Error occurred while pulling folder info: [%s].", path));
                 }
 
                 // ---
@@ -156,7 +159,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
             } else { // Handling single files
 
                 CompletableFuture<AssetVersionsView> assetInformationFuture = CompletableFuture.supplyAsync(
-                        () -> retrieveAssetInformation(source)
+                        () -> retrieveAssetInformation(path)
                 );
 
                 // ConsoleLoadingAnimation instance to handle the waiting "animation"
@@ -175,12 +178,13 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 CompletableFuture.allOf(assetInformationFuture, animationFuture).join();
                 final var result = assetInformationFuture.get();
                 if (result == null) {
-                    output.error(String.format("Error occurred while pulling asset info: [%s].", source));
+                    output.error(String.format("Error occurred while pulling asset info: [%s].",
+                            path));
                     return CommandLine.ExitCode.SOFTWARE;
                 }
 
                 // Handle the pull of a single file
-                pullAssetsService.pullFile(output, result, source, workspaceFilesFolder, override,
+            pullAssetsService.pullFile(output, result, path, workspaceFilesFolder, override,
                         failFast, retryAttempts);
             }
 
@@ -202,7 +206,8 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
         // Execute the REST call to retrieve asset information
-        var response = assetAPI.assetByPath(ByPathRequest.builder().assetPath(source).build());
+        String encodedURL = encodePath(source);
+        var response = assetAPI.assetByPath(ByPathRequest.builder().assetPath(encodedURL).build());
         return response.entity();
     }
 

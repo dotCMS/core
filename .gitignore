@@ -63,6 +63,7 @@ dotCMS/src/main/webapp/dotAdmin
 dotCMS/src/main/webapp/dotcms-webcomponents
 dotCMS/bin/*
 dotCMS/classes
+WAR/
 
 # Changes after gradle migration #
 ###############################
