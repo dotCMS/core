@@ -21,7 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class PushServiceTest extends FilesTestHelper {
+class PushServiceIntegrationTest extends FilesTestHelper {
 
     @Inject
     AuthenticationContext authenticationContext;
