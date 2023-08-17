@@ -3,10 +3,6 @@ package com.dotcms.cli.command.files;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.command.CommandTest;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.*;
-import picocli.CommandLine;
-
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -16,6 +12,11 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
+import javax.inject.Inject;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import picocli.CommandLine;
 
 @QuarkusTest
 class FilesPullCommandTest extends CommandTest {
@@ -39,6 +40,25 @@ class FilesPullCommandTest extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String path = String.format("//%s", "siteDontExist");
+            final int status = commandLine.execute(FilesCommand.NAME, FilesPull.NAME, path);
+            Assertions.assertEquals(CommandLine.ExitCode.SOFTWARE, status);
+        }
+    }
+
+    /**
+     * This method tests the functionality of the "Files Pull" command when the specified asset is
+     * not found. The expected status code is CommandLine.ExitCode.SOFTWARE, which is compared
+     * against the actual status code returned by the execute method. If the status codes match, the
+     * test passes.
+     */
+    @Test
+    void Test_Command_Files_Pull_Option_Not_Found2() {
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String path = String.format("//%s", "default/test1/image4 copy.jpg");
             final int status = commandLine.execute(FilesCommand.NAME, FilesPull.NAME, path);
             Assertions.assertEquals(CommandLine.ExitCode.SOFTWARE, status);
         }
