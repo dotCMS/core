@@ -158,13 +158,6 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
             .filter((field: DotCMSContentTypeField) => this.isDateVarField(field))
             .map((field: DotCMSContentTypeField) => this.getDateVarFieldOption(field));
 
-        if (dateVarOptions.length) {
-            dateVarOptions.unshift({
-                label: '',
-                value: ''
-            });
-        }
-
         return this.isNewDateVarFields(dateVarOptions) ? dateVarOptions : [];
     }
 
