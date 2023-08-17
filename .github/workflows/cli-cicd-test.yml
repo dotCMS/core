@@ -107,7 +107,7 @@ jobs:
         name: Send Github Status
         uses: ./.github/actions/github-status
         with:
-          test_type: unit
+          test_type: cli
           test_results_status: ${{ steps.run-cli-tests.outputs.status }}
           pull_request: ${{ github.event.number }}
           github_user: ${{ env.GITHUB_USER }}
