@@ -1,11 +1,6 @@
 @use "variables" as *;
 @import "common";
 
-// .p-button.p-autocomplete-dropdown {
-//     padding-left: $spacing-3;
-//     padding-right: $spacing-3;
-// }
-
 .p-autocomplete {
     @extend #form-field-extend;
     min-height: $field-height-md;

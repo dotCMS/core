@@ -37,8 +37,3 @@
 
 @use "utils/validation";
 @use "utils/password";
-
-.p-disabled,
-.p-component:disabled {
-    opacity: 1;
-}
