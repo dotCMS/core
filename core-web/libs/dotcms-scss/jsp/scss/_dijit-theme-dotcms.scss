@@ -73,7 +73,7 @@ $button-focused-border: solid $field-border-size $color-palette-primary;
 
 // DropDownButton
 $dropdownbutton-arrow-size: 5px;
-$dropdownbutton-arrow-container-size: $field-height;
+$dropdownbutton-arrow-container-size: calc($field-height - ($field-border-size * 2));
 
 $dropdownbutton-normal-bgcolor: $button-normal-bgcolor;
 $dropdownbutton-normal-textcolor: $button-normal-textcolor;
@@ -118,7 +118,7 @@ $dropdownbutton-disabled-arrow-color: $field-disabled-arrow-color;
 // ComboButton
 // TODO: add margin when there is border in the arrow.
 $combobutton-arrow-size: 5px;
-$combobutton-arrow-container-size: $field-height;
+$combobutton-arrow-container-size: calc($field-height - ($field-border-size * 2));
 
 $combobutton-normal-bgcolor: $button-normal-bgcolor;
 $combobutton-normal-textcolor: $button-normal-textcolor;
@@ -323,34 +323,34 @@ $combobox-arrow-size: 5px;
 
 $combobox-normal-border: $field-normal-border;
 $combobox-normal-bgcolor: $white;
-$combobox-normal-arrow-color: $white;
+$combobox-normal-arrow-color: $color-palette-primary;
 $combobox-normal-arrow-border: $combobox-normal-border;
-$combobox-normal-arrow-bgcolor: $white;
+$combobox-normal-arrow-bgcolor: $color-palette-gray-200;
 
 $combobox-hover-border: $field-hover-border;
 $combobox-hover-bgcolor: $white;
-$combobox-hover-arrow-color: $field-hover-arrow-color;
+$combobox-hover-arrow-color: $color-palette-primary;
 $combobox-hover-arrow-border: $combobox-hover-border;
-$combobox-hover-arrow-bgcolor: $white;
+$combobox-hover-arrow-bgcolor: $color-palette-gray-200;
 // Hover the field and hover the arrow
-$combobox-hoverarrow-arrow-color: $field-hoverarrow-arrow-color;
+$combobox-hoverarrow-arrow-color: $color-palette-primary;
 $combobox-hoverarrow-arrow-border: $field-hoverarrow-arrow-border;
-$combobox-hoverarrow-arrow-bgcolor: $field-hoverarrow-arrow-bgcolor;
+$combobox-hoverarrow-arrow-bgcolor: $color-palette-gray-200;
 
 $combobox-focused-border: $combobox-hover-border;
 $combobox-focused-bgcolor: $white;
-$combobox-focused-arrow-color: $combobox-hoverarrow-arrow-color;
+$combobox-focused-arrow-color: $color-palette-primary;
 $combobox-focused-arrow-border: $combobox-focused-border;
-$combobox-focused-arrow-bgcolor: $white;
+$combobox-focused-arrow-bgcolor: $color-palette-gray-200;
 // Hover the field and hover the arrow
-$combobox-focusedarrow-arrow-color: $field-focusedarrow-arrow-color;
+$combobox-focusedarrow-arrow-color: $color-palette-primary;
 $combobox-focusedarrow-arrow-border: $field-focusedarrow-arrow-border;
-$combobox-focusedarrow-arrow-bgcolor: $field-focusedarrow-arrow-bgcolor;
+$combobox-focusedarrow-arrow-bgcolor: $color-palette-gray-200;
 
 // Click the arrow
-$combobox-activearrow-arrow-color: $field-activearrow-arrow-color;
+$combobox-activearrow-arrow-color: $color-palette-primary;
 $combobox-activearrow-arrow-border: $field-activearrow-arrow-border;
-$combobox-activearrow-arrow-bgcolor: $field-activearrow-arrow-bgcolor;
+$combobox-activearrow-arrow-bgcolor: $color-palette-gray-200;
 
 $combobox-disabled-border: $field-disabled-border;
 $combobox-disabled-bgcolor: $color-palette-gray-200;

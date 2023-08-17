@@ -3821,7 +3821,7 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-bottom: 5px solid #ffffff;
+  border-bottom: 5px solid var(--color-palette-primary-500);
   content: "";
   height: 0;
   width: 0;
@@ -3890,7 +3890,7 @@ body {
 .dijitToggleButton {
   border-radius: 0.375rem;
   font-size: 14px;
-  height: 40px;
+  height: 37px;
 }
 
 .dijitButton,
@@ -3909,7 +3909,7 @@ body {
 .dijitDropDownButton .dijitArrowButtonInner,
 .dijitSelect .dijitArrowButtonContainer,
 .dijitSpinner .dijitSpinnerButtonContainer {
-  height: 38px;
+  height: 37px;
   border: none;
   position: relative;
 }
@@ -4236,7 +4236,7 @@ body {
 
 .dijitButton,
 .dijitToggleButton {
-  height: 2.5rem;
+  height: 37px;
   border-radius: 0.375rem;
   display: inline-flex;
   align-items: center;
@@ -4307,7 +4307,7 @@ body {
   padding-left: 1rem;
 }
 .dijitDropDownButton .dijitArrowButtonInner {
-  width: 40px;
+  width: 37px;
   background-color: transparent;
 }
 .dijitDropDownButton .dijitArrowButtonInner:before {
@@ -4403,7 +4403,7 @@ body {
   box-shadow: 0;
 }
 .dijitComboButton .dijitArrowButtonInner {
-  width: 40px;
+  width: 37px;
   background-color: transparent;
 }
 .dijitComboButton .dijitArrowButtonInner:before {
@@ -4822,22 +4822,25 @@ body {
 .dijitComboBox .dijitArrowButton {
   height: 37px;
   width: 40px;
-  background-color: #ffffff;
+  background-color: #f3f3f4;
   border-left: solid 1.5px #d1d4db;
+}
+.dijitComboBox .dijitArrowButton:before {
+  border-top-color: var(--color-palette-primary-500);
 }
 .dijitComboBoxHover {
   background-color: #ffffff;
   border: solid 1.5px var(--color-palette-primary-400);
 }
 .dijitComboBoxHover .dijitArrowButton {
-  background-color: #ffffff;
+  background-color: #f3f3f4;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
 .dijitComboBoxHover .dijitArrowButton:before {
   border-top-color: var(--color-palette-primary-500);
 }
 .dijitComboBoxHover .dijitDownArrowButtonHover {
-  background-color: #ffffff;
+  background-color: #f3f3f4;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
 .dijitComboBoxHover .dijitDownArrowButtonHover:before {
@@ -4848,11 +4851,11 @@ body {
   background-color: #ffffff;
 }
 .dijitComboBoxFocused .dijitArrowButton {
-  background-color: #ffffff;
+  background-color: #f3f3f4;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
 .dijitComboBoxFocused .dijitDownArrowButtonHover {
-  background-color: #ffffff;
+  background-color: #f3f3f4;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
 .dijitComboBoxDisabled {
@@ -4882,11 +4885,11 @@ body {
   border-top-color: #d82b2e;
 }
 .dijitComboBox .dijitDownArrowButtonActive {
-  background-color: var(--color-palette-primary-500);
+  background-color: #f3f3f4;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
 .dijitComboBox .dijitDownArrowButtonActive:before {
-  border-top-color: #ffffff;
+  border-top-color: var(--color-palette-primary-500);
 }
 
 .dijitSliderBarH, .dijitSliderBumperH {
@@ -11872,3 +11875,5 @@ body {
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/*# sourceMappingURL=dotcms.css.map */
