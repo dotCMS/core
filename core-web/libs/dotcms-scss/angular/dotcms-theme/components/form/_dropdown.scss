@@ -56,6 +56,8 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
     }
 
     &.p-disabled {
+        @extend #form-field-disabled;
+
         .p-dropdown-trigger {
             .p-dropdown-trigger-icon {
                 color: $color-palette-gray-700;

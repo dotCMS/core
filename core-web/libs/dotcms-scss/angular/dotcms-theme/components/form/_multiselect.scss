@@ -32,6 +32,20 @@
         }
     }
 
+    &.p-disabled {
+        @extend #form-field-disabled;
+
+        .p-multiselect-label-container .p-multiselect-label {
+            color: $color-palette-gray-700;
+        }
+
+        .p-multiselect-trigger {
+            .p-multiselect-trigger-icon {
+                color: $color-palette-gray-700;
+            }
+        }
+    }
+
     &.p-multiselect-chip {
         color: $color-palette-gray-800;
 
