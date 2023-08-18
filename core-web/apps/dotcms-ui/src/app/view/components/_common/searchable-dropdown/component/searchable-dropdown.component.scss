@@ -7,31 +7,12 @@
 :host {
     position: relative;
 
-    &.d-secondary {
-        .p-button {
-            border: none;
-
-            &:hover,
-            &:active,
-            &:focus {
-                border: none;
-                box-shadow: none;
-                background: $bg-hover;
-            }
-
-            &::ng-deep {
-                .p-button-label {
-                    margin-right: 0;
-                }
-            }
-        }
-    }
-
     ::ng-deep .p-element.p-button:enabled {
         justify-content: space-between;
         text-align: left;
         padding: 0;
         padding-left: $spacing-1;
+        border: $field-border-size solid $color-palette-gray-400;
 
         .p-button-label {
             text-transform: none;
