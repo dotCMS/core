@@ -30,6 +30,7 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
     .p-element.p-dropdown-label,
     .p-dropdown-label {
         padding: $spacing-1 0;
+        padding-right: $spacing-1;
         font-size: $font-size-md;
         @include truncate-text;
     }
