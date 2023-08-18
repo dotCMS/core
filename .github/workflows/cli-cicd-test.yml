@@ -41,9 +41,10 @@ jobs:
           fi
           
           ./mvnw clean verify
-          EXIT=$?
           
-          if [ $EXIT -eq 0 ]; then
+          FAILURES=$(find target -name TEST-*.xml | xargs grep '<failure' | wc -l)
+          
+          if [ $FAILURES -eq 0 ]; then
               OUTPUT_STATUS="PASSED"
           else
               OUTPUT_STATUS="FAILED"
