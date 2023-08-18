@@ -3,22 +3,25 @@
 import * as _ from 'lodash';
 import { of } from 'rxjs';
 
-import { DecimalPipe } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, LOCALE_ID } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { ConfirmationService } from 'primeng/api';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_NAME,
     DotExperimentStatus,
@@ -28,6 +31,7 @@ import {
     DotVariantData
 } from '@dotcms/dotcms-models';
 import {
+    CoreWebServiceMock,
     dotcmsContentletMock,
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
@@ -45,6 +49,7 @@ import { DotPageStateService } from '../../../content/services/dot-page-state/do
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',
+    'editpage.toolbar.live.page': 'Live',
     'editpage.toolbar.preview.page': 'Preview',
     'editpage.content.steal.lock.confirmation.message.header': 'Lock',
     'editpage.content.steal.lock.confirmation.message': 'Steal lock',
@@ -100,7 +105,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
     let personalizeService: DotPersonalizeService;
 
     beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [TestHostComponent],
             providers: [
                 {
@@ -117,7 +122,12 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 },
                 DotAlertConfirmService,
                 DecimalPipe,
-                { provide: LOCALE_ID, useValue: 'en-US' }
+                { provide: LOCALE_ID, useValue: 'en-US' },
+                ConfirmationService,
+                {
+                    provide: CoreWebService,
+                    useClass: CoreWebServiceMock
+                }
             ],
             imports: [
                 InputSwitchModule,
@@ -126,13 +136,16 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 DotPipesModule,
                 DotEditPageStateControllerSeoComponent,
                 DotEditPageLockInfoSeoComponent,
-                RouterTestingModule
+                RouterTestingModule,
+                CommonModule,
+                FormsModule,
+                HttpClientTestingModule
             ]
         });
     }));
 
     beforeEach(() => {
-        fixtureHost = DOTTestBed.createComponent(TestHostComponent);
+        fixtureHost = TestBed.createComponent(TestHostComponent);
         deHost = fixtureHost.debugElement;
         componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-edit-page-state-controller-seo'));
@@ -158,7 +171,8 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options).toEqual([
                     { label: 'Edit', value: 'EDIT_MODE', disabled: false },
-                    { label: 'Preview', value: 'PREVIEW_MODE', disabled: false }
+                    { label: 'Preview', value: 'PREVIEW_MODE', disabled: false },
+                    { label: 'Live', value: 'ADMIN_MODE', disabled: false }
                 ]);
             });
 
@@ -413,6 +427,41 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 mockDotRenderedPage().page.identifier,
                 pageRenderStateMocked.viewAs.persona.keyTag
             );
+            expect(dotPageStateService.setLock).toHaveBeenCalledWith(
+                { mode: DotPageMode.EDIT },
+                true
+            );
+        });
+    });
+
+    describe('running experiment confirmation', () => {
+        beforeEach(() => {
+            const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                mockUser(),
+                new DotPageRender(mockDotRenderedPage()),
+                null,
+                EXPERIMENT_MOCK
+            );
+
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+        });
+
+        it('should update pageState service when confirmation dialog Success', async () => {
+            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+                conf.accept();
+            });
+            fixtureHost.detectChanges();
+
+            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
+            dotTabButtons.triggerEventHandler('click', {
+                target: { value: 'EDIT_MODE' },
+                value: DotPageMode.EDIT
+            });
+
+            await fixtureHost.whenStable();
+            expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(dialogService.confirm).toHaveBeenCalledTimes(1);
+
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
                 { mode: DotPageMode.EDIT },
                 true
