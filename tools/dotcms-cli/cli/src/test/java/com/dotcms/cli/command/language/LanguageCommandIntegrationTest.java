@@ -11,6 +11,13 @@ import com.dotcms.model.language.Language;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
+
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -22,17 +29,9 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.wildfly.common.Assert;
-import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-class LanguageCommandTest extends CommandTest {
-
+class LanguageCommandIntegrationTest extends CommandTest {
     @Inject
     AuthenticationContext authenticationContext;
     @Inject
@@ -362,7 +361,7 @@ class LanguageCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final String lang = "en-US";
+            final String lang = "en-US".toLowerCase();
             for (int i=0; i<= 5; i++) {
                 final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, lang, "--workspace", workspace.root().toString());
                 Assertions.assertEquals(CommandLine.ExitCode.OK, status);
@@ -371,7 +370,7 @@ class LanguageCommandTest extends CommandTest {
 
             final String fileName = String.format("%s.json", lang);
             final Path path = Path.of(workspace.languages().toString(), fileName);
-            Assert.assertTrue(Files.exists(path));
+            Assertions.assertTrue(Files.exists(path),String.format("The file [%s] should exist", path));
 
             try (Stream<Path> walk = Files.walk(workspace.languages())) {
                 long count = walk.filter(p -> Files.isRegularFile(p) && p.getFileName().toString()
