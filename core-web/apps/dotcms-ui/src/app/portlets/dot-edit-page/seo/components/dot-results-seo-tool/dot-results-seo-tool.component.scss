@@ -1,5 +1,10 @@
 @use "variables" as *;
 
+$main-card-width: 47.6rem;
+$card-favicon-radius: 6.25rem;
+$version-small: 24.375rem;
+$result-card-width: 47.6rem;
+
 :host {
     width: 100%;
     overflow: scroll;
@@ -13,7 +18,7 @@
 }
 
 .results-seo-tool__main-card {
-    width: 47.6rem;
+    width: $main-card-width;
     border-radius: $spacing-2;
     box-shadow: $md-shadow-6;
     margin: $spacing-6 0;
@@ -26,7 +31,7 @@
 
 .results-seo-tool__main-card-title {
     color: $black;
-    font-size: 0.875rem;
+    font-size: $font-size-sm;
     font-style: normal;
     font-weight: 700;
     line-height: normal;
@@ -35,28 +40,28 @@
 }
 
 .results-seo-tool__card-title {
-    color: $black;
-    gap: 1rem;
-    font-size: 1rem;
     display: flex;
-    margin-bottom: 1rem;
     align-items: center;
+    color: $black;
+    gap: $spacing-3;
+    font-size: $font-size-md;
+    margin-bottom: $spacing-3;
 }
 
 .results-seo-tool__card {
-    border-radius: 0.5rem;
+    border-radius: $border-radius-lg;
     border: 1px solid $color-palette-gray-300;
-    padding: 1rem;
+    padding: $spacing-3;
 }
 
 .results-seo-tool__card-favicon {
-    border-radius: 6.25rem;
+    border-radius: $card-favicon-radius;
     background: $color-palette-gray-200;
-    padding: 0.38rem;
+    padding: $spacing-1;
 }
 
 .results-seo-tool__search-title {
-    font-size: 1.25rem;
+    font-size: $font-size-lg;
     text-decoration: none;
 }
 
@@ -66,21 +71,21 @@
 }
 
 .results-seo-tool__version--small {
-    width: 24.375rem;
+    width: $version-small;
 }
 
 .results-seo-tool__result-card {
-    width: 47.6rem;
-    margin-bottom: 1.5rem;
+    width: $result-card-width;
+    margin-bottom: $spacing-4;
 }
 
 .results-seo-tool__result-card-header {
-    border-bottom: 1px solid var(--gray-scale-400, #d1d4db);
+    border-bottom: 1px solid $color-palette-gray-400;
 }
 
 .results-seo-tool__result-card-title {
     display: flex;
-    gap: 1rem;
+    gap: $spacing-3;
 }
 
 .results-seo-tool__result-card-list {
@@ -91,25 +96,25 @@
 
 .results-seo-tool__result-card-list li {
     display: flex;
-    gap: 1rem;
+    gap: $spacing-3;
 }
 
 .results-seo-tool__result-card-list li:not(:last-child) {
-    margin-bottom: 1rem;
+    margin-bottom: $spacing-3;
 }
 
 ::ng-deep {
-    .p-card {
-        border: 1px solid var(--gray-scale-400, #d1d4db);
-        border-radius: 0.75rem;
+    .results-seo-tool__result-card .p-card {
+        border: 1px solid $color-palette-gray-400;
+        border-radius: $border-radius-xl;
     }
 
     .results-seo-tool__result-card .p-card .p-card-header {
-        border-bottom: 1px solid var(--gray-scale-400, #d1d4db);
-        padding: 1rem;
+        border-bottom: 1px solid $color-palette-gray-400;
+        padding: $spacing-3;
     }
 
     .results-seo-tool__result-card .p-card-body {
-        padding: 1rem;
+        padding: $spacing-3;
     }
 }
