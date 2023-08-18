@@ -229,21 +229,34 @@ public class VariantAPITest {
                 .field(textField)
                 .nextPersisted();
 
-        final Contentlet contentlet = new ContentletDataGen(contentType)
-                .setProperty(textField.variable(), "LIVE")
-                .variant(variant)
+        final Contentlet defaultContentlet = new ContentletDataGen(contentType)
+                .setProperty(textField.variable(), "LIVE DEFAULT")
                 .nextPersisted();
 
-        ContentletDataGen.publish(contentlet);
-        ContentletDataGen.update(contentlet, map(textField.variable(), "WORKING"));
+        ContentletDataGen.publish(defaultContentlet);
+
+        ContentletDataGen.update(defaultContentlet, map(textField.variable(), "WORKING"));
+        final Contentlet defaultContentletWorking = APILocator.getContentletAPI().findContentletByIdentifier(
+                defaultContentlet.getIdentifier(), false, defaultContentlet.getLanguageId(),
+                VariantAPI.DEFAULT_VARIANT.name(), APILocator.getUserAPI().getSystemUser(), false);
+
+
+        assertFalse(defaultContentletWorking.getInode().equals(defaultContentlet.getInode()));
+
+        final Contentlet variantContentlet = ContentletDataGen.createNewVersion(defaultContentlet, variant,
+                map(textField.variable(), "VARIANT"));
+
+        ContentletDataGen.publish(variantContentlet);
+        ContentletDataGen.update(variantContentlet, map(textField.variable(), "WORKING"));
+
 
         final Identifier identifier = APILocator.getIdentifierAPI()
-                .find(contentlet.getIdentifier());
+                .find(defaultContentlet.getIdentifier());
         final List<Contentlet> allVersionsBeforeDeleted = APILocator.getContentletAPI()
                 .findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(),
                         false);
 
-        assertEquals(2, allVersionsBeforeDeleted.size());
+        assertEquals(4, allVersionsBeforeDeleted.size());
 
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
@@ -253,11 +266,16 @@ public class VariantAPITest {
         results = getResults(variant);
         assertTrue(results.isEmpty());
 
-        final List<Contentlet> allVersionsAfterDeleted = APILocator.getContentletAPI()
-                .findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(),
-                        false);
+        final List<String> inodes  = APILocator.getContentletAPI()
+                .findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false)
+                .stream()
+                .map(contentlet -> contentlet.getInode())
+                .collect(Collectors.toList());
 
-        assertTrue(allVersionsAfterDeleted.isEmpty());
+        assertEquals(2, inodes.size());
+
+        assertTrue(inodes.contains(defaultContentlet.getInode()));
+        assertTrue(inodes.contains(defaultContentletWorking.getInode()));
     }
 
     /**
@@ -1370,6 +1388,13 @@ public class VariantAPITest {
         final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
 
         new MultiTreeDataGen()
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
                 .setVariant(variant)
                 .setContainer(container)
                 .setPage(page)
@@ -1383,17 +1408,28 @@ public class VariantAPITest {
                 .setContentlet(contentlet_2)
                 .nextPersisted();
 
-        checkMultiTreeCount(variant, 2);
+        checkMultiTreeCount(page, variant, 2);
+        checkMultiTreeCount(page, VariantAPI.DEFAULT_VARIANT, 1);
 
         APILocator.getVariantAPI().delete(variant.name());
 
-        checkMultiTreeCount(variant, 0);
+        checkMultiTreeCount(page, variant, 0);
+        checkMultiTreeCount(page, VariantAPI.DEFAULT_VARIANT, 1);
+
+        final List<Map<String, Object>> loadObjectResultsAfterDeleted = new DotConnect().setSQL(
+                        "SELECT child, variant_id FROM multi_tree WHERE parent1= ?")
+                .addParam(page.getIdentifier()).loadObjectResults();
+
+        assertEquals(1, loadObjectResultsAfterDeleted.size());
+        assertEquals(loadObjectResultsAfterDeleted.get(0).get("child").toString(), contentlet_1.getIdentifier());
+        assertEquals(loadObjectResultsAfterDeleted.get(0).get("variant_id").toString(), VariantAPI.DEFAULT_VARIANT.name());
     }
 
-    private static void checkMultiTreeCount(Variant variant, int expected) throws DotDataException {
+    private static void checkMultiTreeCount(final HTMLPageAsset page, Variant variant, int expected) throws DotDataException {
         final List<Map<String, Object>> loadObjectResultsBeforeDeleted = new DotConnect().setSQL(
-                        "SELECT count(*) FROM multi_tree WHERE variant_id= ?")
-                .addParam(variant.name()).loadObjectResults();
+                        "SELECT count(*) FROM multi_tree WHERE variant_id= ? AND parent1= ?")
+                .addParam(variant.name())
+                .addParam(page.getIdentifier()).loadObjectResults();
 
         assertEquals(1, loadObjectResultsBeforeDeleted.size());
         final int count = Integer.parseInt(loadObjectResultsBeforeDeleted.get(0).get("count").toString());

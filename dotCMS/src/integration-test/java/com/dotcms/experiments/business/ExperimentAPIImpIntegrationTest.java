@@ -7766,7 +7766,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
     @NotNull
     private static Contentlet createContentletWithWorkingAndLiveVersion(
-            final Variant notDefaultVariantStartedExperiment) {
+            final Variant notDefaultVariantStartedExperiment)
+            throws DotDataException, DotSecurityException {
 
         final Field textField = new FieldDataGen()
                 .name("text")
@@ -7783,8 +7784,12 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .variant(notDefaultVariantStartedExperiment)
                 .nextPersisted();
 
-        ContentletDataGen.publish(contentlet_1);
-        ContentletDataGen.update(contentlet_1, map(textField.variable(), "WORKING"));
+        final Contentlet variantLive = ContentletDataGen.createNewVersion(contentlet_1,
+                notDefaultVariantStartedExperiment,
+                map(textField.variable(), "Variant LIVE"));
+
+        ContentletDataGen.publish(variantLive);
+        ContentletDataGen.update(variantLive, map(textField.variable(), "WORKING"));
         return contentlet_1;
     }
 
