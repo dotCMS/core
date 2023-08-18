@@ -130,32 +130,6 @@ describe('DotExperimentsReportsStore', () => {
         });
     });
 
-    it('should get FALSE from showExperimentSummary$ if Experiment status is different of Running', (done) => {
-        dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
-        spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
-
-        store.showExperimentSummary$.subscribe((value) => {
-            expect(value).toEqual(false);
-            done();
-        });
-    });
-
-    it('should get TRUE from showExperimentSummary$ if Experiment status is different of Running', (done) => {
-        dotExperimentsService.getById.mockReturnValue(
-            of({
-                ...EXPERIMENT_MOCK,
-                status: DotExperimentStatus.RUNNING
-            })
-        );
-        dotExperimentsService.getResults.mockReturnValue(of(EXPERIMENT_MOCK_RESULTS));
-
-        spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
-
-        store.showExperimentSummary$.subscribe((value) => {
-            expect(value).toEqual(true);
-            done();
-        });
-    });
     describe('Bayesian response map hasSession = 0', () => {
         it('should summaryWinnerLegend$ get `NO_WINNER_FOUND` when experiment status `ENDED` and any winnerSuggestion', (done) => {
             dotExperimentsService.getById.mockReturnValue(
@@ -546,6 +520,24 @@ describe('DotExperimentsReportsStore', () => {
 
                 done();
             });
+        });
+    });
+
+    describe('Show Bayesian Chart', () => {
+        it('should `hasEnoughDataForShowBayesianChart$` retrieve `false` when the BayesianResult have `NONE` as suggested winner', () => {
+            pending('to implement');
+        });
+
+        it('should `hasEnoughDataForShowBayesianChart$` retrieve `false` when you have at least one dataset with empty data', () => {
+            pending('to implement');
+        });
+
+        it('should `hasEnoughDataForShowBayesianChart$` retrieve `true` when you have all dataset with a failure and a suggested winner', () => {
+            pending('to implement');
+        });
+
+        it('should `hasEnoughDataForShowBayesianChart$` retrieve `true` when you have all dataset with a failure and a suggested winner', () => {
+            pending('to implement');
         });
     });
 });

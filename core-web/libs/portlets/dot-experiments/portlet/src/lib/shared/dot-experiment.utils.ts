@@ -35,6 +35,12 @@ export const orderVariants = (arrayToOrder: Array<string>): Array<string> => {
     return arrayToOrder;
 };
 
+/**
+ * Retrieves an array of uniqueBySession values from the given data.
+ *
+ * @param {Record<string, DotResultDate>} data - The data object containing DotResultDate values.
+ * @return {number[]} - An array of uniqueBySession values.
+ */
 export const getParsedChartData = (data: Record<string, DotResultDate>): number[] => {
     return [0, ...Object.values(data).map((day) => day.uniqueBySession)];
 };

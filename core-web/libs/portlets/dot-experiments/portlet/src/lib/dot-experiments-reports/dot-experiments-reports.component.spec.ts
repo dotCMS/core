@@ -56,13 +56,18 @@ const EXPERIMENT_RESULTS_MOCK = getExperimentResultsMock(0);
 const defaultVmMock: VmReportExperiment = {
     experiment: EXPERIMENT_MOCK_3,
     results: EXPERIMENT_RESULTS_MOCK,
-    dailyChartData: DAILY_CHARTJS_DATA_MOCK_WITH_DATA,
-    bayesianChartData: BAYESIAN_CHARTJS_DATA_MOCK_WITH_DATA,
+    dailyChart: {
+        chartData: DAILY_CHARTJS_DATA_MOCK_WITH_DATA,
+        hasEnoughData: true
+    },
+    bayesianChart: {
+        chartData: BAYESIAN_CHARTJS_DATA_MOCK_WITH_DATA,
+        hasEnoughData: true
+    },
     detailData: [],
     isLoading: false,
     hasEnoughSessions: false,
     status: ComponentStatus.INIT,
-    showSummary: false,
     winnerLegendSummary: { icon: 'icon', legend: 'legend' },
     suggestedWinner: null,
     promotedVariant: null
@@ -160,11 +165,11 @@ describe('DotExperimentsReportsComponent', () => {
 
         spectator.component.vm$.subscribe((vm) => {
             expect(spectator.query(DotExperimentsReportsChartComponent).data).toEqual(
-                vm.dailyChartData
+                vm.dailyChart.chartData
             );
 
             expect(spectator.queryLast(DotExperimentsReportsChartComponent).data).toEqual(
-                vm.bayesianChartData
+                vm.dailyChart.chartData
             );
             expect(spectator.queryLast(DotExperimentsReportsChartComponent).isLinearAxis).toEqual(
                 true
