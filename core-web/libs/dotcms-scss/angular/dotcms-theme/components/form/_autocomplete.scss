@@ -9,6 +9,12 @@
 
     .p-autocomplete-loader {
         right: $spacing-2;
+        color: $color-palette-primary;
+    }
+
+    .p-autocomplete-input {
+        all: unset;
+        color: $black;
     }
 
     &.p-autocomplete-dd {
