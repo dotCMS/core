@@ -7,14 +7,16 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.inject.Inject;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-class FilesLsCommandTest extends CommandTest {
+public class FilesTreeCommandIntegrationTest extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;
@@ -28,45 +30,46 @@ class FilesLsCommandTest extends CommandTest {
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Invalid_Protocol() {
+    void Test_Command_Files_Tree_Option_Invalid_Protocol() {
+
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String path = String.format("%s", "default");
-            final int status = commandLine.execute(FilesCommand.NAME, FilesLs.NAME, path);
+            final int status = commandLine.execute(FilesCommand.NAME, FilesTree.NAME, path);
             Assertions.assertEquals(ExitCode.USAGE, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Valid_Protocol() {
+    void Test_Command_Files_Tree_Option_Valid_Protocol() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
-            final int status = commandLine.execute(FilesCommand.NAME, FilesLs.NAME, path);
+            final int status = commandLine.execute(FilesCommand.NAME, FilesTree.NAME, path);
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Valid_Protocol2() {
+    void Test_Command_Files_Tree_Option_Valid_Protocol2() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String path = String.format("//%s/", "default");
-            final int status = commandLine.execute(FilesCommand.NAME, FilesLs.NAME, path);
+            final int status = commandLine.execute(FilesCommand.NAME, FilesTree.NAME, path);
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Exclude_Empty() {
+    void Test_Command_Files_Tree_Option_Exclude_Empty() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -74,13 +77,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-ee");
+                    FilesTree.NAME, path, "-ee");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Exclude_Empty2() {
+    void Test_Command_Files_Tree_Option_Exclude_Empty2() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -88,13 +91,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--excludeEmptyFolders");
+                    FilesTree.NAME, path, "--excludeEmptyFolders");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Exclude_Folders() {
+    void Test_Command_Files_Tree_Option_Glob_Exclude_Folders() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -102,13 +105,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-ef", "folder1");
+                    FilesTree.NAME, path, "-ef", "folder1");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Exclude_Folders2() {
+    void Test_Command_Files_Tree_Option_Glob_Exclude_Folders2() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -116,13 +119,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-ef", "folder1,folder2");
+                    FilesTree.NAME, path, "-ef", "folder1,folder2");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Exclude_Folders3() {
+    void Test_Command_Files_Tree_Option_Glob_Exclude_Folders3() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -130,13 +133,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--excludeFolder", "folder1");
+                    FilesTree.NAME, path, "--excludeFolder", "folder1");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Exclude_Folders4() {
+    void Test_Command_Files_Tree_Option_Glob_Exclude_Folders4() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -144,13 +147,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--excludeFolder", "folder1,folder2");
+                    FilesTree.NAME, path, "--excludeFolder", "folder1,folder2");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Exclude_Folders_Missing_Parameter() {
+    void Test_Command_Files_Tree_Option_Glob_Exclude_Folders_Missing_Parameter() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -158,13 +161,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-ef");
+                    FilesTree.NAME, path, "-ef");
             Assertions.assertEquals(ExitCode.USAGE, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Exclude_Folders_Missing_Parameter2() {
+    void Test_Command_Files_Tree_Option_Glob_Exclude_Folders_Missing_Parameter2() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -172,13 +175,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--excludeFolder");
+                    FilesTree.NAME, path, "--excludeFolder");
             Assertions.assertEquals(ExitCode.USAGE, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Exclude_Assets() {
+    void Test_Command_Files_Tree_Option_Glob_Exclude_Assets() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -186,13 +189,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-ea", "file1.png");
+                    FilesTree.NAME, path, "-ea", "file1.png");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Exclude_Assets2() {
+    void Test_Command_Files_Tree_Option_Glob_Exclude_Assets2() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -200,13 +203,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-ea", "file1.png,file2.png");
+                    FilesTree.NAME, path, "-ea", "file1.png,file2.png");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Exclude_Assets3() {
+    void Test_Command_Files_Tree_Option_Glob_Exclude_Assets3() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -214,13 +217,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--excludeAsset", "file1.png");
+                    FilesTree.NAME, path, "--excludeAsset", "file1.png");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Exclude_Assets4() {
+    void Test_Command_Files_Tree_Option_Glob_Exclude_Assets4() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -228,13 +231,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--excludeAsset", "file1.png,file2.png");
+                    FilesTree.NAME, path, "--excludeAsset", "file1.png,file2.png");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Exclude_Assets_Missing_Parameter() {
+    void Test_Command_Files_Tree_Option_Glob_Exclude_Assets_Missing_Parameter() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -242,13 +245,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-ea");
+                    FilesTree.NAME, path, "-ea");
             Assertions.assertEquals(ExitCode.USAGE, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Exclude_Assets_Missing_Parameter2() {
+    void Test_Command_Files_Tree_Option_Glob_Exclude_Assets_Missing_Parameter2() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -256,13 +259,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--excludeAsset");
+                    FilesTree.NAME, path, "--excludeAsset");
             Assertions.assertEquals(ExitCode.USAGE, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Include_Folders() {
+    void Test_Command_Files_Tree_Option_Glob_Include_Folders() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -270,13 +273,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-if", "folder1");
+                    FilesTree.NAME, path, "-if", "folder1");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Include_Folders2() {
+    void Test_Command_Files_Tree_Option_Glob_Include_Folders2() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -284,13 +287,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-if", "folder1,folder2");
+                    FilesTree.NAME, path, "-if", "folder1,folder2");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Include_Folders3() {
+    void Test_Command_Files_Tree_Option_Glob_Include_Folders3() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -298,13 +301,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--includeFolder", "folder1");
+                    FilesTree.NAME, path, "--includeFolder", "folder1");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Include_Folders4() {
+    void Test_Command_Files_Tree_Option_Glob_Include_Folders4() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -312,13 +315,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--includeFolder", "folder1,folder2");
+                    FilesTree.NAME, path, "--includeFolder", "folder1,folder2");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Include_Folders_Missing_Parameter() {
+    void Test_Command_Files_Tree_Option_Glob_Include_Folders_Missing_Parameter() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -326,13 +329,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-if");
+                    FilesTree.NAME, path, "-if");
             Assertions.assertEquals(ExitCode.USAGE, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Include_Folders_Missing_Parameter2() {
+    void Test_Command_Files_Tree_Option_Glob_Include_Folders_Missing_Parameter2() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -340,13 +343,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--includeFolder");
+                    FilesTree.NAME, path, "--includeFolder");
             Assertions.assertEquals(ExitCode.USAGE, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Include_Assets() {
+    void Test_Command_Files_Tree_Option_Glob_Include_Assets() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -354,13 +357,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-ia", "file1.png");
+                    FilesTree.NAME, path, "-ia", "file1.png");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Include_Assets2() {
+    void Test_Command_Files_Tree_Option_Glob_Include_Assets2() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -368,13 +371,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-ia", "file1.png,file2.png");
+                    FilesTree.NAME, path, "-ia", "file1.png,file2.png");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Include_Assets3() {
+    void Test_Command_Files_Tree_Option_Glob_Include_Assets3() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -382,13 +385,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--includeAsset", "file1.png");
+                    FilesTree.NAME, path, "--includeAsset", "file1.png");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Include_Assets4() {
+    void Test_Command_Files_Tree_Option_Glob_Include_Assets4() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -396,13 +399,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--includeAsset", "file1.png,file2.png");
+                    FilesTree.NAME, path, "--includeAsset", "file1.png,file2.png");
             Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Include_Assets_Missing_Parameter() {
+    void Test_Command_Files_Tree_Option_Glob_Include_Assets_Missing_Parameter() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -410,13 +413,13 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "-ia");
+                    FilesTree.NAME, path, "-ia");
             Assertions.assertEquals(ExitCode.USAGE, status);
         }
     }
 
     @Test
-    void Test_Command_Files_Ls_Option_Glob_Include_Assets_Missing_Parameter2() {
+    void Test_Command_Files_Tree_Option_Glob_Include_Assets_Missing_Parameter2() {
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -424,7 +427,7 @@ class FilesLsCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesLs.NAME, path, "--includeAsset");
+                    FilesTree.NAME, path, "--includeAsset");
             Assertions.assertEquals(ExitCode.USAGE, status);
         }
     }
