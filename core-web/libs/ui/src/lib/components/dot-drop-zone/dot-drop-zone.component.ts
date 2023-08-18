@@ -18,9 +18,8 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotDropZoneComponent {
-    @Output() fileDrop = new EventEmitter<File[]>();
+    @Output() fileDrop = new EventEmitter<File>();
 
-    @Input() multiple = false;
     @Input() allowedExtensions: string[] = [];
     @Input() set allowedMimeTypes(mineTypes: string[]) {
         this._allowedMimeTypes = mineTypes.map((type) => {
@@ -34,39 +33,53 @@ export class DotDropZoneComponent {
     @HostBinding('class.drop-zone-active')
     active = false;
 
+    @HostBinding('class.drop-zone-error')
+    invalidFile = false;
+
+    @HostBinding('class.drop-zone-error')
+    multiFileError = false;
+
     @HostListener('drop', ['$event'])
     onDrop(event: DragEvent) {
         event.stopPropagation();
         event.preventDefault();
-        const { dataTransfer } = event;
         this.active = false;
 
-        if (dataTransfer.items) {
-            const files = Array.from(dataTransfer.items)
-                .filter((item) => item.kind === 'file') // Only files
-                .map((item) => item.getAsFile()) // Get file
-                .filter((file) => this.isValidFile(file)); // Filter by extension and mime type
+        if (this.invalidFile) return;
 
-            dataTransfer.items.clear();
-            this.fileDrop.emit(files);
-        } else if (dataTransfer.files) {
-            const files = Array.from(dataTransfer.files).filter((file) => this.isValidFile(file));
+        const { dataTransfer } = event;
+        const { items, files } = dataTransfer;
+        const file = items ? Array.from(items)[0].getAsFile() : Array.from(files)[0];
 
-            dataTransfer.clearData();
-            this.fileDrop.emit(files);
+        if (!this.isValidFile(file)) {
+            this.invalidFile = true;
+
+            return;
         }
+
+        dataTransfer.items?.clear();
+        dataTransfer.clearData();
+        this.fileDrop.emit(file);
     }
 
     @HostListener('dragover', ['$event'])
     onDragOver(event: DragEvent) {
         event.stopPropagation();
         event.preventDefault();
-        this.active = true;
+
+        const { items, files } = event.dataTransfer;
+        const length = items ? items.length : files.length;
+        const multiple = length > 1;
+
+        this.multiFileError = multiple; // Only show the error when multiple files are dropped
+        this.active = !multiple; // Only show the active state when a single file is dropped
     }
 
     @HostListener('dragleave', ['$event'])
     onDragLeave(_event: DragEvent) {
         this.active = false;
+        this.invalidFile = false;
+        this.multiFileError = false;
     }
 
     /**
@@ -78,7 +91,7 @@ export class DotDropZoneComponent {
      * @memberof DotDropzoneComponent
      */
     private isValidFile(file: File): boolean {
-        if (this.areValidationsEnabled()) {
+        if (!this.areValidationsEnabled()) {
             return true;
         }
 
