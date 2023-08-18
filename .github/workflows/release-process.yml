@@ -67,12 +67,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: release-process
     if: success()
+    outputs:
+      build_id: ${{ steps.set-common-vars.outputs.build_id }}
+      is_release: ${{ steps.set-common-vars.outputs.is_release }}
+      release_version: ${{ steps.set-common-vars.outputs.release_version }}
     env:
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
       - name: Set Common Vars
+        id: set-common-vars
         run: |
           BUILD_ID=$(basename "${{ github.ref }}")
           
@@ -107,9 +112,12 @@ jobs:
           fi
 
           echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_OUTPUT
           echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
           echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
           echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_ENV
+          echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_OUTPUT
           echo "IS_LTS=${IS_LTS}" >> $GITHUB_ENV
           echo "RELEASE_LABEL=${RELEASE_LABEL}" >> $GITHUB_ENV
           echo "ALSO_LATEST=${ALSO_LATEST}" >> $GITHUB_ENV
@@ -153,6 +161,38 @@ jobs:
             BUILD_FROM=TAG
             BUILD_ID=${{ env.BUILD_ID }}
         if: success()
+
+  release-wrap:
+    name: Release wrap-up
+    runs-on: ubuntu-latest
+    needs: publish-release-image
+    if: success()
+    env:
+      FETCH_VALUE: 'vico test 1'
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v3
+      - name: Fetch `Next Release` issues
+        id: fetch-next-release-issues
+        uses: ./.github/actions/issue-fetcher
+        with:
+          fetch_operation: 'WITH_LABELS'
+          fetch_value: ${{ env.FETCH_VALUE }}
+          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+      - name: Clear next release issues
+        uses: ./.github/actions/issue-labeler
+        with:
+          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
+          labels: ${{ env.FETCH_VALUE }}
+          operation: 'REMOVE'
+          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+      - name: Label current release issues
+        uses: ./.github/actions/issue-labeler
+        with:
+          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
+          labels: 'Release ${{ needs.publish-release-image.outputs.release_version }}'
+          operation: 'ADD'
+          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
@@ -163,5 +203,5 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - ${{ env.BUILD_ID }} :rocket:"
-        if: success() && env.IS_RELEASE == 'true'
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - ${{ needs.publish-release-image.outputs.build_id }} :rocket:"
+        if: success() && needs.publish-release-image.outputs.is_release == 'true'
