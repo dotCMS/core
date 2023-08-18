@@ -180,6 +180,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             status
         })
     );
+
     readonly setExperiment = this.updater(
         (state: DotExperimentsReportsState, experiment: DotExperiment) => ({
             ...state,
