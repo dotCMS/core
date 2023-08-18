@@ -7649,10 +7649,14 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
 
-        final Optional<Experiment> runningExperiment2 = APILocator.getExperimentsAPI()
-                .getRunningExperimentPerPage(experimentPage.getIdentifier());
+        try {
+            final Optional<Experiment> runningExperiment2 = APILocator.getExperimentsAPI()
+                    .getRunningExperimentPerPage(experimentPage.getIdentifier());
 
-        assertTrue(runningExperiment2.isPresent());
+            assertTrue(runningExperiment2.isPresent());
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+        }
     }
     private static void checkVersion(final Contentlet contentlet, final boolean live,
             final Variant defaultVariant, final String value, final Field titleField)
