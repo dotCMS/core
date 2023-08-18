@@ -206,7 +206,7 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
     }
 
     private getStateModeOptions(pageState: DotPageRenderState): SelectItem[] {
-        const items = this.variant ? this.getModesBasedOnVariant() : ['edit', 'preview', 'live'];
+        const items = this.variant ? this.getModesBasedOnVariant() : ['edit', 'preview'];
 
         return items.map((mode: string) => this.getModeOption(mode, pageState));
     }

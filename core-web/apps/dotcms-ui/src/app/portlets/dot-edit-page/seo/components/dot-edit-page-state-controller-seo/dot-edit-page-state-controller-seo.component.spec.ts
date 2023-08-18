@@ -171,8 +171,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options).toEqual([
                     { label: 'Edit', value: 'EDIT_MODE', disabled: false },
-                    { label: 'Preview', value: 'PREVIEW_MODE', disabled: false },
-                    { label: 'Live', value: 'ADMIN_MODE', disabled: false }
+                    { label: 'Preview', value: 'PREVIEW_MODE', disabled: false }
                 ]);
             });
 
