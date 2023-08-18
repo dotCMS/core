@@ -24,16 +24,16 @@
 }
 
 #form-field-hover {
-    border: $field-border-size solid $color-palette-primary-400;
+    border-color: $color-palette-primary-400;
 }
 
 #form-field-focus {
-    border: $field-border-size solid $color-palette-primary-400;
+    border-color: $color-palette-primary-400;
     @include field-focus;
 }
 
 #form-field-disabled {
-    border: $field-border-size solid $color-palette-gray-200;
+    border-color: $color-palette-gray-200;
     background: $color-palette-gray-100;
 }
 
