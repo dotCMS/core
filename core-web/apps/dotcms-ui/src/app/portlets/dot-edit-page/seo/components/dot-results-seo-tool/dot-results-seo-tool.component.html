@@ -2,52 +2,42 @@
     <div class="results-seo-tool__main-card">
         <p-card>
             <div class="results-seo-tool__main-card-content">
-                <span class="results-seo-tool__main-card-title">Desktop Version</span>
-                <div class="results-seo-tool__card">
-                    <div class="results-seo-tool__card-title">
-                        <img
-                            class="results-seo-tool__card-favicon"
-                            [src]="seoOGTags.favicon"
-                            alt="favicon"
-                        />
-                        <span>{{ pageState.page.hostName }}</span>
+                <div *ngFor="let preview of mainPreview">
+                    <span class="results-seo-tool__main-card-title"
+                        >{{ preview.type }} Version</span
+                    >
+                    <div
+                        class="results-seo-tool__card"
+                        [class.results-seo-tool_version--small]="preview.type === 'Mobile'"
+                    >
+                        <div class="results-seo-tool__card-title">
+                            <img
+                                class="results-seo-tool__card-favicon"
+                                [src]="seoOGTags.favicon"
+                                alt="favicon"
+                            />
+                            <span>{{ preview.hostName }}</span>
+                        </div>
+                        <a class="results-seo-tool__search-title" href="#">
+                            {{ preview.title }}
+                        </a>
+                        <p class="results-seo-tool__search-description">
+                            {{ preview.description }}
+                        </p>
                     </div>
-                    <a class="og-title" href="#">
-                        {{ seoOGTags['og:title'] }}
-                    </a>
-                    <p class="og-description">
-                        {{ seoOGTags.description }}
-                    </p>
-                </div>
-
-                <span class="results-seo-tool__main-card-title">Mobile Version</span>
-                <div class="results-seo-tool__card google-mobile">
-                    <div class="results-seo-tool__card-title">
-                        <img
-                            class="results-seo-tool__card-favicon"
-                            [src]="seoOGTags.favicon"
-                            alt="favicon"
-                        />
-                        <span>{{ pageState.page.hostName }}</span>
-                    </div>
-                    <a class="og-title" href="#">
-                        {{ seoOGTags['og:title'] }}
-                    </a>
-                    <p class="og-description">
-                        {{ seoOGTags.description }}
-                    </p>
                 </div>
             </div>
         </p-card>
     </div>
-    <p-card class="seo-og-result" *ngFor="let result of seoOGTagsResults">
-        <ng-template class="seo-og-header" pTemplate="header">
-            <div class="seo-og-header-item">
-                <i class="pi {{ result.keyIcon }}" [style.color]="result.keyColor"></i>
-                <span>{{ result.key }}</span>
+
+    <p-card class="results-seo-tool__result-card" *ngFor="let result of seoOGTagsResults">
+        <ng-template class="results-seo-tool__result-card-header" pTemplate="header">
+            <div class="results-seo-tool__result-card-title">
+                <i class="pi" [ngClass]="result.icon" [style.color]="result.keyColor"></i>
+                <span> {{ result | json }}</span>
             </div>
         </ng-template>
-        <ul class="seo-og-list">
+        <ul class="results-seo-tool__result-card-list">
             <li *ngFor="let item of result.items">
                 <i class="pi {{ item.itemIcon }}" [style.color]="item.color"> </i>
                 <span>{{ item.message }}</span>
@@ -55,24 +45,17 @@
         </ul>
     </p-card>
 
-    <p-card class="seo-og-result">
-        <ng-template class="seo-og-header" pTemplate="header">
-            <div class="seo-og-header-item">
+    <p-card class="results-seo-tool__result-card">
+        <ng-template class="results-seo-tool__result-card-header" pTemplate="header">
+            <div class="results-seo-tool__result-card-title">
                 <i class="pi pi-info-circle" style="color: '#426BF0'"></i>
                 <span>Read More</span>
             </div>
         </ng-template>
-        <ul class="seo-og-list">
-            <li>
+        <ul class="results-seo-tool__result-card-list">
+            <li *ngFor="let item of readMore">
                 <i class="pi pi-external-link" style="color: '#426BF0'"></i>
-                <a target="_blank" href="https://ogp.me/">The Open Graph protocol</a>
-            </li>
-            <li>
-                <i class="pi pi-external-link" style="color: '#426BF0'"></i>
-
-                <a target="_blank" href="https://developers.facebook.com/tools/debug/"
-                    >Sharing Debugger - Meta for Developers</a
-                >
+                <a [href]="item.url" target="_blank">{{ item.label }}</a>
             </li>
         </ul>
     </p-card>

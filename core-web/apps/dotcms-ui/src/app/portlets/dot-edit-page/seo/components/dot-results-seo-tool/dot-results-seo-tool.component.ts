@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { JsonPipe, NgClass, NgFor } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
 
@@ -10,16 +10,45 @@ import { DotEditContentHtmlService } from '../../../content/services/dot-edit-co
 @Component({
     selector: 'dot-results-seo-tool',
     standalone: true,
-    imports: [CommonModule, CardModule],
+    imports: [NgClass, CardModule, NgFor, JsonPipe],
     providers: [DotEditContentHtmlService],
     templateUrl: './dot-results-seo-tool.component.html',
     styleUrls: ['./dot-results-seo-tool.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotResultsSeoToolComponent {
+export class DotResultsSeoToolComponent implements OnInit {
     @Input() pageState: DotPageRenderState;
     @Input() seoOGTags;
     @Input() seoOGTagsResults;
 
+    mainPreview = [];
+    readMore = [
+        {
+            label: 'The Open Graph protocol',
+            url: 'https://ogp.me/'
+        },
+        {
+            label: 'Sharing Debugger - Meta for Developers',
+            url: 'https://developers.facebook.com/tools/debug/'
+        }
+    ];
+
     constructor(public dotEditContentHtmlService: DotEditContentHtmlService) {}
+
+    ngOnInit() {
+        this.mainPreview = [
+            {
+                hostName: this.pageState.page.hostName,
+                title: this.seoOGTags['og:title'],
+                description: this.seoOGTags.description,
+                type: 'Desktop'
+            },
+            {
+                hostName: this.pageState.page.hostName,
+                title: this.seoOGTags['og:title'],
+                description: this.seoOGTags.description,
+                type: 'Mobile'
+            }
+        ];
+    }
 }
