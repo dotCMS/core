@@ -24,6 +24,6 @@ public class RootIndexRegexUrlPatterStrategy implements RegexUrlPatterStrategy{
 
     @Override
     public String getRegexPattern(HTMLPageAsset htmlPageAsset) {
-        return String.format(REDIRECT_REGEX_TEMPLATE, "(\\/[iI][nN][dD][eE][xX]|\\/)?");
+        return String.format(REDIRECT_REGEX_TEMPLATE, "(\\/index|\\/)?");
     }
 }

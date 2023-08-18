@@ -1,7 +1,9 @@
 package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.WorkspaceMixin;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.ResponseEntityView;
@@ -34,7 +36,7 @@ import picocli.CommandLine.ExitCode;
  * Command to push a language given a Language object (in JSON or YML format) or iso code (e.g.: en-us)
  * @author nollymar
  */
-public class LanguagePush extends AbstractLanguageCommand implements Callable<Integer> {
+public class LanguagePush extends AbstractLanguageCommand implements Callable<Integer>, DotCommand {
     static final String NAME = "push";
 
     @CommandLine.Mixin(name = "format")
@@ -70,21 +72,16 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
             final Optional<Workspace> workspace = workspaceManager.findWorkspace(workspaceMixin.workspace());
             if(workspace.isPresent() && !inputFile.isAbsolute()){
                 inputFile = Path.of(workspace.get().languages().toString(), inputFile.getName()).toFile();
-                output.info("Using workspace [%s] as base path for input file.", workspace.get().languages());
             }
             if (!inputFile.exists() || !inputFile.canRead()) {
-                output.error(String.format(
+                throw new IOException(String.format(
                         "Unable to read the input file [%s] check that it does exist and that you have read permissions on it.",
-                        file.getAbsolutePath()));
-                return CommandLine.ExitCode.SOFTWARE;
+                        inputFile)
+                );
             }
-            try{
-                final Language language = objectMapper.readValue(inputFile, Language.class);
-                responseEntityView = pushLanguageByFile(languageAPI, language);
-            } catch (IOException e) {
-                output.error("Unable to parse the input file. Please check that it is a valid JSON or YML file.");
-                return CommandLine.ExitCode.SOFTWARE;
-            }
+
+           final Language language = objectMapper.readValue(inputFile, Language.class);
+           responseEntityView = pushLanguageByFile(languageAPI, language);
 
         } else {
             responseEntityView = pushLanguageByIsoCode(languageAPI);
@@ -139,6 +136,16 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
         output.info(String.format("Language with iso code @|bold,green [%s]|@ successfully created.",languageIso));
 
         return responseEntityView;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 
 }

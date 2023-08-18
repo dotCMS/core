@@ -2,27 +2,21 @@ package com.dotcms.cli.command;
 
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.*;
-import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
 public class InstanceCommandTest extends CommandTest {
-
-    @BeforeAll
-    public static void beforeAll() {
-        disableAnsi();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        enableAnsi();
-    }
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -37,7 +31,7 @@ public class InstanceCommandTest extends CommandTest {
     @Order(2)
     void Test_Command_Instance_Pass_Only_List_Param() {
 
-            final CommandLine commandLine = factory.create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
@@ -60,7 +54,7 @@ public class InstanceCommandTest extends CommandTest {
     void Test_Command_Instance_Pass_Activate_Param_No_Profile() {
         final String[] options = {"-act", "--activate"};
         for (final String option : options) {
-            final CommandLine commandLine = factory.create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setErr(out);
@@ -82,7 +76,7 @@ public class InstanceCommandTest extends CommandTest {
         final String instance = "lol";
         final String[] options = {"-act", "--activate"};
         for (final String option : options) {
-            final CommandLine commandLine = factory.create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setErr(out);
@@ -118,7 +112,7 @@ public class InstanceCommandTest extends CommandTest {
 
         final String[] options = {"-act", "--activate"};
         for (final String option : options) {
-            final CommandLine commandLine = factory.create();
+            final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
