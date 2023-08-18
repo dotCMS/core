@@ -61,7 +61,8 @@ public class GoalsDeserializer extends JsonDeserializer<Goals> {
             for (final Map condition : conditionsAsMap) {
                 final Object value = condition.get("value");
                 final String parameterName = condition.get("parameter").toString();
-                final Parameter parameter = metricType.getParameter(parameterName).orElseThrow();
+                final Parameter parameter = metricType.getParameter(parameterName)
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid Parameters provided: " + parameterName));
 
                 final String valueAsJsonString = value instanceof Map ? JsonUtil.getJsonAsString((Map) value) :
                         value.toString();
