@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class PullServiceTest extends FilesTestHelper {
+class PullServiceIntegrationTest extends FilesTestHelper {
 
     @Inject
     AuthenticationContext authenticationContext;
