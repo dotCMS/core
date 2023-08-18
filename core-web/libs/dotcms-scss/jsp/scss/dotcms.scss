@@ -7,6 +7,13 @@
 
 @import "variables";
 
+*,
+*:before,
+*:after {
+    outline: none; // not 100% sure about this, google it
+    box-sizing: border-box;
+}
+
 :root {
     @include root-colors();
 }

@@ -2830,6 +2830,13 @@
   content: "\f2e0";
 }
 
+*,
+*:before,
+*:after {
+  outline: none;
+  box-sizing: border-box;
+}
+
 :root {
   --color-primary-h: 225deg;
   --color-primary-s: 85%;
@@ -3041,20 +3048,6 @@
   */
   --color-background: #3a3847;
   --empty-message: "";
-}
-
-html,
-body {
-  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 1rem;
-  color: #14151a;
-}
-
-*,
-*:before,
-*:after {
-  outline: none;
-  box-sizing: border-box;
 }
 
 .dojoDndItem {
@@ -4970,7 +4963,7 @@ body {
 }
 .dijitMenu .dijitMenuItem .dijitMenuItemIconCell {
   padding-left: 0.5rem;
-  width: 1rem;
+  width: 3;
 }
 .dijitMenuArrowCell .dijitIcon {
   margin-right: 0.5rem;
