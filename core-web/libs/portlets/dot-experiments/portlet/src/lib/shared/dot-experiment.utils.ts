@@ -241,16 +241,12 @@ const arePointsALine = (points: { x: number; y: number }[]): boolean => {
         return true;
     }
 
-    const calculateSlope = (point1: { x: number; y: number }, point2: { x: number; y: number }) => {
-        return (point2.y - point1.y) / (point2.x - point1.x);
-    };
-
-    const referenceSlope = calculateSlope(points[0], points[1]);
+    const referenceSlope = (points[1].y - points[0].y) / (points[1].x - points[0].x);
 
     for (let i = 1; i < points.length - 1; i++) {
-        const slope = calculateSlope(points[i], points[i + 1]);
+        const slope = (points[i + 1].y - points[i].y) / (points[i + 1].x - points[i].x);
         if (Math.abs(slope - referenceSlope) > 1e-6) {
-            return false; // Points do not form a line
+            return false;
         }
     }
 
