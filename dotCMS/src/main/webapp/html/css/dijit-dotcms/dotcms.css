@@ -3145,7 +3145,6 @@ body {
 .dijitTextBox,
 .dijitToggleButton {
   border-radius: 0.375rem;
-  font-size: 1rem;
   height: 40px;
 }
 
@@ -3512,7 +3511,6 @@ body {
 }
 .dijitButton .dijitButtonText,
 .dijitToggleButton .dijitButtonText {
-  font-size: 1rem;
   text-transform: capitalize;
 }
 
@@ -6149,8 +6147,7 @@ select[multiple]:hover {
 #listing-table, .listingTable, .dojoxUploaderFileListTable {
   border-bottom: 1px solid #f3f3f4;
   border-collapse: collapse;
-  font-size: 1rem;
-  margin: 0 auto 1rem auto;
+  margin: 0 auto 3rem auto;
   width: 100%;
 }
 #listing-table p:last-child, .listingTable p:last-child, .dojoxUploaderFileListTable p:last-child {
@@ -6174,13 +6171,13 @@ select[multiple]:hover {
 #listing-table td:first-child,
 .listingTable td:first-child,
 .dojoxUploaderFileListTable td:first-child {
-  padding-left: 1.5rem;
+  padding-left: 3rem;
 }
 #listing-table th:last-child, .listingTable th:last-child, .dojoxUploaderFileListTable th:last-child,
 #listing-table td:last-child,
 .listingTable td:last-child,
 .dojoxUploaderFileListTable td:last-child {
-  padding-right: 1.5rem;
+  padding-right: 3rem;
 }
 #listing-table th, .listingTable th, .dojoxUploaderFileListTable th {
   background-color: #f3f3f4;
@@ -9949,6 +9946,7 @@ a.category_higlighted, a.tag_higlighted {
   position: absolute;
   right: 30px;
   z-index: 1;
+  top: 8px;
 }
 .view-categories .subNavCrumbTrail {
   display: block;
@@ -10251,7 +10249,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 .tag-manager__tags-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell:first-child,
 .tag-manager__tags-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell:first-child {
-  width: 40px !important;
+  width: 48px !important;
   padding-left: 1.5rem;
 }
 
@@ -11052,11 +11050,15 @@ Resize Handle
 }
 
 .input-text-naked {
-  border: none;
-  color: #14151a;
+  background-color: #fafafb;
+  border: solid 1px #f3f3f4;
+  border-radius: 0.375rem;
+  color: #6c7389;
   font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 1rem;
   line-height: 40px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 @font-face {
