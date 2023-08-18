@@ -19,4 +19,8 @@ $icon-sm: 14px;
 $icon-md: 16px;
 $icon-lg: 18px;
 
-$helper-field-icon-top-position: 1.8rem;
+// Screen sizes for media queries
+$screen-sm: 40em; // 640px
+$screen-md: 40.063em; // 641px;
+$screen-lg: 64.063em; // 1025px
+$screen-xl: 90.063em; // 1441px;
