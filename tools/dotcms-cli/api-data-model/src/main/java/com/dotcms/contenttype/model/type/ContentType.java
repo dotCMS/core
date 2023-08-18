@@ -22,6 +22,8 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
@@ -140,6 +142,19 @@ public abstract class ContentType {
 
     @Nullable
     public abstract List<Workflow> workflows();
+
+    /**
+     * This is a calculated field required only when sending the CT for a save or an update
+     * When pulling down the CT this shouldn't be present that's why it is surrounded by a JsonView
+     * @return
+     */
+    @JsonView(CommonViews.SaveOrUpdate.class)
+    @Value.Derived
+    public Set<String> workflow(){
+        final List<Workflow> workflows = workflows();
+        return  workflows == null ? Set.of() : workflows.stream().map(Workflow::id).collect(
+                Collectors.toSet());
+    }
 
     /**
      * Class id resolver allows us using smaller ClassNames that eventually get mapped to the fully qualified class name

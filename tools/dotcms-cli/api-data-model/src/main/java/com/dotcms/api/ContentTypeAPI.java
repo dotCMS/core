@@ -66,7 +66,7 @@ public interface ContentTypeAPI {
             summary = "Create a brand new CT instance"
     )
     ResponseEntityView<List<ContentType>> createContentTypes(
-            @JsonView(CommonViews.ExternalView.class) final List<ContentType> contentTypes);
+            @JsonView({CommonViews.SaveOrUpdate.class}) final List<ContentType> contentTypes);
 
 
     @PUT
@@ -75,7 +75,7 @@ public interface ContentTypeAPI {
             summary = "Save/Update a CT instance"
     )
     ResponseEntityView<ContentType> updateContentTypes(@PathParam("idOrVar") final String idOrVar,
-            @JsonView(CommonViews.ExternalView.class) final ContentType contentType);
+            @JsonView({CommonViews.SaveOrUpdate.class}) final ContentType contentType);
 
 
     @DELETE

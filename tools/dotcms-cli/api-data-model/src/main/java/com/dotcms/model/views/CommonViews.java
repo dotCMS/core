@@ -20,7 +20,11 @@ public class CommonViews {
      * "External" view, meaning it will include everything from the "External" view and possibly
      * more.
      */
-    public interface InternalView extends ExternalView {
+    public interface InternalView {
+
+    }
+
+    public interface SaveOrUpdate {
 
     }
 
