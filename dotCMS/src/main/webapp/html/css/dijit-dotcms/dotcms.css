@@ -9036,7 +9036,7 @@ dd .buttonCaption {
   line-height: 1;
   padding: 9px 1rem 0;
   text-align: right;
-  width: 150px;
+  width: 200px;
 }
 #form-horizontal-flexbox dt.checkbox, .form-horizontal dt.checkbox, #form-horizontal-flexbox dt.radio, .form-horizontal dt.radio {
   justify-content: flex-end;
@@ -10098,6 +10098,8 @@ a.category_higlighted, a.tag_higlighted {
 
 .view-users__roles-container {
   display: flex;
+  gap: 0.5rem;
+  align-items: center;
   margin-bottom: 1rem;
 }
 .view-users__roles-container h4 {
@@ -10106,11 +10108,9 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-users__roles-actions {
-  padding: 52px 1rem 0;
-}
-.view-users__roles-actions .dijitButton {
-  display: block;
-  margin: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .view-users__roles-to-grant,
