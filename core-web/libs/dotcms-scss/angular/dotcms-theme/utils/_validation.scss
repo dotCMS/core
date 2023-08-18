@@ -25,6 +25,12 @@ p-inputswitch.ng-dirty.ng-invalid > .p-inputswitch {
 .p-inputtext.p-error,
 .p-inputtext.p-invalid,
 .p-inputtext.ng-dirty.ng-invalid {
+    &:hover,
+    &:active,
+    &:focus {
+        border-color: $color-alert-red;
+    }
+
     border-color: $color-alert-red;
 }
 
@@ -38,6 +44,12 @@ p-listbox.ng-dirty.ng-invalid > .p-listbox {
 }
 
 p-multiselect.ng-dirty.ng-invalid > .p-multiselect {
+    &:hover,
+    &:active,
+    &:focus {
+        border-color: $color-alert-red;
+    }
+
     border-color: $color-alert-red;
 }
 
@@ -70,6 +82,12 @@ p-togglebutton.ng-dirty.ng-invalid > .p-togglebutton.p-button {
 
 .p-multiselect.p-error,
 .p-multiselect.p-invalid {
+    &:hover,
+    &:active,
+    &:focus {
+        border-color: $color-alert-red;
+    }
+
     border-color: $color-alert-red;
 }
 
