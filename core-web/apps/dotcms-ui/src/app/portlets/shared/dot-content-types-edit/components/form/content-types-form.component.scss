@@ -25,9 +25,14 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: $spacing-3;
-    margin-bottom: $spacing-1;
+    margin-bottom: $spacing-3;
 
     .field {
         margin-bottom: 0;
     }
+}
+
+.field__date-hint {
+    margin-bottom: $spacing-3;
+    margin-top: -0.25rem;
 }
