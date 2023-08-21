@@ -1560,18 +1560,6 @@ dd.leftdl {
                         </td>
                     </tr>
                 <% } %>
-                    <!--
-                    <tr>
-                        <td>Testing the Dialog</td>
-                        <td style="text-align:center;white-space:nowrap;">
-                            <div class="inline-form">
-                                <button dojoType="dijit.form.Button" onclick="showAssetExportDialog()" iconClass="downloadIcon">
-                                    Display Button
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    -->
                 <tr>
                     <td><%= LanguageUtil.get(pageContext,"Download-Assets") %></td>
                     <td style="text-align:center;white-space:nowrap;">
