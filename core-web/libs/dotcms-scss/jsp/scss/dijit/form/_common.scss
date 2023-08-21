@@ -7,7 +7,7 @@
 .dijitTextBox,
 .dijitToggleButton {
     border-radius: $field-border-radius;
-    height: $field-height;
+    height: calc($field-height - ($field-border-size * 2));
 }
 
 .dijitButton,
