@@ -43,7 +43,7 @@ dot-material-icon-picker {
             justify-content: center;
 
             mwc-icon {
-                font-size: 1.5rem; // we don't have 2rem var this is for this icon only
+                font-size: $font-size-xl;
                 width: 2.1875rem;
             }
         }
