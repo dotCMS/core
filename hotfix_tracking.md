@@ -103,3 +103,4 @@ This maintenance release includes the following code fixes:
 82. https://github.com/dotCMS/core/issues/24716 : Fix Undo/Redo Issues in Block Editor #24716
 83. https://github.com/dotCMS/core/issues/25797 : When uploading multiple files, the files are always in English #25797
 84. https://github.com/dotCMS/core/issues/25371 : PP: pushing new folder with limited user fails #25371
+85. https://github.com/dotCMS/core/issues/25636 : We require a SAML app property to map old SAML configuration IDs to site IDs #25636
