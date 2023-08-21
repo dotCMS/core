@@ -631,12 +631,8 @@
          *****************************
        -->
         <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-all</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-kubernetes</artifactId>
+            <groupId>dnsjava</groupId>
+            <artifactId>dnsjava</artifactId>
         </dependency>
 
         <dependency>
