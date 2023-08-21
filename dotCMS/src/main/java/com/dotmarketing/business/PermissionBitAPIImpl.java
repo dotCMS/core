@@ -9,12 +9,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.PermissionableProxy;
-import com.dotmarketing.beans.UserProxy;
-import com.dotmarketing.beans.WebAsset;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -190,7 +185,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 		
 		// Folders do not have PUBLISH, use EDIT instead
-		if(PermissionableType.FOLDERS.getCanonicalName().equals(permissionable.getPermissionType()) && permissionType == PERMISSION_PUBLISH){
+		if((PermissionableType.FOLDERS.getCanonicalName().equals(permissionable.getPermissionType()) ||
+				permissionable instanceof Identifier && ((Identifier) permissionable).getAssetType().equals("folder"))
+				&& permissionType == PERMISSION_PUBLISH){
 			permissionType=PERMISSION_EDIT;
 		}
 		
@@ -315,10 +312,11 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         }
 
 		// Folders do not have PUBLISH, use EDIT instead
-		final int expecterPermissionType = PermissionableType
+		final int expecterPermissionType = (PermissionableType
 			.FOLDERS
 			.getCanonicalName()
-			.equals(permissionable.getPermissionType())
+			.equals(permissionable.getPermissionType()) ||
+				permissionable instanceof Identifier && ((Identifier) permissionable).getAssetType().equals("folder"))
 				&& permissionType == PERMISSION_PUBLISH
 			? PERMISSION_EDIT
 			: permissionType;

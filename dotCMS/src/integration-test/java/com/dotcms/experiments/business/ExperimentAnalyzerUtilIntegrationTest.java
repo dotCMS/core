@@ -182,19 +182,19 @@ public class ExperimentAnalyzerUtilIntegrationTest {
      * Method to test: {@link ExperimentAnalyzerUtil#getExperimentResult(Experiment, List)}
      * When:
      * - You have 4 pages: A, B, and C
-     * - Create a Experiment with a BOUNCE_RATE goal where:
-     *      - Page B is the Experiment's Page and also if the page to be check for BOUNCE_RATE
+     * - Create an Experiment with a EXIT_RATE goal where:
+     *      - Page B is the Experiment's Page and also if the page to be checked for EXIT_RATE
      * -  Now different users navigate by the site (triggering pageview Events)
-     *      - A, B: Count as a Bounce Rate.
+     *      - A, B: Count as a Exit Rate.
      *      - A, C and D: Not count as session into the Experiment.
-     *      - A, B, C: not count as a Bounce Rate
+     *      - A, B, C: not count as an Exit Rate
      * Should:
      * - Total Session: 2
      * - Unique Session Bounce Rate: 1
-     * - Multi Session: 1 (Really we can not have more than one Bounce Rate by session)
+     * - Multi Session: 1 (Really we can not have more than one Exit Rate by session)
      */
     @Test
-    public void analyzerDataBounceRate() throws DotDataException, DotSecurityException {
+    public void analyzerDataExitRate() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
@@ -204,7 +204,7 @@ public class ExperimentAnalyzerUtilIntegrationTest {
 
         final Metric metric = Metric.builder()
                 .name("Testing Metric")
-                .type(MetricType.BOUNCE_RATE)
+                .type(MetricType.EXIT_RATE)
                 .addConditions(getUrlCondition(pageB.getPageUrl()))
                 .build();
 

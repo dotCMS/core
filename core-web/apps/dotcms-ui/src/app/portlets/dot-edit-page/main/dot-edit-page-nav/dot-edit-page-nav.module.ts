@@ -9,6 +9,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
 
+import { DotPageToolsSeoComponent } from '../../seo/components/dot-page-tools-seo/dot-page-tools-seo.component';
+
 @NgModule({
     imports: [
         CommonModule,
@@ -16,7 +18,8 @@ import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
         TooltipModule,
         DotIconModule,
         DotPipesModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotPageToolsSeoComponent
     ],
     declarations: [DotEditPageNavComponent],
     exports: [DotEditPageNavComponent]

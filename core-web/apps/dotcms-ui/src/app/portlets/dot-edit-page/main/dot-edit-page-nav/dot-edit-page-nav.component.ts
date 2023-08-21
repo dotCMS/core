@@ -1,13 +1,20 @@
 import { Observable, of as observableOf } from 'rxjs';
 
-import { Component, Input, OnChanges } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, Inject, Input, OnChanges } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
 import { map } from 'rxjs/operators';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import { DotPageRender, DotPageRenderState, DotTemplate } from '@dotcms/dotcms-models';
+import {
+    DotPageRender,
+    DotPageRenderState,
+    DotPageToolUrlParams,
+    DotTemplate,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 
 interface DotEditPageNavItem {
     action?: (inode: string) => void;
@@ -26,9 +33,10 @@ interface DotEditPageNavItem {
 })
 export class DotEditPageNavComponent implements OnChanges {
     @Input() pageState: DotPageRenderState;
-
+    togglePageTools: boolean;
     isEnterpriseLicense: boolean;
     model: Observable<DotEditPageNavItem[]>;
+    currentUrlParams: DotPageToolUrlParams;
 
     queryParams: Params;
 
@@ -38,13 +46,16 @@ export class DotEditPageNavComponent implements OnChanges {
         private dotLicenseService: DotLicenseService,
         private dotContentletEditorService: DotContentletEditorService,
         private dotMessageService: DotMessageService,
-        private readonly route: ActivatedRoute
+        private readonly route: ActivatedRoute,
+        @Inject(DOCUMENT) private document: Document
     ) {}
 
     ngOnChanges(): void {
         this.model = !this.model
             ? this.loadNavItems()
             : observableOf(this.getNavItems(this.pageState, this.isEnterpriseLicense));
+
+        this.currentUrlParams = this.getCurrentURLParams();
     }
 
     private loadNavItems(): Observable<DotEditPageNavItem[]> {
@@ -92,8 +103,12 @@ export class DotEditPageNavComponent implements OnChanges {
             }
         ];
 
-        if (this.route.snapshot.data?.featuredFlag) {
+        if (this.route.snapshot.data?.featuredFlags[FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]) {
             navItems.push(this.getExperimentsNavItem(dotRenderedPage, enterpriselicense));
+        }
+
+        if (this.route.snapshot.data?.featuredFlags[FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]) {
+            navItems.push(this.getPageToolsNavItem(enterpriselicense));
         }
 
         return navItems;
@@ -146,6 +161,18 @@ export class DotEditPageNavComponent implements OnChanges {
         };
     }
 
+    private getPageToolsNavItem(enterpriselicense: boolean): DotEditPageNavItem {
+        return {
+            needsEntepriseLicense: !enterpriselicense,
+            disabled: false,
+            icon: 'grid_view',
+            label: this.dotMessageService.get('editpage.toolbar.nav.page.tools'),
+            action: () => {
+                this.showPageTools();
+            }
+        };
+    }
+
     private getTemplateItemLabel(template: DotTemplate): string {
         return this.dotMessageService.get(
             !template ? 'editpage.toolbar.nav.layout' : 'editpage.toolbar.nav.layout'
@@ -159,5 +186,25 @@ export class DotEditPageNavComponent implements OnChanges {
         const isCurrentExperimentAndRunning = experimentId === runningExperiment?.id;
 
         return isCurrentExperimentAndRunning && this.isVariantMode;
+    }
+
+    private showPageTools(): void {
+        this.togglePageTools = !this.togglePageTools;
+    }
+
+    /**
+     * Get current URL
+     * @returns string
+     * @memberof DotEditPageMainComponent
+     * */
+    private getCurrentURLParams(): DotPageToolUrlParams {
+        const { page, site } = this.pageState;
+
+        return {
+            requestHostName: this.document.defaultView.location.host,
+            currentUrl: page.pageURI,
+            siteId: site?.identifier,
+            languageId: page.languageId
+        };
     }
 }

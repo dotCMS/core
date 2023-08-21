@@ -1,5 +1,6 @@
+import { of, NEVER } from 'rxjs';
+
 import { Injectable } from '@angular/core';
-import { of } from 'rxjs';
 import {} from 'jasmine';
 
 @Injectable()
@@ -37,6 +38,8 @@ export class MockDotRouterService {
 
     _storedRedirectUrl = '';
     _currentSavedURL = '';
+    pageLeaveRequest$ = NEVER;
+    canDeactivateRoute$ = of(true);
     replaceQueryParams = jasmine.createSpy('replaceQueryParams');
     getPortletId = jasmine.createSpy('getPortletId').and.returnValue('test');
     goToEditContentType = jasmine.createSpy('goToEditContentType');
@@ -62,6 +65,8 @@ export class MockDotRouterService {
     isJSPPortlet = jasmine.createSpy('isJSPPortlet');
     reloadCurrentPortlet = jasmine.createSpy('reloadCurrentPortlet');
     goToEditTemplate = jasmine.createSpy('goToEditTemplate');
+    allowRouteDeactivation = jasmine.createSpy('allowRouteDeactivation');
+    forbidRouteDeactivation = jasmine.createSpy('forbidRouteDeactivation');
     isEditPage() {
         /* */
     }

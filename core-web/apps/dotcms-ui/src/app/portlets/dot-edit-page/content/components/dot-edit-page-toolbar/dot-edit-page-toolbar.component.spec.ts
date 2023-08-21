@@ -384,7 +384,7 @@ describe('DotEditPageToolbarComponent', () => {
             fixtureHost.detectChanges();
 
             const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
-            expect(favoritePageIcon.componentInstance.icon).toBe('grade');
+            expect(favoritePageIcon.componentInstance.icon).toBe('pi pi-star-fill');
         });
 
         it('should show empty star icon on favorite page if NO contentlet exist', () => {
@@ -393,7 +393,7 @@ describe('DotEditPageToolbarComponent', () => {
             fixtureHost.detectChanges();
 
             const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
-            expect(favoritePageIcon.componentInstance.icon).toBe('star_outline');
+            expect(favoritePageIcon.componentInstance.icon).toBe('pi pi-star');
         });
     });
 

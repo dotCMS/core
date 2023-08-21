@@ -60,7 +60,7 @@ public class AfterLandOnPageExperimentAnalyzer implements MetricExperimentAnalyz
 
         for (final Event event : events) {
             if (!foundCondition) {
-                foundCondition = event.get("url").orElseThrow().toString().contains(visitBeforeUrl);
+                foundCondition = event.getUrl().matches(visitBeforeUrl);
             }
 
             if (foundCondition) {

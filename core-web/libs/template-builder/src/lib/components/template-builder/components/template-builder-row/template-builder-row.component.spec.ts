@@ -30,7 +30,8 @@ import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-b
 class HostComponent {
     isResizing = false;
     row = {
-        id: '1'
+        id: '1',
+        willBoxFit: false
     };
 }
 

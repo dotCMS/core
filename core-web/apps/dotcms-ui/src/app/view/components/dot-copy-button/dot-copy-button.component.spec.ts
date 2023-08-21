@@ -7,7 +7,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotMessageService } from '@dotcms/data-access';
-import { UiDotIconButtonModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCopyButtonComponent } from './dot-copy-button.component';
@@ -34,7 +33,7 @@ describe('DotCopyButtonComponent', () => {
                 },
                 DotClipboardUtil
             ],
-            imports: [UiDotIconButtonModule, TooltipModule, ButtonModule]
+            imports: [TooltipModule, ButtonModule]
         }).compileComponents();
     }));
 

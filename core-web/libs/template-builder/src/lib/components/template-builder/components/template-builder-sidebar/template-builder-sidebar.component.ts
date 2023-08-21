@@ -58,7 +58,7 @@ export class TemplateBuilderSidebarComponent {
     /**
      * @description Delete a container from the sidebar
      *
-     * @param {DotContainer} container
+     * @param {number} index
      * @memberof TemplateBuilderSidebarComponent
      */
     deleteContainer(index: number) {
