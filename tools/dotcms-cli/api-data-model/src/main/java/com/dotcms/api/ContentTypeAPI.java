@@ -5,7 +5,7 @@ import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.contenttype.FilterContentTypesRequest;
-import com.dotcms.model.views.CommonViews;
+import com.dotcms.model.views.CommonViews.SaveView;
 import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
 import javax.ws.rs.Consumes;
@@ -66,7 +66,7 @@ public interface ContentTypeAPI {
             summary = "Create a brand new CT instance"
     )
     ResponseEntityView<List<ContentType>> createContentTypes(
-            @JsonView({CommonViews.SaveOrUpdate.class}) final List<ContentType> contentTypes);
+            @JsonView({SaveView.class}) final List<ContentType> contentTypes);
 
 
     @PUT
@@ -75,7 +75,7 @@ public interface ContentTypeAPI {
             summary = "Save/Update a CT instance"
     )
     ResponseEntityView<ContentType> updateContentTypes(@PathParam("idOrVar") final String idOrVar,
-            @JsonView({CommonViews.SaveOrUpdate.class}) final ContentType contentType);
+            @JsonView({SaveView.class}) final ContentType contentType);
 
 
     @DELETE

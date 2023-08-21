@@ -20,7 +20,7 @@ public class OutputOptionMixin implements MessageWriter {
     @CommandLine.Option(names = { "-e", "--errors" }, description = "Display error messages.", hidden = true)
     boolean showErrors;
 
-    @CommandLine.Option(names = { "--verbose" }, description = "Verbose mode.", hidden = true)
+    @CommandLine.Option(names = { "-v", "--verbose" }, description = "Verbose mode.", hidden = true)
     boolean verbose;
 
     @CommandLine.Option(names = {"--cli-test" }, description = "Manually set output streams for unit test purposes.", hidden = true)

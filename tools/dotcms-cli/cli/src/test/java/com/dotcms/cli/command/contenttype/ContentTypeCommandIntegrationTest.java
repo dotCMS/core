@@ -70,11 +70,9 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
                     "fileAsset", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
-            //System.out.println(output);
             final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
             final ContentType contentType = objectMapper.readValue(output, ContentType.class);
             Assertions.assertNotNull(contentType.variable());
-            //  System.out.println(workspace);
         } finally {
             workspaceManager.destroy(workspace);
         }
@@ -118,8 +116,10 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
     }
 
     /**
-     * Given scenario:
-     * Expected Result:
+     * here we're validating that when updating a CT that has associated Workflows
+     * It still retains that information after an update op is performed
+     * Given scenario: We pull FileAsset save it locally as a file then we push it back in via Push command
+     * Expected Result: When the FileAsset is pulled down for the first time it
      * @throws IOException
      */
     @Test

@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.Workflow;
 import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
 import com.dotcms.model.views.CommonViews;
+import com.dotcms.model.views.CommonViews.SaveView;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -54,7 +55,7 @@ public abstract class ContentType {
     public static final String SYSTEM_HOST = "SYSTEM_HOST";
     public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
 
-    final String TYPE = "ContentType";
+    static final String TYPE = "ContentType";
 
     @JsonView(CommonViews.InternalView.class)
     @JsonProperty("dotCMSObjectType")
@@ -148,7 +149,7 @@ public abstract class ContentType {
      * When pulling down the CT this shouldn't be present that's why it is surrounded by a JsonView
      * @return
      */
-    @JsonView(CommonViews.SaveOrUpdate.class)
+    @JsonView(SaveView.class)
     @Value.Derived
     public Set<String> workflow(){
         final List<Workflow> workflows = workflows();
