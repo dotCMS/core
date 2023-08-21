@@ -232,4 +232,14 @@ public interface ExperimentsAPI {
      * {@link com.dotcms.experiments.model.Experiment.Status#SCHEDULED} state.
      */
     Experiment cancel(String experimentId, User user) throws DotDataException, DotSecurityException;
+
+    /**
+     * Return the RUNNING Experiments for the given page if it has any,
+     * Otherwise return an empty Optional
+     *
+     * @param pageId
+     * @return
+     * @throws DotDataException
+     */
+    Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException;
 }

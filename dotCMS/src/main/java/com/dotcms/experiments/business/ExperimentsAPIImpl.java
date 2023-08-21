@@ -578,7 +578,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling)
                         .withStatus(RUNNING);
                 validateNoConflictsWithScheduledExperiments(experimentToSave, user);
-                toReturn = innerStart(experimentToSave, user);
+                toReturn = innerStart(experimentToSave, user, true);
             } else {
                 Scheduling scheduling = persistedExperiment.scheduling().get();
                 final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling)
@@ -628,35 +628,37 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Optional<Experiment> runningExperimentOnPage = getRunningExperimentsOnPage(
                 user, persistedExperiment);
 
-        if(runningExperimentOnPage.isPresent()) {
-            final boolean meantToRunNow = persistedExperiment.scheduling().isEmpty();
-
-            if(meantToRunNow) {
-                end(runningExperimentOnPage.get().id().orElseThrow(), user);
-            }
-
-            final Experiment runningExperiment = runningExperimentOnPage.get();
-            if(conflictingStartOrEndDate(runningExperiment.scheduling().orElseThrow(),
-                    persistedExperiment.scheduling().orElseThrow())) {
-                end(runningExperiment.id().orElseThrow(), user);
-            }
-        }
-
         Experiment toReturn;
 
         if(emptyScheduling(persistedExperiment)) {
             final Scheduling scheduling = startNowScheduling();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
+
+            if(runningExperimentOnPage.isPresent()) {
+                endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
+            }
             cancelScheduledExperimentsUponConflicts(experimentToSave, user);
-            toReturn = innerStart(experimentToSave, user);
+            toReturn = innerStart(experimentToSave, user, false);
         } else {
-            Scheduling scheduling = persistedExperiment.scheduling().get();
+            Scheduling scheduling = persistedExperiment.scheduling().orElseThrow();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
+
+            if(runningExperimentOnPage.isPresent()) {
+                endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
+            }
             cancelScheduledExperimentsUponConflicts(experimentToSave, user);
             toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
         }
 
         return toReturn;
+    }
+
+    private void endRunningExperimentIfNeeded(User user, Experiment runningExperimentOnPage,
+            Experiment persistedExperiment) throws DotDataException, DotSecurityException {
+        if(conflictingStartOrEndDate(runningExperimentOnPage.scheduling().orElseThrow(),
+                persistedExperiment.scheduling().orElseThrow())) {
+            end(runningExperimentOnPage.id().orElseThrow(), user);
+        }
     }
 
     private Optional<Experiment> getRunningExperimentsOnPage(User user, Experiment persistedExperiment)
@@ -779,16 +781,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(persistedExperiment.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
                 DotStateException.class);
 
-        return innerStart(persistedExperiment, user);
+        final Experiment readyToStart = save(Experiment.builder().from(persistedExperiment)
+                        .status(RUNNING).build(), user);
+
+        return innerStart(readyToStart, user, true);
     }
 
-    private Experiment innerStart(final Experiment persistedExperiment, final User user)
+    private Experiment innerStart(final Experiment persistedExperiment, final User user,
+            final boolean generateNewRunId)
             throws DotSecurityException, DotDataException {
 
-        final Experiment experimentToSave = Experiment.builder().from(persistedExperiment)
-                .runningIds(getRunningIds(persistedExperiment))
-                .status(RUNNING)
-                .build();
+        final Experiment experimentToSave = generateNewRunId
+                ? Experiment.builder().from(persistedExperiment).runningIds(getRunningIds(persistedExperiment)).build()
+                : persistedExperiment;
 
         Experiment running = save(experimentToSave, user);
         cacheRunningExperiments();
@@ -819,8 +824,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private void publishContentOnExperimentVariants(final User user,
             final Experiment runningExperiment)
             throws DotDataException, DotSecurityException {
-        DotPreconditions.isTrue(runningExperiment.status().equals(RUNNING),
-                "Experiment needs to be RUNNING");
 
         final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
                 runningExperiment.trafficProportion().variants().stream()
@@ -1525,6 +1528,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                             + EXPERIMENTS_MAX_DURATION.get() +" days. ");
         }
         return toReturn;
+    }
+
+    @Override
+    public Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException {
+
+        return getRunningExperiments().stream()
+                .filter(experiment ->
+                        experiment.pageId().equals(pageId)
+                )
+                .findFirst();
     }
 
     private boolean hasValidLicense(){

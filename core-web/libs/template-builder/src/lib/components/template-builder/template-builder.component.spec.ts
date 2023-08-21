@@ -90,11 +90,7 @@ describe('TemplateBuilderComponent', () => {
                     body: FULL_DATA_MOCK,
                     header: true,
                     footer: true,
-                    sidebar: {
-                        location: 'left',
-                        width: 'small',
-                        containers: []
-                    },
+                    sidebar: null,
                     width: 'Mobile',
                     title: 'Test Title'
                 },
@@ -243,6 +239,14 @@ describe('TemplateBuilderComponent', () => {
         mainDiv.dispatchEvent(new MouseEvent('mousemove'));
 
         expect(fixGridStackNodeOptionsMock).toHaveBeenCalled();
+    });
+
+    it('should set layoutProperties to default values if sidebar null', () => {
+        expect(spectator.component.layoutProperties).toEqual({
+            header: true,
+            footer: true,
+            sidebar: { location: '', width: 'medium', containers: [] }
+        });
     });
 
     describe('layoutChange', () => {

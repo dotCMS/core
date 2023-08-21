@@ -14,7 +14,11 @@
     }
 }
 
-.template-builder-box--small {
+.template-builder-box--medium {
+    .template-builder-box__header-container {
+        justify-content: center;
+    }
+
     ::ng-deep {
         .p-button-text {
             margin: $spacing-3 0;
@@ -34,10 +38,27 @@
         }
 
         .p-dropdown {
+            display: flex;
+            justify-content: center;
+            align-items: center;
             border-radius: 50%;
             padding: 0.5625rem; // 9px
             margin-top: $spacing-3;
             margin-bottom: $spacing-3;
+            margin-right: $spacing-1;
+            height: 2rem;
+            width: 2rem;
+            border: none;
+
+            &:not(.p-disabled):hover {
+                background-color: $color-palette-primary-op-10;
+            }
+
+            &:not(.p-disabled).p-focus,
+            &.p-dropdown-open {
+                background-color: transparent;
+                @include field-focus;
+            }
         }
     }
 }
@@ -49,6 +70,12 @@ p-dropdown {
             flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
             background: none;
             margin-left: $spacing-4;
+            border-color: transparent;
+
+            .p-dropdown-label {
+                padding-right: $spacing-2;
+                color: $black;
+            }
         }
     }
 }
@@ -69,6 +96,7 @@ p-dropdown {
 }
 
 .template-builder-box__header-container {
+    height: 3.5rem;
     background-color: $color-palette-gray-200;
     padding: $spacing-1 $spacing-4 $spacing-1 $spacing-2;
     display: flex;
@@ -103,4 +131,10 @@ p-dropdown {
     justify-content: center;
     align-items: center;
     flex-direction: column;
+
+    ::ng-deep {
+        .p-button-text {
+            margin: $spacing-3 0;
+        }
+    }
 }

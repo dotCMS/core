@@ -2,20 +2,16 @@ name: Release Candidate Process
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to use for the release candidate'
-        required: true
-        default: 'master'
       initial_sha:
         description: 'Initial commit sha'
         required: true
       last_sha:
         description: 'Last commit sha'
         required: true
-      labels_json:
-        description: 'Labels JSON to add/remove'
+      labels:
+        description: 'Comma delimited labels to add/remove'
         required: false
-        default: '["Release Candidate"]'
+        default: 'Release Candidate'
       label_operation:
         description: 'Label operation (ADD or REMOVE) to perform'
         type: choice
@@ -25,14 +21,10 @@ on:
           - None
         required: true
         default: 'ADD'
-      tag_creation:
-        description: 'Tag creation flag'
-        type: choice
-        options:
-          - Yes
-          - No
-        required: true
-        default: 'YES'
+      tag_name:
+        description: 'Tag name to create'
+        required: false
+        default: 'release_candidate'
 
 jobs:
   release-candidate-process:
@@ -40,32 +32,55 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       -
+        run: echo "$GITHUB_CONTEXT"
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+      -
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.inputs.branch }}
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
       -
+        name: Generate changelog
         id: changelog
         uses: ./.github/actions/rc-changelog
         with:
+          branch: ${{ github.ref_name }}
           initial_sha: ${{ github.event.inputs.initial_sha }}
           last_sha: ${{ github.event.inputs.last_sha }}
           github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
       -
+        name: Label issues
         uses: ./.github/actions/issue-labeler
         with:
           issues_json: ${{ steps.changelog.outputs.issues_flat }}
-          labels_json: ${{ github.event.inputs.labels_json }}
+          labels: ${{ github.event.inputs.labels }}
           operation: ${{ github.event.inputs.label_operation }}
           github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
         if: ${{ github.event.inputs.label_operation != 'None' }}
       -
+        name: Create RC tag
         run: |
-          git fetch --tags
-          git reset --hard ${{ github.event.inputs.last_sha }}
-          git tag -d $RELEASE_CANDIDATE_TAG
-          git push origin :refs/tags/$RELEASE_CANDIDATE_TAG
-          git tag RELEASE_CANDIDATE_TAG
-          git push origin $RELEASE_CANDIDATE_TAG
+          source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+          source ${GITHUB_WORKSPACE}/cicd/local-cicd.sh
+          
+          executeCmd "git fetch --tags"
+          executeCmd "git reset --hard ${{ github.event.inputs.last_sha }}"
+          if git show-ref --tags "${RELEASE_CANDIDATE_TAG}" --quiet; then
+            executeCmd "git tag -d ${RELEASE_CANDIDATE_TAG}"
+            executeCmd "git push origin :refs/tags/${RELEASE_CANDIDATE_TAG}"
+          fi
+          gitConfig ${GITHUB_USER} ${GITHUB_EMAIL}
+          executeCmd "git tag -a \"${RELEASE_CANDIDATE_TAG}\" -m \"Release candidate tag\""
+          executeCmd "git push origin \"${RELEASE_CANDIDATE_TAG}\""
         env:
-          RELEASE_CANDIDATE_TAG=rc
+          RELEASE_CANDIDATE_TAG: ${{ github.event.inputs.tag_name }}
+          GITHUB_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
+        if: env.RELEASE_CANDIDATE_TAG != ''
+      -
+        name: Changelog report
+        uses: ./.github/actions/changelog-report
+        with:
+          issues_json: ${{ steps.changelog.outputs.issues_json }}
+          tag: ${{ github.event.inputs.tag_name }}Z
+          format: md

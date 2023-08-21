@@ -34,6 +34,7 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.test.util.FileTestUtil;
@@ -2638,4 +2639,125 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#unpublish(Contentlet, User, boolean)}
+     * When: Unpublish a {@link Contentlet} with a DRAFT {@link Experiment}
+     * Shpuld: Unpublish the Page
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void unPublishPageWithNoDraftExperiment() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        HTMLPageDataGen.publish(htmlPageAsset);
+
+        final List<ContentletVersionInfo> contentletVersionInfosPublish = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(htmlPageAsset.getIdentifier());
+        assertEquals(1, contentletVersionInfosPublish.size());
+
+        final ContentletVersionInfo contentletVersionInfoPublish = contentletVersionInfosPublish.get(0);
+
+        assertEquals(htmlPageAsset.getInode(), contentletVersionInfoPublish.getLiveInode());
+
+        new ExperimentDataGen().page(htmlPageAsset).nextPersisted();
+
+        HTMLPageDataGen.unpublish(htmlPageAsset);
+
+        final List<ContentletVersionInfo> contentletVersionInfosUnpublish = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(htmlPageAsset.getIdentifier());
+
+        assertEquals(1, contentletVersionInfosUnpublish.size());
+
+        final ContentletVersionInfo contentletVersionInfoUnpublish = contentletVersionInfosUnpublish.get(0);
+        assertNull( contentletVersionInfoUnpublish.getLiveInode());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#unpublish(Contentlet, User, boolean)}
+     * When: Unpublish a {@link Contentlet} with a ENDED {@link Experiment}
+     * Shpuld: Unpublish the Page
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void unPublishPageWithEndedExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        HTMLPageDataGen.publish(htmlPageAsset);
+
+        final List<ContentletVersionInfo> contentletVersionInfosPublish = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(htmlPageAsset.getIdentifier());
+        assertEquals(1, contentletVersionInfosPublish.size());
+
+        final ContentletVersionInfo contentletVersionInfoPublish = contentletVersionInfosPublish.get(0);
+
+        assertEquals(htmlPageAsset.getInode(), contentletVersionInfoPublish.getLiveInode());
+
+        final Experiment experiment = new ExperimentDataGen().page(htmlPageAsset).nextPersisted();
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+        APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        HTMLPageDataGen.unpublish(htmlPageAsset);
+
+        final List<ContentletVersionInfo> contentletVersionInfosUnpublish = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(htmlPageAsset.getIdentifier());
+
+        assertEquals(1, contentletVersionInfosUnpublish.size());
+
+        final ContentletVersionInfo contentletVersionInfoUnpublish = contentletVersionInfosUnpublish.get(0);
+        assertNull( contentletVersionInfoUnpublish.getLiveInode());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#unpublish(Contentlet, User, boolean)}
+     * When: Unpublish a {@link Contentlet} with a RUNNING {@link Experiment}
+     * Shpuld: throw an {@link DotRuntimeException}
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void unPublishPageWithRunningExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        HTMLPageDataGen.publish(htmlPageAsset);
+
+        final List<ContentletVersionInfo> contentletVersionInfosPublish = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(htmlPageAsset.getIdentifier());
+        assertEquals(1, contentletVersionInfosPublish.size());
+
+        final ContentletVersionInfo contentletVersionInfoPublish = contentletVersionInfosPublish.get(0);
+
+        assertEquals(htmlPageAsset.getInode(), contentletVersionInfoPublish.getLiveInode());
+
+        final Experiment experiment = new ExperimentDataGen().page(htmlPageAsset).nextPersisted();
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        try {
+            final Contentlet contentlet = APILocator.getContentletAPI()
+                    .find(htmlPageAsset.getInode(), APILocator.systemUser(), false);
+            try {
+                APILocator.getContentletAPI().unpublish(contentlet, APILocator.systemUser(), false);
+                throw new AssertionError("Should throw an exception");
+            } catch (RunningExperimentUnpublishException e) {
+                final String expectedMessage = String.format(
+                        "Cannot unpublish a Page %s because it has a RUNNING Experiment: %s",
+                        htmlPageAsset.getIdentifier(), experiment.id().get());
+
+                assertEquals(expectedMessage, e.getMessage());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
+        }
+
+    }
 }

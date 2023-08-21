@@ -37,7 +37,9 @@ import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+
 import com.dotcms.experiments.business.ExperimentFilter;
+
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -122,6 +124,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -3121,7 +3124,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try {
                 APILocator.getExperimentsAPI().forceDelete(pageExperiment.id().orElseThrow(), user);
             } catch (DotDataException | DotSecurityException e) {
-                final String message = String.format("Don;t be able to delete the experiment %s",
+                final String message = String.format("Unable to delete experiment %s",
                         pageExperiment.id().orElseThrow());
                 throw new DotRuntimeException(message, e);
             }
@@ -3550,14 +3553,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     } // internalArchive.
 
-    private Optional<Experiment> getExperimentRunningOnPage(final Contentlet contentlet) throws DotDataException {
-        return APILocator.getExperimentsAPI()
-                .getRunningExperiments().stream()
-                .filter(experiment -> experiment.pageId()
-                        .equals(contentlet.getIdentifier()))
-                .findFirst();
-    }
-
     private void internalArchive(final Contentlet contentlet, final User user,
             final boolean respectFrontendRoles,
             final boolean isDestroy, final IndexPolicy indexPolicy,
@@ -3565,7 +3560,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final Contentlet workingContentlet, final Contentlet liveContentlet)
             throws DotDataException, DotSecurityException {
 
-        final Optional<Experiment> experimentRunningOnPage = getExperimentRunningOnPage(contentlet);
+        final Optional<Experiment> experimentRunningOnPage = APILocator.getExperimentsAPI().getRunningExperimentPerPage(
+                workingContentlet.getIdentifier());
+
         if (experimentRunningOnPage.isPresent()) {
             final String message = String.format(
                     "Can't Archive a Page %s because it has a Running Experiment. Experiment ID %s",
@@ -4044,6 +4041,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         this.canLock(contentlet, user);
+
+        if (contentlet.isHTMLPage()) {
+            final Optional<Experiment> runningExperiment = APILocator.getExperimentsAPI()
+                    .getRunningExperimentPerPage(contentlet.getIdentifier());
+
+            if (runningExperiment.isPresent()) {
+                throw new RunningExperimentUnpublishException(contentlet, runningExperiment.get());
+            }
+        }
 
         APILocator.getVersionableAPI().removeLive(contentlet);
 
