@@ -56,7 +56,7 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
 
     .p-dropdown-clear-icon {
         color: $color-palette-primary;
-        right: 2.6875rem;
+        right: calc($field-height + $spacing-1);
     }
 
     &.p-disabled {
