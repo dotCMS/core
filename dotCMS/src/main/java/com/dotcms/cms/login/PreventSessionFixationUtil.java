@@ -4,6 +4,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,6 +26,9 @@ import java.util.concurrent.ExecutorCompletionService;
  * @since May 29th, 2019
  */
 public class PreventSessionFixationUtil {
+
+    private static final Lazy<Boolean> PREVENT_SESSION_FIXATION_ON_LOGIN = Lazy.of(() -> Config.getBooleanProperty(
+            "PREVENT_SESSION_FIXATION_ON_LOGIN", true));
 
     private PreventSessionFixationUtil() {
         // singleton
@@ -54,7 +58,7 @@ public class PreventSessionFixationUtil {
 
         HttpSession session = request.getSession(false);
 
-        if(Config.getBooleanProperty("PREVENT_SESSION_FIXATION_ON_LOGIN", true)) {
+        if (PREVENT_SESSION_FIXATION_ON_LOGIN.get()) {
 
             Logger.debug(this, ()-> "Preventing the session fixation");
 
@@ -69,9 +73,9 @@ public class PreventSessionFixationUtil {
 
                     final String key = keys.nextElement();
                     final Object value = oldSession.getAttribute(key);
-                    oldSessionMap.put(key, value);
+                    oldSessionMap.put(new String(key.toCharArray()), value);
                 }
-                final Map<String, Object> newSessionMap = this.copySessionAttributes(oldSessionMap);
+                final Map<String, Object> newSessionMap = Map.copyOf(oldSessionMap);
                 oldSession.invalidate();
 
                 final HttpSession newSession = request.getSession();
@@ -85,25 +89,5 @@ public class PreventSessionFixationUtil {
 
         return null == session && createSessionIfDoesNotExists? request.getSession(): session;
     } // preventSessionFixation.
-
-    /**
-     * Copies the attributes from an existing {@link HttpSession} into a new Map so that they can be added to a
-     * brand-new session. This method makes sure that such a process has finished before continuing with the execution
-     * flow.
-     * <p>There were sporadic cases where the original session was invalidated before all its attributes were copied.
-     * This was causing the new session to have missing attributes.</p>
-     *
-     * @param originalSessionMap The Map with the attributes from the original session.
-     *
-     * @return The new Map with the original attributes that will be added to the new session.
-     */
-    private Map<String, Object> copySessionAttributes(final Map<String, Object> originalSessionMap) {
-        final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance()
-                .getSubmitter("session-attr-map-copy");
-        final CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(dotSubmitter);
-        // Copy the attributes into an unmodifiable Map
-        completionService.submit(() -> Map.copyOf(originalSessionMap));
-        return Try.of(() -> completionService.take().get()).getOrElse(new HashMap<>());
-    }
 
 }
