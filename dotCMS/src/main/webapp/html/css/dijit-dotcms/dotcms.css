@@ -4457,8 +4457,13 @@
 }
 
 .dijitPopup {
-  border: none;
-  box-shadow: 0 1px 3px var(--color-palette-black-op-10), 0 1px 2px var(--color-palette-black-op-20);
+  background: #ffffff;
+  color: #14151a;
+  border: 0 none;
+  border-radius: 0.375rem;
+  box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
+  padding: 0.5rem;
+  margin-top: 0.5rem;
 }
 .dijitTimePickerPopup {
   border: none;
@@ -4956,24 +4961,25 @@
 }
 
 .dijitMenu {
-  box-shadow: 0 3px 6px var(--color-palette-black-op-10), 0 3px 6px var(--color-palette-black-op-20);
-  background-color: #ffffff;
-  border: none;
+  padding: 0;
 }
 .dijitMenu .dijitMenuItem {
-  border-bottom: none;
+  display: flex;
+  align-items: start;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 0.75rem;
+  color: #14151a;
   height: 40px;
 }
 .dijitMenu .dijitMenuItem:last-child {
   border-bottom: none;
 }
 .dijitMenu .dijitMenuItemHover {
-  background-color: #f3f3f4;
-  color: #515667;
+  background: var(--color-palette-primary-100);
 }
 .dijitMenu .dijitMenuItemSelected {
-  background-color: #f3f3f4;
-  color: #515667;
+  background: var(--color-palette-primary-200);
 }
 .dijitMenu .dijitMenuItem .dijitMenuItemIconCell {
   padding-left: 0.5rem;
@@ -4994,13 +5000,28 @@
   border-bottom: 1px solid #d1d4db;
 }
 
+.dijitComboBoxMenuPopup {
+  background: #ffffff;
+  color: #14151a;
+  border: 0 none;
+  border-radius: 0.375rem;
+  box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+}
 .dijitComboBoxMenuPopup .dijitMenuItem {
-  line-height: 40px;
-  margin-bottom: 1px;
-  padding: 0 0.5rem;
+  display: flex;
+  align-items: start;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 0.75rem;
+  color: #14151a;
+  height: 40px;
 }
 .dijitComboBoxMenuPopup .dijitComboBoxMenu {
   min-width: 200px;
+  padding: 0;
+  border: none;
 }
 
 .dijitMenuBar .dijitMenuItem {
@@ -11088,10 +11109,8 @@ Resize Handle
   gap: 0.5rem;
 }
 
-#structure_inode_popup .dijitMenuItem .separator {
-  height: 1px;
-  margin: -1px -10px 0px -10px;
-  background: #ddd;
+#structure_inode_popup .dijitMenuItem:has(> .separator) {
+  border-top: 1px solid #d1d4db;
 }
 
 /* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */

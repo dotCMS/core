@@ -1,10 +1,13 @@
 .dijitMenu {
-    box-shadow: $menu-shadow;
-    background-color: $menu-bgcolor;
-    border: $menu-border;
+    padding: 0;
 
     .dijitMenuItem {
-        border-bottom: $menu-item-separator;
+        display: flex;
+        align-items: start;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 $spacing-2;
+        color: $black;
         height: $field-height;
 
         &:last-child {
@@ -12,13 +15,11 @@
         }
 
         &Hover {
-            background-color: $menu-item-hover-bgcolor;
-            color: $menu-item-hover-textcolor;
+            background: $color-palette-primary-100;
         }
 
         &Selected {
-            background-color: $menu-item-selected-bgcolor;
-            color: $menu-item-selected-textcolor;
+            background: $color-palette-primary-200;
         }
 
         .dijitMenuItemIconCell {
@@ -48,14 +49,28 @@
 }
 
 .dijitComboBoxMenuPopup {
+    background: $white;
+    color: $black;
+    border: 0 none;
+    border-radius: $border-radius-md;
+    box-shadow: $md-shadow-6;
+    padding: $spacing-1;
+    margin-top: $spacing-1;
+
     .dijitMenuItem {
-        line-height: $field-height;
-        margin-bottom: 1px;
-        padding: 0 $spacing-1;
+        display: flex;
+        align-items: start;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 $spacing-2;
+        color: $black;
+        height: $field-height;
     }
 
     .dijitComboBoxMenu {
         min-width: 200px;
+        padding: 0;
+        border: none;
     }
 }
 
