@@ -73,7 +73,7 @@ $button-focused-border: solid $field-border-size $color-palette-primary;
 
 // DropDownButton
 $dropdownbutton-arrow-size: 5px;
-$dropdownbutton-arrow-container-size: 2.1875rem;
+$dropdownbutton-arrow-container-size: $field-height;
 
 $dropdownbutton-normal-bgcolor: $button-normal-bgcolor;
 $dropdownbutton-normal-textcolor: $button-normal-textcolor;
@@ -118,7 +118,7 @@ $dropdownbutton-disabled-arrow-color: $field-disabled-arrow-color;
 // ComboButton
 // TODO: add margin when there is border in the arrow.
 $combobutton-arrow-size: 5px;
-$combobutton-arrow-container-size: calc($field-height - ($field-border-size * 2));
+$combobutton-arrow-container-size: $field-height;
 
 $combobutton-normal-bgcolor: $button-normal-bgcolor;
 $combobutton-normal-textcolor: $button-normal-textcolor;

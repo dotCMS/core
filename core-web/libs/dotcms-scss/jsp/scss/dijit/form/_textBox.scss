@@ -4,7 +4,7 @@
     border: $textbox-normal-border;
 
     .dijitArrowButton {
-        height: $field-height - ($field-border-size * 2);
+        height: $field-height;
         width: $field-height;
         background-color: $textbox-normal-arrow-bgcolor;
         border-left: $textbox-normal-arrow-border;

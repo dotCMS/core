@@ -7,7 +7,7 @@
 .dijitTextBox,
 .dijitToggleButton {
     border-radius: $field-border-radius;
-    height: calc($field-height - ($field-border-size * 2));
+    height: $field-height;
 }
 
 .dijitButton,
@@ -26,9 +26,7 @@
 .dijitDropDownButton .dijitArrowButtonInner,
 .dijitSelect .dijitArrowButtonContainer,
 .dijitSpinner .dijitSpinnerButtonContainer {
-    height: calc(
-        $field-height - ($field-border-size * 2)
-    ); // Need to substract the border (top and bottom)
+    height: $field-height;
     border: none;
     position: relative;
 }
@@ -36,7 +34,7 @@
 .dijitPlaceHolder {
     color: $field-placeholder-color;
     font-style: normal;
-    line-height: $field-height - ($field-border-size * 2);
+    line-height: $field-height;
 }
 
 .dijitValidationContainer {

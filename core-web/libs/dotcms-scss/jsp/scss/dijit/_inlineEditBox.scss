@@ -7,8 +7,8 @@
     }
 
     &.dijitTextBox .dijitInputInner {
-        height: $field-height - ($field-border-size * 2);
-        line-height: $field-height - ($field-border-size * 2);
+        height: $field-height;
+        line-height: $field-height;
         // line-height: normal; TODO: fix this because is breaking other inline fields
         padding: 0;
     }

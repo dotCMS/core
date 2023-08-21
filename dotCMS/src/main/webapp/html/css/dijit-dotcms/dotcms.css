@@ -3138,7 +3138,7 @@
 .dijitTextBox,
 .dijitToggleButton {
   border-radius: 0.375rem;
-  height: 37px;
+  height: 40px;
 }
 
 .dijitButton,
@@ -3157,7 +3157,7 @@
 .dijitDropDownButton .dijitArrowButtonInner,
 .dijitSelect .dijitArrowButtonContainer,
 .dijitSpinner .dijitSpinnerButtonContainer {
-  height: 37px;
+  height: 40px;
   border: none;
   position: relative;
 }
@@ -3165,7 +3165,7 @@
 .dijitPlaceHolder {
   color: #afb3c0;
   font-style: normal;
-  line-height: 37px;
+  line-height: 40px;
 }
 
 .dijitValidationContainer {
@@ -3203,7 +3203,7 @@
   border: solid 1.5px #d1d4db;
 }
 .dijitTextBox .dijitArrowButton {
-  height: 37px;
+  height: 40px;
   width: 40px;
   background-color: #ffffff;
   border-left: solid 1.5px #d1d4db;
@@ -3484,7 +3484,7 @@
 
 .dijitButton,
 .dijitToggleButton {
-  height: 37px;
+  height: 40px;
   border-radius: 0.375rem;
   display: inline-flex;
   align-items: center;
@@ -3554,7 +3554,7 @@
   padding-left: 1rem;
 }
 .dijitDropDownButton .dijitArrowButtonInner {
-  width: 2.1875rem;
+  width: 40px;
   background-color: transparent;
 }
 .dijitDropDownButton .dijitArrowButtonInner:before {
@@ -3650,7 +3650,7 @@
   box-shadow: 0;
 }
 .dijitComboButton .dijitArrowButtonInner {
-  width: 37px;
+  width: 40px;
   background-color: transparent;
 }
 .dijitComboButton .dijitArrowButtonInner:before {
@@ -4063,12 +4063,12 @@
 }
 .dijitComboBox input {
   height: auto;
-  line-height: 37px;
+  line-height: 40px;
   padding: 0;
 }
 .dijitComboBox .dijitArrowButton {
-  height: 37px;
-  width: 2.1875rem;
+  height: 40px;
+  width: 40px;
   background-color: #f3f3f4;
   border-left: solid 1.5px #d1d4db;
 }
@@ -5055,8 +5055,8 @@
   line-height: normal;
 }
 .dijitInline.dijitTextBox .dijitInputInner {
-  height: 37px;
-  line-height: 37px;
+  height: 40px;
+  line-height: 40px;
   padding: 0;
 }
 .dijitInlineEditBoxDisplayModeHover {

@@ -1,6 +1,6 @@
 .dijitButton,
 .dijitToggleButton {
-    height: calc($field-height - ($field-border-size * 2));
+    height: $field-height;
     border-radius: $border-radius-md;
     display: inline-flex;
     align-items: center;
