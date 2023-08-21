@@ -40,8 +40,8 @@ export class AIContentPromptComponent {
             this.aiContentService
                 .getIAContent(textPrompt)
                 .pipe(catchError(() => of(null)))
-                .subscribe(() => {
-                    // this.aiResponse.emit(response);
+                .subscribe((response) => {
+                    console.warn('AI response', response);
                 });
         }
     }

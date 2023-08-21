@@ -71,8 +71,6 @@ export class AIContentPromptView {
             this.editor.commands.closeAIPrompt();
         });
 
-        this.editor.on('focus', this.focusHandler);
-
         document.body.addEventListener('mousedown', this.handleOutsideClick, { capture: true });
     }
 
@@ -112,35 +110,13 @@ export class AIContentPromptView {
         this.tippy = tippy(editorElement.parentElement, {
             ...TIPPY_OPTIONS,
             ...this.tippyOptions,
-            content: this.element,
-            onShow: (instance) => {
-                (instance.popper as HTMLElement).style.width = '100%';
-
-                requestAnimationFrame(() => {
-                    this.component.instance.input.nativeElement.focus();
-                });
-            }
+            content: this.element
         });
     }
 
-    focusHandler = () => {
-        const { state } = this.editor;
-        const { open } = AI_CONTENT_PROMPT_PLUGIN_KEY.getState(state);
-        const pluginState = this.pluginKey.getState(state);
-
-        if (!pluginState.open) {
-            return;
-        }
-
-        if (open) {
-            requestAnimationFrame(() => {
-                this.component.instance.input.nativeElement.focus();
-            });
-        }
-    };
-
     show() {
         this.tippy?.show();
+        this.component.instance.input.nativeElement.focus();
     }
 
     hide() {
@@ -152,7 +128,6 @@ export class AIContentPromptView {
         this.tippy?.destroy();
         this.$destroy.next(true);
         this.$destroy.complete();
-        this.editor.off('focus', this.focusHandler);
         document.body.removeEventListener('mousedown', this.handleOutsideClick);
     }
 
