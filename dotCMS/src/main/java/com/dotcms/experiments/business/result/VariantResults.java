@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business.result;
 
+import com.dotcms.experiments.business.result.ExperimentResults.TotalSession;
 import java.util.Map;
 
 /**
@@ -75,7 +76,7 @@ public class VariantResults {
         private final long count;
         private final float conversionRate;
 
-        public UniqueBySessionResume(final int count, final long totalVariantSession, long totalSessions) {
+        public UniqueBySessionResume(final int count, final long totalVariantSession) {
             this.count = count;
             this.conversionRate = totalVariantSession > 0 ? (float) (count * 100) / totalVariantSession : 0;
         }
@@ -92,10 +93,17 @@ public class VariantResults {
     public static class ResultResumeItem {
         final long multiBySession;
         final long uniqueBySession;
+        final float totalSessions;
 
         public ResultResumeItem(final long multiBySession, final long uniqueBySession) {
+            this(multiBySession, uniqueBySession, 0);
+        }
+
+        public ResultResumeItem(final long multiBySession, final long uniqueBySession,
+                final float totalSessions) {
             this.multiBySession = multiBySession;
             this.uniqueBySession = uniqueBySession;
+            this.totalSessions = totalSessions;
         }
 
         public long getMultiBySession() {
@@ -104,6 +112,14 @@ public class VariantResults {
 
         public long getUniqueBySession() {
             return uniqueBySession;
+        }
+
+        public float getConvertionRate() {
+            return totalSessions > 0 ? (float) (uniqueBySession * 100) / totalSessions : 0;
+        }
+
+        public float getTotalSessions() {
+            return totalSessions;
         }
     }
 }
