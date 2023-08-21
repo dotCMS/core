@@ -14,6 +14,7 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
+    CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatus,
     DotExperimentsWithActions,
@@ -179,13 +180,6 @@ export class DotExperimentsListStore
         experiments: state.experiments.filter((exp) => exp.id != experimentId)
     }));
 
-    readonly archiveExperimentById = this.updater((state, experimentId: string) => ({
-        ...state,
-        experiments: state.experiments.map((exp) =>
-            experimentId === exp.id ? { ...exp, status: DotExperimentStatus.ARCHIVED } : exp
-        )
-    }));
-
     readonly openSidebar = this.updater((state) => ({
         ...state,
         sidebar: {
@@ -295,6 +289,33 @@ export class DotExperimentsListStore
         );
     });
 
+    readonly cancelSchedule = this.effect((experiment$: Observable<DotExperiment>) => {
+        return experiment$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
+            switchMap((experiment) =>
+                this.dotExperimentsService.cancelSchedule(experiment.id).pipe(
+                    tapResponse(
+                        () => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.notification.cancel.schedule-title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.notification.cancel.schedule',
+                                    experiment.name
+                                )
+                            });
+                            this.loadExperiments(this.dotExperimentsStore.getPageId$);
+                        },
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                    )
+                )
+            )
+        );
+    });
+
     readonly archiveExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
         return experiment$.pipe(
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
@@ -312,12 +333,39 @@ export class DotExperimentsListStore
                                     experiment.name
                                 )
                             });
-                            this.archiveExperimentById(experiment.id);
+                            this.loadExperiments(this.dotExperimentsStore.getPageId$);
                         },
                         (error) => throwError(error),
                         () => this.setComponentStatus(ComponentStatus.LOADED)
                     ),
                     catchError(() => EMPTY)
+                )
+            )
+        );
+    });
+
+    readonly stopExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
+        return experiment$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
+            switchMap((experiment) =>
+                this.dotExperimentsService.stop(experiment.id).pipe(
+                    tapResponse(
+                        () => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.action.stop.confirm-title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.action.stop.confirm-message',
+                                    experiment.name
+                                )
+                            });
+                            this.loadExperiments(this.dotExperimentsStore.getPageId$);
+                        },
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                    )
                 )
             )
         );
@@ -390,29 +438,10 @@ export class DotExperimentsListStore
         pushPublishEnvironments: DotEnvironment[]
     ): MenuItem[] {
         return [
-            // Delete Action
-            {
-                id: 'dot-experiments-delete',
-                label: this.dotMessageService.get('experiments.action.delete'),
-                visible: AllowedActionsByExperimentStatus['delete'].includes(experiment.status),
-                command: () =>
-                    this.confirmationService.confirm({
-                        header: this.dotMessageService.get('experiments.action.delete'),
-                        message: this.dotMessageService.get(
-                            'experiments.action.delete.confirm-question',
-                            experiment.name
-                        ),
-                        rejectButtonStyleClass: 'p-button-secondary',
-                        rejectLabel: this.dotMessageService.get('experiments.action.cancel'),
-                        acceptLabel: this.dotMessageService.get('experiments.action.delete'),
-                        accept: () => this.deleteExperiment(experiment),
-                        key: 'positionDialog'
-                    })
-            },
             // Go to Configuration Action
             {
                 id: 'dot-experiments-go-to-configuration',
-                label: this.dotMessageService.get('experiments.action.configuration'),
+                label: this.getConfigurationOptionLabel(experiment.status),
                 visible: AllowedActionsByExperimentStatus['configuration'].includes(
                     experiment.status
                 ),
@@ -429,12 +458,74 @@ export class DotExperimentsListStore
                     experimentId: null
                 }
             },
+            // Cancel Scheduling
+            {
+                id: 'dot-experiments-cancel-scheduling',
+                label: this.dotMessageService.get('experiments.configure.scheduling.cancel'),
+                visible: AllowedActionsByExperimentStatus['cancelSchedule'].includes(
+                    experiment.status
+                ),
+                command: () =>
+                    this.confirmationService.confirm({
+                        key: CONFIGURATION_CONFIRM_DIALOG_KEY,
+                        header: this.dotMessageService.get(
+                            'experiments.configure.scheduling.cancel'
+                        ),
+                        message: this.dotMessageService.get(
+                            'experiments.action.cancel.schedule-confirm'
+                        ),
+                        acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+                        rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                        rejectButtonStyleClass: 'p-button-secondary',
+                        accept: () => this.cancelSchedule(experiment)
+                    })
+            },
+            // Delete Action
+            {
+                id: 'dot-experiments-delete',
+                label: this.dotMessageService.get('experiments.action.delete'),
+                visible: AllowedActionsByExperimentStatus['delete'].includes(experiment.status),
+                command: () =>
+                    this.confirmationService.confirm({
+                        header: this.dotMessageService.get('experiments.action.delete'),
+                        message: this.dotMessageService.get(
+                            'experiments.action.delete.confirm-question',
+                            experiment.name
+                        ),
+                        rejectButtonStyleClass: 'p-button-secondary',
+                        rejectLabel: this.dotMessageService.get('experiments.action.cancel'),
+                        acceptLabel: this.dotMessageService.get('experiments.action.delete'),
+                        accept: () => this.deleteExperiment(experiment),
+                        key: CONFIGURATION_CONFIRM_DIALOG_KEY
+                    })
+            },
             // Archive Action
             {
                 id: 'dot-experiments-archive',
                 label: this.dotMessageService.get('experiments.action.archive'),
                 visible: AllowedActionsByExperimentStatus['archive'].includes(experiment.status),
                 command: () => this.archiveExperiment(experiment)
+            },
+
+            // End experiment
+            {
+                label: this.dotMessageService.get('experiments.action.end-experiment'),
+                visible: experiment?.status === DotExperimentStatus.RUNNING,
+                command: () => {
+                    this.confirmationService.confirm({
+                        key: CONFIGURATION_CONFIRM_DIALOG_KEY,
+                        header: this.dotMessageService.get('experiments.action.end-experiment'),
+                        message: this.dotMessageService.get(
+                            'experiments.action.stop.delete-confirm'
+                        ),
+                        acceptLabel: this.dotMessageService.get('experiments.action.end'),
+                        rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                        rejectButtonStyleClass: 'p-button-outlined',
+                        accept: () => {
+                            this.stopExperiment(experiment);
+                        }
+                    });
+                }
             },
 
             // Push Publish Action
@@ -456,5 +547,11 @@ export class DotExperimentsListStore
                 command: () => this.showAddToBundle(experiment.id)
             }
         ];
+    }
+
+    private getConfigurationOptionLabel(status: DotExperimentStatus): string {
+        return status === DotExperimentStatus.DRAFT
+            ? this.dotMessageService.get('experiments.action.edit')
+            : this.dotMessageService.get('experiments.action.view');
     }
 }

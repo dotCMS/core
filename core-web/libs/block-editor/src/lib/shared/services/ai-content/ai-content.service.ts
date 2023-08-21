@@ -1,72 +1,42 @@
 import { Observable, throwError } from 'rxjs';
 
+import { DOCUMENT } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, Inject } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
-const API_KEY = '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';
-
-interface Message {
-    role: string;
-    content: string;
-}
-
-interface Choice {
-    message: Message;
-    finish_reason: string;
-}
-
 interface OpenAIResponse {
-    id: string;
-    object: string;
-    created: number;
     model: string;
-    usage: {
-        prompt_tokens: number;
-        completion_tokens: number;
-        total_tokens: number;
-    };
-    choices: Choice[];
+    prompt: string;
+    response: string;
 }
 
-@Injectable({
-    providedIn: 'root'
-})
+@Injectable()
 export class AiContentService {
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient, @Inject(DOCUMENT) private document: Document) {}
+
+    get window(): Window {
+        return this.document.defaultView || window;
+    }
 
     getIAContent(prompt: string): Observable<string> {
+        const url = `${this.window.origin}/api/ai/text/generate`;
         const body = JSON.stringify({
-            model: 'gpt-3.5-turbo',
-            messages: [
-                {
-                    role: 'system',
-                    content: 'Transforms answer on user prompts into detailed HTML responses.'
-                },
-                {
-                    role: 'user',
-                    content: `${prompt} .give me info in HTML format, add also a topic title.`
-                }
-            ]
+            prompt: `${prompt}`
         });
 
         const headers = new HttpHeaders({
-            Authorization: `Bearer ${API_KEY}`,
             'Content-Type': 'application/json'
         });
 
-        return this.http
-            .post<OpenAIResponse>('https://api.openai.com/v1/chat/completions', body, { headers })
-            .pipe(
-                catchError(() => {
-                    return throwError('Error fetching AI content');
-                }),
-                map((response) => {
-                    const messageResponse = response.choices?.[0]?.message?.content ?? '';
-
-                    return messageResponse;
-                })
-            );
+        return this.http.post<OpenAIResponse>(url, body, { headers }).pipe(
+            catchError(() => {
+                return throwError('Error fetching AI content');
+            }),
+            map(({ response }) => {
+                return response;
+            })
+        );
     }
 }

@@ -17,7 +17,7 @@ import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing'
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
-import { DotGridStackWidget } from './models/models';
+import { DotGridStackWidget, SCROLL_DIRECTION } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
@@ -31,6 +31,18 @@ import {
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
+
+const mockRect = {
+    top: 120,
+    bottom: 100,
+    x: 146,
+    y: 50,
+    width: 440,
+    height: 240,
+    right: 586,
+    left: 146,
+    toJSON: jest.fn()
+};
 
 describe('TemplateBuilderComponent', () => {
     let spectator: Spectator<TemplateBuilderComponent>;
@@ -221,6 +233,18 @@ describe('TemplateBuilderComponent', () => {
         expect(spectator.queryAll('.template-builder-row--wont-fit').length).toBe(1);
     });
 
+    it('should trigger fixGridStackNodeOptions when triggering mousemove on main div', () => {
+        const fixGridStackNodeOptionsMock = jest.spyOn(
+            spectator.component,
+            'fixGridStackNodeOptions'
+        );
+        const mainDiv = spectator.query(byTestId('template-builder-main'));
+
+        mainDiv.dispatchEvent(new MouseEvent('mousemove'));
+
+        expect(fixGridStackNodeOptionsMock).toHaveBeenCalled();
+    });
+
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
@@ -261,6 +285,71 @@ describe('TemplateBuilderComponent', () => {
                 });
                 done();
             });
+        });
+    });
+
+    describe('Scroll on Drag', () => {
+        beforeEach(() => {
+            spectator.component.templateContainerRef = {
+                nativeElement: document.createElement('div')
+            };
+
+            spectator.detectChanges();
+        });
+
+        it('should not scroll if draggingElement is null', () => {
+            spectator.component.draggingElement = null;
+            spectator.component.onMouseMove();
+            expect(spectator.component.scrollDirection).toBe(SCROLL_DIRECTION.NONE);
+        });
+
+        it('should scroll up if the element is close to the top of the container', () => {
+            const spy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 1);
+            spectator.component.draggingElement = document.createElement('div');
+            jest.spyOn(
+                spectator.component.draggingElement,
+                'getBoundingClientRect'
+            ).mockReturnValue({
+                ...mockRect,
+                top: 0
+            });
+            jest.spyOn(
+                spectator.component.templateContaniner,
+                'getBoundingClientRect'
+            ).mockReturnValue({
+                ...mockRect,
+                top: 0
+            });
+
+            spectator.component.onMouseMove();
+            expect(spectator.component.scrollDirection).toBe(SCROLL_DIRECTION.UP);
+            expect(spy).toHaveBeenCalled();
+        });
+
+        it('should scroll down if the element is close to the bottom of the container', () => {
+            const spy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 1);
+            spectator.component.draggingElement = document.createElement('div');
+            jest.spyOn(
+                spectator.component.draggingElement,
+                'getBoundingClientRect'
+            ).mockReturnValue({
+                ...mockRect,
+                top: 500,
+                bottom: 0
+            });
+            jest.spyOn(
+                spectator.component.templateContaniner,
+                'getBoundingClientRect'
+            ).mockReturnValue({
+                ...mockRect,
+                top: 100,
+                bottom: 0
+            });
+
+            spectator.component.onMouseMove();
+
+            expect(spectator.component.scrollDirection).toBe(SCROLL_DIRECTION.DOWN);
+            expect(spy).toHaveBeenCalled();
         });
     });
 });

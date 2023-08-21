@@ -1,10 +1,11 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import {
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     ContentChildren,
-    ElementRef,
     forwardRef,
+    inject,
     Provider,
     QueryList
 } from '@angular/core';
@@ -35,11 +36,9 @@ const SELECT_VALUE_ACCESSOR: Provider = {
 export class DotExperimentOptionsComponent implements ControlValueAccessor {
     value: string;
     expanded = new Set<number>();
-
     @ContentChildren(forwardRef(() => DotExperimentOptionsItemDirective))
     itemList: QueryList<DotExperimentOptionsItemDirective>;
-
-    constructor(private _elementRef: ElementRef) {}
+    private cdr: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     onChange = (_: unknown) => {
         //
@@ -60,6 +59,8 @@ export class DotExperimentOptionsComponent implements ControlValueAccessor {
             this.expanded.clear();
             this.expanded.add(index);
         }
+
+        this.cdr.detectChanges();
     };
 
     /**

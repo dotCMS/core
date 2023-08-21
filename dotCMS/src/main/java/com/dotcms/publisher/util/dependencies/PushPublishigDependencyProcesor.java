@@ -17,6 +17,7 @@ import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -52,6 +53,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -798,6 +800,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             final Contentlet parentPage = APILocator.getContentletAPI()
                     .findContentletByIdentifierAnyLanguage(experiment.pageId());
 
+            final long languageId = parentPage.getLanguageId();
+
             if (UtilMethods.isSet(parentPage)) {
                 tryToAddAsDependency(PusheableAsset.CONTENTLET, parentPage,
                         experiment);
@@ -820,14 +824,28 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             tryToAddAllAndProcessDependencies(PusheableAsset.VARIANT, variants,
                     ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
 
-            final List<Contentlet> contentOnVariants = APILocator.getContentletAPI().getAllContentByVariants(user, false,
-                            experiment.trafficProportion().variants().stream()
-                                    .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
-                                    .toArray(String[]::new)).stream()
-                    .filter((contentlet -> Try.of(contentlet::isWorking)
-                            .getOrElse(false))).collect(Collectors.toList());
+            final List<Contentlet> contentDependencies = new ArrayList<>();
 
-            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentOnVariants,
+            for (Variant variant : variants) {
+                List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
+                        .getMultiTreesByVariant(experiment.pageId(), variant.name());
+
+                for (MultiTree multiTree : multiTrees) {
+                    Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
+                            multiTree.getContentlet(), false, languageId, variant.name(), user,
+                            false);
+
+                    if(!UtilMethods.isSet(contentlet)) {
+                        contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
+                                multiTree.getContentlet(), false, languageId, DEFAULT_VARIANT.name(), user,
+                                false);
+                    }
+
+                    contentDependencies.add(contentlet);
+                }
+            }
+
+            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentDependencies,
                     ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
 
         } catch (final DotDataException | DotSecurityException e) {

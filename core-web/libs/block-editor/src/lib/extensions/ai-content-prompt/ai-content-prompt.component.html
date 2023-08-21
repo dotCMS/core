@@ -5,18 +5,16 @@
     (ngSubmit)="onSubmit()"
     autocomplete="off"
 >
-    <div>
-        <span class="p-input-icon-right">
-            <input
-                #input
-                formControlName="textPrompt"
-                type="text"
-                pInputText
-                placeholder="Ask AI to write something"
-            />
-            <button type="submit">
-                <i class="pi pi-send"></i>
-            </button>
-        </span>
-    </div>
+    <span class="p-input-icon-right">
+        <input
+            #input
+            formControlName="textPrompt"
+            type="text"
+            pInputText
+            placeholder="Ask AI to write something"
+        />
+        <button type="submit">
+            <i class="pi pi-send"></i>
+        </button>
+    </span>
 </form>

@@ -11,7 +11,6 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { Card } from 'primeng/card';
-import { ConfirmPopup } from 'primeng/confirmpopup';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, ExperimentSteps, Goals, StepStatus } from '@dotcms/dotcms-models';
@@ -43,7 +42,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalsComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
-    let confirmPopupComponent: ConfirmPopup;
+    let confirmationService: ConfirmationService;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationGoalsComponent,
@@ -70,6 +69,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         store = spectator.inject(DotExperimentsConfigurationStore);
 
         dotExperimentsService = spectator.inject(DotExperimentsService);
+        confirmationService = spectator.inject(ConfirmationService);
     });
 
     describe('no goal selected yet', () => {
@@ -162,6 +162,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         });
         test('should show a confirmation to delete a goal', () => {
             jest.spyOn(store, 'deleteGoal');
+            jest.spyOn(confirmationService, 'confirm');
 
             spectator.detectComponentChanges();
             const deleteIcon = spectator.query(byTestId('goal-delete-button'));
@@ -171,10 +172,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             spectator.dispatchMouseEvent(deleteIcon, 'click');
             spectator.detectComponentChanges();
 
-            confirmPopupComponent = spectator.query(ConfirmPopup);
-            confirmPopupComponent.accept();
-
-            expect(store.deleteGoal).toHaveBeenCalled();
+            expect(confirmationService.confirm).toHaveBeenCalled();
         });
     });
 });

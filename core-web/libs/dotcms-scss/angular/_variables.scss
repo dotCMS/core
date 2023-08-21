@@ -73,11 +73,6 @@ $dot-secondary-toolbar-main-height: 68px;
 $gutter-width: $spacing-9;
 $gutter-border: math.div($gutter-width, 2);
 
-$screen-sm: 40em; // 640px
-$screen-md: 40.063em; // 641px;
-$screen-lg: 64.063em; // 1025px
-$screen-xl: 90.063em; // 1441px;
-
 // Breakpoints min
 $screen-sm-min: $screen-sm;
 $screen-md-min: $screen-md;
@@ -112,9 +107,3 @@ $tabView-scroll-btn-width: 40px;
 
 // Tag
 $tag-radius-md: 7px;
-
-// Device Selector
-$device-list-item-height: 3.625rem;
-$device-selector-grid-width: 31.49rem;
-$device-list-item-media-height: 2.5rem;
-$device-selector-header-height: 2.625rem;

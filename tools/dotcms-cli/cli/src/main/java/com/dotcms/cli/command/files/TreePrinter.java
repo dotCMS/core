@@ -2,6 +2,7 @@ package com.dotcms.cli.command.files;
 
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.FilesUtils;
+import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
@@ -22,6 +23,23 @@ import java.util.List;
  * <p>This class uses the singleton pattern, and can be accessed by calling {@link #getInstance()}.
  */
 public class TreePrinter {
+
+    public static final String COLOR_NEW = "green";
+    public static final String COLOR_MODIFIED = "cyan";
+    public static final String COLOR_DELETED = "red";
+
+    final String STATUS_REGULAR_FORMAT = "@|bold %s|@";
+    final String LANGUAGE_REGULAR_FORMAT = "@|bold \uD83C\uDF10 %s|@";
+    final String LANGUAGE_PUSH_FORMAT = "@|bold," + COLOR_NEW + " \uD83C\uDF10 %s \u2795|@";
+    final String FOLDER_REGULAR_FORMAT = "\uD83D\uDCC2 %s";
+    final String FOLDER_DELETE_FORMAT = "@|bold," + COLOR_DELETED + " \uD83D\uDCC2 %s \u2716|@";
+    final String FOLDER_PUSH_FORMAT = "@|bold," + COLOR_NEW + " \uD83D\uDCC2 %s \u2795|@";
+    final String SITE_REGULAR_FORMAT = "@|bold %s|@";
+    final String SITE_PUSH_FORMAT = "@|bold," + COLOR_NEW + " %s \u2795|@";
+    final String ASSET_REGULAR_FORMAT = "%s";
+    final String ASSET_PUSH_NEW_FORMAT = "@|bold," + COLOR_NEW + " %s \u2795|@";
+    final String ASSET_PUSH_MODIFIED_FORMAT = "@|bold," + COLOR_MODIFIED + " %s \u270E|@";
+    final String ASSET_DELETE_FORMAT = "@|bold," + COLOR_DELETED + " %s \u2716|@";
 
     /**
      * The {@code TreePrinterHolder} class is used to implement the singleton pattern for the
@@ -66,7 +84,7 @@ public class TreePrinter {
         final var uniqueWorkingLanguages = treeNodeInfo.workingLanguages();
 
         if (uniqueLiveLanguages.isEmpty() && uniqueWorkingLanguages.isEmpty()) {
-            FilesUtils.FallbackDefaultLanguage(languages, uniqueLiveLanguages);
+            FilesUtils.fallbackDefaultLanguage(languages, uniqueLiveLanguages);
         }
 
         // Sort the sets and convert them into lists
@@ -77,9 +95,9 @@ public class TreePrinter {
         Collections.sort(sortedWorkingLanguages);
 
         // Live tree
-        formatByStatus(sb, true, sortedLiveLanguages, rootNode, showEmptyFolders);
+        formatByStatus(sb, true, sortedLiveLanguages, rootNode, showEmptyFolders, false, true);
         // Working tree
-        formatByStatus(sb, false, sortedWorkingLanguages, rootNode, showEmptyFolders);
+        formatByStatus(sb, false, sortedWorkingLanguages, rootNode, showEmptyFolders, false, true);
     }
 
     /**
@@ -87,14 +105,20 @@ public class TreePrinter {
      * recursively using a short format for each asset in the sortedLanguages list, separated by
      * status.
      *
-     * @param sb              The StringBuilder object to format.
-     * @param isLive          A boolean indicating whether the status to format is Live or Working.
-     * @param sortedLanguages A List of Strings containing the languages to include in the formatted
-     *                        StringBuilder.
-     * @param rootNode        The root TreeNode to start the formatting from.
+     * @param sb               The StringBuilder object to format.
+     * @param isLive           A boolean indicating whether the status to format is Live or Working.
+     * @param sortedLanguages  A List of Strings containing the languages to include in the formatted
+     *                         StringBuilder.
+     * @param rootNode         The root TreeNode to start the formatting from.
+     * @param showEmptyFolders A boolean indicating whether to include empty folders in the tree. If
+     *                         set to true, all folders will be included. If set to false, only folders
+     *                         containing assets or having children with assets will be included.
+     * @param forPushChanges   A boolean indicating whether the formatting is for push changes or not.
+     * @param languageExists   A boolean indicating whether the language exists or not.
      */
-    private void formatByStatus(StringBuilder sb, boolean isLive, List<String> sortedLanguages,
-            TreeNode rootNode, final boolean showEmptyFolders) {
+    public void formatByStatus(StringBuilder sb, boolean isLive, List<String> sortedLanguages,
+                               final TreeNode rootNode, final boolean showEmptyFolders,
+                               final boolean forPushChanges, final boolean languageExists) {
 
         if (sortedLanguages.isEmpty()) {
             return;
@@ -110,27 +134,34 @@ public class TreePrinter {
             throw new IllegalArgumentException(error, e);
         }
 
-        var status = FilesUtils.StatusToString(isLive);
-        sb.append("\r ").append(status).append('\n');
+        var status = AssetsUtils.statusToString(isLive);
+        sb.append("\r ").append(String.format(STATUS_REGULAR_FORMAT, status)).append('\n');
 
         Iterator<String> langIterator = sortedLanguages.iterator();
         while (langIterator.hasNext()) {
 
             String lang = langIterator.next();
-            TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, lang, showEmptyFolders);
+            TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, lang, showEmptyFolders, forPushChanges);
 
             // Print the filtered tree using the format method starting from the filtered root itself
             boolean isLastLang = !langIterator.hasNext();
             sb.append("     ").
                     append((isLastLang ? "└── " : "├── ")).
-                    append("\uD83C\uDF10 ").
-                    append(lang).append('\n');
+                    append(String.format(languageExists ? LANGUAGE_REGULAR_FORMAT : LANGUAGE_PUSH_FORMAT, lang)).
+                    append('\n');
+
+            var siteFormat = SITE_REGULAR_FORMAT;
+            if (rootNode.folder().markForPush().isPresent()) {
+                if (rootNode.folder().markForPush().get()) {
+                    siteFormat = SITE_PUSH_FORMAT;
+                }
+            }
 
             // Add the domain and parent folder
             sb.append("     ").
                     append((isLastLang ? "    " : "│   ")).
                     append("└── ").
-                    append(rootNode.folder().host()).
+                    append(String.format(siteFormat, rootNode.folder().host())).
                     append('\n');
 
             if (parentPath.isEmpty() || parentPath.equals("/")) {
@@ -142,13 +173,14 @@ public class TreePrinter {
             } else {
 
                 // If the initial path is not the root we need to try to print the folder structure it has
-                var parentFolderIdent = "    ";
+                var parentFolderIdent = isLastLang ? "    " : "";
                 for (var i = 0; i < initialPath.getNameCount(); i++) {
                     sb.append("     ").
                             append((isLastLang ? "    " : "│   ")).
                             append(parentFolderIdent).
+                            append((isLastLang ? "" : "    ")).
                             append("└── ").
-                            append(String.format("@|bold \uD83D\uDCC2 %s|@", initialPath.getName(i))).
+                            append(String.format(FOLDER_REGULAR_FORMAT, initialPath.getName(i))).
                             append('\n');
                     if (i + 1 < initialPath.getNameCount()) {
                         parentFolderIdent += "    ";
@@ -181,12 +213,23 @@ public class TreePrinter {
     private void format(StringBuilder sb, String prefix, final TreeNode node,
             final String indent, boolean isLastSibling, boolean includeAssets) {
 
+        var folderFormat = FOLDER_REGULAR_FORMAT;
+        if (node.folder().markForDelete().isPresent()) {
+            if (node.folder().markForDelete().get()) {
+                folderFormat = FOLDER_DELETE_FORMAT;
+            }
+        } else if (node.folder().markForPush().isPresent()) {
+            if (node.folder().markForPush().get()) {
+                folderFormat = FOLDER_PUSH_FORMAT;
+            }
+        }
+
         String filePrefix;
         String nextIndent;
         if (!node.folder().name().equals("/")) {
             sb.append(prefix).
                     append(isLastSibling ? "└── " : "├── ").
-                    append(String.format("@|bold \uD83D\uDCC2 %s|@", node.folder().name())).
+                    append(String.format(folderFormat, node.folder().name())).
                     append('\n');
 
             filePrefix = indent + (isLastSibling ? "    " : "│   ");
@@ -201,13 +244,34 @@ public class TreePrinter {
             int assetCount = node.assets().size();
             for (int i = 0; i < assetCount; i++) {
 
+                // Calculate the asset format to use
                 AssetView asset = node.assets().get(i);
-                final var fileStr = String.format("%s", asset.name());
+                var assetFormat = ASSET_REGULAR_FORMAT;
+
+                if (asset.markForDelete().isPresent()) {
+                    if (asset.markForDelete().get()) {
+                        assetFormat = ASSET_DELETE_FORMAT;
+                    }
+                }
+
+                if (asset.markForPush().isPresent()) {
+                    if (asset.markForPush().get()) {
+
+                        assetFormat = ASSET_PUSH_MODIFIED_FORMAT;
+
+                        if (asset.pushTypeNew().isPresent()) {
+                            if (asset.pushTypeNew().get()) {
+                                assetFormat = ASSET_PUSH_NEW_FORMAT;
+                            }
+                        }
+                    }
+                }
+
                 boolean lastAsset = i == assetCount - 1 && node.children().isEmpty();
 
                 sb.append(filePrefix).
                         append(lastAsset ? "└── " : "├── ").
-                        append(fileStr).
+                        append(String.format(assetFormat, asset.name())).
                         append('\n');
             }
         }

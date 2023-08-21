@@ -66,7 +66,9 @@ public class PublishAuditUtil {
                 sw.append(language.getLanguage() + " - " + language.getCountry());
             } else if (PusheableAsset.RULE.getType().equals(assetType)) {
                 sw.append(APILocator.getRulesAPI().getRuleById(id, user, false).getName());
-            } else {
+            } else if (PusheableAsset.EXPERIMENT.getType().equals(assetType)) {
+                sw.append(APILocator.getExperimentsAPI().find(id, user).orElseThrow().name());
+            }else {
                 sw.append( assetType );
             }
         } catch ( Exception e ) {

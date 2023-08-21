@@ -30,7 +30,7 @@ public abstract class AbstractContentTypeCommand {
             final ResponseEntityView<ContentType> found = contentTypeAPI.getContentType(varNameOrId, null, false);
             return Optional.of(found.entity());
         }catch ( NotFoundException e){
-           output.error("Content-type not found: " + varNameOrId);
+           output.warn("Content-type not found: " + varNameOrId);
         }
         return Optional.empty();
     }

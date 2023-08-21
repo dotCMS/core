@@ -222,8 +222,6 @@ public class LanguagesResource {
             @Context final HttpServletResponse response,
             @PathParam("languageTag") final String languageTag) {
 
-        this.webResource.init(null, request, response,
-                true, PortletID.LANGUAGES.toString());
 
         final Locale locale = validateLanguageTag(languageTag);
         final LanguageForm languageForm = new LanguageForm.Builder()

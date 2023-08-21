@@ -28,16 +28,21 @@ import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.analytics.model.AnalyticsProperties;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
@@ -62,18 +67,26 @@ import com.dotcms.util.network.IPUtils;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -84,6 +97,7 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.API;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -99,6 +113,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -106,6 +121,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import net.bytebuddy.utility.RandomString;
+import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -116,16 +132,16 @@ import org.junit.runner.RunWith;
  */
 @RunWith(DataProviderRunner.class)
 public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
-    
+
     private static final String CUBEJS_SERVER_IP = "127.0.0.1";
     private static final int CUBEJS_SERVER_PORT = 5000;
     private static final String CUBEJS_SERVER_URL = String.format("http://%s:%s", CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
     private static final DateTimeFormatter SIMPLE_FORMATTER = DateTimeFormatter
-        .ofPattern("MM/dd/yyyy")
-        .withZone(ZoneId.systemDefault());
+            .ofPattern("MM/dd/yyyy")
+            .withZone(ZoneId.systemDefault());
     private static final DateTimeFormatter EVENTS_FORMATTER = DateTimeFormatter
-        .ofPattern("yyyy-MM-dd'T'HH:mm:ss.n")
-        .withZone(ZoneId.systemDefault());
+            .ofPattern("yyyy-MM-dd'T'HH:mm:ss.n")
+            .withZone(ZoneId.systemDefault());
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -253,7 +269,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     .scheduling(Optional.empty())
                     .build();
 
-           FactoryLocator.getExperimentsFactory().save(experimentToRestart);
+            FactoryLocator.getExperimentsFactory().save(experimentToRestart);
 
             APILocator.getExperimentsAPI()
                     .start(experimentToRestart.id().get(), APILocator.systemUser());
@@ -385,8 +401,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
     private static void assertCachedRunningExperiments(final List<String> experimentIds) {
         CacheLocator.getExperimentsCache()
-            .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY)
-            .forEach(experiment -> assertTrue(experimentIds.contains(experiment.getIdentifier())));
+                .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY)
+                .forEach(experiment -> assertTrue(experimentIds.contains(experiment.getIdentifier())));
     }
 
     /**
@@ -446,10 +462,10 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             ExperimentDataGen.start(newExperiment);
             assertCachedRunningExperiments(APILocator.getExperimentsAPI()
-                .getRunningExperiments()
-                .stream()
-                .map(Experiment::getIdentifier)
-                .collect(Collectors.toList()));
+                    .getRunningExperiments()
+                    .stream()
+                    .map(Experiment::getIdentifier)
+                    .collect(Collectors.toList()));
 
             List<Contentlet> experimentContentlets = APILocator.getContentletAPI()
                     .getAllContentByVariants(APILocator.systemUser(),
@@ -468,10 +484,10 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             APILocator.getExperimentsAPI().end(newExperiment.id().orElseThrow()
                     , APILocator.systemUser());
             assertCachedRunningExperiments(APILocator.getExperimentsAPI()
-                .getRunningExperiments()
-                .stream()
-                .map(Experiment::getIdentifier)
-                .collect(Collectors.toList()));
+                    .getRunningExperiments()
+                    .stream()
+                    .map(Experiment::getIdentifier)
+                    .collect(Collectors.toList()));
         }
 
     }
@@ -586,8 +602,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
         final MockHttpServer mockHttpServer = createMockHttpServer(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+                cubeJSQueryExpected,
+                JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
 
         addCountQueryContext(experiment, cubeJsQueryData.size(), mockHttpServer);
 
@@ -644,27 +660,27 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     private static Experiment createExperimentWithReachPageGoalAndVariant(final HTMLPageAsset experimentPage,
-                                                                          final HTMLPageAsset reachPage,
-                                                                            final String... variants) {
+            final HTMLPageAsset reachPage,
+            final String... variants) {
 
         final Metric metric = Metric.builder()
                 .name("Testing Metric")
                 .type(MetricType.REACH_PAGE)
                 .addConditions(
-                    getUrlCondition(reachPage.getPageUrl()),
-                    getRefererCondition(experimentPage.getPageUrl()))
+                        getUrlCondition(reachPage.getPageUrl()),
+                        getRefererCondition(experimentPage.getPageUrl()))
                 .build();
         return createExperiment(experimentPage, metric, variants);
     }
 
     private static Experiment createExperiment(final HTMLPageAsset pageB,
-                                               final Metric metric,
-                                               final String... variants) {
+            final Metric metric,
+            final String... variants) {
 
         final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
         final ExperimentDataGen experimentDataGen = new ExperimentDataGen()
-            .page(pageB)
-            .addGoal(goal);
+                .page(pageB)
+                .addGoal(goal);
 
         Arrays.stream(variants).forEach(variantName -> experimentDataGen.addVariant(variantName));
 
@@ -1235,7 +1251,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
         final List<Map<String, Object>> totalPageViewsResponseExpected = list(
                 map("Events.variant", variantName, "Events.count", "12"),
-                 map("Events.variant", "DEFAULT", "Events.count", "8")
+                map("Events.variant", "DEFAULT", "Events.count", "8")
         );
 
         addContext(mockhttpServer, queryTotalPageViews,
@@ -1337,7 +1353,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * Should:  get a Failed PAGE_REACH
      */
     @Test
-    public void pageReachNotDirectReferer() throws DotDataException, DotSecurityException {
+    public void pageReachButBeforeExperimentPage() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
@@ -1611,7 +1627,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
      * - You have the follow page_view to the pages order by timestamp: A, B, C and D
      *
-     * Should:  get a Faliled PAGE_REACH
+     * Should:  get a SUCCESS PAGE_REACH
      */
     @Test
     public void pageReachAfterExperimentPageButNotDirectReferer() throws DotDataException, DotSecurityException {
@@ -1623,8 +1639,12 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(
-                pageB, pageD);
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(pageD.getPageUrl()))
+                .build();
+        final Experiment experiment = createExperiment(pageB, metric, new String[]{RandomString.make(15)});
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -1673,6 +1693,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
 
+                final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
+
                 if (variantResult.getVariantName().equals(variantName)) {
                     Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
 
@@ -1685,12 +1707,16 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     assertEquals(0, variantResult.getTotalPageViews());
                 }
 
-                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
-                Assert.assertEquals(0, variantResult.getMultiBySession());
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
 
                 final ResultResumeItem resultResumeItem = variantResult.getDetails()
                         .get(SIMPLE_FORMATTER.format(firstEventStartDate));
-                assertNull(resultResumeItem);
+
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -1703,28 +1729,266 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     /**
      * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
-     * - You have 1 page: B
-     * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO Page B .
-     * - You have just one page_view to the page B to the specific Variant
+     * - You have four pages: A, B, Index and C
+     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO Page C.
+     * - You have the follow page_view to the pages order by timestamp: A, Index, C and D
      *
-     * Should:  count 0 Minimize Bounce Rate success for the specific Variant
+     * Should:  get a SUCCESS PAGE_REACH
      */
     @Test
-    public void bounceRate() throws DotDataException, DotSecurityException {
+    @UseDataProvider("indexPaths")
+    public void pageReachWhenExperimentPageIsRootIndexPage(final String indexPath) throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
-        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset indexPage = new HTMLPageDataGen(host, template).pageURL("index").nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant(pageB);
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(pageD.getPageUrl()))
+                .build();
+        final Experiment experiment = createExperiment(indexPage, metric, new String[]{RandomString.make(15)});
 
         final String variantName = getNotDefaultVariantName(experiment);
 
         final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
 
+        final String[] pagesUrl = new String[]{
+                pageA.getURI(),
+                indexPath,
+                pageC.getURI(),
+                pageD.getURI()
+        };
+
         final Instant firstEventStartDate = Instant.now();
         final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
-                experiment, variantName, pageB);
+                experiment, variantName, pagesUrl);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "4")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 4, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResults.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+
+                final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(4, variantResult.getTotalPageViews());
+                } else {
+                    Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
+
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have four pages: A, B, Folder/Index and C
+     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO Page C.
+     * - You have the follow page_view to the pages order by timestamp: A, Folder/Index, C and D
+     *
+     * Should:  get a SUCCESS PAGE_REACH
+     */
+    @Test
+    @UseDataProvider("indexPaths")
+    public void pageReachWhenExperimentPageIsIndexPage(final String indexPath) throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset folderIndexPage = new HTMLPageDataGen(folder, template).pageURL("index").nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(pageD.getPageUrl()))
+                .build();
+        final Experiment experiment = createExperiment(folderIndexPage, metric, new String[]{RandomString.make(15)});
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final String folderPathWithoutLastSlash = folder.getPath().substring(0, folder.getPath().length() - 1);
+
+        final String[] pagesUrl = new String[]{
+                pageA.getURI(),
+                folderPathWithoutLastSlash + indexPath,
+                pageC.getURI(),
+                pageD.getURI()
+        };
+
+        final Instant firstEventStartDate = Instant.now();
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pagesUrl);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "4")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 4, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResults.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+
+                final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(4, variantResult.getTotalPageViews());
+                } else {
+                    Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
+
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have four pages: A, B and  Index
+     * - You create an {@link Experiment} using the Index Page with a URL_PARAMETER Goal: name=TestName and value=testValue.
+     * - You have the follow page_view to the pages order by timestamp: Index, A?testName=testValue, B?notTestName=testValue
+     *
+     * Should:  get a SUCCESS URL PARAMETER
+     */
+    @Test
+    @UseDataProvider("indexPaths")
+    public void urlParameterWhenExperimentPageIsRootIndexPage(final String indexPath) throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).pageURL("index").nextPersisted();
+
+        final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage);
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+
+        final String[] pagesUrl = new String[]{
+                indexPath,
+                pageA.getURI() + "?testName=testValue",
+                pageB.getURI() + "?notTestName=testValue",
+        };
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pagesUrl);
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
@@ -1740,13 +2004,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
 
         final List<Map<String, Object>> totalPageViewsResponseExpected = list(
-                map("Events.variant", variantName, "Events.count", "1")
+                map("Events.variant", variantName, "Events.count", "3")
         );
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 1, mockhttpServer);
+        addCountQueryContext(experiment, 3, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -1767,14 +2031,14 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
                 if (variantResult.getVariantName().equals(variantName)) {
                     assertEquals(variant.description().get(), variantResult.getVariantDescription());
-                    assertEquals(1, variantResult.getTotalPageViews());
+                    assertEquals(3, variantResult.getTotalPageViews());
                 } else {
                     assertEquals("Original", variantResult.getVariantDescription());
                     assertEquals(0, variantResult.getTotalPageViews());
                 }
 
-                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
-                Assert.assertEquals(0, variantResult.getMultiBySession());
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
                 Assert.assertEquals(sessionExpected,
                         (long) experimentResult.getSessions().getVariants()
                                 .get(variantResult.getVariantName()));
@@ -1782,7 +2046,119 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 final ResultResumeItem resultResumeItem = variantResult.getDetails()
                         .get(SIMPLE_FORMATTER.format(firstEventStartDate));
 
-                assertNull(resultResumeItem);
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have four pages: A, B, Folder/Index and C
+     * - You create an {@link Experiment} using the Folder/Index page with a URL_PARAMETER Goal: name=TestName and value=testValue.
+     * - You have the follow page_view to the pages order by timestamp: A, Folder/Index, C and D?testName=testValue
+     *
+     * Should:  get a SUCCESS PAGE_REACH
+     */
+    @Test
+    @UseDataProvider("indexPaths")
+    public void urlParameterWhenExperimentPageIsIndexPage(final String indexPath) throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(folder, template).pageURL("index").nextPersisted();
+
+        final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage);
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+
+        final String folderPathWithoutLastSlash = folder.getPath().substring(0, folder.getPath().length() - 1);
+        final String[] pagesUrl = new String[]{
+                folderPathWithoutLastSlash + indexPath,
+                pageA.getURI() + "?testName=testValue",
+                pageB.getURI() + "?notTestName=testValue",
+        };
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pagesUrl);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpecteExitANdBounceRateQuery(experiment);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "3")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 3, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResult.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
+                final int sessionExpected =
+                        variantResult.getVariantName().equals(variantName) ? 1 : 0;
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(),
+                            variantResult.getVariantDescription());
+                    assertEquals(3, variantResult.getTotalPageViews());
+                } else {
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
+
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
+                Assert.assertEquals(sessionExpected,
+                        (long) experimentResult.getSessions().getVariants()
+                                .get(variantResult.getVariantName()));
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
+
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -1875,104 +2251,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
                 assertNull(resultResumeItem);
 
-            }
-        } finally {
-            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
-
-            IPUtils.disabledIpPrivateSubnet(false);
-            mockhttpServer.stop();
-        }
-    }
-
-    /**
-     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
-     * When:
-     * - You have 3 pages: A, B and C
-     * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO Page B .
-     * - You have the follow page_view to the pages order by timestamp: A, C and B to the Specific Variant
-     *
-     * Should:  count 1 Minimize Bounce Rate success for the No Default Variants
-     */
-    @Test
-    public void notBounceRateLast() throws DotDataException, DotSecurityException {
-        final Host host = new SiteDataGen().nextPersisted();
-        final Template template = new TemplateDataGen().host(host).nextPersisted();
-
-        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
-        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
-        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
-
-        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant(pageB);
-
-        final String variantName = getNotDefaultVariantName(experiment);
-
-        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
-
-        final Instant firstEventStartDate = Instant.now();
-        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
-                experiment, variantName, pageA, pageC, pageB);
-
-        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
-
-        APILocator.getExperimentsAPI()
-                .start(experiment.getIdentifier(), APILocator.systemUser());
-
-        IPUtils.disabledIpPrivateSubnet(true);
-        final String cubeJSQueryExpected = getExpecteExitANdBounceRateQuery(experiment);
-
-        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
-        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
-
-        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
-
-        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
-                map("Events.variant", variantName, "Events.count", "3")
-        );
-
-        addContext(mockhttpServer, queryTotalPageViews,
-                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
-        mockhttpServer.start();
-
-        try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
-            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
-                    experiment,
-                    APILocator.systemUser());
-
-            mockhttpServer.validate();
-
-            assertEquals(1, experimentResult.getSessions().getTotal());
-
-            for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
-                final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
-
-                if (variantResult.getVariantName().equals(variantName)) {
-                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
-                    assertEquals(3, variantResult.getTotalPageViews());
-                } else {
-                    assertEquals("Original", variantResult.getVariantDescription());
-                    assertEquals(0, variantResult.getTotalPageViews());
-                }
-
-                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
-                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
-                Assert.assertEquals(sessionExpected,
-                        (long) experimentResult.getSessions().getVariants()
-                                .get(variantResult.getVariantName()));
-
-                final ResultResumeItem resultResumeItem = variantResult.getDetails()
-                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
-
-                assertNotNull(resultResumeItem);
-
-
-                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
-                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -2585,7 +2863,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should:  count 1 Minimize Bounce Rate success to the specific variant
      */
-    //@Test
+    @Test
     @UseDataProvider("indexPaths")
     public void noBounceRateWithIndexMiddle(final String indexPath) throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
@@ -2683,6 +2961,470 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     /**
      * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
+     * - You have 1 page: B
+     * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO Page B .
+     * - You have just one page_view to the page B to the specific Variant
+     *
+     * Should:  count 0 Minimize Bounce Rate success for the specific Variant
+     */
+    @Test
+    public void bounceRate() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant(pageB);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pageB);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+
+        final String cubeJSQueryExpected = getExpecteExitANdBounceRateQuery(experimentStarted);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "1")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 1, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResult.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
+                final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(1, variantResult.getTotalPageViews());
+                } else {
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
+
+                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(0, variantResult.getMultiBySession());
+                Assert.assertEquals(sessionExpected,
+                        (long) experimentResult.getSessions().getVariants()
+                                .get(variantResult.getVariantName()));
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+
+                assertNull(resultResumeItem);
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have 3 pages: A, B and C
+     * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO Page B .
+     * - You have the follow page_view to the pages order by timestamp: A, C and B to the Specific Variant
+     *
+     * Should:  count 1 Minimize Bounce Rate success for the No Default Variants
+     */
+    @Test
+    public void notBounceRateLast() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant(pageB);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pageA, pageC, pageB);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpecteExitANdBounceRateQuery(experiment);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "3")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 3, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResult.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
+                final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(3, variantResult.getTotalPageViews());
+                } else {
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
+
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
+                Assert.assertEquals(sessionExpected,
+                        (long) experimentResult.getSessions().getVariants()
+                                .get(variantResult.getVariantName()));
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+
+                assertNotNull(resultResumeItem);
+
+
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to save a Experiment with a {@link MetricType#URL_PARAMETER} Goal
+     * Should: set automatically a visitBefore Parameter with a valur equals to the URi of the Experiment's Page
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingExperimentWithUrlParameter() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage);
+
+        final Experiment experimentFromDB = APILocator.getExperimentsAPI()
+                .find(experiment.getIdentifier(), APILocator.systemUser())
+                .orElseThrow();
+
+        final Goal goal = experimentFromDB.goals().get().primary();
+        final Metric metric = goal.getMetric();
+
+        assertEquals(MetricType.URL_PARAMETER, metric.type());
+
+        final ImmutableList<Condition> conditions = metric.conditions();
+        assertEquals(2, conditions.size());
+
+        final Condition visitBefore = conditions.stream()
+                .filter(condition -> condition.parameter().equals("visitBefore"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(ExperimentUrlPatternCalculator.INSTANCE.calculateUrlRegexPattern(experimentPage),
+                visitBefore.value());
+        assertEquals(Operator.REGEX, visitBefore.operator());
+
+        final Condition queryParameter = conditions.stream()
+                .filter(condition -> condition.parameter().equals("queryParameter"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals("{\"name\":\"testName\", \"value\":\"testValue\"}", queryParameter.value());
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to save a Experiment with a {@link MetricType#REACH_PAGE} Goal
+     * Should: set automatically a visitBefore Parameter with a valur equals to the URi of the Experiment's Page
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingExperimentWithReachPage() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset reachPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(reachPage.getPageUrl()))
+                .build();
+        final Experiment experiment = createExperiment(experimentPage, metric,
+                new String[]{RandomString.make(15)});
+
+        final Experiment experimentFromDB = APILocator.getExperimentsAPI()
+                .find(experiment.getIdentifier(), APILocator.systemUser())
+                .orElseThrow();
+
+        final Goal goal = experimentFromDB.goals().get().primary();
+        final Metric metricFromDB = goal.getMetric();
+
+        assertEquals(MetricType.REACH_PAGE, metricFromDB.type());
+
+        final ImmutableList<Condition> conditions = metricFromDB.conditions();
+        assertEquals(2, conditions.size());
+
+        final Condition visitBefore = conditions.stream()
+                .filter(condition -> condition.parameter().equals("visitBefore"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(ExperimentUrlPatternCalculator.INSTANCE.calculateUrlRegexPattern(experimentPage),
+                visitBefore.value());
+        assertEquals(Operator.REGEX, visitBefore.operator());
+
+        final Condition urlParameter = conditions.stream()
+                .filter(condition -> condition.parameter().equals("url"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(reachPage.getPageUrl(), urlParameter.value());
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to update with a User with not permission to edit the Experiment's Page
+     * Should: Throw a {@link DotSecurityException}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingExperimentWithNoPagePermission() throws DotDataException, DotSecurityException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset reachPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(reachPage.getPageUrl()))
+                .build();
+        final Experiment experiment = createExperiment(experimentPage, metric,
+                new String[]{RandomString.make(15)});
+
+        final Experiment experimentUpdated = Experiment.builder().from(experiment)
+                .description("Updating the Experiment")
+                .build();
+
+        try {
+            APILocator.getExperimentsAPI().save(experimentUpdated, limitedUser);
+            throw new AssertionError("Should throw a DotSecurityException");
+        } catch (DotSecurityException e) {
+            assertEquals("You don't have permission to save the Experiment.", e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to update with a User with:
+     *
+     * - Read permission to the Experiment's Page
+     * - Edit rights for Template-Layouts on the site
+     *
+     * Should: Throw a {@link DotSecurityException}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingExperimentWithReadPagePermission() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_EDIT);
+
+        final HTMLPageAsset reachPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(reachPage.getPageUrl()))
+                .build();
+        final Experiment experiment = createExperiment(experimentPage, metric,
+                new String[]{RandomString.make(15)});
+
+        final Experiment experimentUpdated = Experiment.builder().from(experiment)
+                .description("Updating the Experiment")
+                .build();
+
+        try {
+            APILocator.getExperimentsAPI().save(experimentUpdated, limitedUser);
+            throw new AssertionError("Should throw a DotSecurityException");
+        } catch (DotSecurityException e) {
+            assertEquals("You don't have permission to save the Experiment.", e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to update with a User with:
+     *
+     * - Edit permission to the Experiment's Page
+     * - But not Edit rights for Template-Layouts on the site
+     *
+     * Should: Throw a {@link DotSecurityException}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingExperimentWithEditPagePermissionButNoTemplateLayoutPermission() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_EDIT);
+
+        final HTMLPageAsset reachPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(reachPage.getPageUrl()))
+                .build();
+        final Experiment experiment = createExperiment(experimentPage, metric,
+                new String[]{RandomString.make(15)});
+
+        final Experiment experimentUpdated = Experiment.builder().from(experiment)
+                .description("Updating the Experiment")
+                .build();
+
+        try {
+            APILocator.getExperimentsAPI().save(experimentUpdated, limitedUser);
+            throw new AssertionError("Should throw a DotSecurityException");
+        } catch (DotSecurityException e) {
+            assertEquals("You don't have permission to save the Experiment.", e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to update with a User with:
+     *
+     * - Edit permission to the Experiment's Page
+     * - Edit rights for Template-Layouts on the site
+     *
+     * Should: Update the Experiment
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingExperimentWithNotAdminUser() throws DotDataException, DotSecurityException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_EDIT);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_EDIT);
+
+        final HTMLPageAsset reachPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(reachPage.getPageUrl()))
+                .build();
+        final Experiment experiment = createExperiment(experimentPage, metric,
+                new String[]{RandomString.make(15)});
+
+        final Experiment experimentUpdated = Experiment.builder().from(experiment)
+                .description("Updating the Experiment")
+                .build();
+
+        final Experiment experimentSaved = APILocator.getExperimentsAPI().save(experimentUpdated, limitedUser);
+
+        assertEquals("Updating the Experiment", experimentSaved.description().orElseThrow());
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
      * - You have 3 pages: A, B and C
      * - You create an {@link Experiment} using the B page with a EXIT_RATE Goal: url EQUALS TO PAge B .
      * - You have the follow page_view to the pages order by timestamp: A, C and B to the Specific Variant
@@ -2715,6 +3457,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
+
         final String cubeJSQueryExpected = getExpecteExitANdBounceRateQuery(experimentStarted);
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
@@ -2991,51 +3734,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             IPUtils.disabledIpPrivateSubnet(false);
             mockhttpServer.stop();
         }
-    }
-
-    /**
-     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
-     * When: Try to save a Experiment with a {@link MetricType#URL_PARAMETER} Goal
-     * Should: set automatically a visitBefore Parameter with a valur equals to the URi of the Experiment's Page
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @Test
-    public void savingExperimentWithUrlParameter() throws DotDataException, DotSecurityException {
-        final Host host = new SiteDataGen().nextPersisted();
-        final Template template = new TemplateDataGen().host(host).nextPersisted();
-
-        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
-
-        final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage);
-
-        final Experiment experimentFromDB = APILocator.getExperimentsAPI()
-                .find(experiment.getIdentifier(), APILocator.systemUser())
-                .orElseThrow();
-
-        final Goal goal = experimentFromDB.goals().get().primary();
-        final Metric metric = goal.getMetric();
-
-        assertEquals(MetricType.URL_PARAMETER, metric.type());
-
-        final ImmutableList<Condition> conditions = metric.conditions();
-        assertEquals(2, conditions.size());
-
-        final Condition visitBefore = conditions.stream()
-                .filter(condition -> condition.parameter().equals("visitBefore"))
-                .limit(1)
-                .findFirst()
-                .orElseThrow();
-
-        assertEquals(experimentPage.getURI(), visitBefore.value());
-
-        final Condition queryParameter = conditions.stream()
-                .filter(condition -> condition.parameter().equals("queryParameter"))
-                .limit(1)
-                .findFirst()
-                .orElseThrow();
-
-        assertEquals("{\"name\":\"testName\", \"value\":\"testValue\"}", queryParameter.value());
     }
 
     /**
@@ -3967,8 +4665,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
-                experiment,
-                APILocator.systemUser());
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -4076,8 +4774,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
 
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
-                experiment,
-                APILocator.systemUser());
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -4444,7 +5142,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Metric metric = Metric.builder()
                 .name("Testing Metric")
                 .type(MetricType.EXIT_RATE)
-                .addConditions(getUrlCondition(experimentPage.getPageUrl()))
                 .build();
 
         return createExperiment(experimentPage, metric);
@@ -4459,9 +5156,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .toArray(String[]::new));
     }
     private List<Map<String, String>> createPageViewEvents(final Instant firstEventTime,
-        final Experiment experiment,
-        final String variantName,
-        final String... pagesUrl) {
+            final Experiment experiment,
+            final String variantName,
+            final String... pagesUrl) {
 
         final String lookBackWindows = new RandomString(20).nextString();
         final List<Map<String, String>> dataList = new ArrayList<>();
@@ -4486,25 +5183,25 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     private List<Map<String, String>> createPageViewEvents(final Instant firstEventTime,
-                                                           final Experiment experiment,
-                                                           final String variantName,
-                                                           final int times,
-                                                           final HTMLPageAsset... pages) throws DotDataException {
+            final Experiment experiment,
+            final String variantName,
+            final int times,
+            final HTMLPageAsset... pages) throws DotDataException {
         final int repeated = Math.max(times, 1);
         final List<HTMLPageAsset> repeatedPages = new ArrayList<>(pages.length * repeated);
         IntStream.range(0, repeated).forEach(i -> repeatedPages.addAll(Arrays.asList(pages)));
         return createPageViewEvents(
-            firstEventTime,
-            experiment,
-            variantName,
-            repeatedPages.toArray(new HTMLPageAsset[0]));
+                firstEventTime,
+                experiment,
+                variantName,
+                repeatedPages.toArray(new HTMLPageAsset[0]));
     }
 
     private List<Map<String, String>> createPageViewEvents(final int sessions,
-                                                           final Experiment experiment,
-                                                           final String variantName,
-                                                           final int times,
-                                                           final HTMLPageAsset... pages) {
+            final Experiment experiment,
+            final String variantName,
+            final int times,
+            final HTMLPageAsset... pages) {
         final List<Map<String, String>> pageViews = new ArrayList<>(sessions);
         IntStream.range(0,  Math.max(sessions, 1)).forEach(i -> {
             try {
@@ -4740,13 +5437,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     private static AnalyticsHelper mockInvalidAnalyticsHelper() throws DotDataException, DotSecurityException {
         final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
         final AnalyticsProperties analyticsProperties = AnalyticsProperties.builder()
-            .clientId("clientId")
-            .clientSecret("clientSecret")
-            .analyticsKey("analyticsKey")
-            .analyticsConfigUrl("http://localhost:8088/c/customer1/cluster1/keys")
-            .analyticsWriteUrl("http://localhost:8081/api/v1/event")
-            .analyticsReadUrl(CUBEJS_SERVER_URL)
-            .build();
+                .clientId("clientId")
+                .clientSecret("clientSecret")
+                .analyticsKey("analyticsKey")
+                .analyticsConfigUrl("http://localhost:8088/c/customer1/cluster1/keys")
+                .analyticsWriteUrl("http://localhost:8081/api/v1/event")
+                .analyticsReadUrl(CUBEJS_SERVER_URL)
+                .build();
 
         final AnalyticsApp mockAnalyticsApp = mock(AnalyticsApp.class);
         when(mockAnalyticsApp.getAnalyticsProperties()).thenReturn(analyticsProperties);
@@ -4763,9 +5460,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final MockHttpServerContext mockHttpServerContext = new  MockHttpServerContext.Builder()
                 .uri("/cubejs-api/v1/load")
                 .requestCondition((requestContext) ->
-                        String.format( "Cube JS Query is not right, \nExpected: %s \nCurrent %s",
-                                expectedQuery, requestContext.getRequestParameter("query")
-                                        .orElse(StringPool.BLANK)),
+                                String.format( "Cube JS Query is not right, \nExpected: %s \nCurrent %s",
+                                        expectedQuery, requestContext.getRequestParameter("query")
+                                                .orElse(StringPool.BLANK)),
                         requestContext -> isEquals(expectedQuery, requestContext))
                 .responseStatus(HttpURLConnection.HTTP_OK)
                 .mustBeCalled()
@@ -4843,7 +5540,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Goals goals = experimentFromDataBase.goals().orElseThrow();
         final ImmutableList<Condition> conditions = goals.primary().getMetric().conditions();
 
-        assertEquals(1, conditions.size());
+        assertEquals(2, conditions.size());
 
         final Condition condition = conditions.get(0);
         assertEquals("url", condition.parameter());
@@ -4938,7 +5635,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .next();
         APILocator.getExperimentsAPI().getResults(experiment, APILocator.systemUser());
     }
-    
+
     /**
      * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
      * When: Try to save an Experiment with a Exit Rate goal, and it does not have ane url parameter set
@@ -4979,7 +5676,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         assertEquals(1,  conditions.size());
 
         assertEquals("url", conditions.get(0).parameter());
-        assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\" + experimentPage.getURI() + "(\\/?\\?.*)?$",
+        assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\" + experimentPage.getURI() + "(\\/?\\?.*)?$",
                 conditions.get(0).value());
         assertEquals(Operator.REGEX, conditions.get(0).operator());
     }
@@ -5020,7 +5717,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         verify(spiedExperimentAPI, never()).validateScheduling(started.scheduling().orElseThrow());
 
-     }
+    }
 
     /**
      * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment, User)}
@@ -5029,6 +5726,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * - Create a content type with a text field and pageB as detail page,
      * and urlMapper equals to: /testpattern/{field}
      * - Create a new Contentlet with the content type created above and the field value equals to: test
+     * - Create a Experiment using pageB with a REACH_PAGE Goal with url equals to PageD
      * - Create pageview Events for the pages: pageA's url, "/testpattern/test", pageC's Url and pageD's Url
      *
      * Should: count one session and one goal success.
@@ -5116,8 +5814,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
-                experiment,
-                APILocator.systemUser());
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -5158,7 +5856,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
-     /**
+    /**
      * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have three pages: A, B and C
@@ -5176,11 +5874,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
         final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageC);
         final String variantName = experiment.trafficProportion().variants().stream()
-            .map(ExperimentVariant::id)
-            .filter(id -> !id.equals("DEFAULT"))
-            .limit(1)
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+                .map(ExperimentVariant::id)
+                .filter(id -> !id.equals("DEFAULT"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
         final List<Map<String, String>> data = createPageViewEvents(50, experiment, variantName, 2, pageA, pageC);
         data.addAll(createPageViewEvents(10, experiment, variantName, 2, pageA, pageB));
         data.addAll(createPageViewEvents(16, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageC));
@@ -5332,11 +6030,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
         final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageC);
         final String variantName = experiment.trafficProportion().variants().stream()
-            .map(ExperimentVariant::id)
-            .filter(id -> !id.equals("DEFAULT"))
-            .limit(1)
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+                .map(ExperimentVariant::id)
+                .filter(id -> !id.equals("DEFAULT"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
         final List<Map<String, String>> data = createPageViewEvents(35, experiment, variantName, 2, pageA, pageC);
         data.addAll(createPageViewEvents(25, experiment, variantName, 2, pageA, pageB));
         data.addAll(createPageViewEvents(45, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageC));
@@ -5405,11 +6103,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
         final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageC);
         final String variantName = experiment.trafficProportion().variants().stream()
-            .map(ExperimentVariant::id)
-            .filter(id -> !id.equals("DEFAULT"))
-            .limit(1)
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+                .map(ExperimentVariant::id)
+                .filter(id -> !id.equals("DEFAULT"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
         final List<Map<String, String>> data = createPageViewEvents(35, experiment, variantName, 2, pageA, pageC);
         data.addAll(createPageViewEvents(25, experiment, variantName, 2, pageA, pageB));
         data.addAll(createPageViewEvents(45, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageC));
@@ -5428,11 +6126,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
 
         final List<Map<String, Object>> totalPageViewsResponseExpected = list(
-            map("Events.variant", variantName, "Events.count", "50")
+                map("Events.variant", variantName, "Events.count", "50")
         );
 
         addContext(mockhttpServer, queryTotalPageViews,
-            JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
         addCountQueryContext(experiment, 50, mockhttpServer);
 
@@ -5499,8 +6197,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
-
+        
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
@@ -5650,4 +6349,1295 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    @DataProvider
+    public static Object[] pageUrlsGetter() {
+        final List<Function<HTMLPageAsset, String>> functions = new ArrayList<>();
+        functions.add((page) -> getPageUri(page).toLowerCase());
+        functions.add((page) -> getPageUri(page).toUpperCase());
+
+        return functions.toArray(new Function[0]);
+    }
+
+    private static String getPageUri(HTMLPageAsset page) {
+        try {
+            return page.getURI();
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have four pages: A, B, C and D, they are created inside a Folder witch a UPPER CASE Name.
+     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
+     * - You have the follow page_view to the pages order by timestamp: A, C, B, D and C,
+     * all the URL was visited in lower case.
+     *
+     * Should:  get a Faliled PAGE_REACH
+     */
+    @Test
+    @UseDataProvider("pageUrlsGetter")
+    public void reachPageGoalSuccessButWithCaseInsensitiveURL(final Function<HTMLPageAsset, String> urlsGetter)
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final String folderName = "CASE_INSENSITIVE_FOLDER_" + System.currentTimeMillis();
+
+        final Folder folder = new FolderDataGen().site(host).name(folderName).nextPersisted();
+        final HTMLPageAsset pageA = new HTMLPageDataGen(folder, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(folder, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(folder, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(folder, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(
+                pageB, pageD);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+
+        final String[] pagesUrl = new String[]{
+                urlsGetter.apply(pageA),
+                urlsGetter.apply(pageB),
+                urlsGetter.apply(pageD),
+                urlsGetter.apply(pageC)
+        };
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pagesUrl);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data",
+                cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP,
+                CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected,
+                JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT",
+                variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "4")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 4, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(
+                    mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResults.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary")
+                    .getVariants().values()) {
+
+                final int sessionExpected =
+                        variantResult.getVariantName().equals(variantName) ? 1 : 0;
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants()
+                            .get(variantResult.getVariantName()));
+
+                    assertEquals(variant.description().get(),
+                            variantResult.getVariantDescription());
+                    assertEquals(4, variantResult.getTotalPageViews());
+                } else {
+                    Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants()
+                            .get(variantResult.getVariantName()));
+
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
+
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have four pages: A, B, C they are created inside a Folder witch a UPPER CASE Name.
+     * - You create an {@link Experiment} using the B page with a EXIT_RATE Goal:
+     * - You have the follow page_view to the pages order by timestamp: A, C , B
+     * all the URL was visited in lower case.
+     *
+     * Should:  get a Faliled EXIT RATE
+     */
+    @Test
+    @UseDataProvider("pageUrlsGetter")
+    public void exitRateGoalSuccessButWithCaseInsensitiveURL(final Function<HTMLPageAsset, String> urlsGetter) throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final String folderName = "CASE_INSENSITIVE_FOLDER_" + System.currentTimeMillis();
+
+        final Folder folder = new FolderDataGen().site(host).name(folderName).nextPersisted();
+        final HTMLPageAsset pageA = new HTMLPageDataGen(folder, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(folder, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(folder, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithExitRateGoalAndVariant(pageB);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+
+        final String[] pagesUrl = new String[]{
+                urlsGetter.apply(pageA),
+                urlsGetter.apply(pageC),
+                urlsGetter.apply(pageB)
+        };
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pagesUrl);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data",
+                cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpecteExitANdBounceRateQuery(experiment);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP,
+                CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected,
+                JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT",
+                variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "3")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 3, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(
+                    mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResults.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary")
+                    .getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants()
+                            .get(variantResult.getVariantName()));
+
+                    assertEquals(variant.description().get(),
+                            variantResult.getVariantDescription());
+                    assertEquals(3, variantResult.getTotalPageViews());
+                } else {
+                    Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants()
+                            .get(variantResult.getVariantName()));
+
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
+
+                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(0, variantResult.getMultiBySession());
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+                assertNull(resultResumeItem);
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have four pages: A, B, C they are created inside a Folder witch a UPPER CASE Name.
+     * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal:
+     * - You have the follow page_view to the pages order by timestamp: B
+     * all the URL was visited in lower case.
+     *
+     * Should:  get a Faliled BOUNCE RATE
+     */
+    @Test
+    @UseDataProvider("pageUrlsGetter")
+    public void bounceRateGoalSuccessButWithCaseInsensitiveURL(final Function<HTMLPageAsset, String> urlsGetter) throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final String folderName = "CASE_INSENSITIVE_FOLDER_" + System.currentTimeMillis();
+
+        final Folder folder = new FolderDataGen().site(host).name(folderName).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(folder, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant(pageB);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+
+        final String[] pagesUrl = new String[]{
+                urlsGetter.apply(pageB)
+        };
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pagesUrl);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data",
+                cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpecteExitANdBounceRateQuery(experiment);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP,
+                CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected,
+                JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT",
+                variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "1")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 1, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(
+                    mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResults.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary")
+                    .getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants()
+                            .get(variantResult.getVariantName()));
+
+                    assertEquals(variant.description().get(),
+                            variantResult.getVariantDescription());
+                    assertEquals(1, variantResult.getTotalPageViews());
+                } else {
+                    Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants()
+                            .get(variantResult.getVariantName()));
+
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
+
+                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(0, variantResult.getMultiBySession());
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+                assertNull(resultResumeItem);
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have four pages: A, B, C and D, they are created inside a Folder witch a UPPER CASE Name.
+     * - You create an {@link Experiment} using the B page with a URL_PARAMETER Goal:  TestName value=testValue and CONTAINS Operator.
+     *      * - You have the follow page_view to the pages order by timestamp: pageA_Url?notTestName=testValue, pageB_Url?notTestName=testValue, pageC_Url?testName=testValue to the Specific Variant
+     * all the URL was visited in lower case.
+     *
+     * Should:  get a Success URL_PARAMETER
+     */
+    @Test
+    @UseDataProvider("pageUrlsGetter")
+    public void urlParameterGoalSuccessButWithCaseInsensitiveURL(final Function<HTMLPageAsset, String> urlsGetter) throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final String folderName = "CASE_INSENSITIVE_FOLDER_" + System.currentTimeMillis();
+
+        final Folder folder = new FolderDataGen().site(host).name(folderName).nextPersisted();
+        final HTMLPageAsset pageA = new HTMLPageDataGen(folder, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(folder, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(folder, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(folder, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithUrlParameterGoal(pageB,
+                Operator.EQUALS, "{\"name\":\"testName\", \"value\":\"testValue\"}");
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+
+        final String[] pagesUrl = new String[]{
+                urlsGetter.apply(pageA) + "?notTestName=testValue",
+                urlsGetter.apply(pageB) + "?notTestName=testValue",
+                urlsGetter.apply(pageC) + "?testName=testValue",
+        };
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pagesUrl);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data",
+                cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpecteExitANdBounceRateQuery(experiment);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP,
+                CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected,
+                JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT",
+                variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "3")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 3, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(
+                    mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResults.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary")
+                    .getVariants().values()) {
+
+                final int sessionExpected =
+                        variantResult.getVariantName().equals(variantName) ? 1 : 0;
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants()
+                            .get(variantResult.getVariantName()));
+
+                    assertEquals(variant.description().get(),
+                            variantResult.getVariantDescription());
+                    assertEquals(3, variantResult.getTotalPageViews());
+                } else {
+                    Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants()
+                            .get(variantResult.getVariantName()));
+
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
+
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User without permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to promote a variant
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToPromoteVariantWithNoPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
+                PermissionAPI.PERMISSION_PUBLISH);
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        try {
+            APILocator.getExperimentsAPI()
+                    .promoteVariant(experiment.id().get(), variantName, limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to promote a Variant. Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals("You don't have permission to get the Experiment. Experiment Id: " + experiment.getIdentifier(),
+                    cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User with READ permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to promote a variant
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToPromoteVariantWithReadPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        try {
+            APILocator.getExperimentsAPI()
+                    .promoteVariant(experiment.id().get(), variantName, limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to promote a Variant. Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals("You don't have permission to get the Experiment. Experiment Id: " + experiment.getIdentifier(),
+                    cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User with EDIT permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to promote a variant
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToPromoteVariantWithEditPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        try {
+            APILocator.getExperimentsAPI()
+                    .promoteVariant(experiment.id().get(), variantName, limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to promote a Variant. Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+            final String causeExpectedMessage = String.format(
+                    "User %s doesn't have permission to publish the Experiment's page. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().orElseThrow());
+
+            assertEquals(causeExpectedMessage, cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User with PUBLISH permission on the Experiment's Page but no Publish rights for Template-Layouts on the site
+     * try to promote a variant
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToPromoteVariantWithPublishPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_EDIT, PermissionAPI.PERMISSION_PUBLISH);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        try {
+            APILocator.getExperimentsAPI()
+                    .promoteVariant(experiment.id().get(), variantName, limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to promote a Variant. Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+            final String causeExpectedMessage = String.format(
+                    "User %s doesn't have PUBLISH permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().orElseThrow());
+
+            assertEquals(causeExpectedMessage, cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#start(String, String, User)}
+     * When: A User without permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to start the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToStartExperimentWithNoPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
+                PermissionAPI.PERMISSION_PUBLISH);
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+        try {
+            APILocator.getExperimentsAPI().start(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to start the Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals("You don't have permission to get the Experiment. Experiment Id: " + experiment.getIdentifier(),
+                    cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)}
+     * When: A User with READ permission on the page and Publish rights for Template-Layouts on the site
+     * try to start the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToStartExperimentWithReadPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        try {
+            APILocator.getExperimentsAPI().start(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to start the Experiment Id: "
+                    + experiment.id().get();
+
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals("You don't have permission to get the Experiment. Experiment Id: " + experiment.getIdentifier(),
+                    cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)}
+     * When: A User with EDIT permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to start the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToStartExperimentWithEditPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        try {
+            APILocator.getExperimentsAPI().start(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to start the Experiment Id: "
+                    + experiment.id().get();
+
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+            final String causeExpectedMessage = String.format(
+                    "User %s doesn't have PUBLISH permission on the Experiment Page's. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().orElseThrow());
+
+            assertEquals(causeExpectedMessage, cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)}
+     * When: A User with PUBLISH permission on the Experiment's Page and not Publish rights for Template-Layouts on the site
+     * try to start the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToStartExperimentWithNotTemplateLayoutsPermissions() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT, PermissionAPI.PERMISSION_PUBLISH);
+
+        try {
+            APILocator.getExperimentsAPI().start(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to start the Experiment Id: "
+                    + experiment.id().get();
+
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+            final String causeExpectedMessage = String.format(
+                    "User %s doesn't have PUBLISH permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().orElseThrow());
+
+            assertEquals(causeExpectedMessage, cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#end(String, User)}
+     * When: A User without permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to end the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToEndExperimentWithNoPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
+                PermissionAPI.PERMISSION_PUBLISH);
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+        try {
+            APILocator.getExperimentsAPI().end(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to end the Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals("You don't have permission to get the Experiment. Experiment Id: " + experiment.id().get(),
+                    cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#end(String, User)}
+     * When: A User with READ permission on the page and Publish rights for Template-Layouts on the site
+     * try to end the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToEndExperimentWithReadPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        try {
+            APILocator.getExperimentsAPI().end(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to end the Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals("You don't have permission to get the Experiment. Experiment Id: " + experiment.id().get(),
+                    cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#end(String, String, User)}
+     * When: A User with EDIT permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to end the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToEndExperimentWithEditPermissionOnThePage() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        try {
+            APILocator.getExperimentsAPI().end(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to end the Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            assertEquals(String.format("User %s doesn't have permission to publish the Experiment's page. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().get()), cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#end(String, String, User)}
+     * When: A User with PUBLISH permission on the Experiment's Page and not Publish rights for Template-Layouts on the site
+     * try to end the Experiment
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToEndExperimentWithNotTemplateLayoutsPermissions() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT, PermissionAPI.PERMISSION_PUBLISH);
+
+        try {
+            APILocator.getExperimentsAPI().end(experiment.id().get(), limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to end the Experiment Id: "
+                    + experiment.id().get();
+
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+            final String causeExpectedMessage = String.format(
+                    "User %s doesn't have PUBLISH permission for Template-Layouts on the Experiment Page's site. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().orElseThrow());
+
+            assertEquals(causeExpectedMessage, cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#end(String, String, User)}
+     * When: A Not Admin User with PUBLISH permission on the Experiment's Page and Publish rights for Template-Layouts on the site
+     * try to end the Experiment
+     * Should: End the Experiment
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToEndExperimentWithNotAdminUser() throws DotDataException, DotSecurityException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT, PermissionAPI.PERMISSION_PUBLISH);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        APILocator.getExperimentsAPI().start(experiment.id().get(), limitedUser);
+
+        APILocator.getExperimentsAPI().end(experiment.id().get(), limitedUser);
+
+        final Optional<Experiment> experimentFromdataBase = APILocator.getExperimentsAPI()
+                .find(experiment.id().get(), APILocator.systemUser());
+
+        assertEquals(Experiment.Status.ENDED, experimentFromdataBase.get().status());
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#promoteVariant(String, String, User)}
+     * When: A User with EDIT permission on the page try to promote a variant
+     * Should: thrown a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void tryToPromoteVariantWithEditPermissionOnThePageAndTemplateLayoutPermission() throws DotDataException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("variantA")
+                .page(experimentPage)
+                .nextPersisted();
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ,
+                PermissionAPI.PERMISSION_EDIT);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        try {
+            APILocator.getExperimentsAPI()
+                    .promoteVariant(experiment.id().get(), variantName, limitedUser);
+
+            throw new AssertionError("Should thrown a DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String messageExpected = "You don't have permission to promote a Variant. Experiment Id: "
+                    + experiment.id().get();
+            assertEquals(messageExpected, e.getMessage());
+
+            final Throwable cause = e.getCause();
+
+            final String errorMessageExpected = String.format(
+                    "User %s doesn't have permission to publish the Experiment's page. Experiment Id: %s",
+                    limitedUser.getUserId(), experiment.id().orElseThrow());
+
+            assertEquals(errorMessageExpected, cause.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When:
+     * - Crate an Experiment with two {@link Variant}.
+     * - Create two {@link Contentlet} and create a version into the NO DEFAULT Experiment's  {@link Variant} also
+     * create version to the DEFAULT Variant, Save and publish them.
+     * - Make any change to the {@link Contentlet} and just save.
+     *
+     * With a Not Admin User with the follow permissions
+     * - Publish rights on the Page
+     * - Publish rights for Template-Layouts on the site
+     *
+     * Do:
+     *
+     * - Start the Experiment
+     * - Promote the {@link Variant} with No Admin User
+     *
+     * Should:
+     * - Copy both version of the specific Variant  and turn it into the WORKING/LIVE DEFAULT Variant
+     */
+    @Test
+    public void promoteWithNotAdminUser() throws DotDataException, DotSecurityException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet1")
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet2")
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .page(experimentPage)
+                .addVariant("Test Variant")
+                .nextPersisted();
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Contentlet contentlet1Variant = ContentletDataGen.createNewVersion(contentlet1,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet1_variant"
+                ));
+        final Contentlet contentlet2Variant = ContentletDataGen.createNewVersion(contentlet2,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet2_variant"
+                ));
+
+        APILocator.getContentletAPI().publish(contentlet1, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2, APILocator.systemUser(), false);
+
+        APILocator.getContentletAPI().publish(contentlet1Variant, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2Variant, APILocator.systemUser(), false);
+
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        try {
+
+            ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
+            ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
+            ContentletDataGen.update(contentlet1Variant,
+                    map("title", "WORKING contentlet1_variant"));
+            ContentletDataGen.update(contentlet2Variant,
+                    map("title", "WORKING contentlet2_variant"));
+
+            addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                    PermissionAPI.PERMISSION_READ,
+                    PermissionAPI.PERMISSION_EDIT, PermissionAPI.PERMISSION_PUBLISH);
+            addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
+                    PermissionAPI.PERMISSION_PUBLISH);
+
+            APILocator.getExperimentsAPI()
+                    .promoteVariant(experiment.id().orElseThrow(), variantName, limitedUser);
+
+
+            checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT,
+                    "WORKING contentlet1_variant",
+                    titleField);
+            checkVersion(contentlet1, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet1_variant",
+                    titleField);
+
+            checkVersion(contentlet1, false, variant, "WORKING contentlet1_variant", titleField);
+            checkVersion(contentlet1, true, variant, "LIVE contentlet1_variant", titleField);
+
+            checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT,
+                    "WORKING contentlet2_variant",
+                    titleField);
+            checkVersion(contentlet2, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet2_variant",
+                    titleField);
+
+            checkVersion(contentlet2, true, variant, "LIVE contentlet2_variant", titleField);
+            checkVersion(contentlet2, false, variant, "WORKING contentlet2_variant", titleField);
+        } finally {
+
+            final Experiment experimentFromDataBase = APILocator.getExperimentsAPI()
+                    .find(experiment.getIdentifier(), APILocator.systemUser())
+                    .orElseThrow();
+
+            if (experimentFromDataBase.status() == Experiment.Status.RUNNING) {
+                APILocator.getExperimentsAPI()
+                        .end(experiment.id().orElseThrow(), APILocator.systemUser());
+            }
+        }
+    }
+
+    private static void addPermission(final Permissionable permissionable,
+            final User limitedUser, final String permissionType, final int... permissions) throws DotDataException {
+
+        final int permission = Arrays.stream(permissions).sum();
+
+        final Permission permissionObject = new Permission(permissionType,
+                permissionable.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                permission, true);
+
+        try {
+            APILocator.getPermissionAPI().save(permissionObject, permissionable,
+                    APILocator.systemUser(), false);
+        } catch (DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void checkVersion(final Contentlet contentlet, final boolean live,
+            final Variant defaultVariant, final String value, final Field titleField)
+            throws DotDataException, DotSecurityException {
+
+        checkVersion(contentlet, live, defaultVariant, APILocator.getLanguageAPI().getDefaultLanguage(),
+                value, titleField);
+    }
+    private static void checkVersion(Contentlet contentlet, boolean live, Variant variant,
+            final Language language, final String  value, Field titleField)
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet contentlet1DefaultVariantFromDataBase = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(),
+                        live, language.getId(), variant.name(), APILocator.systemUser(), false);
+
+        Assert.assertEquals(value, contentlet1DefaultVariantFromDataBase
+                .getStringProperty(titleField.variable()));
+    }
 }

@@ -13,14 +13,14 @@ import {
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, take, takeUntil } from 'rxjs/operators';
+import { filter, skip, take, takeUntil } from 'rxjs/operators';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
-import { HttpCode } from '@dotcms/dotcms-js';
+import { HttpCode, SiteService } from '@dotcms/dotcms-js';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import {
@@ -55,7 +55,8 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
         private dotEventsService: DotEventsService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotPageRenderService: DotPageRenderService,
-        private element: ElementRef
+        private element: ElementRef,
+        private dotSiteService: SiteService
     ) {
         this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
     }
@@ -176,6 +177,11 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
                     type: DotMessageType.SIMPLE_MESSAGE
                 });
             });
+
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
+            this.store.getPages({ offset: 0 });
+            this.scrollToTop(); // To reset the scroll so it shows the data it retrieves
+        });
     }
 
     ngOnDestroy(): void {
@@ -205,6 +211,18 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     loadPagesOnDeactivation() {
         this.store.getPages({
             offset: 0
+        });
+    }
+
+    /**
+     * Scroll to top of the page
+     *
+     * @memberof DotPagesComponent
+     */
+    scrollToTop(): void {
+        this.element.nativeElement?.scroll({
+            top: 0,
+            left: 0
         });
     }
 }

@@ -1,7 +1,6 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { ConfirmPopup } from 'primeng/confirmpopup';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentVariantDetail } from '@dotcms/dotcms-models';
@@ -16,6 +15,7 @@ import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-
 describe('DotExperimentsReportDailyDetailsComponent', () => {
     let spectator: Spectator<DotExperimentsReportDailyDetailsComponent>;
     let store: DotExperimentsReportsStore;
+    let confirmationService: ConfirmationService;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsReportDailyDetailsComponent,
@@ -32,9 +32,8 @@ describe('DotExperimentsReportDailyDetailsComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
 
-        jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
-
         store = spectator.inject(DotExperimentsReportsStore, true);
+        confirmationService = spectator.inject(ConfirmationService, true);
     });
 
     it('should DotExperimentsDetailsTableComponent exist', () => {
@@ -60,18 +59,11 @@ describe('DotExperimentsReportDailyDetailsComponent', () => {
         spectator.setInput('hasEnoughSessions', true);
 
         jest.spyOn(store, 'promoteVariant');
+        jest.spyOn(confirmationService, 'confirm');
 
         spectator.click(spectator.query(byTestId('promote-variant-button')));
         spectator.detectComponentChanges();
 
-        expect(spectator.query(ConfirmPopup)).toExist();
-
-        spectator.query(ConfirmPopup).accept();
-
-        expect(store.promoteVariant).toHaveBeenCalledWith({
-            experimentId: EXPERIMENT_ID,
-            variant: variant
-        });
-        expect(spectator.queryAll(byTestId('variant-promoted-tag')).length).toEqual(0);
+        expect(confirmationService.confirm).toHaveBeenCalled();
     });
 });

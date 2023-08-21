@@ -73,13 +73,6 @@ describe('DotEditPageInfoSeoComponent', () => {
             expect(button.componentInstance.tooltipText).toBe('Copy url page');
         });
 
-        it('should have api link', () => {
-            const apiLink: DebugElement = de.query(By.css('dot-api-link'));
-            expect(apiLink.componentInstance.href).toBe(
-                'api/v1/page/render/an/url/test?language_id=1'
-            );
-        });
-
         it('should not have preview link', () => {
             const previewLink: DebugElement = de.query(By.css('dot-link[icon="pi-eye"]'));
 

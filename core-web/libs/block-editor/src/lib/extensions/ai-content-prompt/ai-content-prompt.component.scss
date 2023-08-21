@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 form {
-    padding-left: 1.875rem;
+    margin: $spacing-4;
 
     .p-input-icon-right {
         position: relative;

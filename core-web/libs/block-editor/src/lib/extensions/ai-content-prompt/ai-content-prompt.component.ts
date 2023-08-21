@@ -47,18 +47,10 @@ export class AIContentPromptComponent {
         }
     }
 
-    buildForm() {
+    private buildForm() {
         this.form = this.fb.group({
             textPrompt: ['', Validators.required]
         });
-    }
-
-    setFormValue({ textPrompt = '' }) {
-        this.form.patchValue({ textPrompt }, { emitEvent: false });
-    }
-
-    focusInput() {
-        this.input.nativeElement.focus();
     }
 
     cleanForm() {

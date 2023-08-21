@@ -1,5 +1,5 @@
 import { Node } from 'prosemirror-model';
-import { EditorState, NodeSelection, Plugin, PluginKey, Transaction } from 'prosemirror-state';
+import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
 import tippy, { Instance, Props } from 'tippy.js';
@@ -8,9 +8,8 @@ import { ComponentRef } from '@angular/core';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { Editor, posToDOMRect } from '@tiptap/core';
+import { Editor } from '@tiptap/core';
 
-import { getNodePosition } from '../../bubble-menu/utils';
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
 import { AI_CONTENT_PROMPT_PLUGIN_KEY } from '../ai-content-prompt.extension';
 import { TIPPY_OPTIONS } from '../utils';
@@ -47,7 +46,7 @@ export class AIContentPromptView {
 
     public pluginKey: PluginKey;
 
-    public component?: ComponentRef<AIContentPromptComponent>;
+    public component: ComponentRef<AIContentPromptComponent>;
 
     private $destroy = new Subject<boolean>();
 
@@ -61,7 +60,6 @@ export class AIContentPromptView {
         this.tippyOptions = tippyOptions;
 
         this.element.remove();
-        this.element.style.visibility = 'visible';
         this.pluginKey = pluginKey;
         this.component = component;
 
@@ -73,10 +71,6 @@ export class AIContentPromptView {
             this.editor.commands.closeAIPrompt();
         });
 
-        this.editor.on('focus', this.focusHandler);
-
-        document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
-
         document.body.addEventListener('mousedown', this.handleOutsideClick, { capture: true });
 
         this.component.instance.aiResponse.pipe(takeUntil(this.$destroy)).subscribe((response) => {
@@ -87,13 +81,6 @@ export class AIContentPromptView {
     update(view: EditorView, prevState?: EditorState) {
         const next = this.pluginKey?.getState(view.state);
         const prev = prevState ? this.pluginKey?.getState(prevState) : { open: false };
-
-        const { state } = view;
-        const { doc, selection } = state;
-
-        const { ranges } = selection;
-        const from = Math.min(...ranges.map((range) => range.$from.pos));
-        const to = Math.max(...ranges.map((range) => range.$to.pos));
 
         if (next?.open === prev?.open) {
             this.tippy?.popperInstance?.forceUpdate();
@@ -109,18 +96,7 @@ export class AIContentPromptView {
 
         this.tippy?.setProps({
             getReferenceClientRect: () => {
-                if (selection instanceof NodeSelection) {
-                    const node = view.nodeDOM(from) as HTMLElement;
-
-                    if (node) {
-                        this.node = doc.nodeAt(from);
-                        const type = this.node.type.name;
-
-                        return this.tippyRect(node, type);
-                    }
-                }
-
-                return posToDOMRect(view, from, to);
+                return this.tippyRect();
             }
         });
 
@@ -136,42 +112,15 @@ export class AIContentPromptView {
         }
 
         this.tippy = tippy(editorElement.parentElement, {
-            ...this.tippyOptions,
             ...TIPPY_OPTIONS,
-            content: this.element,
-            onShow: (instance) => {
-                (instance.popper as HTMLElement).style.width = '100%';
-
-                requestAnimationFrame(() => {
-                    this.component.instance.input.nativeElement.focus();
-                });
-            }
+            ...this.tippyOptions,
+            content: this.element
         });
     }
 
-    focusHandler = () => {
-        const { state } = this.editor;
-        const { open } = AI_CONTENT_PROMPT_PLUGIN_KEY.getState(state);
-        const pluginState = this.pluginKey.getState(state);
-
-        if (!pluginState.open) {
-            return;
-        }
-
-        if (open) {
-            this.editor.commands.closeForm();
-            requestAnimationFrame(() => {
-                this.component.instance.input.nativeElement.focus();
-            });
-        } else {
-            this.editor.commands.closeForm();
-        }
-
-        setTimeout(() => this.update(this.editor.view));
-    };
-
     show() {
         this.tippy?.show();
+        this.component.instance.input.nativeElement.focus();
     }
 
     hide() {
@@ -183,7 +132,6 @@ export class AIContentPromptView {
         this.tippy?.destroy();
         this.$destroy.next(true);
         this.$destroy.complete();
-        this.editor.off('focus', this.focusHandler);
         document.body.removeEventListener('mousedown', this.handleOutsideClick);
     }
 
@@ -195,26 +143,8 @@ export class AIContentPromptView {
         }
     };
 
-    insertAINode(response: string) {
-        this.editor.commands.showGeneratedContent(response);
-    }
-
-    private tippyRect(node, type) {
-        const domRect = document.querySelector('#ai-text-prompt')?.getBoundingClientRect();
-
-        return domRect || getNodePosition(node, type);
-    }
-
-    private hanlderScroll(e: Event) {
-        if (this.shouldHideOnScroll(e.target as HTMLElement)) {
-            return true;
-        }
-
-        requestAnimationFrame(() => this.update(this.editor.view));
-    }
-
-    private shouldHideOnScroll(node: HTMLElement): boolean {
-        return this.tippy?.state.isMounted && this.tippy?.popper.contains(node);
+    private tippyRect() {
+        return document.querySelector('#ai-text-prompt')?.getBoundingClientRect();
     }
 }
 
@@ -236,7 +166,7 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
                 oldState: EditorState
             ): PluginState {
                 const { open, form } = transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
-                const state = AI_CONTENT_PROMPT_PLUGIN_KEY?.getState(oldState);
+                const state = AI_CONTENT_PROMPT_PLUGIN_KEY.getState(oldState);
 
                 if (typeof open === 'boolean') {
                     return { open, form };
