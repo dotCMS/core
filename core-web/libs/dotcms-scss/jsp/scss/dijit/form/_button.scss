@@ -1,6 +1,6 @@
 .dijitButton,
 .dijitToggleButton {
-    height: $field-height;
+    height: $field-height-md;
     border-radius: $border-radius-md;
     display: inline-flex;
     align-items: center;
@@ -492,8 +492,8 @@
     transition: all $field-animation-speed;
     border-radius: $field-border-radius;
     display: inline-block;
-    height: $field-height;
-    line-height: $field-height;
+    height: $field-height-md;
+    line-height: $field-height-md;
     padding: 0 $spacing-1 * 2;
     text-decoration: none;
     text-transform: uppercase;

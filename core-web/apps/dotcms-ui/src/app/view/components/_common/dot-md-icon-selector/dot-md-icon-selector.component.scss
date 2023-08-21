@@ -17,7 +17,7 @@ dot-material-icon-picker {
         .dot-material-icon__preview {
             border: 0;
             height: calc(
-                $field-height - ($field-border-size * 2)
+                $field-height-md - ($field-border-size * 2)
             ); // All of this is relative so it's not really taking the height of the field and we need to center the icon
         }
 
@@ -44,7 +44,7 @@ dot-material-icon-picker {
 
             mwc-icon {
                 font-size: $font-size-xl;
-                width: $field-height;
+                width: $field-height-md;
             }
         }
 

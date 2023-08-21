@@ -11,7 +11,7 @@
 .dijitTextBox,
 .dijitToggleButton {
     border-radius: $field-border-radius;
-    height: $field-height;
+    height: $field-height-md;
 }
 
 .dijitButton,
@@ -44,7 +44,7 @@
 
 .dijitValidationContainer {
     background-color: $error;
-    height: $field-height - (2 * $field-border-size);
+    height: 100%;
     position: relative;
     width: 11px;
 
