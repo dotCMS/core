@@ -3,12 +3,10 @@
 
     .dijitMenuItem {
         display: flex;
-        align-items: start;
-        flex-direction: column;
-        justify-content: center;
         padding: 0 $spacing-2;
         color: $black;
         height: $field-height;
+        align-items: center;
 
         &:last-child {
             border-bottom: none;

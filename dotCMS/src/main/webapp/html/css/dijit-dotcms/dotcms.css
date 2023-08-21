@@ -4965,12 +4965,10 @@
 }
 .dijitMenu .dijitMenuItem {
   display: flex;
-  align-items: start;
-  flex-direction: column;
-  justify-content: center;
   padding: 0 0.75rem;
   color: #14151a;
   height: 40px;
+  align-items: center;
 }
 .dijitMenu .dijitMenuItem:last-child {
   border-bottom: none;
@@ -6619,11 +6617,6 @@ ul.withBullets li {
 }
 
 /* POPUP MENU STYLES */
-.dotContextMenu {
-  border-left: 1px solid #d1d1d1;
-  box-shadow: 0px 0px 5px #ccc;
-}
-
 td.dijitMenuArrowCell {
   width: 30px;
 }
