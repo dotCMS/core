@@ -556,4 +556,9 @@ class ContentTypeAPIIntegrationTest {
         Assertions.assertEquals(1, fieldLayoutRow1.columns().get(0).fields().size());
     }
 
+    @Test
+    void TestFail(){
+        Assertions.assertFalse(1 == 1, "Fail 1 equals 1");
+    }
+
 }
