@@ -4,11 +4,7 @@ import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.model.config.ServiceBean;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,8 +14,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import javax.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-//@DefaultBean
 @ApplicationScoped
 public class YAMLFactoryServiceManagerImpl implements ServiceManager {
 

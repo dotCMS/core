@@ -152,6 +152,15 @@ export class DotPageStateService {
                 }
             );
 
+        this.getRunningExperiment(state.page.identifier)
+            .pipe(take(1))
+            .subscribe((experiment: DotExperiment) => {
+                if (experiment) {
+                    state.runningExperiment = experiment;
+                    this.setCurrentState(state);
+                }
+            });
+
         this.setCurrentState(state);
         this.isInternalNavigation = true;
     }
@@ -191,8 +200,16 @@ export class DotPageStateService {
      * @memberof DotPageStateService
      */
     setLocalState(state: DotPageRenderState): void {
-        this.setCurrentState(state);
-        this.state$.next(state);
+        this.getRunningExperiment(state.page.identifier)
+            .pipe(take(1))
+            .subscribe((experiment: DotExperiment) => {
+                if (experiment) {
+                    state.runningExperiment = experiment;
+                }
+
+                this.setCurrentState(state);
+                this.state$.next(state);
+            });
     }
 
     /**
@@ -276,7 +293,12 @@ export class DotPageStateService {
                                     favoritePage: DotCMSContentlet,
                                     experiment: DotExperiment
                                 ]) => {
-                                    return this.setLocalPageState(page, favoritePage, experiment);
+                                    return this.setLocalPageState(
+                                        page,
+                                        favoritePage,
+                                        experiment,
+                                        options.viewAs?.device
+                                    );
                                 }
                             )
                         );
@@ -291,7 +313,8 @@ export class DotPageStateService {
     private setLocalPageState(
         page: DotPageRenderParameters,
         favoritePage?: DotCMSContentlet,
-        runningExperiment?: DotExperiment
+        runningExperiment?: DotExperiment,
+        device?: DotDevice
     ): Observable<DotPageRenderState> {
         const pageState = new DotPageRenderState(
             this.getCurrentUser(),
@@ -299,6 +322,10 @@ export class DotPageStateService {
             favoritePage,
             runningExperiment
         );
+
+        if (!pageState.viewAs?.device && device) {
+            pageState.viewAs.device = device;
+        }
 
         this.setCurrentState(pageState);
 

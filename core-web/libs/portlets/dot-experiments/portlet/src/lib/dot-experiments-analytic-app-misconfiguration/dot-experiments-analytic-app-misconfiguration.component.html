@@ -1,0 +1,11 @@
+<dot-experiments-header
+    [title]="'experiments.analytics-app-misconfiguration.route-title' | dm"
+    (goBack)="goToBrowserBack()"
+/>
+<div class="flex justify-content-center align-items-center h-full">
+    <dot-empty-container
+        [buttonLabel]="'experiments.analytics-app-misconfiguration.btn-label' | dm"
+        [configuration]="emptyConfiguration"
+        (buttonAction)="goToAnalyticsApp()"
+    />
+</div>

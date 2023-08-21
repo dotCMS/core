@@ -171,11 +171,11 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             var filter = afterFilter.substring(0,afterFilter.indexOf("/"));
             var afterFilter = afterFilter.substring(afterFilter.indexOf("/"),afterFilter.length);
 
-            thumbUrl = beforeFilter + "filter/" + filter + ",Thumbnail/" + afterFilter + "/thumbnail_h/" + this.thumbnailHeight;
+            thumbUrl = beforeFilter + "filter/" + filter + ",Resize/" + afterFilter + "/resize_w/500/webp_q/50";
         }
         else{
             if(!this.saveAsFileName.toLowerCase().endsWith('.svg')) {
-                thumbUrl+= "/filter/Thumbnail/thumbnail_h/"+ this.thumbnailHeight;
+                thumbUrl+= "/resize_w/500/webp_q/50";
             }else{
                 return thumbUrl;
             }
@@ -195,6 +195,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
 
     setThumbnail: function(){
+
         var thumbUrl = this._getThumbRendition(this.currentUrl)  ;
         dojo.style(this.thumbnailImage, "display", "none");
         dojo.addClass(this.thumbnailDiv, "loader");
@@ -245,19 +246,23 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
         if(baseImage.complete){
             var bic = dojo.coords(baseImage);
-            this.iframe.dojo.byId("baseImageWidth").innerHTML = bic.w;
-            this.iframe.dojo.byId("baseImageHeight").innerHTML = bic.h;
+            this.iframe.dojo.byId("baseImageWidth").innerHTML = Math.round(bic.w);
+            this.iframe.dojo.byId("baseImageHeight").innerHTML = Math.round(bic.h);
             this.baseAndShowLoaded();
         }else{
             baseImage.onload= function (){
                 var ctx = window.top._dotImageEditor ;
                 var bic = dojo.coords(ctx.iframe.dojo.byId("baseImage"));
                 // set the img dimentions so user can see
-                ctx.iframe.dojo.byId("baseImageWidth").innerHTML = bic.w;
-                ctx.iframe.dojo.byId("baseImageHeight").innerHTML = bic.h;
+                ctx.iframe.dojo.byId("baseImageWidth").innerHTML = Math.round(bic.w);
+                ctx.iframe.dojo.byId("baseImageHeight").innerHTML = Math.round(bic.h);
                 ctx.baseAndShowLoaded();
             };
         }
+
+
+
+
         if(showImage.complete){
             // set the img dimentions so user can see
 

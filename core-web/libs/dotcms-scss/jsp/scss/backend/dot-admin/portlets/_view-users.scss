@@ -85,7 +85,9 @@
 
 .view-users__roles-container {
     display: flex;
-    margin-bottom: $spacing-1 * 2;
+    gap: $spacing-1;
+    align-items: center;
+    margin-bottom: $spacing-3;
 
     h4 {
         text-align: center;
@@ -94,12 +96,9 @@
 }
 
 .view-users__roles-actions {
-    padding: 52px $spacing-1 * 2 0;
-
-    .dijitButton {
-        display: block;
-        margin: $spacing-1 0;
-    }
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
 }
 
 .view-users__roles-to-grant,

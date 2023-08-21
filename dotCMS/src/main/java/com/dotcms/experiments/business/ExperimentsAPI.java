@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResults;
@@ -8,7 +9,6 @@ import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
@@ -82,6 +82,13 @@ public interface ExperimentsAPI {
      * @return
      */
     Experiment start(final String experimentId, final User user)
+            throws DotDataException, DotSecurityException;
+
+    /**
+     * Similar to #start, but it forces the start of the Experiment even if there is an Experiment
+     * already running for the same page, which would then be stopped.
+     */
+    Experiment forceStart(final String experimentId, final User user)
             throws DotDataException, DotSecurityException;
 
     /**
@@ -186,6 +193,8 @@ public interface ExperimentsAPI {
      */
     ExperimentResults getResults(final Experiment experiment, User user)
             throws DotDataException, DotSecurityException;
+
+    List<Experiment> cacheRunningExperiments() throws DotDataException;
 
     /**
      * Return a list of the Events into an Experiment group by {@link BrowserSession}

@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.business.SystemTableFactory;
+import com.dotcms.business.SystemTableFactoryImpl;
 import com.dotcms.cluster.business.ServerFactory;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
@@ -256,6 +258,10 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (ExperimentsFactory) getInstance(FactoryIndex.EXPERIMENTS_FACTORY);
     }
 
+    public static SystemTableFactory getSystemTableFactory() {
+        return (SystemTableFactory) getInstance(FactoryIndex.SYSTEM_TABLE_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -331,7 +337,8 @@ enum FactoryIndex
 	FIELD_FACTORY_2,
     FileAsset_Factory,
     VARIANT_FACTORY,
-    EXPERIMENTS_FACTORY;
+    EXPERIMENTS_FACTORY,
+    SYSTEM_TABLE_FACTORY;
 
 	Object create() {
 		switch(this) {
@@ -372,6 +379,7 @@ enum FactoryIndex
             case HOST_FACTORY : return new HostFactoryImpl();
             case VARIANT_FACTORY:_FACTORY : return new VariantFactoryImpl();
             case EXPERIMENTS_FACTORY: return new ExperimentsFactoryImpl();
+            case SYSTEM_TABLE_FACTORY: return new SystemTableFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

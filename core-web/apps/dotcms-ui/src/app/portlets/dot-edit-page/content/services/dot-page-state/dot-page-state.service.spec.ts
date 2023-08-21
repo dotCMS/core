@@ -491,6 +491,21 @@ describe('DotPageStateService', () => {
 
             service.setLocalState(renderedPage);
         });
+
+        it('should set local state and emit with experiment', () => {
+            const mock = getDotPageRenderStateMock(dotcmsContentletMock, EXPERIMENT_MOCK);
+            dotExperimentsService.getByStatus = jasmine
+                .createSpy()
+                .and.returnValue(of([EXPERIMENT_MOCK]));
+
+            const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
+
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
+            });
+
+            service.setLocalState(renderedPage);
+        });
     });
 
     describe('login as user', () => {
