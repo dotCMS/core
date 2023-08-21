@@ -21,14 +21,13 @@
     width: 522px;
 }
 
-.field {
-    .field__date-hint {
-        margin-top: -$spacing-3;
-    }
-}
-
 .content-type__form-dates {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: $spacing-3;
+    margin-bottom: $spacing-1;
+
+    .field {
+        margin-bottom: 0;
+    }
 }
