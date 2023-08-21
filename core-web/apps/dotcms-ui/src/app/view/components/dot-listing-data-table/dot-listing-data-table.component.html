@@ -115,7 +115,7 @@
             {{ rowData[col.fieldName] }}
         </span>
         <span *ngIf="!col.icon && col.fieldName !== 'nEntries' && col.format === 'date'">
-            {{ rowData[col.fieldName] | dotRelativeDate : true }}
+            {{ rowData[col.fieldName] | dotRelativeDate }}
         </span>
         <a
             *ngIf="col.fieldName === 'nEntries' && !rowData?.system"
