@@ -4,8 +4,8 @@
     border: $textbox-normal-border;
 
     .dijitArrowButton {
-        height: $field-height - ($field-border-size * 2);
-        width: $field-height;
+        height: $field-height-md;
+        width: $field-height-md;
         background-color: $textbox-normal-arrow-bgcolor;
         border-left: $textbox-normal-arrow-border;
 
@@ -45,6 +45,7 @@
     &Focused {
         border: $textbox-focused-border;
         background-color: $textbox-focused-bgcolor;
+        @include field-focus;
 
         .dijitInputInner {
             color: $textbox-focused-textcolor;

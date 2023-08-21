@@ -42,10 +42,8 @@
     gap: 0.5rem;
 }
 
-#structure_inode_popup .dijitMenuItem .separator {
-    height: 1px;
-    margin: -1px -10px 0px -10px;
-    background: #ddd;
+#structure_inode_popup .dijitMenuItem:has(> .separator) {
+    border-top: 1px solid $color-palette-gray-400;
 }
 
 // GOOGLE FONTS
