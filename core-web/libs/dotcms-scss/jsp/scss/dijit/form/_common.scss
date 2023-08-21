@@ -1,5 +1,9 @@
 @use "sass:math";
 
+.dijitInputContainer {
+    height: 100%;
+}
+
 .dijitButton,
 .dijitComboButton,
 .dijitDropDownButton,
@@ -7,8 +11,7 @@
 .dijitTextBox,
 .dijitToggleButton {
     border-radius: $field-border-radius;
-    font-size: $font-size-default;
-    height: $field-height;
+    height: $field-height-md;
 }
 
 .dijitButton,
@@ -27,20 +30,21 @@
 .dijitDropDownButton .dijitArrowButtonInner,
 .dijitSelect .dijitArrowButtonContainer,
 .dijitSpinner .dijitSpinnerButtonContainer {
-    height: $field-height - 2px; // Need to substract the border (top and bottom)
+    height: 100%;
     border: none;
     position: relative;
 }
 
 .dijitPlaceHolder {
     color: $field-placeholder-color;
+    top: 50%;
+    transform: translateY(-50%);
     font-style: normal;
-    line-height: $field-height - ($field-border-size * 2);
 }
 
 .dijitValidationContainer {
     background-color: $error;
-    height: $field-height - (2 * $field-border-size);
+    height: 100%;
     position: relative;
     width: 11px;
 
