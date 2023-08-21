@@ -73,7 +73,7 @@ $button-focused-border: solid $field-border-size $color-palette-primary;
 
 // DropDownButton
 $dropdownbutton-arrow-size: 5px;
-$dropdownbutton-arrow-container-size: calc($field-height - ($field-border-size * 2));
+$dropdownbutton-arrow-container-size: 2.1875rem;
 
 $dropdownbutton-normal-bgcolor: $button-normal-bgcolor;
 $dropdownbutton-normal-textcolor: $button-normal-textcolor;

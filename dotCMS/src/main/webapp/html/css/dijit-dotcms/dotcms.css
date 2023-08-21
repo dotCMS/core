@@ -3554,7 +3554,7 @@
   padding-left: 1rem;
 }
 .dijitDropDownButton .dijitArrowButtonInner {
-  width: 37px;
+  width: 2.1875rem;
   background-color: transparent;
 }
 .dijitDropDownButton .dijitArrowButtonInner:before {
@@ -4068,7 +4068,7 @@
 }
 .dijitComboBox .dijitArrowButton {
   height: 37px;
-  width: 40px;
+  width: 2.1875rem;
   background-color: #f3f3f4;
   border-left: solid 1.5px #d1d4db;
 }
@@ -11125,16 +11125,3 @@ body {
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
 }
-
-
-.listingThumbDiv{
-  height: 60px;
-  width: 80px;
-  position: relative;
-  border-radius: 5px;
-  overflow: hidden;
-  cursor: pointer;
-
-}
-
-/*# sourceMappingURL=dotcms.css.map */
