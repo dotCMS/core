@@ -6164,6 +6164,17 @@ select[multiple]:hover {
   border-bottom: 1px solid #f3f3f4;
   vertical-align: middle;
 }
+#listing-table th .listingThumbDiv, .listingTable th .listingThumbDiv, .dojoxUploaderFileListTable th .listingThumbDiv,
+#listing-table td .listingThumbDiv,
+.listingTable td .listingThumbDiv,
+.dojoxUploaderFileListTable td .listingThumbDiv {
+  height: 60px;
+  width: 80px;
+  position: relative;
+  border-radius: 5px;
+  overflow: hidden;
+  cursor: pointer;
+}
 #listing-table th:first-child, .listingTable th:first-child, .dojoxUploaderFileListTable th:first-child,
 #listing-table td:first-child,
 .listingTable td:first-child,
