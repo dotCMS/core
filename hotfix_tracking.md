@@ -102,3 +102,4 @@ This maintenance release includes the following code fixes:
 81. https://github.com/dotCMS/core/issues/25660 : Add support for h4, h5, h6 headlines in Block Editor #25660
 82. https://github.com/dotCMS/core/issues/24716 : Fix Undo/Redo Issues in Block Editor #24716
 83. https://github.com/dotCMS/core/issues/25797 : When uploading multiple files, the files are always in English #25797
+84. https://github.com/dotCMS/core/issues/25371 : PP: pushing new folder with limited user fails #25371
