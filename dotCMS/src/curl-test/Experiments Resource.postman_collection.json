@@ -5903,7 +5903,7 @@
 									"});",
 									"",
 									"pm.test(\"Expected error message\", function () {",
-									"    pm.expect(jsonData.message).equal(\"Invalid Parameters provided: [does-not-exist]\")",
+									"    pm.expect(jsonData.message).equal(\"Invalid Parameters provided: does-not-exist\")",
 									"});",
 									"",
 									""
