@@ -1187,11 +1187,67 @@ function showSystemVars(){
     });
 }
 
+    let assetExportDialog;
 
+    /**
+     * When the User needs to download dotCMS assets, this function will display a dialog asking them whether they want
+     * to include old versions of the assets or not.
+     */
+    function createAssetExportDialog() {
+        // Create the dialog
+        assetExportDialog = new dijit.Dialog({
+            title: "<%= LanguageUtil.get(pageContext, "Import/Export-dotCMS-Content") %>",
+            content: "<%= LanguageUtil.get(pageContext, "download-assets-include-old-versions") %>",
+            onBlur: () => {
+                if (assetExportDialog.open) {
+                    assetExportDialog.hide();
+                }
+            }
+        });
+        const assetDownloadUrl = "/api/v1/maintenance/_downloadAssets?oldAssets=";
+        const btnContainer = document.createElement("div");
+        const btnConfirm = createDialogBtn("<%= LanguageUtil.get(pageContext, "Yes") %>", assetDownloadUrl + "true");
+        const btnReject = createDialogBtn("<%= LanguageUtil.get(pageContext, "No") %>", assetDownloadUrl + "false");
+        btnContainer.className = "dialogBtnContainer";
+        // Add the buttons to the container
+        btnContainer.appendChild(btnConfirm.domNode)
+        btnContainer.appendChild(btnReject.domNode);
+        // Add the container to the dialog
+        assetExportDialog.containerNode.appendChild(btnContainer);
+    }
+
+    function createDialogBtn(label, href) {
+        return new dijit.form.Button({
+            label,
+            class: "dialogButton",
+            onClick: () => {
+                location.href = href;
+                assetExportDialog.hide();
+            }
+        });
+    }
+
+    function showAssetExportDialog() {
+        assetExportDialog.show();
+    }
 
 </script>
 
 <style>
+
+    .dialogBtnContainer {
+        text-align: center; /* Horizontally center the content */
+        width: auto;
+        display: flex;
+        justify-content: center;
+        padding: .5rem 0;
+        gap: 25px; /* flex | grid */
+    }
+
+    .dialogButton {
+        width: 30%;
+    }
+
 #idxReplicasDialog{
 	width:300px,height:150px;
 }
@@ -1504,11 +1560,23 @@ dd.leftdl {
                         </td>
                     </tr>
                 <% } %>
+                    <!--
+                    <tr>
+                        <td>Testing the Dialog</td>
+                        <td style="text-align:center;white-space:nowrap;">
+                            <div class="inline-form">
+                                <button dojoType="dijit.form.Button" onclick="showAssetExportDialog()" iconClass="downloadIcon">
+                                    Display Button
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    -->
                 <tr>
                     <td><%= LanguageUtil.get(pageContext,"Download-Assets") %></td>
                     <td style="text-align:center;white-space:nowrap;">
                         <div class="inline-form">
-                            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadAssets'" iconClass="downloadIcon">
+                            <button dojoType="dijit.form.Button" onclick="showAssetExportDialog()" iconClass="downloadIcon">
                                 <%= LanguageUtil.get(pageContext,"Download-Assets") %>
                             </button>
                         </div>
@@ -1534,7 +1602,7 @@ dd.leftdl {
                                 <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
                             </button>
 
-                            <button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarterWithAssets'" iconClass="downloadIcon">
+                            <button dojoType="dijit.form.Button" onClick="showAssetExportDialog()" iconClass="downloadIcon">
                                 <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
                             </button>
                         </div>
@@ -1922,6 +1990,7 @@ dojo.require("dijit.form.DateTextBox");
 
 		checkReindexation();
 		checkFixAsset();
+        createAssetExportDialog();
 		//indexStructureChanged();
 
 			var tab =dijit.byId("mainTabContainer");

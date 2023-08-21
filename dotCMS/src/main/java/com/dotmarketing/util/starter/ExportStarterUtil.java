@@ -492,7 +492,7 @@ public class ExportStarterUtil {
      * @param includeAssets If the Starter file must contain all dotCMS assets as well, set this to {@code true}.
      */
     public void streamCompressedStarter(final OutputStream output, final boolean includeAssets) {
-        this.streamCompressedData(output, true, includeAssets, false, false);
+        this.streamCompressedData(output, true, includeAssets, false, true);
     }
 
     /**
@@ -501,30 +501,34 @@ public class ExportStarterUtil {
      * <p>The resulting compressed file is directly streamed to the {@link OutputStream} for users to be able to
      * download it even before it is 100% ready.</p>
      *
-     * @param output The {@link OutputStream} instance.
+     * @param output           The {@link OutputStream} instance.
+     * @param includeOldAssets If absolutely all versions of the assets must be included in the compressed file, set
+     *                         this to {@code true}.
      */
-    public void streamCompressedAssets(final OutputStream output, boolean oldAssets) {
-        this.streamCompressedData(output, false, false, true, oldAssets);
+    public void streamCompressedAssets(final OutputStream output, boolean includeOldAssets) {
+        this.streamCompressedData(output, false, false, true, includeOldAssets);
     }
 
     /**
      * Generates a compressed file with specific dotCMS data.</p>
      *
      * @param output                      The {@link OutputStream} instance.
-     * @param includeStarterData          If the dotCMS data must be added to the compressed file, set this to {@code
-     *                                    true}.
+     * @param includeStarterData          If the dotCMS data must be added to the compressed file, set this to
+     *                                    {@code true}.
      * @param includeStarterDataAndAssets If the Starter file must contain all dotCMS assets as well, set this to
      *                                    {@code true}.
      * @param includeAssetsOnly           If only the assets must be included in the compressed file, set this to
      *                                    {@code true}.
+     * @param includeOldAssets            If absolutely all versions of the assets must be included in the compressed
+     *                                    file, set this to {@code true}.
      */
     private void streamCompressedData(final OutputStream output, boolean includeStarterData,
-                                     final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean oldAssets) {
+                                     final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean includeOldAssets) {
         try (final ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(output))) {
             if (includeStarterData) {
                 this.getStarterDataAsJSON(zip);
             }
-            final AssetFileNameFilter fileFilter = oldAssets ?  new AssetFileNameFilter() : new AssetFileNameFilter(getLiveWorkingBloomFilter());
+            final AssetFileNameFilter fileFilter = includeOldAssets ?  new AssetFileNameFilter() : new AssetFileNameFilter(getLiveWorkingBloomFilter());
             if (includeStarterDataAndAssets) {
                 this.getAssets(zip, fileFilter);
             }
@@ -532,7 +536,10 @@ public class ExportStarterUtil {
                 this.getAssets(zip, fileFilter);
             }
         } catch (final Exception e) {
-            Logger.error(this, String.format("An error occurred when generating compressed data file with [ includeStarterData = %s, includeStarterDataAndAssets = %s, includeAssetsOnly = %s ] : %s", includeStarterData, includeStarterDataAndAssets, includeAssetsOnly, e.getMessage()), e);
+            Logger.error(this, String.format("An error occurred when generating compressed data file with [ " +
+                    "includeStarterData = %s, includeStarterDataAndAssets = %s, includeAssetsOnly = %s, " +
+                    "includeOldAssets = %s ] : %s", includeStarterData, includeStarterDataAndAssets,
+                    includeAssetsOnly, includeOldAssets, e.getMessage()), e);
             throw new DotRuntimeException(e);
         }
     }
@@ -646,8 +653,6 @@ public class ExportStarterUtil {
 
     }
 
-
-
     private static final String SELECT_ALL_LIVE_WORKING_CONTENTLETS=
             "select " +
             "  live_inode as inode " +
@@ -672,12 +677,8 @@ public class ExportStarterUtil {
             "count(*) as my_count " +
             "from (" + SELECT_ALL_LIVE_WORKING_CONTENTLETS + ") testing ";
 
-
-
     @CloseDBIfOpened
     BloomFilter<String> getLiveWorkingBloomFilter()  {
-
-
         long contentCount = new DotConnect()
                 .setSQL(SELECT_ALL_LIVE_WORKING_CONTENTLETS_COUNT)
                 .getInt("my_count");
@@ -689,10 +690,10 @@ public class ExportStarterUtil {
                 contentCount,
                 0.01);
 
-        try(Connection conn = DbConnectionFactory.getDataSource().getConnection();
-            PreparedStatement statement = conn.prepareStatement(SELECT_ALL_LIVE_WORKING_CONTENTLETS)){
+        try (final Connection conn = DbConnectionFactory.getDataSource().getConnection();
+            final PreparedStatement statement = conn.prepareStatement(SELECT_ALL_LIVE_WORKING_CONTENTLETS)){
             statement.setFetchSize(5000);
-            try(ResultSet rs = statement.executeQuery()) {
+            try (final ResultSet rs = statement.executeQuery()) {
                 int i = 0;
                 while (rs.next()) {
                     bloomFilter.put(rs.getString("inode"));
@@ -700,20 +701,11 @@ public class ExportStarterUtil {
                 }
                 Logger.info(this.getClass(), "Added " + i + " contentlets to the BloomFilter");
             }
-        }
-        catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new DotRuntimeException(e);
         }
 
         return bloomFilter;
-
-
     }
-
-
-
-
-
-
 
 }

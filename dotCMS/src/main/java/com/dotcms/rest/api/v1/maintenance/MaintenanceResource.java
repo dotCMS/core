@@ -252,6 +252,7 @@ public class MaintenanceResource implements Serializable {
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
+     * @param oldAssets If the resulting file must have absolutely all versions of all assets, set this to {@code true}.
      *
      * @return The {@link StreamingOutput} with the compressed file.
      */
@@ -268,9 +269,6 @@ public class MaintenanceResource implements Serializable {
         final String zipName = exportStarterUtil.resolveAssetsFileName();
         Logger.info(this, String.format("User '%s' is generating compressed Assets file '%s'", user.getUserId(),
                 zipName));
-
-
-
         final StreamingOutput stream = output -> {
 
             exportStarterUtil.streamCompressedAssets(output, oldAssets);
@@ -279,7 +277,6 @@ public class MaintenanceResource implements Serializable {
             Logger.info(this, String.format("Compressed Assets file '%s' has been generated successfully!", zipName));
 
         };
-
         return this.buildFileResponse(response, stream, zipName);
     }
 
