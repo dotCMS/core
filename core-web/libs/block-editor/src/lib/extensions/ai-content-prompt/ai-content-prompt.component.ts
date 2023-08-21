@@ -46,13 +46,13 @@ export class AIContentPromptComponent {
         }
     }
 
+    cleanForm() {
+        this.form.reset();
+    }
+
     private buildForm() {
         this.form = this.fb.group({
             textPrompt: ['', Validators.required]
         });
-    }
-
-    cleanForm() {
-        this.form.reset();
     }
 }

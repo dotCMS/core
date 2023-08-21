@@ -18,7 +18,7 @@ interface AIContentPromptProps {
     pluginKey: PluginKey;
     editor: Editor;
     element: HTMLElement;
-    tippyOptions?: Partial<Props>;
+    tippyOptions: Partial<Props>;
     component: ComponentRef<AIContentPromptComponent>;
 }
 
@@ -42,7 +42,7 @@ export class AIContentPromptView {
 
     public tippy: Instance | undefined;
 
-    public tippyOptions?: Partial<Props>;
+    public tippyOptions: Partial<Props>;
 
     public pluginKey: PluginKey;
 
@@ -84,7 +84,7 @@ export class AIContentPromptView {
             return;
         }
 
-        if (next.open) {
+        if (!next.open) {
             this.component.instance.cleanForm();
         }
 
@@ -131,7 +131,7 @@ export class AIContentPromptView {
         document.body.removeEventListener('mousedown', this.handleOutsideClick);
     }
 
-    handleOutsideClick = (event: MouseEvent) => {
+    private handleOutsideClick = (event: MouseEvent) => {
         const target = event.target as HTMLElement;
 
         if (!this.tippy?.popper.contains(target)) {
