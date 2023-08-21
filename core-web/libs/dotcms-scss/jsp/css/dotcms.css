@@ -3526,6 +3526,10 @@
     display: none !important;
 }
 
+.dijitInputContainer {
+    height: 100%;
+}
+
 .dijitButton,
 .dijitComboButton,
 .dijitDropDownButton,
@@ -3533,7 +3537,7 @@
 .dijitTextBox,
 .dijitToggleButton {
     border-radius: 0.375rem;
-    height: 37px;
+    height: 40px;
 }
 
 .dijitButton,
@@ -3552,15 +3556,16 @@
 .dijitDropDownButton .dijitArrowButtonInner,
 .dijitSelect .dijitArrowButtonContainer,
 .dijitSpinner .dijitSpinnerButtonContainer {
-    height: 37px;
+    height: 100%;
     border: none;
     position: relative;
 }
 
 .dijitPlaceHolder {
     color: #afb3c0;
+    top: 50%;
+    transform: translateY(-50%);
     font-style: normal;
-    line-height: 37px;
 }
 
 .dijitValidationContainer {
@@ -3598,7 +3603,7 @@
     border: solid 1.5px #d1d4db;
 }
 .dijitTextBox .dijitArrowButton {
-    height: 37px;
+    height: 40px;
     width: 40px;
     background-color: #ffffff;
     border-left: solid 1.5px #d1d4db;
@@ -3879,7 +3884,7 @@
 
 .dijitButton,
 .dijitToggleButton {
-    height: 37px;
+    height: 40px;
     border-radius: 0.375rem;
     display: inline-flex;
     align-items: center;
@@ -3944,6 +3949,10 @@
     border: solid 1.5px var(--color-palette-primary-500);
     color: var(--color-palette-primary-500);
     box-shadow: 0;
+}
+.dijitDropDownButton .dijitButtonContents,
+.dijitDropDownButton .dijitButtonNode {
+    height: 100%;
 }
 .dijitDropDownButton .dijitButtonNode {
     padding-left: 1rem;
@@ -4045,7 +4054,7 @@
     box-shadow: 0;
 }
 .dijitComboButton .dijitArrowButtonInner {
-    width: 37px;
+    width: 40px;
     background-color: transparent;
 }
 .dijitComboButton .dijitArrowButtonInner:before {
@@ -4143,7 +4152,6 @@
     box-shadow: 0;
 }
 .dijitComboButtonDisabled .dijitArrowButtonInner {
-    border-left: solid 1.5px #ebecef;
     background-color: transparent;
 }
 .dijitComboButtonDisabled .dijitArrowButtonInner:before {
@@ -4475,11 +4483,10 @@
 }
 .dijitComboBox input {
     height: auto;
-    line-height: 37px;
     padding: 0;
 }
 .dijitComboBox .dijitArrowButton {
-    height: 37px;
+    height: 100%;
     width: 40px;
     background-color: #f3f3f4;
     border-left: solid 1.5px #d1d4db;
@@ -5502,8 +5509,7 @@
     line-height: normal;
 }
 .dijitInline.dijitTextBox .dijitInputInner {
-    height: 37px;
-    line-height: 37px;
+    height: 100%;
     padding: 0;
 }
 .dijitInlineEditBoxDisplayModeHover {

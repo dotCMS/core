@@ -6,12 +6,11 @@
 
     input {
         height: auto;
-        line-height: $field-height;
         padding: 0;
     }
 
     .dijitArrowButton {
-        height: $field-height;
+        height: 100%;
         width: $field-height;
         background-color: $combobox-normal-arrow-bgcolor;
         border-left: $combobox-normal-arrow-border;

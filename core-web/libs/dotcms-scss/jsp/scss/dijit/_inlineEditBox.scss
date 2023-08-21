@@ -1,5 +1,3 @@
-// TODO: design it :)
-
 .dijitInline {
     .dijitButton {
         margin: 5px 5px 0 0;
@@ -7,9 +5,7 @@
     }
 
     &.dijitTextBox .dijitInputInner {
-        height: $field-height;
-        line-height: $field-height;
-        // line-height: normal; TODO: fix this because is breaking other inline fields
+        height: 100%;
         padding: 0;
     }
 

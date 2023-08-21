@@ -3131,6 +3131,10 @@
   display: none !important;
 }
 
+.dijitInputContainer {
+  height: 100%;
+}
+
 .dijitButton,
 .dijitComboButton,
 .dijitDropDownButton,
@@ -3157,15 +3161,16 @@
 .dijitDropDownButton .dijitArrowButtonInner,
 .dijitSelect .dijitArrowButtonContainer,
 .dijitSpinner .dijitSpinnerButtonContainer {
-  height: 40px;
+  height: 100%;
   border: none;
   position: relative;
 }
 
 .dijitPlaceHolder {
   color: #afb3c0;
+  top: 50%;
+  transform: translateY(-50%);
   font-style: normal;
-  line-height: 40px;
 }
 
 .dijitValidationContainer {
@@ -3550,6 +3555,10 @@
   color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
+.dijitDropDownButton .dijitButtonContents,
+.dijitDropDownButton .dijitButtonNode {
+  height: 100%;
+}
 .dijitDropDownButton .dijitButtonNode {
   padding-left: 1rem;
 }
@@ -3745,7 +3754,6 @@
   box-shadow: 0;
 }
 .dijitComboButtonDisabled .dijitArrowButtonInner {
-  border-left: solid 1.5px #ebecef;
   background-color: transparent;
 }
 .dijitComboButtonDisabled .dijitArrowButtonInner:before {
@@ -4063,11 +4071,10 @@
 }
 .dijitComboBox input {
   height: auto;
-  line-height: 40px;
   padding: 0;
 }
 .dijitComboBox .dijitArrowButton {
-  height: 40px;
+  height: 100%;
   width: 40px;
   background-color: #f3f3f4;
   border-left: solid 1.5px #d1d4db;
@@ -5055,8 +5062,7 @@
   line-height: normal;
 }
 .dijitInline.dijitTextBox .dijitInputInner {
-  height: 40px;
-  line-height: 40px;
+  height: 100%;
   padding: 0;
 }
 .dijitInlineEditBoxDisplayModeHover {
