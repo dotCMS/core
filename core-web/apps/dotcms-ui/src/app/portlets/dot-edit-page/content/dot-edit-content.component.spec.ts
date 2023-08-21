@@ -700,6 +700,7 @@ describe('DotEditContentComponent', () => {
                 }));
 
                 it('should render in edit mode', fakeAsync(() => {
+                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
                     const state = new DotPageRenderState(
                         mockUser(),
                         new DotPageRender({
