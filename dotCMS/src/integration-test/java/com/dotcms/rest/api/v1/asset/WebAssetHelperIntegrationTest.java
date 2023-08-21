@@ -216,7 +216,7 @@ public class WebAssetHelperIntegrationTest {
      * @throws IOException
      */
     @Test
-    public void TestSaveFilAssetNoSystemWorkflow_Test() throws DotDataException, DotSecurityException, IOException {
+    public void Test_Save_FilAsset_No_System_Workflow() throws DotDataException, DotSecurityException, IOException {
         final User user = APILocator.systemUser();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         ContentType fileAssetContentType = contentTypeAPI.find("FileAsset");
