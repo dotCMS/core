@@ -37,6 +37,7 @@ import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
@@ -120,6 +121,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -3992,6 +3994,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         this.canLock(contentlet, user);
+
+        if (contentlet.isHTMLPage()) {
+            final Optional<Experiment> runningExperiment = APILocator.getExperimentsAPI()
+                    .getRunningExperimentPerPage(contentlet.getIdentifier());
+
+            if (runningExperiment.isPresent()) {
+                throw new RunningExperimentUnpublishException(contentlet, runningExperiment.get());
+            }
+        }
 
         APILocator.getVersionableAPI().removeLive(contentlet);
 
