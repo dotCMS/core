@@ -6171,7 +6171,7 @@ select[multiple]:hover {
   height: 60px;
   width: 80px;
   position: relative;
-  border-radius: 5px;
+  border-radius: 0.25rem;
   overflow: hidden;
   cursor: pointer;
 }
