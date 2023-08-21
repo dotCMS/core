@@ -69,14 +69,13 @@ export interface VmReportExperiment {
     bayesianChart: DotChart | null;
     detailData: DotExperimentVariantDetail[];
     isLoading: boolean;
-    hasEnoughSessions: boolean;
     status: ComponentStatus;
     winnerLegendSummary: SummaryLegend;
     suggestedWinner: DotResultVariant | null;
     promotedVariant: Variant | null;
 }
 
-const NOT_ENOUGH_DATA_LABEL = 'Not enough data';
+const NOT_ENOUGH_DATA_LABEL = 'experiments.reports.not.enough.data';
 
 @Injectable()
 export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsReportsState> {
@@ -269,7 +268,6 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     readonly vm$: Observable<VmReportExperiment> = this.select(
         this.state$,
         this.isLoading$,
-        this.hasEnoughSessions$,
         this.bayesianChart$,
         this.dailyChart$,
         this.summaryWinnerLegend$,
@@ -279,7 +277,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         (
             { experiment, status, results },
             isLoading,
-            hasEnoughSessions,
+
             bayesianChart,
             dailyChart,
             winnerLegendSummary,
@@ -291,7 +289,6 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             status,
             results,
             isLoading,
-            hasEnoughSessions,
             bayesianChart,
             dailyChart,
             winnerLegendSummary: {

@@ -15,11 +15,7 @@ import { ConfirmPopup } from 'primeng/confirmpopup';
 import { TabView } from 'primeng/tabview';
 
 import { DotMessageService } from '@dotcms/data-access';
-import {
-    ComponentStatus,
-    DotExperimentStatus,
-    DotExperimentVariantDetail
-} from '@dotcms/dotcms-models';
+import { ComponentStatus, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     BAYESIAN_CHARTJS_DATA_MOCK_WITH_DATA,
@@ -50,6 +46,31 @@ const ActivatedRouteMock = {
     }
 };
 
+const EXPERIMENT_RESULTS_DETAIL_DATA_MOCK = [
+    {
+        id: '111',
+        name: 'Variant 111 Name',
+        conversions: 0,
+        conversionRate: '0%',
+        conversionRateRange: '19.41% to 93.24%',
+        sessions: 0,
+        probabilityToBeBest: '7.69%',
+        isWinner: false,
+        isPromoted: false
+    },
+    {
+        id: 'DEFAULT',
+        name: 'DEFAULT Name',
+        conversions: 2,
+        conversionRate: '100%',
+        conversionRateRange: '66.37% to 99.72%',
+        sessions: 2,
+        probabilityToBeBest: '92.31%',
+        isWinner: false,
+        isPromoted: false
+    }
+];
+
 const EXPERIMENT_MOCK_3 = getExperimentMock(3);
 const EXPERIMENT_RESULTS_MOCK = getExperimentResultsMock(0);
 
@@ -64,9 +85,8 @@ const defaultVmMock: VmReportExperiment = {
         chartData: BAYESIAN_CHARTJS_DATA_MOCK_WITH_DATA,
         hasEnoughData: true
     },
-    detailData: [],
+    detailData: EXPERIMENT_RESULTS_DETAIL_DATA_MOCK,
     isLoading: false,
-    hasEnoughSessions: false,
     status: ComponentStatus.INIT,
     winnerLegendSummary: { icon: 'icon', legend: 'legend' },
     suggestedWinner: null,
@@ -154,7 +174,7 @@ describe('DotExperimentsReportsComponent', () => {
         expect(spectator.query(DotExperimentsReportDailyDetailsComponent)).toExist();
     });
 
-    it('should have a Daily Report and a Bayesian Report', (done) => {
+    it('should have a Daily Report and a Bayesian Report', () => {
         spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
         spectator.detectChanges();
 
@@ -163,19 +183,14 @@ describe('DotExperimentsReportsComponent', () => {
         expect(spectator.query(byTestId('bayesian-chart'))).toExist();
         expect(spectator.query(DotExperimentsReportDailyDetailsComponent)).toExist();
 
-        spectator.component.vm$.subscribe((vm) => {
-            expect(spectator.query(DotExperimentsReportsChartComponent).data).toEqual(
-                vm.dailyChart.chartData
-            );
+        expect(spectator.query(DotExperimentsReportsChartComponent).data).toEqual(
+            defaultVmMock.dailyChart.chartData
+        );
 
-            expect(spectator.queryLast(DotExperimentsReportsChartComponent).data).toEqual(
-                vm.dailyChart.chartData
-            );
-            expect(spectator.queryLast(DotExperimentsReportsChartComponent).isLinearAxis).toEqual(
-                true
-            );
-            done();
-        });
+        expect(spectator.queryLast(DotExperimentsReportsChartComponent).data).toEqual(
+            defaultVmMock.bayesianChart.chartData
+        );
+        expect(spectator.queryLast(DotExperimentsReportsChartComponent).isLinearAxis).toEqual(true);
     });
 
     it('should show the SummaryComponent', () => {
@@ -185,8 +200,7 @@ describe('DotExperimentsReportsComponent', () => {
                 ...defaultVmMock.experiment,
                 status: DotExperimentStatus.RUNNING
             },
-            isLoading: false,
-            showSummary: true
+            isLoading: false
         });
         spectator.detectComponentChanges();
         expect(spectator.query(DotExperimentsExperimentSummaryComponent)).toExist();
@@ -199,8 +213,7 @@ describe('DotExperimentsReportsComponent', () => {
                 ...defaultVmMock.experiment,
                 status: DotExperimentStatus.RUNNING
             },
-            isLoading: false,
-            showSummary: true
+            isLoading: false
         });
 
         spectator.detectComponentChanges();
@@ -221,17 +234,14 @@ describe('DotExperimentsReportsComponent', () => {
     });
 
     it('should show promote variant', () => {
-        const variant: DotExperimentVariantDetail = {
-            id: '111',
-            name: 'Variant 111 Name',
-            conversions: 0,
-            conversionRate: '0%',
-            conversionRateRange: '19.41% to 93.24%',
-            sessions: 0,
-            probabilityToBeBest: '7.69%',
-            isWinner: false,
-            isPromoted: false
-        };
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            experiment: {
+                ...defaultVmMock.experiment,
+                status: DotExperimentStatus.RUNNING
+            },
+            isLoading: false
+        });
 
         spectator.detectChanges();
         jest.spyOn(store, 'promoteVariant');
@@ -244,8 +254,8 @@ describe('DotExperimentsReportsComponent', () => {
         confirmPopupComponent.accept();
 
         expect(store.promoteVariant).toHaveBeenCalledWith({
-            experimentId: EXPERIMENT_MOCK.id,
-            variant: variant
+            experimentId: defaultVmMock.experiment.id,
+            variant: EXPERIMENT_RESULTS_DETAIL_DATA_MOCK[0]
         });
         expect(spectator.queryAll(byTestId('variant-promoted-tag')).length).toEqual(0);
     });
