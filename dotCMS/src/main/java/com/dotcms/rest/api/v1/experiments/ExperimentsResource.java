@@ -1,5 +1,10 @@
 package com.dotcms.rest.api.v1.experiments;
 
+import static com.dotcms.jitsu.EventLogRunnable.POSTING_HEADERS;
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.experiments.business.ExperimentFilter;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.result.ExperimentResults;
@@ -7,19 +12,32 @@ import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.http.CircuitBreakerUrl.Method;
+import com.dotcms.http.CircuitBreakerUrl.Response;
+import com.dotcms.http.CircuitBreakerUrlBuilder;
+import com.dotcms.jitsu.EventLogRunnable;
+import com.dotcms.jitsu.EventsPayload;
+import com.dotcms.jitsu.EventsPayload.EventPayload;
 import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.control.Try;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -498,6 +516,45 @@ public class ExperimentsResource {
         final ExperimentResults experimentResults = APILocator.getExperimentsAPI().getResults(experiment, user);
 
         return new ResponseEntityExperimentResults(experimentResults);
+    }
+
+    /**
+     * Healthcheck for the Experiments/Analytics configuration.
+     *
+     */
+    @GET
+    @NoCache
+    @Path("/health")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityView healthcheck(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response)
+            throws DotDataException, DotSecurityException, SystemException, PortalException {
+
+        final InitDataObject initData = getInitData(request, response);
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+        final AnalyticsApp analyticsApp = Try.of(()->AnalyticsHelper.get().appFromHost(host))
+                .getOrNull();
+
+        if(analyticsApp==null) {
+            return new ResponseEntityView<>(Map.of("healthy", false));
+        }
+
+        final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
+
+        final CircuitBreakerUrlBuilder builder = CircuitBreakerUrl.builder()
+                .setMethod(Method.POST)
+                .setUrl(url)
+                .setParams(map("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
+                .setTimeout(4000)
+                .setHeaders(POSTING_HEADERS);
+
+        final Map<String, Object> testObject = Map.of("test", "test");
+
+        final EventsPayload eventPayload = new EventsPayload(testObject);
+        final Optional<Response> eventResponse = new EventLogRunnable(host, eventPayload)
+                .sendEvent(builder, new EventPayload(new JSONObject(testObject)));
+
+        return new ResponseEntityView<>(Map.of("healthy", eventResponse.isPresent()));
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,
