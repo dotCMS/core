@@ -1279,12 +1279,12 @@ dd.leftdl {
 
             <table class="listingTable shadowBox">
                 <tr>
-                    <th colspan="2"><%= LanguageUtil.get(pageContext,"Cache") %></th>
-                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                    <th><%= LanguageUtil.get(pageContext,"Cache") %></th>
+                    <th></th>
                 </tr>
                 <tr>
-                    <td colspan="2">&nbsp;</td>
-                    <td align="center">
+                    <td>&nbsp;</td>
+                    <td align="right" style="white-space: nowrap;">
                         <select name="cName" dojoType="dijit.form.ComboBox" autocomplete="true" value="<%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>">
                             <option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"Flush-All-Caches") %></option>
                             <% Object[] caches = (Object[])CacheLocator.getCacheIndexes();
@@ -1304,22 +1304,22 @@ dd.leftdl {
                     </td>
                 </tr>
                 <tr>
-                    <th colspan="2"><%= LanguageUtil.get(pageContext,"Menus-File-Store") %></th>
-                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                    <th><%= LanguageUtil.get(pageContext,"Menus-File-Store") %></th>
+                    <th></th>
                 </tr>
                 <tr>
-                    <td colspan="2">&nbsp;</td>
-                    <td align="center">
+                    <td>&nbsp;</td>
+                    <td align="right">
                         <button dojoType="dijit.form.Button"  onClick="submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_MENU_FILES%>');" iconClass="deleteIcon">
                            <%= LanguageUtil.get(pageContext,"Delete-Menu-Cache") %>
                         </button>
                     </td>
                 </tr>
                 <tr>
-                    <th colspan="3"><%= LanguageUtil.get(pageContext,"Cache-Stats") %></th>
+                    <th colspan="2"><%= LanguageUtil.get(pageContext,"Cache-Stats") %></th>
                 </tr>
                 <tr>
-                    <td colspan="3">
+                    <td colspan="2">
                         <div class="buttonRow" style="text-align: right">
                         <button dojoType="dijit.form.Button"  onClick="refreshCache()" iconClass="resetIcon">
                            <%= LanguageUtil.get(pageContext,"Refresh-Stats") %>
@@ -1379,7 +1379,7 @@ dd.leftdl {
                         <th colspan="2"><%= LanguageUtil.get(pageContext,"Content-Index-Tasks") %></th>
                     </tr>
                     <tr>
-                        <td colspan="2" align="center">
+                        <td colspan="2" align="right">
                             <div id="currentIndexDirDiv"></div>
                         </td>
                     </tr>
@@ -1398,7 +1398,7 @@ dd.leftdl {
                                 </select>
 
                         </td>
-                        <td style="text-align:center;white-space:nowrap;" width="350">
+                        <td style="text-align:right;white-space:nowrap;" width="350">
                             <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="repeatIcon" onClick="doReindex()">
                                 <%= LanguageUtil.get(pageContext,"Reindex") %>
                             </button>
@@ -1411,7 +1411,7 @@ dd.leftdl {
                         <td>
                             <%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> 
                         </td>
-                        <td align="center">
+                        <td align="right">
                             <button dojoType="dijit.form.Button" id="idxShrinkBtn" onClick="optimizeIndices()">
                                 <%= LanguageUtil.get(pageContext,"Optimize-Index") %>
                             </button>
@@ -1421,7 +1421,7 @@ dd.leftdl {
                         <td>
                             <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush.info") %> 
                         </td>
-                        <td align="center">
+                        <td align="right">
                             <button dojoType="dijit.form.Button"  onClick="flushIndiciesCache()">
                                 <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush") %>
                             </button>
@@ -1835,7 +1835,7 @@ dd.leftdl {
                 <%= LanguageUtil.get(pageContext,"thread-tab-reload-sysinfo") %>
             </button>
         </div>
-		<div style="width: 98%; margin-left:auto; margin-right:auto; margin-top: -30px">
+		<div style="width: 98%; margin-left:auto; margin-right:auto; margin-top: -55px">
 		<button dojoType="dijit.form.Button"  name="btn" onClick="selectAll('threadList');">
 			 <%= LanguageUtil.get(pageContext,"Select-all") %>
 		</button>
