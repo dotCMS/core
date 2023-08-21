@@ -146,6 +146,10 @@ export class AIContentPromptView {
     private tippyRect() {
         return document.querySelector('#ai-text-prompt')?.getBoundingClientRect();
     }
+
+    private insertAINode(content: string) {
+        this.editor.commands.showGeneratedContent(content);
+    }
 }
 
 export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
