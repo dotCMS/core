@@ -4,7 +4,8 @@
 
 p-dropdown.p-inputwrapper-filled {
     .p-dropdown {
-        .p-element.p-dropdown-label {
+        .p-element.p-dropdown-label,
+        input.p-dropdown-label {
             color: $black;
         }
     }
@@ -31,7 +32,6 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
     .p-element.p-dropdown-label,
     .p-dropdown-label {
         padding-right: $spacing-1;
-        font-size: $font-size-md;
         @include truncate-text;
     }
 
@@ -63,9 +63,7 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
         @extend #form-field-disabled;
 
         .p-dropdown-trigger {
-            .p-dropdown-trigger-icon {
-                color: $color-palette-gray-700;
-            }
+            color: $color-palette-gray-500;
         }
     }
 }

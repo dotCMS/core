@@ -9,8 +9,6 @@
     padding: 0 $spacing-1;
     color: $color-palette-gray-700;
     font-size: $font-size-md;
-    font-weight: 400;
-    line-height: 140%;
 
     &.p-filled {
         color: $black;
@@ -35,6 +33,7 @@
 #form-field-disabled {
     border-color: $color-palette-gray-200;
     background: $color-palette-gray-100;
+    color: $color-palette-gray-500;
 }
 
 #form-field-states {
@@ -55,11 +54,6 @@
     }
 }
 
-#form-field-text-area {
-    padding: $spacing-1;
-    min-height: 4rem;
-}
-
 #form-field-extend {
     @extend #form-field-base;
     @extend #form-field-states;
@@ -68,20 +62,19 @@
 #field-trigger {
     background: $color-palette-gray-200;
     color: $color-palette-primary;
-    width: 2.1875rem;
+    width: $field-height-md;
     border-top-right-radius: $border-radius-md;
     border-bottom-right-radius: $border-radius-md;
     height: 100%;
 }
 
 #field-trigger-sm {
-    width: 1.875rem;
+    width: $field-height-sm;
     border-top-right-radius: $border-radius-sm;
     border-bottom-right-radius: $border-radius-sm;
 }
 
 #field-trigger-icon {
-    color: $color-palette-primary;
     padding: $spacing-1 $spacing-1;
     font-size: $icon-sm;
 }

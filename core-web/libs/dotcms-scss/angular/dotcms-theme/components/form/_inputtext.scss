@@ -9,7 +9,12 @@
     }
 
     &.p-inputtextarea {
-        @extend #form-field-text-area;
+        padding: $spacing-1;
+        min-height: 4rem;
+    }
+
+    &:disabled::placeholder {
+        color: $color-palette-gray-500;
     }
 }
 
@@ -22,6 +27,7 @@
         transform: translateY(-50%);
         -moz-transform: translateY(-50%);
     }
+
     &:has(.p-inputtext.p-inputtext-sm) {
         i {
             font-size: $font-size-sm;
