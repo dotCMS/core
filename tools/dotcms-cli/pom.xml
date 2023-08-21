@@ -40,6 +40,11 @@
           <artifactId>quarkus-maven-plugin</artifactId>
           <version>${quarkus.platform.version}</version>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>${surefire-plugin.version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>

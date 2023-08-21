@@ -13,6 +13,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,7 +29,8 @@ public class AssetPathResolverImplIntegrationTest {
         IntegrationTestInitService.getInstance().init();
         host = new SiteDataGen().nextPersisted(true);
         Folder foo = new FolderDataGen().site(host).name("foo").nextPersisted();
-        final Folder bar = new FolderDataGen().parent(foo).name("bar").nextPersisted();
+        new FolderDataGen().parent(foo).name("bar").nextPersisted();
+        new FolderDataGen().parent(foo).name("test withSpace").nextPersisted();
     }
 
     /**
@@ -59,6 +64,128 @@ public class AssetPathResolverImplIntegrationTest {
         assertEquals(host.getHostname(), parse.host());
         assertEquals("/foo/bar/1234", parse.path());
         assertEquals("1234", parse.asset());
+    }
+
+    /**
+     * Given scenario: host followed by path with an encoded asset name. The asset name contains
+     * spaces that have been encoded.
+     * <p>
+     * Expected: host is resolved, path contains the original asset name with spaces, and asset name
+     * is the original decoded value.
+     *
+     * @throws DotDataException     if there is an error accessing data
+     * @throws DotSecurityException if there is a security violation
+     */
+    @Test
+    public void Test_Parse_Path_With_Encoded_Asset() throws DotDataException, DotSecurityException {
+
+        String url = String.format("http://%s/foo/bar/qwe rty.png", host.getHostname());
+        url = url.replaceAll(" ", URLEncoder.encode(" ", StandardCharsets.UTF_8));
+
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                .resolve(url, APILocator.systemUser());
+        assertEquals(host.getHostname(), parse.host());
+        assertEquals("/foo/bar/qwe rty.png", parse.path());
+        assertEquals("qwe rty.png", parse.asset());
+    }
+
+    /**
+     * Given scenario: host followed by path with an asset name with spaces that has not been
+     * encoded.
+     * <p>
+     * Expected: an exception is thrown due to the space character in the asset name, and the cause
+     * of the exception is URISyntaxException.
+     */
+    @Test
+    public void Test_Parse_Path_With_Asset_Without_Encoding() {
+
+        final String url = String.format("http://%s/foo/bar/qwe rty.png", host.getHostname());
+
+        try {
+            AssetPathResolver.newInstance().resolve(url, APILocator.systemUser());
+            Assert.fail("Should have thrown an URISyntaxException");
+        } catch (Exception e) {
+            Assert.assertTrue(e.getCause() instanceof URISyntaxException);
+        }
+    }
+
+    /**
+     * Given scenario: host followed by path with an asset name that has a folder with spaces that
+     * has been encoded.
+     * <p>
+     * Expected: the URL is properly resolved, the host, path, and asset are correctly extracted.
+     * the folder with spaces is properly decoded to its original form. No exceptions are expected
+     * to be thrown.
+     *
+     * @throws DotDataException     If there is an error resolving the asset path
+     * @throws DotSecurityException If the user does not have the necessary permissions
+     */
+    @Test
+    public void Test_Parse_Path_With_Encoded_Folder()
+            throws DotDataException, DotSecurityException {
+
+        String url = String.format("http://%s/foo/test withSpace/qwerty.png", host.getHostname());
+        url = url.replaceAll(" ", URLEncoder.encode(" ", StandardCharsets.UTF_8));
+
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                .resolve(url, APILocator.systemUser());
+        assertEquals(host.getHostname(), parse.host());
+        assertEquals("/foo/test withSpace/qwerty.png", parse.path());
+        assertEquals("qwerty.png", parse.asset());
+    }
+
+    /**
+     * Given scenario: host followed by path with an asset name that has a folder with spaces that
+     * has not been encoded.
+     * <p>
+     * Expected: the URL is not properly resolved and an URISyntaxException is thrown.
+     * <p>
+     * This method tests the case where the URL contains a path with spaces that has not been
+     * encoded. It ensures that if the path contains spaces without proper encoding, an
+     * URISyntaxException is thrown.
+     *
+     * @throws URISyntaxException if the URL contains an improperly encoded path with spaces
+     */
+    @Test
+    public void Test_Parse_Path_Without_Encoding() {
+
+        String url = String.format("http://%s/foo/test withSpace/qwerty.png", host.getHostname());
+
+        try {
+            AssetPathResolver.newInstance().resolve(url, APILocator.systemUser());
+            Assert.fail("Should have thrown an URISyntaxException");
+        } catch (Exception e) {
+            Assert.assertTrue(e.getCause() instanceof URISyntaxException);
+        }
+    }
+
+    /**
+     * Given scenario: host followed by path with an asset name with spaces that also has a folder
+     * with spaces that has been properly encoded.
+     * <p>
+     * Expected: the URL is properly resolved, the host, path, and asset are correctly extracted.
+     * the folder and asset with spaces is properly decoded to its original form. No exceptions are
+     * expected to be thrown.
+     * <p>
+     * This method tests the case where the URL contains a path with spaces that has been properly
+     * encoded. It ensures that the path is correctly resolved and the parsed asset and path match
+     * the input URL.
+     *
+     * @throws DotDataException     if there is an error in the asset data
+     * @throws DotSecurityException if there is a security exception
+     */
+    @Test
+    public void Test_Parse_Path_With_Encoded_Folder_And_Asset()
+            throws DotDataException, DotSecurityException {
+
+        String url = String.format("http://%s/foo/test withSpace/qwe rty.png", host.getHostname());
+        url = url.replaceAll(" ", URLEncoder.encode(" ", StandardCharsets.UTF_8));
+
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                .resolve(url, APILocator.systemUser());
+        assertEquals(host.getHostname(), parse.host());
+        assertEquals("/foo/test withSpace/qwe rty.png", parse.path());
+        assertEquals("qwe rty.png", parse.asset());
     }
 
     /**
