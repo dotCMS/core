@@ -37,9 +37,13 @@
 }
 
 .input-text-naked {
-    border: none;
-    color: $font-color-base;
+    background-color: $color-palette-gray-100;
+    border: solid 1px $color-palette-gray-200;
+    border-radius: $border-radius-md;
+    color: $color-palette-gray-700;
     font-family: $font-default;
-    font-size: $font-size-default;
+    font-size: $font-size-md;
     line-height: $field-height;
+    padding-left: $spacing-1;
+    padding-right: $spacing-1;
 }

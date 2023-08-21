@@ -43,7 +43,8 @@ import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-de
 
 enum DotConfirmationType {
     LOCK,
-    PERSONALIZATION
+    PERSONALIZATION,
+    RUNNING_EXPERIMENT
 }
 
 @Component({
@@ -86,15 +87,17 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
     ) {}
 
     ngOnChanges(changes: SimpleChanges) {
-        const pageState = changes.pageState.currentValue;
-        this.options = this.getStateModeOptions(pageState);
-        /*
-When the page is lock but the page is being load from an user that can lock the page
-we want to show the lock off so the new user can steal the lock
-*/
-        this.lock = this.isLocked(pageState);
-        this.lockWarn = this.shouldWarnLock(pageState);
-        this.mode = pageState.state.mode;
+        const pageState = changes.pageState?.currentValue;
+        if (pageState) {
+            this.options = this.getStateModeOptions(pageState);
+            /*
+            When the page is lock but the page is being load from an user that can lock the page
+            we want to show the lock off so the new user can steal the lock
+            */
+            this.lock = this.isLocked(pageState);
+            this.lockWarn = this.shouldWarnLock(pageState);
+            this.mode = pageState.state.mode;
+        }
     }
 
     /**
@@ -244,13 +247,20 @@ we want to show the lock off so the new user can steal the lock
         return this.pageState.page.canLock && this.pageState.state.lockedByAnotherUser;
     }
 
+    private shouldAskOnRunningExperiment(): boolean {
+        return !!this.pageState.state.runningExperiment;
+    }
+
     private shouldAskPersonalization(): boolean {
         return this.pageState.viewAs.persona && !this.isPersonalized();
     }
 
     private shouldShowConfirmation(mode: DotPageMode): boolean {
         return (
-            mode === DotPageMode.EDIT && (this.shouldAskToLock() || this.shouldAskPersonalization())
+            mode === DotPageMode.EDIT &&
+            (this.shouldAskToLock() ||
+                this.shouldAskPersonalization() ||
+                this.shouldAskOnRunningExperiment())
         );
     }
 
@@ -261,18 +271,22 @@ we want to show the lock off so the new user can steal the lock
     private showConfirmation(): Observable<DotConfirmationType> {
         return from(
             new Promise<DotConfirmationType>((resolve, reject) => {
-                if (this.shouldAskToLock()) {
-                    this.showLockConfirmDialog()
-                        .then(() => {
-                            resolve(DotConfirmationType.LOCK);
-                        })
-                        .catch(() => reject());
-                }
-
                 if (this.shouldAskPersonalization()) {
                     this.showPersonalizationConfirmDialog()
                         .then(() => {
                             resolve(DotConfirmationType.PERSONALIZATION);
+                        })
+                        .catch(() => reject());
+                } else if (this.shouldAskOnRunningExperiment()) {
+                    this.showRunningExperimentConfirmDialog()
+                        .then(() => {
+                            resolve(DotConfirmationType.RUNNING_EXPERIMENT);
+                        })
+                        .catch(() => reject());
+                } else if (this.shouldAskToLock()) {
+                    this.showLockConfirmDialog()
+                        .then(() => {
+                            resolve(DotConfirmationType.LOCK);
                         })
                         .catch(() => reject());
                 }
@@ -306,6 +320,17 @@ we want to show the lock off so the new user can steal the lock
         });
     }
 
+    private showRunningExperimentConfirmDialog(): Promise<string> {
+        return new Promise((resolve, reject) => {
+            this.dotAlertConfirmService.confirm({
+                accept: resolve,
+                reject: reject,
+                header: this.dotMessageService.get('experiment.running'),
+                message: this.getRunningExperimentConfirmMessage()
+            });
+        });
+    }
+
     private getPersonalizationConfirmMessage(): string {
         let message = this.dotMessageService.get(
             'editpage.personalization.confirm.message',
@@ -313,13 +338,38 @@ we want to show the lock off so the new user can steal the lock
         );
 
         if (this.shouldAskToLock()) {
-            message += this.dotMessageService.get(
-                'editpage.personalization.confirm.with.lock',
-                this.pageState.page.lockedByName
-            );
+            message += this.getBlockedPageNote();
+        }
+
+        if (this.shouldAskOnRunningExperiment()) {
+            message += this.getRunningExperimentNote();
         }
 
         return message;
+    }
+
+    private getRunningExperimentConfirmMessage(): string {
+        let message = this.dotMessageService.get('experiment.running.edit.confirmation');
+
+        if (this.shouldAskToLock()) {
+            message += this.getBlockedPageNote();
+        }
+
+        return message;
+    }
+
+    private getBlockedPageNote(): string {
+        return this.dotMessageService.get(
+            'editpage.personalization.confirm.with.lock',
+            this.pageState.page.lockedByName
+        );
+    }
+
+    private getRunningExperimentNote(): string {
+        return this.dotMessageService.get(
+            'experiment.running.edit.lock.confirmation.note',
+            this.pageState.page.lockedByName
+        );
     }
 
     private updatePageState(options: DotPageRenderOptions, lock: boolean = null) {
