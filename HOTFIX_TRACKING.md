@@ -167,3 +167,4 @@ This maintenance release includes the following code fixes:
 138. https://github.com/dotCMS/core/issues/21944 : Remove unnecessary Spring jars #21944
 139. https://github.com/dotCMS/core/issues/22014 : PageCache is caching non-200 responses #22014
 140. https://github.com/dotCMS/core/issues/22068 : lazy load workflow history in workflowprocessor #22068
+141. https://github.com/dotCMS/core/issues/22131 : Remove invalid "View Statistics" Link #22131
