@@ -35,12 +35,14 @@
 
     @media only screen and (max-width: $screen-lg-max) {
         .dot-language-selector.gap-3 {
-            gap: 0 !important;
+            gap: $spacing-1 !important;
         }
         ::ng-deep {
-            p-dropdown .p-dropdown {
+            p-dropdown.p-dropdown-sm .p-dropdown {
+                padding-left: 0;
                 .p-dropdown-label {
                     display: none;
+                    padding: 0;
                 }
             }
         }

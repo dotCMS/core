@@ -90,7 +90,7 @@
 
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" style="white-space:nowrap;" class="view-users">
 	<!-- START Left Column User listing -->
-	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width:350px;" class="portlet-sidebar-wrapper">
+	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width:440px;" class="portlet-sidebar-wrapper">
 		<div class="portlet-sidebar">
 			<div class="inline-form view-users__filter-form">
 				<input dojoType="dijit.form.TextBox" onkeyup="filterUsers()" trim="true" name="usersFilter" id="usersFilter" placeholder="<%= LanguageUtil.get(pageContext, "Filter") %>:" />

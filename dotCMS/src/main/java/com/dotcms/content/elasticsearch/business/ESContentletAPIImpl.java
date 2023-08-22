@@ -37,6 +37,10 @@ import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+
+import com.dotcms.experiments.business.ExperimentFilter;
+
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
@@ -120,6 +124,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -746,12 +751,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     @Override
     public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final String variant) throws DotDataException {
+        return findContentletByIdentifierAnyLanguage(identifier, variant, false);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final String variant,
+            final boolean includeDeleted) throws DotDataException{
         try {
-            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, variant);
+            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, variant, includeDeleted);
         } catch (Exception e) {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
         }
     }
+
 
     @CloseDBIfOpened
     @Override
@@ -2420,7 +2433,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentlets.add(contentlet);
 
         try {
-
             deleted = delete(contentlets, user, respectFrontendRoles);
             HibernateUtil.addCommitListener
                     (() -> this.localSystemEventsAPI.notify(
@@ -3026,7 +3038,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } else {
 
             if (contentletToDelete.isHTMLPage()) {
-
+                checkAndDeleteExperiment(contentletToDelete, user);
                 unlinkRelatedContentType(user, contentletToDelete);
             }
 
@@ -3092,6 +3104,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         deletedIdentifiers.add(contentletToDelete.getIdentifier());
         this.sendDeleteEvent(contentletToDelete);
+    }
+
+    private void checkAndDeleteExperiment(final Contentlet contentlet, final User user) throws DotDataException {
+        final Optional<Experiment> experimentRunningOnPage = APILocator.getExperimentsAPI()
+                .getRunningExperimentPerPage(contentlet.getIdentifier());
+
+        if (experimentRunningOnPage.isPresent()) {
+            final String message = String.format(
+                    "Can't Delete a Page %s because it has a Running Experiment. Experiment ID %s",
+                    contentlet.getIdentifier(), experimentRunningOnPage.get().id().get());
+
+            throw new DotDataException(message);
+        }
+
+        final List<Experiment> pageExperiments = APILocator.getExperimentsAPI().list(
+                ExperimentFilter.builder().pageId(contentlet.getIdentifier()).build(), user);
+
+        for (final Experiment pageExperiment : pageExperiments) {
+            try {
+                APILocator.getExperimentsAPI().forceDelete(pageExperiment.id().orElseThrow(), user);
+            } catch (DotDataException | DotSecurityException e) {
+                final String message = String.format("Unable to delete experiment %s",
+                        pageExperiment.id().orElseThrow());
+                throw new DotRuntimeException(message, e);
+            }
+        }
     }
 
     private List<Contentlet> validateAndFilterContentletsToDelete(
@@ -3523,6 +3561,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final Contentlet workingContentlet, final Contentlet liveContentlet)
             throws DotDataException, DotSecurityException {
 
+        final Optional<Experiment> experimentRunningOnPage = APILocator.getExperimentsAPI().getRunningExperimentPerPage(
+                workingContentlet.getIdentifier());
+
+        if (experimentRunningOnPage.isPresent()) {
+            final String message = String.format(
+                    "Can't Archive a Page %s because it has a Running Experiment. Experiment ID %s",
+                    workingContentlet.getIdentifier(), experimentRunningOnPage.get().id().get());
+
+            throw new DotDataException(message);
+        }
+
         if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
 
             APILocator.getVersionableAPI().removeLive(liveContentlet);
@@ -3532,6 +3581,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 this.indexAPI.removeContentFromLiveIndex(liveContentlet);
             }
         }
+
 
         // sets deleted to true
         APILocator.getVersionableAPI().setDeleted(workingContentlet, true);
@@ -3992,6 +4042,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         this.canLock(contentlet, user);
+
+        if (contentlet.isHTMLPage()) {
+            final Optional<Experiment> runningExperiment = APILocator.getExperimentsAPI()
+                    .getRunningExperimentPerPage(contentlet.getIdentifier());
+
+            if (runningExperiment.isPresent()) {
+                throw new RunningExperimentUnpublishException(contentlet, runningExperiment.get());
+            }
+        }
 
         APILocator.getVersionableAPI().removeLive(contentlet);
 

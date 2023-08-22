@@ -50,9 +50,15 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     * Deletes the Experiment matching the provided id
+     * Deletes the Experiment matching the provided id, validate that the Experiment
+     * is in DRAFT or SCHEDULED state to be deleted
      */
     void delete(String id, User user) throws DotDataException, DotSecurityException;
+
+    /**
+     * Deletes the Experiment matching the provided id, and just Validate Permission
+     */
+    public void forceDelete(final String id, final User user) throws DotDataException, DotSecurityException;
 
     /**
      * Returns experiments based on the provided filters in {@link ExperimentFilter}
@@ -226,4 +232,14 @@ public interface ExperimentsAPI {
      * {@link com.dotcms.experiments.model.Experiment.Status#SCHEDULED} state.
      */
     Experiment cancel(String experimentId, User user) throws DotDataException, DotSecurityException;
+
+    /**
+     * Return the RUNNING Experiments for the given page if it has any,
+     * Otherwise return an empty Optional
+     *
+     * @param pageId
+     * @return
+     * @throws DotDataException
+     */
+    Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException;
 }

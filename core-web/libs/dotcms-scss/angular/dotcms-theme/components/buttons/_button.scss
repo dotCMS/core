@@ -51,7 +51,8 @@
 }
 
 // Severity for basic button
-.p-button:enabled {
+.p-button:enabled,
+.p-button.p-element {
     @extend #main-primary-severity;
 
     &.p-button-secondary {

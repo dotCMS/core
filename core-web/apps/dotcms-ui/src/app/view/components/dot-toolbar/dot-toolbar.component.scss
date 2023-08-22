@@ -61,6 +61,7 @@ dot-toolbar-user {
 
 .toolbar__dot-wrapper {
     display: flex;
+    width: $navigation-width;
 }
 
 .toolbar__crumbtrail {
@@ -113,7 +114,7 @@ dot-toolbar-user {
     left: 0;
     position: absolute;
     top: 0;
-    width: 130px;
+    width: 100%;
     transition: width $basic-speed ease;
 
     .toolbar__logo-wrapper--collapsed & {
@@ -127,7 +128,7 @@ dot-toolbar-user {
     height: 60px;
     justify-content: center;
     position: relative;
-    width: 130px;
+    flex: 1;
 }
 
 .toolbar__logo-wrapper--whitelabel {

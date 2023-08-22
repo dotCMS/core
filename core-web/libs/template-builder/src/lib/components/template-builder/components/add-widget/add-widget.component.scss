@@ -12,7 +12,7 @@
     gap: $spacing-3;
     width: fit-content;
     background: $white;
-    border: 1.5px solid $color-palette-primary-500;
+    border: $field-border-size solid $color-palette-primary-500;
     border-radius: $border-radius-md;
 
     &:hover {

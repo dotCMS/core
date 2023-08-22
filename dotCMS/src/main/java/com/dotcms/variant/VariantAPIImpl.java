@@ -6,6 +6,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.validation.Preconditions;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -16,18 +17,21 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -105,6 +109,55 @@ public class VariantAPIImpl implements VariantAPI {
         Logger.debug(this, ()-> "Deleting Variant: " + variant);
 
         variantFactory.delete(id);
+
+        deleteAllContentletVersions(variant);
+        deleteMultiTrees(variant);
+
+    }
+
+    private void deleteMultiTrees(final Variant variant) throws DotDataException {
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(variant);
+        multiTreeAPI.deleteMultiTree(multiTrees);
+
+    }
+
+    private static void deleteAllContentletVersions(Variant variant) throws DotDataException {
+        try {
+            APILocator.getContentletAPI().getAllContentByVariants(APILocator.systemUser(), false , variant.name())
+                    .stream()
+                    .map(contentlet -> getIdentifier(contentlet))
+                    .flatMap(identifier -> getVersions(variant, identifier).stream())
+                    .forEach(contentlet -> deleteContentlet(contentlet));
+        } catch (DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private static Collection<Contentlet> getVersions(Variant variant, Identifier identifier) {
+        try {
+            return APILocator.getContentletAPI()
+                    .findAllVersions(identifier, variant, APILocator.systemUser(), false);
+        } catch (DotSecurityException | DotDataException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Identifier getIdentifier(Contentlet contentlet)  {
+        try {
+            return APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void deleteContentlet(final Contentlet contentlet) {
+        try {
+            APILocator.getVersionableAPI().deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getVariantId());
+            APILocator.getContentletAPI().deleteVersion(contentlet, APILocator.systemUser(), false);
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     /**

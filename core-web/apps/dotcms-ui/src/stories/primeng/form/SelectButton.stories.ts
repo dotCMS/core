@@ -23,7 +23,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'SelectButton is a form component to choose a value from a list of options using button elements: https://primefaces.org/primeng/showcase/#/selectbutton'
+                    'SelectButton is a form component to choose a value from a list of options using button elements: https://primeng.org/selectbutton'
             }
         }
     }
