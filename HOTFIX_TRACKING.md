@@ -165,3 +165,4 @@ This maintenance release includes the following code fixes:
 136. https://github.com/dotCMS/core/issues/25785 : Edit/Preview Mode not showing Draft changes #25785
 137. https://github.com/dotCMS/core/issues/21904 : Tags under specific site aren't listing #21904
 138. https://github.com/dotCMS/core/issues/21944 : Remove unnecessary Spring jars #21944
+139. https://github.com/dotCMS/core/issues/22014 : PageCache is caching non-200 responses #22014
