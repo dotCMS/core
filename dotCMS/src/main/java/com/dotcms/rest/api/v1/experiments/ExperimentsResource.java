@@ -548,4 +548,16 @@ public class ExperimentsResource {
                 .rejectWhenNoUser(true)
                 .init();
     }
+
+    @PUT
+    @Path("/{experimentId}/_cancel")
+    @JSONP
+    @NoCache
+    @Consumes({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView cancel(@PathParam("experimentId") final String experimentId)
+            throws DotDataException, DotSecurityException {
+        return null;
+
+    }
 }

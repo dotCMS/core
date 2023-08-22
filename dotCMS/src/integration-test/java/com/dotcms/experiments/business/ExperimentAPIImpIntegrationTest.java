@@ -51,6 +51,7 @@ import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.GoalResults;
 import com.dotcms.experiments.business.result.VariantResults;
 import com.dotcms.experiments.business.result.VariantResults.ResultResumeItem;
+import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -7569,7 +7570,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             ContentletDataGen.update(contentlet2Variant,
                     map("title", "WORKING contentlet2_variant"));
 
-            addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+           addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                     PermissionAPI.PERMISSION_READ,
                     PermissionAPI.PERMISSION_EDIT, PermissionAPI.PERMISSION_PUBLISH);
             addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
@@ -8118,4 +8119,184 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         assertTrue(notDefaultVariantEndedExperimentOptional.isPresent());
     }
 
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
+     * When: Try to cancel a Scheduled Experiment
+     * Should: The Experiment come back to DRAFT
+     */
+    @Test
+    public void cancelScheduledExperiment() throws DotDataException, DotSecurityException {
+        final Instant startDate = Instant.now().plus(1, ChronoUnit.DAYS);
+        final Experiment experiment =  new ExperimentDataGen()
+                .scheduling(Scheduling.builder().startDate(startDate).build())
+                .nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                .orElseThrow();
+
+        assertEquals(Status.SCHEDULED, experimentAfterScheduled.status());
+
+        APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), APILocator.systemUser());
+
+        final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                .orElseThrow();
+
+        assertEquals(Status.DRAFT, experimentAfterCancel.status());
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
+     * When: Try to cancel a Running Experiment
+     * Should: The Experiment come back to DRAFT
+     */
+    @Test
+    public void cancelRunningExperiment() throws DotDataException, DotSecurityException {
+        final Experiment experiment =  new ExperimentDataGen()
+                .nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                .orElseThrow();
+
+        assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+
+        APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), APILocator.systemUser());
+
+        final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                .orElseThrow();
+
+        assertEquals(Status.DRAFT, experimentAfterCancel.status());
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
+     * When: Try to cancel a Running Experiment with a no Admin User but with:
+     * - Edit rights for the Page
+     * - Edit rights for Template-Layouts on the site
+     * Should: The Experiment come back to DRAFT
+     */
+    @Test
+    public void cancelExperimentWithNoAdminUser() throws DotDataException, DotSecurityException {
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
+                PermissionAPI.PERMISSION_EDIT);
+
+        final Instant startDate = Instant.now().plus(1, ChronoUnit.DAYS);
+        final Experiment experiment =  new ExperimentDataGen()
+                .page(experimentPage)
+                .nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                .orElseThrow();
+
+        assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+
+        APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), limitedUser);
+
+        final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                .orElseThrow();
+
+        assertEquals(Status.DRAFT, experimentAfterCancel.status());
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
+     * When: Try to cancel a Running Experiment with a no Admin User:
+     * - Without Edit rights for the Page
+     * - With Edit rights for Template-Layouts on the site
+     * Should: Throw DotSecurityException
+     */
+    @Test
+    public void cancelExperimentWithUserNotEditPagePermission() throws DotDataException, DotSecurityException {
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
+                PermissionAPI.PERMISSION_EDIT);
+
+        final Instant startDate = Instant.now().plus(1, ChronoUnit.DAYS);
+        final Experiment experiment =  new ExperimentDataGen()
+                .page(experimentPage)
+                .nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                .orElseThrow();
+
+        assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+
+        try {
+            APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), limitedUser);
+            throw new AssertionError("Should throw DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
+     * When: Try to cancel a Running Experiment with a no Admin User:
+     * - With Edit rights for the Page
+     * - Without Edit rights for Template-Layouts on the site
+     * Should: Throw DotSecurityException
+     */
+    @Test
+    public void cancelExperimentWithUserNotEditTemplateLayoutPermission() throws DotDataException, DotSecurityException {
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+
+        final Instant startDate = Instant.now().plus(1, ChronoUnit.DAYS);
+        final Experiment experiment =  new ExperimentDataGen()
+                .page(experimentPage)
+                .nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                .orElseThrow();
+
+        assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+
+        try {
+            APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), limitedUser);
+            throw new AssertionError("Should throw DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+        }
+    }
 }
