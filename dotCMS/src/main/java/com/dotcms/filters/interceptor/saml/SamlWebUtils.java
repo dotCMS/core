@@ -1,19 +1,25 @@
 package com.dotcms.filters.interceptor.saml;
 
+import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Encapsulates Saml util methods for Web.
@@ -21,8 +27,21 @@ import java.util.Map;
  */
 public class SamlWebUtils {
 
+    /**
+     * In t case a client wants to override the default relay state strategy, it can be done by setting the by setting the addRelayStateStrategy
+     * to the site id.
+     */
+    private static final Map<String, RelayStateStrategy> RELAY_STATE_STRATEGY_MAP = new ConcurrentHashMap<>();
+
+    /*
+    * This is the default implementation based on velocity evaluation
+    */
+    private static final RelayStateStrategy DEFAULT_VELOCITY_RELAY_STATE_STRATEGY = SamlWebUtils::evalRelayState;
+
+
     public static final String BY_PASS_KEY   = "native";
     public static final String BY_PASS_VALUE = "true";
+    public static final String AUTH_RELAYSTATE_KEY = "auth.relaystate";
 
     protected     final UserWebAPI userWebAPI;
 
@@ -33,6 +52,15 @@ public class SamlWebUtils {
     @VisibleForTesting
     public SamlWebUtils(final UserWebAPI userWebAPI) {
         this.userWebAPI = userWebAPI;
+    }
+
+    /**
+     * Adds a custom relay state strategy for a site.
+     * @param siteIdentifier
+     * @param relayStateStrategy
+     */
+    public static void addRelayStateStrategy(final String siteIdentifier, final RelayStateStrategy relayStateStrategy) {
+        RELAY_STATE_STRATEGY_MAP.put(siteIdentifier, relayStateStrategy);
     }
 
     protected boolean isByPass(final HttpServletRequest request, final HttpSession session) {
@@ -185,4 +213,41 @@ public class SamlWebUtils {
     }
 
 
+    public String getRelayState(final HttpServletRequest request,
+                                final HttpServletResponse response,
+                                final IdentityProviderConfiguration identityProviderConfiguration,
+                                final String siteIdentifier) {
+
+        final String relayState = identityProviderConfiguration.containsOptionalProperty(AUTH_RELAYSTATE_KEY)?
+                identityProviderConfiguration.getOptionalProperty(AUTH_RELAYSTATE_KEY).toString(): null;
+        request.setAttribute(AUTH_RELAYSTATE_KEY, relayState);
+
+        final RelayStateStrategy relayStateStrategy = RELAY_STATE_STRATEGY_MAP.getOrDefault(siteIdentifier, DEFAULT_VELOCITY_RELAY_STATE_STRATEGY);
+
+        return relayStateStrategy.apply(request, response, identityProviderConfiguration);
+    }
+
+
+    private static String evalRelayState(final HttpServletRequest request,
+                                         final HttpServletResponse response,
+                                         final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        final String relayStateVelocityTemplate = (String) request.getAttribute(AUTH_RELAYSTATE_KEY);
+        String velocityMessage        = relayStateVelocityTemplate;
+
+        if (UtilMethods.isSet(relayStateVelocityTemplate)) {
+
+            final Context velocityContext = VelocityUtil.getInstance().getContext(request, response);
+            velocityContext.put("identityProviderConfiguration", identityProviderConfiguration);
+
+            try {
+                Logger.debug(SamlWebUtils.class, () -> "evaluating relay state template: " + relayStateVelocityTemplate);
+                velocityMessage = VelocityUtil.eval(relayStateVelocityTemplate, velocityContext);
+            } catch (Exception e1) {
+                Logger.warn(SamlWebUtils.class, "unable to parse message, the relay state" + relayStateVelocityTemplate);
+            }
+        }
+
+        return velocityMessage;
+    }
 } // E:O:F:SamlWebUtils.
