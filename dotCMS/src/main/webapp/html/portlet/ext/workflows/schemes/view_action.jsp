@@ -199,7 +199,7 @@
 			</div>
 			<%} %>
 
-			<div class="row" >
+			<main class="row" >
 				<div class="col-xs-5 view-actions__permissions">
 					<button dojoType="dijit.form.Button" class="view-actions__back-btn" onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
 						<i class="fa fa-level-up" aria-hidden="true"></i>
@@ -423,7 +423,7 @@
 						</div>
 					</div>
 				</div>
-			</div>
+			</main>
 		</div>
 	</div>
 </div>

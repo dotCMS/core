@@ -19,6 +19,8 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
@@ -79,9 +81,10 @@ public class AssetPathResolver {
             if (null == path) {
                 throw new IllegalArgumentException(String.format("Unable to determine path: [%s].", url));
             }
+            final var decodedPath = URLDecoder.decode(path, StandardCharsets.UTF_8);
 
             //This line determines if the path is a folder
-            final Optional<Folder> folder = resolveExistingFolder(path, host, user);
+            final Optional<Folder> folder = resolveExistingFolder(decodedPath, host, user);
             if(folder.isEmpty()){
                 //if we've got this far we need to verify if the path is an asset. The folder will be expected to be the parent folder
                 Optional<FolderAndAsset> folderAndAsset = resolveAssetAndFolder(uri.getPath(), host, user, createMissingFolders);
@@ -93,7 +96,7 @@ public class AssetPathResolver {
                         .resolvedHost(host)
                         .host(host.getHostname())
                         .resolvedFolder(folderAsset.folder())
-                        .path(path)
+                        .path(decodedPath)
                         .asset(folderAsset.asset())
                         .build();
             }
@@ -106,7 +109,7 @@ public class AssetPathResolver {
             builder.resolvedHost(host)
                     .host(host.getHostname())
                     .resolvedFolder(folder.get())
-                    .path(path);
+                    .path(decodedPath);
 
             asset.ifPresent(builder::asset);
             return builder.build();
@@ -166,22 +169,26 @@ public class AssetPathResolver {
      */
     Optional<FolderAndAsset> resolveAssetAndFolder(final String rawPath, final Host host, final User user, final boolean createMissingFolder)
             throws DotDataException, DotSecurityException {
+
+        final var decodedRawPath = URLDecoder.decode(rawPath, StandardCharsets.UTF_8);
+
         final String startsWithForwardSlash = "^\\/[a-zA-Z0-9\\.\\-]+$";
         // if our path starts with / followed by a string  then we're looking at file asset in the root folder
-        if(rawPath.matches(startsWithForwardSlash)){
-            final String[] split = rawPath.split(FORWARD_SLASH, 2);
+        if (decodedRawPath.matches(startsWithForwardSlash)) {
+            final String[] split = decodedRawPath.split(FORWARD_SLASH, 2);
             return  Optional.of(
                     FolderAndAsset.builder().folder(folderAPI.findSystemFolder()).asset(split[1]).build()
            );
         }
         //if we're not looking at the root folder then we need to extract the parent folder and the asset name
-        final int index = rawPath.lastIndexOf(FORWARD_SLASH);
+        final int index = decodedRawPath.lastIndexOf(FORWARD_SLASH);
         if(index == -1){
             return Optional.empty();
         }
 
-        final String parentFolderPath = Try.of(()-> rawPath.substring(0, index)).getOrNull();
-        final String assetName = Try.of(()->rawPath.substring(index + 1)).getOrNull();
+        final String parentFolderPath = Try.of(() -> decodedRawPath.substring(0, index))
+                .getOrNull();
+        final String assetName = Try.of(() -> decodedRawPath.substring(index + 1)).getOrNull();
         final String folderPath = parentFolderPath + FORWARD_SLASH;
         final Folder parentFolder = folderAPI.findFolderByPath(folderPath, host, user, false);
 
@@ -210,7 +217,10 @@ public class AssetPathResolver {
      * @return
      */
     Optional<String> asset(final Folder resolvedFolder, final String rawResource) {
-        String resource = rawResource.toLowerCase();
+
+        final var decodedRawResource = URLDecoder.decode(rawResource, StandardCharsets.UTF_8);
+
+        String resource = decodedRawResource.toLowerCase();
         final int index = resource.lastIndexOf(FORWARD_SLASH);
         if (index == 0) {
             return Optional.empty();

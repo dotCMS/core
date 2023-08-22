@@ -86,8 +86,8 @@
     flex-direction: column;
 
     &::ng-deep .action-button--no-label .p-button.p-button-icon-only {
-        height: $field-height;
-        width: $field-height;
+        height: $field-height-md;
+        width: $field-height-md;
         font-size: $font-size-sm;
     }
 }

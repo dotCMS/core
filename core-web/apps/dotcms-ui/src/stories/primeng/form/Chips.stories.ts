@@ -12,7 +12,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'Chips is used to enter multiple values on an input field: https://primefaces.org/primeng/showcase/#/chips'
+                    'Chips is used to enter multiple values on an input field: https://primeng.org/checkbox'
             }
         }
     },

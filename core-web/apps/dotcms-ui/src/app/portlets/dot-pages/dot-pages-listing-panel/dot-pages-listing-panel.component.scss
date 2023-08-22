@@ -53,11 +53,13 @@
 }
 
 .dot-pages-table__status-field {
+    align-items: center;
+    display: flex;
+
     dot-badge,
     dot-contentlet-lock-icon {
         margin-left: $spacing-1;
     }
-    display: flex;
 }
 
 .pi.pi-times {
