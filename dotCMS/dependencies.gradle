@@ -140,10 +140,6 @@ dependencies {
     }
     implementation (group: 'com.graphql-java', name: 'java-dataloader', version: '2.1.1'){}
     implementation (group: 'com.h2database', name: 'h2', version: '2.1.214'){}
-    implementation (group: 'com.hazelcast', name: 'hazelcast-all', version: '3.12.13'){}
-    implementation (group: 'com.hazelcast', name: 'hazelcast-kubernetes', version: '1.2.2') {
-        exclude group: 'com.hazelcast', module: 'hazelcast'
-    }
     implementation (group: 'com.impossibl.pgjdbc-ng', name: 'pgjdbc-ng', version: '0.8.9'){}
     implementation (group: 'com.impossibl.pgjdbc-ng', name: 'spy', version: '0.8.9'){}
     implementation (group: 'com.jayway.jsonpath', name: 'json-path', version: '2.4.0'){}

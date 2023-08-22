@@ -130,7 +130,10 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 		        properties: {
 		            height: {start: start, end: end, unit: "px"},
 		        },
-		        duration: 500
+		        duration: 500,
+                        onEnd: function() {
+                                        dojo.byId("advancedSearchOptions").style.overflow = "visible";
+                                }
 		    }).play();
 			dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "hide") %>";
 			dojo.cookie("ShAdDi", end, { });
@@ -143,19 +146,21 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 			var showing = dojo.getStyle(dojo.byId('advancedSearchOptions'),'height');
 
 			// resize
-			if("0px" == showing || 0 ==showing){
+			if("0px" == showing || 0 == showing) {
 				dojo.cookie("ShAdDi", "0", { });
 				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "hide") %>";
 				resizeAdvancedSearch();
+                                dojo.byId("advancedSearchOptions").style.overflow = "hidden";
 			// hide
-			}else{
+			} else {
+                                dojo.byId("advancedSearchOptions").style.overflow = "hidden";
 
-				dojo.animateProperty({
+			        dojo.animateProperty({
 			        node: dojo.byId("advancedSearchOptions"),
 			        properties: {
 			            height: {start: showing, end: 0, unit: "px"},
 			        },
-			        duration: 500
+			        duration: 500,
 			    }).play();
 				dojo.cookie("ShAdDi", 0, { });
 				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "advanced") %>";

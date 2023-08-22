@@ -1,5 +1,3 @@
-$dropdown-size: $field-height - 10;
-
 .dijitA11ySideArrow {
     display: none;
 }
@@ -63,18 +61,18 @@ $dropdown-size: $field-height - 10;
     &MonthContainer {
         background-color: $calendar-month-bgcolor;
         color: $calendar-month-textcolor;
-        height: $field-height;
+        height: $field-height-md;
 
         .dijitCalendarMonthLabel,
         .dijitDropDownButton .dijitArrowButtonInner {
-            height: $dropdown-size;
-            line-height: $dropdown-size;
+            height: calc($field-height-md - 0.625rem);
+            line-height: calc($field-height-md - 0.625rem);
         }
 
         .dijitDropDownButton {
             border-radius: 0;
             background-color: transparent;
-            height: $dropdown-size + ($field-border-size * 2);
+            height: calc(calc($field-height-md - 0.625rem) + ($field-border-size * 2));
             border: $calendar-dropdown-arrow-border;
             color: $calendar-dropdown-color;
 
@@ -83,7 +81,7 @@ $dropdown-size: $field-height - 10;
             }
 
             .dijitArrowButtonInner {
-                width: $dropdown-size;
+                width: calc($field-height-md - 0.625rem);
 
                 &:before {
                     border-top-color: $calendar-dropdown-color;
@@ -138,9 +136,9 @@ $dropdown-size: $field-height - 10;
             background-color: $calendar-date-seleted-bgcolor;
             color: $calendar-date-seleted-textcolor;
             display: block;
-            height: $field-height;
-            line-height: $field-height;
-            width: $field-height;
+            height: $field-height-md;
+            line-height: $field-height-md;
+            width: $field-height-md;
         }
     }
 

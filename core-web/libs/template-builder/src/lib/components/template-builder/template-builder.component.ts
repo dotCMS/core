@@ -128,7 +128,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             header: this.layout.header,
             footer: this.layout.footer,
             sidebar: this.layout.sidebar ?? {
-                location: ''
+                location: '',
+                width: 'medium',
+                containers: []
             }
         };
     }
