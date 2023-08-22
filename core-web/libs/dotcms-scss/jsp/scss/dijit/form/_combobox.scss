@@ -20,7 +20,8 @@
         }
     }
 
-    &Hover {
+    &Hover,
+    &:hover {
         background-color: $combobox-hover-bgcolor;
         border: $combobox-hover-border;
 
@@ -43,22 +44,21 @@
         }
     }
 
-    &Focused {
+    &Focused,
+    &:focus {
         border: $combobox-focused-border;
-        background-color: $combobox-focused-bgcolor;
 
         .dijitArrowButton {
-            background-color: $combobox-focusedarrow-arrow-bgcolor;
             border-left: $combobox-focused-arrow-border;
         }
 
         .dijitDownArrowButtonHover {
-            background-color: $combobox-focusedarrow-arrow-bgcolor;
             border-left: $combobox-focused-arrow-border;
         }
     }
 
-    &Disabled {
+    &Disabled,
+    &:disabled {
         border: $combobox-disabled-border;
         background-color: $combobox-disabled-bgcolor;
 
