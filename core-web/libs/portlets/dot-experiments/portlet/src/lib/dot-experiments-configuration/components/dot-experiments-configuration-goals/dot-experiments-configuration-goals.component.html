@@ -30,10 +30,13 @@
                         [title]="titleTpl"
                     >
                         <ng-template #headers>
-                            <div class="flex col flex-wrap align-items-center">
+                            <div
+                                class="flex col flex-wrap align-items-center"
+                                data-testId="goal-header-parameter"
+                            >
                                 {{
                                     vm.goals.primary.type === GOAL_TYPES.URL_PARAMETER
-                                        ? 'experiments.goal.conditions.query.parameter'
+                                        ? ('experiments.goal.conditions.query.parameter' | dm)
                                         : ('experiments.goal.conditions.parameter' | dm)
                                 }}
                             </div>

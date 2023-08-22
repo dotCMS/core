@@ -126,7 +126,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                   ...experiment.goals,
                   primary: {
                       ...experiment.goals.primary,
-                      ...this.formatConditionsByGoal(experiment.goals.primary)
+                      ...this.filterConditionsByGoal(experiment.goals.primary)
                   }
               }
             : null;
@@ -884,7 +884,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
     }
 
-    private formatConditionsByGoal(goal: Goal): Goal {
+    private filterConditionsByGoal(goal: Goal): Goal {
         const { type, conditions } = goal;
 
         return {
