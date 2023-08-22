@@ -72,7 +72,7 @@ export class DotSeoMetaTagsService {
                     keyColor: keyValues.keyColor,
                     items: items,
                     sort: 2,
-                    info: "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed."
+                    info: this.dotMessageService.get('seo.rules.description.info')
                 });
             }
 
@@ -85,7 +85,7 @@ export class DotSeoMetaTagsService {
                     keyColor: keyValues.keyColor,
                     items: items,
                     sort: 3,
-                    info: 'HTML Title content should be between 30 and 60 characters.'
+                    info: this.dotMessageService.get('seo.rules.title.info')
                 });
             }
         });
@@ -100,7 +100,7 @@ export class DotSeoMetaTagsService {
 
         if (faviconElements.length === 0) {
             items.push({
-                message: 'FavIcon not found!',
+                message: this.dotMessageService.get('seo.rules.favicon.not.found'),
                 color: SEO_RULES_COLORS.ERROR,
                 itemIcon: SEO_RULES_ICONS.TIMES
             });
@@ -108,7 +108,7 @@ export class DotSeoMetaTagsService {
 
         if (faviconElements.length > SEO_LIMITS.MAX_FAVICONS) {
             items.push({
-                message: 'More than 1 FavIcon found!',
+                message: this.dotMessageService.get('seo.rules.favicon.more.one.found'),
                 color: SEO_RULES_COLORS.ERROR,
                 itemIcon: SEO_RULES_ICONS.TIMES
             });
@@ -116,7 +116,7 @@ export class DotSeoMetaTagsService {
 
         if (favicon && faviconElements.length === SEO_LIMITS.MAX_FAVICONS) {
             items.push({
-                message: 'FavIcon found!',
+                message: this.dotMessageService.get('seo.rules.favicon.found'),
                 color: SEO_RULES_COLORS.DONE,
                 itemIcon: SEO_RULES_ICONS.CHECK
             });
@@ -152,7 +152,7 @@ export class DotSeoMetaTagsService {
 
         if (!ogDescription && description) {
             result.push({
-                message: 'Meta Description not found! Showing Description instead.',
+                message: this.dotMessageService.get('seo.rules.description.not.found'),
                 color: SEO_RULES_COLORS.ERROR,
                 itemIcon: SEO_RULES_ICONS.TIMES
             });
@@ -160,7 +160,7 @@ export class DotSeoMetaTagsService {
 
         if (ogDescription && ogDescription.length === 0) {
             result.push({
-                message: 'Meta Description found, but is empty!',
+                message: this.dotMessageService.get('seo.rules.description.found.empty'),
                 color: SEO_RULES_COLORS.ERROR,
                 itemIcon: SEO_RULES_ICONS.TIMES
             });
@@ -168,7 +168,7 @@ export class DotSeoMetaTagsService {
 
         if (ogDescription && ogDescription.length > 0) {
             result.push({
-                message: 'Meta Description found!',
+                message: this.dotMessageService.get('seo.rules.description.found'),
                 color: SEO_RULES_COLORS.DONE,
                 itemIcon: SEO_RULES_ICONS.CHECK
             });
@@ -184,7 +184,7 @@ export class DotSeoMetaTagsService {
 
         if (!titleElements) {
             result.push({
-                message: 'HTML Title not found!',
+                message: this.dotMessageService.get('seo.rules.title.not.found'),
                 color: SEO_RULES_COLORS.ERROR,
                 itemIcon: SEO_RULES_ICONS.TIMES
             });
@@ -192,7 +192,7 @@ export class DotSeoMetaTagsService {
 
         if (titleElements?.length > 1) {
             result.push({
-                message: 'More than 1 HTML Title found!',
+                message: this.dotMessageService.get('seo.rules.title.more.one.found'),
                 color: SEO_RULES_COLORS.ERROR,
                 itemIcon: SEO_RULES_ICONS.TIMES
             });
@@ -200,7 +200,7 @@ export class DotSeoMetaTagsService {
 
         if (title?.length > SEO_LIMITS.MAX_TITLE_LENGTH) {
             result.push({
-                message: 'HTML Title found, but but has more than 60 characters.',
+                message: this.dotMessageService.get('seo.rules.title.greater'),
                 color: SEO_RULES_COLORS.WARNING,
                 itemIcon: SEO_RULES_ICONS.EXCLAMATION_CIRCLE
             });
@@ -208,7 +208,7 @@ export class DotSeoMetaTagsService {
 
         if (title?.length < SEO_LIMITS.MIN_TITLE_LENGTH) {
             result.push({
-                message: 'HTML Title found, but but has fewer than 30 characters of content.',
+                message: this.dotMessageService.get('seo.rules.title.less'),
                 color: SEO_RULES_COLORS.WARNING,
                 itemIcon: SEO_RULES_ICONS.EXCLAMATION_CIRCLE
             });
@@ -220,7 +220,7 @@ export class DotSeoMetaTagsService {
             title?.length < SEO_LIMITS.MIN_TITLE_LENGTH
         ) {
             result.push({
-                message: 'HTML Title found, with an appropriate amount of content!',
+                message: this.dotMessageService.get('seo.rules.title.found'),
                 color: SEO_RULES_COLORS.DONE,
                 itemIcon: SEO_RULES_ICONS.CHECK
             });
