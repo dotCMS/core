@@ -40,6 +40,7 @@ import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
+import { DotSeoMetaTagsService } from './services/html/dot-seo-meta-tags.service';
 
 import { DotEditPageToolbarSeoComponent } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.component';
 import { DotResultsSeoToolComponent } from '../seo/components/dot-results-seo-tool/dot-results-seo-tool.component';
@@ -93,7 +94,8 @@ const routes: Routes = [
         DotWorkflowActionsFireService,
         DotLicenseService,
         DialogService,
-        DotCopyContentModalService
+        DotCopyContentModalService,
+        DotSeoMetaTagsService
     ]
 })
 export class DotEditContentModule {}

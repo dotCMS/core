@@ -523,9 +523,7 @@ browse from the page internal links
             this.dotEditContentHtmlService.renderPage(pageState, this.iframe);
             this.isEditMode = false;
             this.seoOGTags = this.dotEditContentHtmlService.getMetaTags();
-            this.seoOGTagsResults = this.dotEditContentHtmlService.getMetaTagsResults(
-                this.seoOGTags
-            );
+            this.seoOGTagsResults = this.dotEditContentHtmlService.getMetaTagsResults();
         }
     }
 
