@@ -83,6 +83,11 @@
             $dropdownbutton-normal-textcolor
         );
 
+        .dijitButtonContents,
+        .dijitButtonNode {
+            height: 100%;
+        }
+
         .dijitButtonNode {
             padding-left: $button-padding;
         }
@@ -318,8 +323,6 @@
             );
 
             .dijitArrowButtonInner {
-                border-left: $combobutton-disabled-arrow-border;
-
                 @if $combobutton-disabled-arrow-bgcolor != "transparent" {
                     background-color: $combobutton-disabled-arrow-bgcolor;
                 }
@@ -489,8 +492,8 @@
     transition: all $field-animation-speed;
     border-radius: $field-border-radius;
     display: inline-block;
-    height: $field-height;
-    line-height: $field-height;
+    height: $field-height-md;
+    line-height: $field-height-md;
     padding: 0 $spacing-1 * 2;
     text-decoration: none;
     text-transform: uppercase;
