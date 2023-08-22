@@ -16,6 +16,7 @@ import {
     BayesianStatusResponse,
     ComponentStatus,
     DEFAULT_VARIANT_ID,
+    DotExperimentResults,
     DotExperimentStatus,
     DotExperimentVariantDetail,
     ReportSummaryLegendByBayesianStatus
@@ -525,45 +526,52 @@ describe('DotExperimentsReportsStore', () => {
     });
 
     describe('Show Bayesian Chart', () => {
+        function generateResutlsMock(
+            winner: string,
+            uniqueSessions: number[]
+        ): DotExperimentResults {
+            return {
+                ...EXPERIMENT_MOCK_RESULTS,
+                goals: {
+                    ...EXPERIMENT_MOCK_RESULTS.goals,
+                    primary: {
+                        ...EXPERIMENT_MOCK_RESULTS.goals.primary,
+                        variants: {
+                            ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants,
+                            [DEFAULT_VARIANT_ID]: {
+                                ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants[
+                                    DEFAULT_VARIANT_ID
+                                ],
+                                uniqueBySession: {
+                                    count: uniqueSessions[0],
+                                    totalPercentage: 100.0,
+                                    variantPercentage: 100.0
+                                }
+                            },
+                            '111': {
+                                ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'],
+                                uniqueBySession: {
+                                    count: uniqueSessions[1],
+                                    totalPercentage: 100.0,
+                                    variantPercentage: 100.0
+                                }
+                            }
+                        }
+                    }
+                },
+                sessions: { total: 20, variants: { DEFAULT: 10, '111': 10 } },
+                bayesianResult: {
+                    ...EXPERIMENT_MOCK_RESULTS.bayesianResult,
+                    suggestedWinner: winner
+                }
+            };
+        }
+
         it('should `hasEnoughDataForShowBayesianChart$` retrieve `false` when the BayesianResult have `NONE` as suggested winner', (done) => {
             //The following mock has failures for both variants, enough sessions to display  results,
             // so it generate the data sets; but no suggested winner
             dotExperimentsService.getResults.mockReturnValue(
-                of({
-                    ...EXPERIMENT_MOCK_RESULTS,
-                    goals: {
-                        ...EXPERIMENT_MOCK_RESULTS.goals,
-                        primary: {
-                            ...EXPERIMENT_MOCK_RESULTS.goals.primary,
-                            variants: {
-                                ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants,
-                                [DEFAULT_VARIANT_ID]: {
-                                    ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants[
-                                        DEFAULT_VARIANT_ID
-                                    ],
-                                    uniqueBySession: {
-                                        count: 5,
-                                        totalPercentage: 100.0,
-                                        variantPercentage: 100.0
-                                    }
-                                },
-                                '111': {
-                                    ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'],
-                                    uniqueBySession: {
-                                        count: 8,
-                                        totalPercentage: 100.0,
-                                        variantPercentage: 100.0
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    sessions: { total: 20, variants: { DEFAULT: 10, '111': 10 } },
-                    bayesianResult: {
-                        ...EXPERIMENT_MOCK_RESULTS.bayesianResult,
-                        suggestedWinner: BayesianStatusResponse.NONE
-                    }
-                })
+                of(generateResutlsMock(BayesianStatusResponse.NONE, [5, 8]))
             );
 
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
@@ -575,44 +583,10 @@ describe('DotExperimentsReportsStore', () => {
         });
 
         it('should `hasEnoughDataForShowBayesianChart$` retrieve `false` when you have at least one dataset with empty data', (done) => {
-            //The following mock don't have failures for the variant 111, have enough sessions to display  results,
+            //The following mock don't have failures for the variant 111 ( second one ), have enough sessions to display  results,
             // have a suggested winner, but the variant 111 will not generate a date set
             dotExperimentsService.getResults.mockReturnValue(
-                of({
-                    ...EXPERIMENT_MOCK_RESULTS,
-                    goals: {
-                        ...EXPERIMENT_MOCK_RESULTS.goals,
-                        primary: {
-                            ...EXPERIMENT_MOCK_RESULTS.goals.primary,
-                            variants: {
-                                ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants,
-                                [DEFAULT_VARIANT_ID]: {
-                                    ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants[
-                                        DEFAULT_VARIANT_ID
-                                    ],
-                                    uniqueBySession: {
-                                        count: 5,
-                                        totalPercentage: 100.0,
-                                        variantPercentage: 100.0
-                                    }
-                                },
-                                '111': {
-                                    ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'],
-                                    uniqueBySession: {
-                                        count: 10,
-                                        totalPercentage: 100.0,
-                                        variantPercentage: 100.0
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    sessions: { total: 20, variants: { DEFAULT: 10, '111': 10 } },
-                    bayesianResult: {
-                        ...EXPERIMENT_MOCK_RESULTS.bayesianResult,
-                        suggestedWinner: DEFAULT_VARIANT_ID
-                    }
-                })
+                of(generateResutlsMock(DEFAULT_VARIANT_ID, [5, 10]))
             );
 
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
@@ -627,41 +601,7 @@ describe('DotExperimentsReportsStore', () => {
             //The following mock  have failures for both variants, have enough sessions to display  results,
             // have a suggested winner, and both variants will generate a date set
             dotExperimentsService.getResults.mockReturnValue(
-                of({
-                    ...EXPERIMENT_MOCK_RESULTS,
-                    goals: {
-                        ...EXPERIMENT_MOCK_RESULTS.goals,
-                        primary: {
-                            ...EXPERIMENT_MOCK_RESULTS.goals.primary,
-                            variants: {
-                                ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants,
-                                [DEFAULT_VARIANT_ID]: {
-                                    ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants[
-                                        DEFAULT_VARIANT_ID
-                                    ],
-                                    uniqueBySession: {
-                                        count: 5,
-                                        totalPercentage: 100.0,
-                                        variantPercentage: 100.0
-                                    }
-                                },
-                                '111': {
-                                    ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'],
-                                    uniqueBySession: {
-                                        count: 5,
-                                        totalPercentage: 100.0,
-                                        variantPercentage: 100.0
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    sessions: { total: 20, variants: { DEFAULT: 10, '111': 10 } },
-                    bayesianResult: {
-                        ...EXPERIMENT_MOCK_RESULTS.bayesianResult,
-                        suggestedWinner: DEFAULT_VARIANT_ID
-                    }
-                })
+                of(generateResutlsMock(DEFAULT_VARIANT_ID, [5, 5]))
             );
 
             spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
