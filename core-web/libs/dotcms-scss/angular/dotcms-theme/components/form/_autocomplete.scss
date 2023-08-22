@@ -1,0 +1,110 @@
+@use "variables" as *;
+@import "common";
+
+.p-autocomplete {
+    @extend #form-field-extend;
+    min-height: $field-height-md;
+    height: auto;
+    padding-right: 0;
+
+    .p-autocomplete-loader {
+        right: $spacing-2;
+        color: $color-palette-primary;
+    }
+
+    .p-autocomplete-input {
+        all: unset;
+        color: $black;
+    }
+
+    &.p-autocomplete-dd {
+        .p-autocomplete-loader {
+            right: $spacing-7;
+        }
+    }
+
+    &.p-autocomplete-multiple {
+        .p-autocomplete-multiple-container {
+            padding: 0.375rem $spacing-2;
+            max-height: 13rem; // 208px
+            overflow: auto; // Make it scrollable
+
+            &:hover,
+            &:active,
+            &.p-focus {
+                border: none;
+            }
+
+            .p-autocomplete-token {
+                padding: 0.375rem $spacing-2;
+                margin-right: $spacing-1;
+                background: $color-palette-primary-200;
+                color: $color-palette-primary;
+                border-radius: $field-border-radius;
+
+                .p-autocomplete-token-icon {
+                    margin-left: $spacing-1;
+                }
+            }
+
+            .p-autocomplete-input-token {
+                padding: 0.375rem 0;
+
+                input {
+                    font-family: $font-default;
+                    font-size: $font-size-md;
+                    color: $black;
+                    padding: 0;
+                    margin: 0;
+                }
+            }
+        }
+    }
+
+    &.p-error > .p-inputtext,
+    &.p-invalid > .p-inputtext {
+        border-color: $error;
+    }
+}
+
+p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
+    border-color: $error;
+}
+
+.p-autocomplete-panel {
+    @extend #field-panel;
+
+    .p-autocomplete-items {
+        @extend #field-panel-items;
+
+        .p-autocomplete-item {
+            @extend #field-panel-item;
+
+            &:hover {
+                @extend #field-panel-item-hover;
+            }
+
+            &.p-highlight {
+                @extend #field-panel-item-highlight;
+            }
+        }
+    }
+}
+
+.p-autocomplete-dropdown.p-element.p-button {
+    @extend #field-trigger;
+    height: inherit;
+
+    .p-button-icon {
+        @extend #field-trigger-icon;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &:hover,
+    &:active,
+    &.p-focus {
+        outline: none;
+    }
+}

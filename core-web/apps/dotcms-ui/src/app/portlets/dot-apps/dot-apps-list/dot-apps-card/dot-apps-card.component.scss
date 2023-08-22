@@ -10,6 +10,28 @@
         box-shadow: $md-shadow-3;
         cursor: pointer;
     }
+
+    ::ng-deep {
+        p-card {
+            border-radius: $border-radius-sm;
+        }
+
+        .p-card {
+            background: $white;
+            height: 100%;
+
+            .p-card-body {
+                color: $color-palette-gray-700;
+
+                .p-card-content > p {
+                    line-height: 1.5rem;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    margin: 0 $spacing-3;
+                }
+            }
+        }
+    }
 }
 
 .dot-apps-card__disabled {
@@ -94,26 +116,4 @@ p-avatar {
     line-height: $spacing-3;
     margin-top: $spacing-1;
     margin-right: $spacing-4;
-}
-
-::ng-deep {
-    p-card {
-        border-radius: $border-radius-sm;
-    }
-
-    .p-card {
-        background: $white;
-        height: 100%;
-
-        .p-card-body {
-            color: $color-palette-gray-700;
-
-            .p-card-content > p {
-                line-height: 1.5rem;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                margin: 0 $spacing-3;
-            }
-        }
-    }
 }
