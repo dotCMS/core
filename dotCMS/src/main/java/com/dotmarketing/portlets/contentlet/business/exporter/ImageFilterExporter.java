@@ -49,7 +49,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
         Class<? extends ImageFilter> errorClass = ImageFilter.class;
         try {
 
-            final Map<String,Class<? extends ImageFilter>> filters = new ImageFilterApiImpl().resolveFilters(parameters);
+            final Map<String,Class<? extends ImageFilter>> filters = ImageFilterApiImpl.apiInstance.apply().resolveFilters(parameters);
             parameters.put("filter", filters.keySet().toArray(new String[0]));
             parameters.put("filters", filters.keySet().toArray(new String[0]));
             

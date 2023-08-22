@@ -7,17 +7,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
+import javax.imageio.spi.IIORegistry;
+import javax.imageio.spi.ImageReaderSpi;
+import javax.imageio.spi.ServiceRegistry;
 import javax.imageio.stream.ImageInputStream;
 
 import com.dotmarketing.util.Logger;
@@ -35,6 +32,12 @@ import io.vavr.control.Try;
 import org.w3c.dom.Document;
 
 public class ImageFilterApiImpl implements ImageFilterAPI {
+
+
+    ImageFilterApiImpl(){
+        ImageIO.scanForPlugins();
+        deregisterProviders();
+    }
 
 
 
@@ -158,6 +161,28 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
         }
     }
 
+    private <T> T lookupProviderByName(final ServiceRegistry registry, final String providerClassName) {
+        try {
+            return (T) registry.getServiceProviderByClass(Class.forName(providerClassName));
+        }
+        catch (ClassNotFoundException ignore) {
+            return null;
+        }
+    }
+
+    String[] providersToIgnore = {"net.sf.javavp8decoder.imageio.WebPImageReaderSpi"};
+
+    private void deregisterProviders()  {
+
+        IIORegistry registry = IIORegistry.getDefaultInstance();
+
+        for(String providerClazz: providersToIgnore) {
+            ImageReaderSpi  provider= lookupProviderByName(registry, providerClazz);
+            registry.deregisterServiceProvider(provider);
+        }
+
+    }
+
 
 
 
@@ -170,7 +195,6 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
      */
     ImageReader getReader(File imageFile, ImageInputStream inputStream) {
         Set<ImageReader> readers = new LinkedHashSet<>();
-
         ImageIO.getImageReaders(inputStream).forEachRemaining(readers::add);
         ImageIO.getImageReadersBySuffix(UtilMethods.getFileExtension(imageFile.getName()))
                         .forEachRemaining(readers::add);

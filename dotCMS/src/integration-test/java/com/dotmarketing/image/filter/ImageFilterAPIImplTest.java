@@ -11,6 +11,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import org.apache.commons.collections.IteratorUtils;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.google.common.io.Files;
@@ -21,12 +22,27 @@ public class ImageFilterAPIImplTest {
 
     static ImageFilterApiImpl imageApi = ImageFilterAPI.apiInstance.apply();
 
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
+    @Test
+    public void test_no_VP8_WEBP_loaded() {
 
-        ImageIO.scanForPlugins();
+        Iterator<ImageReader> readerIter = ImageIO.getImageReadersByFormatName("webp");
+
+        IteratorUtils.toList(readerIter).forEach(r->{
+            Assert.assertFalse (r instanceof net.sf.javavp8decoder.imageio.WebPImageReaderSpi);
+            Assert.assertFalse (r instanceof net.sf.javavp8decoder.imageio.WebPImageReader);
+        });
+
+
+
+
+
 
     }
+
+
+
+
+
 
     @Test
     public void test_image_readers_loaded() {
