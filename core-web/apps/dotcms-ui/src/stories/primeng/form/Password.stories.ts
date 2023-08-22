@@ -11,7 +11,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'Password displays strength indicator for password fields: https://primefaces.org/primeng/showcase/#/password'
+                    'Password displays strength indicator for password fields: https://primeng.org/password'
             }
         }
     },

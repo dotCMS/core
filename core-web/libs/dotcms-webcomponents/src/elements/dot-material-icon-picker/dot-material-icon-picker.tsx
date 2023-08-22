@@ -219,7 +219,7 @@ export class DotMaterialIcon {
                                 this.onFocus(true);
                             }}
                         >
-                            <mwc-icon>arrow_drop_down</mwc-icon>
+                            <mwc-icon>expand_more</mwc-icon>
                         </button>
                     </div>
                     <div class="dot-material-icon__select-options-container">

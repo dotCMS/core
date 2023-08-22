@@ -6,15 +6,18 @@
 
     input {
         height: auto;
-        line-height: $field-height - ($field-border-size * 2);
         padding: 0;
     }
 
     .dijitArrowButton {
-        height: $field-height - ($field-border-size * 2);
-        width: $field-height;
+        height: 100%;
+        width: $field-height-md;
         background-color: $combobox-normal-arrow-bgcolor;
         border-left: $combobox-normal-arrow-border;
+
+        &:before {
+            border-top-color: $combobox-normal-arrow-color;
+        }
     }
 
     &Hover {
@@ -45,7 +48,7 @@
         background-color: $combobox-focused-bgcolor;
 
         .dijitArrowButton {
-            background-color: $white;
+            background-color: $combobox-focusedarrow-arrow-bgcolor;
             border-left: $combobox-focused-arrow-border;
         }
 
@@ -62,6 +65,10 @@
         .dijitArrowButton {
             background-color: $combobox-disabled-bgcolor;
             border-left: $combobox-disabled-arrow-border;
+
+            &:before {
+                border-top-color: $combobox-disabled-arrow-color;
+            }
         }
 
         .dijitPlaceHolder {
@@ -90,11 +97,11 @@
     }
 
     .dijitDownArrowButtonActive {
-        background-color: $combobox-hoverarrow-arrow-color;
+        background-color: $combobox-hoverarrow-arrow-bgcolor;
         border-left: $spinner-activearrow-arrow-border;
 
         &:before {
-            border-top-color: $spinner-activearrow-arrow-color;
+            border-top-color: $combobox-hoverarrow-arrow-color;
         }
     }
 }

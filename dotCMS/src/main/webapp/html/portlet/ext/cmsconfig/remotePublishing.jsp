@@ -34,7 +34,7 @@ function goToAddEnvironment() {
     var dialog = new dijit.Dialog({
         id: 'addEnvironment',
         title: "<%= LanguageUtil.get(pageContext, "publisher_Environment_Add")%>",
-        style: "width: 382px; ",
+        style: "width: 420px; ",
         content: new dojox.layout.ContentPane({
             href: "/html/portlet/ext/contentlet/publishing/add_publish_environment.jsp"
         }),
@@ -594,7 +594,7 @@ function goToAddEndpoint(environmentId, isSender) {
     var dialog = new dijit.Dialog({
         id: 'addEndpoint',
         title: (isSender === 'true') ? "<%= LanguageUtil.get(pageContext, "publisher_Add_Server")%>" : "<%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint")%>",
-        style: "width: 582px; ",
+        style: "width: 620px; ",
         content: new dojox.layout.ContentPane({
             href: "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp?environmentId=" + environmentId + "&isSender=" + isSender
         }),
