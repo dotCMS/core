@@ -3137,6 +3137,7 @@
 
 .dijitButton,
 .dijitComboButton,
+.dijitComboButton > *,
 .dijitDropDownButton,
 .dijitSelect,
 .dijitTextBox,
@@ -3226,40 +3227,40 @@
   height: 0;
   width: 0;
 }
-.dijitTextBoxHover {
+.dijitTextBoxHover, .dijitTextBox:hover {
   background-color: #ffffff;
   border: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitTextBoxHover .dijitInputInner {
+.dijitTextBoxHover .dijitInputInner, .dijitTextBox:hover .dijitInputInner {
   color: #14151a;
 }
-.dijitTextBoxHover .dijitArrowButton {
+.dijitTextBoxHover .dijitArrowButton, .dijitTextBox:hover .dijitArrowButton {
   background-color: #ffffff;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitTextBoxHover .dijitArrowButton:before {
+.dijitTextBoxHover .dijitArrowButton:before, .dijitTextBox:hover .dijitArrowButton:before {
   border-top-color: var(--color-palette-primary-500);
 }
-.dijitTextBoxHover .dijitDownArrowButtonHover {
+.dijitTextBoxHover .dijitDownArrowButtonHover, .dijitTextBox:hover .dijitDownArrowButtonHover {
   background-color: #ffffff;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitTextBoxHover .dijitDownArrowButtonHover:before {
+.dijitTextBoxHover .dijitDownArrowButtonHover:before, .dijitTextBox:hover .dijitDownArrowButtonHover:before {
   border-top-color: var(--color-palette-primary-500);
 }
-.dijitTextBoxFocused {
+.dijitTextBoxFocused, .dijitTextBox:focus {
   border: solid 1.5px var(--color-palette-primary-400);
   background-color: #ffffff;
   outline: 2.8px solid var(--color-palette-primary-op-20);
 }
-.dijitTextBoxFocused .dijitInputInner {
+.dijitTextBoxFocused .dijitInputInner, .dijitTextBox:focus .dijitInputInner {
   color: #14151a;
 }
-.dijitTextBoxFocused .dijitArrowButton {
+.dijitTextBoxFocused .dijitArrowButton, .dijitTextBox:focus .dijitArrowButton {
   background-color: #ffffff;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitTextBoxFocused .dijitArrowButton:before {
+.dijitTextBoxFocused .dijitArrowButton:before, .dijitTextBox:focus .dijitArrowButton:before {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3272,11 +3273,11 @@
   height: 0;
   width: 0;
 }
-.dijitTextBoxFocused .dijitDownArrowButtonHover {
+.dijitTextBoxFocused .dijitDownArrowButtonHover, .dijitTextBox:focus .dijitDownArrowButtonHover {
   background-color: var(--color-palette-primary-500);
   border-left: var(--color-palette-primary-500);
 }
-.dijitTextBoxFocused .dijitDownArrowButtonHover:before {
+.dijitTextBoxFocused .dijitDownArrowButtonHover:before, .dijitTextBox:focus .dijitDownArrowButtonHover:before {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3289,15 +3290,15 @@
   height: 0;
   width: 0;
 }
-.dijitTextBoxDisabled {
+.dijitTextBoxDisabled, .dijitTextBox:disabled {
   border: solid 1.5px #f3f3f4;
   background-color: #fafafb;
 }
-.dijitTextBoxDisabled .dijitArrowButton {
+.dijitTextBoxDisabled .dijitArrowButton, .dijitTextBox:disabled .dijitArrowButton {
   background-color: #fafafb;
   border-left: solid 1.5px #f3f3f4;
 }
-.dijitTextBoxDisabled .dijitArrowButton:before {
+.dijitTextBoxDisabled .dijitArrowButton:before, .dijitTextBox:disabled .dijitArrowButton:before {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3310,10 +3311,10 @@
   height: 0;
   width: 0;
 }
-.dijitTextBoxDisabled .dijitPlaceHolder {
+.dijitTextBoxDisabled .dijitPlaceHolder, .dijitTextBox:disabled .dijitPlaceHolder {
   color: #6c7389;
 }
-.dijitTextBoxDisabled .dijitInputInner {
+.dijitTextBoxDisabled .dijitInputInner, .dijitTextBox:disabled .dijitInputInner {
   color: #6c7389;
 }
 .dijitTextBoxError {
@@ -3529,6 +3530,7 @@
 }
 .dijitButtonNode {
   border: none;
+  font-size: 1rem;
 }
 .dijitButtonHover {
   background-color: var(--color-palette-primary-100);
@@ -4082,51 +4084,48 @@
 .dijitComboBox .dijitArrowButton:before {
   border-top-color: var(--color-palette-primary-500);
 }
-.dijitComboBoxHover {
+.dijitComboBoxHover, .dijitComboBox:hover {
   background-color: #ffffff;
   border: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitComboBoxHover .dijitArrowButton {
+.dijitComboBoxHover .dijitArrowButton, .dijitComboBox:hover .dijitArrowButton {
   background-color: #f3f3f4;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitComboBoxHover .dijitArrowButton:before {
+.dijitComboBoxHover .dijitArrowButton:before, .dijitComboBox:hover .dijitArrowButton:before {
   border-top-color: var(--color-palette-primary-500);
 }
-.dijitComboBoxHover .dijitDownArrowButtonHover {
+.dijitComboBoxHover .dijitDownArrowButtonHover, .dijitComboBox:hover .dijitDownArrowButtonHover {
   background-color: #f3f3f4;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitComboBoxHover .dijitDownArrowButtonHover:before {
+.dijitComboBoxHover .dijitDownArrowButtonHover:before, .dijitComboBox:hover .dijitDownArrowButtonHover:before {
   border-top-color: var(--color-palette-primary-500);
 }
-.dijitComboBoxFocused {
+.dijitComboBoxFocused, .dijitComboBox:focus {
   border: solid 1.5px var(--color-palette-primary-400);
-  background-color: #ffffff;
 }
-.dijitComboBoxFocused .dijitArrowButton {
-  background-color: #f3f3f4;
+.dijitComboBoxFocused .dijitArrowButton, .dijitComboBox:focus .dijitArrowButton {
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitComboBoxFocused .dijitDownArrowButtonHover {
-  background-color: #f3f3f4;
+.dijitComboBoxFocused .dijitDownArrowButtonHover, .dijitComboBox:focus .dijitDownArrowButtonHover {
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitComboBoxDisabled {
+.dijitComboBoxDisabled, .dijitComboBox:disabled {
   border: solid 1.5px #f3f3f4;
   background-color: #f3f3f4;
 }
-.dijitComboBoxDisabled .dijitArrowButton {
+.dijitComboBoxDisabled .dijitArrowButton, .dijitComboBox:disabled .dijitArrowButton {
   background-color: #f3f3f4;
   border-left: solid 1.5px #f3f3f4;
 }
-.dijitComboBoxDisabled .dijitArrowButton:before {
+.dijitComboBoxDisabled .dijitArrowButton:before, .dijitComboBox:disabled .dijitArrowButton:before {
   border-top-color: #6c7389;
 }
-.dijitComboBoxDisabled .dijitPlaceHolder {
+.dijitComboBoxDisabled .dijitPlaceHolder, .dijitComboBox:disabled .dijitPlaceHolder {
   color: #afb3c0;
 }
-.dijitComboBoxDisabled .dijitInputInner {
+.dijitComboBoxDisabled .dijitInputInner, .dijitComboBox:disabled .dijitInputInner {
   color: #afb3c0;
 }
 .dijitComboBoxError {
@@ -8890,6 +8889,7 @@ Styles for commons fields along the backend
   position: relative;
 }
 .tagsWrapper .dijitTextBox {
+  min-height: 2.5rem;
   height: auto;
   padding: 3px 5px;
 }
@@ -11157,3 +11157,5 @@ body {
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/*# sourceMappingURL=dotcms.css.map */
