@@ -163,6 +163,9 @@ public class ExperimentResults {
                 return new TotalSession(getTotal(), totalSessionByVariant);
             }
 
+            /**
+             * Util class to count the number of session per day and Variant.
+             */
             private class SessionDetail {
 
                 final Map<Instant, Long> details = new TreeMap<>(new Comparator<Instant>() {
@@ -204,6 +207,9 @@ public class ExperimentResults {
 
     }
 
+    /**
+     * Represent the number of session per day and Variant.
+     */
     public static class TotalSessionByVariant {
         final Map<String, Map<Instant, Long>> sessionsResult = new HashMap<>();
 
