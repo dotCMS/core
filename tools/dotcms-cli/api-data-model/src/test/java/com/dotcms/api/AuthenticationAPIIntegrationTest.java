@@ -12,7 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class AuthenticationAPITest {
+class AuthenticationAPIIntegrationTest {
 
     @Inject
     ServiceManager  serviceManager;
