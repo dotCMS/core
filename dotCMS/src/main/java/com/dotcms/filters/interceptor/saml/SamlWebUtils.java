@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -226,9 +227,7 @@ public class SamlWebUtils {
 
         final String relayStateValue =  relayStateStrategy.apply(request, response, identityProviderConfiguration);
 
-        if (null != request.getSession(false)) {
-            request.getSession(false).setAttribute(AUTH_RELAYSTATE_KEY, relayStateValue);
-        }
+        Optional.ofNullable(request.getSession(false)).ifPresent(session -> session.setAttribute(AUTH_RELAYSTATE_KEY, relayStateValue));
 
         return relayStateValue;
     }
