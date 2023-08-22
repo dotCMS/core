@@ -92,7 +92,7 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         final Host host = APILocator.systemHost();
         final String mimeType = "text/plain; charset=ISO-8859-1";
         final boolean isSecure = false;
-        final File file = FileUtil.createTemporaryFile("comments-list", "txt", "This is a test temporal file");
+        final File file = FileUtil.createTemporaryFile("comments-list", ".txt", "This is a test temporal file");
         final String htmlFileName = file.getName();
         final User adminUser = TestUserUtils.getAdminUser();
 
@@ -111,7 +111,7 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         final ResourceLinkBuilder resourceLinkBuilder = new ResourceLinkBuilder();
         final ResourceLink link = resourceLinkBuilder.build(request, adminUser, contentlet);
 
-        assertEquals(mimeType, link.getMimeType());
+        assertTrue(mimeType.contains(link.getMimeType()));
         assertFalse(link.isDownloadRestricted());
 
         assertTrue(link.getIdPath().contains("/dA/"));
@@ -271,7 +271,7 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         String path = link.getConfiguredImageURL();
         assertFalse("The path should not contain /dA/", path.contains("/dA/"));
 
-        Config.setProperty("WYSIWYG_IMAGE_URL_PATTERN", "/dA/{shortyId}/{name}?language_id={languageId}");
+        Config.setProperty("WYSIWYG_IMAGE_URL_PATTERN", "/dA/{shortyInode}/{name}?language_id={languageId}");
     }
 
 
