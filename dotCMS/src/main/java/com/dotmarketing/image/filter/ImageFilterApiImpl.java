@@ -174,12 +174,11 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
         ImageIO.getImageReaders(inputStream).forEachRemaining(readers::add);
         ImageIO.getImageReadersBySuffix(UtilMethods.getFileExtension(imageFile.getName()))
                         .forEachRemaining(readers::add);
-        if(readers.size()>1) {
-            // We remove the Luciad based webp-imageio reader if there are more than one reader should choose twelve monkeys
-            readers.removeIf(r ->
-                    r.getOriginatingProvider().getVendorName().equals("Luciad")
-            );
-        }
+
+
+        // remove old VP8 ImageReader as there are cases where it is broken
+        readers.removeIf(r->r.getClass().equals(net.sf.javavp8decoder.imageio.WebPImageReader.class));
+
         return readers.stream().findFirst().orElseThrow(()->new DotRuntimeException("Unable to find reader for image:" + imageFile));
 
     }

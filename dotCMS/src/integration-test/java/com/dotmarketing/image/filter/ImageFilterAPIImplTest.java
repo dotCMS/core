@@ -56,9 +56,25 @@ public class ImageFilterAPIImplTest {
             }
         }
     }
-    
-    
+
+
+    // GH Issue 25861
     @Test
+    public void test_broken_webp_reader() {
+        final URL url = getClass().getResource("/images/test-webp-issue-25861.webp");
+        File incomingFile = new File(url.getFile());
+        Dimension dim = imageApi.getWidthHeight(incomingFile);
+
+        assert(dim.getWidth() == 320);
+        assert(dim.getHeight() == 240);
+
+    }
+
+
+
+
+
+        @Test
     public void test_dimensions() {
 
         URL url = getClass().getResource("/images/10by10000.png");
