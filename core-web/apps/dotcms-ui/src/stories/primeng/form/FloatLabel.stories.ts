@@ -11,7 +11,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'All input text components support floating labels: https://primefaces.org/primeng/showcase/#/floatlabel'
+                    'All input text components support floating labels: https://primeng.org/inputtext#floatlabel'
             }
         }
     },

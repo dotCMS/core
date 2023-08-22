@@ -20,7 +20,7 @@ $dot-tab-height: 2.5rem;
 }
 
 .dot-tab__button {
-    border: 1.5px solid $color-palette-gray-200;
+    border: $field-border-size solid $color-palette-gray-200;
     color: $color-palette-primary-500;
     background-color: transparent;
     padding: $spacing-1 $spacing-3;
@@ -39,7 +39,7 @@ $dot-tab-height: 2.5rem;
 
 .dot-tab__dropdow {
     background-color: transparent;
-    border: 1.5px solid $color-palette-gray-200;
+    border: $field-border-size solid $color-palette-gray-200;
     height: $dot-tab-height;
     border-top-right-radius: $border-radius-md;
     border-bottom-right-radius: $border-radius-md;
@@ -69,7 +69,7 @@ $dot-tab-height: 2.5rem;
     border: 0;
 
     &.dot-tab__button--right {
-        border: 1.5px solid $color-palette-primary-100;
+        border: $field-border-size solid $color-palette-primary-100;
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
     }

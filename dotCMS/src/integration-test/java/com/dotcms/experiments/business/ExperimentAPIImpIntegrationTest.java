@@ -25,6 +25,7 @@ import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
+import com.dotcms.analytics.metrics.QueryParameter;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.analytics.model.AnalyticsProperties;
@@ -3193,7 +3194,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .findFirst()
                 .orElseThrow();
 
-        assertEquals("{\"name\":\"testName\", \"value\":\"testValue\"}", queryParameter.value());
+        final QueryParameter queryParameterExpected = new QueryParameter("testName", "testValue");
+
+        assertEquals(queryParameterExpected, queryParameter.value());
     }
 
     /**
@@ -3861,7 +3864,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage,
-                Operator.CONTAINS, "{\"name\":\"testName\", \"value\":\"testValue\"}");
+                Operator.CONTAINS, new QueryParameter("testName", "testValue"));
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -3963,7 +3966,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage,
-                Operator.CONTAINS, "{\"name\":\"testName\", \"value\":\"RightValue\"}");
+                Operator.CONTAINS, new QueryParameter("testName", "RightValue"));
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -4070,7 +4073,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage,
-                Operator.CONTAINS, "{\"name\":\"testName\", \"value\":\"RightValue\"}");
+                Operator.CONTAINS, new QueryParameter("testName", "RightValue"));
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -4173,7 +4176,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage,
-                Operator.EXISTS, "{\"name\":\"testName\"}");
+                Operator.EXISTS, new QueryParameter("testName", null));
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -4279,7 +4282,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage,
-                Operator.EXISTS, "{\"name\":\"testName\"}");
+                Operator.EXISTS, new QueryParameter("testName", null));
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -4568,11 +4571,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     private static Experiment createExperimentWithUrlParameterGoal(
             final HTMLPageAsset experimentPage) {
         return createExperimentWithUrlParameterGoal(experimentPage, Operator.EQUALS,
-                "{\"name\":\"testName\", \"value\":\"testValue\"}");
+                new QueryParameter("testName", "testValue"));
     }
 
     private static Experiment createExperimentWithUrlParameterGoal(
-            final HTMLPageAsset experimentPage, final Operator operator, final String value) {
+            final HTMLPageAsset experimentPage, final Operator operator, final QueryParameter value) {
 
         final Condition queryParameterCondition = Condition.builder()
                 .parameter("queryParameter")
@@ -6738,7 +6741,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset pageD = new HTMLPageDataGen(folder, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithUrlParameterGoal(pageB,
-                Operator.EQUALS, "{\"name\":\"testName\", \"value\":\"testValue\"}");
+                Operator.EQUALS, new QueryParameter("testName", "testValue"));
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -7622,6 +7625,42 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getRunningExperimentPerPage(String)}
+     * When: The Page has a Experiment but is not RUNNING
+     * Should: The Method return a empty Optional but after Start the Experiment the
+     * method should return the Experiment
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void getRunningExperimentPerPage() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .page(experimentPage)
+                .nextPersisted();
+
+        final Optional<Experiment> runningExperiment = APILocator.getExperimentsAPI()
+                .getRunningExperimentPerPage(experimentPage.getIdentifier());
+
+        assertFalse(runningExperiment.isPresent());
+
+        APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
+
+        try {
+            final Optional<Experiment> runningExperiment2 = APILocator.getExperimentsAPI()
+                    .getRunningExperimentPerPage(experimentPage.getIdentifier());
+
+            assertTrue(runningExperiment2.isPresent());
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+        }
+    }
     private static void checkVersion(final Contentlet contentlet, final boolean live,
             final Variant defaultVariant, final String value, final Field titleField)
             throws DotDataException, DotSecurityException {
