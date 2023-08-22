@@ -271,7 +271,6 @@ describe('TemplateBuilderComponent', () => {
             });
 
             store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {
-                expect(true).toBeTruthy();
                 expect(layoutChangeMock).toHaveBeenCalledWith({
                     layout: {
                         body: FULL_DATA_MOCK,
@@ -289,6 +288,37 @@ describe('TemplateBuilderComponent', () => {
                 });
                 done();
             });
+        });
+    });
+
+    it('should emit layoutChange when the layoutProperties changes', (done) => {
+        const LAYOUT_PROPERTIES_MOCK = {
+            header: false,
+            footer: true,
+            sidebar: {
+                containers: [],
+                location: 'right',
+                width: 'medium'
+            }
+        };
+
+        const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+
+        store.updateLayoutProperties(LAYOUT_PROPERTIES_MOCK);
+
+        spectator.detectChanges();
+
+        store.vm$.pipe(pluck('layoutProperties'), take(1)).subscribe(() => {
+            expect(layoutChangeMock).toHaveBeenCalledWith({
+                layout: {
+                    ...LAYOUT_PROPERTIES_MOCK,
+                    body: FULL_DATA_MOCK,
+                    width: 'Mobile',
+                    title: 'Test Title'
+                },
+                themeId: '123'
+            });
+            done();
         });
     });
 

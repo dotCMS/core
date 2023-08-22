@@ -68,6 +68,7 @@ import com.dotcms.util.network.IPUtils;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -123,6 +124,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import net.bytebuddy.utility.RandomString;
 import org.apache.commons.lang.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -6200,7 +6202,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
-        
+
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
 
@@ -7679,4 +7681,441 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         Assert.assertEquals(value, contentlet1DefaultVariantFromDataBase
                 .getStringProperty(titleField.variable()));
     }
+
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When Try to archive a Page with a Running Experiment
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryArchivePageWithRunningExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        try {
+            APILocator.getContentletAPI()
+                    .archive(experimentPage, APILocator.systemUser(), false);
+
+            throw new AssertionError("Should throw a DotDataException");
+        } catch (DotDataException e) {
+            //expected
+            final String messageExpected = String.format(
+                    "Can't Archive a Page %s because it has a Running Experiment. Experiment ID %s"
+                    , experimentPage.getIdentifier(), experiment.id().orElseThrow());
+            assertEquals(messageExpected, e.getMessage());
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When Try to archive a Page with a DRAFT Experiment
+     * Should: Archive the page and keep the Experiment on DRAFT
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryArchivePageWithNotRunningExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        APILocator.getContentletAPI()
+                .archive(experimentPage, APILocator.systemUser(), false);
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .find(experimentPage.getInode(), APILocator.systemUser(), false);
+
+        assertTrue(contentlet.isArchived());
+
+        final Experiment experimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(experiment.getIdentifier(), APILocator.systemUser()).orElseThrow();
+
+        assertEquals(Experiment.Status.DRAFT, experimentFromDatabase.status());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When Try to delete an Experiment
+     * Should: Delete the Experiment and the Variants
+     * Also must delete the Variants and the COntentlets' version inside the Variants
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryDeleteExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment draftExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String notDefaultVariantName = getNotDefaultVariantName(draftExperiment);
+        final Variant notDefaultVariantStartedExperiment = APILocator.getVariantAPI()
+                .get(notDefaultVariantName)
+                .orElseThrow();
+
+        final Contentlet contentlet_1 = createContentletWithWorkingAndLiveVersion(notDefaultVariantStartedExperiment);
+
+        APILocator.getExperimentsAPI().delete(draftExperiment.id().orElseThrow(), APILocator.systemUser());
+
+        final Optional<Experiment> draftExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(draftExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertFalse(draftExperimentFromDatabase.isPresent());
+
+        final Optional<Variant> notDefaultVariantStartedExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantName);
+
+        assertFalse(notDefaultVariantStartedExperimentOptional.isPresent());
+
+        checkNotExistsAnyVersion(contentlet_1);
+
+    }
+
+    private static void checkNotExistsAnyVersion(Contentlet contentlet_1)
+            throws DotDataException, DotSecurityException {
+        final Identifier identifier = APILocator.getIdentifierAPI()
+                .find(contentlet_1.getIdentifier());
+
+        final List<Contentlet> allVersionsAfterDeleted = APILocator.getContentletAPI()
+                .findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(),
+                        false);
+
+        Assert.assertTrue(allVersionsAfterDeleted.isEmpty());
+    }
+
+    @NotNull
+    private static Contentlet createContentletWithWorkingAndLiveVersion(
+            final Variant notDefaultVariantStartedExperiment)
+            throws DotDataException, DotSecurityException {
+
+        final Field textField = new FieldDataGen()
+                .name("text")
+                .velocityVarName("text")
+                .type(TextField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(textField)
+                .nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .setProperty(textField.variable(), "LIVE")
+                .variant(notDefaultVariantStartedExperiment)
+                .nextPersisted();
+
+        final Contentlet variantLive = ContentletDataGen.createNewVersion(contentlet_1,
+                notDefaultVariantStartedExperiment,
+                map(textField.variable(), "Variant LIVE"));
+
+        ContentletDataGen.publish(variantLive);
+        ContentletDataGen.update(variantLive, map(textField.variable(), "WORKING"));
+        return contentlet_1;
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When Try to delete a Page with two Experiments: one Draft and the other Ended
+     * Should: Delete the Page and the experiments too
+     * Also must delete the Variants and the COntentlets' version inside the Variants
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryDeletePageWithNotRunningExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment draftExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+        final Experiment endedExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String notDefaultVariantDraftExperimentName = getNotDefaultVariantName(draftExperiment);
+        final Variant notDefaultVariantDraftExperiment = APILocator.getVariantAPI()
+                .get(notDefaultVariantDraftExperimentName)
+                .orElseThrow();
+        final Contentlet contentlet_1 = createContentletWithWorkingAndLiveVersion(notDefaultVariantDraftExperiment);
+
+        final String notDefaultVariantEndedExperimentName = getNotDefaultVariantName(endedExperiment);
+        final Variant notDefaultVariantEndedExperiment = APILocator.getVariantAPI()
+                .get(notDefaultVariantEndedExperimentName)
+                .orElseThrow();
+        final Contentlet contentlet_2 = createContentletWithWorkingAndLiveVersion(notDefaultVariantEndedExperiment);
+
+        APILocator.getExperimentsAPI().start(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+        APILocator.getExperimentsAPI().end(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+
+        APILocator.getContentletAPI()
+                .archive(experimentPage, APILocator.systemUser(), false);
+
+        APILocator.getContentletAPI()
+                .delete(experimentPage, APILocator.systemUser(), false);
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .find(experimentPage.getInode(), APILocator.systemUser(), false);
+
+        assertNull(contentlet);
+
+        final Optional<Experiment> draftExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(draftExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertFalse(draftExperimentFromDatabase.isPresent());
+
+        final Optional<Experiment> endedExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(endedExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertFalse(endedExperimentFromDatabase.isPresent());
+
+        final Optional<Variant> notDefaultVariantDraftExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantDraftExperimentName);
+
+        assertFalse(notDefaultVariantDraftExperimentOptional.isPresent());
+
+        final Optional<Variant> notDefaultVariantEndedExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantEndedExperimentName);
+
+        assertFalse(notDefaultVariantEndedExperimentOptional.isPresent());
+
+        checkNotExistsAnyVersion(contentlet_1);
+        checkNotExistsAnyVersion(contentlet_2);
+    }
+
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When A Not Admin user but with the follow permission:
+     * - Not Edit Permission on the Page
+     * - Edit Template/Layout Permission on the site.
+     *
+     * Try to delete a Page with two Experiments: one Draft and the other Ended
+     * Should: throw DotSecurityException
+     * Also must delete the Variants and the COntentlets' version inside the Variants
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryDeletePageWithNotRunningExperimentNoAdminUserNotEditPagePermission() throws DotDataException, DotSecurityException {
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_EDIT);
+
+        final Experiment draftExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+        final Experiment endedExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String notDefaultVariantDraftExperimentName = getNotDefaultVariantName(draftExperiment);
+        final String notDefaultVariantEndedExperimentName = getNotDefaultVariantName(endedExperiment);
+
+        APILocator.getExperimentsAPI().start(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+        APILocator.getExperimentsAPI().end(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+
+        APILocator.getContentletAPI()
+                .archive(experimentPage, APILocator.systemUser(), false);
+
+        try {
+            APILocator.getContentletAPI()
+                    .delete(experimentPage, limitedUser, false);
+
+            throw new AssertionError("Should throw DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String expectedMessage =  String.format("User: %s does not have Edit Permissions to lock content: %s",
+                    limitedUser.getUserId(), experimentPage.getIdentifier());
+            assertEquals(expectedMessage, e.getMessage());
+        }
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .find(experimentPage.getInode(), APILocator.systemUser(), false);
+
+        assertNotNull(contentlet);
+
+        final Optional<Experiment> draftExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(draftExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertTrue(draftExperimentFromDatabase.isPresent());
+
+        final Optional<Experiment> endedExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(endedExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertTrue(endedExperimentFromDatabase.isPresent());
+
+        final Optional<Variant> notDefaultVariantDraftExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantDraftExperimentName);
+
+        assertTrue(notDefaultVariantDraftExperimentOptional.isPresent());
+
+        final Optional<Variant> notDefaultVariantEndedExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantEndedExperimentName);
+
+        assertTrue(notDefaultVariantEndedExperimentOptional.isPresent());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When A Not Admin user but with the follow permission:
+     * - Edit Permission on the Page
+     * - Not Edit Template/Layout Permission on the site.
+     *
+     * Try to delete a Page with two Experiments: one Draft and the other Ended
+     * Should: Delete the Page and the experiments too
+     * Also must delete the Variants and the COntentlets' version inside the Variants
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryDeletePageWithNotRunningExperimentNoAdminUserNotTemplateLayoutPermission() throws DotDataException, DotSecurityException {
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+        final Experiment draftExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+        final Experiment endedExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String notDefaultVariantDraftExperimentName = getNotDefaultVariantName(draftExperiment);
+        final String notDefaultVariantEndedExperimentName = getNotDefaultVariantName(endedExperiment);
+
+        APILocator.getExperimentsAPI().start(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+        APILocator.getExperimentsAPI().end(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+
+        APILocator.getContentletAPI()
+                .archive(experimentPage, APILocator.systemUser(), false);
+
+        try {
+            APILocator.getContentletAPI()
+                    .delete(experimentPage, limitedUser, false);
+
+            throw new AssertionError("Should throw DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String expectedMessage =  String.format("User: %s does not have Edit Permissions to lock content: %s",
+                    limitedUser.getUserId(), experimentPage.getIdentifier());
+            assertEquals(expectedMessage, e.getMessage());
+        }
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .find(experimentPage.getInode(), APILocator.systemUser(), false);
+
+        assertNotNull(contentlet);
+
+        final Optional<Experiment> draftExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(draftExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertTrue(draftExperimentFromDatabase.isPresent());
+
+        final Optional<Experiment> endedExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(endedExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertTrue(endedExperimentFromDatabase.isPresent());
+
+        final Optional<Variant> notDefaultVariantDraftExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantDraftExperimentName);
+
+        assertTrue(notDefaultVariantDraftExperimentOptional.isPresent());
+
+        final Optional<Variant> notDefaultVariantEndedExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantEndedExperimentName);
+
+        assertTrue(notDefaultVariantEndedExperimentOptional.isPresent());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When A Not Admin user but with the follow permission:
+     * - Edit Permission on the Page
+     * - Edit Template/Layout Permission on the site.
+     *
+     * Try to delete a Page with two Experiments: one Draft and the other Ended
+     * Should: Delete the Page and the experiments too
+     * Also must delete the Variants and the COntentlets' version inside the Variants
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryDeletePageWithNotRunningExperimentNoAdminUser() throws DotDataException, DotSecurityException {
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment draftExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+        final Experiment endedExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String notDefaultVariantDraftExperimentName = getNotDefaultVariantName(draftExperiment);
+        final String notDefaultVariantEndedExperimentName = getNotDefaultVariantName(endedExperiment);
+
+        APILocator.getExperimentsAPI().start(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+        APILocator.getExperimentsAPI().end(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+
+        APILocator.getContentletAPI()
+                .archive(experimentPage, APILocator.systemUser(), false);
+
+        try {
+            APILocator.getContentletAPI()
+                    .delete(experimentPage, limitedUser, false);
+
+            throw new AssertionError("Should throw DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String expectedMessage =  String.format("User: %s does not have Edit Permissions to lock content: %s",
+                    limitedUser.getUserId(), experimentPage.getIdentifier());
+            assertEquals(expectedMessage, e.getMessage());
+        }
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .find(experimentPage.getInode(), APILocator.systemUser(), false);
+
+        assertNotNull(contentlet);
+
+        final Optional<Experiment> draftExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(draftExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertTrue(draftExperimentFromDatabase.isPresent());
+
+        final Optional<Experiment> endedExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(endedExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertTrue(endedExperimentFromDatabase.isPresent());
+
+        final Optional<Variant> notDefaultVariantDraftExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantDraftExperimentName);
+
+        assertTrue(notDefaultVariantDraftExperimentOptional.isPresent());
+
+        final Optional<Variant> notDefaultVariantEndedExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantEndedExperimentName);
+
+        assertTrue(notDefaultVariantEndedExperimentOptional.isPresent());
+    }
+
 }

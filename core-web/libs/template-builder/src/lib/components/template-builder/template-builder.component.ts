@@ -192,6 +192,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             .subscribe(([rows, layoutProperties]) => {
                 this.dotLayout = {
                     ...this.layout,
+                    ...layoutProperties,
                     sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
                         ? layoutProperties.sidebar
                         : null,
