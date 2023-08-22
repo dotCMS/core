@@ -615,10 +615,10 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	}
 
 	@Override
-	protected void deleteContentletVersionInfo(String id, long lang, final String variantId) throws DotDataException {
-		new DotConnect().setSQL("DELETE FROM contentlet_version_info WHERE identifier=? AND lang=? AND variant_id=?")
-				.addParam(id).addParam(lang).addParam(variantId).loadResult();
-		this.icache.removeContentletVersionInfoToCache(id, lang);
+	protected void deleteContentletVersionInfo(String id, final String variantId) throws DotDataException {
+		new DotConnect().setSQL("DELETE FROM contentlet_version_info WHERE identifier=? AND variant_id=?")
+				.addParam(id).addParam(variantId).loadResult();
+		//this.icache.removeContentletVersionInfoToCache(id, lang);
 	}
 
 	/**
