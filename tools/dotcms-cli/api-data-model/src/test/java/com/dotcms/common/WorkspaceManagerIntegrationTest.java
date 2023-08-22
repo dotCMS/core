@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
 
 @QuarkusTest
-class WorkspaceManagerTest {
+class WorkspaceManagerIntegrationTest {
 
     @Inject
     WorkspaceManager workspaceManager;
