@@ -49,10 +49,9 @@ const node_fetch_1 = __importDefault(__nccwpck_require__(4429));
  * Sends the tests results statsus to Github using its API.
  *
  * @param testType test type
- * @param dbType database type
  * @param testResultsStatus test results status (PASSED or FAILED)
  */
-const send = (testType, dbType, testResultsStatus) => __awaiter(void 0, void 0, void 0, function* () {
+const send = (testType, testResultsStatus) => __awaiter(void 0, void 0, void 0, function* () {
     const pullRequest = core.getInput('pull_request');
     if (!pullRequest) {
         core.warning(`This was not triggered from a pull request, so skipping sending status `);
@@ -69,7 +68,7 @@ const send = (testType, dbType, testResultsStatus) => __awaiter(void 0, void 0, 
     }
     const pr = (yield prResponse.json());
     const testsReportUrl = core.getInput('tests_report_url');
-    const status = createStatus(testType, dbType, testResultsStatus, testsReportUrl);
+    const status = createStatus(testType, testResultsStatus, testsReportUrl);
     const statusResponse = yield postStatus(pr._links.statuses.href, creds, status);
     if (!statusResponse.ok) {
         core.warning(`Could not send Github status for ${testType} tests`);
@@ -78,34 +77,14 @@ const send = (testType, dbType, testResultsStatus) => __awaiter(void 0, void 0, 
 });
 exports.send = send;
 /**
- * Resolves what label to use based on the test type.
- *
- * @param testType test type
- * @param dbType database type
- * @returns status label
- */
-const resolveStastusLabel = (testType, dbType) => {
-    switch (testType) {
-        case 'unit':
-            return '[Unit tests results]';
-        case 'integration':
-            return `[Integration tests results] - [${dbType}]`;
-        case 'postman':
-            return '[Postman tests results]';
-        default:
-            return '';
-    }
-};
-/**
  * Creates a status object based on the provided params.
  *
  * @param testType test type
- * @param dbType database type
  * @param testResultsStatus test results status
  * @param testsReportUrl report url where tests results are located
  * @returns {@link GithubStatus} object to be used when reporting
  */
-const createStatus = (testType, dbType, testResultsStatus, testsReportUrl) => {
+const createStatus = (testType, testResultsStatus, testsReportUrl) => {
     let statusLabel;
     let description;
     if (testResultsStatus === 'PASSED') {
@@ -120,7 +99,7 @@ const createStatus = (testType, dbType, testResultsStatus, testsReportUrl) => {
         state: statusLabel,
         description,
         target_url: testsReportUrl,
-        context: `Github Actions - ${resolveStastusLabel(testType, dbType)}`
+        context: `Github Actions - [${testType.toUpperCase()} tests results]`
     };
 };
 /**
@@ -209,11 +188,9 @@ const github = __importStar(__nccwpck_require__(6684));
  */
 const run = () => {
     const testType = core.getInput('test_type');
-    const dbType = core.getInput('db_type');
     const testResultsStatus = core.getInput('test_results_status');
-    const dbLabel = !!dbType ? ` with ${dbType} database` : '';
-    core.info(`Submitting ${testResultsStatus} status to Github for ${testType} tests${dbLabel}`);
-    github.send(testType, dbType, testResultsStatus);
+    core.info(`Submitting ${testResultsStatus} status to Github for ${testType} tests`);
+    github.send(testType, testResultsStatus);
 };
 // Run main function
 run();

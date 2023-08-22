@@ -615,7 +615,7 @@
             imgCell.style.textAlign = 'center';
             var imageValue;
 			imageValue = item.hasTitleImage === 'true'
-				? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/64w">'
+				? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/500w/50q">'
 				: '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
 
             imgCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(item, imageValue);
@@ -905,6 +905,3 @@
 	     contentletLanguageId="<%=contentlet.getLanguageId() %>"
 	     dialogCounter="<%= randomNumber %>">
 	 </div>
-
-
-

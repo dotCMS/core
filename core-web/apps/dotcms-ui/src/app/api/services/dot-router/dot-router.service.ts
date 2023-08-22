@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import {
@@ -22,6 +22,8 @@ export class DotRouterService {
     private _storedRedirectUrl: string;
     private _routeHistory: PortletNav = { url: '' };
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
+    private _routeCanBeDeactivated = new BehaviorSubject(true);
+    private _pageLeaveRequest = new Subject<void>();
 
     constructor(private router: Router, private route: ActivatedRoute) {
         this._routeHistory.url = this.router.url;
@@ -70,6 +72,14 @@ export class DotRouterService {
         const nav = this.router.getCurrentNavigation();
 
         return nav ? nav.finalUrl.queryParams : this.route.snapshot.queryParams;
+    }
+
+    get canDeactivateRoute$(): Observable<boolean> {
+        return this._routeCanBeDeactivated.asObservable();
+    }
+
+    get pageLeaveRequest$() {
+        return this._pageLeaveRequest.asObservable();
     }
 
     /**
@@ -359,6 +369,30 @@ export class DotRouterService {
             queryParams: params,
             queryParamsHandling: 'merge'
         });
+    }
+
+    /**
+     * Only relevant for components that depend on CanDeactivateGuardService
+     * @memberof DotRouterService
+     */
+    allowRouteDeactivation() {
+        this._routeCanBeDeactivated.next(true);
+    }
+
+    /**
+     * Only relevant for components that depend on CanDeactivateGuardService
+     * @memberof DotRouterService
+     */
+    forbidRouteDeactivation() {
+        this._routeCanBeDeactivated.next(false);
+    }
+
+    /**
+     * Only relevant for components that depend on CanDeactivateGuardService
+     * @memberof DotRouterService
+     */
+    requestPageLeave() {
+        this._pageLeaveRequest.next();
     }
 
     private redirectMain(): Promise<boolean> {

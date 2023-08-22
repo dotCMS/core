@@ -70,10 +70,22 @@ public interface SamlAuthenticationService {
                                  final IdentityProviderConfiguration identityProviderConfiguration);
 
     /**
-     * Render the metadata as a XML
-     * @param writer
+     * Retrieve all attributes from the assertion and return them as a key/value map
+     * @param request
+     * @param response
      * @param identityProviderConfiguration
+     * @return
      */
+    public Map<String, String> resolveAllAttributes(final HttpServletRequest request,
+                                                    final HttpServletResponse response,
+                                                    final IdentityProviderConfiguration identityProviderConfiguration);
+
+
+        /**
+         * Render the metadata as a XML
+         * @param writer
+         * @param identityProviderConfiguration
+         */
     void renderMetadataXML(final Writer writer,
                            final IdentityProviderConfiguration identityProviderConfiguration);
 

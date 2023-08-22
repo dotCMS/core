@@ -926,16 +926,16 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                         message: this.dotMessageService.get(
                             'experiments.action.stop.delete-confirm'
                         ),
-                        acceptLabel: this.dotMessageService.get('stop'),
+                        acceptLabel: this.dotMessageService.get('experiments.action.end'),
                         rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
-                        rejectButtonStyleClass: 'p-button-secondary',
+                        rejectButtonStyleClass: 'p-button-outlined',
                         accept: () => {
                             this.stopExperiment(experiment);
                         }
                     });
                 }
             },
-            // Schedule experiment
+            // Cancel Schedule
             {
                 label: this.dotMessageService.get('experiments.configure.scheduling.cancel'),
                 visible: experiment?.status === DotExperimentStatus.SCHEDULED,
@@ -963,7 +963,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 visible: hasEnterpriseLicense && !!pushPublishEnvironments.length,
                 command: () =>
                     this.dotPushPublishDialogService.open({
-                        assetIdentifier: experiment.identifier,
+                        assetIdentifier: experiment.id,
                         title: this.dotMessageService.get('contenttypes.content.push_publish')
                     })
             },
@@ -971,7 +971,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             {
                 label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
                 visible: hasEnterpriseLicense,
-                command: () => this.showAddToBundle(experiment.identifier)
+                command: () => this.showAddToBundle(experiment.id)
             }
         ];
     }

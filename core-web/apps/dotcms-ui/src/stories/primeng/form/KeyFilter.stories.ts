@@ -15,7 +15,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'KeyFilter directive restricts user input based on a regular expression.: https://primefaces.org/primeng/showcase/#/keyfilter'
+                    'KeyFilter directive restricts user input based on a regular expression.: https://primeng.org/keyfilter'
             }
         }
     },

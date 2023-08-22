@@ -37,7 +37,7 @@ import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
                 "" // empty line left here on purpose to make room at the end
         }
 )
-public class InstanceCommand implements Callable<Integer> {
+public class InstanceCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "instance";
 
@@ -58,7 +58,7 @@ public class InstanceCommand implements Callable<Integer> {
     String activate;
 
     @Override
-    public Integer call() {
+    public Integer call() throws IOException {
 
         final Map<String, URI> servers = clientConfig.servers();
         if (servers.isEmpty()) {
@@ -98,13 +98,8 @@ public class InstanceCommand implements Callable<Integer> {
                 } else {
                     ServiceBean serviceBean = optional.get();
                     serviceBean = serviceBean.withActive(true);
-                    try {
-                        serviceManager.persist(serviceBean);
-                        output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active one.", activate));
-                    } catch (IOException e) {
-                        output.error("Unable to persist the new selected service ",e);
-                        return ExitCode.SOFTWARE;
-                    }
+                    serviceManager.persist(serviceBean);
+                    output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active one.", activate));
                 }
             }
         }
@@ -131,4 +126,13 @@ public class InstanceCommand implements Callable<Integer> {
         return beans;
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

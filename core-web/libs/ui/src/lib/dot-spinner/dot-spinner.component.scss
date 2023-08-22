@@ -1,7 +1,7 @@
 @use "sass:math";
 @use "variables" as *;
 
-$size: $field-height;
+$size: $field-height-md;
 $border-size: math.div($size, 5);
 
 div {

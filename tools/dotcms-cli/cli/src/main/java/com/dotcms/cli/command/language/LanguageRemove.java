@@ -1,25 +1,14 @@
 package com.dotcms.cli.command.language;
 
-import static com.dotcms.cli.common.Utils.nextFileName;
-
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.HelpOptionMixin;
+import com.dotcms.cli.command.DotCommand;
+import com.dotcms.cli.common.InteractiveOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.model.ResponseEntityView;
+import com.dotcms.cli.common.Prompt;
 import com.dotcms.model.language.Language;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.annotations.VisibleForTesting;
-import java.io.Console;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.BooleanUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.Parameters;
@@ -27,6 +16,7 @@ import picocli.CommandLine.Parameters;
 @ActivateRequestContext
 @CommandLine.Command(
         name = LanguageRemove.NAME,
+        aliases = LanguageRemove.ALIAS,
         header = "@|bold,blue Remove a language|@",
         description = {
                 " Remove a language given its id or iso (e.g.: en-us)",
@@ -37,22 +27,22 @@ import picocli.CommandLine.Parameters;
  * Command to delete a language given its id or iso (e.g.: en-us)
  * @author nollymar
  */
-public class LanguageRemove extends AbstractLanguageCommand implements Callable<Integer> {
+public class LanguageRemove extends AbstractLanguageCommand implements Callable<Integer>, DotCommand {
+
+    @CommandLine.Mixin
+    InteractiveOptionMixin interactiveOption;
+
     static final String NAME = "remove";
+    static final String ALIAS = "rm";
+
     @Parameters(index = "0", arity = "1", description = "Language Id or Iso.")
     String languageIdOrIso;
 
     @Override
     public Integer call() throws Exception {
 
-        final Optional<Language> result = super.findExistingLanguage(languageIdOrIso);
+        final Language language = findExistingLanguage(languageIdOrIso);
 
-        if (result.isEmpty()){
-            output.error(String.format(
-                    "A language with id or ISO code [%s] could not be found.", languageIdOrIso));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
-        final Language language = result.get();
         output.info("Attempting to delete the following language:");
         output.info(shortFormat(language));
 
@@ -68,7 +58,20 @@ public class LanguageRemove extends AbstractLanguageCommand implements Callable<
     }
 
     private boolean isDeleteConfirmed() {
-        return BooleanUtils.toBoolean(
-                System.console().readLine("\nAre you sure you want to continue? [y/n]: "));
+        if(interactiveOption.isInteractive()){
+           return Prompt.yesOrNo(false,"Are you sure you want to continue ");
+        }
+        return true;
     }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
+
 }

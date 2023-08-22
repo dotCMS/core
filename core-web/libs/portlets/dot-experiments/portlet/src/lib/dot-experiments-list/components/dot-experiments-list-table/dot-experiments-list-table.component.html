@@ -14,18 +14,15 @@
                     </tr>
                 </ng-template>
                 <ng-template let-experiment pTemplate="body">
-                    <tr data-testId="experiment-row">
-                        <td
-                            (click)="goToContainer.emit(experiment)"
-                            data-testId="experiment-row__name"
-                        >
+                    <tr (click)="goToContainer.emit(experiment)" data-testId="experiment-row">
+                        <td data-testId="experiment-row__name">
                             {{ experiment.name }}
                         </td>
                         <td data-testId="experiment-row__createdDate">
-                            {{ experiment.creationDate | dotRelativeDate : true }}
+                            {{ experiment.creationDate | dotRelativeDate }}
                         </td>
                         <td data-testId="experiment-row__modDate">
-                            {{ experiment.modDate | dotRelativeDate : true }}
+                            {{ experiment.modDate | dotRelativeDate }}
                         </td>
                         <td class="text-right" data-testId="experiment-row__actions">
                             <p-menu
@@ -35,8 +32,8 @@
                                 appendTo="body"
                             ></p-menu>
                             <button
-                                class="p-button-rounded p-button-text p-button-secondary"
-                                (click)="menu.toggle($event)"
+                                class="p-button-rounded p-button-text"
+                                (click)="menu.toggle($event); $event.stopPropagation()"
                                 data-testId="experiment-row__action-button"
                                 icon="pi pi-ellipsis-v"
                                 pButton
@@ -51,10 +48,7 @@
 </div>
 
 <ng-template #noExperimentsFilteredTpl>
-    <dot-experiments-empty-experiments
-        [showButton]="false"
-        description="{{ 'experimentspage.not.experiments.found.filtered' | dm }}"
-    />
+    <dot-empty-container [configuration]="emptyConfiguration" [hideContactUsLink]="true" />
 </ng-template>
 
 <p-confirmPopup />

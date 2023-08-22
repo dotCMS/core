@@ -229,7 +229,6 @@ describe('DotPortletToolbarComponent', () => {
                 const actionsCancelButton = de.query(By.css('[data-testId="actionsCancelButton"]'));
                 actionsCancelButton.triggerEventHandler('click', {});
 
-                expect(actionsCancelButton.classes['p-button-secondary']).toBe(true);
                 expect(actionsCancelButton.nativeElement.textContent).toBe('Cancel');
                 expect(spy).toHaveBeenCalledWith({});
             });

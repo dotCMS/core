@@ -30,7 +30,7 @@ function redirectIfNeedIt(experimentsData,
             const pattern = new RegExp(experimentsData.experiments[i].redirectPattern);
 
             if (additionalValidation(experimentsData.experiments[i]) &&
-                pattern.test(location.href)) {
+                pattern.test(location.href.toLowerCase())) {
 
                 const param = experimentsData.experiments[i].variant.name === 'DEFAULT' ?
                     '' : getParams(experimentsData.experiments[i]);

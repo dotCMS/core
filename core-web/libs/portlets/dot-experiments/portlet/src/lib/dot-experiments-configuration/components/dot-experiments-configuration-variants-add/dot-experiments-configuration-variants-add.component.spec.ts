@@ -5,6 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -28,6 +29,7 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
 
 import { DotExperimentsConfigurationVariantsAddComponent } from './dot-experiments-configuration-variants-add.component';
 
+import { DotExperimentsReportsChartComponent } from '../../../dot-experiments-reports/components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
 const messageServiceMock = new MockDotMessageService({
@@ -51,7 +53,8 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
             ButtonModule,
             InputTextModule,
             InputTextareaModule,
-            DotFieldValidationMessageModule
+            DotFieldValidationMessageModule,
+            MockComponent(DotExperimentsReportsChartComponent)
         ],
         component: DotExperimentsConfigurationVariantsAddComponent,
         providers: [

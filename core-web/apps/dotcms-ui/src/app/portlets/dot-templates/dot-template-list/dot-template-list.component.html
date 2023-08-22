@@ -23,7 +23,7 @@
                 data-testid="archiveCheckbox"
             ></p-checkbox>
             <button
-                class="p-button-secondary p-button-sm"
+                class="p-button-outlined p-button-sm"
                 [disabled]="!this.selectedTemplates?.length"
                 [label]="'Actions' | dm"
                 (click)="actionsMenu.toggle($event)"
@@ -63,7 +63,7 @@
             {{ rowData.friendlyName }}
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
-            {{ rowData.modDate | dotRelativeDate : true }}
+            {{ rowData.modDate | dotRelativeDate }}
         </td>
         <td style="width: 5%; height: 3.85rem">
             <dot-action-menu-button

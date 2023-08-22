@@ -68,9 +68,21 @@ export default {
     ]
 };
 
-export const Default = () => ({
-    component: DotDeviceSelectorSeoComponent,
-    props: {
-        selected: action('selected')
-    }
-});
+export const Default = () => {
+    const handleClick = () => {
+        // open selector logic
+    };
+
+    return {
+        template: `
+        <p-button label="Open Selector" styleClass="p-button-outlined" (click)="op.openMenu($event)"></p-button>
+        <dot-device-selector-seo #op></dot-device-selector-seo>
+      `,
+        props: {
+            handleClick,
+            props: {
+                selected: action('selected')
+            }
+        }
+    };
+};

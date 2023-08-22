@@ -4,6 +4,7 @@ import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -28,7 +29,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.sql.SQLException;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -257,6 +257,22 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
 
         if (DbConnectionFactory.connectionExists()) {
             DbConnectionFactory.closeSilently(); // start always we a new one
+        }
+    }
+
+    /**
+     * Wrap the Delegate into a method db read method, that will close the connection at the end
+     * @param supplier
+     * @return
+     * @param <T>
+     * @throws Throwable
+     */
+    protected  <T>  T wrapOnReadOnlyConn(final ReturnableDelegate<T> supplier) throws Throwable {
+
+        try {
+            return supplier.execute();
+        } finally {
+            DbConnectionFactory.closeSilently();
         }
     }
 }

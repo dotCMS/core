@@ -1,7 +1,12 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { parseFromDotObjectToGridStack, parseFromGridStackToDotObject } from './gridstack-utils';
-import { EMPTY_ROWS_VALUE, MINIMAL_DATA_MOCK } from './mocks';
+import {
+    getRemainingSpaceForBox,
+    parseFromDotObjectToGridStack,
+    parseFromGridStackToDotObject,
+    willBoxFitInRow
+} from './gridstack-utils';
+import { EMPTY_ROWS_VALUE, MINIMAL_DATA_MOCK, ROWS_MOCK } from './mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -67,5 +72,54 @@ describe('parseFromGridStackToDotObject', () => {
         const result = parseFromGridStackToDotObject([]);
 
         expect(result).toEqual({ rows: [] });
+    });
+});
+
+describe('willBoxFitInRow', () => {
+    it('should fit when theres only a box with width 7', () => {
+        expect(willBoxFitInRow(ROWS_MOCK[0].subGridOpts.children)).toBe(true);
+    });
+
+    it('should fit with 2 boxes and a gap of 2 between them', () => {
+        expect(willBoxFitInRow(ROWS_MOCK[1].subGridOpts.children)).toBe(true);
+    });
+
+    it('should not fit when the row is full', () => {
+        expect(willBoxFitInRow(ROWS_MOCK[2].subGridOpts.children)).toBe(false);
+    });
+
+    it('should fit with multiple boxes and a gap of 1 between them', () => {
+        expect(willBoxFitInRow(ROWS_MOCK[3].subGridOpts.children)).toBe(true);
+    });
+
+    it('should fit when empty', () => {
+        expect(willBoxFitInRow(ROWS_MOCK[4].subGridOpts.children)).toBe(true);
+    });
+});
+describe('getRemainingSpaceForBox', () => {
+    it('should return 2 empty spaces when theres only a box with width 7', () => {
+        expect(
+            getRemainingSpaceForBox(ROWS_MOCK[0].subGridOpts.children, {
+                w: 1,
+                x: 7
+            })
+        ).toBe(2);
+    });
+
+    it('should return 1 empty spaces with 2 boxes and a gap of 2 between them', () => {
+        expect(
+            getRemainingSpaceForBox(ROWS_MOCK[1].subGridOpts.children, {
+                w: 1,
+                x: 7
+            })
+        ).toBe(1);
+    });
+    it('should return 0 empty spaces when theres no more space', () => {
+        expect(
+            getRemainingSpaceForBox(ROWS_MOCK[3].subGridOpts.children, {
+                w: 1,
+                x: 7
+            })
+        ).toBe(0);
     });
 });

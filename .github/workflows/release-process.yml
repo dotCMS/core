@@ -32,6 +32,7 @@ jobs:
             RELEASE_VERSION=${{ github.event.release.tag_name }}
           else
             BUILD_HASH=$(git log -1 --pretty=%h)
+            BUILD_HASH=${BUILD_HASH::7}
             eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
             RELEASE_VERSION="${dotcmsReleaseVersion}"
           fi
@@ -81,6 +82,7 @@ jobs:
             RELEASE_VERSION=${RELEASE_VERSION//v/}
           else
             BUILD_HASH=$(git log -1 --pretty=%h)
+            BUILD_HASH=${BUILD_HASH::7}
             eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
             RELEASE_VERSION="${dotcmsReleaseVersion}"
           fi
