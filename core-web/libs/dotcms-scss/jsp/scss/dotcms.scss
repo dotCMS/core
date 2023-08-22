@@ -42,10 +42,8 @@
     gap: 0.5rem;
 }
 
-#structure_inode_popup .dijitMenuItem .separator {
-    height: 1px;
-    margin: -1px -10px 0px -10px;
-    background: #ddd;
+#structure_inode_popup .dijitMenuItem:has(> .separator) {
+    border-top: 1px solid $color-palette-gray-400;
 }
 
 // GOOGLE FONTS
@@ -89,12 +87,15 @@
             format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
-body {
-    margin: 0;
-    padding: 0;
+html {
     font-family: $font-default;
     font-size: $font-size-default;
     color: $font-color-base;
+}
+
+body {
+    margin: 0;
+    padding: 0;
 }
 
 .material-icons {

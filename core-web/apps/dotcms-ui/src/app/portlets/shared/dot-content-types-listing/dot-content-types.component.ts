@@ -103,7 +103,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
 
             this.contentTypeColumns = this.setContentTypeColumns();
             this.rowActions = this.createRowActions({
-                pushPublish: isEnterprise && environments,
+                pushPublish: !!(isEnterprise && environments),
                 addToBundle: isEnterprise,
                 addToMenu: isEnterprise,
                 cloneContentType: isEnterprise

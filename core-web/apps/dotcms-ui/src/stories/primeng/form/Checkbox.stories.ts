@@ -12,7 +12,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'Basic checkbox with label, more information: https://primefaces.org/primeng/showcase/#/checkbox'
+                    'Basic checkbox with label, more information: https://primeng.org/checkbox'
             }
         }
     },
