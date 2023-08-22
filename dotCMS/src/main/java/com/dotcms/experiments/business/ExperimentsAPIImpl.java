@@ -605,7 +605,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             cancelScheduledExperimentsUponConflicts(experimentToSave, user);
             toReturn = innerStart(experimentToSave, user, false);
         } else {
-            Scheduling scheduling = persistedExperiment.scheduling().get();
+            Scheduling scheduling = persistedExperiment.scheduling().orElseThrow();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
 
             if(runningExperimentOnPage.isPresent()) {
@@ -1493,6 +1493,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                             + EXPERIMENTS_MAX_DURATION.get() +" days. ");
         }
         return toReturn;
+    }
+
+    @Override
+    public Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException {
+
+        return getRunningExperiments().stream()
+                .filter(experiment ->
+                        experiment.pageId().equals(pageId)
+                )
+                .findFirst();
     }
 
     private boolean hasValidLicense(){
