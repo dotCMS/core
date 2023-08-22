@@ -34,15 +34,19 @@
         <ng-template class="results-seo-tool__result-card-header" pTemplate="header">
             <div class="results-seo-tool__result-card-title">
                 <i class="pi" [ngClass]="result.keyIcon" [style.color]="result.keyColor"></i>
-                <span> {{ result.key }}</span>
+                <span> {{ result.key | titlecase }}</span>
             </div>
         </ng-template>
         <ul class="results-seo-tool__result-card-list">
             <li *ngFor="let item of result.items">
-                <i class="pi {{ item.itemIcon }}" [style.color]="item.color"> </i>
+                <i class="pi" [ngClass]="item.itemIcon" [style.color]="item.color"> </i>
                 <span>{{ item.message }}</span>
             </li>
         </ul>
+        <div class="results-seo-tool__result-card-info" *ngIf="result.info">
+            <i class="pi pi-info-circle"> </i>
+            <span>{{ result.info }}</span>
+        </div>
     </p-card>
 
     <p-card class="results-seo-tool__result-card">

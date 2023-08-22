@@ -1,4 +1,4 @@
-import { JsonPipe, NgClass, NgFor } from '@angular/common';
+import { NgClass, NgFor, NgIf, TitleCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
@@ -10,7 +10,7 @@ import { DotEditContentHtmlService } from '../../../content/services/dot-edit-co
 @Component({
     selector: 'dot-results-seo-tool',
     standalone: true,
-    imports: [NgClass, CardModule, NgFor, JsonPipe],
+    imports: [NgClass, CardModule, NgFor, TitleCasePipe, NgIf],
     providers: [DotEditContentHtmlService],
     templateUrl: './dot-results-seo-tool.component.html',
     styleUrls: ['./dot-results-seo-tool.component.scss'],

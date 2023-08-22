@@ -6,7 +6,8 @@ import {
     SEO_LIMITS,
     SEO_OPTIONS,
     SEO_RULES_COLORS,
-    SEO_RULES_ICONS
+    SEO_RULES_ICONS,
+    SeoRulesResult
 } from '../dot-edit-content-html/models/meta-tags-model';
 
 @Injectable()
@@ -33,8 +34,10 @@ export class DotSeoMetaTagsService {
         const favicon = pageDocument.querySelectorAll('link[rel="icon"]');
         const title = pageDocument.querySelectorAll('title');
 
-        metaTagsObject['favicon'] = favicon;
-        metaTagsObject['title'] = title;
+        metaTagsObject['faviconElements'] = favicon;
+        metaTagsObject['titleElements'] = title;
+        metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement).href;
+        metaTagsObject['title'] = title[0].innerText;
 
         return metaTagsObject;
     }
@@ -68,7 +71,8 @@ export class DotSeoMetaTagsService {
                     keyIcon: keyValues.keyIcon,
                     keyColor: keyValues.keyColor,
                     items: items,
-                    sort: 2
+                    sort: 2,
+                    info: "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed."
                 });
             }
 
@@ -80,58 +84,10 @@ export class DotSeoMetaTagsService {
                     keyIcon: keyValues.keyIcon,
                     keyColor: keyValues.keyColor,
                     items: items,
-                    sort: 2
+                    sort: 3,
+                    info: 'HTML Title content should be between 30 and 60 characters.'
                 });
             }
-
-            /* if (key === 'title') {
-                const itemT = result.find((item) => item.key === 'Title')
-                    ? result.find((item) => item.key === 'Title')
-                    : {
-                          key: 'Title',
-                          items: [],
-                          keyIcon: '',
-                          keyColor: '',
-                          sort: 1
-                      };
-    
-                if (metaTagsObject['title'].length > 60) {
-                    itemT.items.push({
-                        message: 'HTML Title found, but but has more than 60 characters.',
-                        color: '#FFB444',
-                        itemIcon: 'pi-exclamation-circle'
-                    });
-                }
-    
-                if (metaTagsObject['title'].length < 30) {
-                    itemT.items.push({
-                        message:
-                            'HTML Title found, but but has fewer than 30 characters of content.',
-                        color: '#FFB444',
-                        itemIcon: 'pi-exclamation-circle'
-                    });
-                }
-    
-                if (metaTagsObject['title'].length > 30 && metaTagsObject['title'].length < 60) {
-                    itemT.items.push({
-                        message: 'HTML Title found, with an appropriate amount of content!',
-                        color: '#3ED97A',
-                        itemIcon: 'pi-check'
-                    });
-                }
-    
-                itemT.keyIcon = itemT.items.every((item) => item.itemIcon === 'pi-check')
-                    ? 'pi-check-circle'
-                    : 'pi-exclamation-circle';
-    
-                itemT.keyColor = itemT.items.every((item) => item.itemIcon === 'pi-check')
-                    ? '#3ED97A'
-                    : '#FFB444';
-    
-                if (!result.find((item) => item.key === 'Title')) {
-                    result.push(itemT);
-                }
-            } */
         });
 
         return result.sort((a, b) => a.sort - b.sort);
@@ -140,7 +96,9 @@ export class DotSeoMetaTagsService {
     private getFaviconItems(metaTagsObject) {
         const items = [];
         const favicon = metaTagsObject['favicon'];
-        if (favicon.length === 0) {
+        const faviconElements = metaTagsObject['faviconElements'];
+
+        if (faviconElements.length === 0) {
             items.push({
                 message: 'FavIcon not found!',
                 color: SEO_RULES_COLORS.ERROR,
@@ -148,7 +106,7 @@ export class DotSeoMetaTagsService {
             });
         }
 
-        if (favicon.length > SEO_LIMITS.MAX_FAVICONS) {
+        if (faviconElements.length > SEO_LIMITS.MAX_FAVICONS) {
             items.push({
                 message: 'More than 1 FavIcon found!',
                 color: SEO_RULES_COLORS.ERROR,
@@ -156,7 +114,7 @@ export class DotSeoMetaTagsService {
             });
         }
 
-        if (favicon.length === SEO_LIMITS.MAX_FAVICONS) {
+        if (favicon && faviconElements.length === SEO_LIMITS.MAX_FAVICONS) {
             items.push({
                 message: 'FavIcon found!',
                 color: SEO_RULES_COLORS.DONE,
@@ -167,16 +125,16 @@ export class DotSeoMetaTagsService {
         return items;
     }
 
-    private getKeyValues(items) {
-        let keyIcon = SEO_RULES_ICONS.CHECK;
+    private getKeyValues(items: SeoRulesResult[]) {
+        let keyIcon = SEO_RULES_ICONS.CHECK_CIRCLE;
         let keyColor = SEO_RULES_COLORS.DONE;
 
-        if (items.some((item) => item.color === SEO_RULES_COLORS.WARNING)) {
+        if (items?.some((item) => item.color === SEO_RULES_COLORS.WARNING)) {
             keyIcon = SEO_RULES_ICONS.EXCLAMATION;
             keyColor = SEO_RULES_COLORS.WARNING;
         }
 
-        if (items.some((item) => item.color === SEO_RULES_COLORS.ERROR)) {
+        if (items?.some((item) => item.color === SEO_RULES_COLORS.ERROR)) {
             keyIcon = SEO_RULES_ICONS.EXCLAMATION;
             keyColor = SEO_RULES_COLORS.ERROR;
         }
@@ -222,8 +180,9 @@ export class DotSeoMetaTagsService {
     private getTitleItems(metaTagsObject) {
         const result = [];
         const title = metaTagsObject['title'];
+        const titleElements = metaTagsObject['titleElements'];
 
-        if (!title) {
+        if (!titleElements) {
             result.push({
                 message: 'HTML Title not found!',
                 color: SEO_RULES_COLORS.ERROR,
@@ -231,7 +190,7 @@ export class DotSeoMetaTagsService {
             });
         }
 
-        if (title && title.length > 0) {
+        if (titleElements?.length > 1) {
             result.push({
                 message: 'More than 1 HTML Title found!',
                 color: SEO_RULES_COLORS.ERROR,
@@ -239,7 +198,27 @@ export class DotSeoMetaTagsService {
             });
         }
 
-        if (title.length === SEO_LIMITS.MAX_TITLE) {
+        if (title?.length > SEO_LIMITS.MAX_TITLE_LENGTH) {
+            result.push({
+                message: 'HTML Title found, but but has more than 60 characters.',
+                color: SEO_RULES_COLORS.WARNING,
+                itemIcon: SEO_RULES_ICONS.EXCLAMATION_CIRCLE
+            });
+        }
+
+        if (title?.length < SEO_LIMITS.MIN_TITLE_LENGTH) {
+            result.push({
+                message: 'HTML Title found, but but has fewer than 30 characters of content.',
+                color: SEO_RULES_COLORS.WARNING,
+                itemIcon: SEO_RULES_ICONS.EXCLAMATION_CIRCLE
+            });
+        }
+
+        if (
+            titleElements?.length === SEO_LIMITS.MAX_TITLES &&
+            title?.length > SEO_LIMITS.MAX_TITLE_LENGTH &&
+            title?.length < SEO_LIMITS.MIN_TITLE_LENGTH
+        ) {
             result.push({
                 message: 'HTML Title found, with an appropriate amount of content!',
                 color: SEO_RULES_COLORS.DONE,
