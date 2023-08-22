@@ -29,7 +29,7 @@ public class QueryParameterValuesTransformerTest {
                 new QueryParameter("testName2", "TestValue2")
         );
         final AbstractCondition condition = mock(AbstractCondition.class);
-        when(condition.value()).thenReturn("{\"name\": \"TestName\", \"value\": \"testValue\"}");
+        when(condition.value()).thenReturn(new QueryParameter("TestName", "testValue"));
 
         final Values transforms = queryParameterValuesTransformer.transform(
                 valuesFromEvent, condition);
