@@ -3107,7 +3107,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private void checkAndDeleteExperiment(final Contentlet contentlet, final User user) throws DotDataException {
-        final Optional<Experiment> experimentRunningOnPage = getExperimentRunningOnPage(contentlet);
+        final Optional<Experiment> experimentRunningOnPage = APILocator.getExperimentsAPI()
+                .getRunningExperimentPerPage(contentlet.getIdentifier());
 
         if (experimentRunningOnPage.isPresent()) {
             final String message = String.format(
