@@ -166,3 +166,4 @@ This maintenance release includes the following code fixes:
 137. https://github.com/dotCMS/core/issues/21904 : Tags under specific site aren't listing #21904
 138. https://github.com/dotCMS/core/issues/21944 : Remove unnecessary Spring jars #21944
 139. https://github.com/dotCMS/core/issues/22014 : PageCache is caching non-200 responses #22014
+140. https://github.com/dotCMS/core/issues/22068 : lazy load workflow history in workflowprocessor #22068

@@ -113,6 +113,7 @@ import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessorTest;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
@@ -501,7 +502,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentWorkflowHandlerTest.class,
         Task230119MigrateContentToProperPersonaTagAndRemoveDupTagsTest.class,
         Task230426AlterVarcharLengthOfLockedByColTest.class,
-        CMSUrlUtilTest.class
+        CMSUrlUtilTest.class,
+        WorkflowProcessorTest.class
 })
 public class MainSuite {
 
