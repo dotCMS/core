@@ -15,6 +15,8 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     BayesianStatusResponse,
     ComponentStatus,
+    DEFAULT_VARIANT_ID,
+    DotExperimentResults,
     DotExperimentStatus,
     DotExperimentVariantDetail,
     ReportSummaryLegendByBayesianStatus
@@ -130,32 +132,6 @@ describe('DotExperimentsReportsStore', () => {
         });
     });
 
-    it('should get FALSE from showExperimentSummary$ if Experiment status is different of Running', (done) => {
-        dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
-        spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
-
-        store.showExperimentSummary$.subscribe((value) => {
-            expect(value).toEqual(false);
-            done();
-        });
-    });
-
-    it('should get TRUE from showExperimentSummary$ if Experiment status is different of Running', (done) => {
-        dotExperimentsService.getById.mockReturnValue(
-            of({
-                ...EXPERIMENT_MOCK,
-                status: DotExperimentStatus.RUNNING
-            })
-        );
-        dotExperimentsService.getResults.mockReturnValue(of(EXPERIMENT_MOCK_RESULTS));
-
-        spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
-
-        store.showExperimentSummary$.subscribe((value) => {
-            expect(value).toEqual(true);
-            done();
-        });
-    });
     describe('Bayesian response map hasSession = 0', () => {
         it('should summaryWinnerLegend$ get `NO_WINNER_FOUND` when experiment status `ENDED` and any winnerSuggestion', (done) => {
             dotExperimentsService.getById.mockReturnValue(
@@ -544,6 +520,129 @@ describe('DotExperimentsReportsStore', () => {
                     expect(label).toEqual(expectedLabel[index]);
                 });
 
+                done();
+            });
+        });
+    });
+
+    describe('Show Bayesian Chart', () => {
+        function generateResutlsMock(
+            winner: string,
+            uniqueSessions: number[]
+        ): DotExperimentResults {
+            return {
+                ...EXPERIMENT_MOCK_RESULTS,
+                goals: {
+                    ...EXPERIMENT_MOCK_RESULTS.goals,
+                    primary: {
+                        ...EXPERIMENT_MOCK_RESULTS.goals.primary,
+                        variants: {
+                            ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants,
+                            [DEFAULT_VARIANT_ID]: {
+                                ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants[
+                                    DEFAULT_VARIANT_ID
+                                ],
+                                uniqueBySession: {
+                                    count: uniqueSessions[0],
+                                    totalPercentage: 100.0,
+                                    variantPercentage: 100.0
+                                }
+                            },
+                            '111': {
+                                ...EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'],
+                                uniqueBySession: {
+                                    count: uniqueSessions[1],
+                                    totalPercentage: 100.0,
+                                    variantPercentage: 100.0
+                                }
+                            }
+                        }
+                    }
+                },
+                sessions: { total: 20, variants: { DEFAULT: 10, '111': 10 } },
+                bayesianResult: {
+                    ...EXPERIMENT_MOCK_RESULTS.bayesianResult,
+                    suggestedWinner: winner
+                }
+            };
+        }
+
+        it('should `hasEnoughDataForShowBayesianChart$` retrieve `false` when the BayesianResult have `NONE` as suggested winner', (done) => {
+            //The following mock has failures for both variants, enough sessions to display  results,
+            // so it generate the data sets; but no suggested winner
+            dotExperimentsService.getResults.mockReturnValue(
+                of(generateResutlsMock(BayesianStatusResponse.NONE, [5, 8]))
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.vm$.subscribe((state) => {
+                expect(state.bayesianChart.hasEnoughData).toEqual(false);
+                done();
+            });
+        });
+
+        it('should `hasEnoughDataForShowBayesianChart$` retrieve `false` when you have at least one dataset with empty data', (done) => {
+            //The following mock don't have failures for the variant 111 ( second one ), have enough sessions to display  results,
+            // have a suggested winner, but the variant 111 will not generate a date set
+            dotExperimentsService.getResults.mockReturnValue(
+                of(generateResutlsMock(DEFAULT_VARIANT_ID, [5, 10]))
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.vm$.subscribe((state) => {
+                expect(state.bayesianChart.hasEnoughData).toEqual(false);
+                done();
+            });
+        });
+
+        it('should `hasEnoughDataForShowBayesianChart$` retrieve `true` when you have all dataset with a failure and a suggested winner', (done) => {
+            //The following mock  have failures for both variants, have enough sessions to display  results,
+            // have a suggested winner, and both variants will generate a date set
+            dotExperimentsService.getResults.mockReturnValue(
+                of(generateResutlsMock(DEFAULT_VARIANT_ID, [5, 5]))
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.vm$.subscribe((state) => {
+                expect(state.bayesianChart.hasEnoughData).toEqual(true);
+                done();
+            });
+        });
+    });
+
+    describe('Show Daily Chart', () => {
+        it('should `dailyChart$` retrieve `false` when there is not enough sessions', (done) => {
+            //The following mock have results but not enough sessions to display results
+            dotExperimentsService.getResults.mockReturnValue(
+                of({
+                    ...EXPERIMENT_MOCK_RESULTS
+                })
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.vm$.subscribe((state) => {
+                expect(state.dailyChart.hasEnoughData).toEqual(false);
+                done();
+            });
+        });
+
+        it('should `dailyChart$` retrieve `true` when there is enough sessions', (done) => {
+            //The following mock have results and more than 10 sessions.
+            dotExperimentsService.getResults.mockReturnValue(
+                of({
+                    ...EXPERIMENT_MOCK_RESULTS,
+                    sessions: { total: 20, variants: { DEFAULT: 10, '111': 10 } }
+                })
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.vm$.subscribe((state) => {
+                expect(state.dailyChart.hasEnoughData).toEqual(true);
                 done();
             });
         });
