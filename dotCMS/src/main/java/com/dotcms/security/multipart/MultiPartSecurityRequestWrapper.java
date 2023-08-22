@@ -16,10 +16,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.regex.Pattern;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+
+import io.vavr.Lazy;
 import org.apache.commons.io.IOUtils;
 
 /**
@@ -182,13 +185,15 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         }
     }
 
+    private final static String[] checkPatterns  = {"content-disposition","form-data","filename"};
+
     private void testString(final String lineToTest) {
 
         final String lineToTestLower = lineToTest.toLowerCase();
-
-        if (!lineToTestLower.contains("content-disposition:") || ! lineToTestLower.contains("filename=")) {
-
-            return;
+        for (String p : checkPatterns) {
+            if (!lineToTestLower.contains(p)) {
+                return;
+            }
         }
 
         final String fileName = ContentDispositionFileNameParser.parse(lineToTestLower);
