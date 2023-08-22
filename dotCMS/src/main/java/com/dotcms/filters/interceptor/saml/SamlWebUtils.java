@@ -224,12 +224,13 @@ public class SamlWebUtils {
 
         final RelayStateStrategy relayStateStrategy = RELAY_STATE_STRATEGY_MAP.getOrDefault(siteIdentifier, DEFAULT_VELOCITY_RELAY_STATE_STRATEGY);
 
-        final HttpSession session = request.getSession(false);
-        if (null != session) {
-            session.setAttribute(AUTH_RELAYSTATE_KEY, relayState);
+        final String relayStateValue =  relayStateStrategy.apply(request, response, identityProviderConfiguration);
+
+        if (null != request.getSession(false)) {
+            request.getSession(false).setAttribute(AUTH_RELAYSTATE_KEY, relayStateValue);
         }
 
-        return relayStateStrategy.apply(request, response, identityProviderConfiguration);
+        return relayStateValue;
     }
 
 
