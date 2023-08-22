@@ -539,22 +539,9 @@ public class ExperimentsResource {
             return new ResponseEntityView<>(Map.of("healthy", false));
         }
 
-        final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
-
-        final CircuitBreakerUrlBuilder builder = CircuitBreakerUrl.builder()
-                .setMethod(Method.POST)
-                .setUrl(url)
-                .setParams(map("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
-                .setTimeout(4000)
-                .setHeaders(POSTING_HEADERS);
-
-        final Map<String, Object> testObject = Map.of("test", "test");
-
-        final EventsPayload eventPayload = new EventsPayload(testObject);
-        final Optional<Response> eventResponse = new EventLogRunnable(host, eventPayload)
-                .sendEvent(builder, new EventPayload(new JSONObject(testObject)));
-
-        return new ResponseEntityView<>(Map.of("healthy", eventResponse.isPresent()));
+        final EventLogRunnable eventLogRunnable = new EventLogRunnable(host);
+        return new ResponseEntityView<>(Map.of("healthy", eventLogRunnable.sendTestEvent()
+                .isPresent()));
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,
