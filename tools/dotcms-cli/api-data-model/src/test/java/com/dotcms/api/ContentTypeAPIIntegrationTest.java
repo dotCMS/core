@@ -357,6 +357,7 @@ class ContentTypeAPIIntegrationTest {
      * Then create another one this time using a folder path then verify the returned instance
      */
     @Test
+
     void Test_Send_Invalid_Host_And_Folder_Verify_Defaults() {
 
         final SiteAPI siteAPI = apiClientFactory.getClient(SiteAPI.class);
@@ -554,6 +555,17 @@ class ContentTypeAPIIntegrationTest {
         Assertions.assertEquals(1, fieldLayoutRow1.columns().size());
         Assertions.assertEquals("column-3", fieldLayoutRow1.columns().get(0).columnDivider().name());
         Assertions.assertEquals(1, fieldLayoutRow1.columns().get(0).fields().size());
+    }
+
+
+    @Test
+    void FailOnPurpose1Test(){
+        Assertions.assertFalse(1==1,"1 should eq to 1");
+    }
+    
+    @Test
+    void FailOnPurpose2Test(){
+        Assertions.assertNull(new Object(),"Object should not be null");
     }
 
 }
