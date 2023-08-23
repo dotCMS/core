@@ -2,7 +2,7 @@ import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
 
-import { DotDropZoneComponent } from './dot-drop-zone.component';
+import { DotDropZoneComponent, DropZoneError } from './dot-drop-zone.component';
 
 describe('DotDropZoneComponent', () => {
     let spectator: SpectatorHost<DotDropZoneComponent>;
@@ -88,13 +88,15 @@ describe('DotDropZoneComponent', () => {
 
             it('should set invalidFile to true if file is not valid', () => {
                 const spy = spyOn(spectator.component.fileDrop, 'emit');
+                const spyError = spyOn(spectator.component.dropZoneError, 'emit');
 
                 const event = new DragEvent('drop', {
                     dataTransfer: mockDataTransfer
                 });
 
                 spectator.component.onDrop(event);
-                expect(spectator.component.invalidFile).toBeTrue();
+                expect(spectator.component.error).toBeTrue();
+                expect(spyError).toHaveBeenCalledWith(DropZoneError.INVALID_FILE);
                 expect(spy).not.toHaveBeenCalled();
             });
         });
@@ -116,6 +118,7 @@ describe('DotDropZoneComponent', () => {
 
         describe('when multiple files are being dragged', () => {
             it('should set multiFileError to true if multiplefiles are being dragged', () => {
+                const spyError = spyOn(spectator.component.dropZoneError, 'emit');
                 const file1 = new File([''], 'filename', { type: 'text/html' });
                 const file2 = new File([''], 'filename', { type: 'text/html' });
                 mockDataTransfer.items.add(file1);
@@ -126,7 +129,8 @@ describe('DotDropZoneComponent', () => {
                 });
 
                 spectator.component.onDragEnter(event);
-                expect(spectator.component.multiFileError).toBeTrue();
+                expect(spyError).toHaveBeenCalledWith(DropZoneError.MULTIFILE_ERROR);
+                expect(spectator.component.error).toBeTrue();
                 expect(spectator.component.active).toBeFalsy();
             });
         });
@@ -135,8 +139,7 @@ describe('DotDropZoneComponent', () => {
     describe('onDragLeave', () => {
         it('should set active & error to false', () => {
             spectator.component.active = true;
-            spectator.component.invalidFile = true;
-            spectator.component.multiFileError = true;
+            spectator.component.error = true;
 
             const event = new DragEvent('dragleave');
 
@@ -145,8 +148,7 @@ describe('DotDropZoneComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.active).toBeFalse();
-            expect(spectator.component.invalidFile).toBeFalse();
-            expect(spectator.component.multiFileError).toBeFalse();
+            expect(spectator.component.error).toBeFalse();
         });
     });
 });

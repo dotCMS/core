@@ -9,6 +9,11 @@ import {
     Output
 } from '@angular/core';
 
+export enum DropZoneError {
+    INVALID_FILE = 'INVALID_FILE',
+    MULTIFILE_ERROR = 'MULTIFILE_ERROR'
+}
+
 @Component({
     selector: 'dot-drop-zone',
     standalone: true,
@@ -19,6 +24,7 @@ import {
 })
 export class DotDropZoneComponent {
     @Output() fileDrop = new EventEmitter<File>();
+    @Output() dropZoneError = new EventEmitter<DropZoneError>();
 
     @Input() allowedExtensions: string[] = [];
     @Input() set allowedMimeTypes(mineTypes: string[]) {
@@ -34,10 +40,7 @@ export class DotDropZoneComponent {
     active = false;
 
     @HostBinding('class.drop-zone-error')
-    invalidFile = false;
-
-    @HostBinding('class.drop-zone-error')
-    multiFileError = false;
+    error = false;
 
     @HostListener('drop', ['$event'])
     onDrop(event: DragEvent) {
@@ -45,14 +48,15 @@ export class DotDropZoneComponent {
         event.preventDefault();
         this.active = false;
 
-        if (this.invalidFile) return;
+        if (this.error) return;
 
         const { dataTransfer } = event;
         const { items, files } = dataTransfer;
         const file = items ? Array.from(items)[0].getAsFile() : Array.from(files)[0];
 
         if (!this.isValidFile(file)) {
-            this.invalidFile = true;
+            this.error = true;
+            this.dropZoneError.emit(DropZoneError.INVALID_FILE);
 
             return;
         }
@@ -69,10 +73,14 @@ export class DotDropZoneComponent {
 
         const { items, files } = event.dataTransfer;
         const length = items ? items.length : files.length;
-        const multiple = length > 1;
+        const multipleFile = length > 1;
 
-        this.multiFileError = multiple; // Only show the error when multiple files are dropped
-        this.active = !multiple; // Only show the active state when a single file is dropped
+        if (multipleFile) {
+            this.dropZoneError.emit(DropZoneError.MULTIFILE_ERROR);
+        }
+
+        this.error = multipleFile;
+        this.active = !multipleFile;
     }
 
     @HostListener('dragover', ['$event'])
@@ -85,8 +93,7 @@ export class DotDropZoneComponent {
     @HostListener('dragleave', ['$event'])
     onDragLeave(_event: DragEvent) {
         this.active = false;
-        this.invalidFile = false;
-        this.multiFileError = false;
+        this.error = false;
     }
 
     /**
