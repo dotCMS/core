@@ -62,8 +62,8 @@ export class DotDropZoneComponent {
         this.fileDrop.emit(file);
     }
 
-    @HostListener('dragover', ['$event'])
-    onDragOver(event: DragEvent) {
+    @HostListener('dragenter', ['$event'])
+    onDragEnter(event: DragEvent) {
         event.stopPropagation();
         event.preventDefault();
 

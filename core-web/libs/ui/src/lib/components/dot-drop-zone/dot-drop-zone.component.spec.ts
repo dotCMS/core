@@ -6,6 +6,8 @@ import { DotDropZoneComponent } from './dot-drop-zone.component';
 
 describe('DotDropZoneComponent', () => {
     let spectator: SpectatorHost<DotDropZoneComponent>;
+    let mockFile: File;
+    let mockDataTransfer: DataTransfer;
 
     const createHost = createHostFactory({
         component: DotDropZoneComponent,
@@ -24,11 +26,127 @@ describe('DotDropZoneComponent', () => {
         spectator.detectChanges();
     });
 
+    beforeEach(() => {
+        mockFile = new File([''], 'filename', { type: 'text/html' });
+        mockDataTransfer = new DataTransfer();
+        mockDataTransfer.items.add(mockFile);
+    });
+
     it('should create', () => {
         expect(spectator.component).toBeTruthy();
     });
 
     it('should have content', () => {
         expect(spectator.query('#dot-drop-zone__content')).toBeTruthy();
+    });
+
+    describe('onDrop', () => {
+        it('should emit fileDrop and set active to false', () => {
+            const spy = spyOn(spectator.component.fileDrop, 'emit');
+            spectator.component.active = true;
+
+            const event = new DragEvent('drop', {
+                dataTransfer: mockDataTransfer
+            });
+
+            spectator.component.onDrop(event);
+
+            expect(spy).toHaveBeenCalledWith(mockFile);
+            expect(spectator.component.active).toBeFalsy();
+        });
+
+        describe('when file is valid', () => {
+            beforeEach(() => {
+                spectator.component.allowedExtensions = ['html'];
+                spectator.component.allowedMimeTypes = ['text/html'];
+
+                spectator.detectChanges();
+            });
+
+            it('should emit fileDrop and set active to false', () => {
+                const spy = spyOn(spectator.component.fileDrop, 'emit');
+                spectator.component.active = true;
+
+                const event = new DragEvent('drop', {
+                    dataTransfer: mockDataTransfer
+                });
+
+                spectator.component.onDrop(event);
+
+                expect(spy).toHaveBeenCalledWith(mockFile);
+                expect(spectator.component.active).toBeFalsy();
+            });
+        });
+
+        describe('when file is invalid', () => {
+            beforeEach(() => {
+                spectator.component.allowedExtensions = ['png'];
+                spectator.component.allowedMimeTypes = ['image/'];
+
+                spectator.detectChanges();
+            });
+
+            it('should set invalidFile to true if file is not valid', () => {
+                const spy = spyOn(spectator.component.fileDrop, 'emit');
+
+                const event = new DragEvent('drop', {
+                    dataTransfer: mockDataTransfer
+                });
+
+                spectator.component.onDrop(event);
+                expect(spectator.component.invalidFile).toBeTrue();
+                expect(spy).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe('onDragEnter', () => {
+        it('should set active to true and add drop-zone-active class', () => {
+            const event = new DragEvent('dragenter', {
+                dataTransfer: mockDataTransfer
+            });
+
+            spectator.component.onDragEnter(event);
+
+            spectator.detectChanges();
+
+            expect(spectator.component.active).toBeTrue();
+            expect(spectator.element.classList).toContain('drop-zone-active');
+        });
+
+        describe('when multiple files are being dragged', () => {
+            it('should set multiFileError to true if multiplefiles are being dragged', () => {
+                const file1 = new File([''], 'filename', { type: 'text/html' });
+                const file2 = new File([''], 'filename', { type: 'text/html' });
+                mockDataTransfer.items.add(file1);
+                mockDataTransfer.items.add(file2);
+
+                const event = new DragEvent('dragenter', {
+                    dataTransfer: mockDataTransfer
+                });
+
+                spectator.component.onDragEnter(event);
+                expect(spectator.component.multiFileError).toBeTrue();
+                expect(spectator.component.active).toBeFalsy();
+            });
+        });
+    });
+
+    describe('onDragLeave', () => {
+        it('should set active & error to false', () => {
+            spectator.component.active = true;
+            spectator.component.invalidFile = true;
+            spectator.component.multiFileError = true;
+
+            const event = new DragEvent('dragleave');
+
+            spectator.component.onDragLeave(event);
+
+            spectator.detectChanges();
+
+            expect(spectator.component.active).toBeFalse();
+            expect(spectator.component.invalidFile).toBeFalse();
+            expect(spectator.component.multiFileError).toBeFalse();
+        });
     });
 });
