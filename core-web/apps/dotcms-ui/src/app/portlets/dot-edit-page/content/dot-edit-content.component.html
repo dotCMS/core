@@ -48,7 +48,7 @@
     <div class="dot-edit-content__wrapper">
         <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
         <dot-results-seo-tool
-            *ngIf="pageState.seoTile !== null"
+            *ngIf="pageState.seoTile"
             [seoOGTagsResults]="seoOGTagsResults"
             [seoOGTags]="seoOGTags"
             [pageState]="pageState"
@@ -56,7 +56,7 @@
 
         <div
             class="dot-edit__page-wrapper"
-            *ngIf="pageState.seoTile === null"
+            *ngIf="!pageState.seoTile"
             [class.dot-edit__page-wrapper--deviced]="pageState.viewAs.device"
         >
             <div
