@@ -18,8 +18,8 @@ import org.mockito.Mockito;
 import javax.servlet.http.HttpServletRequest;
 import java.util.NoSuchElementException;
 
-import static org.jgroups.util.Util.assertEquals;
-import static org.jgroups.util.Util.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(DataProviderRunner.class)
 public class DotJSONCacheTest {
