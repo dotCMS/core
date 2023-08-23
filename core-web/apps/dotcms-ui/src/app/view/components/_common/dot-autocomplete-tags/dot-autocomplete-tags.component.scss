@@ -1,5 +1,5 @@
 @use "variables" as *;
-@import "dotcms-theme/extends/inputtext.extends";
+@import "dotcms-theme/components/form/common";
 
 :host {
     min-height: 6.85rem;
@@ -43,7 +43,7 @@
                     padding: 0;
                     width: 100%;
                     border: 0;
-                    box-shadow: none;
+                    outline: none;
                     display: block;
 
                     .p-autocomplete-input-token {
@@ -51,24 +51,29 @@
                         left: 0;
                         position: absolute;
                         right: 0;
-                        top: -5.5rem;
+                        top: -3rem;
 
-                        input {
+                        input.p-element.ui-inputtext {
+                            @extend #form-field-extend;
+                            background-color: transparent;
                             width: 100%;
                             text-overflow: ellipsis;
-                            @extend #p-inputtext-extend;
+                            border: none;
+                            outline: none;
+                            color: $black;
+
+                            &:enabled:hover,
+                            &:enabled:focus,
+                            &:enabled:active {
+                                border: none;
+                                outline: none;
+                            }
                         }
                     }
                 }
 
                 .p-autocomplete-token {
-                    border-radius: $border-radius-xs;
-                    border: solid 1px $color-palette-gray-500;
                     margin: $spacing-1 $spacing-1 0 0;
-                    padding: $spacing-1 $spacing-1;
-                    max-width: 100%;
-                    background: none;
-                    color: $black;
 
                     span {
                         display: block;

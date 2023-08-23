@@ -1,26 +1,12 @@
 package com.dotcms.api.client.files.traversal;
 
-import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
-
-import com.dotcms.api.AssetAPI;
 import com.dotcms.api.AuthenticationContext;
-import com.dotcms.api.FolderAPI;
-import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
-import com.dotcms.model.ResponseEntityView;
-import com.dotcms.model.asset.FileUploadData;
-import com.dotcms.model.asset.FileUploadDetail;
+import com.dotcms.cli.common.FilesTestHelper;
 import com.dotcms.model.config.ServiceBean;
-import com.dotcms.model.site.CreateUpdateSiteRequest;
-import com.dotcms.model.site.SiteView;
-import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
@@ -30,16 +16,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class RemoteTraversalServiceTest {
+class RemoteTraversalServiceTest extends FilesTestHelper {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;
 
     @Inject
     AuthenticationContext authenticationContext;
-
-    @Inject
-    RestClientFactory clientFactory;
 
     @Inject
     ServiceManager serviceManager;
@@ -88,7 +71,7 @@ class RemoteTraversalServiceTest {
     void Test_Folders_Check() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(true);
+        final var testSiteName = prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -107,7 +90,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -135,13 +118,97 @@ class RemoteTraversalServiceTest {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
+    }
+
+    /**
+     * This method is used to test the remote traversal functionality for a specific asset, and
+     * specifically an asset with spaces in the name.
+     * <p>
+     * It prepares the data for the test, sets up the folder path to be checked, and then performs
+     * the asset check using the remote traversal service. Finally, it validates the result by
+     * asserting the expected number of children and assets in the tree.
+     *
+     * @throws IOException if an I/O error occurs during the test
+     */
+    @Test
+    void Test_Asset_Check() throws IOException {
+
+        // Preparing the data for the test
+        final var testSiteName = prepareData();
+
+        final var folderPath = String.format("//%s/folder3/image 3.png", testSiteName);
+
+        var result = remoteTraversalService.traverseRemoteFolder(
+                folderPath,
+                null,
+                true,
+                parsePatternOption(null),
+                parsePatternOption(null),
+                parsePatternOption(null),
+                parsePatternOption(null)
+        );
+        var treeNode = result.getRight();
+
+        // ============================
+        //Validating the tree
+        // ============================
+        // Folder3 (Root)
+        Assertions.assertEquals(0, treeNode.children().size());
+
+        // Folder3 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.assets().size());
+    }
+
+    /**
+     * This method is used to test the remote traversal functionality for a specific asset, and
+     * specifically an asset located in a nested folder structure.
+     * <p>
+     * It prepares the data for the test, sets up the folder path to be checked, and then performs
+     * the asset check using the remote traversal service. Finally, it validates the result by
+     * asserting the expected number of children and assets in the tree.
+     *
+     * @throws IOException if an I/O error occurs during the test
+     */
+    @Test
+    void Test_Asset_Check2() throws IOException {
+
+        // Preparing the data for the test
+        final var testSiteName = prepareData();
+
+        final var folderPath = String.format("//%s/folder2/subFolder2-1/subFolder2-1-1/image2.png",
+                testSiteName);
+
+        var result = remoteTraversalService.traverseRemoteFolder(
+                folderPath,
+                null,
+                true,
+                parsePatternOption(null),
+                parsePatternOption(null),
+                parsePatternOption(null),
+                parsePatternOption(null)
+        );
+        var treeNode = result.getRight();
+
+        // ============================
+        //Validating the tree
+        // ============================
+        // subFolder2-1-1 (Root)
+        Assertions.assertEquals(0, treeNode.children().size());
+
+        // subFolder2-1-1 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.assets().size());
     }
 
     @Test
     void Test_Folders_Depth_Zero() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -160,7 +227,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
         // Folder1
         Assertions.assertEquals(0, treeNode.children().get(0).children().size());
         // Folder2
@@ -173,7 +240,7 @@ class RemoteTraversalServiceTest {
     void Test_Include() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -192,7 +259,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
         for (var child : treeNode.children()) {
             Assertions.assertFalse(child.folder().implicitGlobInclude());
         }
@@ -235,13 +302,16 @@ class RemoteTraversalServiceTest {
 
         // Folder 3
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
     }
 
     @Test
     void Test_Include2() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -260,7 +330,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
         for (var child : treeNode.children()) {
             Assertions.assertFalse(child.folder().implicitGlobInclude());
         }
@@ -307,13 +377,16 @@ class RemoteTraversalServiceTest {
 
         // Folder 3
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
     }
 
     @Test
     void Test_Include3() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -332,7 +405,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         Assertions.assertTrue(
                 treeNode.children().get(0).folder().explicitGlobInclude());
@@ -358,7 +431,7 @@ class RemoteTraversalServiceTest {
     void Test_Include_Assets() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(true);
+        final var testSiteName = prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -377,7 +450,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -405,13 +478,18 @@ class RemoteTraversalServiceTest {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 0 asset)
+        Assertions.assertEquals(0, treeNode.children().get(3).assets().size());
     }
 
     @Test
     void Test_Include_Assets2() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(true);
+        final var testSiteName = prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -430,7 +508,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -458,13 +536,18 @@ class RemoteTraversalServiceTest {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has no asset)
         Assertions.assertEquals(0, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
     @Test
     void Test_Include_Assets3() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(true);
+        final var testSiteName = prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -483,7 +566,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -511,13 +594,18 @@ class RemoteTraversalServiceTest {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
     @Test
     void Test_Include_Assets4() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(true);
+        final var testSiteName = prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -536,7 +624,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -562,15 +650,20 @@ class RemoteTraversalServiceTest {
 
         // Folder 3
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
-        // Folder 3 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(2).assets().size());
+        // Folder 3 (has no asset)
+        Assertions.assertEquals(0, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
     @Test
     void Test_Include_Assets5() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(true);
+        final var testSiteName = prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -589,7 +682,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -617,13 +710,18 @@ class RemoteTraversalServiceTest {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 0 asset)
         Assertions.assertEquals(0, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 0 asset)
+        Assertions.assertEquals(0, treeNode.children().get(3).assets().size());
     }
 
     @Test
     void Test_Exclude() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -642,7 +740,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
         for (var child : treeNode.children()) {
             Assertions.assertTrue(child.folder().implicitGlobInclude());
         }
@@ -685,13 +783,16 @@ class RemoteTraversalServiceTest {
 
         // Folder 3
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
     }
 
     @Test
     void Test_Exclude2() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -710,7 +811,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
         for (var child : treeNode.children()) {
             Assertions.assertTrue(child.folder().implicitGlobInclude());
         }
@@ -757,13 +858,16 @@ class RemoteTraversalServiceTest {
 
         // Folder 3
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
     }
 
     @Test
     void Test_Exclude3() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -782,7 +886,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         Assertions.assertTrue(
                 treeNode.children().get(0).folder().explicitGlobExclude());
@@ -806,7 +910,7 @@ class RemoteTraversalServiceTest {
     void Test_Exclude_Assets() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(true);
+        final var testSiteName = prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -825,7 +929,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -853,13 +957,18 @@ class RemoteTraversalServiceTest {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has no asset)
         Assertions.assertEquals(0, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
     @Test
     void Test_Exclude_Assets2() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(true);
+        final var testSiteName = prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -878,7 +987,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -906,13 +1015,18 @@ class RemoteTraversalServiceTest {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 0 asset)
+        Assertions.assertEquals(0, treeNode.children().get(3).assets().size());
     }
 
     @Test
     void Test_Exclude_Assets3() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(true);
+        final var testSiteName = prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -931,7 +1045,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -959,13 +1073,18 @@ class RemoteTraversalServiceTest {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 0 asset)
         Assertions.assertEquals(0, treeNode.children().get(2).assets().size());
+
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 0 asset)
+        Assertions.assertEquals(0, treeNode.children().get(3).assets().size());
     }
 
     @Test
     void Test_Exclude_Assets4() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(true);
+        final var testSiteName = prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -984,7 +1103,7 @@ class RemoteTraversalServiceTest {
         //Validating the tree
         // ============================
         // Root
-        Assertions.assertEquals(3, treeNode.children().size());
+        Assertions.assertEquals(4, treeNode.children().size());
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -1012,130 +1131,11 @@ class RemoteTraversalServiceTest {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
         // Folder 3 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(2).assets().size());
-    }
 
-    private String prepareData() throws IOException {
-        return prepareData(false);
-    }
-
-    private String prepareData(final boolean includeAssets) throws IOException {
-
-        final FolderAPI folderAPI = clientFactory.getClient(FolderAPI.class);
-        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-
-        // root folders
-        final String folder1 = "folder1";
-        final String folder2 = "folder2";
-        final String folder3 = "folder3";
-
-        // folder1 children
-        final String subfolder1_1 = "subFolder1-1";
-        final String subfolder1_2 = "subFolder1-2";
-        final String subfolder1_3 = "subFolder1-3";
-
-        // folder2 children
-        final String subfolder2_1 = "subFolder2-1";
-        final String subfolder2_2 = "subFolder2-2";
-        final String subfolder2_3 = "subFolder2-3";
-
-        // subfolder1_1 children
-        final String subfolder1_1_1 = "subFolder1-1-1";
-        final String subfolder1_1_2 = "subFolder1-1-2";
-        final String subfolder1_1_3 = "subFolder1-1-3";
-
-        // subfolder1_2 children
-        final String subfolder1_2_1 = "subFolder1-2-1";
-        final String subfolder1_2_2 = "subFolder1-2-2";
-        final String subfolder1_2_3 = "subFolder1-2-3";
-
-        // subfolder2_1 children
-        final String subfolder2_1_1 = "subFolder2-1-1";
-        final String subfolder2_1_2 = "subFolder2-1-2";
-        final String subfolder2_1_3 = "subFolder2-1-3";
-
-        var paths = ImmutableList.of(
-                String.format("/%s/%s/%s", folder1, subfolder1_1, subfolder1_1_1),
-                String.format("/%s/%s/%s", folder1, subfolder1_1, subfolder1_1_2),
-                String.format("/%s/%s/%s", folder1, subfolder1_1, subfolder1_1_3),
-                String.format("/%s/%s/%s", folder1, subfolder1_2, subfolder1_2_1),
-                String.format("/%s/%s/%s", folder1, subfolder1_2, subfolder1_2_2),
-                String.format("/%s/%s/%s", folder1, subfolder1_2, subfolder1_2_3),
-                String.format("/%s/%s", folder1, subfolder1_3),
-                String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_1),
-                String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_2),
-                String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_3),
-                String.format("/%s/%s", folder2, subfolder2_2),
-                String.format("/%s/%s", folder2, subfolder2_3),
-                String.format("/%s", folder3)
-        );
-
-        // Creating a new test site
-        final String newSiteName = String.format("site-%d", System.currentTimeMillis());
-        CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder()
-                .siteName(newSiteName).build();
-        ResponseEntityView<SiteView> createSiteResponse = siteAPI.create(newSiteRequest);
-        Assertions.assertNotNull(createSiteResponse);
-        // Publish the new site
-        siteAPI.publish(createSiteResponse.entity().identifier());
-
-        // Creating test folders
-        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(
-                paths, newSiteName);
-        Assertions.assertNotNull(makeFoldersResponse.entity());
-
-        if (includeAssets) {
-            // Adding some test files
-            pushFile(true, "en-us", newSiteName,
-                    String.format("/%s/%s/%s", folder1, subfolder1_1, subfolder1_1_1),
-                    "image1.png");
-            pushFile(true, "en-us", newSiteName,
-                    String.format("/%s/%s/%s", folder1, subfolder1_1, subfolder1_1_1),
-                    "image4.jpg");
-            pushFile(true, "en-us", newSiteName,
-                    String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_1),
-                    "image2.png");
-            pushFile(true, "en-us", newSiteName,
-                    String.format("/%s", folder3),
-                    "image3.png");
-        }
-
-        return newSiteName;
-    }
-
-    /**
-     * Pushes a file asset to the given site and folder path.
-     *
-     * @param live       Whether the asset should be published live
-     * @param language   The language of the asset
-     * @param siteName   The name of the site to push the asset to
-     * @param folderPath The folder path where the asset will be pushed
-     * @param assetName  The name of the asset file
-     * @throws IOException If there is an error reading the file or pushing
-     *                     it to the server
-     */
-    private void pushFile(final boolean live, final String language,
-                         final String siteName, String folderPath, final String assetName) throws IOException {
-
-        final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
-
-        // Building the remote asset path
-        final var remoteAssetPath = buildRemoteAssetURL(siteName, folderPath, assetName);
-
-        // Reading the file and preparing the data to be pushed
-        try (InputStream inputStream = getClass().getResourceAsStream(String.format("/%s", assetName))) {
-
-            var uploadForm = new FileUploadData();
-            uploadForm.setAssetPath(remoteAssetPath);
-            uploadForm.setDetail(new FileUploadDetail(
-                    remoteAssetPath,
-                    language,
-                    live
-            ));
-            uploadForm.setFile(inputStream);
-
-            // Pushing the file
-            assetAPI.push(uploadForm);
-        }
+        // Folder 4
+        Assertions.assertEquals(0, treeNode.children().get(3).children().size());
+        // Folder 4 (has 1 asset)
+        Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
     /**

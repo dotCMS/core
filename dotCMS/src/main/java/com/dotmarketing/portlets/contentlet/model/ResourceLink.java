@@ -215,7 +215,7 @@ public class ResourceLink {
          */
         String replaceUrlPattern(final String pattern, final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host site) {
             final String fileName  = contentlet.isFileAsset() ? identifier.getAssetName() : metadata.getName();
-            final String path      = getPath(contentlet);
+            final String path      = pattern.equals("{path}{name}") ? getPath(identifier) : getPath(contentlet);
             final String extension = UtilMethods.getFileExtension(fileName);
             final ShortyIdAPI shortyAPI = APILocator.getShortyAPI();
             String shortyId = contentlet.getIdentifier();
@@ -379,6 +379,16 @@ public class ResourceLink {
      */
     public static String getPath(final Contentlet contentlet){
         return  "/dA/" + contentlet.getIdentifier() + StringPool.SLASH;
+    }
+
+    /**
+     * Centralized code to get classical file path
+     * this path not include the dA prefix
+     * @param identifier
+     * @return
+     */
+    public static String getPath(final Identifier identifier){
+        return identifier.getParentPath();
     }
 
 }

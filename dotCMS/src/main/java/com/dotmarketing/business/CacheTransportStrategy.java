@@ -1,7 +1,5 @@
 package com.dotmarketing.business;
 
-import javax.sql.DataSource;
-import com.dotcms.cache.transport.HazelcastCacheTransportEmbedded;
 import com.dotcms.cache.transport.PubSubCacheTransport;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.cache.transport.CacheTransport;
@@ -28,11 +26,8 @@ public class CacheTransportStrategy {
     NullTransport nullTransport = new NullTransport();
     
     Lazy<CacheTransport> defaultTransport = Lazy.<CacheTransport>of(()-> {
-        String cTransClazz = Config.getStringProperty("CACHE_INVALIDATION_TRANSPORT_CLASS",
-                        isPostgres() 
-                            ? PubSubCacheTransport.class.getCanonicalName()
-                            : HazelcastCacheTransportEmbedded.class.getCanonicalName());
-        
+        String cTransClazz = Config.getStringProperty("CACHE_INVALIDATION_TRANSPORT_CLASS",PubSubCacheTransport.class.getCanonicalName());
+
             return Try.of(()->(CacheTransport) Class.forName(cTransClazz).newInstance())
                             .getOrElseThrow(e ->new DotRuntimeException(e));
         

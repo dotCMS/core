@@ -13,7 +13,7 @@
 
     <properties>
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
-        <twelvemonkeys.version>3.7.0</twelvemonkeys.version>
+        <twelvemonkeys.version>3.7.1</twelvemonkeys.version>
         <swagger.version>2.2.0</swagger.version>
         <bytebuddy.version>1.12.6</bytebuddy.version>
         <batik.version>1.16</batik.version>
@@ -791,21 +791,10 @@
                Cluster Support
              *****************************
            -->
-            <dependency>
-                <groupId>com.hazelcast</groupId>
-                <artifactId>hazelcast-all</artifactId>
-                <version>3.12.13</version>
-            </dependency>
-            <dependency>
-                <groupId>com.hazelcast</groupId>
-                <artifactId>hazelcast-kubernetes</artifactId>
-                <version>1.2.2</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.hazelcast</groupId>
-                        <artifactId>hazelcast</artifactId>
-                    </exclusion>
-                </exclusions>
+           <dependency>
+                <groupId>dnsjava</groupId>
+                <artifactId>dnsjava</artifactId>
+                <version>2.1.8</version>
             </dependency>
 
             <dependency>

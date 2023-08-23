@@ -1187,11 +1187,67 @@ function showSystemVars(){
     });
 }
 
+    let assetExportDialog;
 
+    /**
+     * When the User needs to download dotCMS assets, this function will display a dialog asking them whether they want
+     * to include old versions of the assets or not.
+     */
+    function createAssetExportDialog() {
+        // Create the dialog
+        assetExportDialog = new dijit.Dialog({
+            title: "<%= LanguageUtil.get(pageContext, "Import/Export-dotCMS-Content") %>",
+            content: "<%= LanguageUtil.get(pageContext, "download-assets-include-old-versions") %>",
+            onBlur: () => {
+                if (assetExportDialog.open) {
+                    assetExportDialog.hide();
+                }
+            }
+        });
+        const assetDownloadUrl = "/api/v1/maintenance/_downloadAssets?oldAssets=";
+        const btnContainer = document.createElement("div");
+        const btnConfirm = createDialogBtn("<%= LanguageUtil.get(pageContext, "Yes") %>", assetDownloadUrl + "true");
+        const btnReject = createDialogBtn("<%= LanguageUtil.get(pageContext, "No") %>", assetDownloadUrl + "false");
+        btnContainer.className = "dialogBtnContainer";
+        // Add the buttons to the container
+        btnContainer.appendChild(btnConfirm.domNode)
+        btnContainer.appendChild(btnReject.domNode);
+        // Add the container to the dialog
+        assetExportDialog.containerNode.appendChild(btnContainer);
+    }
+
+    function createDialogBtn(label, href) {
+        return new dijit.form.Button({
+            label,
+            class: "dialogButton",
+            onClick: () => {
+                location.href = href;
+                assetExportDialog.hide();
+            }
+        });
+    }
+
+    function showAssetExportDialog() {
+        assetExportDialog.show();
+    }
 
 </script>
 
 <style>
+
+    .dialogBtnContainer {
+        text-align: center; /* Horizontally center the content */
+        width: auto;
+        display: flex;
+        justify-content: center;
+        padding: .5rem 0;
+        gap: 25px; /* flex | grid */
+    }
+
+    .dialogButton {
+        width: 30%;
+    }
+
 #idxReplicasDialog{
 	width:300px,height:150px;
 }
@@ -1279,12 +1335,12 @@ dd.leftdl {
 
             <table class="listingTable shadowBox">
                 <tr>
-                    <th colspan="2"><%= LanguageUtil.get(pageContext,"Cache") %></th>
-                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                    <th><%= LanguageUtil.get(pageContext,"Cache") %></th>
+                    <th></th>
                 </tr>
                 <tr>
-                    <td colspan="2">&nbsp;</td>
-                    <td align="center">
+                    <td>&nbsp;</td>
+                    <td align="right" style="white-space: nowrap;">
                         <select name="cName" dojoType="dijit.form.ComboBox" autocomplete="true" value="<%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>">
                             <option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"Flush-All-Caches") %></option>
                             <% Object[] caches = (Object[])CacheLocator.getCacheIndexes();
@@ -1304,22 +1360,22 @@ dd.leftdl {
                     </td>
                 </tr>
                 <tr>
-                    <th colspan="2"><%= LanguageUtil.get(pageContext,"Menus-File-Store") %></th>
-                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                    <th><%= LanguageUtil.get(pageContext,"Menus-File-Store") %></th>
+                    <th></th>
                 </tr>
                 <tr>
-                    <td colspan="2">&nbsp;</td>
-                    <td align="center">
+                    <td>&nbsp;</td>
+                    <td align="right">
                         <button dojoType="dijit.form.Button"  onClick="submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_MENU_FILES%>');" iconClass="deleteIcon">
                            <%= LanguageUtil.get(pageContext,"Delete-Menu-Cache") %>
                         </button>
                     </td>
                 </tr>
                 <tr>
-                    <th colspan="3"><%= LanguageUtil.get(pageContext,"Cache-Stats") %></th>
+                    <th colspan="2"><%= LanguageUtil.get(pageContext,"Cache-Stats") %></th>
                 </tr>
                 <tr>
-                    <td colspan="3">
+                    <td colspan="2">
                         <div class="buttonRow" style="text-align: right">
                         <button dojoType="dijit.form.Button"  onClick="refreshCache()" iconClass="resetIcon">
                            <%= LanguageUtil.get(pageContext,"Refresh-Stats") %>
@@ -1379,7 +1435,7 @@ dd.leftdl {
                         <th colspan="2"><%= LanguageUtil.get(pageContext,"Content-Index-Tasks") %></th>
                     </tr>
                     <tr>
-                        <td colspan="2" align="center">
+                        <td colspan="2" align="right">
                             <div id="currentIndexDirDiv"></div>
                         </td>
                     </tr>
@@ -1398,7 +1454,7 @@ dd.leftdl {
                                 </select>
 
                         </td>
-                        <td style="text-align:center;white-space:nowrap;" width="350">
+                        <td style="text-align:right;white-space:nowrap;" width="350">
                             <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="repeatIcon" onClick="doReindex()">
                                 <%= LanguageUtil.get(pageContext,"Reindex") %>
                             </button>
@@ -1411,7 +1467,7 @@ dd.leftdl {
                         <td>
                             <%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> 
                         </td>
-                        <td align="center">
+                        <td align="right">
                             <button dojoType="dijit.form.Button" id="idxShrinkBtn" onClick="optimizeIndices()">
                                 <%= LanguageUtil.get(pageContext,"Optimize-Index") %>
                             </button>
@@ -1421,7 +1477,7 @@ dd.leftdl {
                         <td>
                             <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush.info") %> 
                         </td>
-                        <td align="center">
+                        <td align="right">
                             <button dojoType="dijit.form.Button"  onClick="flushIndiciesCache()">
                                 <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush") %>
                             </button>
@@ -1508,7 +1564,7 @@ dd.leftdl {
                     <td><%= LanguageUtil.get(pageContext,"Download-Assets") %></td>
                     <td style="text-align:center;white-space:nowrap;">
                         <div class="inline-form">
-                            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadAssets'" iconClass="downloadIcon">
+                            <button dojoType="dijit.form.Button" onclick="showAssetExportDialog()" iconClass="downloadIcon">
                                 <%= LanguageUtil.get(pageContext,"Download-Assets") %>
                             </button>
                         </div>
@@ -1534,7 +1590,7 @@ dd.leftdl {
                                 <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
                             </button>
 
-                            <button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarterWithAssets'" iconClass="downloadIcon">
+                            <button dojoType="dijit.form.Button" onClick="showAssetExportDialog()" iconClass="downloadIcon">
                                 <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
                             </button>
                         </div>
@@ -1835,7 +1891,7 @@ dd.leftdl {
                 <%= LanguageUtil.get(pageContext,"thread-tab-reload-sysinfo") %>
             </button>
         </div>
-		<div style="width: 98%; margin-left:auto; margin-right:auto; margin-top: -30px">
+		<div style="width: 98%; margin-left:auto; margin-right:auto; margin-top: -55px">
 		<button dojoType="dijit.form.Button"  name="btn" onClick="selectAll('threadList');">
 			 <%= LanguageUtil.get(pageContext,"Select-all") %>
 		</button>
@@ -1922,6 +1978,7 @@ dojo.require("dijit.form.DateTextBox");
 
 		checkReindexation();
 		checkFixAsset();
+        createAssetExportDialog();
 		//indexStructureChanged();
 
 			var tab =dijit.byId("mainTabContainer");
