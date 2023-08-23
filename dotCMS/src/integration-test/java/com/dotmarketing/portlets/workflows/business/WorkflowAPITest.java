@@ -14,8 +14,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -54,6 +53,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
@@ -76,8 +76,10 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.IOException;
@@ -4103,4 +4105,94 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
     }
 
+
+    /**
+     * This test is meant to update relationship between two contentlets     *
+     * It creates 2 content types Movie and Region and creates a one-to-many relationship between Movie and Region, then create 2 child contentlets
+     * of Region (Africa and Asia) and then finally create 1 child contentlet of Movie and update the relationship.
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void createContentletsWithRelationshipOneToManyCardinality_updateRelationship_shouldCreateRelationshipSuccessfully() throws DotSecurityException, DotDataException{
+
+        ContentType movieContentType  = null;
+        ContentType regionContentType = null;
+        try{
+
+            //Create content types
+            movieContentType  = insertContentType("Movie", BaseContentType.CONTENT);
+            regionContentType = insertContentType("Region", BaseContentType.CONTENT);
+            APILocator.getWorkflowAPI().saveSchemeIdsForContentType(movieContentType,  Set.of(new String[]{SystemWorkflowConstants.SYSTEM_WORKFLOW_ID}));
+            APILocator.getWorkflowAPI().saveSchemeIdsForContentType(regionContentType, Set.of(new String[]{SystemWorkflowConstants.SYSTEM_WORKFLOW_ID}));
+
+            //Create Relationship Field
+            final Field relField = createRelationshipField("regions", movieContentType.id(),
+                    regionContentType.variable(), String.valueOf(
+                            WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()));
+
+            Contentlet africa = createContent("africa", regionContentType);
+            Contentlet asia   = createContent("asia", regionContentType);
+
+            //Publish
+            final WorkflowAction publishAction = APILocator.getWorkflowAPI().findAction(
+                    SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID, APILocator.systemUser());
+
+            africa.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            africa = fireWorkflowAction(africa, null,
+                    publishAction,
+                    StringPool.BLANK, StringPool.BLANK, user);
+
+            asia.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            asia = fireWorkflowAction(asia, null,
+                    publishAction,
+                    StringPool.BLANK, StringPool.BLANK, user);
+
+            assertTrue(africa.isLive());
+            assertTrue(asia.isLive());
+
+            Contentlet movie   = createContent("movie", movieContentType);
+            movie.setProperty("Regions", Arrays.asList(africa, asia));
+
+            final List<Contentlet> records = new ArrayList<>(Arrays.asList(asia, africa));
+            final List<Relationship> relationships = APILocator.getRelationshipAPI().byContentType(movieContentType);
+            final Relationship relationship = APILocator.getRelationshipAPI().byInode(relationships.stream().findFirst().get().getInode());
+
+            final List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<>();
+            final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords =
+                    new ContentletRelationships(null).new ContentletRelationshipRecords(relationship, true);
+
+            contentletRelationshipRecords.setRecords(records);
+            relationshipsRecords.add(contentletRelationshipRecords);
+
+            final ContentletRelationships contentletRelationships = new ContentletRelationships(movie, relationshipsRecords);
+            movie.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            movie = fireWorkflowAction(movie, contentletRelationships,
+                    publishAction,
+                    StringPool.BLANK, StringPool.BLANK, user);
+
+            final List<Contentlet> movieContentRelated = APILocator.getContentletAPI().getRelatedContent(movie, relationship, user, false);
+
+            Assert.assertNotNull(movieContentRelated);
+            Assert.assertTrue(movieContentRelated.size() == 2);
+        } finally {
+            if(movieContentType != null){
+                contentTypeAPI.delete(movieContentType);
+            }
+            if(regionContentType != null){
+                contentTypeAPI.delete(regionContentType);
+            }
+        }
+    }
+
+    private Field createRelationshipField(final String relationshipName, final String parentTypeId,
+                                          final String childTypeVar, final String cardinality)
+            throws DotSecurityException, DotDataException {
+
+        final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
+                .contentTypeId(parentTypeId).values(cardinality).relationType(childTypeVar).build();
+
+        return fieldAPI.save(field, user);
+    }
 }
