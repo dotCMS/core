@@ -31,9 +31,6 @@ export class DotResultsSeoToolComponent implements OnInit {
     ];
 
     ngOnInit() {
-        console.log('pageState: ', this.pageState);
-        console.log('seoOGTags', this.seoOGTags);
-        console.log('seoOGTagsResults', this.seoOGTagsResults);
         this.mainPreview = [
             {
                 hostName: this.pageState.page.hostName,
