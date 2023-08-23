@@ -67,11 +67,9 @@ export class AIContentPromptView {
             this.editor.commands.updateValue(data);
         });
 
-        this.component.instance.hide.pipe(takeUntil(this.$destroy)).subscribe(() => {
+        this.component.instance.formSubmission.pipe(takeUntil(this.$destroy)).subscribe(() => {
             this.editor.commands.closeAIPrompt();
         });
-
-        document.body.addEventListener('mousedown', this.handleOutsideClick, { capture: true });
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -120,6 +118,7 @@ export class AIContentPromptView {
     }
 
     hide() {
+        this.editor.commands.closeAIPrompt();
         this.tippy?.hide();
         this.editor.view.focus();
     }
@@ -128,16 +127,7 @@ export class AIContentPromptView {
         this.tippy?.destroy();
         this.$destroy.next(true);
         this.$destroy.complete();
-        document.body.removeEventListener('mousedown', this.handleOutsideClick);
     }
-
-    private handleOutsideClick = (event: MouseEvent) => {
-        const target = event.target as HTMLElement;
-
-        if (!this.tippy?.popper.contains(target)) {
-            this.editor.commands.closeAIPrompt();
-        }
-    };
 
     private tippyRect() {
         return document.querySelector('#ai-text-prompt')?.getBoundingClientRect();

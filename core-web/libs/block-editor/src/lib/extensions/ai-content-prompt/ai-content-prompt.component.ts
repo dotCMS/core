@@ -20,7 +20,7 @@ export class AIContentPromptComponent {
     @ViewChild('input') input: ElementRef;
 
     @Output() formValues = new EventEmitter<FormValues>();
-    @Output() hide = new EventEmitter<boolean>();
+    @Output() formSubmission = new EventEmitter<boolean>();
 
     loading = false;
     form: FormGroup;
@@ -35,7 +35,7 @@ export class AIContentPromptComponent {
         if (textPrompt) {
             this.formValues.emit({ textPrompt });
 
-            this.hide.emit(true);
+            this.formSubmission.emit(true);
 
             this.aiContentService
                 .getIAContent(textPrompt)

@@ -4,26 +4,17 @@ form {
     margin: $spacing-4;
 
     .p-input-icon-right {
-        position: relative;
         width: 100%;
 
         input {
             width: 100%;
-            border: 1px solid $color-palette-gray-700;
-            border-radius: $border-radius-sm;
-            color: $color-palette-gray-700;
         }
 
         button {
             position: absolute;
+            top: 3px;
             right: 0;
-            top: 0;
-            bottom: 0;
             background: none;
-            border: none;
-            cursor: pointer;
-            padding-right: 1rem;
-            color: $color-palette-primary;
         }
     }
 }
