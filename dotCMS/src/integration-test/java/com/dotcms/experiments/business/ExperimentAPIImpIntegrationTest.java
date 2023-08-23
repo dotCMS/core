@@ -8133,19 +8133,23 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
 
-        final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
-                .find(experiment.id().orElseThrow(), APILocator.systemUser())
-                .orElseThrow();
+        try {
+            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
 
-        assertEquals(Status.SCHEDULED, experimentAfterScheduled.status());
+            assertEquals(Status.SCHEDULED, experimentAfterScheduled.status());
 
-        APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), APILocator.systemUser());
+            APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), APILocator.systemUser());
 
-        final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
-                .find(experiment.id().orElseThrow(), APILocator.systemUser())
-                .orElseThrow();
+            final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
 
-        assertEquals(Status.DRAFT, experimentAfterCancel.status());
+            assertEquals(Status.DRAFT, experimentAfterCancel.status());
+        } finally {
+            APILocator.getExperimentsAPI().cancel(experiment.getIdentifier(), APILocator.systemUser());
+        }
     }
 
     /**
@@ -8160,19 +8164,24 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
 
-        final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
-                .find(experiment.id().orElseThrow(), APILocator.systemUser())
-                .orElseThrow();
+        try {
+            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
 
-        assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+            assertEquals(Status.RUNNING, experimentAfterScheduled.status());
 
-        APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), APILocator.systemUser());
+            APILocator.getExperimentsAPI()
+                    .cancel(experimentAfterScheduled.getIdentifier(), APILocator.systemUser());
 
-        final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
-                .find(experiment.id().orElseThrow(), APILocator.systemUser())
-                .orElseThrow();
+            final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
 
-        assertEquals(Status.DRAFT, experimentAfterCancel.status());
+            assertEquals(Status.DRAFT, experimentAfterCancel.status());
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
+        }
     }
 
     /**
@@ -8203,19 +8212,23 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
 
-        final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
-                .find(experiment.id().orElseThrow(), APILocator.systemUser())
-                .orElseThrow();
+        try {
+            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
 
-        assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+            assertEquals(Status.RUNNING, experimentAfterScheduled.status());
 
-        APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), limitedUser);
+            APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), limitedUser);
 
-        final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
-                .find(experiment.id().orElseThrow(), APILocator.systemUser())
-                .orElseThrow();
+            final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
 
-        assertEquals(Status.DRAFT, experimentAfterCancel.status());
+            assertEquals(Status.DRAFT, experimentAfterCancel.status());
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+        }
     }
 
     /**
@@ -8246,17 +8259,22 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
 
-        final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
-                .find(experiment.id().orElseThrow(), APILocator.systemUser())
-                .orElseThrow();
-
-        assertEquals(Status.RUNNING, experimentAfterScheduled.status());
-
         try {
-            APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), limitedUser);
-            throw new AssertionError("Should throw DotSecurityException");
-        } catch (DotSecurityException e) {
-            //expected
+            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
+
+            assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+
+            try {
+                APILocator.getExperimentsAPI()
+                        .cancel(experimentAfterScheduled.getIdentifier(), limitedUser);
+                throw new AssertionError("Should throw DotSecurityException");
+            } catch (DotSecurityException e) {
+                //expected
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
         }
     }
 
@@ -8286,17 +8304,22 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
 
-        final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
-                .find(experiment.id().orElseThrow(), APILocator.systemUser())
-                .orElseThrow();
-
-        assertEquals(Status.RUNNING, experimentAfterScheduled.status());
-
         try {
-            APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), limitedUser);
-            throw new AssertionError("Should throw DotSecurityException");
-        } catch (DotSecurityException e) {
-            //expected
+            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
+
+            assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+
+            try {
+                APILocator.getExperimentsAPI()
+                        .cancel(experimentAfterScheduled.getIdentifier(), limitedUser);
+                throw new AssertionError("Should throw DotSecurityException");
+            } catch (DotSecurityException e) {
+                //expected
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
         }
     }
 }
