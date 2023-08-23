@@ -9,13 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -31,6 +25,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
@@ -624,6 +619,74 @@ public class NavToolTest extends IntegrationTestBase{
         assertNotNull(navResult);
         assertEquals(1,navResult.getChildren().size());
         assertEquals("SPA Version", navResult.getChildren().get(0).getTitle());
+    }
+
+    /**
+     * Method to test: NavTool.getNav
+     * Given scenario: get navigation of a folder, where it contains published and unpublished links
+     * Expected result: getting the navigation must return only the published links
+     * @throws Exception exception
+     */
+    @Test
+    public void test_getNav_GivenLinkItems_ShouldOnlyShowLiveLinksLiveMode() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final NavTool navTool = new NavTool();
+        final User mockedUSer = mock(User.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE.toString());
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(request);
+        navTool.init(viewContext);
+        //Create Folder
+        folder = new FolderDataGen().site(site).title("test").showOnMenu(true).nextPersisted();
+
+        //Add create two links with different states
+        final Link publishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testPublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+        APILocator.getVersionableAPI().setLive(publishLink);
+
+        final Link unpublishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testUnpublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+
+        final NavResult navResult1 = navTool.getNav(site, folder.getPath());
+        assertNotNull("There must be a valid NavResult object", navResult1);
+        assertEquals("Only only one item should appear in the nav result. ",1,navResult1.getChildren().size());
+    }
+
+    /**
+     * Method to test: NavTool.getNav
+     * Given scenario: get navigation of a folder, where it contains published and unpublished links
+     * Expected result: getting the navigation must return published and unpublished links
+     * @throws Exception exception
+     */
+    @Test
+    public void test_getNav_GivenLinkItems_ShouldOnlyShowLinksEditMode() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final NavTool navTool = new NavTool();
+        final User mockedUSer = mock(User.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.EDIT_MODE.toString());
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(request);
+        navTool.init(viewContext);
+
+        //Create Folder
+        folder = new FolderDataGen().site(site).title("test").showOnMenu(true).nextPersisted();
+
+        //Add create two links with different states
+        final Link publishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testPublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+        APILocator.getVersionableAPI().setLive(publishLink);
+
+        Link unpublishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testUnpublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+
+        final NavResult navResult1 = navTool.getNav(site, folder.getPath());
+        assertNotNull("There must be a valid NavResult object", navResult1);
+        assertEquals("Both items should appear in the nav result. ",2,navResult1.getChildren().size());
     }
 
 }
