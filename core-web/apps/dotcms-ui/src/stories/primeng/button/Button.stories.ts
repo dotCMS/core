@@ -14,7 +14,9 @@ export default {
         disabled: false,
         icon: false,
         size: 'p-button-md',
-        iconPos: 'left'
+        iconPos: 'left',
+        severity: '-',
+        type: '-'
     },
     argTypes: {
         size: {
@@ -22,11 +24,11 @@ export default {
             control: { type: 'radio' }
         },
         severity: {
-            options: ['p-button-secondary', 'p-button-danger'],
+            options: ['-', 'p-button-secondary', 'p-button-danger'],
             control: { type: 'select' }
         },
         type: {
-            options: ['p-button-text', 'p-button-outlined'],
+            options: ['-', 'p-button-text', 'p-button-outlined'],
             control: { type: 'select' }
         },
         iconPos: {
@@ -37,10 +39,23 @@ export default {
 } as Meta;
 
 export const Main: Story = (args) => {
+    const parts = [];
+    for (const key of Object.keys(args)) {
+        if (
+            typeof args[key] === 'string' &&
+            args[key].trim() !== '-' &&
+            args[key].trim().length > 0
+        ) {
+            parts.push(args[key].trim());
+        }
+    }
+
+    const joined = parts.join(' ');
+
     return {
         props: {
             label: args.label,
-            classes: `${args.size} ${args.severity} ${args.type}`,
+            classes: joined,
             disabled: args.disabled,
             icon: args.icon ? 'pi pi-home' : '',
             iconPos: args.iconPos
