@@ -87,6 +87,9 @@ $line-height: 1.3rem;
 .results-seo-tool__result-card-title {
     display: flex;
     gap: $spacing-3;
+    align-items: center;
+    font-size: $font-size-lg;
+    color: $black;
 }
 
 .results-seo-tool__result-card-list {
@@ -98,6 +101,7 @@ $line-height: 1.3rem;
 .results-seo-tool__result-card-list li {
     display: flex;
     gap: $spacing-3;
+    color: $black;
 }
 
 .results-seo-tool__result-card-list li:not(:last-child) {
@@ -116,6 +120,11 @@ $line-height: 1.3rem;
     line-height: $line-height;
     color: $color-palette-gray-900;
     font-size: $font-size-sm;
+}
+
+.results-seo-tool__result-icon {
+    font-size: $font-size-xl;
+    color: $color-palette-primary-500;
 }
 
 ::ng-deep {
@@ -139,5 +148,9 @@ $line-height: 1.3rem;
 
     .results-seo-tool__result-card .p-card-content {
         flex-direction: column;
+    }
+
+    .results-seo-tool__result-card-list .pi-external-link {
+        color: $color-palette-primary-500;
     }
 }

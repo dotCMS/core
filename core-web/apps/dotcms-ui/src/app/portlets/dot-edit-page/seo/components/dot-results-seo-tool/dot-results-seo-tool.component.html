@@ -8,7 +8,7 @@
                     >
                     <div
                         class="results-seo-tool__card"
-                        [class.results-seo-tool_version--small]="preview.type === 'Mobile'"
+                        [class.results-seo-tool__version--small]="preview.isMobile"
                     >
                         <div class="results-seo-tool__card-title">
                             <img
@@ -33,7 +33,11 @@
     <p-card class="results-seo-tool__result-card" *ngFor="let result of seoOGTagsResults">
         <ng-template class="results-seo-tool__result-card-header" pTemplate="header">
             <div class="results-seo-tool__result-card-title">
-                <i class="pi" [ngClass]="result.keyIcon" [style.color]="result.keyColor"></i>
+                <i
+                    class="results-seo-tool__result-icon pi"
+                    [ngClass]="result.keyIcon"
+                    [style.color]="result.keyColor"
+                ></i>
                 <span> {{ result.key | titlecase }}</span>
             </div>
         </ng-template>
@@ -52,13 +56,13 @@
     <p-card class="results-seo-tool__result-card">
         <ng-template class="results-seo-tool__result-card-header" pTemplate="header">
             <div class="results-seo-tool__result-card-title">
-                <i class="pi pi-info-circle" style="color: '#426BF0'"></i>
+                <i class="results-seo-tool__result-icon pi pi-info-circle"></i>
                 <span>Read More</span>
             </div>
         </ng-template>
         <ul class="results-seo-tool__result-card-list">
             <li *ngFor="let item of readMore">
-                <i class="pi pi-external-link" style="color: '#426BF0'"></i>
+                <i class="pi pi-external-link"></i>
                 <a [href]="item.url" target="_blank">{{ item.label }}</a>
             </li>
         </ul>

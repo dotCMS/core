@@ -36,13 +36,15 @@ export class DotResultsSeoToolComponent implements OnInit {
                 hostName: this.pageState.page.hostName,
                 title: this.seoOGTags['og:title'],
                 description: this.seoOGTags.description,
-                type: 'Desktop'
+                type: 'Desktop',
+                isMobile: false
             },
             {
                 hostName: this.pageState.page.hostName,
                 title: this.seoOGTags['og:title'],
                 description: this.seoOGTags.description,
-                type: 'Mobile'
+                type: 'Mobile',
+                isMobile: true
             }
         ];
     }

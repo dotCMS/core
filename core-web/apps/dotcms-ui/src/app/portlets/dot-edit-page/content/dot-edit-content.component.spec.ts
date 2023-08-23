@@ -703,7 +703,7 @@ describe('DotEditContentComponent', () => {
                     spyOn(dotEditContentHtmlService, 'setCurrentPage');
                 });
 
-                it('should render in preview mode 2222', fakeAsync(() => {
+                it('should render in preview mode', fakeAsync(() => {
                     detectChangesForIframeRender(fixture);
 
                     expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(
