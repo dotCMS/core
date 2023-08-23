@@ -24,6 +24,8 @@ export enum DropZoneError {
 })
 export class DotDropZoneComponent {
     @Output() fileDrop = new EventEmitter<File>();
+    @Output() dragStart = new EventEmitter<boolean>();
+    @Output() dragStop = new EventEmitter<boolean>();
     @Output() dropZoneError = new EventEmitter<DropZoneError>();
 
     @Input() allowedExtensions: string[] = [];
@@ -70,6 +72,7 @@ export class DotDropZoneComponent {
     onDragEnter(event: DragEvent) {
         event.stopPropagation();
         event.preventDefault();
+        this.dragStart.emit(true);
 
         const { items, files } = event.dataTransfer;
         const length = items ? items.length : files.length;
@@ -92,6 +95,7 @@ export class DotDropZoneComponent {
 
     @HostListener('dragleave', ['$event'])
     onDragLeave(_event: DragEvent) {
+        this.dragStop.emit(true);
         this.active = false;
         this.error = false;
     }

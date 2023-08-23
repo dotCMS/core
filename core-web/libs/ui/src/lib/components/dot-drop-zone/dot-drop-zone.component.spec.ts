@@ -104,6 +104,7 @@ describe('DotDropZoneComponent', () => {
 
     describe('onDragEnter', () => {
         it('should set active to true and add drop-zone-active class', () => {
+            const spy = spyOn(spectator.component.dragStart, 'emit');
             const event = new DragEvent('dragenter', {
                 dataTransfer: mockDataTransfer
             });
@@ -114,6 +115,7 @@ describe('DotDropZoneComponent', () => {
 
             expect(spectator.component.active).toBeTrue();
             expect(spectator.element.classList).toContain('drop-zone-active');
+            expect(spy).toHaveBeenCalledWith(true);
         });
 
         describe('when multiple files are being dragged', () => {
@@ -138,6 +140,7 @@ describe('DotDropZoneComponent', () => {
 
     describe('onDragLeave', () => {
         it('should set active & error to false', () => {
+            const spy = spyOn(spectator.component.dragStop, 'emit');
             spectator.component.active = true;
             spectator.component.error = true;
 
@@ -149,6 +152,7 @@ describe('DotDropZoneComponent', () => {
 
             expect(spectator.component.active).toBeFalse();
             expect(spectator.component.error).toBeFalse();
+            expect(spy).toHaveBeenCalledWith(true);
         });
     });
 });
