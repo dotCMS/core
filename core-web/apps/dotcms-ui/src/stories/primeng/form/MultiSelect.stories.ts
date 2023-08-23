@@ -18,7 +18,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'MultiSelect is used to multiple values from a list of options: https://primefaces.org/primeng/showcase/#/multiselect'
+                    'MultiSelect is used to multiple values from a list of options: https://primeng.org/multiselect'
             }
         }
     },
@@ -36,6 +36,7 @@ export default {
 
 const MultiSelectTemplate = `
 <p-multiSelect [options]="cities" defaultLabel="Select a City" optionLabel="name"></p-multiSelect>`;
+
 const Template: Story<MultiSelect> = (props: MultiSelect) => {
     const template = MultiSelectTemplate;
 

@@ -759,8 +759,8 @@ public class VersionableAPIImpl implements VersionableAPI {
 
     @WrapInTransaction
     @Override
-    public void deleteContentletVersionInfo(final String identifier, final long lang, final String variantId) throws DotDataException {
-        versionableFactory.deleteContentletVersionInfo(identifier, lang, variantId);
+    public void deleteContentletVersionInfo(final String identifier, final String variantId) throws DotDataException {
+        versionableFactory.deleteContentletVersionInfo(identifier, variantId);
     }
 
 	@CloseDBIfOpened

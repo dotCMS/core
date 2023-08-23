@@ -13,7 +13,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'AutoComplete is an input component that provides real-time suggestions when being typed: https://primefaces.org/primeng/showcase/#/autocomplete'
+                    'AutoComplete is an input component that provides real-time suggestions when being typed: https://primeng.org/autocomplete'
             }
         }
     },
@@ -48,6 +48,7 @@ const AutocompleteTemplate = `
 field="name"
 ></p-autoComplete>
 `;
+
 const Template: Story<AutoComplete> = (props: AutoComplete) => {
     const template = AutocompleteTemplate;
 
