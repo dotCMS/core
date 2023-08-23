@@ -24,15 +24,15 @@ export enum DropZoneError {
 })
 export class DotDropZoneComponent {
     @Output() fileDrop = new EventEmitter<File>();
+    @Output() dropZoneError = new EventEmitter<DropZoneError>();
     @Output() dragStart = new EventEmitter<boolean>();
     @Output() dragStop = new EventEmitter<boolean>();
-    @Output() dropZoneError = new EventEmitter<DropZoneError>();
 
     @Input() allowedExtensions: string[] = [];
     @Input() set allowedMimeTypes(mineTypes: string[]) {
         this._allowedMimeTypes = mineTypes.map((type) => {
             // Remove the wildcard character
-            return type.toLowerCase().replace('*', '');
+            return type.toLowerCase().replace(/\*/g, '');
         });
     }
 

@@ -16,7 +16,6 @@ export default {
 
 const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
     props: args,
-
     styles: [
         `
         .drop-zone-active .content {
@@ -32,6 +31,8 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
             height: 200px;
             background: #f8f9fa;
             display:flex;
+            flex-direction: column;
+            gap: 1rem;
             justify-content:center;
             align-items:center;
             border: 1px dashed #ced4da;
@@ -42,7 +43,15 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
     template: `
         <dot-drop-zone [allowedExtensions]="allowedExtensions" [allowedMimeTypes]="allowedMimeTypes">
             <div class="content">
-                Drop files here
+                Drop files here.
+
+                <div *ngIf="allowedExtensions.length">
+                    <strong>Allowed extensions:</strong> {{ allowedExtensions }}
+                </div>
+
+                <div *ngIf="allowedMimeTypes.length">
+                    <strong>Allowed mime types:</strong> {{ allowedMimeTypes }}
+                </div>
             </div>
         </dot-drop-zone>
     `
