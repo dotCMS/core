@@ -9,6 +9,7 @@
                     <div
                         class="results-seo-tool__card"
                         [class.results-seo-tool__version--small]="preview.isMobile"
+                        data-testId="seo-preview"
                     >
                         <div class="results-seo-tool__card-title">
                             <img
@@ -38,7 +39,7 @@
                     [ngClass]="result.keyIcon"
                     [style.color]="result.keyColor"
                 ></i>
-                <span> {{ result.key | titlecase }}</span>
+                <span data-testId="result-key"> {{ result.key | titlecase }}</span>
             </div>
         </ng-template>
         <ul class="results-seo-tool__result-card-list">

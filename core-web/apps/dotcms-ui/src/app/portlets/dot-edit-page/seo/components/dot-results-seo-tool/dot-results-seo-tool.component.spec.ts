@@ -19,7 +19,7 @@ const seoOGTagsMock = {
 
 const seoOGTagsResultMock = [
     {
-        key: 'favicon',
+        key: 'Favicon',
         keyIcon: 'pi-check-circle',
         keyColor: 'var(--color-alert-green)',
         items: [
@@ -28,7 +28,7 @@ const seoOGTagsResultMock = [
         sort: 1
     },
     {
-        key: 'description',
+        key: 'Description',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'var(--color-alert-red)',
         items: [
@@ -42,12 +42,12 @@ const seoOGTagsResultMock = [
         info: "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed."
     },
     {
-        key: 'title',
+        key: 'Title',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'var(--color-alert-yellow)',
         items: [
             {
-                message: 'HTML Title found, but but has fewer than 30 characters of content.',
+                message: 'HTML Title found, but has fewer than 30 characters of content.',
                 color: 'var(--color-alert-yellow)',
                 itemIcon: 'pi-exclamation-circle'
             }
@@ -76,9 +76,31 @@ describe('DotResultsSeoToolComponent', () => {
         expect(title).toHaveText(spectator.component.pageState.page.title);
     });
 
-    it('should display seo tags', () => {
+    it('should display SEO Tags', () => {
         const tags = spectator.queryAll(byTestId('seo-tag'));
         expect(tags[0]).toContainText('FavIcon found!');
         expect(tags[1]).toContainText('Meta Description not found! Showing Description instead');
+        expect(tags[2]).toContainText(
+            'HTML Title found, but has fewer than 30 characters of content.'
+        );
+    });
+
+    it('should display Key tags', () => {
+        const keys = spectator.queryAll(byTestId('result-key'));
+        expect(keys[0]).toContainText(seoOGTagsResultMock[0].key);
+        expect(keys[1]).toContainText(seoOGTagsResultMock[1].key);
+        expect(keys[2]).toContainText(seoOGTagsResultMock[2].key);
+    });
+
+    it('should display Key tags', () => {
+        const keys = spectator.queryAll(byTestId('result-key'));
+        expect(keys[0]).toContainText(seoOGTagsResultMock[0].key);
+        expect(keys[1]).toContainText(seoOGTagsResultMock[1].key);
+        expect(keys[2]).toContainText(seoOGTagsResultMock[2].key);
+    });
+
+    it('should display mobile size for the preview', () => {
+        const previews = spectator.queryAll(byTestId('seo-preview'));
+        expect(previews[1]).toHaveClass('results-seo-tool__version--small');
     });
 });
