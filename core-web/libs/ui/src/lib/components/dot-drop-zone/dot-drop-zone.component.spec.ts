@@ -1,22 +1,34 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
+
+import { CommonModule } from '@angular/common';
 
 import { DotDropZoneComponent } from './dot-drop-zone.component';
 
 describe('DotDropZoneComponent', () => {
-    let component: DotDropZoneComponent;
-    let fixture: ComponentFixture<DotDropZoneComponent>;
+    let spectator: SpectatorHost<DotDropZoneComponent>;
+
+    const createHost = createHostFactory({
+        component: DotDropZoneComponent,
+        imports: [CommonModule]
+    });
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotDropZoneComponent]
-        }).compileComponents();
+        spectator = createHost(`
+            <dot-drop-zone>
+                <div id="dot-drop-zone__content" class="dot-drop-zone__content">
+                    Content
+                </div>
+            </dot-drop-zone>
+        `);
 
-        fixture = TestBed.createComponent(DotDropZoneComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+        spectator.detectChanges();
     });
 
     it('should create', () => {
-        expect(component).toBeTruthy();
+        expect(spectator.component).toBeTruthy();
+    });
+
+    it('should have content', () => {
+        expect(spectator.query('#dot-drop-zone__content')).toBeTruthy();
     });
 });

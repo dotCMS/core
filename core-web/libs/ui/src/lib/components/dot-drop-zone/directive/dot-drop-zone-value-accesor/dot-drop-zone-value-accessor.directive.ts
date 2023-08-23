@@ -4,7 +4,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotDropZoneComponent } from '../../dot-drop-zone.component';
 
 @Directive({
-    selector: '[dotDropZoneValueAccesor]',
+    selector: '[dotDropZoneValueAccessor]',
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
