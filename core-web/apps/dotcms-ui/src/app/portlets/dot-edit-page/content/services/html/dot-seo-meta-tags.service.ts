@@ -36,8 +36,8 @@ export class DotSeoMetaTagsService {
 
         metaTagsObject['faviconElements'] = favicon;
         metaTagsObject['titleElements'] = title;
-        metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement).href;
-        metaTagsObject['title'] = title[0].innerText;
+        metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement)?.href;
+        metaTagsObject['title'] = title[0]?.innerText;
 
         return metaTagsObject;
     }

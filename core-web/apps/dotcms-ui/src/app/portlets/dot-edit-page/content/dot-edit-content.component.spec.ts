@@ -102,6 +102,7 @@ import { DotPageStateService } from './services/dot-page-state/dot-page-state.se
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
+import { DotSeoMetaTagsService } from './services/html/dot-seo-meta-tags.service';
 
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotPageContent } from '../shared/models';
@@ -152,6 +153,20 @@ export class MockDotFormSelectorComponent {
     template: ''
 })
 export class MockDotEditPageToolbarComponent {
+    @Input() pageState = mockDotRenderedPageState;
+    @Input() variant;
+    @Input() runningExperiment;
+    @Output() actionFired = new EventEmitter<DotCMSContentlet>();
+    @Output() cancel = new EventEmitter<boolean>();
+    @Output() favoritePage = new EventEmitter<boolean>();
+    @Output() whatschange = new EventEmitter<boolean>();
+}
+
+@Component({
+    selector: 'dot-edit-page-toolbar-seo',
+    template: ''
+})
+export class MockDotEditPageToolbarSeoComponent {
     @Input() pageState = mockDotRenderedPageState;
     @Input() variant;
     @Input() runningExperiment;
@@ -236,7 +251,8 @@ describe('DotEditContentComponent', () => {
                 MockDotIconComponent,
                 MockDotPaletteComponent,
                 HostTestComponent,
-                MockGlobalMessageComponent
+                MockGlobalMessageComponent,
+                MockDotEditPageToolbarSeoComponent
             ],
             imports: [
                 HttpClientTestingModule,
@@ -280,6 +296,7 @@ describe('DotEditContentComponent', () => {
                 DotCopyContentModalService,
                 DotFavoritePageService,
                 DotExperimentsService,
+                DotSeoMetaTagsService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -686,7 +703,7 @@ describe('DotEditContentComponent', () => {
                     spyOn(dotEditContentHtmlService, 'setCurrentPage');
                 });
 
-                it('should render in preview mode', fakeAsync(() => {
+                it('should render in preview mode 2222', fakeAsync(() => {
                     detectChangesForIframeRender(fixture);
 
                     expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(

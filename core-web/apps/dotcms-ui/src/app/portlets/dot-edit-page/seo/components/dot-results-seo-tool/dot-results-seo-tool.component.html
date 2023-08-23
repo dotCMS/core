@@ -18,7 +18,7 @@
                             />
                             <span>{{ preview.hostName }}</span>
                         </div>
-                        <a class="results-seo-tool__search-title" href="#">
+                        <a class="results-seo-tool__search-title" data-testId="page-title" href="#">
                             {{ preview.title }}
                         </a>
                         <p class="results-seo-tool__search-description">
@@ -38,7 +38,7 @@
             </div>
         </ng-template>
         <ul class="results-seo-tool__result-card-list">
-            <li *ngFor="let item of result.items">
+            <li *ngFor="let item of result.items" data-testId="seo-tag">
                 <i class="pi" [ngClass]="item.itemIcon" [style.color]="item.color"> </i>
                 <span>{{ item.message }}</span>
             </li>

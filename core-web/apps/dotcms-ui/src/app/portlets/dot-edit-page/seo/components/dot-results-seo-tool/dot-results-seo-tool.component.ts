@@ -5,13 +5,10 @@ import { CardModule } from 'primeng/card';
 
 import { DotPageRenderState } from '@dotcms/dotcms-models';
 
-import { DotEditContentHtmlService } from '../../../content/services/dot-edit-content-html/dot-edit-content-html.service';
-
 @Component({
     selector: 'dot-results-seo-tool',
     standalone: true,
     imports: [NgClass, CardModule, NgFor, TitleCasePipe, NgIf],
-    providers: [DotEditContentHtmlService],
     templateUrl: './dot-results-seo-tool.component.html',
     styleUrls: ['./dot-results-seo-tool.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -33,9 +30,10 @@ export class DotResultsSeoToolComponent implements OnInit {
         }
     ];
 
-    constructor(public dotEditContentHtmlService: DotEditContentHtmlService) {}
-
     ngOnInit() {
+        console.log('pageState: ', this.pageState);
+        console.log('seoOGTags', this.seoOGTags);
+        console.log('seoOGTagsResults', this.seoOGTagsResults);
         this.mainPreview = [
             {
                 hostName: this.pageState.page.hostName,
