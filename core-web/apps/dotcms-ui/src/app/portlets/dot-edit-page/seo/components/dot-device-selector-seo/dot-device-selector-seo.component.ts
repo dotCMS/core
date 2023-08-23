@@ -67,16 +67,16 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
             icon: 'pi pi-mobile',
-            cssHeight: '390',
-            cssWidth: '844',
+            cssHeight: '844',
+            cssWidth: '390',
             inode: '0',
             identifier: ''
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.landscape'),
             icon: 'pi pi-mobile',
-            cssHeight: '844',
-            cssWidth: '390',
+            cssHeight: '390',
+            cssWidth: '844',
             inode: '0',
             identifier: ''
         },
@@ -99,16 +99,16 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         {
             name: this.dotMessageService.get('editpage.device.selector.tablet.portrait'),
             icon: 'pi pi-tablet',
-            cssHeight: '820',
-            cssWidth: '1180',
+            cssHeight: '1180',
+            cssWidth: '820',
             inode: '0',
             identifier: ''
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.tablet.landscape'),
             icon: 'pi pi-tablet',
-            cssHeight: '1180',
-            cssWidth: '820',
+            cssHeight: '820',
+            cssWidth: '1180',
             inode: '0',
             identifier: ''
         }
