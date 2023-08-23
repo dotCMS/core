@@ -10,6 +10,9 @@ import java.util.List;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
+
+import com.dotmarketing.image.filter.ImageFilterAPI;
+import com.dotmarketing.image.filter.ImageFilterApiImpl;
 import org.apache.commons.collections.IteratorUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -32,17 +35,7 @@ public class ImageFilterAPIImplTest {
             Assert.assertFalse (r instanceof net.sf.javavp8decoder.imageio.WebPImageReader);
         });
 
-
-
-
-
-
     }
-
-
-
-
-
 
     @Test
     public void test_image_readers_loaded() {
