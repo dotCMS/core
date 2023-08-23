@@ -52,7 +52,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -111,7 +111,7 @@ public class TemplateResourceTest {
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
         final Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -135,7 +135,7 @@ public class TemplateResourceTest {
         final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
         //Call Resource
         final Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -162,7 +162,7 @@ public class TemplateResourceTest {
         //Call Resource
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
                         new ArrayList<>(
-                                Collections.singleton(template.getIdentifier())));
+                                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class
@@ -172,7 +172,7 @@ public class TemplateResourceTest {
         //Call again the resource
         responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
                 new ArrayList<>(
-                        Collections.singleton(template.getIdentifier())));
+                        Set.of(template.getIdentifier())));
         Assert.assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
         responseEntityView = ResponseEntityView.class
                 .cast(responseResource.getEntity());
@@ -264,7 +264,7 @@ public class TemplateResourceTest {
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -272,7 +272,7 @@ public class TemplateResourceTest {
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
         //Call Resource to UnArchive
         responseResource = resource.unarchive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -295,7 +295,7 @@ public class TemplateResourceTest {
         final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
         //Call Resource to UnArchive
         final Response responseResource = resource.unarchive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -321,7 +321,7 @@ public class TemplateResourceTest {
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to UnArchive
         final Response responseResource = resource.unarchive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -350,7 +350,7 @@ public class TemplateResourceTest {
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -386,7 +386,7 @@ public class TemplateResourceTest {
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -408,7 +408,7 @@ public class TemplateResourceTest {
 
         //Call Resource to UnArchive
         responseResource = resource.unarchive(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -434,7 +434,7 @@ public class TemplateResourceTest {
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -444,7 +444,7 @@ public class TemplateResourceTest {
 
         //Call Resource to Delete
         responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -469,7 +469,7 @@ public class TemplateResourceTest {
         final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
         //Call Resource to Archive
         Response responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -499,7 +499,7 @@ public class TemplateResourceTest {
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -536,7 +536,7 @@ public class TemplateResourceTest {
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -558,7 +558,7 @@ public class TemplateResourceTest {
 
         //Call Resource to Delete
         responseResource = resource.delete(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -587,7 +587,7 @@ public class TemplateResourceTest {
         final HTMLPageAsset page = new HTMLPageDataGen(newHost,template).nextPersisted();
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -596,7 +596,7 @@ public class TemplateResourceTest {
         Assert.assertEquals(0,results.getFails().size());
         //Call Resource to Delete
         responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -622,7 +622,7 @@ public class TemplateResourceTest {
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
         final Response responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -649,7 +649,7 @@ public class TemplateResourceTest {
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
         Response responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -659,7 +659,7 @@ public class TemplateResourceTest {
 
         //Call Resource again
         responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -686,7 +686,7 @@ public class TemplateResourceTest {
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -696,7 +696,7 @@ public class TemplateResourceTest {
 
         //Call Resource
         responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -787,7 +787,7 @@ public class TemplateResourceTest {
         final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
         //Call Resource
         final Response responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -812,7 +812,7 @@ public class TemplateResourceTest {
         final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
         //Call Resource
         Response responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -822,7 +822,7 @@ public class TemplateResourceTest {
 
         //Call Resource again
         responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -849,7 +849,7 @@ public class TemplateResourceTest {
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -859,7 +859,7 @@ public class TemplateResourceTest {
 
         //Call Resource
         responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
+                Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -1222,6 +1222,7 @@ public class TemplateResourceTest {
                 .inode(template.getInode())
                 .layout(templateView.getLayout())
                 .title(template.getTitle())
+                .theme(template.getTheme())
                 .build();
 
         final PageContext pageContext =  new PageContext(APILocator.systemUser(),
@@ -1239,9 +1240,8 @@ public class TemplateResourceTest {
                 templateFromDaBaseBeforeUpdate.getDrawedBody());
         assertTrue(templateLayoutBeforeUpdate.existsContainer(container, uuid));
 
+        //Thread.sleep(10000);
         templateResource.save(request, response, templateForm);
-
-        Thread.sleep(3000);
 
         final Template templateFromDaBaseAfterUpdate = APILocator.getTemplateAPI()
                 .findWorkingTemplate(template.getIdentifier(), APILocator.systemUser(), false);
@@ -1250,9 +1250,12 @@ public class TemplateResourceTest {
                 templateFromDaBaseAfterUpdate.getDrawedBody());
         assertTrue(templateLayoutAfterUpdate.existsContainer(container, "1"));
 
+        System.out.println("SECOND TIME------------------------");
+
         final String pageHtml_2 = APILocator.getHTMLPageAssetRenderedAPI()
                 .getPageHtml(pageContext, request, response);
         assertTrue(pageHtml_2.contains("<div>Testing</div>"));
+
 
 
     }

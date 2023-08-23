@@ -7,7 +7,7 @@ import { Extension } from '@tiptap/core';
 import { FloatingButtonComponent } from './floating-button.component';
 import { DotFloatingButtonPlugin } from './plugin/floating-button.plugin';
 
-import { DotImageService } from '../image-uploader/services/dot-image/dot-image.service';
+import { DotUploadFileService } from '../../shared';
 
 export const FLOATING_BUTTON_PLUGIN_KEY = new PluginKey('floating-button');
 
@@ -17,7 +17,7 @@ export function DotFloatingButton(injector: Injector, viewContainerRef: ViewCont
     const floatingButtonElement = floatingButtonComponent.location.nativeElement;
 
     // Services
-    const dotImageService = injector.get(DotImageService);
+    const dotUploadFileService = injector.get(DotUploadFileService);
 
     return Extension.create({
         addProseMirrorPlugins() {
@@ -28,7 +28,7 @@ export function DotFloatingButton(injector: Injector, viewContainerRef: ViewCont
             return [
                 DotFloatingButtonPlugin({
                     ...this.options,
-                    dotImageService,
+                    dotUploadFileService,
                     component: floatingButtonComponent,
                     pluginKey: FLOATING_BUTTON_PLUGIN_KEY,
                     editor: this.editor,

@@ -18,9 +18,14 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockParameterRequest;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.LANGUAGE_TYPE_FILTER;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.PUBLISH_TYPE_FILTER;
 import com.dotcms.util.IntegrationTestInitService;
@@ -39,8 +44,10 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -48,14 +55,22 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author nollymar
@@ -1086,5 +1101,135 @@ public class ContentUtilsTest {
                 ContentletDataGen.remove(contentlet);
             }
         }
+    }
+
+
+    /**
+     * Method to test: {@link ContentUtils#pullRelatedField(Relationship, String, String, int, int, String, User, String, boolean, long, Boolean)}
+     * Given Scenario: Pulling related content when the offset is greater than the limit
+     * ExpectedResult: Should return results, if they're available.
+     *
+     * In this test 5 items are related, and we're passing offset = 3 and limit = 1, so 1 item should be returned.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testPullRelatedField_withOffsetGreaterThanLimit()
+            throws DotDataException, DotSecurityException {
+
+        final long languageId = languageAPI.getDefaultLanguage().getId();
+        final ContentType news = getNewsLikeContentType("News");
+        final ContentType comments = getCommentsLikeContentType("Comments");
+        relateContentTypes(news, comments);
+
+        final ContentType newsContentType = contentTypeAPI.find("News");
+        final ContentType commentsContentType = contentTypeAPI.find("Comments");
+
+        Contentlet newsContentlet = null;
+        Contentlet commentsContentlet;
+        final List<Contentlet> relatedComments = new ArrayList<>();
+
+        try {
+            //creates parent contentlet
+            ContentletDataGen dataGen = new ContentletDataGen(newsContentType.id());
+
+            //English version
+            newsContentlet = dataGen.languageId(languageId)
+                    .setProperty("title", "News Test")
+                    .setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+                    .setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+                    .next();
+
+            //creates child contentlet
+            dataGen = new ContentletDataGen(commentsContentType.id());
+
+            for (int i=1; i<5 ;i++){
+                commentsContentlet = dataGen
+                        .languageId(languageId)
+                        .setProperty("title", "Comment for News " + i)
+                        .setProperty("email", "testing@dotcms.com")
+                        .setProperty("comment", "Comment for News " + i)
+                        .setPolicy(IndexPolicy.FORCE).nextPersisted();
+                relatedComments.add(commentsContentlet);
+
+            }
+
+            //Saving relationship
+            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+
+            newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+            newsContentlet = contentletAPI.checkin(newsContentlet,
+                    map(relationship, relatedComments),
+                    null, user, false);
+
+            //Pull related content from comment child
+            List<Contentlet> result = ContentUtils.
+                    pullRelatedField(relationship, newsContentlet.getIdentifier(), "+languageId:1",
+                            1, 3, "", user, null, false, languageId, false);
+
+            assertNotNull(result);
+            assertEquals(1,result.size());
+
+        } finally {
+            if (null != newsContentlet && UtilMethods.isSet(newsContentlet.getInode())) {
+                ContentletDataGen.remove(newsContentlet);
+            }
+
+            for (final Contentlet contentlet: relatedComments){
+                ContentletDataGen.remove(contentlet);
+            }
+        }
+    }
+
+
+    /**
+     * Method to test: {@link ContentUtils#addRelationships(Contentlet, User, PageMode, long, int, HttpServletRequest, HttpServletResponse)} 
+     * Given Scenario: Creates a content parent with a children many to many relationship, create a few instances of the child type and related to the parent
+     * ExpectedResult: Calling the parameter with depth in 0 should retrieve the children contentlets
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void test_add_relationships_on_parent_children_related_contents()
+            throws DotDataException, DotSecurityException {
+
+        // 1) create the child content type
+        final ContentType childContentType = new ContentTypeDataGen().velocityVarName("child"+System.currentTimeMillis()).nextPersisted();
+        // 2) create parent content type and add a relationship to the child content type
+        final ContentType parentContentType = new ContentTypeDataGen().velocityVarName("parent"+System.currentTimeMillis()).nextPersisted();
+        Field field = FieldBuilder.builder(RelationshipField.class).name("children")
+                .contentTypeId(parentContentType.id()).values(String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(childContentType.variable()).build();
+
+        APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+        // 3) create a few child instances
+
+        final Contentlet child1 = new ContentletDataGen(childContentType.id()).nextPersisted();
+        final Contentlet child2 = new ContentletDataGen(childContentType.id()).nextPersisted();
+        final Contentlet child3 = new ContentletDataGen(childContentType.id()).nextPersisted();
+        // 4) create a instance of the parent and add the child instances to the relationship
+        // 5) save it
+        final Contentlet parent = new ContentletDataGen(parentContentType.id()).setProperty("children", Arrays.asList(child1, child2, child3)).nextPersisted();
+
+        // 6) retrieve again
+        final Contentlet parentRetrieved = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(parent.getIdentifier());
+        Assert.assertNotNull(parentRetrieved);
+        Assert.assertEquals(parent.getIdentifier(), parentRetrieved.getIdentifier());
+        // 7) call the addRelationships method with depth = 1
+        final int depth = 0;  // only ids
+        final HttpServletRequest  request  = new MockHttpRequestIntegrationTest("localhost", "/api/v1/test").request();
+        final HttpServletResponse response = new MockHttpResponse().response();
+        ContentUtils.addRelationships(parentRetrieved, user, PageMode.EDIT_MODE,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(), depth, request, response);
+        // 8) check the children contentlets are there
+        Assert.assertTrue(parentRetrieved.getMap().containsKey("children"));
+        final Object children = parentRetrieved.get("children");
+        Assert.assertNotNull(children);
+        Assert.assertTrue(children instanceof Collection);
+        final Set<String> childrenIds = new HashSet<>((Collection<String>) children);
+        Assert.assertTrue(childrenIds.contains(child1.getIdentifier()));
+        Assert.assertTrue(childrenIds.contains(child2.getIdentifier()));
+        Assert.assertTrue(childrenIds.contains(child3.getIdentifier()));
     }
 }

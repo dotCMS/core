@@ -1,5 +1,5 @@
 @use "variables" as *;
-@import "dotcms-theme/extends/inputtext.extends";
+@import "dotcms-theme/components/form/common";
 
 dot-binary-file {
     display: block;
@@ -9,9 +9,9 @@ dot-binary-file {
             display: flex;
 
             input {
-                @extend #p-inputtext-extend;
-                border-top-left-radius: $border-radius;
-                border-bottom-left-radius: $border-radius;
+                @extend #form-field-extend;
+                border-top-left-radius: $border-radius-xs;
+                border-bottom-left-radius: $border-radius-xs;
                 padding: 1.07rem;
                 width: 100%;
             }
@@ -22,12 +22,12 @@ dot-binary-file {
         }
 
         button {
-            border-top-right-radius: $border-radius;
-            border-bottom-right-radius: $border-radius;
+            border-top-right-radius: $border-radius-xs;
+            border-bottom-right-radius: $border-radius-xs;
         }
 
         .dot-file-preview__info {
-            border-radius: $border-radius;
+            border-radius: $border-radius-xs;
         }
     }
 }

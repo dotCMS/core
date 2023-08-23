@@ -1,6 +1,4 @@
-// @import "~primeicons/primeicons.css";
-// @import "~primeng/resources/primeng.css";
-// @import "~primeng/resources/themes/nova-light/theme.css";
+@use "variables" as *;
 
 $background-primary: #f2f2f2;
 $background-secondary: #dff1f9;
@@ -12,25 +10,14 @@ $foreground-active: #848484;
 
 $text-emphasis: #fc7e1c;
 $warn: #cb3927;
-$brand-primary-one: #209021;
+$color-palette-primary-one: #209021;
 $black: #0a0725;
-$gray: #7e7a86;
-$gray-light: #b3b1b8;
-$gray-bg: #f1f3f4;
+$color-palette-gray-700: #7e7a86;
+$color-palette-gray-500: #b3b1b8;
+$color-palette-gray-200: #f1f3f4;
 $white: #fff;
-$md-shadow-4: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
-
-$font-size-xx-large: 24px;
-$font-size-x-large: 18px;
-$font-size-medium: 14px;
 
 $action-button-height: 48px;
-
-$brand-primary: var(--color-main);
-$brand-primary_mod: var(--color-main_mod);
-
-$md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-$md-shadow-3: 0 10px 24px 0 rgba(0, 0, 0, 0.2);
 
 $spacing-3: 1rem;
 $spacing-4: 1.5rem;
@@ -94,7 +81,7 @@ $finder-s-input: ".ui.input input";
     }
 
     .close-button {
-        font-size: $font-size-medium;
+        font-size: $font-size-md;
         position: absolute;
         right: 5px;
         top: 5px;
@@ -115,7 +102,7 @@ $finder-s-input: ".ui.input input";
     .cw-saved {
         .ui.checkbox input:checked ~ .box:after,
         .ui.checkbox input:checked ~ label:after {
-            background-color: $brand-primary-one;
+            background-color: $color-palette-primary-one;
             border: 0.5em solid white;
         }
         .cw-rule-status-text {
@@ -225,6 +212,7 @@ $finder-s-input: ".ui.input input";
     }
 
     .cw-filter-links {
+        padding: $spacing-1;
         font-size: 0.8em;
         color: $foreground-disabled;
 
@@ -455,7 +443,7 @@ $finder-s-input: ".ui.input input";
     }
 
     .cw-button-add-item i {
-        color: $brand-primary-one;
+        color: $color-palette-primary-one;
     }
 
     .cw-spacer.cw-condition-operator {
@@ -534,7 +522,7 @@ $finder-s-input: ".ui.input input";
     }
 
     cw-modal-dialog .ui.dimmer {
-        background-color: rgba(0, 0, 0, 0.55);
+        background-color: $color-palette-black-op-50;
     }
 
     .cw-rule-engine__empty {
@@ -543,16 +531,16 @@ $finder-s-input: ".ui.input input";
 
         i {
             font-size: 120px;
-            color: $gray-light;
+            color: $color-palette-gray-500;
             border: 7px solid;
             border-radius: 10px;
             margin-bottom: $spacing-4;
         }
 
         h2 {
-            font-size: $font-size-xx-large;
+            font-size: $font-size-xxl;
             margin: 0;
-            color: $gray;
+            color: $color-palette-gray-700;
         }
 
         span {
@@ -571,24 +559,24 @@ $finder-s-input: ".ui.input input";
         display: inline-flex;
         justify-content: center;
         border: none;
-        background-color: $brand-primary;
+        background-color: $color-palette-primary;
         box-shadow: $md-shadow-1;
         outline: none;
         align-items: center;
 
         &:hover {
-            background: $brand-primary_mod;
+            background: $color-palette-primary-400;
             box-shadow: $md-shadow-3;
         }
 
         &:active,
         &:focus {
-            background: $brand-primary_mod;
+            background: $color-palette-primary-400;
         }
 
         i {
             color: $white;
-            font-size: $font-size-x-large;
+            font-size: $font-size-xl;
         }
     }
 }

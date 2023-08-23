@@ -62,7 +62,7 @@ public class PushCategoryUtil {
 	 * Mar 6, 2013 - 9:53:45 AM
 	 */
 	public List<CategoryWrapper> findTopLevelWrappers() throws IOException {
-		List<CategoryWrapper> topLevels = new ArrayList<CategoryWrapper>();
+		List<CategoryWrapper> topLevels = new ArrayList<>();
 		for(String categoryInode : categoriesTopLevel){
 			File categoryFile = categoriesByInode.get(categoryInode);
 			topLevels.add( getCategoryWrapperFromFile(categoryFile) );

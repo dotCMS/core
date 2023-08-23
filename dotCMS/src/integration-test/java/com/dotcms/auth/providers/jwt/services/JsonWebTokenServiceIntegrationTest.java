@@ -9,6 +9,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
@@ -127,6 +128,9 @@ public class JsonWebTokenServiceIntegrationTest {
         different server.
          */
         set(jsonWebTokenService, "issuerId", "ANOTHER-CLUSTER-456");
+
+        // Set config to validate the issuer
+        Config.setProperty("JWT_CLAIM_ISSUER_VALIDATE", true);
 
         //Parse the generated token
         jsonWebTokenService.parseToken(jsonWebToken);

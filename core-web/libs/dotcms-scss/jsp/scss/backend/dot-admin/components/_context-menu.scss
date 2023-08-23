@@ -1,0 +1,41 @@
+.context-menu {
+    box-shadow: $menu-shadow;
+    position: absolute;
+    background: $white;
+    border: 1px solid $color-palette-gray-400;
+    min-width: 200px;
+
+    .pop_divider {
+        border-bottom: 1px solid $color-palette-gray-400;
+        background-color: $white;
+    }
+}
+
+.context-menu__item {
+    color: $color-palette-gray-800;
+    cursor: pointer;
+    display: block;
+    font-size: $font-size-md;
+    height: $menu-item-height;
+    line-height: $menu-item-height;
+    padding: 0px $spacing-1 * 3;
+    position: relative;
+    text-decoration: none;
+
+    &:hover {
+        background-color: $color-palette-gray-200;
+    }
+
+    [class$="Icon"],
+    [class*="Icon"] {
+        display: none;
+    }
+
+    .arrowRightIcon {
+        font-size: $font-size-sm;
+        margin-top: -(calc($font-size-sm / 2));
+        position: absolute;
+        right: $spacing-1;
+        top: 50%;
+    }
+}

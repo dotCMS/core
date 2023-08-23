@@ -64,7 +64,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 
 	public SystemEventsWebSocketEndPoint() {
 
-		this(new ConcurrentLinkedQueue<Session>(),
+		this(new ConcurrentLinkedQueue<>(),
                 SystemEventProcessorFactory.getInstance(),
                 PayloadVerifierFactory.getInstance());
     }

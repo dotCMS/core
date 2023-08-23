@@ -1,24 +1,33 @@
 import { Subject } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import {
+    AfterViewInit,
+    Component,
+    ElementRef,
+    HostListener,
+    OnDestroy,
+    ViewChild
+} from '@angular/core';
 
-import { DialogService } from 'primeng/dynamicdialog';
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, skip, takeUntil } from 'rxjs/operators';
+import { filter, skip, take, takeUntil } from 'rxjs/operators';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
+import { HttpCode, SiteService } from '@dotcms/dotcms-js';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
-import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
-
-export const FAVORITE_PAGE_LIMIT = 5;
+import {
+    DotPagesState,
+    DotPageStore,
+    FAVORITE_PAGE_LIMIT
+} from './dot-pages-store/dot-pages.store';
 
 export interface DotActionsMenuEventParams {
     event: MouseEvent;
@@ -32,7 +41,7 @@ export interface DotActionsMenuEventParams {
     styleUrls: ['./dot-pages.component.scss'],
     templateUrl: './dot-pages.component.html'
 })
-export class DotPagesComponent implements OnInit, OnDestroy {
+export class DotPagesComponent implements AfterViewInit, OnDestroy {
     @ViewChild('menu') menu: Menu;
     vm$: Observable<DotPagesState> = this.store.vm$;
 
@@ -40,14 +49,14 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        private dialogService: DialogService,
-        private dotMessageService: DotMessageService,
         private store: DotPageStore,
         private dotRouterService: DotRouterService,
         private dotMessageDisplayService: DotMessageDisplayService,
         private dotEventsService: DotEventsService,
-        private dotSiteService: SiteService,
-        private element: ElementRef
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private dotPageRenderService: DotPageRenderService,
+        private element: ElementRef,
+        private dotSiteService: SiteService
     ) {
         this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
     }
@@ -59,6 +68,8 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     goToUrl(url: string): void {
+        this.store.setPortletStatus(ComponentStatus.LOADING);
+
         const splittedUrl = url.split('?');
         const urlParams = { url: splittedUrl[0] };
         const searchParams = new URLSearchParams(splittedUrl[1]);
@@ -67,7 +78,44 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             urlParams[entry[0]] = entry[1];
         }
 
-        this.dotRouterService.goToEditPage(urlParams);
+        this.dotPageRenderService
+            .checkPermission(urlParams)
+            .pipe(take(1))
+            .subscribe(
+                (hasPermission: boolean) => {
+                    if (hasPermission) {
+                        this.dotRouterService.goToEditPage(urlParams);
+                    } else {
+                        const error = new HttpErrorResponse(
+                            new HttpResponse({
+                                body: null,
+                                status: HttpCode.FORBIDDEN,
+                                headers: null,
+                                url: ''
+                            })
+                        );
+                        this.dotHttpErrorManagerService.handle(error);
+                        this.store.setPortletStatus(ComponentStatus.LOADED);
+                    }
+                },
+                (error: HttpErrorResponse) => {
+                    this.dotHttpErrorManagerService.handle(error);
+                    this.store.setPortletStatus(ComponentStatus.LOADED);
+                }
+            );
+    }
+
+    /**
+     * Closes the menu when the user clicks outside of it
+     *
+     * @memberof DotPagesComponent
+     */
+    @HostListener('window:click')
+    closeMenu(): void {
+        if (this.menuIsLoaded(this.domIdMenuAttached)) {
+            this.menu.hide();
+            this.store.clearMenuActions();
+        }
     }
 
     /**
@@ -78,11 +126,10 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      */
     showActionsMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
         event.stopPropagation();
+        this.store.clearMenuActions();
         this.menu.hide();
 
-        if (event?.currentTarget['id'] !== this.domIdMenuAttached) {
-            this.store.showActionsMenu({ item, actionMenuDomId });
-        }
+        this.store.showActionsMenu({ item, actionMenuDomId });
     }
 
     /**
@@ -91,11 +138,10 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     closedActionsMenu() {
-        this.store.clearMenuActions();
         this.domIdMenuAttached = '';
     }
 
-    ngOnInit(): void {
+    ngAfterViewInit(): void {
         this.store.actionMenuDomId$
             .pipe(
                 takeUntil(this.destroy$),
@@ -103,10 +149,12 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             )
             .subscribe((actionMenuDomId: string) => {
                 const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
-                if (target) {
+                if (target && this.menuIsLoaded(actionMenuDomId)) {
                     this.menu.show({ currentTarget: target });
                     this.domIdMenuAttached = actionMenuDomId;
-                }
+
+                    // To hide when the contextMenu is opened
+                } else this.menu.hide();
             });
 
         this.dotEventsService
@@ -132,24 +180,49 @@ export class DotPagesComponent implements OnInit, OnDestroy {
 
         this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
             this.store.getPages({ offset: 0 });
+            this.scrollToTop(); // To reset the scroll so it shows the data it retrieves
         });
-
-        this.store.pageTypes$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((val) => !!val)
-            )
-            .subscribe((pageTypes: DotCMSContentType[]) => {
-                this.dialogService.open(DotPagesCreatePageDialogComponent, {
-                    header: this.dotMessageService.get('create.page'),
-                    width: '58rem',
-                    data: pageTypes
-                });
-            });
     }
 
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    /**
+     * Check if the menu is loaded
+     *
+     * @private
+     * @param {string} menuDOMID
+     * @return {*}  {boolean}
+     * @memberof DotPagesComponent
+     */
+    private menuIsLoaded(menuDOMID: string): boolean {
+        return (
+            menuDOMID.includes('pageActionButton') || menuDOMID.includes('favoritePageActionButton')
+        );
+    }
+
+    /**
+     * Load pages on deactivation
+     *
+     * @memberof DotPagesComponent
+     */
+    loadPagesOnDeactivation() {
+        this.store.getPages({
+            offset: 0
+        });
+    }
+
+    /**
+     * Scroll to top of the page
+     *
+     * @memberof DotPagesComponent
+     */
+    scrollToTop(): void {
+        this.element.nativeElement?.scroll({
+            top: 0,
+            left: 0
+        });
     }
 }

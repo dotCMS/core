@@ -1,7 +1,5 @@
 package com.dotmarketing.util;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -14,7 +12,6 @@ import static org.mockito.Mockito.when;
 import com.dotcms.UnitTestBase;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.unittest.TestUtil;
-import com.dotmarketing.business.APILocator;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -449,7 +446,7 @@ public class DateUtilTest extends UnitTestBase {
 
         final String   gmt12TimeZone   = "GMT+1400";
         final TimeZone timeZone        = TimeZone.getTimeZone(gmt12TimeZone);
-        final TimeZone defaultTimeZone =  APILocator.systemTimeZone();
+        final TimeZone defaultTimeZone = TimeZone.getDefault();
 
         final Date date1 = DateUtil.convertDate("2015-02-04 11 GMT +1400", defaultTimeZone, "yyyy-MM-dd HH z Z");
 
@@ -470,8 +467,6 @@ public class DateUtilTest extends UnitTestBase {
         }
     }
 
-    private static final String PERSISTENCE = "value.object.persistence.com.liferay.portal.model.Company";
-
     /**
      * Method to test: convert Date
      * Given Scenario: Passing a Date without any formats
@@ -484,7 +479,7 @@ public class DateUtilTest extends UnitTestBase {
         final Date date1 = DateUtil.convertDate("2015-02-04 GMT +1400");
 
         assertNotNull(date1);
-        assertEquals("Year should be 2015", 115,date1.getYear());
+        assertEquals("Year should be 2015", 115, date1.getYear());
         assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
     }
 
@@ -492,7 +487,7 @@ public class DateUtilTest extends UnitTestBase {
      * Method to test: {@link DateUtil#isTimeReach(Instant)}
      */
     @Test
-    public void timeReach(){
+    public void timeReach() {
         //Now must be Reach
         assertTrue(DateUtil.isTimeReach(Instant.now()));
 

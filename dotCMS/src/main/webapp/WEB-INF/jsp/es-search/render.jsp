@@ -189,7 +189,7 @@ if(query == null){
 <div class="portlet-main">
 	
 	<!-- START Toolbar -->
-	<div class="portlet-toolbar">
+	<div class="portlet-toolbar" style="margin-top: 16px;">
 		<div class="portlet-toolbar__actions-primary">
 			
 		</div>

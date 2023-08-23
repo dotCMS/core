@@ -354,8 +354,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
                 return cachedChildren;
             }
 
-            final List<Category> categoryTree = new ArrayList<Category>();
-            final LinkedList<Category> children = new LinkedList<Category>(getChildren(parentCategory));
+            final List<Category> categoryTree = new ArrayList<>();
+            final LinkedList<Category> children = new LinkedList<>(getChildren(parentCategory));
             while (children.size() > 0) {
                 Category child = children.poll();
                 children.addAll(getChildren(child));

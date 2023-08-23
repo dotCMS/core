@@ -40,11 +40,11 @@ public class FixTasksExecutor  implements StatefulJob {
 	 * Check which database we're using, and select the apropiate SQL. In a
 	 * different method to avoid further clutter
 	 */
-	List <Map>  returnValue =  new ArrayList <Map>();
+	List <Map>  returnValue =  new ArrayList <>();
 
 	@CloseDBIfOpened
 	public void execute(JobExecutionContext arg0) {
-		returnValue= new ArrayList <Map>();
+		returnValue= new ArrayList <>();
 		List<Class<?>> runOnce;
 
 		Comparator<Class<?>> comparator = new Comparator<Class<?>>() {
@@ -83,7 +83,7 @@ public class FixTasksExecutor  implements StatefulJob {
 					if (FixTask.class.isAssignableFrom(c)) {
 						FixTask task;
 						try {
-							task = (FixTask) c.newInstance();
+							task = (FixTask) c.getDeclaredConstructor().newInstance();
 						} catch (Exception e) {
 							throw new DotRuntimeException(e.getMessage(), e);
 						}

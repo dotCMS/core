@@ -335,7 +335,7 @@ public class DateTool implements ViewTool
         {
             return null;
         }
-        return new Integer(cal.get(field));
+        return Integer.valueOf(cal.get(field));
     }
 
 

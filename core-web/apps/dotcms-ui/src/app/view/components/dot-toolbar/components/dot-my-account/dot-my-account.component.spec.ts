@@ -16,6 +16,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
@@ -30,6 +32,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     LoginServiceMock,
@@ -90,6 +93,7 @@ describe('DotMyAccountComponent', () => {
                 CommonModule,
                 CheckboxModule,
                 DotPipesModule,
+                DotMessagePipe,
                 HttpClientTestingModule
             ],
             providers: [
@@ -99,6 +103,7 @@ describe('DotMyAccountComponent', () => {
                 },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotAccountService, useClass: DotAccountServiceMock },
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 StringFormat,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -177,8 +182,8 @@ describe('DotMyAccountComponent', () => {
         expect(showStarter.nativeElement.innerText).toEqual(
             messageServiceMock.get('starter.show.getting.started')
         );
-        expect(cancel.innerText).toEqual(messageServiceMock.get('modes.Close').toUpperCase());
-        expect(save.innerText).toEqual(messageServiceMock.get('save').toUpperCase());
+        expect(cancel.innerText).toEqual(messageServiceMock.get('modes.Close'));
+        expect(save.innerText).toEqual(messageServiceMock.get('save'));
     });
 
     it(`should form be valid and load starter page data`, async () => {

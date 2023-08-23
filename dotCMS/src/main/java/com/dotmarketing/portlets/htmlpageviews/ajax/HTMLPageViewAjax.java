@@ -39,7 +39,7 @@ public class HTMLPageViewAjax {
 
 	public Map<String, Object> getPageStatistics(String htmlPageIdentifier, Date startDate, Date endDate) {
 
-		Map<String, Object> results = new HashMap<String, Object>();
+		Map<String, Object> results = new HashMap<>();
 
 		try {
 			User systemUser = userAPI.getSystemUser();
@@ -112,7 +112,7 @@ public class HTMLPageViewAjax {
 			java.util.HashMap<String, Integer> countContentsInodesViews = _countNumEachLongFromList(contentsInodesViews);
 			java.util.HashMap<String, Integer> countContentsInodesUniqueVisitors = _countNumEachLongFromList(contentsInodesUniqueVisitors);
 
-			java.util.HashSet<String> contentsInodes = new java.util.HashSet<String>(contentsInodesViews);
+			java.util.HashSet<String> contentsInodes = new java.util.HashSet<>(contentsInodesViews);
 			contentsInodes.addAll(contentsInodesUniqueVisitors);
 			
 			results.put("viewBy", viewBy);
@@ -156,7 +156,7 @@ public class HTMLPageViewAjax {
 		Date startDate = UtilMethods.htmlToDate(startDateStr);
 		Date endDate = UtilMethods.htmlToDate(endDateStr);
 
-		List<User> results = new ArrayList<User>();
+		List<User> results = new ArrayList<>();
 		Identifier id = null;
 		try {
 			id = idAPI.find(htmlPageIdentifier);
@@ -209,7 +209,7 @@ public class HTMLPageViewAjax {
     }
     
 	private java.util.HashMap<String, Integer> _countNumEachLongFromList(java.util.List<String> inodesList) {
-		java.util.HashMap<String, Integer> result = new java.util.HashMap<String, Integer>();
+		java.util.HashMap<String, Integer> result = new java.util.HashMap<>();
 
 		if (0 < inodesList.size()) {
 			String lastInode = inodesList.get(0);

@@ -80,7 +80,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         final Optional<WorkflowAction> optionalSaveAction = getWorkflowActionByName("Save");
         final Optional<WorkflowAction> optionalPublishAction = getWorkflowActionByName("Publish");;
 
-        if (!optionalSaveAction.isPresent() || !optionalPublishAction.isPresent()) {
+        if (optionalSaveAction.isEmpty() || optionalPublishAction.isEmpty()) {
             throw new AssertException("Publish and Save Actions Expected");
         }
 

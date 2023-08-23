@@ -46,7 +46,7 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 
     private static final String TASKNAME = "RecreateMissingFoldersInParentPath";
 
-    private List<Map<String, String>> modifiedData = new ArrayList<Map<String, String>>();
+    private List<Map<String, String>> modifiedData = new ArrayList<>();
 
     private int total;
 
@@ -54,7 +54,7 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
     public List<Map<String, Object>> executeFix() throws DotDataException, DotRuntimeException {
         Logger.info(FixTask00090RecreateMissingFoldersInParentPath.class,
                 "Beginning RecreateMissingFoldersInParentPath");
-        List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> returnValue = new ArrayList<>();
 
         if (!FixAssetsProcessStatus.getRunning()) {
 

@@ -47,7 +47,7 @@ public class StartupTasksUtil {
                 name = name.substring(name.lastIndexOf(".") + 1);
                 if (StartupTask.class.isAssignableFrom(c)) {
 
-                    StartupTask task = (StartupTask) c.newInstance();
+                    StartupTask task = (StartupTask) c.getDeclaredConstructor().newInstance();
 
                     HibernateUtil.startTransaction();
                     if (task.forceRun()) {

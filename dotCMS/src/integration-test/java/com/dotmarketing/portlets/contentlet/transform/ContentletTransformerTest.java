@@ -67,6 +67,7 @@ import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import com.liferay.util.EncryptorException;
 import com.liferay.util.StringPool;
@@ -82,6 +83,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Path;
 import java.security.Key;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
@@ -862,6 +867,71 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 return (Contentlet) inputStream.readObject();
             }
         }
+    }
+
+    /**
+     * Given Scenario: This tests that the transformer used to handle serialization for the legacy content-resource is configured properly
+     * to handle the date formats returned from the regular database columns and also the fields loaded from the contentlet-as-json column
+     * Expected Result: The transformer instantiated through contentResourceOptions method should be able to convert from Date to Timestamp which the expected datatype used to feed JSONObject
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Transformer_content_Resource_Date_Formats_Test()
+            throws Exception {
+
+        final ContentType contentType = TestDataUtils.newContentTypeFieldTypesGalore();
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.inode())
+                .setProperty("title", "Bicycle")
+                .setProperty("timeField", new Date())
+                .setProperty("dateField", new Date())
+                .setProperty("dateTimeField", new Date());
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
+
+        Assert.assertTrue(contentlet.getMap().get("timeField") instanceof Date);
+        Assert.assertTrue(contentlet.getMap().get("dateField") instanceof Date);
+        Assert.assertTrue(contentlet.getMap().get("dateTimeField") instanceof Date);
+
+        final DotContentletTransformer transformer = new DotTransformerBuilder()
+                .contentResourceOptions(true)
+                .content(contentlet).build();
+
+        final Map<String, Object> map = transformer.toMaps().get(0);
+
+        Assert.assertTrue(map.get("timeField") instanceof Timestamp);
+        Assert.assertTrue(map.get("dateField") instanceof Timestamp);
+        Assert.assertTrue(map.get("dateTimeField") instanceof Timestamp);
+
+        final Map<String, Object> printableMap = ContentletUtil.getContentPrintableMap(
+                APILocator.systemUser(), contentlet);
+
+        Assert.assertTrue(printableMap.get("timeField") instanceof Timestamp);
+        Assert.assertTrue(printableMap.get("dateField") instanceof Timestamp);
+        Assert.assertTrue(printableMap.get("dateTimeField") instanceof Timestamp);
+
+        //This part simulates the JSON rendering that takes place in the ContentResource
+
+        final JSONObject object = new JSONObject()
+                .put("timeField", map.get("timeField"))
+                .put("dateField", map.get("dateField"))
+                .put("dateTimeField", map.get("dateTimeField")
+        );
+
+        Assert.assertTrue(isValidStringDateISO8601(object.get("timeField").toString()));
+        Assert.assertTrue(isValidStringDateISO8601(object.get("dateField").toString()));
+        Assert.assertTrue(isValidStringDateISO8601(object.get("dateTimeField").toString()));
+
+    }
+
+    /**
+     * Utitlity method to validate a string date against the ISO8601 format
+     * @param dateString
+     * @return
+     */
+    public static boolean isValidStringDateISO8601(final String dateString) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        dateFormat.setLenient(false); // Strict date parsing
+        return null != Try.of(()-> dateFormat.parse(dateString)).getOrElse((Date)null);
     }
 
 }

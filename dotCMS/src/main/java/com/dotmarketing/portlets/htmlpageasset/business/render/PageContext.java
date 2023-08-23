@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
+import java.util.Objects;
 
 /**
  * Context for render a {@link HTMLPageAsset}
@@ -51,6 +52,24 @@ public class PageContext {
         this.parseJSON = parseJSON;
     }
 
+
+    @Override
+    public boolean equals(final Object another) {
+        if (this == another) {
+            return true;
+        }
+        if (another == null || getClass() != another.getClass()) {
+            return false;
+        }
+        PageContext that = (PageContext) another;
+        return Objects.equals(user, that.user) && Objects.equals(pageUri,
+                that.pageUri) && pageMode == that.pageMode;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(user, pageUri, pageMode);
+    }
 
     public HTMLPageAsset getPage() {
         return page;

@@ -374,7 +374,7 @@
                   <span><%= ConfigurationHelper.getClusterId() %></span>
                </dd>
             </dl>
-            <dl>
+            <dl style="display: none;">
                <dt><%= LanguageUtil.get(pageContext, "background.color") %></dt>
                <dd style="position:relative;">
                   <div id="bgColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>

@@ -8,7 +8,7 @@
 
 .dot-add-variable-list__item {
     h3 {
-        font-size: $font-size-medium;
+        font-size: $font-size-md;
         margin: 0;
     }
 
@@ -17,7 +17,7 @@
     }
 
     small {
-        color: $gray;
+        color: $color-palette-gray-700;
     }
 }
 

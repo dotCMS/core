@@ -35,7 +35,7 @@ import java.util.function.BiPredicate;
  */
 public class AnalyticsHelper {
 
-    private static Lazy<AnalyticsHelper> analyticsHelper = Lazy.of(() -> new AnalyticsHelper());
+    private static final Lazy<AnalyticsHelper> analyticsHelper = Lazy.of(AnalyticsHelper::new);
 
     public static AnalyticsHelper get(){
         return analyticsHelper.get();
@@ -154,7 +154,7 @@ public class AnalyticsHelper {
      * @return resolved token status
      */
     public TokenStatus resolveTokenStatus(final AccessToken accessToken) {
-        if (accessToken == null) {
+        if (Objects.isNull(accessToken)) {
             return TokenStatus.NONE;
         }
 
@@ -169,6 +169,7 @@ public class AnalyticsHelper {
 
             return TokenStatus.OK;
         }
+
         return Optional.ofNullable(accessToken.status()).map(AccessTokenStatus::tokenStatus).orElse(TokenStatus.NONE);
     }
 
@@ -196,7 +197,7 @@ public class AnalyticsHelper {
      * @return true if it has a {@link TokenStatus#OK} or {@link TokenStatus#IN_WINDOW}
      */
     private static boolean canUseToken(final TokenStatus tokenStatus) {
-        return tokenStatus == TokenStatus.OK || tokenStatus == TokenStatus.IN_WINDOW;
+        return tokenStatus.matchesAny(TokenStatus.OK, TokenStatus.IN_WINDOW);
     }
 
     /**
@@ -393,6 +394,23 @@ public class AnalyticsHelper {
      */
     public String resolveAudience(final AnalyticsApp analyticsApp) {
         return null;
+    }
+
+    /**
+     * Extracts the missing analytics properties from the provided {@link IllegalStateException} exception.
+     *
+     * @param exception provided exception
+     * @return missing analytics properties
+     */
+    public static String extractMissingAnalyticsProps(final IllegalStateException exception) {
+        final int openBracket = exception.getMessage().indexOf("[");
+        final int closeBracket = exception.getMessage().indexOf("]");
+
+        if (openBracket == -1 || closeBracket == -1) {
+            return StringPool.BLANK;
+        }
+
+        return exception.getMessage().substring(openBracket + 1, closeBracket);
     }
 
 }

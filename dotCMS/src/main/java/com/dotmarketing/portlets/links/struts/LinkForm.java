@@ -18,7 +18,7 @@ public class LinkForm extends ValidatorForm {
 
     private String url;
     
-    private static final java.util.ArrayList<String> protocals  = new java.util.ArrayList<String>();
+    private static final java.util.ArrayList<String> protocals  = new java.util.ArrayList<>();
 
     private String protocal;
 

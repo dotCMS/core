@@ -85,7 +85,7 @@ public class MenuResource implements Serializable {
 							 @Context final HttpServletResponse httpServletResponse) {
 
 		Response res;
-		final Collection<Menu> menus = new ArrayList<Menu>();
+		final Collection<Menu> menus = new ArrayList<>();
 
 		try {
 

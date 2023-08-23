@@ -1,24 +1,23 @@
-<dot-icon-button *ngIf="icon" big [icon]="icon" (click)="onToggle()" [attr.disabled]="disabled">
-    <ng-content select=".badge"></ng-content>
-</dot-icon-button>
-
 <button
-    pButton
-    *ngIf="title"
-    icon="fa fa-chevron-down"
-    iconPos="right"
-    [label]="title"
-    (click)="onToggle()"
+    class="p-button-rounded p-button-text"
+    *ngIf="icon"
     [disabled]="disabled"
+    [icon]="icon"
+    (click)="onToggle()"
+    pButton
+    data-testid="icon-button"
 ></button>
 
-<dot-gravatar
-    class="dropdown-component__gravatar"
-    *ngIf="gravatar"
-    size="32"
-    [email]="gravatar"
+<button
+    *ngIf="title"
+    [label]="title"
+    [disabled]="disabled"
     (click)="onToggle()"
-></dot-gravatar>
+    pButton
+    icon="pi pi-chevron-down"
+    iconPos="right"
+    data-testid="title-button"
+></button>
 
 <div
     class="dropdown-content"

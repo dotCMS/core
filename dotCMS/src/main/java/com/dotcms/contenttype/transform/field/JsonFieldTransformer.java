@@ -152,7 +152,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
   }
 
   public List<Map<String, Object>> mapList() {
-    List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+    List<Map<String, Object>> list = new ArrayList<>();
     for (Field field : asList()) {
       list.add(new JsonFieldTransformer(field).mapObject());
     }

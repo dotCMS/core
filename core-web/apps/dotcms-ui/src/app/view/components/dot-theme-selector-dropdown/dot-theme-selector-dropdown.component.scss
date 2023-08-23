@@ -24,7 +24,7 @@
 
     .dot-theme-item__image,
     .dot-theme-item__image--fallback {
-        border-radius: $border-radius;
+        border-radius: $border-radius-xs;
         width: 3.43rem;
         height: 3.43rem;
     }
@@ -32,8 +32,8 @@
         background: $bg-highlight;
         width: 3.43rem;
         height: 3.43rem;
-        font-size: $font-size-xx-large;
-        color: $brand-primary_mod;
+        font-size: $font-size-xxl;
+        color: $color-palette-primary-400;
         text-transform: uppercase;
         text-align: center;
         line-height: 3.21rem;
@@ -52,8 +52,8 @@
             margin-bottom: $spacing-1;
         }
         .dot-theme-item__date {
-            color: $gray-dark;
-            font-size: $font-size-small;
+            color: $color-palette-gray-800;
+            font-size: $font-size-sm;
         }
         & > span {
             display: block;
@@ -79,12 +79,12 @@ dot-searchable-dropdown {
         ::ng-deep {
             .site-selector__title {
                 display: block;
-                background: $gray-lighter;
-                border: 1px solid $gray-light;
-                border-radius: $border-radius;
+                background: $color-palette-gray-300;
+                border: 1px solid $color-palette-gray-500;
+                border-radius: $border-radius-xs;
                 padding: $spacing-2;
-                font-size: $font-size-medium;
-                color: $gray-dark;
+                font-size: $font-size-md;
+                color: $color-palette-gray-800;
                 text-overflow: ellipsis;
                 min-width: 10rem;
                 white-space: nowrap;
@@ -104,7 +104,7 @@ dot-searchable-dropdown {
 }
 
 .searchable-dropdown__search-icon {
-    color: $gray;
+    color: $color-palette-gray-700;
     position: absolute;
     right: $spacing-1;
     top: 9px;

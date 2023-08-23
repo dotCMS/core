@@ -102,7 +102,7 @@ public class FormResource {
                 .filter(field -> FORM_SUCCESS_CALLBACK.equals(field.variable()))
                 .findFirst();
 
-        if (!fieldOptional.isPresent()) {
+        if (fieldOptional.isEmpty()) {
             throw new BadRequestException(FORM_SUCCESS_CALLBACK + " field not exists in:" + idOrVar);
         }
 

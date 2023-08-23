@@ -1,0 +1,39 @@
+{
+    "name": "dotcms-scss",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "projectType": "library",
+    "sourceRoot": "libs/dotcms-scss",
+    "prefix": "dotcms",
+    "targets": {
+        "serve": {
+            "executor": "nx:run-commands",
+            "outputs": [],
+            "options": {
+                "commands": [
+                    "npx http-server -p 3333 ./libs/dotcms-scss/jsp -P https://demo.dotcms.com --proxy-options.changeOrigin true",
+                    "sass libs/dotcms-scss/jsp/scss/:libs/dotcms-scss/jsp/css --watch",
+                    "open http://localhost:3333"
+                ]
+            }
+        },
+        "publish": {
+            "executor": "nx:run-commands",
+            "outputs": [],
+            "options": {
+                "commands": [
+                    "sass libs/dotcms-scss/jsp/scss/dotcms.scss ../dotCMS/src/main/webapp/html/css/dijit-dotcms/dotcms.css --no-source-map"
+                ]
+            }
+        },
+        "development": {
+            "executor": "nx:run-commands",
+            "outputs": [],
+            "options": {
+                "commands": [
+                    "sass libs/dotcms-scss/jsp/scss/dotcms.scss ../dotCMS/src/main/webapp/html/css/dijit-dotcms/dotcms.css --watch"
+                ]
+            }
+        }
+    },
+    "tags": []
+}

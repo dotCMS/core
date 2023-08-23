@@ -285,7 +285,7 @@ public class UtilHTML {
 	}
 
 	public static List<Template> getSelectTemplates(Host host, User user) {
-		List<Template> result = new ArrayList<Template>();
+		List<Template> result = new ArrayList<>();
 		String condition = "working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + " and deleted=" + com.dotmarketing.db.DbConnectionFactory.getDBFalse();
 
 		// Gets roles

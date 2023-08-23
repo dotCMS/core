@@ -17,7 +17,7 @@ import java.util.Map;
 public class KeyValueFieldUtil {
 
   public static Map<String, Object> JSONValueToHashMap(final String json) {
-    LinkedHashMap<String, Object> keyValueMap = new LinkedHashMap<String, Object>();
+    LinkedHashMap<String, Object> keyValueMap = new LinkedHashMap<>();
     if (UtilMethods.isSet(json)) {
 
       // the following code fixes issue 10529

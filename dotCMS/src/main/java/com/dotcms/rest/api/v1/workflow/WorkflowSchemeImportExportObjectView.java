@@ -58,7 +58,7 @@ public class WorkflowSchemeImportExportObjectView implements Serializable {
 			return actionSteps;
 		}
 
-		return new ArrayList<Map<String,String>>();
+		return new ArrayList<>();
 	}
 
 

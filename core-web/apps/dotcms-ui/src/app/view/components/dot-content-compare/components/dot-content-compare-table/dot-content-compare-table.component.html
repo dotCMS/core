@@ -16,10 +16,18 @@
                         appendTo="body"
                     >
                         <ng-template let-selected pTemplate="selectedItem">
-                            {{ selected | dotTransformVersionLabel }}
+                            {{
+                                (selected.modDate | dotRelativeDate : 'MM/dd/yyyy - hh:mm aa') +
+                                    (' by ' | dm) +
+                                    selected.modUserName
+                            }}
                         </ng-template>
                         <ng-template let-item pTemplate="item">
-                            {{ item | dotTransformVersionLabel }}
+                            {{
+                                (item.modDate | dotRelativeDate : 'MM/dd/yyyy - hh:mm aa') +
+                                    (' by ' | dm) +
+                                    item.modUserName
+                            }}
                         </ng-template>
                     </p-dropdown>
                     <p-selectButton
@@ -111,6 +119,7 @@
                     </dot-content-compare-preview-field>
                 </td>
             </ng-container>
+
             <ng-container *ngSwitchCase="'JSON-Field'">
                 <td
                     [innerHTML]="data.working[field.variable] | json"
@@ -124,6 +133,23 @@
                     "
                     data-testId="table-json-compare"
                 ></td>
+            </ng-container>
+            <ng-container *ngSwitchCase="'Story-Block'">
+                <td>
+                    <dot-content-compare-block-editor
+                        [field]="field.variable"
+                        [data]="data"
+                        [showAsCompare]="false"
+                    ></dot-content-compare-block-editor>
+                </td>
+                <td>
+                    <dot-content-compare-block-editor
+                        [showDiff]="showDiff"
+                        [field]="field.variable"
+                        [data]="data"
+                        [showAsCompare]="true"
+                    ></dot-content-compare-block-editor>
+                </td>
             </ng-container>
             <ng-container *ngSwitchDefault>
                 <td

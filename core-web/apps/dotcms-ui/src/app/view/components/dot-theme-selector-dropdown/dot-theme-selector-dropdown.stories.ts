@@ -8,8 +8,8 @@ import { SearchableDropDownModule } from '@components/_common/searchable-dropdow
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
 
@@ -189,7 +189,7 @@ export default {
                     }
                 }
             ],
-            imports: [SearchableDropDownModule, BrowserAnimationsModule, DotMessagePipeModule],
+            imports: [SearchableDropDownModule, BrowserAnimationsModule, DotMessagePipe],
             declarations: [DotThemeSelectorDropdownComponent]
         })
     ],

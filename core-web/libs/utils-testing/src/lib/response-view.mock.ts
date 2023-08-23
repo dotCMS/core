@@ -1,4 +1,4 @@
-import { HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 
 export const mockResponseView = (
     status: number,
@@ -9,6 +9,6 @@ export const mockResponseView = (
     new HttpErrorResponse({
         error: body || null,
         status: status,
-        headers: headers || null,
+        headers: headers || undefined,
         url: url || '/test/test'
     });

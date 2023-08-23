@@ -5,7 +5,11 @@ import {
     DotHttpErrorResponse
 } from '@dotcms/dotcms-models';
 
-import { fallbackErrorMessages } from './dot-temp-file.service';
+export const fallbackErrorMessages = {
+    500: '500 Internal Server Error',
+    400: '400 Bad Request',
+    401: '401 Unauthorized Error'
+};
 
 /**
  * Create DotAssets based on options passed in DotAssetCreateOptions

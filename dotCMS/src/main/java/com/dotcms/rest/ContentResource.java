@@ -198,12 +198,14 @@ public class ContentResource {
 
         if (UtilMethods.isSet(query)) {
 
+            final String queryDefaultVariant = query + " +variant:default";
+
             startAPISearchPull = Calendar.getInstance().getTimeInMillis();
-            resultsSize        = APILocator.getContentletAPI().indexCount(query, userForPull, pageMode.respectAnonPerms);
+            resultsSize        = APILocator.getContentletAPI().indexCount(queryDefaultVariant, userForPull, pageMode.respectAnonPerms);
             afterAPISearchPull = Calendar.getInstance().getTimeInMillis();
 
             startAPIPull       = Calendar.getInstance().getTimeInMillis();
-            contentlets        = ContentUtils.pull(processQuery(query), offset, limit, sort, userForPull, tmDate, pageMode.respectAnonPerms);
+            contentlets        = ContentUtils.pull(processQuery(queryDefaultVariant), offset, limit, sort, userForPull, tmDate, pageMode.respectAnonPerms);
             resultJson = getJSONObject(contentlets, request, response, render, user, depth,
                     pageMode.respectAnonPerms, language, pageMode.showLive, allCategoriesInfo);
 
@@ -246,7 +248,7 @@ public class ContentResource {
 
         InitDataObject initData = webResource.init(null, request, response, false, null);
 
-        Map<String, String> paramsMap = new HashMap<String, String>();
+        Map<String, String> paramsMap = new HashMap<>();
         paramsMap.put("type", type);
         paramsMap.put("callback", callback);
         //Creating an utility response object
@@ -290,7 +292,7 @@ public class ContentResource {
 
         InitDataObject initData = webResource.init(null, request, response, false, null);
 
-        Map<String, String> paramsMap = new HashMap<String, String>();
+        Map<String, String> paramsMap = new HashMap<>();
         paramsMap.put("type", type);
         paramsMap.put("callback", callback);
         //Creating an utility response object
@@ -1028,7 +1030,7 @@ public class ContentResource {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
         sb.append("<contentlet>");
-        Map<String, Object> m = new HashMap<String, Object>();
+        Map<String, Object> m = new HashMap<>();
         m.put("inode", con.getInode());
         m.put("identifier", con.getIdentifier());
         sb.append(xstream.toXML(m));
@@ -1349,7 +1351,7 @@ public class ContentResource {
 
     public static Set<String> getJSONFields(ContentType type)
             throws DotDataException, DotSecurityException {
-        Set<String> jsonFields = new HashSet<String>();
+        Set<String> jsonFields = new HashSet<>();
         List<Field> fields = new LegacyFieldTransformer(
                 APILocator.getContentTypeAPI(APILocator.systemUser()).
                         find(type.inode()).fields()).asOldFieldList();
@@ -1561,7 +1563,7 @@ public class ContentResource {
         }
 
         public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
-            Map<String, String> map = new HashMap<String, String>();
+            Map<String, String> map = new HashMap<>();
 
             while (reader.hasMoreChildren()) {
                 reader.moveDown();
@@ -2152,7 +2154,7 @@ public class ContentResource {
 
     protected void processForm(Contentlet contentlet, InputStream input) throws Exception {
 
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<>();
         for (String param : IOUtils.toString(input).split("&")) {
 
             int index = param.indexOf("=");
@@ -2171,10 +2173,10 @@ public class ContentResource {
     protected void processFormPost(Contentlet contentlet, HttpServletRequest request,
             boolean multiPart) throws Exception {
 
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<>();
 
         if (multiPart) {
-            ArrayList<Part> partList = new ArrayList<Part>(request.getParts());
+            ArrayList<Part> partList = new ArrayList<>(request.getParts());
 
             for (Part part : partList) {
                 String partName = part.getName();

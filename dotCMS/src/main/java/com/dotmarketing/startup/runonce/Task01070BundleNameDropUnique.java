@@ -80,7 +80,7 @@ public class Task01070BundleNameDropUnique extends AbstractJDBCStartupTask {
 
     @Override
     protected List<String> getTablesToDropConstraints () {
-        List<String> tablesList = new ArrayList<String>();
+        List<String> tablesList = new ArrayList<>();
         //tablesList.add("publishing_bundle_environment");
         return tablesList;
     }

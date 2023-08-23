@@ -1,0 +1,12 @@
+@use "variables" as *;
+
+:host {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    display: grid;
+}
+
+.column {
+    height: 100%;
+    border-radius: $border-radius-sm;
+    background-color: $color-palette-gray-200;
+}

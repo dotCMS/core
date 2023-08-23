@@ -1,3 +1,5 @@
+@import "../../../../dotcms-scss/shared/colors";
+
 :host {
     position: relative;
 }
@@ -6,7 +8,7 @@ span {
     color: #fff;
     position: absolute;
     transform: translateY(7px);
-    text-shadow: 1px 1px rgba(0, 0, 0, 0.25);
+    text-shadow: 1px 1px $color-palette-black-op-20;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 40px;

@@ -37,7 +37,7 @@
 <%@ page import="com.dotcms.contenttype.model.field.HostFolderField" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
-
+<%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -164,6 +164,7 @@
             String displayCountBar = "";
             String charLimit = "";
             String customBlocks = "";
+            String contentletIdentifier = contentlet.getIdentifier();
             Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
 
             // By default this is an empty JSON `{}`.
@@ -172,8 +173,7 @@
                 JSONValue = new JSONObject(textValue);
             } catch(Exception e) {
                 // Need it in case the value contains Single quote/backtick.
-                textValue = "`" + textValue.replaceAll("`", "&#96;") + "`";
-              
+                textValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`"; 
             }
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
@@ -199,8 +199,8 @@
                 }
             }
             %>
-
             <script src="/html/dotcms-block-editor.js"></script>
+            <script src="/html/showdown.min.js"></script>
             <dotcms-block-editor
                 id="block-editor-<%=field.getVelocityVarName()%>"
                 allowed-content-types="<%=allowedContentTypes%>"
@@ -209,9 +209,12 @@
                 display-count-bar="<%=displayCountBar%>"
                 char-limit="<%=charLimit%>"
                 lang="<%=contentLanguage%>"
-                custom-blocks='<%=customBlocks%>'>
+                custom-blocks='<%=customBlocks%>'
+                contentlet-identifier='<%=contentletIdentifier%>'
+            >
+                
             </dotcms-block-editor>
-            <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
+            <input type="hidden" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>"/>
 
             <script>
 
@@ -234,20 +237,36 @@
                         // Otherwise, we try to parse the "textValue".
                         content = JSONValue || JSON.parse(<%=textValue%>);
                     } catch (error) {
-                        content = <%=textValue%>;
+                        const text = (<%=textValue%>).replace(/&#96;/g, '`').replace(/&#36;/g, '$');
+                        const converter = new showdown.Converter({tables: true});
+                        content = converter.makeHtml(text);                      
                     }
 
                     const blockEditor = document.getElementById("block-editor-<%=field.getVelocityVarName()%>");
                     const block = blockEditor.querySelector('.ProseMirror');
-                    const field = document.querySelector('#<%=field.getVelocityVarName()%>');
+                    const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
+
+                    /**
+                     * Safeguard just in case the editor changes are not triggering the 
+                     * "valueChange" event.
+                     */
+                    if (typeof <%=textValue%> === 'object') {
+                        field.value = JSON.stringify(<%=textValue%>);
+                    } else {
+                        field.value = <%=textValue%>;
+                    }
+
+                    /**
+                     * We need to listen to the "valueChange" event BEFORE setting the value
+                     * to the editor.
+                     */
+                    blockEditor.addEventListener('valueChange', (event) => {
+                        field.value = block.editor.isEmpty ? null : JSON.stringify(event.detail);;
+                    });
 
                     if (content) {
                         blockEditor.value = content;
                     }
-
-                    blockEditor.addEventListener('valueChange', (event) => {
-                        field.value = event.detail;
-                    });
 
                     blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
                 })();
@@ -810,13 +829,26 @@
 
     </script>
 
-    <% if (UtilMethods.isSet(value)) {
-            final boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user);
-            if (canUserWriteToContentlet && resourceLink.isEditableAsText() && InodeUtils.isSet(binInode)) { %>
-                <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
-         <% } %>
-    <% } else { %>
-            <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
+
+    <%
+
+        if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink)){
+
+          boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE, user);
+
+    %>
+
+        <%if(canUserWriteToContentlet){%>
+            <% if (resourceLink.isEditableAsText()) { %>
+                <%
+                    if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
+
+                %>
+                    <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
+                <%  } %>
+            <% } %>
+
+        <% } %>
     <% } %>
 
     <!--  END display -->

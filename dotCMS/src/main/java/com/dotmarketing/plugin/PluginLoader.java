@@ -29,7 +29,7 @@ public class PluginLoader {
 	
 	public void loadPlugins(String rootPath, String pluginPath) {
 		List<File> pluginJars = PluginUtil.getPluginJars(rootPath, pluginPath);
-		List<String> pluginIds = new ArrayList<String>();
+		List<String> pluginIds = new ArrayList<>();
 		
 		//initialize the pluginAPI
 		PluginAPI pluginAPI = APILocator.getPluginAPI();
@@ -168,7 +168,7 @@ public class PluginLoader {
 	private void loadPluginProperties(JarFile jar, String pluginId) throws IOException, DotDataException{
 		Map<String, String> props = PluginUtil.loadPropertiesFromFile(jar);
 		String reload = props.get("reload.force");
-		if(!UtilMethods.isSet(reload) || new Boolean(reload)){
+		if(!UtilMethods.isSet(reload) || Boolean.valueOf(reload)){
 			pluginAPI.deletePluginProperties(pluginId);
 			for (String key : props.keySet()) {
 				pluginAPI.saveProperty(pluginId, key, props.get(key));

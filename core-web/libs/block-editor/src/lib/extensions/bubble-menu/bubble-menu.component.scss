@@ -9,7 +9,7 @@
     box-sizing: border-box;
     align-items: center;
     background: $white;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     box-shadow: $md-shadow-3;
     display: flex;
     justify-content: center;
@@ -24,7 +24,7 @@
         cursor: pointer;
 
         &:hover {
-            background: $gray-bg;
+            background: $color-palette-gray-200;
         }
 
         &::after {
@@ -39,7 +39,7 @@
     }
 
     .divider {
-        border-left: 1px solid $gray-bg;
+        border-left: 1px solid $color-palette-gray-200;
         height: 100%;
         margin: 0 (0.5 * $dot-editor-size);
     }

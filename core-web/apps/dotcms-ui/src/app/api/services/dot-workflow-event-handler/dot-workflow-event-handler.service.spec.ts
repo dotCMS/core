@@ -12,6 +12,7 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
@@ -132,7 +133,7 @@ describe('DotWorkflowEventHandlerService', () => {
             imports: [RouterTestingModule, HttpClientTestingModule],
             providers: [
                 DotWorkflowEventHandlerService,
-                DotMessageDisplayService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 DotWizardService,
                 DotIframeService,
                 DotHttpErrorManagerService,

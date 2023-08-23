@@ -127,7 +127,7 @@ public class DotWebdavHelper {
 	private static MessageDigest md5Helper;
 
 
-	private Hashtable<String, com.bradmcevoy.http.LockInfo> resourceLocks = new Hashtable<String, com.bradmcevoy.http.LockInfo>();
+	private Hashtable<String, com.bradmcevoy.http.LockInfo> resourceLocks = new Hashtable<>();
 
 	static {
 		new Timer().schedule(new FileResourceCacheCleaner(), 1000  * 60 * Config.getIntProperty("WEBDAV_CLEAR_RESOURCE_CACHE_FRECUENCY", 10), 1000  * 60 * Config.getIntProperty("WEBDAV_CLEAR_RESOURCE_CACHE_FRECUENCY", 10));
@@ -453,13 +453,13 @@ public class DotWebdavHelper {
 			throw new IOException( e.getMessage() );
 		}
 
-		List<Resource> result = new ArrayList<Resource>();
+		List<Resource> result = new ArrayList<>();
 		try {
 
 			//Search for child folders
 			List<Folder> folderListSubChildren = folderAPI.findSubFolders( parentFolder, user, false );
 			//Search for child files
-			List<Versionable> filesListSubChildren = new ArrayList<Versionable>();
+			List<Versionable> filesListSubChildren = new ArrayList<>();
 			try {
 				filesListSubChildren.addAll( APILocator.getFileAssetAPI().findFileAssetsByDB(FileAssetSearcher.builder().folder(parentFolder).user(user).respectFrontendRoles(false).build()) );
 			} catch ( Exception e2 ) {
@@ -1053,7 +1053,7 @@ public class DotWebdavHelper {
 		}
 
 		// CheckPermission
-		List<Permission> parentPermissions = new ArrayList<Permission>();
+		List<Permission> parentPermissions = new ArrayList<>();
 		boolean hasPermission = false;
 		boolean validName = true;
 		String parentPath = getFolderName(path);
@@ -1667,7 +1667,7 @@ public class DotWebdavHelper {
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		Logger.debug(this.getClass(), "getChildrenNames");
 		folderUriAux=stripMapping(folderUriAux);
-		ArrayList<Summary> returnValue = new ArrayList<Summary>();
+		ArrayList<Summary> returnValue = new ArrayList<>();
 		try {
 			// ### GET THE HOST ###
 			if (folderUriAux.equals("") || folderUriAux.equals("/")) {

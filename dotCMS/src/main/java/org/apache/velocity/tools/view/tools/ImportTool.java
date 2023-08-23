@@ -74,7 +74,7 @@ public class ImportTool extends ImportSupport implements ViewTool {
     }
 
     public String read(String url) {
-    	return read(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 15000), new HashMap<String, String>());
+    	return read(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 15000), new HashMap<>());
     }
     
     
@@ -86,7 +86,7 @@ public class ImportTool extends ImportSupport implements ViewTool {
      * @return the URL as a string
      */
     public String read(String url, int timeout) {
-    	return read(url, timeout, new HashMap<String, String>());
+    	return read(url, timeout, new HashMap<>());
     }
     
     /**

@@ -79,7 +79,7 @@ public class FormAPIImpl implements FormAPI {
 	@CloseDBIfOpened
 	public List<Structure> findAll(User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
         List<Structure> sts = StructureFactory.getAllStructuresByType(Structure.STRUCTURE_TYPE_FORM);
-        List<Structure> forms = new ArrayList<Structure>();
+        List<Structure> forms = new ArrayList<>();
         for (Structure structure : sts) {
             if (perAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
                 forms.add(structure);

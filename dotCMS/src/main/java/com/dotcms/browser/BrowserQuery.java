@@ -8,7 +8,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Theme;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -42,9 +41,9 @@ import java.util.Set;
 public class BrowserQuery {
     private static final int MAX_FETCH_PER_REQUEST = Config.getIntProperty("BROWSER_MAX_FETCH_PER_REQUEST", 300);
     final User user;
-    final String  filter, sortBy;
+    final String  filter, fileName, sortBy;
     final int offset, maxResults;
-    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent, showShorties;
+    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent, showShorties,showDefaultLangItems;
     final long languageId;
     final String luceneQuery;
     final Set<BaseContentType> baseTypes;
@@ -58,7 +57,7 @@ public class BrowserQuery {
     public String toString() {
         return "BrowserQuery {user:" + user + ", site:" + site + ", folder:" + folder + ", filter:" + filter + ", sortBy:" + sortBy
                 + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:" + showWorking + ", showArchived:"
-                + showArchived + ", showFolders:" + showFolders + ", sortByDesc:" + sortByDesc + ", showLinks:"
+                + showArchived + ", showFolders:" + showFolders + ", showDefaultLangItems:" + showDefaultLangItems + ", sortByDesc:" + sortByDesc + ", showLinks:"
                 + showLinks + ", showContent:" + showContent + ", showShorties:" + showShorties + ", languageId:" + languageId + ", luceneQuery:" + luceneQuery
                 + ", baseTypes:" + baseTypes + "}";
     }
@@ -67,6 +66,7 @@ public class BrowserQuery {
         this.user = builder.user == null ? APILocator.systemUser() : builder.user;
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
+        this.fileName = builder.fileName;
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
         this.offset = builder.offset;
@@ -80,6 +80,7 @@ public class BrowserQuery {
         this.extensions    = builder.extensions;
         this.sortByDesc = UtilMethods.isEmpty(builder.sortBy) ? true : builder.sortByDesc;
         this.showLinks = builder.showLinks;
+        this.showDefaultLangItems = builder.showDefaultLangItems;
 
         this.baseTypes = builder.baseTypes.isEmpty()
                 ? ImmutableSet.of(BaseContentType.ANY)
@@ -92,27 +93,54 @@ public class BrowserQuery {
         this.roles= Try.of(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0])).getOrElse(new Role[0]);
     }
 
+    /**
+     * Returns the appropriate Site and Folder based on the input from the User or system configuration. It's worth
+     * noting that if the value of {@code parentId} points to the System Folder, then the value for
+     * {@code hostIdSystemFolder} must be set as well.
+     *
+     * @param parentId           The ID of the Folder or Site that has been selected or specified.
+     * @param user               The {@link User} executing this action.
+     * @param hostIdSystemFolder The ID of a specific Site, if required.
+     *
+     * @return A Tuple2 containing the Site and its Folder.
+     */
     @CloseDBIfOpened
     private Tuple2<Host, Folder> getParents(final String parentId, final User user, final String hostIdSystemFolder) {
         boolean respectFrontEndPermissions = PageMode.get().respectAnonPerms;
-        //check if the parentId exists
+        Folder folderObj;
+        boolean isSite = false;
         final Identifier identifier = Try.of(() -> APILocator.getIdentifierAPI().findFromInode(parentId)).getOrNull();
-        if ((identifier == null || UtilMethods.isEmpty(identifier.getId())) && (!parentId.equalsIgnoreCase(
-                Theme.SYSTEM_THEME))) {
-            Logger.error(this, "parentId doesn't belong to a Folder or a Host, id: " + parentId
-                    + ", maybe the Folder was modified in the background. If using SystemFolder must send hostIdSystemFolder.");
-            throw new DotRuntimeException("parentId doesn't belong to a Folder or a Host, id: " + parentId);
+        if (null != identifier && UtilMethods.isSet(identifier.getId()) && !parentId.equalsIgnoreCase(
+                Theme.SYSTEM_THEME) && Host.HOST_VELOCITY_VAR_NAME.equals(identifier.getAssetSubType())) {
+            // The ID belongs to a Site
+            folderObj = APILocator.getFolderAPI().findSystemFolder();
+            isSite = true;
+        } else {
+            // The ID belongs to a Folder
+            folderObj = parentId.equalsIgnoreCase(Theme.SYSTEM_THEME)
+                                ? APILocator.getFolderAPI().findSystemFolder()
+                                : Try.of(() -> APILocator.getFolderAPI().find(parentId, user, respectFrontEndPermissions)).getOrElse(new Folder());
         }
-
-        // gets folder parent
-        final Folder folder = Try.of(() -> APILocator.getFolderAPI().find(parentId, user, respectFrontEndPermissions)).toJavaOptional()
-                .orElse(APILocator.getFolderAPI().findSystemFolder());
-        final Host site = folder.isSystemFolder()
-                ? null != hostIdSystemFolder ? Try.of(() -> APILocator.getHostAPI().find(hostIdSystemFolder, user, respectFrontEndPermissions)).getOrNull()
-                :  Try.of(() -> WebAPILocator.getHostWebAPI().getCurrentHost()).getOrNull()
-                : Try.of(() -> APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions)).getOrNull();
-
-        return Tuple.of(site, folder);
+        String calculatedSiteId = null;
+        // Determine the appropriate Site ID based on provided data
+        if (isSite) {
+            calculatedSiteId = UtilMethods.isSet(hostIdSystemFolder) ? hostIdSystemFolder : parentId;
+        } else {
+            if (null != folderObj) {
+                calculatedSiteId = Folder.SYSTEM_FOLDER.equals(folderObj.getInode()) && UtilMethods.isSet(hostIdSystemFolder) ? hostIdSystemFolder :
+                                           folderObj.getHostId();
+            }
+        }
+        final String siteId = calculatedSiteId;
+        final Host siteObj = Try.of(() -> APILocator.getHostAPI().find(siteId, user, respectFrontEndPermissions)).getOrNull();
+        if (null == folderObj || UtilMethods.isEmpty(folderObj.getIdentifier()) || null == siteObj || UtilMethods.isEmpty(siteObj.getIdentifier())) {
+            final String errorMsg = String.format("Parent ID '%s' [ %s ] does not match any existing Folder or Site.",
+                    parentId, siteId);
+            Logger.error(this, errorMsg + ". Maybe the Site/Folder was modified or deleted in the background. If " +
+                                       "System Folder is specified, then set a value for hostIdSystemFolder as well.");
+            throw new DotRuntimeException(errorMsg);
+        }
+        return Tuple.of(siteObj, folderObj);
     }
 
     /**
@@ -142,6 +170,7 @@ public class BrowserQuery {
 
         private User user;
         private String filter = null;
+        private String fileName = null;
         private String sortBy = "moddate";
         private int offset = 0;
         private int maxResults = MAX_FETCH_PER_REQUEST;
@@ -153,6 +182,7 @@ public class BrowserQuery {
         private boolean sortByDesc = false;
         private boolean showLinks = false;
         private boolean showMenuItemsOnly = false;
+        private boolean showDefaultLangItems = false;
         private long languageId = 0;
         private final StringBuilder luceneQuery = new StringBuilder();
         private Set<BaseContentType> baseTypes = new HashSet<>();
@@ -169,6 +199,7 @@ public class BrowserQuery {
                     ? browserQuery.site.getIdentifier()
                     : browserQuery.folder.getInode();
             this.filter = browserQuery.filter;
+            this.fileName = browserQuery.fileName;
             if (browserQuery.luceneQuery != null) {
                 this.luceneQuery.append(browserQuery.luceneQuery);
             }
@@ -186,6 +217,7 @@ public class BrowserQuery {
             this.extensions = browserQuery.extensions;
             this.showContent = browserQuery.showContent;
             this.showShorties = browserQuery.showShorties;
+            this.showDefaultLangItems = browserQuery.showDefaultLangItems;
         }
 
         public Builder withUser(@Nonnull User user) {
@@ -202,6 +234,19 @@ public class BrowserQuery {
             if (UtilMethods.isSet(filter)) {
                 luceneQuery.append(StringPool.SPACE).append(filter);
                 this.filter = filter;
+            }
+            return this;
+        }
+
+        public Builder withFileName(@Nonnull String fileName) {
+            if (UtilMethods.isSet(fileName)) {
+                // for exact file-name match we need to relay exclusively on the database
+                // we can not trust on the use of the title field indexed in lucene
+                // As different files can share the same title, and we need an exact match on identifier.asset_name
+                // Therefore we need to make it fail on purpose by adding a non-existing value to the query
+                // If we include this fileNAme here BrowserAPI will try to match the title in lucene bringing back false positives
+                luceneQuery.append(StringPool.SPACE).append("___").append(fileName).append("___");
+                this.fileName = fileName;
             }
             return this;
         }
@@ -318,6 +363,11 @@ public class BrowserQuery {
 
         public Builder hostIdSystemFolder(@Nonnull String hostIdSystemFolder) {
             this.hostIdSystemFolder = hostIdSystemFolder;
+            return this;
+        }
+
+        public Builder showDefaultLangItems(@Nonnull boolean showDefaultLangItems) {
+            this.showDefaultLangItems = showDefaultLangItems;
             return this;
         }
 

@@ -6,6 +6,7 @@ import com.dotcms.content.model.annotation.HydrateWith;
 import com.dotcms.content.model.annotation.Hydration;
 import com.dotcms.content.model.annotation.ValueType;
 import com.dotcms.content.model.hydration.MetadataDelegate;
+import com.dotcms.content.model.hydration.MetadataMapDeserializer;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -38,7 +39,8 @@ public interface AbstractBinaryFieldType extends FieldValue<String> {
     @Nullable
     @JsonProperty("metadata")
     @Parameter
-    Map<String, Serializable> metadata();
+    @JsonDeserialize(using = MetadataMapDeserializer.class)
+    Map<String, Object> metadata();
 
     @Hydration(properties = {
         @HydrateWith(delegate = MetadataDelegate.class, propertyName = "metadata")

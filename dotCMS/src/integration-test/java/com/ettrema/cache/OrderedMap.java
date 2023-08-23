@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public class OrderedMap<K, T> {
 
-    private final LinkedHashMap<K, T> map = new LinkedHashMap<K, T>( 1000, 0.75f, true );
+    private final LinkedHashMap<K, T> map = new LinkedHashMap<>( 1000, 0.75f, true );
 
     public synchronized T get( K key ) {
         return map.get( key );

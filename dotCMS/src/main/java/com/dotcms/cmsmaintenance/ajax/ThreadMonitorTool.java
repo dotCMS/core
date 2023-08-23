@@ -65,7 +65,7 @@ public class ThreadMonitorTool{
 	    sb.append( "\n\n" );    
 
 	    long[] deadLockedArray = mxBean.findDeadlockedThreads();
-	    Set<Long> deadlocks = new HashSet<Long>();
+	    Set<Long> deadlocks = new HashSet<>();
 	    if( deadLockedArray != null ) {
 	        for( long i : deadLockedArray ) {
 	            deadlocks.add(i);
@@ -74,7 +74,7 @@ public class ThreadMonitorTool{
 
 	    // Build a TID map for looking up more specific thread
 	    // information than provided by ThreadInfo
-	    Map<Long, Thread> threadMap = new HashMap<Long, Thread>();
+	    Map<Long, Thread> threadMap = new HashMap<>();
 	    for( Thread t : Thread.getAllStackTraces().keySet() ) {
 	        threadMap.put( t.getId(), t );
 	    } 
@@ -82,7 +82,7 @@ public class ThreadMonitorTool{
 
 	    ThreadInfo[] infos = mxBean.dumpAllThreads(true, true);
 	    
-	    Map<String, String> blockers = new HashMap<String, String>();
+	    Map<String, String> blockers = new HashMap<>();
 	    
 	    
 	    
@@ -233,7 +233,7 @@ public class ThreadMonitorTool{
 
 		SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
 
-		Map<String, String> sysProps = new HashMap<String, String>();
+		Map<String, String> sysProps = new HashMap<>();
 
 		sysProps.put("System Startup Time ", sdf.format(rmxbean.getStartTime()));
 		sysProps.put("Thread Count - Current ", (tb.getThreadCount() + ""));

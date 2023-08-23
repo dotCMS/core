@@ -1,0 +1,7 @@
+.dojoxUploaderFileList {
+    border: solid 1px $color-palette-gray-400;
+}
+
+.dojoxUploaderFileListTable {
+    @extend #listing-table;
+}

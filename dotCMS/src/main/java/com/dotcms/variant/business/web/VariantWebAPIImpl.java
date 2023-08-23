@@ -19,6 +19,7 @@ import com.liferay.portal.model.User;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.exception.ResourceNotFoundException;
+import javax.servlet.http.HttpSession;
 
 /**
  * Default implementation for {@link VariantWebAPI}
@@ -37,7 +38,6 @@ public class VariantWebAPIImpl implements VariantWebAPI{
      *
      * @return
      */
-    @Override
     public String currentVariantId() {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
@@ -45,22 +45,97 @@ public class VariantWebAPIImpl implements VariantWebAPI{
             return VariantAPI.DEFAULT_VARIANT.name();
         }
 
-        final String requestParameter = request.getParameter(VariantAPI.VARIANT_KEY);
+        String currentVariantName = getCurrentVariantNameFromParameter(request)
+                .or(() -> getCurrentVariantNameFromAttribute(request))
+                .orElse(null);
 
-        if (UtilMethods.isSet(requestParameter)) {
+        if (!UtilMethods.isSet(currentVariantName)) {
+            currentVariantName = VariantAPI.DEFAULT_VARIANT.name();
+        } else {
             try {
                 final Optional<Variant> byName = APILocator.getVariantAPI()
-                        .get(requestParameter);
-                return byName.isPresent() ? byName.get().name() : VariantAPI.DEFAULT_VARIANT.name();
+                        .get(currentVariantName);
+                currentVariantName = byName.isPresent() ? byName.get().name() : VariantAPI.DEFAULT_VARIANT.name();
             } catch (DotDataException e) {
                 Logger.error(VariantWebAPIImpl.class,
                         String.format("It is not possible get variant y name %s: %s",
-                                requestParameter, e.getMessage()));
-                return VariantAPI.DEFAULT_VARIANT.name();
+                                currentVariantName, e.getMessage()));
+                currentVariantName = VariantAPI.DEFAULT_VARIANT.name();
             }
-        } else {
-            return VariantAPI.DEFAULT_VARIANT.name();
         }
+
+        setSessionAttribute(request, currentVariantName);
+        return currentVariantName;
+    }
+
+    private static void setSessionAttribute(final HttpServletRequest request,
+            final String currentVariantName) {
+
+        final HttpSession session = request.getSession(true);
+
+        if (!UtilMethods.isSet(session)) {
+            return;
+        }
+        
+        final Object attribute = session.getAttribute(VariantAPI.VARIANT_KEY);
+
+        if (mustOverwrite(attribute, currentVariantName)) {
+            final CurrentVariantSessionItem currentVariantSessionItem = new
+                    CurrentVariantSessionItem(currentVariantName);
+            session.setAttribute(VariantAPI.VARIANT_KEY, currentVariantSessionItem);
+        }
+    }
+
+    private static boolean mustOverwrite(final Object currentVariantSessionItemAsObject, final String currentVariantName) {
+
+        if (!UtilMethods.isSet(currentVariantSessionItemAsObject)) {
+            return true;
+        }
+
+        final CurrentVariantSessionItem currentVariantSessionItem = (CurrentVariantSessionItem) currentVariantSessionItemAsObject;
+        return currentVariantSessionItem instanceof CurrentVariantSessionItem &&
+                (!currentVariantSessionItem.getVariantName().equals(currentVariantName) || currentVariantSessionItem.isExpired());
+    }
+
+    private Optional<String> getCurrentVariantNameFromAttribute(
+            HttpServletRequest request) {
+        return Optional.ofNullable(request.getAttribute(VariantAPI.VARIANT_KEY))
+                .map(Object::toString);
+    }
+
+    private static Optional<String> getCurrentVariantNameFromParameter(final HttpServletRequest request) {
+        return Optional.ofNullable(request.getParameter(VariantAPI.VARIANT_KEY));
+    }
+
+    /**
+     * Return the specific {@link Variant} and {@link Language} with a {@link Contentlet} should be render.
+     * this method follow this rules:
+     *
+     * - First look for a version of the {@link Contentlet} in the current variant and <code>tryingLang</code>
+     * if exists then return the Current Variant and <code>tryingLang</code> .
+     * - If it does not exist and the current variant is different that the {@link VariantAPI#DEFAULT_VARIANT}
+     * then look for a version of the {@link Contentlet} in the {@link VariantAPI#DEFAULT_VARIANT}
+     * and <code>tryingLang</code> if it exists then return the {@link VariantAPI#DEFAULT_VARIANT}  and <code>tryingLang</code>.
+     * - If it does not exist then look for a version of the {@link Contentlet} in the Current Variant
+     * and the Default Language if it exists then return the Current Variant and Default Language, if the fallback language is allowed.
+     * - If it does not exist then look for a version of the {@link Contentlet} in the {@link VariantAPI#DEFAULT_VARIANT}
+     * and the Default Language if it exists then return the {@link VariantAPI#DEFAULT_VARIANT}  and Default Language, if the fallback language is allowed.
+     *
+     * @param tryingLang Language to try if not exists any version for this lang try with default
+     * @param identifier {@link com.dotcms.content.model.Contentlet}'s identifier
+     * @param pageMode page mode to render
+     * @param user to check {@link com.dotmarketing.beans.Permission}
+     * @return
+     */
+    @Override
+    public RenderContext getRenderContext(final long tryingLang, final String identifier,
+            final PageMode pageMode, final User user) {
+
+        final ContentletVersionInfo contentletVersionInfoByFallback = getContentletVersionInfoByFallback(
+                tryingLang, identifier, pageMode, user);
+
+        return new RenderContext(contentletVersionInfoByFallback.getVariant(),
+                contentletVersionInfoByFallback.getLang());
     }
 
     /**
@@ -84,21 +159,24 @@ public class VariantWebAPIImpl implements VariantWebAPI{
      * @return
      */
     @Override
-    public RenderContext getRenderContext(final long tryingLang, final String identifier,
+    public RenderContext getRenderContextForceLangFallback(final long tryingLang, final String identifier,
             final PageMode pageMode, final User user) {
 
         final ContentletVersionInfo contentletVersionInfoByFallback = getContentletVersionInfoByFallback(
-                tryingLang, identifier, pageMode, user);
+                tryingLang, identifier, pageMode, user, true);
 
         return new RenderContext(contentletVersionInfoByFallback.getVariant(),
                 contentletVersionInfoByFallback.getLang());
     }
 
-
-
     @Override
     public ContentletVersionInfo getContentletVersionInfoByFallback(final long tryingLang, final String identifier,
             final PageMode pageMode, final User user) {
+        return getContentletVersionInfoByFallback(tryingLang, identifier, pageMode, user, false);
+    }
+
+    public ContentletVersionInfo getContentletVersionInfoByFallback(final long tryingLang, final String identifier,
+        final PageMode pageMode, final User user, final boolean forceLangFallback) {
 
         final String currentVariantName = currentVariantId();
         Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI()
@@ -127,8 +205,8 @@ public class VariantWebAPIImpl implements VariantWebAPI{
                         .getContentletVersionInfo(identifier, defaultLanguage.getId(),
                                 currentVariantName);
 
-                if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
-                        contentletVersionInfo.get(), pageMode, user)) {
+                if (contentletVersionInfo.isPresent() &&
+                        (forceLangFallback || shouldFallbackByLang(contentletVersionInfo.get(), pageMode, user))) {
                     return contentletVersionInfo.get();
                 }
 
@@ -138,8 +216,8 @@ public class VariantWebAPIImpl implements VariantWebAPI{
                             .getContentletVersionInfo(identifier, defaultLanguage.getId(),
                                     VariantAPI.DEFAULT_VARIANT.name());
 
-                    if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
-                            contentletVersionInfo.get(), pageMode, user)) {
+                    if (contentletVersionInfo.isPresent() &&
+                            (forceLangFallback || shouldFallbackByLang(contentletVersionInfo.get(), pageMode, user))) {
                         return contentletVersionInfo.get();
                     }
                 }

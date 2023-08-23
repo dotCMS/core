@@ -21,8 +21,17 @@ const COMMANDS: Commands = {
   gradle: [
     {
       cmd: gradleCmd,
+      args: ['generateDependenciesFromMaven'],
+      workingDir: dotCmsRoot
+    },
+    {
+      cmd: gradleCmd,
       args: ['createDistPrep', '--stacktrace'],
       workingDir: dotCmsRoot
+    },
+    {
+      cmd: 'rm',
+      args: ['-rf', '/home/runner/.m2/repository/com/dotcms']
     }
   ],
   maven: [

@@ -50,7 +50,7 @@ public class GoogleTranslationService extends AbstractTranslationService {
         this.apiKey = apiKey;
         this.jsonTool = jsonTool;
         this.apiProvider = apiProvider;
-        this.params = Collections.singletonList(new ServiceParameter(API_KEY_VAR, "Service API Key", apiKey));
+        this.params = List.of(new ServiceParameter(API_KEY_VAR, "Service API Key", apiKey));
     }
 
     @VisibleForTesting
@@ -73,7 +73,7 @@ public class GoogleTranslationService extends AbstractTranslationService {
 
     @Override
     public String translateString(String toTranslate, Language from, Language to) throws TranslationException {
-        return translateStrings(Collections.singletonList(toTranslate), from, to).get(0);
+        return translateStrings(List.of(toTranslate), from, to).get(0);
     }
 
     @Override

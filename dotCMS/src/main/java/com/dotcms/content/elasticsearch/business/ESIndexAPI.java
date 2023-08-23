@@ -536,7 +536,7 @@ public class ESIndexAPI {
                                             @SuppressWarnings("unchecked")
                                             Map<String, Object> oldMap = mapper
                                                     .readValue(json, HashMap.class);
-                                            Map<String, Object> newMap = new HashMap<String, Object>();
+                                            Map<String, Object> newMap = new HashMap<>();
 
                                             for (String key : oldMap.keySet()) {
                                                 Object val = oldMap.get(key);

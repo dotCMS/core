@@ -13,6 +13,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.startup.StartupTask;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.util.StringPool;
@@ -81,7 +82,10 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
             final String body = (String) template.get("body");
             final String hostName = (String) template.get("host_name");
 
-            final List<String> relativePaths = getRelativePaths(drawedBody);
+            Logger.debug(this,"Original body: " + body != null ? body : "NULL");
+            Logger.debug(this,"Original Drawed_body: " + drawedBody);
+            Logger.debug(this,"hostName: " + hostName);
+            final Set<String> relativePaths = getRelativePaths(drawedBody);
             final String newDrawBody = replaceAllContainerRelativePath(drawedBody, hostName, relativePaths);
             final String newBody = body != null ? replaceAllContainerRelativePath(body, hostName, relativePaths) : null;
 
@@ -98,28 +102,31 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
     }
 
     private String replaceAllContainerRelativePath(
-            final String string,
+            final String drawed_body,
             final String hostName,
-            List<String> relativePaths) {
+            Set<String> relativePaths) {
 
-        String newString = string;
+        String newDrawed_body = drawed_body;
 
         for (final String relativePath : relativePaths) {
-            newString = newString.replaceAll(
+            Logger.debug(this,"Relative Path: " + relativePath);
+            final String fullPath = FileAssetContainerUtil.getInstance().getFullPath(hostName, relativePath);
+            Logger.debug(this,"Replacement: " + fullPath);
+            newDrawed_body = newDrawed_body.replaceAll(
                     relativePath,
-                    FileAssetContainerUtil.getInstance().getFullPath(hostName, relativePath)
+                    fullPath
             );
         }
 
-        return newString;
+        return newDrawed_body;
     }
 
-    private List<String> getRelativePaths(final String drawedBody) {
+    private Set<String> getRelativePaths(final String drawedBody) {
         return  getTemplateContainers(drawedBody).stream()
                 .map(containerUUID -> containerUUID.get("identifier").toString())
                 .filter((String idOrPath) -> isFolderAssetContainerId(idOrPath))
                 .filter((String idOrPath) -> !isFullPath(idOrPath))
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 
     public boolean isFullPath(final String path) {

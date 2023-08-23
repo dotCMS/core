@@ -514,7 +514,7 @@ public class PublisherTestUtil {
 
         final List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId(
                 bundleId);
-        final List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
+        final List<PublishQueueElement> assetsToPublish = new ArrayList<>();
 
         for (final PublishQueueElement queueElement : tempBundleContents) {
             assetsToPublish.add(queueElement);
@@ -532,7 +532,7 @@ public class PublisherTestUtil {
         //BUNDLERS
 
         final List<Class<IBundler>> bundlers = new ArrayList<>();
-        final List<IBundler> confBundlers = new ArrayList<IBundler>();
+        final List<IBundler> confBundlers = new ArrayList<>();
 
         final Publisher publisher = new PushPublisher();
         publisher.init(pconf);
@@ -565,12 +565,12 @@ public class PublisherTestUtil {
         pconf.setBundlers(confBundlers);
 
         //Compressing bundle
-        final List<File> list = new ArrayList<File>();
+        final List<File> list = new ArrayList<>();
         list.add(bundleRoot);
         final File bundle = new File(
                 bundleRoot + File.separator + ".." + File.separator + pconf.getId() + ".tar.gz");
 
-        final Map<String, Object> bundleData = new HashMap<String, Object>();
+        final Map<String, Object> bundleData = new HashMap<>();
         bundleData.put("id", bundleId);
         bundleData.put(FILE, PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath()));
         return bundleData;

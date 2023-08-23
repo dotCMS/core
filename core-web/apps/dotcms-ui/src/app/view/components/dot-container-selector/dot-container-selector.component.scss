@@ -15,9 +15,9 @@
 .container-selector__list-item {
     display: flex;
     align-items: center;
-    border-top: 1px solid $gray-bg;
+    border-top: 1px solid $color-palette-gray-200;
     color: $black;
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
     overflow: hidden;
     padding: $spacing-1 0;
 

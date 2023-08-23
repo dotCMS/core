@@ -1,7 +1,9 @@
-import { Component, DebugElement, Input } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ButtonModule } from 'primeng/button';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 
@@ -10,7 +12,6 @@ import { DotDropdownComponent } from './dot-dropdown.component';
 @Component({
     selector: 'dot-test-host-component',
     template: `<dot-dropdown-component
-        [gravatar]="gravatar"
         [icon]="icon"
         [title]="title"
         [disabled]="disabled"
@@ -18,35 +19,13 @@ import { DotDropdownComponent } from './dot-dropdown.component';
 })
 class DotTestHostComponent {
     disabled: boolean;
-    gravatar: string;
     icon: string;
     title: string;
 
     constructor() {
         this.icon = 'icon';
-        this.gravatar = 'test@test.com';
         this.title = 'test';
     }
-}
-
-@Component({
-    selector: 'dot-gravatar',
-    template: ''
-})
-class MockGravatarComponent {
-    @Input()
-    email;
-}
-
-@Component({
-    selector: 'dot-icon-button',
-    template: ''
-})
-class MockDotIconButtonComponent {
-    @Input()
-    icon: string;
-    @Input()
-    disabled?: boolean;
 }
 
 function executeEnabled(
@@ -80,13 +59,8 @@ describe('DotDropdownComponent', () => {
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [
-                DotDropdownComponent,
-                MockGravatarComponent,
-                MockDotIconButtonComponent,
-                DotTestHostComponent
-            ],
-            imports: [BrowserAnimationsModule]
+            declarations: [DotDropdownComponent, DotTestHostComponent],
+            imports: [BrowserAnimationsModule, ButtonModule]
         });
 
         hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
@@ -100,15 +74,13 @@ describe('DotDropdownComponent', () => {
     describe('Enabled', () => {
         let button: DebugElement;
         let titleButton: DebugElement;
-        let gravatar: DebugElement;
 
         beforeEach(() => {
             spyOn(comp.toggle, 'emit');
             hostComp.disabled = false;
             hostFixture.detectChanges();
-            button = de.query(By.css('dot-icon-button'));
-            titleButton = de.query(By.css('button'));
-            gravatar = de.query(By.css('dot-gravatar'));
+            button = de.query(By.css('[data-testid="icon-button"]'));
+            titleButton = de.query(By.css('[data-testid="title-button"]'));
         });
 
         it(`should dot-icon button be displayed & emit`, () => {
@@ -118,10 +90,6 @@ describe('DotDropdownComponent', () => {
 
         it(`should title button be displayed & emit`, () => {
             executeEnabled(titleButton, hostFixture, de, comp);
-        });
-
-        it(`should dot-gravatar be displayed & emit`, () => {
-            executeEnabled(gravatar, hostFixture, de, comp);
         });
     });
 
@@ -133,13 +101,13 @@ describe('DotDropdownComponent', () => {
             spyOn(comp.toggle, 'emit');
             hostComp.disabled = true;
             hostFixture.detectChanges();
-            button = de.query(By.css('dot-icon-button'));
-            titleButton = de.query(By.css('button'));
+            button = de.query(By.css('[data-testid="icon-button"]'));
+            titleButton = de.query(By.css('[data-testid="title-button"]'));
         });
 
         it(`should dot-icon button not be displayed --> null`, () => {
             executeDisabled(button, de);
-            expect(button.attributes.disabled).toBe('true');
+            expect(button.componentInstance.disabled).toBe(true);
         });
 
         it(`should title button not be displayed & not emit`, () => {

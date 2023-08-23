@@ -41,8 +41,8 @@ import java.util.Map;
  */
 public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 
-	private List <Map<String, String>>  modifiedData = new  ArrayList <Map<String,String>>();
-	private HashMap<String, Integer> badDataCount = new HashMap<String, Integer>();
+	private List <Map<String, String>>  modifiedData = new  ArrayList <>();
+	private HashMap<String, Integer> badDataCount = new HashMap<>();
 	private int total = 0;
 	private String assetNames[] = { "contentlet", "containers", "links", "template" };
 
@@ -58,7 +58,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 	public List<Map<String, Object>> executeFix() throws DotDataException,
 		DotRuntimeException {
 
-		List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> returnValue = new ArrayList<>();
 
 		Logger.info(FixTask00020DeleteOrphanedIdentifiers.class,"Beginning DeleteOrphanedIdentifiers");
 

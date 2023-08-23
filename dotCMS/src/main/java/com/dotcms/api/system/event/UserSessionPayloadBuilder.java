@@ -14,7 +14,7 @@ public class UserSessionPayloadBuilder {
      */
     public static Payload build(final String userId, final String sessionId) {
 
-        return new Payload(new Long(System.currentTimeMillis()),
+        return new Payload(Long.valueOf(System.currentTimeMillis()),
                 Visibility.USER_SESSION,
                 new UserSessionBean(userId, sessionId));
     }

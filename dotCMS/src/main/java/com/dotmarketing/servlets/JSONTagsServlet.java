@@ -92,7 +92,7 @@ public class JSONTagsServlet extends HttpServlet implements Servlet {
 			}
 
 
-			List<Map<String,Object>> items = new ArrayList<Map<String,Object>>();
+			List<Map<String,Object>> items = new ArrayList<>();
 
 			List<Tag> tags = null;
 			termFilter = StringEscapeUtils.unescapeJava(termFilter);  
@@ -113,7 +113,7 @@ public class JSONTagsServlet extends HttpServlet implements Servlet {
 						Logger.error(this, "Unable to get host from tag Id:"+ tag.getHostId());
 					}
 					if (host!=null){
-						Map<String,Object> tagMap = new HashMap<String,Object>();
+						Map<String,Object> tagMap = new HashMap<>();
 						String hostName = "";
 						if(host.isSystemHost())
 							hostName = LanguageUtil.get(APILocator.getUserAPI().getSystemUser(), "tag-all-hosts");
@@ -128,7 +128,7 @@ public class JSONTagsServlet extends HttpServlet implements Servlet {
 				}
 			}
 
-			Map<String,Object> m = new HashMap<String, Object>();
+			Map<String,Object> m = new HashMap<>();
 			m.put("items", items);
 			m.put("numRows", tagAPI.getFilteredTags(termFilter, hostFilter, globalTagsFilter, sort, 0, -1).size());
 			String s = mapper.writeValueAsString(m);

@@ -18,7 +18,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'Calendar is an input component to select a date: https://primefaces.org/primeng/showcase/#/calendar'
+                    'Calendar is an input component to select a date: https://primeng.org/calendar'
             }
         }
     }

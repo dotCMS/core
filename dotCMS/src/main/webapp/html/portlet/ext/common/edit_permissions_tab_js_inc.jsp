@@ -33,11 +33,13 @@
 		Structure hostStrucuture = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 		Contentlet contentletAux = ((Contentlet)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_EDIT));
 	%>
+
 	var languageId = '<%= ((UtilMethods.isSet(contentletAux) && UtilMethods.isSet(contentletAux.getLanguageId())) ? contentletAux.getLanguageId() : "") %>';
 	var assetId = '<%= asset.getPermissionId() %>';
 	var assetType = '<%= ((asset instanceof Contentlet) && ((Contentlet)asset).getStructureInode().equals(hostStrucuture.getInode()))?Host.class.getName():asset.getClass().getName() %>';
 	var isParentPermissionable = <%= (asset.isParentPermissionable()) %>;
 	var isFolder = <%= (asset instanceof Folder) %>;
+	var isContentType = <%= (asset instanceof Structure ) %>;
 	var isHost = <%= (asset instanceof Host) || ((asset instanceof Contentlet) && ((Contentlet)asset).getStructureInode().equals(hostStrucuture.getInode())) %>;
 	var doesUserHavePermissionsToEdit = <%= permAPI.doesUserHavePermission(asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user) %>;
 	var isNewAsset = assetId == 0 || assetId == '' || !assetId;
@@ -68,6 +70,8 @@
 	var contentWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Content-Files")) %>';
 	var permissionsOnChildrenMsg1 = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Permissions-on-Children1")) %>';
 	var permissionsOnChildrenMsg2 = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Permissions-on-Children2")) %>';
+    var permissionsOnContentTypeChildren = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "permissions-on-contentType-children")) %>';
+    
 	var structureWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Structure")) %>';
 	var noPermissionsSavedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "no-permissions-saved")) %>';
 	var categoriesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Category")) %>';
@@ -76,8 +80,10 @@
 	//HTML Templates
 	var inheritedSourcesTemplate = '<span class="${icon}"></span> ${path}';
 	var titleTemplateString = dojo._getText('/html/portlet/ext/common/edit_permissions_accordion_title.html');
-
-	if(isFolder){
+    if(isContentType){
+        var contentTemplateString = dojo._getText('/html/portlet/ext/common/edit_permissions_accordion_contentType_entry.html');
+    }
+    else if(isFolder){
 		var contentTemplateString = dojo._getText('/html/portlet/ext/common/edit_permissions_accordion_folder_entry.html');
 	}
 	else if(isHost){
@@ -193,7 +199,7 @@
 				var totalCollapsedHeight = 0;
 				dojo.forEach(this.getChildren(), function(child){
 					totalCollapsedHeight += child._buttonWidget.getTitleHeight();
-					if((!isFolder && !isHost) || (inheritingPermissions)) {
+					if((!isFolder && !isHost && !isContentType) || (inheritingPermissions)) {
 						dojo.style(child.containerNode, { padding: '0' });
 					}
 				});
@@ -202,6 +208,8 @@
 					this._verticalSpace = 280;
 				}else if (isFolder && !inheritingPermissions) {
 					this._verticalSpace = 200;
+                }else if (isContentType && !inheritingPermissions) {
+                    this._verticalSpace = 100;
 				}else {
 					this._verticalSpace = 0;
 				}
@@ -254,7 +262,7 @@
 		}
 
 		adjustAccordionHeigth();
-		if(!inheritingPermissions && (isHost || isFolder)){
+		if(!inheritingPermissions && (isHost || isFolder || isContentType)){
 			dojo.query(".accordionEntry").forEach(function(node, index, arr){
 				node.className = "permissionTable";
 			 });
@@ -392,7 +400,7 @@
 			var role = currentPermissions[i];
 			var rolePermission = { roleId: role.id }
 			rolePermission.individualPermission = retrievePermissionChecks(role.id);
-			if(isFolder || isHost) {
+			if(isFolder || isHost ) {
 				rolePermission.foldersPermission = retrievePermissionChecks(role.id, 'folders');
 				rolePermission.containersPermission = retrievePermissionChecks(role.id, 'containers');
 				rolePermission.templatesPermission = retrievePermissionChecks(role.id, 'templates');
@@ -403,6 +411,9 @@
 				rolePermission.structurePermission = retrievePermissionChecks(role.id, 'structure');
 				rolePermission.categoriesPermissions = retrievePermissionChecks(role.id, 'categories');
 				rolePermission.rulesPermissions = retrievePermissionChecks(role.id, 'rules');
+			}
+			if(isContentType){
+			    rolePermission.contentPermission = retrievePermissionChecks(role.id, 'content');
 			}
 
 			dojo.forEach(rolePermission, function(value){
@@ -720,8 +731,7 @@
 	}
 
 	function permissionsIndividually () {
-	  if(assetType == 'com.dotmarketing.portlets.folders.model.Folder' ||
-		   assetType == 'com.dotmarketing.beans.Host') {
+	  if(isFolder || isHost || isContentType) {
 		 dijit.byId('savingPermissionsDialog').show();
 		 changesMadeToPermissions=false;
 		 permissionsLoaded = false;
@@ -771,14 +781,19 @@
 			var totalCollapsedHeight = 0;
 			dojo.forEach(this.getChildren(), function(child){
 				totalCollapsedHeight += child._buttonWidget.getTitleHeight();
-				if((!isFolder && !isHost)) {
+				if((!isFolder && !isHost && !isContentType)) {
 					dojo.style(child.containerNode, { padding: '0' });
 				}
 			});
 			var mySize = this._contentBox;
 			if(isFolder || isHost) {
 				this._verticalSpace = 200;
-			} else {
+			} 
+			else if (isContentType){
+			    this._verticalSpace = 120;
+			}
+			
+			else {
 				this._verticalSpace = 0;
 			}
 
@@ -895,8 +910,6 @@
 			role["publish-permission-style"] = 'display:none';
 		} else if(assetType == 'com.dotmarketing.beans.Host') {
 			role["publish-permission-style"] = 'display:none';
-		} else if(assetType == 'com.dotmarketing.portlets.structure.model.Structure') {
-			role["add-children-permission-style"] = 'display: none'
 		} else if(assetType == 'com.dotmarketing.portlets.categories.model.Category') {
 			role["publish-permission-style"] = 'display:none';
 			role["add-children-permission-style"] = 'display: none'
@@ -926,6 +939,7 @@
 		role.contentWillInherit = contentWillInheritMsg;
 		role.permissionsOnChildren1=permissionsOnChildrenMsg1;
 		role.permissionsOnChildren2=permissionsOnChildrenMsg2;
+		role.permissionsOnContentTypeChildren=permissionsOnContentTypeChildren;
 		role.structureWillInherit = structureWillInheritMsg;
 		role.categoriesWillInherit = categoriesWillInheritMsg;
 		role.rulesWillInherit = rulesWillInheritMsg;

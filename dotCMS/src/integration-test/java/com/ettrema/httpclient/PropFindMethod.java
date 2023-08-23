@@ -48,7 +48,7 @@ public class PropFindMethod extends EntityEnclosingMethod {
 	 * @return - child responses only, not the requested url
 	 */
 	public List<Response> getResponses() {
-		List<Response> responses = new ArrayList<PropFindMethod.Response>();
+		List<Response> responses = new ArrayList<>();
 		try {
 			Header serverDateHeader = this.getResponseHeader("Date");
 			String serverDate = null;

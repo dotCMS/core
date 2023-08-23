@@ -1,12 +1,11 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
-import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.web.ExperimentWebAPI;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -25,6 +24,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
@@ -45,14 +45,12 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-
-import java.util.Optional;
-import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 
-import org.jetbrains.annotations.Nullable;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Implementation class for the {@link HTMLPageAssetRenderedAPI}.
@@ -327,11 +325,11 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         Optional<HTMLPageUrl> htmlPageUrlOptional = findPageByContext(host, context);
 
-        if (!htmlPageUrlOptional.isPresent()) {
+        if (htmlPageUrlOptional.isEmpty()) {
             htmlPageUrlOptional = findByURLMap(context, host, request);
         }
 
-        if(!htmlPageUrlOptional.isPresent()){
+        if(htmlPageUrlOptional.isEmpty()){
             throw new HTMLPageAssetNotFoundException(context.getPageUri());
         }
 
@@ -470,8 +468,15 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final Language language = request != null ? this.getCurrentLanguage(request) : this.languageAPI.getDefaultLanguage();
 
-        return this.htmlPageAssetAPI.findByIdLanguageFallback(id, language.getId(), mode.showLive, userAPI.getSystemUser(),
-                mode.respectAnonPerms);
+        final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
+                .getRenderContextForceLangFallback(language.getId(), id, mode, userAPI.getSystemUser());
+
+        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(id, renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey())
+                .orElseThrow();
+
+        final String inode = mode.showLive ? contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
+        return this.htmlPageAssetAPI.findPage(inode, userAPI.getSystemUser(), false);
     }
 
     private Language getCurrentLanguage(final HttpServletRequest request) {
@@ -591,17 +596,4 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return new PageLivePreviewVersionBean(renderLive, renderWorking);
     }
 
-    @Nullable
-    private static String getAnalyticsKey(Host host) {
-        try {
-            final AnalyticsApp analyticsApp = AnalyticsHelper.get().appFromHost(host);
-            return analyticsApp.getAnalyticsProperties().analyticsKey();
-        } catch (IllegalStateException e) {
-            return StringPool.BLANK;
-        }
-    }
-
-    private String getLocalServerName(HttpServletRequest request) {
-        return request.getLocalName() + ":" + request.getLocalPort();
-    }
 }

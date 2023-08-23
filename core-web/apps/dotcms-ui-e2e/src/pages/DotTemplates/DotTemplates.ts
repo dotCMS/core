@@ -37,7 +37,7 @@ class DotTemplates {
             'p[data-testid="description"]',
             'Template Designer create reusable templates using a drag and drop interface and tools.'
         );
-        Page.assertElementContainsText('dot-dot-template-selector button', 'Next').click();
+        Page.assertElementContainsText('dot-binary-selector button', 'Next').click();
     }
 
     static fillCreateTemplateForm({ title, theme }: { title: string; theme: string }) {

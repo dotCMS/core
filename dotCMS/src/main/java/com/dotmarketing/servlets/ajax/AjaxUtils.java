@@ -12,7 +12,7 @@ public class AjaxUtils {
 		
 		url = (url.startsWith("/")) ? url.substring(1, url.length()) : url;
 		String p[] = url.split("/");
-		Map<String, String> map = new HashMap<String, String>();
+		Map<String, String> map = new HashMap<>();
 		
 		String key =null;
 		for(String x : p){

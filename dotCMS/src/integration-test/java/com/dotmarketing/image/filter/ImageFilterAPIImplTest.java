@@ -13,6 +13,7 @@ import javax.imageio.stream.ImageInputStream;
 import org.apache.commons.collections.IteratorUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import com.google.common.io.Files;
 
 public class ImageFilterAPIImplTest {
 
@@ -75,8 +76,38 @@ public class ImageFilterAPIImplTest {
         assert (dim.getHeight() == 772d);
         assert (dim.getWidth() == 1024d);
 
+        url = getClass().getResource("/images/test.svg");
+        incomingFile = new File(url.getFile());
+
+        dim = imageApi.getWidthHeight(incomingFile);
+        assert (dim.getHeight() > 0);
+        assert (dim.getWidth() > 0);
+
+        //We should get dimensions even when the svg file is actually a png
+        url = getClass().getResource("/images/png_as_svg.svg");
+        incomingFile = new File(url.getFile());
+
+        dim = imageApi.getWidthHeight(incomingFile);
+        assert (dim.getHeight() > 0);
+        assert (dim.getWidth() > 0);
+
     }
-    
+
+
+
+    @Test
+    public void test_svg_dimensions() {
+
+        URL url = getClass().getResource("/images/test.svg");
+        File incomingFile = new File(url.getFile());
+
+        Dimension dim = imageApi.getWidthHeight(incomingFile);
+        assert (dim.getHeight() == 103);
+        assert (dim.getWidth() == 203);
+
+    }
+
+
 
     
     @Test
@@ -114,6 +145,31 @@ public class ImageFilterAPIImplTest {
 
 
     }
+
+    
+    @Test
+    public void test_resizeImage_change_algo() throws Exception{
+        URL url = getClass().getResource("/images/test.webp");
+        File incomingFile = new File(url.getFile());
+
+
+        BufferedImage newFile = imageApi.resizeImage(incomingFile,150,150, 1);
+        File tempResultFile1 = new File("/tmp",System.currentTimeMillis() + ".png");
+        ImageIO.write(newFile, "png", tempResultFile1);
+
+        
+        BufferedImage newFile2 = imageApi.resizeImage(incomingFile,150,150, 15);
+        File tempResultFile2 = new File("/tmp",System.currentTimeMillis() + "2.png");
+        ImageIO.write(newFile2, "png", tempResultFile2);
+
+        // tests that the resample opts are getting read and result in different files.
+        assert(!Files.equal(tempResultFile2,tempResultFile1));
+
+
+    }
+
+
+
     
 
 }

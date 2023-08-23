@@ -21,6 +21,11 @@
             "options": {
                 "jestConfig": "libs/block-editor/jest.config.ts",
                 "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true
+                }
             }
         },
         "storybook": {
@@ -31,8 +36,14 @@
                 "browserTarget": "block-editor:build-storybook",
                 "compodoc": false,
                 "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
-                }
+                    "includePaths": ["libs/dotcms-scss/angular"]
+                },
+                "styles": [
+                    "libs/dotcms-scss/angular/styles.scss",
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeflex/primeflex.css",
+                    "node_modules/primeng/resources/primeng.min.css"
+                ]
             },
             "configurations": {
                 "ci": {
@@ -49,7 +60,7 @@
                 "browserTarget": "block-editor:build-storybook",
                 "compodoc": false,
                 "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                    "includePaths": ["libs/dotcms-scss/angular"]
                 }
             },
             "configurations": {

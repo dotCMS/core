@@ -1,17 +1,19 @@
 import { Observable, of } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService } from 'primeng/dynamicdialog';
+import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -45,7 +47,14 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotPageMode, DotPageRender, DotPageRenderState, ESContent } from '@dotcms/dotcms-models';
+import {
+    DotExperiment,
+    DotPageMode,
+    DotPageRender,
+    DotPageRenderState,
+    ESContent
+} from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -72,10 +81,16 @@ import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-ac
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-edit-page-toolbar [pageState]="pageState"></dot-edit-page-toolbar> `
+    template: `
+        <dot-edit-page-toolbar
+            [pageState]="pageState"
+            [runningExperiment]="runningExperiment"
+        ></dot-edit-page-toolbar>
+    `
 })
 class TestHostComponent {
     @Input() pageState: DotPageRenderState = mockDotRenderedPageState;
+    @Input() runningExperiment: DotExperiment = null;
 }
 
 @Component({
@@ -109,7 +124,7 @@ class MockDotPageStateService {
 export class ActivatedRouteListStoreMock {
     get queryParams() {
         return of({
-            editPageTab: 'edit',
+            mode: DotPageMode.EDIT,
             variantName: 'Original',
             experimentId: '1232121212'
         });
@@ -147,9 +162,17 @@ describe('DotEditPageToolbarComponent', () => {
                 DotEditPageInfoModule,
                 DotEditPageWorkflowsActionsModule,
                 DotPipesModule,
+                DotMessagePipe,
                 DotWizardModule,
                 TooltipModule,
-                DotExperimentClassDirective
+                TagModule,
+                DotExperimentClassDirective,
+                RouterTestingModule.withRoutes([
+                    {
+                        path: 'edit-page/experiments/pageId/id/reports',
+                        component: TestHostComponent
+                    }
+                ])
             ],
             providers: [
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
@@ -158,7 +181,9 @@ describe('DotEditPageToolbarComponent', () => {
                     useValue: new MockDotMessageService({
                         'dot.common.whats.changed': 'Whats',
                         'dot.common.cancel': 'Cancel',
-                        'favoritePage.dialog.header.add.page': 'Add Favorite Page'
+                        'favoritePage.dialog.header': 'Add Favorite Page',
+                        'dot.edit.page.toolbar.preliminary.results': 'Preliminary Results',
+                        running: 'Running'
                     })
                 },
                 {
@@ -255,7 +280,9 @@ describe('DotEditPageToolbarComponent', () => {
             const dotEditPageInfo = de.query(By.css('dot-edit-page-info')).componentInstance;
             expect(dotEditPageInfo.title).toBe('A title');
             expect(dotEditPageInfo.url).toBe('/an/url/test');
-            expect(dotEditPageInfo.apiLink).toBe('api/v1/page/render/an/url/test?language_id=1');
+            expect(dotEditPageInfo.innerApiLink).toBe(
+                'api/v1/page/render/an/url/test?language_id=1'
+            );
         });
     });
 
@@ -357,7 +384,7 @@ describe('DotEditPageToolbarComponent', () => {
             fixtureHost.detectChanges();
 
             const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
-            expect(favoritePageIcon.componentInstance.icon).toBe('grade');
+            expect(favoritePageIcon.componentInstance.icon).toBe('pi pi-star-fill');
         });
 
         it('should show empty star icon on favorite page if NO contentlet exist', () => {
@@ -366,7 +393,26 @@ describe('DotEditPageToolbarComponent', () => {
             fixtureHost.detectChanges();
 
             const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
-            expect(favoritePageIcon.componentInstance.icon).toBe('star_outline');
+            expect(favoritePageIcon.componentInstance.icon).toBe('pi pi-star');
+        });
+    });
+
+    describe('Go to Experiment results', () => {
+        it('should show an experiment is running an go to results', (done) => {
+            const location = de.injector.get(Location);
+            componentHost.runningExperiment = { pageId: 'pageId', id: 'id' } as DotExperiment;
+
+            fixtureHost.detectChanges();
+
+            const experimentTag = de.query(By.css('[data-testId="runningExperimentTag"]'));
+
+            experimentTag.nativeElement.click();
+
+            expect(experimentTag.componentInstance.value).toEqual('Running');
+            fixtureHost.whenStable().then(() => {
+                expect(location.path()).toEqual('/edit-page/experiments/pageId/id/reports');
+                done();
+            });
         });
     });
 

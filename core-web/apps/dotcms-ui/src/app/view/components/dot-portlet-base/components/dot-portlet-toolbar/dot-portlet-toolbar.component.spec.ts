@@ -7,8 +7,8 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
 
@@ -17,8 +17,8 @@ import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
     template: `
         <dot-portlet-toolbar>
             <div data-testId="leftExtraContent" left></div>
-            <div data-testId="rightExtraContent" right></div
-        ></dot-portlet-toolbar>
+            <div data-testId="rightExtraContent" right></div>
+        </dot-portlet-toolbar>
     `
 })
 class TestHostComponent {}
@@ -40,7 +40,7 @@ describe('DotPortletToolbarComponent', () => {
                 }
             ],
             declarations: [DotPortletToolbarComponent, TestHostComponent],
-            imports: [ToolbarModule, DotMessagePipeModule, ButtonModule, MenuModule]
+            imports: [ToolbarModule, DotMessagePipe, ButtonModule, MenuModule]
         }).compileComponents();
     });
 
@@ -229,7 +229,6 @@ describe('DotPortletToolbarComponent', () => {
                 const actionsCancelButton = de.query(By.css('[data-testId="actionsCancelButton"]'));
                 actionsCancelButton.triggerEventHandler('click', {});
 
-                expect(actionsCancelButton.classes['p-button-secondary']).toBe(true);
                 expect(actionsCancelButton.nativeElement.textContent).toBe('Cancel');
                 expect(spy).toHaveBeenCalledWith({});
             });

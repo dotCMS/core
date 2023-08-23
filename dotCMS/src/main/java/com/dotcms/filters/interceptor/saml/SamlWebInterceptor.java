@@ -591,7 +591,7 @@ public class SamlWebInterceptor implements WebInterceptor {
 
     private boolean isFile(final String uri, final Host host, final long languageId) {
 
-        if (CMSFilter.IAm.FILE != this.cmsUrlUtil.resolveResourceType(null, uri, host, languageId)) {
+        if (CMSFilter.IAm.FILE != this.cmsUrlUtil.resolveResourceType(null, uri, host, languageId)._1()) {
 
             final String uriWithoutQueryString = this.cmsUrlUtil.getUriWithoutQueryString(uri.toLowerCase());
             return  uriWithoutQueryString.endsWith(".jpg")  ||

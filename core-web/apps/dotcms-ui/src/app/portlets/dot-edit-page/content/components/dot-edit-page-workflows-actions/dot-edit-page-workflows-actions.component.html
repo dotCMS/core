@@ -1,9 +1,9 @@
-<dot-icon-button
-    icon="more_vert"
+<p-button
+    [disabled]="!actionsAvailable"
     (click)="menu.toggle($event)"
-    float
-    [attr.disabled]="!actionsAvailable"
+    icon="pi pi-ellipsis-v"
+    styleClass=" p-button-rounded"
 >
-</dot-icon-button>
+</p-button>
 
-<p-menu [model]="actions | async" #menu popup="popup" appendTo="body"></p-menu>
+<p-menu #menu [model]="actions | async" popup="popup" appendTo="body"></p-menu>

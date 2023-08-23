@@ -2,11 +2,13 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { AvatarModule } from 'primeng/avatar';
+import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
-import { DotIconModule } from '@dotcms/ui';
+import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
@@ -16,10 +18,13 @@ import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.com
         CommonModule,
         FormsModule,
         DotIconModule,
-        DotAvatarModule,
+        DotAvatarDirective,
+        AvatarModule,
+        BadgeModule,
         ButtonModule,
         TooltipModule,
-        DotPipesModule
+        DotPipesModule,
+        DotMessagePipe
     ],
     declarations: [DotPersonaSelectedItemComponent],
     exports: [DotPersonaSelectedItemComponent]

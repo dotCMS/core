@@ -47,7 +47,7 @@ public class DbFieldVariableTransformer {
 
 
 	public List<FieldVariable> asList() throws DotStateException {
-		List<FieldVariable> list = new ArrayList<FieldVariable>();
+		List<FieldVariable> list = new ArrayList<>();
 		for (Map<String, Object> map : results) {
 			list.add(fromMap(map));
 		}

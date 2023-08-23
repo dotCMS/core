@@ -212,7 +212,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_PARAGRAPH);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<p style=\"text-align: left\">"));
+        Assert.assertTrue(html.contains("<p style=\"text-align: left;\">"));
         Assert.assertTrue(html + ": does not contains this is paragraph", html.contains("this is paragraph"));
         Assert.assertTrue(html.contains("</p>"));
     }
@@ -248,11 +248,11 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<h2 style=\"text-align: \" >test2</h2>"));
-        Assert.assertTrue(html.contains("<h2 style=\"text-align: \" >test1</h2>"));
+        Assert.assertTrue(html.contains("<h2>test2</h2>"));
+        Assert.assertTrue(html.contains("<h2>test1</h2>"));
         Assert.assertTrue(html + ": does not contains <strong>", html.contains("<strong>"));
         Assert.assertTrue(html.contains("heading 1"));
-        Assert.assertTrue(html.contains("<h2 style=\"text-align: left\">"));
+        Assert.assertTrue(html.contains("<h2 style=\"text-align: left;\">"));
         Assert.assertTrue(html.contains("heading 2"));
         Assert.assertTrue(html.contains("</h2>"));
 

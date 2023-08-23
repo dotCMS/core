@@ -14,12 +14,15 @@ import { IframeOverlayService } from '@components/_common/iframe/service/iframe-
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
 import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.module';
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPersona } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     cleanUpDialog,
     LoginServiceMock,
@@ -43,7 +46,9 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 })
 class HostTestComponent {
     @Input() disabled: boolean;
+
     selectedPersonaHandler(_$event) {}
+
     deletePersonaHandler(_$event) {}
 }
 
@@ -94,7 +99,8 @@ describe('DotPersonaSelectorComponent', () => {
                 DotPersonaSelectorOptionModule,
                 DotAddPersonaDialogModule,
                 TooltipModule,
-                DotPipesModule
+                DotPipesModule,
+                DotMessagePipe
             ],
             providers: [
                 IframeOverlayService,
@@ -103,6 +109,7 @@ describe('DotPersonaSelectorComponent', () => {
                     useValue: messageServiceMock
                 },
                 { provide: PaginatorService, useClass: TestPaginatorService },
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: SiteService, useValue: siteServiceMock }
             ]
@@ -209,7 +216,7 @@ describe('DotPersonaSelectorComponent', () => {
 
         it('should toggle Overlay Panel, pass the search as name if present and open add form', () => {
             openOverlay();
-            const addPersonaIcon = dropdown.query(By.css('dot-icon-button'));
+            const addPersonaIcon = dropdown.query(By.css('p-button'));
 
             spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
 

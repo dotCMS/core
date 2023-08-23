@@ -27,7 +27,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -96,7 +95,7 @@ public class XmlTool implements ViewTool {
 	}
 
 	public XmlTool(Node node) {
-		this(Collections.singletonList(node));
+		this(List.of(node));
 	}
 
 	public XmlTool(List<Node> nodes) {
@@ -127,7 +126,7 @@ public class XmlTool implements ViewTool {
 		if (node instanceof Document) {
 			node = ((Document) node).getRootElement();
 		}
-		this.nodes = new ArrayList<Node>(1);
+		this.nodes = new ArrayList<>(1);
 		this.nodes.add(node);
 	}
 
@@ -333,7 +332,7 @@ public class XmlTool implements ViewTool {
 	public Map<String, String> attributes() {
 		Node node = node();
 		if (node instanceof Element) {
-			Map<String, String> attrs = new HashMap<String, String>();
+			Map<String, String> attrs = new HashMap<>();
 			for (Iterator i = ((Element) node).attributeIterator(); i.hasNext();) {
 				Attribute a = (Attribute) i.next();
 				attrs.put(a.getName(), a.getValue());
@@ -440,7 +439,7 @@ public class XmlTool implements ViewTool {
 		if (xpath.indexOf('/') < 0) {
 			xpath = "//" + xpath;
 		}
-		List<Node> found = new ArrayList<Node>();
+		List<Node> found = new ArrayList<>();
 		for (Node n : nodes) {
 			found.addAll((List<Node>) n.selectNodes(xpath));
 		}
@@ -476,7 +475,7 @@ public class XmlTool implements ViewTool {
 		if (size() == 1) {
 			return getParent();
 		}
-		List<Node> parents = new ArrayList<Node>(size());
+		List<Node> parents = new ArrayList<>(size());
 		for (Node n : nodes) {
 			Element parent = n.getParent();
 			if (parent != null && !parents.contains(parent)) {
@@ -497,7 +496,7 @@ public class XmlTool implements ViewTool {
 		if (isEmpty()) {
 			return null;
 		}
-		List<Node> kids = new ArrayList<Node>();
+		List<Node> kids = new ArrayList<>();
 		for (Node n : nodes) {
 			if (n instanceof Element) {
 				kids.addAll(((Element) n).elements());

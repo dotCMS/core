@@ -59,7 +59,7 @@ public class NotifyNewUsersAction extends PortletAction {
 				count = UserManagerUtil.notifyNewUsers();
 			}
 
-			req.setAttribute(WebKeys.USERS_NOTIFIED, new Integer(count));
+			req.setAttribute(WebKeys.USERS_NOTIFIED, Integer.valueOf(count));
 
 			return mapping.findForward("portlet.admin.notify_new_users");
 		}

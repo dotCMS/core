@@ -118,7 +118,7 @@ public class PluginAPIImpl implements PluginAPI {
 	}
 
 	public List<String> loadPluginConfigKeys(String pluginId) throws DotDataException {
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 		try{
 			JarFile jar = new JarFile(new File(pluginJarDir.getPath() + File.separator + "plugin-" + pluginId));
 			JarEntry entry = jar.getJarEntry("conf/plugin-controller.properties");
@@ -182,7 +182,7 @@ public class PluginAPIImpl implements PluginAPI {
 			
 			User systemUser = APILocator.getUserAPI().getSystemUser();
 			JarFile jar = new JarFile(new File(pluginJarDir.getPath() + File.separator + "plugin-" + pluginId + ".jar"));
-			List<Host> hostList = new ArrayList<Host>();
+			List<Host> hostList = new ArrayList<>();
 
 			String hosts = loadPluginConfigProperty(pluginId, "hosts.name");
 			if(UtilMethods.isSet(hosts)){

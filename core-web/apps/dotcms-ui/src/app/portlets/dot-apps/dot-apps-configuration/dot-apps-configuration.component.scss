@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host {
-    background: $gray-bg;
+    background: $color-palette-gray-200;
     box-shadow: $md-shadow-4;
     display: flex;
     height: 100%;
@@ -38,12 +38,12 @@
 }
 
 .dot-apps-configuration__add-configurations-title {
-    font-size: $font-size-xx-large;
+    font-size: $font-size-xxl;
     font-weight: bold;
 }
 
 .dot-apps-configuration__add-configurations-description {
-    font-size: $font-size-large;
+    font-size: $font-size-lg;
     margin-bottom: $spacing-9;
     margin-top: $spacing-4;
 }

@@ -194,7 +194,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                     .host(host)
                     .setProperty("title", "genericContent")
                     .setProperty("author", "systemUser")
-                    .setProperty("body", "Generic Content Body").nextPersisted();
+                    .setProperty("body", "{\"type\":\"doc\",\"attrs\":{\"chartCount\":20,\"wordCount\":3,\"readingTime\":1},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Generic Content Body\"}]}]}").nextPersisted();
         }
     }
 

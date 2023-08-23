@@ -90,7 +90,7 @@
 
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" style="white-space:nowrap;" class="view-users">
 	<!-- START Left Column User listing -->
-	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width:350px;" class="portlet-sidebar-wrapper">
+	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width:440px;" class="portlet-sidebar-wrapper">
 		<div class="portlet-sidebar">
 			<div class="inline-form view-users__filter-form">
 				<input dojoType="dijit.form.TextBox" onkeyup="filterUsers()" trim="true" name="usersFilter" id="usersFilter" placeholder="<%= LanguageUtil.get(pageContext, "Filter") %>:" />
@@ -116,7 +116,7 @@
 	<!-- START Right Column User Details -->
 	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
 		<div class="portlet-main">
-			<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"' style="position:absolute;top:16px;right:16px;">
+			<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"' style="position:absolute;top:8px;right:16px;">
 				<span></span>
 				<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
 					<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addUser">

@@ -227,7 +227,7 @@ public class EditSchedulerAction extends DotPortletAction {
 	}
 	
 	private Map<String, String> getSchedulerProperties(ActionRequest req, SchedulerForm schedulerForm) {
-		Map<String, String> properties = new HashMap<String, String>(5);
+		Map<String, String> properties = new HashMap<>(5);
 		Enumeration<String> propertiesNames = req.getParameterNames();
 
 		if (UtilMethods.isSet(schedulerForm.getMap())) {
@@ -299,7 +299,7 @@ public class EditSchedulerAction extends DotPortletAction {
 		if (req.getParameter("schedulerEditable").equals("false"))
 			schedulerEditable = false;
 		*/
-		Map<String, Object> properties = new HashMap<String, Object>(5);
+		Map<String, Object> properties = new HashMap<>(5);
 		Enumeration<String> propertiesNames = req.getParameterNames();
 
 		if (UtilMethods.isSet(schedulerForm.getMap())) {

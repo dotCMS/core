@@ -1,108 +1,41 @@
-import { Observable } from 'rxjs';
+import { AsyncPipe, NgIf } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 
-import { Component, Inject, OnInit, ViewChild } from '@angular/core';
+import { AvatarModule } from 'primeng/avatar';
+import { MenuModule } from 'primeng/menu';
 
-import { map } from 'rxjs/operators';
+import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
+import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 
-import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import { Auth, CurrentUser, LoggerService, LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
+import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
-import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
+import { DotLoginAsModule } from '../dot-login-as/dot-login-as.module';
+import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
 
 @Component({
+    providers: [DotToolbarUserStore],
     selector: 'dot-toolbar-user',
     styleUrls: ['./dot-toolbar-user.component.scss'],
-    templateUrl: 'dot-toolbar-user.component.html'
+    templateUrl: 'dot-toolbar-user.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [
+        DotGravatarDirective,
+        AvatarModule,
+        DotLoginAsModule,
+        DotMyAccountModule,
+        DotPipesModule,
+        MenuModule,
+        AsyncPipe,
+        NgIf
+    ]
 })
 export class DotToolbarUserComponent implements OnInit {
-    @ViewChild(DotDropdownComponent) dropdown: DotDropdownComponent;
-    auth: Auth;
+    vm$ = this.store.vm$;
 
-    showLoginAs = false;
-    showMyAccount = false;
-
-    logoutUrl = `${LOGOUT_URL}?r=${new Date().getTime()}`;
-
-    haveLoginAsPermission$: Observable<boolean>;
-
-    constructor(
-        @Inject(LOCATION_TOKEN) private location: Location,
-        private loggerService: LoggerService,
-        private loginService: LoginService,
-        public iframeOverlayService: IframeOverlayService,
-        private dotNavigationService: DotNavigationService,
-        private dotRouterService: DotRouterService
-    ) {}
+    constructor(private store: DotToolbarUserStore) {}
 
     ngOnInit(): void {
-        this.loginService.watchUser((auth: Auth) => {
-            this.auth = auth;
-        });
-
-        this.haveLoginAsPermission$ = this.loginService
-            .getCurrentUser()
-            .pipe(map((res: CurrentUser) => res.loginAs));
-    }
-
-    /**
-     * Call the logout service and clear the user session
-     *
-     * @returns boolean
-     * @memberof ToolbarUserComponent
-     */
-    logout(): boolean {
-        this.dotRouterService.doLogOut();
-
-        return false;
-    }
-
-    /**
-     * Call the logout as service and clear the user login as
-     *
-     * @param any $event
-     * @memberof To/olbarUserComponent
-     */
-    logoutAs($event): void {
-        $event.preventDefault();
-
-        this.loginService.logoutAs().subscribe(
-            () => {
-                this.dropdown.closeIt();
-                this.dotNavigationService.goToFirstPortlet().then(() => {
-                    this.location.reload();
-                });
-            },
-            (error) => {
-                this.loggerService.error(error);
-            }
-        );
-    }
-
-    /**
-     * Toggle show/hide login as dialog
-     *
-     * @returns boolean
-     * @memberof ToolbarUserComponent
-     */
-    tooggleLoginAs(): boolean {
-        this.dropdown.closeIt();
-        this.showLoginAs = !this.showLoginAs;
-
-        return false;
-    }
-
-    /**
-     * Toggle show/hide my acccont menu
-     *
-     * @returns boolean
-     * @memberof ToolbarUserComponent
-     */
-    toggleMyAccount(): boolean {
-        this.showMyAccount = !this.showMyAccount;
-
-        return false;
+        this.store.init();
     }
 }

@@ -179,7 +179,7 @@ public class Visitor implements Serializable {
     return getPersonaCounts()
         .entrySet()
         .stream()
-        .collect(Collectors.toMap( e->e.getKey(),  e -> e.getValue()/new Float(possiblePersonas.size())));
+        .collect(Collectors.toMap( e->e.getKey(),  e -> e.getValue()/Float.valueOf(possiblePersonas.size())));
   }
   
   /**

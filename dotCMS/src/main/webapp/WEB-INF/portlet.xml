@@ -88,6 +88,12 @@
     </portlet>
 
     <portlet>
+        <portlet-name>pages</portlet-name>
+        <display-name>Pages</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
         <portlet-name>html-pages</portlet-name>
         <display-name>HTML Pages Manager</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>

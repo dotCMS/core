@@ -29,6 +29,7 @@
 <%@ include file="/html/portlet/ext/cmsmaintenance/init.jsp"%>
 
 <%
+int rollingRestartDelay = Config.getIntProperty("ROLLING_RESTART_DELAY_SECONDS", 60);
 
 DateFormat modDateFormat = java.text.DateFormat.getDateTimeInstance(DateFormat.SHORT,DateFormat.SHORT, locale);
 
@@ -284,21 +285,67 @@ function doDeactivateIndex(indexName){
 
 }
 
-function doShutdownDotcms(){
 
+function toggleRollingShutdown(){
+    let show = document.getElementById("rollingShutdownInfo").style.display;
+    document.getElementById("rollingShutdownInfo").style.display=(show=='none') ? '':'none';
     
-    if(!dijit.byId("agreeToShutdown").checked){
+}
+
+function doShutdownDotcms(){
+    
+    if(dijit.byId("agreeToShutdown") && !dijit.byId("agreeToShutdown").checked){
         alert("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Please agree with the disclaimer"))%>")
         return;
     }
     
-    if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "shutdown.dotcms.confirmation"))%>")){
+    if(dijit.byId("agreeToShutdown") && !confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "shutdown.dotcms.confirmation"))%>")){
         return;
     }
+    
+    let rollingShutdown = false;
+    
+    if(dijit.byId("rollingShutdown")){
+        rollingShutdown = dijit.byId("rollingShutdown").getValue();
+    }
 
-    fetch('/api/v1/maintenance/_shutdown', {method:'DELETE'} )
+    
+    rollingShutdown = (rollingShutdown === 'true');
+    
+
+    
+    
+    if(!rollingShutdown){
+        fetch('/api/v1/maintenance/_shutdown', {method:'DELETE'} )
+        .then(response => response.json())
+        .then(()=>{
+            alert('shutdown started');
+            dijit.byId("rollingRestartDelay").setDisabled(true);
+        });
+    }
+
+    if(rollingShutdown && !(dijit.byId("rollingRestartDelay").isValid())){
+        alert("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Please enter a number for the restart delay"))%>")
+        return;
+    }
+    
+    let rollingRestartDelay = dijit.byId("rollingRestartDelay").getValue();
+    
+    if(isNaN(parseInt( rollingRestartDelay ))){
+        rollingRestartDelay = <%=rollingRestartDelay%> ;
+    }else{
+        rollingRestartDelay=parseInt( rollingRestartDelay );
+    }
+
+
+
+    fetch('/api/v1/maintenance/_shutdownCluster?rollingDelay=' + rollingRestartDelay, {method:'DELETE'} )
     .then(response => response.json())
-    .then(()=>alert('shutdown started'));
+    .then(()=>{
+        alert('shutdown started');
+        dijit.byId("rollingRestartDelay").setDisabled(true);
+    });
+    
 
 }
 
@@ -1140,11 +1187,67 @@ function showSystemVars(){
     });
 }
 
+    let assetExportDialog;
 
+    /**
+     * When the User needs to download dotCMS assets, this function will display a dialog asking them whether they want
+     * to include old versions of the assets or not.
+     */
+    function createAssetExportDialog() {
+        // Create the dialog
+        assetExportDialog = new dijit.Dialog({
+            title: "<%= LanguageUtil.get(pageContext, "Import/Export-dotCMS-Content") %>",
+            content: "<%= LanguageUtil.get(pageContext, "download-assets-include-old-versions") %>",
+            onBlur: () => {
+                if (assetExportDialog.open) {
+                    assetExportDialog.hide();
+                }
+            }
+        });
+        const assetDownloadUrl = "/api/v1/maintenance/_downloadAssets?oldAssets=";
+        const btnContainer = document.createElement("div");
+        const btnConfirm = createDialogBtn("<%= LanguageUtil.get(pageContext, "Yes") %>", assetDownloadUrl + "true");
+        const btnReject = createDialogBtn("<%= LanguageUtil.get(pageContext, "No") %>", assetDownloadUrl + "false");
+        btnContainer.className = "dialogBtnContainer";
+        // Add the buttons to the container
+        btnContainer.appendChild(btnConfirm.domNode)
+        btnContainer.appendChild(btnReject.domNode);
+        // Add the container to the dialog
+        assetExportDialog.containerNode.appendChild(btnContainer);
+    }
+
+    function createDialogBtn(label, href) {
+        return new dijit.form.Button({
+            label,
+            class: "dialogButton",
+            onClick: () => {
+                location.href = href;
+                assetExportDialog.hide();
+            }
+        });
+    }
+
+    function showAssetExportDialog() {
+        assetExportDialog.show();
+    }
 
 </script>
 
 <style>
+
+    .dialogBtnContainer {
+        text-align: center; /* Horizontally center the content */
+        width: auto;
+        display: flex;
+        justify-content: center;
+        padding: .5rem 0;
+        gap: 25px; /* flex | grid */
+    }
+
+    .dialogButton {
+        width: 30%;
+    }
+
 #idxReplicasDialog{
 	width:300px,height:150px;
 }
@@ -1232,12 +1335,12 @@ dd.leftdl {
 
             <table class="listingTable shadowBox">
                 <tr>
-                    <th colspan="2"><%= LanguageUtil.get(pageContext,"Cache") %></th>
-                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                    <th><%= LanguageUtil.get(pageContext,"Cache") %></th>
+                    <th></th>
                 </tr>
                 <tr>
-                    <td colspan="2">&nbsp;</td>
-                    <td align="center">
+                    <td>&nbsp;</td>
+                    <td align="right" style="white-space: nowrap;">
                         <select name="cName" dojoType="dijit.form.ComboBox" autocomplete="true" value="<%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>">
                             <option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"Flush-All-Caches") %></option>
                             <% Object[] caches = (Object[])CacheLocator.getCacheIndexes();
@@ -1257,22 +1360,22 @@ dd.leftdl {
                     </td>
                 </tr>
                 <tr>
-                    <th colspan="2"><%= LanguageUtil.get(pageContext,"Menus-File-Store") %></th>
-                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                    <th><%= LanguageUtil.get(pageContext,"Menus-File-Store") %></th>
+                    <th></th>
                 </tr>
                 <tr>
-                    <td colspan="2">&nbsp;</td>
-                    <td align="center">
+                    <td>&nbsp;</td>
+                    <td align="right">
                         <button dojoType="dijit.form.Button"  onClick="submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_MENU_FILES%>');" iconClass="deleteIcon">
                            <%= LanguageUtil.get(pageContext,"Delete-Menu-Cache") %>
                         </button>
                     </td>
                 </tr>
                 <tr>
-                    <th colspan="3"><%= LanguageUtil.get(pageContext,"Cache-Stats") %></th>
+                    <th colspan="2"><%= LanguageUtil.get(pageContext,"Cache-Stats") %></th>
                 </tr>
                 <tr>
-                    <td colspan="3">
+                    <td colspan="2">
                         <div class="buttonRow" style="text-align: right">
                         <button dojoType="dijit.form.Button"  onClick="refreshCache()" iconClass="resetIcon">
                            <%= LanguageUtil.get(pageContext,"Refresh-Stats") %>
@@ -1332,7 +1435,7 @@ dd.leftdl {
                         <th colspan="2"><%= LanguageUtil.get(pageContext,"Content-Index-Tasks") %></th>
                     </tr>
                     <tr>
-                        <td colspan="2" align="center">
+                        <td colspan="2" align="right">
                             <div id="currentIndexDirDiv"></div>
                         </td>
                     </tr>
@@ -1351,7 +1454,7 @@ dd.leftdl {
                                 </select>
 
                         </td>
-                        <td style="text-align:center;white-space:nowrap;" width="350">
+                        <td style="text-align:right;white-space:nowrap;" width="350">
                             <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="repeatIcon" onClick="doReindex()">
                                 <%= LanguageUtil.get(pageContext,"Reindex") %>
                             </button>
@@ -1364,7 +1467,7 @@ dd.leftdl {
                         <td>
                             <%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> 
                         </td>
-                        <td align="center">
+                        <td align="right">
                             <button dojoType="dijit.form.Button" id="idxShrinkBtn" onClick="optimizeIndices()">
                                 <%= LanguageUtil.get(pageContext,"Optimize-Index") %>
                             </button>
@@ -1374,7 +1477,7 @@ dd.leftdl {
                         <td>
                             <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush.info") %> 
                         </td>
-                        <td align="center">
+                        <td align="right">
                             <button dojoType="dijit.form.Button"  onClick="flushIndiciesCache()">
                                 <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush") %>
                             </button>
@@ -1461,7 +1564,7 @@ dd.leftdl {
                     <td><%= LanguageUtil.get(pageContext,"Download-Assets") %></td>
                     <td style="text-align:center;white-space:nowrap;">
                         <div class="inline-form">
-                            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadAssets'" iconClass="downloadIcon">
+                            <button dojoType="dijit.form.Button" onclick="showAssetExportDialog()" iconClass="downloadIcon">
                                 <%= LanguageUtil.get(pageContext,"Download-Assets") %>
                             </button>
                         </div>
@@ -1487,7 +1590,7 @@ dd.leftdl {
                                 <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
                             </button>
 
-                            <button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarterWithAssets'" iconClass="downloadIcon">
+                            <button dojoType="dijit.form.Button" onClick="showAssetExportDialog()" iconClass="downloadIcon">
                                 <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
                             </button>
                         </div>
@@ -1659,20 +1762,74 @@ dd.leftdl {
                 </tr>
                 <tr>
                     <td align="center" class="warning">
-                    <div style="margin:auto;width:55%;padding:50px;text-align: justify;line-height:1.5">
-                        <%= LanguageUtil.get(pageContext,"shutdown.dotcms.disclaimer") %>
                     
-                    </div>
+                    <%if(System.getProperty("DOTCMS_CLUSTER_RESTART")!=null){ %>
                     
-                    <div style="margin:auto;width:50%;background-color:pink;padding:50px;border-radius:20px;">
+                        <div style="margin:auto;width:50%;background-color:pink;padding:50px;border-radius:20px;">
+                             System restarting @ <%=System.getProperty("DOTCMS_CLUSTER_RESTART")%>
+                             <br>&nbsp;<br>
+                            <button dojoType="dijit.form.Button" onClick="doShutdownDotcms();"  id="doShutdownDotcms">
+                               <%= LanguageUtil.get(pageContext,"shutdown.dotcms.button.force") %>
+                            </button>
+                             
+                             
+                        </div>
+                        
+                    <%} else { %>
                     
-                    <input dojoType="dijit.form.CheckBox" type="checkbox" id="agreeToShutdown" name="agreeToShutdown" value="true"><label for="agreeToShutdown" style="padding-left:5px;padding-right:15px;"><%= LanguageUtil.get(pageContext,"shutdown.dotcms.consent") %></label>
-                    
-                         <button dojoType="dijit.form.Button" onClick="doShutdownDotcms();"  id="doShutdownDotcms">
-                            <%= LanguageUtil.get(pageContext,"shutdown.dotcms.button") %>
-                         </button>
-                      
-                      </div>
+                       <div style="margin:auto;width:55%;padding:50px;text-align: justify;line-height:1.5">
+                           <%= LanguageUtil.get(pageContext,"shutdown.dotcms.disclaimer") %>
+                       </div>
+                       
+                       <div style="margin:auto;width:50%;background-color:pink;padding:50px;border-radius:20px;">
+                          <div style="display:grid;grid-template-columns: 50% 50%;width:100%">
+                             <div style="text-align: right;padding:10px 10px">
+                                <%= LanguageUtil.get(pageContext,"shutdown.dotcms.consent") %>:
+                             </div>  
+                             <div style="text-align: left;padding:10px 10px">
+                                  <input dojoType="dijit.form.CheckBox" type="checkbox" id="agreeToShutdown" name="agreeToShutdown" value="true"><label for="agreeToShutdown">
+                             </div>
+                             <div style="text-align: right;padding:10px 10px">
+                                   <%= LanguageUtil.get(pageContext,"shutdown.dotcms.cluster") %>:
+                             </div>
+                             <%if(System.getProperty("DOTCMS_CLUSTER_RESTART")==null){ %>
+                                <div style="text-align: left;padding:10px 10px">
+                                     <input dojoType="dijit.form.CheckBox" type="checkbox" id="rollingShutdown" value="true" name="rollingShutdown" onclick="toggleRollingShutdown()">
+                                </div>
+                             <%} %>
+                             
+                          </div>
+                          <%if(System.getProperty("DOTCMS_CLUSTER_RESTART")==null){ %>
+                          <div id="rollingShutdownInfo" style="display:none">
+                          <div style="display:grid;grid-template-columns: 50% 50%;width:100%">
+                             <div style="text-align: right;padding:15px;vertical-align: middle;"> 
+                       
+                                     Rolling Delay in Seconds:
+                             </div>
+                            <div style="text-align:left;align:left;padding-top:15px">
+         
+                                <input dojoType="dijit.form.NumberTextBox" 
+                                    type="text" 
+                                    id="rollingRestartDelay" 
+                                    name="rollingRestartDelay" 
+                                    value="<%=rollingRestartDelay %>"  
+                                    style="width:100px" 
+                                    invalidMessage="Please enter only numbers" 
+                                    constraints="{ min:0,max:6000,places:0,pattern:'####'}">
+                                   <div style="padding:10px;font-size:95%">
+                                       <%= LanguageUtil.get(pageContext,"shutdown.dotcms.rolling.message") %>
+                                  </div>
+                              </div>
+                            </div>
+                            </div>
+                            <%} %>
+                           <div style="padding:15 15 0 15">
+                            <button dojoType="dijit.form.Button" onClick="doShutdownDotcms();"  id="doShutdownDotcms">
+                               <%= LanguageUtil.get(pageContext,"shutdown.dotcms.button") %>
+                            </button>
+                         </div>
+                         
+                      <% } %>
                     </td>
                 </tr>
 
@@ -1734,7 +1891,7 @@ dd.leftdl {
                 <%= LanguageUtil.get(pageContext,"thread-tab-reload-sysinfo") %>
             </button>
         </div>
-		<div style="width: 98%; margin-left:auto; margin-right:auto; margin-top: -30px">
+		<div style="width: 98%; margin-left:auto; margin-right:auto; margin-top: -55px">
 		<button dojoType="dijit.form.Button"  name="btn" onClick="selectAll('threadList');">
 			 <%= LanguageUtil.get(pageContext,"Select-all") %>
 		</button>
@@ -1821,6 +1978,7 @@ dojo.require("dijit.form.DateTextBox");
 
 		checkReindexation();
 		checkFixAsset();
+        createAssetExportDialog();
 		//indexStructureChanged();
 
 			var tab =dijit.byId("mainTabContainer");

@@ -1,0 +1,24 @@
+// Drag & Drop functionality
+.dojo {
+    &DndItem {
+        padding: 0;
+
+        &ItemOver,
+        &ItemAfter {
+            padding: 0;
+        }
+    }
+}
+
+// Arrows
+
+.dijitDownArrowButton,
+.dijitUpArrowButton {
+    position: relative;
+}
+
+.dijitUpArrowButton {
+    .dijitArrowButtonInner:before {
+        @include create-arrow($combobox-arrow-size, $combobox-normal-arrow-color, "up");
+    }
+}

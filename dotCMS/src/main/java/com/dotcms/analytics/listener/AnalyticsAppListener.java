@@ -77,12 +77,13 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
         // detect blank analytics key to reset it
         resolveAnalyticsKey(event)
             .map(AbstractProperty::getString)
-            .filter(StringUtils::isWhitespace)
+            .filter(StringUtils::isEmpty)
             .ifPresent(analyticsKey -> {
                 final Host host = Try
                     .of(() -> hostAPI.find(event.getHostIdentifier(), APILocator.systemUser(), false))
                     .getOrElse((Host) null);
-                Optional.ofNullable(host)
+                Optional
+                    .ofNullable(host)
                     .map(site -> AnalyticsHelper.get().appFromHost(site))
                     .ifPresent(app -> {
                         try {
@@ -90,8 +91,9 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
                             analyticsAPI.resetAnalyticsKey(app, true);
 
                             // reset access token when is NOOP, is this the right place?
-                            Optional.ofNullable(analyticsAPI.getAccessToken(app))
-                                .filter(appplication -> AnalyticsHelper.get().isTokenNoop(appplication))
+                            Optional
+                                .ofNullable(analyticsAPI.getAccessToken(app))
+                                .filter(application -> AnalyticsHelper.get().isTokenNoop(application))
                                 .ifPresent(token -> analyticsAPI.resetAccessToken(app));
                         } catch (AnalyticsException e) {
                             Logger.error(

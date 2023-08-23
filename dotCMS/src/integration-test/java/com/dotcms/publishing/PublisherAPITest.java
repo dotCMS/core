@@ -287,7 +287,7 @@ public class PublisherAPITest extends IntegrationTestBase {
         Map<String, Long> fileDates = Maps.newHashMap();
 
         for (File file : FileUtil.listFilesRecursively(folder, fileFilter)) {
-            fileDates.put(file.getAbsolutePath(), new Long(file.lastModified()));
+            fileDates.put(file.getAbsolutePath(), Long.valueOf(file.lastModified()));
         }
 
         return fileDates;

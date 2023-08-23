@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 .loader__overlay {
-    background: rgba($white, 0.7);
+    background: $color-palette-white-op-70;
     bottom: 0;
     left: 0;
     position: absolute;

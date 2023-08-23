@@ -25,7 +25,7 @@ public class TranslationUtil {
             try {
                 String clazz = Config.getStringProperty("TRANSLATION_SERVICE",
                     GoogleTranslationService.class.getName());
-                SERVICE = (TranslationService) Class.forName(clazz).newInstance();
+                SERVICE = (TranslationService) Class.forName(clazz).getDeclaredConstructor().newInstance();
 
             } catch (Exception e) {
                 Logger.error(TranslationUtil.class, e.getMessage(), e);
@@ -53,7 +53,7 @@ public class TranslationUtil {
      */
     public List<Language> getLanguagesByLanguageCode(String languageCode) {
         List<Language> allLangs = APILocator.getLanguageAPI().getLanguages();
-        List<Language> returnLangs = new ArrayList<Language>();
+        List<Language> returnLangs = new ArrayList<>();
 
         if (!UtilMethods.isSet(languageCode)) {
             return returnLangs;

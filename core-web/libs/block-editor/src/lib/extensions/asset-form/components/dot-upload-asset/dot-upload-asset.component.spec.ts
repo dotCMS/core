@@ -10,7 +10,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotUploadAssetComponent, STATUS } from './dot-upload-asset.component';
 
-import { DotImageService } from '../../../image-uploader/services/dot-image/dot-image.service';
+import { DotUploadFileService } from '../../../../shared';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
@@ -46,7 +46,7 @@ describe('DotUploadAssetComponent', () => {
     let de: DebugElement;
     let component: DotUploadAssetComponent;
 
-    let dotImageService: DotImageService;
+    let dotUploadFileService: DotUploadFileService;
     let domSanitizer: DomSanitizer;
 
     beforeEach(async () => {
@@ -58,7 +58,7 @@ describe('DotUploadAssetComponent', () => {
             ],
             providers: [
                 {
-                    provide: DotImageService,
+                    provide: DotUploadFileService,
                     useValue: {
                         publishContent: jest.fn().mockReturnValue(of())
                     }
@@ -72,7 +72,7 @@ describe('DotUploadAssetComponent', () => {
             ]
         }).compileComponents();
 
-        dotImageService = TestBed.inject(DotImageService);
+        dotUploadFileService = TestBed.inject(DotUploadFileService);
         domSanitizer = TestBed.inject(DomSanitizer);
         fixture = TestBed.createComponent(DotUploadAssetComponent);
         de = fixture.debugElement;
@@ -182,7 +182,7 @@ describe('DotUploadAssetComponent', () => {
                 }
             ];
 
-            jest.spyOn(dotImageService, 'publishContent').mockReturnValue(
+            jest.spyOn(dotUploadFileService, 'publishContent').mockReturnValue(
                 of(data as DotCMSContentlet[]).pipe(delay(500))
             );
             const emitSpy = jest.spyOn(component.uploadedFile, 'emit');

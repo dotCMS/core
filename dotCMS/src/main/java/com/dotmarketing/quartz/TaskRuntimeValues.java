@@ -8,7 +8,7 @@ public class TaskRuntimeValues {
 	protected int currentProgress = 0;
 	protected int startProgress = 0;
 	protected int endProgress = 100;
-	protected List<String> messages = new LinkedList<String>();
+	protected List<String> messages = new LinkedList<>();
 	public int getCurrentProgress() {
 		return currentProgress;
 	}

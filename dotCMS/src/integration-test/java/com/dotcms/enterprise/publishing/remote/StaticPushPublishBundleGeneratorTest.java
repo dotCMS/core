@@ -41,15 +41,18 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Lazy;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.lang.RandomStringUtils;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -58,27 +61,29 @@ import org.junit.runner.RunWith;
 public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
 
    private static AtomicBoolean prepared = new AtomicBoolean(false);
+    private static Folder folder;
+    private static long langId;
 
-   static class TestCase{
+    static class TestCase{
 
        enum Condition {
            EQ, GT, GTE, LT,LTE
        }
 
+       final  boolean isInclude;
       final Class<? extends IBundler> bundler;
-      final Contentlet contentlet;
-      final String includePattern;
-      final String excludePattern;
+      final String fileName;
+      final String pattern;
       final int expectedMatches;
       final Condition condition;
 
-       public TestCase(final Class<? extends IBundler> bundler,
-               final Contentlet contentlet, final String includePattern,final String excludePattern,
+       public TestCase(boolean isInclude, final Class<? extends IBundler> bundler,
+               final String fileName, final String pattern,
                final int expectedMatches, final Condition condition) {
+           this.isInclude = isInclude;
            this.bundler = bundler;
-           this.contentlet = contentlet;
-           this.includePattern = includePattern;
-           this.excludePattern = excludePattern;
+           this.fileName = fileName;
+           this.pattern = pattern;
            this.expectedMatches = expectedMatches;
            this.condition = condition;
        }
@@ -87,9 +92,9 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
        public String toString() {
            return "TestCase{" +
                    "bundler=" + bundler +
-                   ", contentlet=" + contentlet.getTitle() +
-                   ", includePattern='" + includePattern + '\'' +
-                   ", excludePattern='" + excludePattern + '\'' +
+                   ", fileName=" + fileName +
+                   ", isInclude=" + isInclude +
+                   ", pattern='" + pattern + '\'' +
                    ", expectedMatches=" + expectedMatches +
                    ", condition=" + condition +
                    '}';
@@ -97,115 +102,39 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
    }
 
 
-    private static TestCase fileAssetInclusivePatternTest(final Folder folder, final String fileName,
-            final long langId, final int expectedMatches, final Condition condition) throws Exception {
-        return fileAssetInclusivePatternTest(folder, fileName, langId, null, expectedMatches, condition
-        );
+    @BeforeClass
+    public static void setup() throws Exception {
+        prepareIfNecessary();
+        folder = new FolderDataGen().nextPersisted();
+        langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
     }
-
-    private static TestCase fileAssetInclusivePatternTest(final Folder folder, final String fileName,
-            long langId, final String pattern, final int expectedMatches,
-            final Condition condition)
-            throws Exception {
-
-        final Contentlet fileAsset = newFileAsset(folder, fileName, langId);
-        final String path =
-                pattern == null ? APILocator.getIdentifierAPI().find(fileAsset.getIdentifier())
-                        .getPath() : pattern;
-
-        return new TestCase(FileAssetBundler.class, fileAsset, path, null, expectedMatches, condition);
-    }
-
-
-    private static TestCase fileAssetExclusivePatternTest(final Folder folder, final String fileName,
-            final long langId, final int expectedMatches, final Condition condition) throws Exception {
-        return fileAssetExclusivePatternTest(folder, fileName, langId, null, expectedMatches, condition
-        );
-    }
-
-    private static TestCase fileAssetExclusivePatternTest(final Folder folder, final String fileName,
-            long langId, final String pattern, final int expectedMatches,
-            final Condition condition)
-            throws Exception {
-
-        final Contentlet fileAsset = newFileAsset(folder, fileName, langId);
-        final String path =
-                pattern == null ? APILocator.getIdentifierAPI().find(fileAsset.getIdentifier())
-                        .getPath() : pattern;
-
-        return new TestCase(FileAssetBundler.class, fileAsset, null, path, expectedMatches, condition);
-    }
-
-    private static TestCase htmlPageInclusivePatternTest(final Folder folder, final String pageName,
-            long langId, final int expectedMatches, final Condition condition)
-            throws Exception{
-        return htmlPageInclusivePatternTest(folder, pageName, langId, null, expectedMatches, condition);
-    }
-
-
-    private static TestCase htmlPageExclusivePatternTest(final Folder folder, final String pageName,
-            long langId, final int expectedMatches, final Condition condition)
-            throws Exception{
-        return htmlPageExclusivePatternTest(folder, pageName, langId, null, expectedMatches, condition);
-    }
-
-    private static TestCase htmlPageInclusivePatternTest(final Folder folder, final String pageName,
-            final long langId, final String pattern, final int expectedMatches,
-            final Condition condition)
-            throws Exception {
-
-        final Contentlet htmlPage = newHtmlPage(folder, pageName, langId);
-        final String path =
-                pattern == null ? APILocator.getIdentifierAPI().find(htmlPage.getIdentifier())
-                        .getPath() : pattern;
-
-        return new TestCase(HTMLPageAsContentBundler.class, htmlPage, path, null, expectedMatches, condition);
-    }
-
-    private static TestCase htmlPageExclusivePatternTest(final Folder folder, final String pageName,
-            final long langId, final String pattern, final int expectedMatches,
-            final Condition condition)
-            throws Exception {
-
-        final Contentlet htmlPage = newHtmlPage(folder, pageName, langId);
-        final String excludePattern =
-                pattern == null ? APILocator.getIdentifierAPI().find(htmlPage.getIdentifier())
-                        .getPath() : pattern;
-
-
-        return new TestCase(HTMLPageAsContentBundler.class, htmlPage, null, excludePattern, expectedMatches, condition);
-    }
-
-
     @DataProvider
     public static Object[] getTestCases() throws Exception {
-        prepareIfNecessary();
 
-        final Folder folder = new FolderDataGen().nextPersisted();
-        final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
         return new Object[]{
 
-                fileAssetInclusivePatternTest(folder,
-                "static-push-test-file.txt", langId, 1, Condition.EQ),
-                fileAssetInclusivePatternTest(folder,
-                "test file blank.txt", langId, 1, Condition.EQ),
-                fileAssetInclusivePatternTest(folder,
-                "test-file.txt", langId, "/*", 1, Condition.GTE),
+                new TestCase(true,FileAssetBundler.class,
+                "static-push-test-file.txt",null,1, Condition.EQ),
+                new TestCase(true,FileAssetBundler.class,
+                "test file blank.txt",null, 1, Condition.EQ),
+                new TestCase(true,FileAssetBundler.class,
+                "test-file.txt", "/*", 1, Condition.GTE),
 
-                htmlPageInclusivePatternTest(folder,
-                "static-push-test-page.htm", langId, 1, Condition.EQ),
-                htmlPageInclusivePatternTest(folder,
-                "test page blank.htm", langId, 1, Condition.EQ),
-                htmlPageInclusivePatternTest(folder,
-                "test page blank.htm", langId, "/*", 1, Condition.GTE),
+                new TestCase(true,HTMLPageAsContentBundler.class,
+                "static-push-test-page.htm", null,1, Condition.EQ),
+                new TestCase(true,HTMLPageAsContentBundler.class,
+                "test page blank.htm",null, 1, Condition.EQ),
+                new TestCase(true,HTMLPageAsContentBundler.class,
+                "test page blank.htm", "/*", 1, Condition.GTE),
 
 
-                fileAssetExclusivePatternTest(folder,
-                        "any.htm", langId, "/*",0, Condition.GTE),
+                new TestCase(false,FileAssetBundler.class,
+                        "any.htm","/*",0, Condition.GTE),
 
-                htmlPageExclusivePatternTest(folder,
-                        "any.htm", langId, "/*",0, Condition.GTE),
+                new TestCase(false,HTMLPageAsContentBundler.class,
+                        "any.htm","/*",0, Condition.GTE),
 
 
         };
@@ -236,7 +165,18 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
     public void Test_Static_Publish_Bundle_Generate(final TestCase testCase)
             throws Exception {
 
-        final String contentletIdentifier = testCase.contentlet.getIdentifier();
+        Contentlet contentlet = null;
+        if (testCase.bundler.equals(HTMLPageAsContentBundler.class)) {
+            Logger.info(StaticPushPublishBundleGeneratorTest.class, "Testing HTMLPageAsContentBundler");
+            contentlet = newHtmlPage(folder, testCase.fileName, langId);
+
+        } else {
+            Logger.info(StaticPushPublishBundleGeneratorTest.class, "Testing FileAssetBundler");
+            contentlet = newFileAsset(folder, testCase.fileName, langId);
+        }
+
+
+        final String contentletIdentifier = contentlet.getIdentifier();
         Logger.info(StaticPushPublishBundleGeneratorTest.class, "Identifier: " + contentletIdentifier);
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentletIdentifier);
         Logger.info(StaticPushPublishBundleGeneratorTest.class, "Path is: " + identifier.getPath());
@@ -253,7 +193,11 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
         publisherAPI.saveBundleAssets(identifiers, bundleWithDefaultFilter.getId(), systemUser);
 
         //Generate Bundle, will return several dependencySet with the assets that will be added to the bundle
-        final BundlerStatus status = generateBundle(systemUser, bundleWithDefaultFilter.getId(), testCase.bundler, testCase.includePattern, testCase.excludePattern);
+        String pattern = testCase.pattern==null ? APILocator.getIdentifierAPI().find(contentletIdentifier).getPath() : testCase.pattern;
+        String excludePattern = testCase.isInclude ? null : pattern;
+        String includePattern = testCase.isInclude ? pattern : null;
+
+        final BundlerStatus status = generateBundle(systemUser, bundleWithDefaultFilter.getId(), testCase.bundler, includePattern, excludePattern);
 
             switch (testCase.condition){
                 case EQ : {
@@ -310,7 +254,7 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
         final Publisher publisher = new StaticPublisher();
         publisher.init(publisherConfig);
 
-        final IBundler instance = bundleGenerator.newInstance();
+        final IBundler instance = bundleGenerator.getDeclaredConstructor().newInstance();
 
         instance.setConfig(publisherConfig);
         instance.setPublisher(publisher);

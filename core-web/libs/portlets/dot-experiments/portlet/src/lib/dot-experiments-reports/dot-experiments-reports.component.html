@@ -1,0 +1,60 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <dot-experiments-header
+        [isLoading]="vm.isLoading"
+        [status]="vm?.experiment?.status"
+        [title]="vm.experiment?.name"
+        (goBack)="goToExperimentList(vm.experiment.pageId)"
+    >
+    </dot-experiments-header>
+    <div class="flex flex-column dot-experiment-report-content">
+        <ng-container *ngIf="!vm.isLoading; else loadingTpl">
+            <dot-experiments-experiment-summary
+                [goals]="vm.experiment.goals"
+                [scheduling]="vm.experiment.scheduling"
+                [sessionsReached]="vm.results ? vm.results.sessions.total : 0"
+                [suggestedWinner]="vm.winnerLegendSummary"
+            />
+
+            <div class="flex align-items-center flex-column w-full container gap-3">
+                <p-tabView>
+                    <p-tabPanel header="{{ 'experiments.reports.chart.title' | dm }}">
+                        <div class="flex flex-column gap-2 content">
+                            <dot-experiments-reports-chart
+                                [config]="axisLabelsProbabilityChart"
+                                [data]="vm.dailyChart.chartData"
+                                [isEmpty]="!vm.dailyChart.hasEnoughData"
+                                [isLoading]="vm.isLoading"
+                                data-testId="daily-chart"
+                            />
+                        </div>
+                    </p-tabPanel>
+
+                    <p-tabPanel header="{{ 'experiments.bayesian.reports.chart.title' | dm }}">
+                        <div class="flex flex-column gap-2 content">
+                            <dot-experiments-reports-chart
+                                [config]="axisLabelsBayesianChart"
+                                [data]="vm.bayesianChart.chartData"
+                                [isEmpty]="!vm.bayesianChart.hasEnoughData"
+                                [isLinearAxis]="true"
+                                [isLoading]="vm.isLoading"
+                                data-testId="bayesian-chart"
+                            />
+                        </div>
+                    </p-tabPanel>
+                </p-tabView>
+                <dot-experiments-report-daily-details
+                    [detailData]="vm.detailData"
+                    [experimentId]="vm.experiment.id"
+                    [hasEnoughSessions]="vm.dailyChart.hasEnoughData"
+                    [promotedVariantId]="vm.promotedVariant"
+                />
+            </div>
+        </ng-container>
+    </div>
+</ng-container>
+
+<ng-template #loadingTpl>
+    <dot-experiments-reports-skeleton />
+</ng-template>
+<ng-template dotDynamic></ng-template>
+<p-confirmPopup></p-confirmPopup>

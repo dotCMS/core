@@ -1,27 +1,27 @@
 <dot-dialog
-    (hide)="closeDialog()"
+    class="no-overflow"
     [actions]="dialogActions$ | async"
     [header]="dialogTitle"
     [isSaving]="isSaving$ | async"
     [visible]="isVisibleDialog"
-    class="no-overflow"
+    (hide)="closeDialog()"
     width="600px"
 >
-    <form #formEl="ngForm" [formGroup]="form" class="p-fluid" novalidate>
+    <form class="p-fluid" #formEl="ngForm" [formGroup]="form" novalidate>
         <div class="field form__group--validation">
-            <label for="content-type-form-name">{{ inputNameWithType }} *</label>
+            <label dotFieldRequired for="content-type-form-name">{{ inputNameWithType }}</label>
             <input
+                id="content-type-form-name"
                 [tabindex]="1"
                 dotAutofocus
                 formControlName="name"
-                id="content-type-form-name"
                 name="name"
                 pInputText
                 type="text"
             />
             <dot-field-validation-message
                 [field]="nameControl"
-                [message]="'dot.common.message.field.required' | dm: [inputNameWithType]"
+                [message]="'dot.common.message.field.required' | dm : [inputNameWithType]"
             ></dot-field-validation-message>
         </div>
 
@@ -30,9 +30,9 @@
                 >{{ 'contenttypes.form.label.variable_name' | dm }}
             </label>
             <input
+                id="content-type-form-variable-name"
                 [tabindex]="2"
                 formControlName="variable"
-                id="content-type-form-variable-name"
                 name="variable"
                 pInputText
                 placeholder="{{ 'contentType.form.variable.placeholder' | dm }}"
@@ -46,9 +46,9 @@
         <div class="field">
             <label for="content-type-form-icon">{{ 'contenttypes.form.label.icon' | dm }}</label>
             <dot-md-icon-selector
+                id="content-type-form-icon"
                 [tabindex]="3"
                 formControlName="icon"
-                id="content-type-form-icon"
             ></dot-md-icon-selector>
         </div>
 
@@ -57,10 +57,10 @@
                 'contenttypes.form.field.host_folder.label' | dm
             }}</label>
             <dot-site-selector-field
+                id="content-type-form-host"
                 [system]="true"
                 [tabindex]="4"
                 formControlName="host"
-                id="content-type-form-host"
             ></dot-site-selector-field>
         </div>
     </form>

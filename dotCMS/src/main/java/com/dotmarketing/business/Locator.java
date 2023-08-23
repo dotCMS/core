@@ -24,7 +24,7 @@ public abstract class Locator<T> {
 	protected abstract Object createService(T enumObj);
 	
 	protected Locator() {
-		cache = new HashMap<T,Object>();
+		cache = new HashMap<>();
 	}
 	
 	protected Object getServiceInstance(T enumObj) {

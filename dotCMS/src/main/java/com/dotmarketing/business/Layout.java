@@ -54,7 +54,7 @@ public class Layout implements Serializable{
 	}
 
 	public Map<String, Object> toMap() {
-		Map<String, Object> layoutMap = new HashMap<String, Object>();
+		Map<String, Object> layoutMap = new HashMap<>();
 		layoutMap.put("id", id);
 		layoutMap.put("name", name);
 		layoutMap.put("description", description);

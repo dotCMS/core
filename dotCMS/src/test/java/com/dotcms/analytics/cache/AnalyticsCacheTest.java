@@ -1,5 +1,6 @@
 package com.dotcms.analytics.cache;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.analytics.model.TokenStatus;
@@ -15,7 +16,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author vico
  */
-public class AnalyticsCacheTest {
+public class AnalyticsCacheTest extends UnitTestBase {
 
     private AnalyticsCache analyticsCache;
 

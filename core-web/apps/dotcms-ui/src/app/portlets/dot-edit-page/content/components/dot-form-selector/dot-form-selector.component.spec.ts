@@ -16,6 +16,7 @@ import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
@@ -76,6 +77,7 @@ describe('DotFormSelectorComponent', () => {
                 HttpClientTestingModule,
                 TableModule,
                 DotPipesModule,
+                DotMessagePipe,
                 ButtonModule
             ]
         });

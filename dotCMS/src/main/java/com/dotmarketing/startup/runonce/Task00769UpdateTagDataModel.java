@@ -71,7 +71,7 @@ public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask impleme
 			    replaceStr="replace(replace(replace(tagname,'\\n',' '),'\\r',' '),'\\t',' ')";
 			}
 			
-			Set<String> replacedNames = new HashSet<String>();
+			Set<String> replacedNames = new HashSet<>();
 			dc.setSQL("SELECT tagname, "+replaceStr+" AS replaced FROM tag");
 			List<HashMap<String,String>> results=dc.loadResults();
 			for(HashMap<String,String> names : results) {
@@ -215,7 +215,7 @@ public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask impleme
 
 	@Override
 	protected List<String> getTablesToDropConstraints() {
-		List<String> tablesList = new ArrayList<String>();
+		List<String> tablesList = new ArrayList<>();
 		tablesList.add( "tag" );
 		tablesList.add( "tag_inode" );
 		return tablesList;

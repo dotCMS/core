@@ -86,7 +86,7 @@ public class CalendarAjax {
 		Map<String, Object> eventMap = ev.getMap();
 		
 		//Loading categories
-		List<Map<String, Object>> categoryMaps = new ArrayList<Map<String,Object>>();
+		List<Map<String, Object>> categoryMaps = new ArrayList<>();
 		List<Category> eventCategories =  categoryAPI.getParents(ev, user, respectFrontendRoles);
 		for(Category cat : eventCategories) {
 			categoryMaps.add(cat.getMap());
@@ -168,8 +168,8 @@ public class CalendarAjax {
 		User user = userAPI.getLoggedInUser(request);
 		boolean respectFrontendRoles = true;
 
-		List<Map<String, Object>> retList = new ArrayList<Map<String,Object>>();
-		List<Category> categories = new ArrayList<Category>();
+		List<Map<String, Object>> retList = new ArrayList<>();
+		List<Category> categories = new ArrayList<>();
 		if(categoriesInodes != null) {
 			for (String categoryInode : categoriesInodes) {
 				Category cat = categoryAPI.find(categoryInode, user, respectFrontendRoles);
@@ -183,7 +183,7 @@ public class CalendarAjax {
 			Map<String, Object> eventMap = ev.getMap();
 
 			//Loading categories
-			List<Map<String, Object>> categoryMaps = new ArrayList<Map<String,Object>>();
+			List<Map<String, Object>> categoryMaps = new ArrayList<>();
 			List<Category> eventCategories =  categoryAPI.getParents(ev, user, respectFrontendRoles);
 			for(Category cat : eventCategories) {
 				categoryMaps.add(cat.getMap());
@@ -240,7 +240,7 @@ public class CalendarAjax {
 		User user = userAPI.getLoggedInUser(request);
 		boolean respectFrontendRoles = true;
 		
-		List<Map<String, Object>> retList = new ArrayList<Map<String,Object>>();
+		List<Map<String, Object>> retList = new ArrayList<>();
 		Event parentEv = eventAPI.find(parentEvent, live, user, respectFrontendRoles);
 		List<Event> events = eventAPI.findRelatedEvents(parentEv, fromDate, toDate, live, user, respectFrontendRoles);
 		for(Event ev : events) {
@@ -400,8 +400,8 @@ public class CalendarAjax {
 		HibernateUtil.startTransaction();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
-		List<String> eventDeleteErrors = new ArrayList<String>();
-		Map<String,Object> callbackData = new HashMap<String,Object>();
+		List<String> eventDeleteErrors = new ArrayList<>();
+		Map<String,Object> callbackData = new HashMap<>();
 
 		//Retrieving the current user
 		User user = userAPI.getLoggedInUser(request);
@@ -470,9 +470,9 @@ public class CalendarAjax {
 		String strutsAction = "";		
 		String recurrenceDaysOfWeek="";
 		
-		Map<String,Object> contentletFormData = new HashMap<String,Object>();		
-		Map<String,Object> callbackData = new HashMap<String,Object>();
-		List<String> saveContentErrors = new ArrayList<String>();
+		Map<String,Object> contentletFormData = new HashMap<>();		
+		Map<String,Object> callbackData = new HashMap<>();
+		List<String> saveContentErrors = new ArrayList<>();
 		
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req); 
@@ -905,8 +905,8 @@ public class CalendarAjax {
 		User user = userAPI.getLoggedInUser(request);
 		boolean respectFrontendRoles = true;
 
-		Map<String, Object> eventMap = new HashMap<String, Object>();
-		List<String> disconnectEventErrors = new ArrayList<String>();
+		Map<String, Object> eventMap = new HashMap<>();
+		List<String> disconnectEventErrors = new ArrayList<>();
 
 		String inodeStr = (InodeUtils.isSet(inode) ? inode : "");
 		Contentlet contentlet = new Contentlet();
@@ -981,7 +981,7 @@ public class CalendarAjax {
 						newEvent = eventAPI.disconnectEvent(ev, user, originalStartDate.getTime(), originalEndDate.getTime());
 						eventMap = newEvent.getMap();
 						//Loading categories
-						List<Map<String, Object>> categoryMaps = new ArrayList<Map<String,Object>>();
+						List<Map<String, Object>> categoryMaps = new ArrayList<>();
 						List<Category> eventCategories =  categoryAPI.getParents(newEvent, user, respectFrontendRoles);
 						for(Category cat : eventCategories) {
 							categoryMaps.add(cat.getMap());

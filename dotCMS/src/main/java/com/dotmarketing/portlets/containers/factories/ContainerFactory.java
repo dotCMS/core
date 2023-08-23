@@ -143,7 +143,7 @@ public class ContainerFactory {
 		if(currentContainer.getMaxContentlets()>0) {
 
 			List<ContainerStructure> sourceCS = APILocator.getContainerAPI().getContainerStructures(currentContainer);
-			List<ContainerStructure> newContainerCS = new LinkedList<ContainerStructure>();
+			List<ContainerStructure> newContainerCS = new LinkedList<>();
 
 			for (ContainerStructure oldCS : sourceCS) {
 				ContainerStructure newCS = new ContainerStructure();

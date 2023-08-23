@@ -1,0 +1,93 @@
+@use "variables" as *;
+
+.p-dialog {
+    border-radius: $border-radius-md;
+    box-shadow: 0 11px 15px -7px $color-palette-black-op-20,
+        0 24px 38px 3px $color-palette-black-op-10, 0 9px 46px 8px $color-palette-black-op-10;
+    border: 0 none;
+    overflow: auto;
+}
+
+.p-dialog .p-dialog-header {
+    border-bottom: 0 none;
+    background: $white;
+    color: $black;
+    padding: $spacing-6;
+    border-top-right-radius: $border-radius-md;
+    border-top-left-radius: $border-radius-md;
+}
+
+.p-dialog .p-dialog-header .p-dialog-title {
+    font-size: $font-size-xl;
+    font-size: 1.5rem;
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-icon {
+    width: $spacing-5;
+    height: $spacing-5;
+    color: $black;
+    border: 0 none;
+    background: transparent;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    margin-right: $spacing-1;
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-icon:enabled:hover {
+    color: $text-color-hover;
+    border-color: transparent;
+    background: $bg-hover;
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-icon:focus {
+    outline: 0 none;
+    outline-offset: 0;
+    box-shadow: $button-shadow-focus;
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-icon:last-child {
+    margin-right: 0;
+}
+
+.p-dialog .p-dialog-content {
+    background: $white;
+    color: $black;
+    padding: 0 $spacing-6 $spacing-6 $spacing-6;
+}
+
+.p-dialog .p-dialog-footer {
+    border-top: 0 none;
+    background: $white;
+    color: $black;
+    padding: $spacing-4;
+    text-align: right;
+    border-bottom-right-radius: $border-radius-xs;
+    border-bottom-left-radius: $border-radius-xs;
+}
+
+.p-dialog .p-dialog-footer button {
+    margin: 0 $spacing-1 0 0;
+    width: auto;
+}
+
+//TODO: This need to go to the confirm-dialog stylesheet when we update the look and feel
+.p-dialog.p-confirm-dialog .p-confirm-dialog-icon {
+    font-size: $font-size-xxl;
+    padding-right: $spacing-1;
+    color: $color-palette-primary;
+}
+
+.p-dialog.p-confirm-dialog .p-confirm-dialog-message {
+    line-height: $line-height;
+}
+
+.p-dialog-mask.p-component-overlay {
+    background-color: $color-palette-black-op-80;
+    backdrop-filter: blur(5px);
+}
+
+.p-dialog-header .p-dialog-header-icons .p-dialog-header-close {
+    background-color: $color-palette-gray-200;
+    color: $color-palette-primary-500;
+    border-radius: 0;
+}

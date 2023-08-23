@@ -1,0 +1,25 @@
+<div class="wrapper flex flex-row align-items-center gap-2">
+    <a class="flex cursor-pointer" (click)="goBack.emit(true)" data-testId="goback-link">
+        <i class="pi pi-angle-left"></i>
+    </a>
+    <ng-container *ngIf="!isLoading; else loadingTpl">
+        <span data-testId="title">{{ title }}</span>
+    </ng-container>
+
+    <ng-container *ngIf="!!status">
+        <div class="flex flex-grow-1 align-items-center justify-content-between">
+            <p-tag
+                data-testId="status-tag"
+                styleClass="{{ status | lowercase }}"
+                value="{{ status | lowercase | dm }} "
+            >
+            </p-tag>
+        </div>
+    </ng-container>
+
+    <ng-content></ng-content>
+</div>
+
+<ng-template #loadingTpl>
+    <p-skeleton height="1rem" width="12rem"></p-skeleton>
+</ng-template>

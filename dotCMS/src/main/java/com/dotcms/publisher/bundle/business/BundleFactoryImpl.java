@@ -164,7 +164,7 @@ public class BundleFactoryImpl extends BundleFactory {
     @Override
     public List<Bundle> findUnsendBundlesByName ( String userId, String likeName, int limit, int offset ) throws DotDataException {
 
-        List<Bundle> bundles = new ArrayList<Bundle>();
+        List<Bundle> bundles = new ArrayList<>();
 
         if ( !UtilMethods.isSet( userId ) ) {
             return bundles;

@@ -67,7 +67,6 @@ import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import jersey.repackaged.com.google.common.collect.Lists;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -94,7 +93,7 @@ import org.elasticsearch.common.unit.TimeValue;
 public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	private PermissionCache permissionCache;
-	private static final Map<String, Integer> PERMISION_TYPES = new HashMap<String, Integer>();
+	private static final Map<String, Integer> PERMISION_TYPES = new HashMap<>();
 
 	private final IdentifierStripedLock lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
 
@@ -1341,7 +1340,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     		RoleAPI roleAPI = APILocator.getRoleAPI();
 
     		List<Permission> allPermissions = getPermissions(permissionable);
-    		List<String> roleIds = new ArrayList<String>();
+    		List<String> roleIds = new ArrayList<>();
     		for(Permission p : allPermissions) {
     			if(p.matchesPermission(permissionType)) {
     				roleIds.add(p.getRoleId());
@@ -1359,7 +1358,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
     		}
 
-			ArrayList<User> users = new ArrayList<User>();
+			ArrayList<User> users = new ArrayList<>();
 
 			DotConnect dotConnect = new DotConnect();
 			String userFullName = DotConnect.concat(new String[] { "user_.firstName", "' '", "user_.lastName" });
@@ -1421,7 +1420,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     		RoleAPI roleAPI = APILocator.getRoleAPI();
 
     		List<Permission> allPermissions = getPermissions(permissionable);
-    		List<String> roleIds = new ArrayList<String>();
+    		List<String> roleIds = new ArrayList<>();
     		for(Permission p : allPermissions) {
     			if(p.matchesPermission(permissionType)) {
     				roleIds.add(p.getRoleId());
@@ -1492,7 +1491,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	protected Map<Permissionable, List<Permission>> getPermissions(List<Permissionable> permissionables, boolean bitPermission)
 		throws DotDataException, DotSecurityException {
 
-		Map<Permissionable, List<Permission>> result = new HashMap<Permissionable, List<Permission>>();
+		Map<Permissionable, List<Permission>> result = new HashMap<>();
 
 		for(Permissionable p : permissionables) {
 			List<Permission> permission = getPermissions(p, bitPermission);
@@ -1546,7 +1545,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 		asset.setOwner(ownerId);
 
-		List<HashMap<String, String>> inodes = new ArrayList<HashMap<String, String>>();
+		List<HashMap<String, String>> inodes = new ArrayList<>();
 		String assetType ="";
 		dc.setSQL("Select asset_type from identifier where id =?");
 		dc.addParam(permissionId);
@@ -1630,7 +1629,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * @return
 	 */
 	private List<Permission> convertToNonBitPermissions (List<Permission> bitPermissionsList) {
-		Set<Permission> permissionsSet = new LinkedHashSet<Permission>();
+		Set<Permission> permissionsSet = new LinkedHashSet<>();
 
 		for(Permission p : bitPermissionsList) {
 			if(p.isBitPermission()) {
@@ -1643,7 +1642,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				permissionsSet.add(p);
 			}
 		}
-		return new ArrayList<Permission> (permissionsSet);
+		return new ArrayList<> (permissionsSet);
 
 	}
 
@@ -1800,7 +1799,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
   
   private Tuple2<Permissionable,List<Permission>> _loadParentPermissions(final Permissionable permissionable, final String permissionKey) throws DotDataException {
 
-      List<Permission> permissionList = Lists.newArrayList();
+      List<Permission> permissionList = new ArrayList<>();
       final String type = resolvePermissionType(permissionable);
 
       Permissionable parentPermissionable = permissionable.getParentPermissionable();
@@ -1932,7 +1931,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	}
 
     private List<Permission> filterOnlyNonInheritablePermissions(List<Permission> permissions, String permissionableId) {
-		List<Permission> filteredList = new ArrayList<Permission>();
+		List<Permission> filteredList = new ArrayList<>();
 		for(Permission p: permissions) {
 			if((p.isIndividualPermission() && p.getInode().equals(permissionableId)) || !p.getInode().equals(permissionableId))
 				filteredList.add(p);
@@ -1941,7 +1940,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	}
 
 	private List<Permission> filterOnlyInheritablePermissions(List<Permission> permissions, String permissionableId) {
-		List<Permission> filteredList = new ArrayList<Permission>();
+		List<Permission> filteredList = new ArrayList<>();
 		for(Permission p: permissions) {
 			if(!p.isIndividualPermission() && p.getInode().equals(permissionableId))
 				filteredList.add(p);
@@ -1958,7 +1957,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	}
 
 	private List<Permission> filterOnlyIndividualPermissions(List<Permission> permissions, String permissionableId) {
-		List<Permission> filteredList = new ArrayList<Permission>();
+		List<Permission> filteredList = new ArrayList<>();
 		for(Permission p: permissions) {
 			if(p.isIndividualPermission() && p.getInode().equals(permissionableId))
 				filteredList.add(p);
@@ -2022,7 +2021,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 
 		//Search all children remove individual permissions and permission references and make them point to this permissionable
-		List<Map<String, String>> idsToClear = new ArrayList<Map<String,String>>();
+		List<Map<String, String>> idsToClear = new ArrayList<>();
 		if(isHost || isFolder) {
 
 			Permissionable host = null;
@@ -2450,7 +2449,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		String folderPath = folder != null ? APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath() : "";
 		String query = SELECT_CHILDREN_WITH_INDIVIDUAL_PERMISSIONS_SQLS.get(permissionType);
 
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 
 		if (query != null) {
 			dc.setSQL(query);
@@ -2634,7 +2633,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			throw new DotRuntimeException(e1.getMessage(), e1);
 		}
 
-		List<String> roleIds = new ArrayList<String>();
+		List<String> roleIds = new ArrayList<>();
 		if(respectFrontendRoles){
 		// add anonRole and frontEndUser roles
 			roleIds.add(anonRole.getId());
@@ -2645,7 +2644,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 		//If user is null and roleIds are empty return empty list
 		if(roleIds.isEmpty() && user==null){
-			return new ArrayList<P>();
+			return new ArrayList<>();
 		}
 
 		List<Role> roles;
@@ -2668,7 +2667,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			}
 		}
 
-		Map<String, P> permissionableMap = new HashMap<String, P>();
+		Map<String, P> permissionableMap = new HashMap<>();
 		StringBuilder permissionRefSQL = new StringBuilder();
 		permissionRefSQL.append("select asset_id from permission_reference, permission WHERE permission_reference.reference_id = permission.inode_id ");
 		permissionRefSQL.append(" and permission.permission_type = permission_reference.permission_type ");
@@ -2696,7 +2695,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		StringBuilder permIds = new StringBuilder();
 		//Iterate over 500 at a time to build the SQL
 		int permIdCount = 0;
-		List<P> permsToReturn = new ArrayList<P>();
+		List<P> permsToReturn = new ArrayList<>();
 		for(P perm : permissionables){
 			Inode inode = (Inode)perm;
 			permissionableMap.put(inode.getIdentifier(), perm);
@@ -2713,7 +2712,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	    				permsToReturn.add(permissionableMap.get(assetId));
 	    			}
 	    		}
-	    		permissionableMap = new HashMap<String, P>();
+	    		permissionableMap = new HashMap<>();
 				permIds = new StringBuilder();
 			}else{
 				permIds.append(", ");

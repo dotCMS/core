@@ -1,0 +1,83 @@
+{
+    "name": "template-builder",
+    "$schema": "../node_modules/nx/schemas/project-schema.json",
+    "projectType": "library",
+    "sourceRoot": "libs/template-builder/src",
+    "prefix": "dotcms",
+    "targets": {
+        "test": {
+            "executor": "@nrwl/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/template-builder/jest.config.ts"
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true
+                }
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": [
+                    "libs/template-builder/**/*.ts",
+                    "libs/template-builder/**/*.html"
+                ]
+            }
+        },
+        "storybook": {
+            "executor": "@storybook/angular:start-storybook",
+            "options": {
+                "port": 4400,
+                "configDir": "libs/template-builder/.storybook",
+                "browserTarget": "template-builder:build-storybook",
+                "compodoc": false,
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dotcms-scss/angular"]
+                },
+                "styles": [
+                    "libs/dotcms-scss/angular/styles.scss",
+                    "apps/dotcms-ui/src/assets/material-icons.css",
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeflex/primeflex.css",
+                    "node_modules/primeng/resources/primeng.min.css",
+                    "node_modules/gridstack/dist/gridstack.min.css"
+                ]
+            },
+            "configurations": {
+                "ci": {
+                    "quiet": true
+                }
+            }
+        },
+        "build-storybook": {
+            "executor": "@storybook/angular:build-storybook",
+            "outputs": ["{options.outputDir}"],
+            "options": {
+                "outputDir": "dist/storybook/template-builder",
+                "configDir": "libs/template-builder/.storybook",
+                "browserTarget": "template-builder:build-storybook",
+                "compodoc": false,
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dotcms-scss/angular"]
+                },
+                "styles": [
+                    "libs/dotcms-scss/angular/styles.scss",
+                    "node_modules/primeng/resources/primeng.min.css",
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeflex/primeflex.css",
+                    "apps/dotcms-ui/src/assets/material-icons.css",
+                    "node_modules/gridstack/dist/gridstack.min.css"
+                ]
+            },
+            "configurations": {
+                "ci": {
+                    "quiet": true
+                }
+            }
+        }
+    },
+    "tags": []
+}

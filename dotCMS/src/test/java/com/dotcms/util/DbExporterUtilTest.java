@@ -23,7 +23,7 @@ public class DbExporterUtilTest {
     public void test_finding_executables() throws Exception {
         Optional<String> sh = DbExporterUtil.findExecutable("sh");
         assert(sh.isPresent());
-        assert(!DbExporterUtil.findExecutable("thisDoesNotExist").isPresent());
+        assert(DbExporterUtil.findExecutable("thisDoesNotExist").isEmpty());
     }
 
     /**

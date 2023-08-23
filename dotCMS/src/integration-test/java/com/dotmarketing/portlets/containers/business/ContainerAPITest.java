@@ -52,7 +52,7 @@ public class ContainerAPITest extends ContentletBaseTest {
         Container cc = new Container();
         BeanUtils.copyProperties(cc, c);
 
-        List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        List<ContainerStructure> csList = new ArrayList<>();
         ContainerStructure cs = new ContainerStructure();
         cs.setStructureId(contentTypeAPI.find("host").inode());
         cs.setCode("this is the code");
@@ -97,7 +97,7 @@ public class ContainerAPITest extends ContentletBaseTest {
         Container cc = new Container();
         BeanUtils.copyProperties(cc, c);
 
-        List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        List<ContainerStructure> csList = new ArrayList<>();
         ContainerStructure cs = new ContainerStructure();
         cs.setStructureId(contentTypeAPI.find("host").inode());
         cs.setCode("this is the code");

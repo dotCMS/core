@@ -77,6 +77,7 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
@@ -122,6 +123,8 @@ public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
         mapper.registerModule(new VersioningModule());
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         mapper.setSerializationInclusion( Include.NON_DEFAULT);
+      //  TODO: We need to release failure proof for unknown properties
+      //  mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return mapper;
     }
 

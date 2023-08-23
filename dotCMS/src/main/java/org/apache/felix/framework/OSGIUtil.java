@@ -14,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -28,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
@@ -463,7 +463,7 @@ public class OSGIUtil {
                                      final Set<String> osgiUserPackages) {
         try {
 
-            final LinkedHashSet<String> exportedPackagesSet = new LinkedHashSet<>(StringUtils.splitOnCommasWithQuotes(getExtraOSGIPackages()));
+            final LinkedHashSet<String> exportedPackagesSet = this.getExportedPackagesAsSet();
             
             if (exportedPackagesSet.containsAll(osgiUserPackages)) {
                 this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
@@ -477,6 +477,14 @@ public class OSGIUtil {
         } catch (IOException e) {
             Logger.error(this, e.getMessage(), e);
         }
+    }
+
+    LinkedHashSet<String> getExportedPackagesAsSet() {
+
+        return new LinkedHashSet<>(
+                StringUtils.splitOnCommasWithQuotes(getExtraOSGIPackages()).stream()
+                        .map(org.apache.commons.lang3.StringUtils::normalizeSpace)
+                        .collect(Collectors.toSet()));
     }
 
     // move all on upload folder to load, and restarts osgi.
@@ -668,7 +676,7 @@ public class OSGIUtil {
                     // Try to load first non-empty, non-commented line.
                     if ((s.length() > 0) && (s.charAt( 0 ) != '#')) {
                         Logger.info(OSGIUtil.class, "Loading Factory " + s);
-                        return (FrameworkFactory) Class.forName(s).newInstance();
+                        return (FrameworkFactory) Class.forName(s).getDeclaredConstructor().newInstance();
                     }
                 }
             } finally {

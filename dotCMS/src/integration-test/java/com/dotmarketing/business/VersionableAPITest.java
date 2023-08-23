@@ -5,11 +5,13 @@ import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.reindex.ReindexQueueFactory;
@@ -17,14 +19,17 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 
+import java.util.List;
 import java.util.Random;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -364,5 +369,123 @@ public class VersionableAPITest {
 
 		assertTrue(contentletWithVariantChecking.isWorking());
 		assertFalse(contentletWithVariantChecking.isLive());
+	}
+
+	/**
+	 * Method to test: {@link VersionableAPI#findAllByVariant(Variant)} (Variant)}
+	 * When: Create a {@link Contentlet}, a {@link com.dotcms.variant.model.Variant} and a {@link com.dotmarketing.portlets.languagesmanager.model.Language}
+	 * and Create a version of this {@link Contentlet} for the specific and DEFAULT {@link com.dotcms.variant.model.Variant}
+	 * in different {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s
+	 * Should: Return the {@link Contentlet} for all the versions for specific {@link com.dotcms.variant.model.Variant}
+	 */
+	@Test
+	public void getAllByVariants() throws DotDataException {
+		final Language language = new LanguageDataGen().nextPersisted();
+		final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+		final Variant specificVariant = new VariantDataGen().nextPersisted();
+		final Variant defaultVariant = VariantAPI.DEFAULT_VARIANT;
+
+		final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+		final Contentlet contentletDefaultVariantSpecificLang = new ContentletDataGen(contentType)
+				.languageId(language.getId())
+				.nextPersisted();
+
+		final Contentlet contentletDefaultVariantDefaultLang = new ContentletDataGen(contentType)
+				.languageId(defaultLanguage.getId())
+				.nextPersisted();
+
+		final Contentlet contentletSpecificVariantSpecificLang = new ContentletDataGen(contentType)
+				.languageId(language.getId())
+				.variant(specificVariant)
+				.nextPersisted();
+
+		final Contentlet contentletSpecificVariantDefaultLang = new ContentletDataGen(contentType)
+				.languageId(defaultLanguage.getId())
+				.variant(specificVariant)
+				.nextPersisted();
+
+		final List<ContentletVersionInfo> allByVariant = APILocator.getVersionableAPI()
+				.findAllByVariant(specificVariant);
+
+		assertEquals(2, allByVariant.size());
+
+		allByVariant.forEach(contentlet -> {
+			assertEquals(specificVariant.name(), contentlet.getVariant());
+
+			assertTrue(
+			contentletSpecificVariantDefaultLang.getInode().equals(contentlet.getWorkingInode()) ||
+						contentletSpecificVariantSpecificLang.getInode().equals(contentlet.getWorkingInode())
+			);
+		});
+
+	}
+
+	/**
+	 * Method to test: {@link VersionableAPI#findAllByVariant(Variant)}
+	 * When: Create a {@link Contentlet}, a {@link com.dotcms.variant.model.Variant} and a {@link com.dotmarketing.portlets.languagesmanager.model.Language}
+	 * and Create a version of this {@link Contentlet} for the specific and DEFAULT {@link com.dotcms.variant.model.Variant}
+	 * in different {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s
+	 * and PUBLISH THEM
+	 * Should: Return the {@link Contentlet} for all the versions for specific {@link com.dotcms.variant.model.Variant}
+	 */
+	@Test
+	public void getAllByVariantsLIVE() throws DotDataException {
+		final Language language = new LanguageDataGen().nextPersisted();
+		final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+		final Variant specificVariant = new VariantDataGen().nextPersisted();
+		final Variant defaultVariant = VariantAPI.DEFAULT_VARIANT;
+
+		final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+		final Contentlet contentletDefaultVariantSpecificLang = new ContentletDataGen(contentType)
+				.languageId(language.getId())
+				.nextPersistedAndPublish();
+
+		final Contentlet contentletDefaultVariantDefaultLang = new ContentletDataGen(contentType)
+				.languageId(defaultLanguage.getId())
+				.nextPersistedAndPublish();
+
+		final Contentlet contentletSpecificVariantSpecificLang = new ContentletDataGen(contentType)
+				.languageId(language.getId())
+				.variant(specificVariant)
+				.nextPersistedAndPublish();
+
+		final Contentlet contentletSpecificVariantDefaultLang = new ContentletDataGen(contentType)
+				.languageId(defaultLanguage.getId())
+				.variant(specificVariant)
+				.nextPersistedAndPublish();
+
+		final List<ContentletVersionInfo> allByVariant = APILocator.getVersionableAPI()
+				.findAllByVariant(specificVariant);
+
+		assertEquals(2, allByVariant.size());
+
+		allByVariant.forEach(contentlet -> {
+			assertEquals(specificVariant.name(), contentlet.getVariant());
+
+			assertTrue(
+					contentletSpecificVariantDefaultLang.getInode().equals(contentlet.getLiveInode()) ||
+							contentletSpecificVariantSpecificLang.getInode().equals(contentlet.getLiveInode())
+			);
+		});
+
+	}
+
+	/**
+	 * Method to test: {@link VersionableAPI#findAllByVariant(Variant)}
+	 * When: Create a {@link com.dotcms.variant.model.Variant} but not create any {@link Contentlet}'s version
+	 * into it.
+	 * Should: Return empty Collection
+	 */
+	@Test
+	public void getEmptyVariant() throws DotDataException {
+
+		final Variant specificVariant = new VariantDataGen().nextPersisted();
+
+		final List<ContentletVersionInfo> allByVariant = APILocator.getVersionableAPI()
+				.findAllByVariant(specificVariant);
+
+		assertTrue(allByVariant.isEmpty());
 	}
 }

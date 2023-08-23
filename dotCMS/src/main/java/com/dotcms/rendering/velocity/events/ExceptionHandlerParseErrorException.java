@@ -12,9 +12,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.util.Html;
-import java.util.Collections;
 import org.apache.commons.lang.WordUtils;
 import org.apache.velocity.exception.ParseErrorException;
+
+import java.util.List;
 
 /**
  * Handle for the ParseErrorException
@@ -76,7 +77,7 @@ public class ExceptionHandlerParseErrorException implements ExceptionHandler<Par
         if (UtilMethods.isSet(userId)) {
             SystemMessageEventUtil.getInstance().
                     pushMessage(exception.getTemplateName(),
-                            systemMessageBuilder.create(), Collections.singletonList(userId));
+                            systemMessageBuilder.create(), List.of(userId));
         }
         return messageAsString;
     }

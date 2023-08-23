@@ -1,12 +1,14 @@
 package com.dotcms.util;
 
+import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
+import com.dotcms.analytics.metrics.QueryParameter;
+import com.dotcms.analytics.metrics.QueryParameterValuesGetter;
+import com.dotcms.experiments.business.result.Event;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Optional;
-import java.util.Vector;
+import java.util.*;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -41,7 +43,7 @@ public class HttpRequestDataUtilTest {
     public void test_getParamCaseInsensitive(final ParamTestCase testCase) {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameterNames()).thenReturn(
-                Collections.enumeration(Collections.singletonList(testCase.providedParam)));
+                Collections.enumeration(List.of(testCase.providedParam)));
 
         when(request.getParameter(testCase.providedParam)).thenReturn("60");
 
@@ -56,7 +58,7 @@ public class HttpRequestDataUtilTest {
     public void test_getHeaderCaseInsensitive(final ParamTestCase testCase) {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeaderNames()).thenReturn(
-                Collections.enumeration(Collections.singletonList(testCase.providedParam)));
+                Collections.enumeration(List.of(testCase.providedParam)));
 
         when(request.getHeader(testCase.providedParam)).thenReturn("60");
 
@@ -76,4 +78,35 @@ public class HttpRequestDataUtilTest {
         }
     }
 
+    @Test
+    public void getQueryParamsFromUrlWithOneQueryParams(){
+
+        final Map<String, String> queryParams = HttpRequestDataUtil.getQueryParams(
+                "http://localhost:8080/test?testParam=testValue");
+
+        Assert.assertEquals(1, queryParams.size());
+
+        Assert.assertEquals("testValue", queryParams.get("testParam"));
+    }
+
+    @Test
+    public void getQueryParamsFromUrlWithMultiQueryParams(){
+
+        final Map<String, String> queryParams = HttpRequestDataUtil.getQueryParams(
+                "http://localhost:8080/test?testParam1=testValue1&testParam2=testValue2");
+
+
+        Assert.assertEquals(2, queryParams.size());
+
+        Assert.assertEquals("testValue1", queryParams.get("testParam1"));
+        Assert.assertEquals("testValue2", queryParams.get("testParam2"));
+    }
+
+    @Test
+    public void getQueryParamsFromUrlWithNoneQueryParams(){
+        final Map<String, String> queryParams = HttpRequestDataUtil.getQueryParams(
+                "http://localhost:8080/test");
+
+        Assert.assertEquals(0, queryParams.size());
+    }
 }

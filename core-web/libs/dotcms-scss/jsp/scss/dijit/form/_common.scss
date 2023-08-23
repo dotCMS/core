@@ -1,0 +1,77 @@
+@use "sass:math";
+
+.dijitInputContainer {
+    height: 100%;
+}
+
+.dijitButton,
+.dijitComboButton,
+.dijitComboButton > *,
+.dijitDropDownButton,
+.dijitSelect,
+.dijitTextBox,
+.dijitToggleButton {
+    border-radius: $field-border-radius;
+    height: $field-height-md;
+}
+
+.dijitButton,
+.dijitComboButton,
+.dijitArrowButtonInner,
+.dijitDropDownButton,
+.dijitSelect,
+.dijitTextBox,
+.dijitToggleButton,
+.dijitDownArrowButton {
+    transition: all $field-animation-speed;
+}
+
+.dijitComboBox .dijitArrowButtonContainer,
+.dijitComboButton .dijitArrowButtonInner,
+.dijitDropDownButton .dijitArrowButtonInner,
+.dijitSelect .dijitArrowButtonContainer,
+.dijitSpinner .dijitSpinnerButtonContainer {
+    height: 100%;
+    border: none;
+    position: relative;
+}
+
+.dijitPlaceHolder {
+    color: $field-placeholder-color;
+    top: 50%;
+    transform: translateY(-50%);
+    font-style: normal;
+}
+
+.dijitValidationContainer {
+    background-color: $error;
+    height: 100%;
+    position: relative;
+    width: 11px;
+
+    // TODO: make available option to add image icon
+    &:before {
+        border-radius: 2px;
+        background-color: $white;
+        content: "";
+        height: 13px;
+        left: 5px;
+        position: absolute;
+        top: 8px;
+        width: 2px;
+    }
+
+    &:after {
+        background-color: $white;
+        content: "";
+        height: 2px;
+        left: 50%;
+        position: absolute;
+        top: 23px;
+        width: 2px;
+    }
+
+    .dijitValidationInner {
+        display: none;
+    }
+}

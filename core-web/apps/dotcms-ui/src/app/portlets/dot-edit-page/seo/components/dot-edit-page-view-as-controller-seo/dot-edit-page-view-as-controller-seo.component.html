@@ -1,0 +1,33 @@
+<ng-container *ngIf="isEnterpriseLicense$ | async as isEnterpriseLicense; else language">
+    <dot-language-selector
+        [pTooltip]="pageState.viewAs.language.language"
+        [value]="pageState.viewAs.language"
+        (selected)="changeLanguageHandler($event)"
+        appendTo="body"
+        tooltipPosition="bottom"
+        tooltipStyleClass="dot-language-selector__dialog"
+    ></dot-language-selector>
+
+    <dot-persona-selector
+        [disabled]="(dotPageStateService.haveContent$ | async) === false"
+        [pageState]="pageState"
+        (delete)="deletePersonalization($event)"
+        (selected)="changePersonaHandler($event)"
+    ></dot-persona-selector>
+
+    <p-checkbox
+        class="flex dot-edit__what-changed-button"
+        *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
+        [binary]="true"
+        [label]="'dot.common.whats.changed' | dm"
+        (onChange)="whatschange.emit($event.checked)"
+    ></p-checkbox>
+</ng-container>
+
+<ng-template #language>
+    <dot-language-selector
+        [readonly]="!!variant"
+        [value]="pageState.viewAs.language"
+        (selected)="changeLanguageHandler($event)"
+    ></dot-language-selector>
+</ng-template>

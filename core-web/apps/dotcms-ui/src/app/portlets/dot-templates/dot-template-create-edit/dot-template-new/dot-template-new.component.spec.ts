@@ -57,7 +57,24 @@ describe('DotTemplateNewComponent', () => {
     it('should open template type selector', () => {
         expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
             header: 'Create a template',
-            width: '37rem'
+            width: '37rem',
+            contentStyle: { padding: '0px' },
+            data: {
+                options: {
+                    option1: {
+                        value: 'designer',
+                        message: 'templates.template.selector.design',
+                        icon: 'web',
+                        label: 'templates.template.selector.label.designer'
+                    },
+                    option2: {
+                        value: 'advanced',
+                        message: 'templates.template.selector.advanced',
+                        icon: 'settings_applications',
+                        label: 'templates.template.selector.label.advanced'
+                    }
+                }
+            }
         });
     });
 

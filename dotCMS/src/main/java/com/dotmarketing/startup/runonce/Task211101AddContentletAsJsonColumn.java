@@ -32,7 +32,7 @@ public class Task211101AddContentletAsJsonColumn implements StartupTask {
     @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         final Optional<String> type = getColumnType();
-        if (!type.isPresent()) {
+        if (type.isEmpty()) {
             return;
         }
 

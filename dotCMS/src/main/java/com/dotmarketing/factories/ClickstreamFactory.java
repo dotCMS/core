@@ -243,7 +243,7 @@ public class ClickstreamFactory {
 	@SuppressWarnings("unchecked")
 	public static List<Clickstream> getClickstreamsByCookieId(String cookieId) {
 		HibernateUtil dh = new HibernateUtil(Clickstream.class);
-		List<Clickstream> list = new ArrayList<Clickstream>();
+		List<Clickstream> list = new ArrayList<>();
 		try {
 			dh.setQuery("from clickstream in class " + Clickstream.class.getName() + " where cookie_id = ?");
 			dh.setParam(cookieId);

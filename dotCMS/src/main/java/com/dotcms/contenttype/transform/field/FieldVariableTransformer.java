@@ -26,9 +26,9 @@ public class FieldVariableTransformer {
 
     public FieldVariableTransformer(List<? extends IFieldVar> newVars) {
 
-        List<FieldVariable> news = new ArrayList<FieldVariable>();
+        List<FieldVariable> news = new ArrayList<>();
         List<com.dotmarketing.portlets.structure.model.FieldVariable> olds =
-                new ArrayList<com.dotmarketing.portlets.structure.model.FieldVariable>();
+                new ArrayList<>();
 
         for (IFieldVar var : newVars) {
             if (var instanceof FieldVariable) {

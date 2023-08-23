@@ -525,7 +525,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	public boolean isArchived(final Template template) throws DotDataException, DotStateException,DotSecurityException {
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
-			Logger.info(this, "System temaplte can not be archive");
+			Logger.info(this, "System template can not be archived");
 			// System template is never archived
 			return false;
 		}
@@ -799,7 +799,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 					final Optional<Container> optionalContainer = APILocator.getContainerAPI().findContainer(containerIdOrPath, user, false, false);
 
-					if (!optionalContainer.isPresent()) {
+					if (optionalContainer.isEmpty()) {
 						continue;
 					}
 

@@ -558,7 +558,7 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 	 * @return the map
 	 */
 	public Map<String, Object> getMap()  throws DotStateException, DotDataException, DotSecurityException {
-		HashMap<String, Object> map = new HashMap<String, Object>();
+		HashMap<String, Object> map = new HashMap<>();
 		map.put("inode", inode);
 		map.put("type", type);
 		map.put("identifier", this.identifier);

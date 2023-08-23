@@ -1,5 +1,10 @@
 package com.dotcms.rest.api.v1.experiments;
 
+import static com.dotcms.jitsu.EventLogRunnable.POSTING_HEADERS;
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.experiments.business.ExperimentFilter;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.result.ExperimentResults;
@@ -7,22 +12,32 @@ import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.PATCH;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.http.CircuitBreakerUrl.Method;
+import com.dotcms.http.CircuitBreakerUrl.Response;
+import com.dotcms.http.CircuitBreakerUrlBuilder;
+import com.dotcms.jitsu.EventLogRunnable;
+import com.dotcms.jitsu.EventsPayload;
+import com.dotcms.jitsu.EventsPayload.EventPayload;
+import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.control.Try;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +53,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -83,11 +99,15 @@ public class ExperimentsResource {
         final Experiment.Builder builder = Experiment.builder();
 
         builder.pageId(experimentForm.getPageId()).name(experimentForm.getName())
-                .description(experimentForm.getDescription()).createdBy(user.getUserId())
+                .createdBy(user.getUserId())
                 .lastModifiedBy(user.getUserId())
                 .trafficAllocation(experimentForm.getTrafficAllocation()>-1
                         ? experimentForm.getTrafficAllocation()
                         : 100);
+
+        if(experimentForm.getDescription()!=null) {
+            builder.description(experimentForm.getDescription());
+        }
 
         if(experimentForm.getTrafficProportion()!=null) {
             builder.trafficProportion(experimentForm.getTrafficProportion());
@@ -298,6 +318,25 @@ public class ExperimentsResource {
     }
 
     /**
+     * Cancels the future execution of a Scheduled {@link Experiment}. The Experiment needs to be in
+     * {@link Status#SCHEDULED} status to be able to cancel it.
+     */
+
+    @POST
+    @Path("/scheduled/{experimentId}/_cancel")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView cancel(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment endedExperiment = experimentsAPI.cancel(experimentId, user);
+        return new ResponseEntitySingleExperimentView(endedExperiment);
+    }
+
+    /**
      * Adds a new {@link com.dotcms.variant.model.Variant} to the {@link Experiment}
      *
      */
@@ -374,6 +413,35 @@ public class ExperimentsResource {
     }
 
     /**
+     * Promotes a Variant to become the DEFAULT variant of the Page of the Experiment
+     * Returns the updated version of the Experiment.
+     */
+    @PUT
+    @Path("/{experimentId}/variants/{name}/_promote")
+    @JSONP
+    @NoCache
+    @Consumes({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView promoteVariant(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            @PathParam("name") final String variantName,
+            ExperimentVariantForm experimentVariantForm) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+
+        final Optional<Experiment> experimentToUpdate =  experimentsAPI.find(experimentId, user);
+
+        if(experimentToUpdate.isEmpty()) {
+            throw new NotFoundException("Experiment with id: " + experimentId + " not found.");
+        }
+
+        final Experiment persistedExperiment = experimentsAPI.promoteVariant(experimentId,
+                variantName, user);
+        return new ResponseEntitySingleExperimentView(persistedExperiment);
+    }
+
+    /**
      * Deletes the {@link TargetingCondition} with the given id from the {@link Experiment} with the given experimentId
      *
      */
@@ -427,15 +495,17 @@ public class ExperimentsResource {
     }
 
     /**
-     * Returns the partoal or total Result of a {@link Experiment}
+     * Returns the partial or total Result of a {@link Experiment}
      */
     @GET
     @NoCache
     @Path("/{id}/results")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ResponseEntityExperimentResults getResult(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("id") String id
-    ) throws DotDataException, DotSecurityException {
+                                                     @Context final HttpServletResponse response,
+                                                     @PathParam("id") String id)
+        throws DotDataException, DotSecurityException {
+
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
 
@@ -443,9 +513,35 @@ public class ExperimentsResource {
                 .orElseThrow(
                         () -> new NotFoundException("Experiment with id: " + id + " not found."));
 
-        final ExperimentResults experimentResults = APILocator.getExperimentsAPI().getResults(experiment);
+        final ExperimentResults experimentResults = APILocator.getExperimentsAPI().getResults(experiment, user);
 
         return new ResponseEntityExperimentResults(experimentResults);
+    }
+
+    /**
+     * Healthcheck for the Experiments/Analytics configuration.
+     *
+     */
+    @GET
+    @NoCache
+    @Path("/health")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityView healthcheck(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response)
+            throws DotDataException, DotSecurityException, SystemException, PortalException {
+
+        final InitDataObject initData = getInitData(request, response);
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+        final AnalyticsApp analyticsApp = Try.of(()->AnalyticsHelper.get().appFromHost(host))
+                .getOrNull();
+
+        if(analyticsApp==null) {
+            return new ResponseEntityView<>(Map.of("healthy", false));
+        }
+
+        final EventLogRunnable eventLogRunnable = new EventLogRunnable(host);
+        return new ResponseEntityView<>(Map.of("healthy", eventLogRunnable.sendTestEvent()
+                .isPresent()));
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,

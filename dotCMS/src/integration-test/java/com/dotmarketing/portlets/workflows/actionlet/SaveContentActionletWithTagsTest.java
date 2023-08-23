@@ -26,7 +26,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -53,7 +52,7 @@ public class SaveContentActionletWithTagsTest extends BaseWorkflowIntegrationTes
         // associated the scheme to the type
         final WorkflowScheme systemWorkflowScheme = workflowAPI.findSystemWorkflowScheme();
         workflowAPI.saveSchemesForStruct(new StructureTransformer(customContentType).asStructure(),
-                Collections.singletonList(systemWorkflowScheme));
+                List.of(systemWorkflowScheme));
 
         setDebugMode(false);
     }

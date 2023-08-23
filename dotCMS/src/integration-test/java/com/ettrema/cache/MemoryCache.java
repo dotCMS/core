@@ -25,7 +25,7 @@ public class MemoryCache<K, T> implements Cache<K, T>, Service {
 
     public MemoryCache(String name, int highWater, int lowWater) {
         this.name = name;
-        this.map = new OrderedMap<K, T>();
+        this.map = new OrderedMap<>();
         if (highWater < lowWater) {
             throw new IllegalArgumentException("highWater must be greater then lowWater");
         }
@@ -38,7 +38,7 @@ public class MemoryCache<K, T> implements Cache<K, T>, Service {
 
     public MemoryCache(int highWater, int lowWater, Cache<K, T> auxillary) {
         this.name = auxillary.getName() + " Memory";
-        this.map = new OrderedMap<K, T>();
+        this.map = new OrderedMap<>();
         if (highWater < lowWater) {
             throw new IllegalArgumentException("highWater must be greater then lowWater");
         }

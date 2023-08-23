@@ -222,7 +222,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 			SessionMessages.add(req, "custommessage", LanguageUtil.get(user, "message.contentlets.batch.reindexing.background"));
 		boolean filterError = false;
 
-		List<String> existingFileNames = new ArrayList<String>();
+		List<String> existingFileNames = new ArrayList<>();
 		final java.io.File tempFolder = java.io.File.createTempFile("temp", UUID.randomUUID().toString());
 		tempFolder.delete();
 		tempFolder.mkdirs();

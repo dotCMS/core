@@ -23,7 +23,7 @@ public class ContainerAjaxUtil {
 	private static final String PATTERN_METATAG = "^<meta.*/>$";
 
 
-	private static List<String> PATTERNS = new ArrayList<String>();
+	private static List<String> PATTERNS = new ArrayList<>();
 
 	static {
 		PATTERNS.add(PATTERN_HTML_START);

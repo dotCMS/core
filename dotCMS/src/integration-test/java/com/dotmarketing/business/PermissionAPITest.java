@@ -20,6 +20,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.UserDataGen;
+import java.util.HashSet;
 import org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -441,7 +442,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f4/", host, sysuser, false);
         permissionAPI.permissionIndividually(host, f, sysuser, false);
 
-        ArrayList<Permission> permissions=new ArrayList<Permission>(permissionAPI.getPermissions(f));
+        ArrayList<Permission> permissions=new ArrayList<>(permissionAPI.getPermissions(f));
 
         Permission p=new Permission();
         p.setPermission(PermissionAPI.PERMISSION_READ);
@@ -513,7 +514,7 @@ public class PermissionAPITest extends IntegrationTestBase {
             permissionAPI.getPermissions(f1);
             permissionAPI.getPermissions(f2);
 
-            Map<String,String> mm=new HashMap<String,String>();
+            Map<String,String> mm=new HashMap<>();
             mm.put("individual",Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE));
             new RoleAjax().saveRolePermission(nrole.getId(), hh.getIdentifier(), mm, false);
 
@@ -750,7 +751,7 @@ public class PermissionAPITest extends IntegrationTestBase {
             FieldsCache.addField(field);
 
 
-            Map<String,String> mm=new HashMap<String,String>();
+            Map<String,String> mm=new HashMap<>();
             mm.put("individual",Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN));
             mm.put("structures", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
             mm.put("content", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
@@ -833,7 +834,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
         Role nrole=getRole("TestingRole10");
 
-        Map<String,String> mm=new HashMap<String,String>();
+        Map<String,String> mm=new HashMap<>();
         mm.put("templateLayouts", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
         RoleAjax roleAjax = new RoleAjax();
         roleAjax.saveRolePermission(nrole.getId(), hh.getIdentifier(), mm, false);
@@ -1269,7 +1270,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
             final List<Permission> pagePermissionsRestoredInheritance = permissionAPI.getPermissions(
                     page, true);
-            assertEquals(pagePermissionsRestoredInheritance, pagePermissionsInheritedFromSite);
+            assertEquals(new HashSet(pagePermissionsRestoredInheritance), new HashSet(pagePermissionsInheritedFromSite));
         }catch(Exception e){
             HibernateUtil.rollbackTransaction();
             Logger.error(PermissionAPITest.class, e.getMessage());

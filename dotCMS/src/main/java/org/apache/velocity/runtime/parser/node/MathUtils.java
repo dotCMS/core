@@ -21,6 +21,7 @@ package org.apache.velocity.runtime.parser.node;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
@@ -185,7 +186,7 @@ public abstract class MathUtils
             else
             {
                 // TODO: JDK 1.4+ -> valueOf()
-                return new Byte ((byte)value);
+                return Byte.valueOf((byte)value);
             }
         }
         if (type == Short.class)
@@ -197,7 +198,7 @@ public abstract class MathUtils
             else
             {
                 // TODO: JDK 1.4+ -> valueOf()
-                return new Short((short)value);
+                return Short.valueOf((short)value);
             }
         }
         if (type == Integer.class)
@@ -209,13 +210,13 @@ public abstract class MathUtils
             else
             {
                 // TODO: JDK 1.4+ -> valueOf()
-                return new Integer ((int)value);
+                return Integer.valueOf((int)value);
             }
         }
         if (type == Long.class)
         {
             // TODO: JDK 1.4+ -> valueOf()
-            return new Long (value);
+            return Long.valueOf(value);
         }
         return BigInteger.valueOf( value);
     }
@@ -298,9 +299,9 @@ public abstract class MathUtils
                 }
                 return wrapPrimitive( result, op1, op2);
             case BASE_FLOAT:
-                return new Float (op1.floatValue()+op2.floatValue());
+                return Float.valueOf(op1.floatValue() + op2.floatValue());
             case BASE_DOUBLE:
-                return new Double (op1.doubleValue()+op2.doubleValue());
+                return Double.valueOf(op1.doubleValue() + op2.doubleValue());
 
             // Default is BigDecimal operation
             default:
@@ -332,9 +333,9 @@ public abstract class MathUtils
                 }
                 return wrapPrimitive( result, op1, op2);
             case BASE_FLOAT:
-                return new Float (op1.floatValue()-op2.floatValue());
+                return Float.valueOf(op1.floatValue() - op2.floatValue());
             case BASE_DOUBLE:
-                return new Double (op1.doubleValue()-op2.doubleValue());
+                return Double.valueOf(op1.doubleValue() - op2.doubleValue());
 
             // Default is BigDecimal operation
             default:
@@ -366,9 +367,9 @@ public abstract class MathUtils
                 }
                 return wrapPrimitive( result, op1, op2);
             case BASE_FLOAT:
-                return new Float (op1.floatValue()*op2.floatValue());
+                return Float.valueOf(op1.floatValue() * op2.floatValue());
             case BASE_DOUBLE:
-                return new Double (op1.doubleValue()*op2.doubleValue());
+                return Double.valueOf(op1.doubleValue() * op2.doubleValue());
 
             // Default is BigDecimal operation
             default:
@@ -399,13 +400,13 @@ public abstract class MathUtils
                 return wrapPrimitive( l1 / l2, op1, op2);
 
             case BASE_FLOAT:
-                return new Float (op1.floatValue()/op2.floatValue());
+                return Float.valueOf(op1.floatValue() / op2.floatValue());
             case BASE_DOUBLE:
-                return new Double (op1.doubleValue()/op2.doubleValue());
+                return Double.valueOf(op1.doubleValue() / op2.doubleValue());
 
             // Default is BigDecimal operation
             default:
-                return toBigDecimal( op1 ).divide( toBigDecimal( op2 ), BigDecimal.ROUND_HALF_DOWN);
+                return toBigDecimal( op1 ).divide(toBigDecimal(op2), RoundingMode.HALF_DOWN);
         }
     }
 
@@ -426,9 +427,9 @@ public abstract class MathUtils
             case BASE_LONG:
                 return wrapPrimitive( op1.longValue() % op2.longValue(), op1, op2);
             case BASE_FLOAT:
-                return new Float (op1.floatValue() % op2.floatValue());
+                return Float.valueOf(op1.floatValue() % op2.floatValue());
             case BASE_DOUBLE:
-                return new Double (op1.doubleValue() % op2.doubleValue());
+                return Double.valueOf(op1.doubleValue() % op2.doubleValue());
 
             // Default is BigDecimal operation
             default:

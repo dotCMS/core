@@ -6,6 +6,8 @@ import { fakeAsync, getTestBed, TestBed, tick } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotApps, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
@@ -61,6 +63,7 @@ describe('DotAppsService', () => {
                     provide: LoginService,
                     useClass: LoginServiceMock
                 },
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                 ConfirmationService,

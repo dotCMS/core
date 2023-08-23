@@ -190,7 +190,7 @@ public class DependencyModDateUtil {
 				final Optional<PushedAsset> pushedAssetOptional =
 						getPushedAsset(assetId, environment);
 
-				if (!pushedAssetOptional.isPresent()) {
+				if (pushedAssetOptional.isEmpty()) {
 					return false;
 				}
 

@@ -41,8 +41,8 @@ public class GeoIp2CityDbUtilTest {
         System.out.println(mapper.writeValueAsString(geo));
         assertEquals(geo.getCity(), "Andover");
         assertEquals(geo.getCountry(), "United States");
-        assertEquals(new Double(geo.getLatitude()), new Double(42.6489));
-        assertEquals(new Double(geo.getLongitude()), new Double(-71.1655d));
+        assertEquals(Double.valueOf(geo.getLatitude()), Double.valueOf(42.6489));
+        assertEquals(Double.valueOf(geo.getLongitude()), Double.valueOf(-71.1655d));
         assertEquals(geo.getCountryCode(),"US");
         assertEquals(geo.getContinent(),"North America");
         assertEquals(geo.getContinentCode(),"NA");

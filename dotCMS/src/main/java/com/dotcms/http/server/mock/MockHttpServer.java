@@ -12,8 +12,13 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Mock for a HttpServer
@@ -27,6 +32,7 @@ public class MockHttpServer {
     private  HttpServer httpServer;
     private List<String> errors = new ArrayList<>();
     private List<URI> uris = new ArrayList<>();
+    private List<MockHttpServerContext> contextsUsed = new ArrayList<>();
 
     public MockHttpServer(String ip, int port) {
         this.ip =ip;
@@ -49,23 +55,27 @@ public class MockHttpServer {
         try {
             httpServer = HttpServer.create(new InetSocketAddress(ip, port), 0);
 
-            for (MockHttpServerContext mockHttpServerContext : mockHttpServerContexts) {
-                httpServer.createContext(mockHttpServerContext.getUri(), exchange -> {
+            final Map<String, List<MockHttpServerContext>> contextMap = orderContextByUri();
+
+            for (Entry<String, List<MockHttpServerContext>> entry : contextMap.entrySet()) {
+                final List<MockHttpServerContext> contexts = entry.getValue();
+
+                httpServer.createContext(entry.getKey(), exchange -> {
                     this.uris.add(exchange.getRequestURI());
 
-                    if (!validate(mockHttpServerContext, exchange)){
-                        exchange.sendResponseHeaders(HttpResponseCode.INTERNAL_SERVER_ERROR, 0);
-                    } else {
-
-                        exchange.sendResponseHeaders(mockHttpServerContext.getStatus(),
-                                mockHttpServerContext.getBody().length());
-
-                        if (UtilMethods.isSet(mockHttpServerContext.getBody())) {
-                            writeBody(mockHttpServerContext, exchange);
+                    for (final MockHttpServerContext context : contexts) {
+                        if (validate(context, exchange)) {
+                            this.contextsUsed.add(context);
+                            sendSuccessResponse(exchange, context);
+                            return;
                         }
                     }
 
-                    exchange.close();
+                    final RequestContext requestContext = new RequestContext(exchange);
+
+                    this.errors.add(getErrorMessage(contexts, requestContext));
+
+                    sendFailResponse(exchange);
                 });
             }
 
@@ -73,6 +83,52 @@ public class MockHttpServer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static String getErrorMessage(List<MockHttpServerContext> contexts,
+            RequestContext requestContext) {
+        return "New Request:" + contexts.stream()
+                    .flatMap(context -> context.getRequestConditions().stream())
+                    .map(requestCondition -> requestCondition.getMessage(requestContext))
+                    .collect(Collectors.joining("\n"));
+    }
+
+    private static void sendFailResponse(HttpExchange exchange) {
+        try {
+            exchange.sendResponseHeaders(HttpResponseCode.INTERNAL_SERVER_ERROR, 0);
+            exchange.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void sendSuccessResponse(HttpExchange exchange, MockHttpServerContext context) {
+        try {
+            exchange.sendResponseHeaders(context.getStatus(),
+                    context.getBody().length());
+
+            if (UtilMethods.isSet(context.getBody())) {
+                writeBody(context, exchange);
+            }
+
+            exchange.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NotNull
+    private Map<String, List<MockHttpServerContext>> orderContextByUri() {
+        final Map<String, List<MockHttpServerContext>> contextMap = new HashMap<>();
+
+        for (MockHttpServerContext mockHttpServerContext : mockHttpServerContexts) {
+            if (!contextMap.containsKey(mockHttpServerContext.getUri())) {
+                contextMap.put(mockHttpServerContext.getUri(), new ArrayList<>());
+            }
+
+            contextMap.get(mockHttpServerContext.getUri()).add(mockHttpServerContext);
+        }
+        return contextMap;
     }
 
     /**
@@ -97,7 +153,6 @@ public class MockHttpServer {
 
         for (Condition requestCondition : requestConditions) {
             if (!requestCondition.getValidation().apply(requestContext)) {
-                this.errors.add(requestCondition.getMessage());
                 return false;
             }
         }
@@ -118,6 +173,10 @@ public class MockHttpServer {
                 .collect(Collectors.toList());
 
         for (final MockHttpServerContext mockHttpServerContext : mustBeCalledContext) {
+            if (!contextsUsed.stream().anyMatch(context -> context.equals(mockHttpServerContext))) {
+                throw new AssertException("Must be called context: " + mockHttpServerContext);
+            }
+
             if (!uris.stream().anyMatch(uri -> uri.getPath().equals(mockHttpServerContext.getUri()))) {
                 throw new AssertException(mockHttpServerContext.getUri() + " Must be called");
             }

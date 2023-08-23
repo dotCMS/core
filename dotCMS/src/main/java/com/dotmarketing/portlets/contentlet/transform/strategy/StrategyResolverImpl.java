@@ -69,7 +69,8 @@ public class StrategyResolverImpl implements StrategyResolver {
                  SITE_VIEW,       ()-> new  SiteViewStrategy(toolBox),
                  STORY_BLOCK_VIEW,()-> new  StoryBlockViewStrategy(toolBox),
                  RENDER_FIELDS,   ()-> new  RenderFieldStrategy(toolBox),
-                 JSON_VIEW,   ()-> new  JSONViewStrategy(toolBox)
+                 JSON_VIEW,   ()-> new  JSONViewStrategy(toolBox),
+                 DATETIME_FIELDS_TO_TIMESTAMP,   ()-> new DateTimeFieldsToTimeStampStrategy(toolBox)
              ),
              ()-> new DefaultTransformStrategy(toolBox)
         );

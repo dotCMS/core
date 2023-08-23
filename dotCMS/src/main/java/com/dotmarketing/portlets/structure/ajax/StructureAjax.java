@@ -72,8 +72,8 @@ public class StructureAjax {
 	public List<Map<String, Object>> getWidgets(){
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = null;
-		List<Map<String,Object>> wids = new ArrayList<Map<String,Object>>();
-		List<Structure> wstructures = new ArrayList<Structure>();
+		List<Map<String,Object>> wids = new ArrayList<>();
+		List<Structure> wstructures = new ArrayList<>();
 
 			user = com.liferay.portal.util.PortalUtil.getUser(req);
 
@@ -112,7 +112,7 @@ public class StructureAjax {
 	public List<Map> getSearchableStructureFields (String structureInode) {
 		Structure st = StructureFactory.getStructureByInode(structureInode);
 		List<Field> fields = st.getFields();
-		ArrayList<Map> searchableFields = new ArrayList<Map> ();
+		ArrayList<Map> searchableFields = new ArrayList<> ();
 		for (Field field : fields) {
 		  if (!field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) &&
 					  !field.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
@@ -132,7 +132,7 @@ public class StructureAjax {
 
 
 	public Map<String,Object> getKeyStructureFields (final String contentTypeInode) throws SystemException, PortalException, DotDataException, DotSecurityException {
-		final Map<String,Object> result = new HashMap<String, Object>();
+		final Map<String,Object> result = new HashMap<>();
 		final boolean allowImport = true;
 
 		//Retrieving the current user
@@ -142,7 +142,7 @@ public class StructureAjax {
 
 		final ContentType contentTypeToImport = APILocator.getContentTypeAPI(user).find(contentTypeInode);
 		final List<com.dotcms.contenttype.model.field.Field> fields = contentTypeToImport.fields();
-		final ArrayList<Map> searchableFields = new ArrayList<Map> ();
+		final ArrayList<Map> searchableFields = new ArrayList<> ();
 
 		fields.stream().filter(field -> !(field instanceof RelationshipField))
 				.filter(field -> !(field instanceof RelationshipsTabField))
@@ -196,7 +196,7 @@ public class StructureAjax {
 		}
 
 
-		List<Map> catsMaps = new ArrayList<Map>();
+		List<Map> catsMaps = new ArrayList<>();
 
 		List<Field> fields = st.getFields();
 		for (Field field : fields) {
@@ -234,7 +234,7 @@ public class StructureAjax {
 		}
 
 		Structure st = (Structure) CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureName);
-		List<Map<String, Object>> maps = new ArrayList<Map<String,Object>>();
+		List<Map<String, Object>> maps = new ArrayList<>();
 
 
 		List<Field> fields = st.getFields();
@@ -280,7 +280,7 @@ public class StructureAjax {
 		}
 
 		String separator = "    ";
-		ArrayList<Map<String, Object>> categories = new ArrayList<Map<String, Object>>();
+		ArrayList<Map<String, Object>> categories = new ArrayList<>();
 		if(level <= maxLevel)
 		{
 			int nextLevel = level + 1;
@@ -463,7 +463,7 @@ public class StructureAjax {
         
         // StructureInode is a special inode to get ALL content types (used in combo boxes)
         if(StructureInode.equals(Structure.STRUCTURE_TYPE_ALL)) {
-            Map<String, Object> structureDetails = new HashMap<String, Object>();
+            Map<String, Object> structureDetails = new HashMap<>();
             structureDetails.put("inode", Structure.STRUCTURE_TYPE_ALL);
             structureDetails.put("name", LanguageUtil.get(user, "all"));
             structureDetails.put("velocityVarName", StringPool.BLANK);
@@ -474,9 +474,9 @@ public class StructureAjax {
         Structure str = CacheLocator.getContentTypeCache().getStructureByInode(StructureInode);
 
         if(!APILocator.getPermissionAPI().doesUserHavePermission(str, PERMISSION_READ, user, false))
-            return  new HashMap<String, Object>();
+            return  new HashMap<>();
 
-		Map<String, Object> structureDetails = new HashMap<String, Object>();
+		Map<String, Object> structureDetails = new HashMap<>();
 		structureDetails.put("inode", StructureInode);
 		structureDetails.put("name", str.getName());
 		structureDetails.put("velocityVarName", str.getVelocityVarName());
@@ -490,7 +490,7 @@ public class StructureAjax {
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = userWebAPI.getLoggedInUser(req);
 		if(count<=0)count=10;
-		List<Structure> fullListStructures = new ArrayList<Structure>();
+		List<Structure> fullListStructures = new ArrayList<>();
 		try{
 			String structureTypeStr = queryOptions.get("structureType");
 			Integer structureType = null;
@@ -507,8 +507,8 @@ public class StructureAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
-		Map<String, Object> results = new HashMap<String, Object>();
-		List<Map<String, Object>> list = new ArrayList<Map<String, Object>> ();
+		Map<String, Object> results = new HashMap<>();
+		List<Map<String, Object>> list = new ArrayList<> ();
 		for(Structure structure : fullListStructures) {
 			Map<String, Object> stMap = structure.getMap();
 			list.add(stMap);
@@ -532,12 +532,12 @@ public class StructureAjax {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		
-		Map<Object,Object> result = new HashMap<Object, Object>();
-		List<Map<String,String>> containersList = new ArrayList<Map<String,String>>();
+		Map<Object,Object> result = new HashMap<>();
+		List<Map<String,String>> containersList = new ArrayList<>();
 		
 		// checking if there are containers using this structure
 		List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(structureInode, true);
-		Map<String, Container> containersInUse = new HashMap<String, Container>();		
+		Map<String, Container> containersInUse = new HashMap<>();		
 		
 		for(Container c : containers) {
 			try {
@@ -551,7 +551,7 @@ public class StructureAjax {
 			try {
 				hostTitle = APILocator.getHostAPI().findParentHost(c, PortalUtil.getUser(request), false).getTitle();
 			} catch (Exception e) {}
-			Map<String,String> containerMap = new HashMap<String, String>();
+			Map<String,String> containerMap = new HashMap<>();
 			containerMap.put("title", hostTitle + " : " + c.getTitle());
 			containerMap.put("identifier", c.getIdentifier());
 			containerMap.put("inode", c.getInode());

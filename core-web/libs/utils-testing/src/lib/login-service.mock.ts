@@ -1,4 +1,5 @@
 import { of, Observable, Subject } from 'rxjs';
+
 import { Auth, User } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
 
@@ -8,6 +9,8 @@ export const mockUser = () => {
         admin: true,
         firstName: 'Admin',
         lastName: 'Admin',
+        fullName: 'Admin',
+        name: 'Admin',
         loggedInDate: 123456789,
         userId: '123',
         languageId: 'en_US'
@@ -71,12 +74,12 @@ const mockUserWithRedirect: User = {
 
 export const mockAuth: Auth = {
     loginAsUser: mockUser(),
-    user: mockUser()
+    user: mockUser(),
+    isLoginAs: true
 };
 
 export class LoginServiceMock {
     _auth: Subject<Auth> = new Subject();
-    private watchUserFunc: (params: unknown) => void;
 
     constructor() {
         this._auth.next(mockAuth);
@@ -87,11 +90,15 @@ export class LoginServiceMock {
     }
 
     get auth$(): Observable<Auth> {
-        return this._auth;
+        return this._auth.asObservable();
     }
 
     setAuth(): void {
         /* */
+    }
+
+    loadAuth() {
+        return of(mockAuth);
     }
 
     loginAs(): Observable<boolean> {
@@ -106,16 +113,12 @@ export class LoginServiceMock {
         return of(mockUserWithRedirect);
     }
 
-    logOutUser(): Observable<User> {
+    logOutUser(): Observable<User | null> {
         return of(null);
     }
 
     watchUser(func: (params: unknown) => void): void {
-        this.watchUserFunc = func;
-    }
-
-    tiggerWatchUser(): void {
-        this.watchUserFunc(mockAuth);
+        func(mockAuth);
     }
 
     triggerNewAuth(auth: Auth) {

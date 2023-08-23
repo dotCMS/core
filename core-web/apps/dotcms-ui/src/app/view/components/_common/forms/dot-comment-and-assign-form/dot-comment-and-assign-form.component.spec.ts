@@ -14,6 +14,7 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotRolesService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, mockProcessedRoles } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -47,6 +48,7 @@ describe('DotAssigneeFormComponent', () => {
             imports: [
                 HttpClientTestingModule,
                 DotPipesModule,
+                DotMessagePipe,
                 FormsModule,
                 ReactiveFormsModule,
                 InputTextareaModule,

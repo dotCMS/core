@@ -11,6 +11,7 @@ import com.dotcms.enterprise.publishing.remote.handler.ContainerHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentTypeHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentWorkflowHandler;
+import com.dotcms.enterprise.publishing.remote.handler.ExperimentHandler;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandler;
 import com.dotcms.enterprise.publishing.remote.handler.HostHandler;
 import com.dotcms.enterprise.publishing.remote.handler.LanguageHandler;
@@ -21,6 +22,7 @@ import com.dotcms.enterprise.publishing.remote.handler.RelationshipHandler;
 import com.dotcms.enterprise.publishing.remote.handler.RuleHandler;
 import com.dotcms.enterprise.publishing.remote.handler.TemplateHandler;
 import com.dotcms.enterprise.publishing.remote.handler.UserHandler;
+import com.dotcms.enterprise.publishing.remote.handler.VariantHandler;
 import com.dotcms.enterprise.publishing.remote.handler.WorkflowHandler;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.EndpointDetail;
@@ -101,14 +103,14 @@ public class BundlePublisher extends Publisher {
 
     boolean bundleSuccess = true;
 
-    private List<IHandler> handlers = new ArrayList<IHandler>();
+    private List<IHandler> handlers = new ArrayList<>();
 
     @Override
     public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
         if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
             throw new RuntimeException("need an enterprise license to run this");
         }
-        handlers = new ArrayList<IHandler>();
+        handlers = new ArrayList<>();
         handlers.add(new BundleXMLascHandler(config));
         //The order is really important
         handlers.add(new UserHandler(config));
@@ -125,7 +127,9 @@ public class BundlePublisher extends Publisher {
         handlers.add(new TemplateHandler(config));
         handlers.add(new LanguageHandler(config));
         handlers.add(new LanguageVariablesHandler(config));
+        handlers.add(new VariantHandler(config));
         handlers.add(new ContentHandler(config));
+        handlers.add(new ExperimentHandler(config));
         handlers.add(new ContentWorkflowHandler(config));
         handlers.add(new OSGIHandler(config));
         handlers.add(new LinkHandler(config));
@@ -295,7 +299,7 @@ public class BundlePublisher extends Publisher {
     @SuppressWarnings("rawtypes")
     @Override
     public List<Class> getBundlers() {
-        List<Class> list = new ArrayList<Class>();
+        List<Class> list = new ArrayList<>();
 
         return list;
     }

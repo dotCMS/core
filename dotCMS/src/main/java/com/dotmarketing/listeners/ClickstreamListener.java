@@ -28,7 +28,7 @@ import com.dotmarketing.util.Logger;
 public class ClickstreamListener implements ServletContextListener, HttpSessionListener {
 
   public static final String CLICKSTREAMS_ATTRIBUTE_KEY = "clickstreams";
-  private static Map<String, Clickstream> clickstreams = Collections.synchronizedMap(new HashMap<String, Clickstream>());
+  private static Map<String, Clickstream> clickstreams = Collections.synchronizedMap(new HashMap<>());
 
   public ClickstreamListener() {
     Logger.debug(this, "ClickstreamLogger constructed");

@@ -428,6 +428,10 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
     Persona persona = fromContentlet(personaContentlet);
     String keyTag = persona.getKeyTag();
 
+    if(null == keyTag || keyTag.isEmpty()) {
+      return;
+    }
+    
     // Search for the tag related to this key tag, either in current host or
     // system host
     Tag foundPersonaKeyTag = APILocator.getTagAPI().getTagByNameAndHost(keyTag, persona.getHost());

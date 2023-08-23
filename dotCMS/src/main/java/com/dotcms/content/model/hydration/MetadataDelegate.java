@@ -24,16 +24,10 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableSet;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.Serializable;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -47,14 +41,19 @@ import java.util.stream.Collectors;
  */
 public class MetadataDelegate implements HydrationDelegate {
 
-    final Set<String> filter = ImmutableSet.of("sha256","name","contentType","isImage");
+    public static final String SHA_256 = "sha256";
+    public static final String NAME = "name";
+    public static final String CONTENT_TYPE = "contentType";
+    public static final String IS_IMAGE = "isImage";
+
+    static final Set<String> fieldNames = Set.of(SHA_256, NAME, CONTENT_TYPE, IS_IMAGE);
 
     @Override
     public FieldValueBuilder hydrate(final FieldValueBuilder builder, final Field field,
             final Contentlet contentlet, String propertyName)
             throws DotDataException, DotSecurityException {
 
-        Map<String, Serializable> metadataMap = null;
+        Map<String, Object> metadataMap = null;
         try{
             metadataMap = getMetadataMap(field, contentlet);
         } finally {
@@ -70,7 +69,7 @@ public class MetadataDelegate implements HydrationDelegate {
      * @param contentlet
      * @return
      */
-    private Map<String, Serializable> getMetadataMap(final Field field, final Contentlet contentlet) {
+    private Map<String, Object> getMetadataMap(final Field field, final Contentlet contentlet) {
         final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
         Map<String, Serializable> metadataMap = null;
         try {
@@ -180,12 +179,12 @@ public class MetadataDelegate implements HydrationDelegate {
      * @param originalMap
      * @return
      */
-    private Map<String, Serializable> filterMetadataFields(
+    private Map<String, Object> filterMetadataFields(
             final Map<String, Serializable> originalMap) {
         if (null == originalMap) {
             return null;
         }
-        return originalMap.entrySet().stream().filter(entry -> filter
+        return originalMap.entrySet().stream().filter(entry -> fieldNames
                 .contains(entry.getKey())).collect(
                 Collectors.toMap(Entry::getKey, Entry::getValue));
     }

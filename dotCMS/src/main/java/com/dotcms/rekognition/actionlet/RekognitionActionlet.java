@@ -74,7 +74,7 @@ public class RekognitionActionlet extends WorkFlowActionlet {
             fields = APILocator.getContentTypeAPI(processor.getUser()).find(contentlet.getContentTypeId()).fields();
             tagFieldOpt = fields.stream().filter(TagField.class::isInstance).findFirst();
             //Check if there is a Tag Field, if not there is nothing to do here
-            if (!tagFieldOpt.isPresent()) {
+            if (tagFieldOpt.isEmpty()) {
                 Logger.warn(this,"There is no Tag Field in the Content Type");
                 return;
             }
@@ -92,7 +92,7 @@ public class RekognitionActionlet extends WorkFlowActionlet {
                     .findFirst();
 
             //Check if there is a Binary Field and if there is an Image set in it, if not there is nothing to do here
-            if (!imageOpt.isPresent()) {
+            if (imageOpt.isEmpty()) {
                 Logger.warn(this,"There is no Binary Field or an Image is not set in it");
                 return;
             }
@@ -102,7 +102,7 @@ public class RekognitionActionlet extends WorkFlowActionlet {
             final Host host = Try.of(() -> APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser(),false)).getOrElse(APILocator.systemHost());
             appSecrets = APILocator.getAppsAPI().getSecrets(AMAZON_REKOGNITION_APP_CONFIG_KEY,true,host,APILocator.systemUser());
 
-            if(!appSecrets.isPresent()) {
+            if(appSecrets.isEmpty()) {
                 Logger.warn(RekognitionActionlet.class,"There is no config set, please set it via Apps Tool");
                 return;
             }

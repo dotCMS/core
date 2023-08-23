@@ -2,6 +2,7 @@ import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ListboxModule } from 'primeng/listbox';
@@ -14,13 +15,10 @@ import { DotBlockEditorComponent } from './dot-block-editor.component';
 
 import { BlockEditorModule } from '../../block-editor.module';
 import {
-    ActionButtonComponent,
     BubbleLinkFormComponent,
-    DotImageService,
     DragHandlerComponent,
-    FileStatus,
     AssetFormComponent,
-    LoaderComponent
+    UploadPlaceholderComponent
 } from '../../extensions';
 import { ContentletBlockComponent } from '../../nodes';
 import {
@@ -29,11 +27,13 @@ import {
     SearchService,
     SuggestionsComponent,
     SuggestionsService,
-    ASSET_MOCK
+    DotUploadFileService,
+    ASSET_MOCK,
+    FileStatus
 } from '../../shared';
 
 export default {
-    title: 'Block Editor'
+    title: 'Library/Block Editor'
 };
 
 export const primary = () => ({
@@ -45,11 +45,12 @@ export const primary = () => ({
             BlockEditorModule,
             OrderListModule,
             ListboxModule,
+            BrowserModule,
             BrowserAnimationsModule
         ],
         providers: [
             {
-                provide: DotImageService,
+                provide: DotUploadFileService,
                 useValue: {
                     publishContent({
                         data: _data,
@@ -183,9 +184,8 @@ export const primary = () => ({
         entryComponents: [
             SuggestionsComponent,
             ContentletBlockComponent,
-            ActionButtonComponent,
             DragHandlerComponent,
-            LoaderComponent,
+            UploadPlaceholderComponent,
             BubbleLinkFormComponent,
             AssetFormComponent
         ]

@@ -7,10 +7,19 @@
                     [binary]="true"
                     [id]="control.key"
                 ></p-checkbox>
-                <label [for]="control.key">{{ control.label | titlecase }}</label>
+                <label
+                    [checkIsRequiredControl]="control.key"
+                    [for]="control.key"
+                    dotFieldRequired
+                    >{{ control.label | titlecase }}</label
+                >
             </ng-container>
             <ng-container *ngSwitchDefault>
-                <label [for]="control.key">{{ control.label | titlecase }}</label>
+                <label
+                    [ngClass]="{ 'p-label-input-required': control.required }"
+                    [for]="control.key"
+                    >{{ control.label | titlecase }}</label
+                >
                 <input
                     #group
                     *ngSwitchDefault

@@ -1,0 +1,138 @@
+/* PORTLET STYLES 2.0 */
+$panel-padding: $spacing-1 * 2;
+
+.portlet {
+    &-main {
+        padding: 0;
+
+        .dijitTabPaneWrapper .dijitContentPane .dijitContentPane {
+            padding: 0;
+        }
+    }
+
+    &-sidebar {
+        padding: $spacing-1 * 3 $panel-padding 0 $panel-padding;
+    }
+
+    &-sidebar-wrapper {
+        background-color: $color-palette-gray-100;
+        border-right: solid 1px $color-palette-gray-400;
+    }
+
+    &-wrapper {
+        height: 100%;
+        overflow: auto;
+    }
+
+    &-pagination,
+    &-toolbar,
+    &-toolbar__actions,
+    &-toolbar__info {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    &-toolbar__actions-primary {
+        display: flex;
+        align-items: center;
+        gap: $spacing-1 * 2;
+    }
+
+    &-toolbar__actions-archive {
+        display: flex;
+        align-items: center;
+        gap: $spacing-1;
+    }
+
+    &-pagination {
+        margin: $panel-padding;
+    }
+
+    &-pagination__results {
+        flex: 1;
+        align-self: center;
+        text-align: center;
+    }
+
+    &-toolbar {
+        margin: 0 $panel-padding $panel-padding;
+
+        .dijitTabPaneWrapper .dijitContentPane & {
+            margin: 0 0 $panel-padding;
+        }
+
+        & > * {
+            align-self: center;
+        }
+
+        a {
+            text-decoration: none;
+        }
+    }
+
+    &-toolbar__info {
+        display: flex;
+        justify-content: center;
+        flex: 1;
+        margin: 0 18px;
+        align-items: center;
+
+        .dijitTabPaneWrapper .dijitContentPane & {
+            margin-left: 0;
+        }
+    }
+
+    &-toolbar__center {
+        flex: 2;
+
+        .callOutBox {
+            margin: 0;
+        }
+
+        & + .portlet-toolbar__actions {
+            flex: 1;
+            justify-content: flex-end;
+        }
+    }
+}
+
+#tablemessage {
+    color: #cc0000;
+}
+
+.hintBox {
+    background-color: $color-palette-gray-200;
+    border-radius: $border-radius-xs;
+    border: solid 1px $color-palette-gray-500;
+    padding: $spacing-1 * 2;
+    position: absolute;
+    right: $spacing-1 * 2;
+    top: $spacing-1 * 2;
+    width: 300px;
+}
+
+// TODO: fix this, rgba can't take hex values
+.callOutBox {
+    background-color: $color-palette-black-op-10;
+    border-radius: $border-radius-xs;
+    border: 1px solid $color-palette-black-op-30;
+    margin: $spacing-1 * 2 0;
+    padding: $spacing-1;
+    text-align: center;
+}
+
+.callOutBox2 {
+    background-color: $color-palette-gray-400;
+    border-radius: $border-radius-xs;
+    border: 1px solid $color-palette-gray-500;
+    padding: $spacing-1;
+    text-align: center;
+
+    h3 {
+        margin-bottom: $spacing-1 * 2;
+    }
+
+    p:last-child {
+        margin-bottom: 0;
+    }
+}

@@ -1,0 +1,525 @@
+.dijitButton,
+.dijitToggleButton {
+    height: $field-height-md;
+    border-radius: $border-radius-md;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    .dijitButtonNode {
+        padding: 0 $spacing-3;
+        margin: none;
+
+        .dijitIcon {
+            margin-right: $spacing-1;
+        }
+    }
+
+    .dijitInline .dijitButtonNode {
+        margin: 0;
+    }
+
+    .dijitButtonText {
+        text-transform: capitalize;
+    }
+}
+
+.dijitButton,
+.dijitComboBox,
+.dijitComboButton,
+.dijitDropDownButton,
+.dijitToggleButton {
+    margin: 0;
+}
+
+.dijit {
+    &Button {
+        @include btn(
+            $button-normal-shadow,
+            $button-normal-bgcolor,
+            $button-normal-border,
+            $button-normal-textcolor
+        );
+
+        &Node {
+            border: none;
+            font-size: $font-size-md;
+        }
+
+        &Hover {
+            @include btn(
+                $button-hover-shadow,
+                $button-hover-bgcolor,
+                $button-hover-border,
+                $button-hover-textcolor
+            );
+        }
+
+        &Focused {
+            @include btn(
+                $button-active-shadow,
+                $button-active-bgcolor,
+                $button-active-border,
+                $button-active-textcolor
+            );
+
+            @include field-focus;
+        }
+
+        &Disabled {
+            @include btn(
+                $button-disabled-shadow,
+                $button-disabled-bgcolor,
+                $button-disabled-border,
+                $button-disabled-textcolor
+            );
+        }
+    }
+
+    &DropDownButton {
+        @include btn(
+            $dropdownbutton-normal-shadow,
+            $dropdownbutton-normal-bgcolor,
+            $dropdownbutton-normal-border,
+            $dropdownbutton-normal-textcolor
+        );
+
+        .dijitButtonContents,
+        .dijitButtonNode {
+            height: 100%;
+        }
+
+        .dijitButtonNode {
+            padding-left: $button-padding;
+        }
+
+        .dijitArrowButtonInner {
+            width: $dropdownbutton-arrow-container-size;
+
+            @if $dropdownbutton-normal-arrow-bgcolor != "transparent" {
+                // TODO: write this mixin
+                background-color: $dropdownbutton-normal-arrow-bgcolor;
+            }
+
+            &:before {
+                @if $dropdownbutton-normal-arrow-url {
+                    background-image: url($dropdownbutton-normal-arrow-url);
+                } @else {
+                    @include create-arrow(
+                        $dropdownbutton-arrow-size,
+                        $dropdownbutton-normal-arrow-color
+                    );
+                }
+            }
+        }
+
+        &Hover {
+            @include btn(
+                $dropdownbutton-hover-shadow,
+                $dropdownbutton-hover-bgcolor,
+                $dropdownbutton-hover-border,
+                $dropdownbutton-hover-textcolor
+            );
+
+            .dijitArrowButtonInner {
+                @if $dropdownbutton-hover-arrow-bgcolor != "transparent" {
+                    background-color: $dropdownbutton-hover-arrow-bgcolor;
+                }
+
+                &:before {
+                    @if $dropdownbutton-hover-arrow-url {
+                        background-image: url($dropdownbutton-hover-arrow-url);
+                    } @else {
+                        @include create-arrow(
+                            $dropdownbutton-arrow-size,
+                            $dropdownbutton-hover-arrow-color
+                        );
+                    }
+                }
+            }
+        }
+
+        &Active {
+            @include btn(
+                $dropdownbutton-active-shadow,
+                $dropdownbutton-active-bgcolor,
+                $dropdownbutton-active-border,
+                $dropdownbutton-active-textcolor
+            );
+
+            .dijitArrowButtonInner {
+                @if $dropdownbutton-active-arrow-bgcolor != "transparent" {
+                    background-color: $dropdownbutton-active-arrow-bgcolor;
+                }
+
+                &:before {
+                    @if $dropdownbutton-active-arrow-url {
+                        background-image: url($dropdownbutton-active-arrow-url);
+                    } @else {
+                        @include create-arrow(
+                            $dropdownbutton-arrow-size,
+                            $dropdownbutton-active-arrow-color
+                        );
+                    }
+                }
+            }
+        }
+
+        &Focused {
+            @include btn(
+                $dropdownbutton-focused-shadow,
+                $dropdownbutton-focused-bgcolor,
+                $dropdownbutton-focused-border,
+                $dropdownbutton-focused-textcolor
+            );
+        }
+
+        &Disabled {
+            @include btn(
+                $dropdownbutton-disabled-shadow,
+                $dropdownbutton-disabled-bgcolor,
+                $dropdownbutton-disabled-border,
+                $dropdownbutton-disabled-textcolor
+            );
+
+            .dijitArrowButtonInner {
+                @if $dropdownbutton-disabled-arrow-bgcolor != "transparent" {
+                    background-color: $dropdownbutton-disabled-arrow-bgcolor;
+                }
+
+                &:before {
+                    @if $dropdownbutton-disabled-arrow-url {
+                        background-image: url($dropdownbutton-disabled-arrow-url);
+                    } @else {
+                        @include create-arrow(
+                            $dropdownbutton-arrow-size,
+                            $dropdownbutton-disabled-arrow-color
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    &ComboButton {
+        border-collapse: inherit;
+
+        @include btn(
+            $combobutton-normal-shadow,
+            $combobutton-normal-bgcolor,
+            $combobutton-normal-border,
+            $combobutton-normal-textcolor
+        );
+
+        .dijitArrowButtonInner {
+            width: $combobutton-arrow-container-size;
+
+            @if $combobutton-normal-arrow-bgcolor != "transparent" {
+                // TODO: write this mixin
+                background-color: $combobutton-normal-arrow-bgcolor;
+            }
+
+            &:before {
+                @if $combobutton-normal-arrow-url {
+                    background-image: url($combobutton-normal-arrow-url);
+                } @else {
+                    @include create-arrow($combobutton-arrow-size, $combobutton-normal-arrow-color);
+                }
+            }
+        }
+
+        .dijitButtonNode {
+            padding-left: $button-padding;
+
+            &.dijitDownArrowButton {
+                padding-left: 0;
+            }
+        }
+
+        &Hover {
+            @include btn(
+                $combobutton-hover-shadow,
+                $combobutton-hover-bgcolor,
+                $combobutton-hover-border,
+                $combobutton-hover-textcolor
+            );
+
+            .dijitArrowButtonInner {
+                @if $combobutton-hover-arrow-bgcolor != "transparent" {
+                    background-color: $combobutton-hover-arrow-bgcolor;
+                }
+
+                &:before {
+                    @if $combobutton-hover-arrow-url {
+                        background-image: url($combobutton-hover-arrow-url);
+                    } @else {
+                        @include create-arrow(
+                            $combobutton-arrow-size,
+                            $combobutton-hover-arrow-color
+                        );
+                    }
+                }
+            }
+        }
+
+        &Active {
+            @include btn(
+                $combobutton-active-shadow,
+                $combobutton-active-bgcolor,
+                $combobutton-active-border,
+                $combobutton-active-textcolor
+            );
+
+            .dijitArrowButtonInner {
+                @if $combobutton-active-arrow-bgcolor != "transparent" {
+                    background-color: $combobutton-active-arrow-bgcolor;
+                }
+
+                &:before {
+                    @if $combobutton-active-arrow-url {
+                        background-image: url($combobutton-active-arrow-url);
+                    } @else {
+                        @include create-arrow(
+                            $combobutton-arrow-size,
+                            $combobutton-active-arrow-color
+                        );
+                    }
+                }
+            }
+        }
+
+        &Focused,
+        &HoverFocused {
+            @include btn(
+                $combobutton-focused-shadow,
+                $combobutton-focused-bgcolor,
+                $combobutton-focused-border,
+                $combobutton-focused-textcolor
+            );
+
+            .dijitArrowButtonInner {
+                @if $combobutton-focused-arrow-bgcolor != "transparent" {
+                    background-color: $combobutton-focused-arrow-bgcolor;
+                }
+
+                &:before {
+                    @if $combobutton-focused-arrow-url {
+                        background-image: url($combobutton-focused-arrow-url);
+                    } @else {
+                        @include create-arrow(
+                            $combobutton-arrow-size,
+                            $combobutton-focused-arrow-color
+                        );
+                    }
+                }
+            }
+        }
+
+        &Disabled {
+            @include btn(
+                $combobutton-disabled-shadow,
+                $combobutton-disabled-bgcolor,
+                $combobutton-disabled-border,
+                $combobutton-disabled-textcolor
+            );
+
+            .dijitArrowButtonInner {
+                @if $combobutton-disabled-arrow-bgcolor != "transparent" {
+                    background-color: $combobutton-disabled-arrow-bgcolor;
+                }
+
+                &:before {
+                    @if $combobutton-disabled-arrow-url {
+                        background-image: url($combobutton-disabled-arrow-url);
+                    } @else {
+                        @include create-arrow(
+                            $combobutton-arrow-size,
+                            $combobutton-disabled-arrow-color
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    &ToggleButton {
+        @include btn(
+            $togglebutton-normal-shadow,
+            $togglebutton-normal-bgcolor,
+            $togglebutton-normal-border,
+            $togglebutton-normal-textcolor
+        );
+
+        .dijitIcon {
+            visibility: hidden;
+        }
+
+        &Checked {
+            .dijitIcon {
+                visibility: visible;
+            }
+        }
+
+        &Focused,
+        &Checked {
+            @include btn(
+                $togglebutton-active-shadow,
+                $togglebutton-active-bgcolor,
+                $togglebutton-active-border,
+                $togglebutton-active-textcolor
+            );
+        }
+
+        &Hover,
+        &HoverFocused,
+        &CheckedHover {
+            @include btn(
+                $togglebutton-hover-shadow,
+                $togglebutton-hover-bgcolor,
+                $togglebutton-hover-border,
+                $togglebutton-hover-textcolor
+            );
+        }
+
+        &Disabled {
+            @include btn(
+                $togglebutton-disabled-shadow,
+                $togglebutton-disabled-bgcolor,
+                $togglebutton-disabled-border,
+                $togglebutton-disabled-textcolor
+            );
+        }
+    }
+
+    &DropDownActionButton {
+        background-color: $color-palette-primary;
+        border: none;
+        border-radius: 50%;
+        height: $field-height-md;
+        width: $field-height-md;
+
+        .actionIcon,
+        .fa-plus {
+            color: $white;
+            line-height: $field-height-md;
+            margin: 0;
+            font-size: $font-size-lg;
+        }
+
+        .dijitButtonNode {
+            height: $field-height-md;
+            width: $field-height-md;
+            padding: 0;
+        }
+
+        .dijitArrowButtonInner {
+            display: none;
+        }
+
+        &.dijitDropDownButtonHover {
+            background-color: $color-palette-primary-600;
+        }
+
+        &.dijitDropDownButtonActive {
+            background-color: $color-palette-primary-700;
+        }
+        &.dijitDropDownButtonFocused {
+            background-color: $color-palette-primary;
+            @include field-focus;
+        }
+
+        &.dijitDropDownButtonDisabled {
+            background-color: $color-palette-gray-200;
+
+            .actionIcon,
+            .fa-plus {
+                color: $color-palette-gray-500;
+            }
+        }
+    }
+
+    &ButtonFlat {
+        border: 0;
+        background-color: transparent;
+        box-shadow: none;
+        color: $black;
+
+        &.dijitButtonHover {
+            background-color: $color-palette-primary-100;
+        }
+
+        &.dijitDropDownButtonActive {
+            background-color: $color-palette-primary-op-20;
+        }
+        &.dijitDropDownButtonFocused {
+            background-color: $color-palette-primary;
+            @include field-focus;
+        }
+
+        &.dijitDropDownButtonDisabled {
+            background-color: $white;
+        }
+    }
+
+    &ButtonDanger {
+        border: 0;
+        background-color: $red;
+        color: $white;
+
+        &.dijitButtonHover {
+            background-color: darken($red, 10%);
+        }
+    }
+
+    &ButtonAction {
+        border: solid 1px transparent;
+        background-color: $color-palette-primary;
+        color: $white;
+
+        &.dijitButtonHover {
+            background-color: $color-palette-primary-400;
+        }
+    }
+}
+
+// CUSTOM BUTTONS FOR DOTCMS UI
+.fakeDojoButton {
+    @include btn(
+        $button-normal-shadow,
+        $button-normal-bgcolor,
+        $button-normal-border,
+        $button-normal-textcolor
+    );
+    transition: all $field-animation-speed;
+    border-radius: $field-border-radius;
+    display: inline-block;
+    height: $field-height-md;
+    line-height: $field-height-md;
+    padding: 0 $spacing-1 * 2;
+    text-decoration: none;
+    text-transform: uppercase;
+
+    &:hover {
+        @include btn(
+            $button-hover-shadow,
+            $button-hover-bgcolor,
+            $button-hover-border,
+            $button-hover-textcolor
+        );
+    }
+
+    img {
+        vertical-align: middle;
+        margin-top: -2px;
+    }
+}
+
+.fakeDojoButtonDanger {
+    background-color: $red;
+    color: $white;
+
+    &:hover {
+        background-color: darken($red, 10%);
+        color: $white;
+    }
+}

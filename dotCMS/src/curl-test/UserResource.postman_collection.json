@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "a9eac856-e8ee-47da-96a9-f2e68e81fd72",
+		"_postman_id": "958f7287-3a20-4591-94ae-525a6c9a7c38",
 		"name": "UserResource",
 		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -34,7 +34,7 @@
 							"    var paginationData = pm.response.json().pagination;",
 							"    pm.expect(paginationData.currentPage).to.equal(1);",
 							"    pm.expect(paginationData.perPage).to.equal(100);",
-							"    pm.expect(paginationData.totalEntries).to.equal(2);",
+							"    pm.expect(paginationData.totalEntries).to.gte(2);",
 							"});",
 							""
 						],

@@ -802,7 +802,7 @@ public class JSONArray  implements List,Serializable {
      */
 
     public JSONArray put(int index, double value)  {
-        return _put(index, new Double(value));
+        return _put(index, Double.valueOf(value));
 
     }
 
@@ -818,7 +818,7 @@ public class JSONArray  implements List,Serializable {
      */
 
     public JSONArray put(int index, int value)  {
-        return _put(index, new Integer(value));
+        return _put(index, Integer.valueOf(value));
 
     }
 
@@ -834,7 +834,7 @@ public class JSONArray  implements List,Serializable {
      */
 
     public JSONArray put(int index, long value)  {
-        return _put(index, new Long(value));
+        return _put(index, Long.valueOf(value));
 
     }
 

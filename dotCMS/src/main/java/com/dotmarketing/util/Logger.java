@@ -242,7 +242,7 @@ public class Logger {
         final org.apache.logging.log4j.Logger logger = loadLogger(cl);
         final StackTraceElement ste = ex.getStackTrace()[0];
 
-        final Long hash = new Long(Objects.hashCode(ste, message.substring(0, Math.min(message.length(), 10)), cl));
+        final Long hash = Long.valueOf(Objects.hashCode(ste, message.substring(0, Math.min(message.length(), 10)), cl));
         final Long expireWhen = logMap.get().get(hash);
 
         if (expireWhen == null || expireWhen < System.currentTimeMillis()) {
@@ -267,7 +267,7 @@ public class Logger {
         final org.apache.logging.log4j.Logger logger = loadLogger(cl);
 
 
-        final Long hash = new Long(Objects.hashCode(cl, message.substring(0, Math.min(message.length(), 10)), cl));
+        final Long hash = Long.valueOf(Objects.hashCode(cl, message.substring(0, Math.min(message.length(), 10)), cl));
         final Long expireWhen = logMap.get().get(hash);
         if (expireWhen == null || expireWhen < System.currentTimeMillis()) {
             logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis, true);

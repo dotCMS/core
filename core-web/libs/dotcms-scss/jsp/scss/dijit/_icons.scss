@@ -1,0 +1,89 @@
+#font-icon-base {
+    font: normal normal normal #{$fa-font-size-base}/ 1 FontAwesome; // shortening font declaration
+    text-rendering: auto; // optimizelegibility throws things off #1094
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transform: translate(0, 0); // ensures no half-pixel rendering in firefox
+}
+
+#dijit-icon {
+    @extend #font-icon-base;
+    display: inline-block;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    width: 16px;
+}
+
+.dijit {
+    &Icon {
+        @extend #dijit-icon;
+        margin-right: calc($spacing-1 / 2);
+
+        &Task {
+            &:before {
+                content: $fa-var-tasks;
+            }
+        }
+
+        &Edit {
+            &:before {
+                content: $fa-var-edit;
+            }
+        }
+
+        &Save {
+            &:before {
+                content: $fa-var-save;
+            }
+        }
+
+        &Cut {
+            &:before {
+                content: $fa-var-cut;
+            }
+        }
+
+        &Copy {
+            @extend #font-icon-base;
+            &:before {
+                content: $fa-var-copy;
+            }
+        }
+
+        &Paste {
+            &:before {
+                content: $fa-var-paste;
+            }
+        }
+
+        &Undo {
+            &:before {
+                content: $fa-var-undo;
+            }
+        }
+
+        &Delete {
+            &:before {
+                content: $fa-var-remove;
+            }
+        }
+
+        &Expand {
+            &:before {
+                content: $fa-var-angle-right;
+            }
+        }
+    }
+
+    // USED IN THE TOGGLE BUTTON WIDGET
+    &CheckBoxIcon {
+        &:before {
+            content: $fa-var-check-square-o;
+        }
+    }
+
+    &NoIcon {
+        display: none !important;
+    }
+}

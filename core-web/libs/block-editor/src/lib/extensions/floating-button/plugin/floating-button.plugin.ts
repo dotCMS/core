@@ -12,11 +12,8 @@ import { Editor } from '@tiptap/core';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { ImageNode } from '../../../nodes';
+import { DotUploadFileService, FileStatus } from '../../../shared';
 import { getNodeCoords } from '../../bubble-menu/utils';
-import {
-    DotImageService,
-    FileStatus
-} from '../../image-uploader/services/dot-image/dot-image.service';
 import { FloatingButtonComponent } from '../floating-button.component';
 
 export const setCoords = ({ viewCoords, nodeCoords }): DOMRect => {
@@ -31,7 +28,7 @@ export const setCoords = ({ viewCoords, nodeCoords }): DOMRect => {
     return {
         ...nodeCoords.toJSON(),
         top: pos,
-        left: left - 10
+        left
     };
 };
 
@@ -50,16 +47,18 @@ export class DotFloatingButtonPluginView {
     private tippy: Instance | undefined;
     private preventHide = false;
     private $destroy = new Subject<boolean>();
-    private dotImageService: DotImageService;
+    private dotUploadFileService: DotUploadFileService;
     private imageUrl: string;
+    private initialLabel = 'Import to dotCMS';
+    private offset = 10;
 
     /* @Overrrider */
-    constructor({ dotImageService, editor, component, element, view }) {
+    constructor({ dotUploadFileService, editor, component, element, view }) {
         this.editor = editor;
         this.element = element;
         this.view = view;
         this.component = component;
-        this.dotImageService = dotImageService;
+        this.dotUploadFileService = dotUploadFileService;
 
         this.component.instance.byClick
             .pipe(takeUntil(this.$destroy))
@@ -86,21 +85,25 @@ export class DotFloatingButtonPluginView {
         const from = Math.min(...ranges.map((range) => range.$from.pos));
         const type = doc.nodeAt(from)?.type.name;
         const props = this.editor.getAttributes(ImageNode.name);
+        const isImage = type === ImageNode.name;
 
-        if (empty || type != ImageNode.name || props?.data) {
+        if (empty || !isImage || props?.data) {
             this.hide();
 
             return;
         }
 
+        const node = view.nodeDOM(from) as HTMLElement;
+        const image = node.querySelector('img');
+
         this.imageUrl = props?.src;
-        this.updateButtonLabel('Import to dotCMS');
+        this.updateButtonLabel(this.initialLabel);
 
         this.createTooltip();
 
         this.tippy?.setProps({
+            maxWidth: image?.width - this.offset || 250,
             getReferenceClientRect: () => {
-                const node = view.nodeDOM(from) as HTMLElement;
                 const viewCoords = view.dom.parentElement.getBoundingClientRect();
                 const nodeCoords = getNodeCoords(node, type);
 
@@ -127,6 +130,7 @@ export class DotFloatingButtonPluginView {
             interactive: true,
             trigger: 'manual',
             placement: 'bottom-end',
+            offset: [-this.offset, 0],
             hideOnClick: 'toggle'
         });
     }
@@ -148,10 +152,12 @@ export class DotFloatingButtonPluginView {
     }
 
     private updateImageNode(data: DotCMSContentlet): void {
+        const { fileAsset, asset } = data;
         this.setPreventHide();
         const attr = this.editor.getAttributes(ImageNode.name);
         this.editor.commands.updateAttributes(ImageNode.name, {
             ...attr,
+            src: fileAsset || asset,
             data
         });
     }
@@ -162,7 +168,7 @@ export class DotFloatingButtonPluginView {
 
     private uploadImagedotCMS() {
         this.updateButtonLoading(true);
-        this.dotImageService
+        this.dotUploadFileService
             .publishContent({
                 data: this.imageUrl,
                 statusCallback: (status: string) => this.updateButtonLabel(status)
@@ -178,6 +184,7 @@ export class DotFloatingButtonPluginView {
                     this.updateImageNode(contentlet[Object.keys(contentlet)[0]]);
                 },
                 () => {
+                    this.updateButtonLoading(false);
                     this.updateButtonLabel(FileStatus.ERROR);
                     this.setPreventHide();
                 }

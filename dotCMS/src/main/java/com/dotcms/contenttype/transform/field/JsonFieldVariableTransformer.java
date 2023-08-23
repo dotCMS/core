@@ -59,7 +59,7 @@ public class JsonFieldVariableTransformer {
 
 
   public List<Map<String, Object>> mapList() {
-    List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+    List<Map<String, Object>> list = new ArrayList<>();
     for (FieldVariable fieldVariable : asList()) {
       list.add(new JsonFieldVariableTransformer(fieldVariable).mapObject());
     }

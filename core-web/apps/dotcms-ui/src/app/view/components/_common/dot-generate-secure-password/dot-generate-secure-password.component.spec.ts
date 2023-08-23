@@ -11,6 +11,7 @@ import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component'
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -31,7 +32,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
 
     const messageServiceMock = new MockDotMessageService({
         'generate.secure.password': 'Generate Secure Password',
-        Copy: 'COPY',
+        Copy: 'Copy',
         'generate.secure.password.reveal': 'Reveal',
         'generate.secure.password.description': 'Description'
     });
@@ -43,7 +44,13 @@ describe('DotGenerateSecurePasswordComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotGenerateSecurePasswordComponent, TestHostComponent],
-            imports: [BrowserAnimationsModule, ButtonModule, DotDialogModule, DotPipesModule],
+            imports: [
+                BrowserAnimationsModule,
+                ButtonModule,
+                DotDialogModule,
+                DotPipesModule,
+                DotMessagePipe
+            ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotGenerateSecurePasswordService,
@@ -80,10 +87,10 @@ describe('DotGenerateSecurePasswordComponent', () => {
             copyButton.nativeElement.click();
             fixture.detectChanges();
             expect(dotClipboardUtil.copy).toHaveBeenCalledWith(comp.value);
-            expect(copyButton.nativeElement.innerText).toBe('COPIED');
+            expect(copyButton.nativeElement.innerText).toBe('Copied');
             tick(2000);
             fixture.detectChanges();
-            expect(copyButton.nativeElement.innerText).toBe('COPY');
+            expect(copyButton.nativeElement.innerText).toBe('Copy');
         }));
 
         it('should Reveal password', () => {

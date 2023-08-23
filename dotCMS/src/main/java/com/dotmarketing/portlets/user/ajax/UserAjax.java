@@ -54,7 +54,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
-import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 /**
  * Provides utility methods that are accessed via DWR to build up the UI of the
@@ -169,7 +168,7 @@ public class UserAjax {
 			if (localTransaction) {
 				HibernateUtil.closeAndCommitTransaction();
 			}
-			resultMap = new HashMap<String, Object>();
+			resultMap = new HashMap<>();
 			resultMap.put("userID", user.getUserId());
 			return resultMap;
 		} catch(UserFirstNameException e) {
@@ -293,7 +292,7 @@ public class UserAjax {
 
 			ActivityLogger.logInfo(getClass(), "User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-			resultMap = new HashMap<String, Object>();
+			resultMap = new HashMap<>();
 			resultMap.put("userID", userToSave.getUserId());
 			resultMap.put("reauthenticate", reauthenticationRequired);
 			return resultMap;
@@ -428,7 +427,7 @@ public class UserAjax {
 	public List<Map<String, Object>> getUserRoles (String userId) throws Exception {
 		//auth
 		User modUser = getAdminUser();
-		List<Map<String, Object>> roleMaps = new ArrayList<Map<String,Object>>();
+		List<Map<String, Object>> roleMaps = new ArrayList<>();
 		Role userRole = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -468,7 +467,7 @@ public class UserAjax {
 		//auth
 		User modUser = getLoggedInUser();
 
-		Map<String, Boolean> userPerms = new HashMap<String,Boolean>();
+		Map<String, Boolean> userPerms = new HashMap<>();
 		if(UtilMethods.isSet(userId)){
 			RoleAPI roleAPI = APILocator.getRoleAPI();
 			List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(userId, false);
@@ -666,7 +665,7 @@ public class UserAjax {
 		if(role == null){
 			return null;
 		}
-		HashMap<String, Object> aRecord = new HashMap<String, Object>();
+		HashMap<String, Object> aRecord = new HashMap<>();
 		aRecord.put("id", role.getId());
 		aRecord.put("type", ROLE_TYPE_VALUE);
 		aRecord.put("name", role.getName());
@@ -694,7 +693,7 @@ public class UserAjax {
     if(access.indexOf("userActive")==0) {
       userToModify.setActive(granted);
       uApi.save(userToModify, loggedInUser, false);
-      return ImmutableMap.of("granted", granted, "role", "active", "user", userToModify.toMap());
+      return Map.of("granted", granted, "role", "active", "user", userToModify.toMap());
     }
     
     final Role role = access.toLowerCase().indexOf("admin") ==0 && APILocator.getRoleAPI().doesUserHaveRole(loggedInUser, APILocator.getRoleAPI().loadCMSAdminRole()) 
@@ -707,7 +706,7 @@ public class UserAjax {
 
     
     if(role==null) {
-      return ImmutableMap.of();
+      return Map.of();
     }
     
     
@@ -717,7 +716,7 @@ public class UserAjax {
       APILocator.getRoleAPI().removeRoleFromUser(role, userToModify);
     }
     
-    return ImmutableMap.of("granted", granted, "role", role.toMap(), "user", userToModify.toMap());
+    return Map.of("granted", granted, "role", role.toMap(), "user", userToModify.toMap());
   }
 	
 	/**
@@ -931,7 +930,7 @@ public class UserAjax {
 		}
 		catch(NumberFormatException nfe) {
     		Logger.warn(UserAjax.class, String.format("::getUsersAndRolesList -> Invalid parameters inode(%s) permission(%s).", assetInode, permission));
-    		results = new HashMap<String,Object>(0);
+    		results = new HashMap<>(0);
 		}
 
 		return results;
@@ -963,7 +962,7 @@ public class UserAjax {
 					Logger.error(UserAjax.class,e.getMessage(),e);
 					throw new SystemException(e);
 				}
-				List<Role> roleListTemp = new ArrayList<Role>(roleList);
+				List<Role> roleListTemp = new ArrayList<>(roleList);
 				for(Role r : roleListTemp) {
 					if(PortalUtil.isSystemRole(r) && !r.getFQN().startsWith("Users"))
 						roleList.remove(r);
@@ -981,7 +980,7 @@ public class UserAjax {
 					Logger.error(UserAjax.class,e.getMessage(),e);
 					throw new SystemException(e);
 				}
-				List<Role> roleListTemp = new ArrayList<Role>(roleList);
+				List<Role> roleListTemp = new ArrayList<>(roleList);
 				for(Role r : roleListTemp) {
 					if(PortalUtil.isSystemRole(r)&& hideSystemRoles && !r.getFQN().startsWith("Users"))
 						roleList.remove(r);
@@ -1052,7 +1051,7 @@ public class UserAjax {
 		}
 		catch(NumberFormatException nfe) {
     		Logger.warn(UserAjax.class, String.format("::getUsersAndRolesList -> Invalid parameters inode(%s) permission(%s).", assetInode, permission));
-    		results = new HashMap<String,Object>(0);
+    		results = new HashMap<>(0);
 		}
 
 		return results;
@@ -1084,7 +1083,7 @@ public class UserAjax {
 					Logger.error(UserAjax.class,e.getMessage(),e);
 					throw new SystemException(e);
 				}
-				List<Role> roleListTemp = new ArrayList<Role>(roleList);
+				List<Role> roleListTemp = new ArrayList<>(roleList);
 				for(Role r : roleListTemp) {
 					if(PortalUtil.isSystemRole(r))
 						roleList.remove(r);
@@ -1101,7 +1100,7 @@ public class UserAjax {
 					Logger.error(UserAjax.class,e.getMessage(),e);
 					throw new SystemException(e);
 				}
-				List<Role> roleListTemp = new ArrayList<Role>(roleList);
+				List<Role> roleListTemp = new ArrayList<>(roleList);
 				for(Role r : roleListTemp) {
 					if(PortalUtil.isSystemRole(r)&& hideSystemRoles)
 						roleList.remove(r);
@@ -1112,7 +1111,7 @@ public class UserAjax {
 			@Override
 			public int getUserCount() {
 				try {
-					return new Long(userAPI.getCountUsersByNameOrEmail(filter)).intValue();
+					return Long.valueOf(userAPI.getCountUsersByNameOrEmail(filter)).intValue();
 				} catch (DotDataException e) {
 					Logger.error(this, e.getMessage(), e);
 					return 0;
@@ -1125,7 +1124,7 @@ public class UserAjax {
 					return userAPI.getUsersByName(filter, newStart, newLimit, APILocator.getUserAPI().getSystemUser(),false);
 				} catch (DotDataException e) {
 					Logger.error(this, e.getMessage(), e);
-					return new ArrayList<User>();
+					return new ArrayList<>();
 				}
 			}
 		}
@@ -1168,7 +1167,7 @@ public class UserAjax {
 		}
 		catch(NumberFormatException nfe) {
 			Logger.warn(UserAjax.class, String.format("::getUsersList -> Invalid parameters inode(%s) permission(%s).", assetInode, permission));
-			results = new HashMap<String,Object>(0);
+			results = new HashMap<>(0);
 		}
 
 		return results;
@@ -1199,7 +1198,7 @@ public class UserAjax {
 				@Override
 				public int getUserCount() {
 					try {
-						return new Long(userAPI.getCountUsersByNameOrEmailOrUserID(filter,false)).intValue();
+						return Long.valueOf(userAPI.getCountUsersByNameOrEmailOrUserID(filter, false)).intValue();
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
 						return 0;
@@ -1214,7 +1213,7 @@ public class UserAjax {
 						return userAPI.getUsersByNameOrEmailOrUserID(filter, page, pageSize,false);
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
-						return new ArrayList<User>();
+						return new ArrayList<>();
 					}
 				}
 		}
@@ -1299,11 +1298,11 @@ public class UserAjax {
 		public Map<String, Object> perform() {
 
 			ArrayList<Map<String, String>> list = null;						// Keeps a list of roles and/or users
-			Map<String, Object> results = new HashMap<String, Object>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side)
+			Map<String, Object> results = new HashMap<>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side)
 			int totalItemCount = 0;											// Keeps the grand total of items
 																			// (No. of roles + No. of users)
 			List<Role> roles = null;
-			List<User> users = new ArrayList<User>();
+			List<User> users = new ArrayList<>();
 			int realRoleCount = 0;
 			int realUserCount = 0;
 
@@ -1373,11 +1372,11 @@ public class UserAjax {
 				if( roles != null || users != null ) {
 
 					int pageSize = realRoleCount + realUserCount;
-					list = new ArrayList<Map<String, String>>(pageSize);
+					list = new ArrayList<>(pageSize);
 
 					if( roles != null ) {
 						for(Role aRole : roles) {
-							Map<String, String> aRecord = new HashMap<String, String>();
+							Map<String, String> aRecord = new HashMap<>();
 							aRecord.put("id", aRole.getId());
 							aRecord.put("type", ROLE_TYPE_VALUE);
 							aRecord.put("name", aRole.getName());
@@ -1388,7 +1387,7 @@ public class UserAjax {
 
 					if( users != null ) {
 						for( User aUser : users ) {
-							Map<String, String> aRecord = new HashMap<String, String>();
+							Map<String, String> aRecord = new HashMap<>();
 							String fullName = aUser.getFullName();
 							fullName = (UtilMethods.isSet(fullName) ? fullName : " ");
 							String emailAddress = aUser.getEmailAddress();
@@ -1404,7 +1403,7 @@ public class UserAjax {
 				}
 				// No roles nor users retrieved. So create an empty list.
 				else {
-					list = new ArrayList<Map<String, String>>(0);
+					list = new ArrayList<>(0);
 				} //end if
 
 				Collections.sort(list, new Comparator <Map<String, String>>(){
@@ -1421,7 +1420,7 @@ public class UserAjax {
 			}
 			catch(Exception ex) {
 	    		Logger.warn(UsersAndRolesListTemplate.class, "::perform -> Could not process list of roles and users.");
-				list = new ArrayList<Map<String, String>>(0);
+				list = new ArrayList<>(0);
 			}
 
 			results.put("data", list);
@@ -1459,7 +1458,7 @@ public class UserAjax {
 		public Map<String, Object> perform() {
 
 			ArrayList<Map<String, String>> list = null;						// Keeps a list of roles and/or users
-			Map<String, Object> results = new HashMap<String, Object>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side)
+			Map<String, Object> results = new HashMap<>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side)
 			int totalItemCount = 0;											// Keeps the grand total of items
 																			// (No. of roles + No. of users)
 			List<Role> roles = null;
@@ -1528,11 +1527,11 @@ public class UserAjax {
 				if( roles != null  ) {
 
 					int pageSize = realRoleCount ;
-					list = new ArrayList<Map<String, String>>(pageSize);
+					list = new ArrayList<>(pageSize);
 
 					if( roles != null ) {
 						for(Role aRole : roles) {
-							Map<String, String> aRecord = new HashMap<String, String>();
+							Map<String, String> aRecord = new HashMap<>();
 							aRecord.put("id", aRole.getId());
 							aRecord.put("type", ROLE_TYPE_VALUE);
 							aRecord.put("name", aRole.getName());
@@ -1545,7 +1544,7 @@ public class UserAjax {
 				}
 				// No roles nor users retrieved. So create an empty list.
 				else {
-					list = new ArrayList<Map<String, String>>(0);
+					list = new ArrayList<>(0);
 				} //end if
 
 				Collections.sort(list, new Comparator <Map<String, String>>(){
@@ -1562,7 +1561,7 @@ public class UserAjax {
 			}
 			catch(Exception ex) {
 	    		Logger.warn(UsersAndRolesListTemplate.class, "::perform -> Could not process list of roles");
-				list = new ArrayList<Map<String, String>>(0);
+				list = new ArrayList<>(0);
 			}
 
 			results.put("data", list);
@@ -1642,7 +1641,7 @@ public class UserAjax {
 		public Map<String, Object> perform() {
 
 			ArrayList<Map<String, String>> list = null;						// Keeps a list of users
-			Map<String, Object> results = new HashMap<String, Object>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side)
+			Map<String, Object> results = new HashMap<>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side)
 			int totalItemCount = 0;											// Keeps the grand total of items
 																			// (No. of users)
 			List<User> users = null;
@@ -1661,10 +1660,10 @@ public class UserAjax {
 				if( users != null ) {
 
 					int pageSize = realUserCount;
-					list = new ArrayList<Map<String, String>>(pageSize);
+					list = new ArrayList<>(pageSize);
 
 					for( User aUser : users ) {
-						Map<String, String> aRecord = new HashMap<String, String>();
+						Map<String, String> aRecord = new HashMap<>();
 						String fullName = aUser.getFullName();
 						fullName = (UtilMethods.isSet(fullName) ? fullName : " ");
 						String emailAddress = aUser.getEmailAddress();
@@ -1678,12 +1677,12 @@ public class UserAjax {
 				}
 				// No users retrieved. So create an empty list.
 				else {
-					list = new ArrayList<Map<String, String>>(0);
+					list = new ArrayList<>(0);
 				} //end if
 			}
 			catch(Exception ex) {
 	    		Logger.warn(UserAjax.class, "::processUsersList -> Could not process list of users.");
-				list = new ArrayList<Map<String, String>>(0);
+				list = new ArrayList<>(0);
 			}
 
 			results.put("data", list);

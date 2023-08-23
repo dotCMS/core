@@ -323,7 +323,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	protected List<Folder> getFoldersByParent(Folder folder, User user, boolean respectFrontendRoles) throws DotDataException {
-		List<Folder> entries = new ArrayList<Folder>();
+		List<Folder> entries = new ArrayList<>();
 		List<Folder> elements = getSubFoldersTitleSort(folder);
 		for (Folder childFolder : elements) {
 			if (APILocator.getPermissionAPI().doesUserHavePermission(childFolder, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
@@ -345,7 +345,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@SuppressWarnings("unchecked")
 	protected java.util.List getMenuItems(Folder folder, int orderDirection) throws  DotDataException{
-		List<Folder> folders = new ArrayList<Folder>();
+		List<Folder> folders = new ArrayList<>();
 		folders.add(folder);
 		return getMenuItems(folders, orderDirection);
 	}
@@ -474,23 +474,24 @@ public class FolderFactoryImpl extends FolderFactory {
 		//Content Files
 		List<FileAsset> faConts = APILocator.getFileAssetAPI().findFileAssetsByFolder(source, APILocator.getUserAPI().getSystemUser(), false);
 		for(FileAsset fa : faConts){
-			if(fa.isWorking() && !fa.isArchived()){
+			if(fa.isWorking() && !fa.isArchived() && !filesCopied.containsKey(fa.getIdentifier())){
 				Contentlet cont = APILocator.getContentletAPI().find(fa.getInode(), APILocator.getUserAPI().getSystemUser(), false);
 				cont.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 
 				APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
-				filesCopied.put(cont.getInode(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
+				filesCopied.put(cont.getIdentifier(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
 			}
 		}
 		
 		//Content Pages
-		Set<IHTMLPage> pageAssetList=new HashSet<IHTMLPage>();
+		Set<IHTMLPage> pageAssetList=new HashSet<>();
 		pageAssetList.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(source, APILocator.getUserAPI().getSystemUser(), false));
-		pageAssetList.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(source, APILocator.getUserAPI().getSystemUser(), false));
 		for(IHTMLPage page : pageAssetList) {
-		    Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
-            Contentlet newContent = APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
-            pagesCopied.put(cont.getInode(), new IHTMLPage[] {page , APILocator.getHTMLPageAssetAPI().fromContentlet(cont)});
+			if(!pagesCopied.containsKey(page.getIdentifier())) {
+				Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
+				APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
+				pagesCopied.put(cont.getIdentifier(), new IHTMLPage[]{page, APILocator.getHTMLPageAssetAPI().fromContentlet(cont)});
+			}
 		}
 		
 

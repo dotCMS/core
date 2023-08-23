@@ -115,6 +115,7 @@ public class ContentletLoader implements DotLoader {
         final String contentTypeId = content.get("formId") == null ? content.getContentType().id() : content.get("formId").toString();
         sb.append("#set($CONTENT_TYPE_ID='").append(contentTypeId).append("' )");
         sb.append("#set($CONTENT_LANGUAGE='").append(content.getLanguageId()).append("' )");
+        sb.append("#set($CONTENT_VARIANT='").append(content.getVariantId()).append("' )");
 
         if(mode == PageMode.EDIT_MODE) {
             final Optional<Integer> pageReferences =
@@ -176,14 +177,33 @@ public class ContentletLoader implements DotLoader {
 
             if (field instanceof StoryBlockField) {
                 contFieldValueObject = conAPI.getFieldValue(content, field);
-                sb.append("#set($").append(field.variable());
-                if (JsonUtil.isValidJSON(contFieldValueObject.toString())) {
-                    sb.append("= $json.generate(").append(contFieldValueObject).append("))");
-                } else {
-                    Logger.warn(this, String.format("Story Block field '%s' in contentlet with ID '%s' does not " +
-                                                            "contain valid JSON data. Please try to re-publish it.",
-                            field.variable(), content.getIdentifier()));
-                    sb.append("= \"").append(contFieldValueObject).append("\")");
+                if (UtilMethods.isSet(contFieldValueObject)) {
+                    if (JsonUtil.isValidJSON(contFieldValueObject.toString())) {
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("= $json.generate(")
+                                .append(contFieldValueObject)
+                                .append("))");
+                    } else {
+                        Logger.warn(this, String.format("Story Block field '%s' in contentlet with ID '%s' does not " +
+                                        "contain valid JSON data. Please try to re-publish it.",
+                                field.variable(), content.getIdentifier()));
+                        if (contFieldValueObject.toString().contains("$") || contFieldValueObject.toString().contains("#")) {
+                            String velPath = new VelocityResourceKey(field, Optional.of(content), mode).path;
+                            sb.append("#set($")
+                                    .append(field.variable())
+                                    .append("= $velutil.mergeTemplate(\"")
+                                    .append(velPath)
+
+                                    .append("\"))");
+                        } else {
+                            sb.append("#set($")
+                                    .append(field.variable())
+                                    .append("= \"")
+                                    .append(UtilMethods.espaceForVelocity(contFieldValueObject.toString()).trim())
+                                    .append("\")");
+                        }
+                    }
                 }
                 continue;
             }
@@ -440,7 +460,7 @@ public class ContentletLoader implements DotLoader {
 
                 // Initialize variables
                 String catInodes = "";
-                Set<Category> categoryList = new HashSet<Category>();
+                Set<Category> categoryList = new HashSet<>();
                 List<Category> categoryTree = categoryAPI.getAllChildren(category, systemUser, false);
 
                 if (selectedCategories.size() > 0 && categoryTree != null) {
@@ -508,7 +528,7 @@ public class ContentletLoader implements DotLoader {
 
         // get the contentlet categories to make a list
         String categories = "";
-        Set<Category> categoryList = new HashSet<Category>(categoryAPI.getParents(content, systemUser, false));
+        Set<Category> categoryList = new HashSet<>(categoryAPI.getParents(content, systemUser, false));
         if (categoryList != null && categoryList.size() > 0) {
             StringBuilder catbuilder = new StringBuilder();
             Iterator<Category> it = categoryList.iterator();
@@ -614,7 +634,7 @@ public class ContentletLoader implements DotLoader {
     public InputStream writeObject(final VelocityResourceKey key)
             throws DotStateException, DotDataException, DotSecurityException {
 
-        long language = new Long(key.language);
+        long language = Long.valueOf(key.language);
         final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
                 .getRenderContext(language, key.id1, key.mode, APILocator.systemUser());
 

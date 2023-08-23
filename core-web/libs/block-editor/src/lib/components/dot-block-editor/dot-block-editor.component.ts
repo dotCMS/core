@@ -14,15 +14,17 @@ import {
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import { AnyExtension, Content, Editor } from '@tiptap/core';
+import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
+import { Subscript } from '@tiptap/extension-subscript';
+import { Superscript } from '@tiptap/extension-superscript';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
+import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import {
@@ -44,23 +46,20 @@ import {
     DragHandler,
     DotFloatingButton,
     BubbleAssetFormExtension,
-    ImageUpload,
     FreezeScroll,
-    FREEZE_SCROLL_KEY
+    FREEZE_SCROLL_KEY,
+    AssetUploader,
+    DotComands
 } from '../../extensions';
+import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import {
     formatHTML,
     removeInvalidNodes,
     SetDocAttrStep,
-    DotMarketingConfigService
+    DotMarketingConfigService,
+    RestoreDefaultDOMAttrs
 } from '../../shared';
-
-function toTitleCase(str) {
-    return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
-        return txt.charAt(0).toUpperCase() + txt.slice(1);
-    });
-}
 
 @Component({
     selector: 'dot-block-editor',
@@ -73,8 +72,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() customStyles: string;
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
-    @Input() customBlocks: string;
+    @Input() customBlocks = '';
     @Input() content: Content = '';
+    @Input() contentletIdentifier: string;
     @Input() set showVideoThumbnail(value) {
         this.dotMarketingConfigService.setProperty(
             EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
@@ -97,7 +97,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
         this.setEditorJSONContent(content);
     }
-    @Output() valueChange = new EventEmitter<string>();
+    @Output() valueChange = new EventEmitter<JSONContent>();
 
     editor: Editor;
     subject = new Subject();
@@ -159,10 +159,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                     .pipe(takeUntil(this.destroy$), debounceTime(250))
                     .subscribe(() => this.updateChartCount());
 
-                this.editor.on('update', ({ editor }) => {
-                    this.valueChange.emit(JSON.stringify(editor.getJSON()));
-                });
-
                 this.editor.on('transaction', ({ editor }) => {
                     this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
                 });
@@ -174,11 +170,22 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
+    onChange(value: JSONContent) {
+        this.valueChange.emit(value);
+    }
+
     private updateChartCount(): void {
-        const tr = this.editor.state.tr
-            .step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
-            .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
-            .step(new SetDocAttrStep('readingTime', this.readingTime));
+        const tr = this.editor.state.tr.setMeta('addToHistory', false);
+
+        if (this.characterCount.characters() != 0) {
+            tr.step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
+                .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
+                .step(new SetDocAttrStep('readingTime', this.readingTime));
+        } else {
+            // If the content is empty, we need to remove the attributes
+            tr.step(new RestoreDefaultDOMAttrs());
+        }
+
         this.editor.view.dispatch(tr);
     }
 
@@ -214,7 +221,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             extensions: []
         };
 
-        if (!this.customBlocks.length) {
+        if (!this.customBlocks?.length) {
             return emptyExtentions;
         }
 
@@ -353,13 +360,23 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotConfigExtension({
                 lang: this.lang,
                 allowedContentTypes: this.allowedContentTypes,
-                allowedBlocks: this._allowedBlocks
+                allowedBlocks: this._allowedBlocks,
+                contentletIdentifier: this.contentletIdentifier
             }),
-            Placeholder.configure({ placeholder: this.placeholder }),
+            DotComands,
+            DotPlaceholder.configure({ placeholder: 'Type "/" for commands' }),
+            Youtube.configure({
+                height: 300,
+                width: 400,
+                interfaceLanguage: 'us',
+                nocookie: true,
+                modestBranding: true
+            }),
+            Subscript,
+            Superscript,
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
-            ImageUpload(this.injector, this.viewContainerRef),
-            BubbleLinkFormExtension(this.viewContainerRef),
+            BubbleLinkFormExtension(this.viewContainerRef, this.lang),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
@@ -368,7 +385,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableHeaderExtension(),
             TableRow,
             FreezeScroll,
-            CharacterCount
+            CharacterCount,
+            AssetUploader(this.injector, this.viewContainerRef)
         ];
     }
 
@@ -386,22 +404,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
             Link.configure({ autolink: false, openOnClick: false })
         ];
-    }
-
-    /**
-     * Placeholder function
-     *
-     * @private
-     * @param {*} { node }
-     * @return {*}
-     * @memberof DotBlockEditorComponent
-     */
-    private placeholder({ node }) {
-        if (node.type.name === 'heading') {
-            return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
-        }
-
-        return 'Type "/" for commmands';
     }
 
     private setEditorJSONContent(content: Content) {

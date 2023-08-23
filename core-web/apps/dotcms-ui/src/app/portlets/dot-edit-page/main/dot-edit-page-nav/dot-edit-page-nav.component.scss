@@ -4,8 +4,8 @@
 $nav-size: 80px;
 
 :host {
-    background-color: $gray-bg;
-    border-left: solid 1px $gray-lighter;
+    background-color: $color-palette-gray-200;
+    border-left: solid 1px $color-palette-gray-300;
     display: flex;
     flex-shrink: 0;
     order: 2;
@@ -26,10 +26,10 @@ $nav-size: 80px;
     }
 
     &.edit-page-variant-mode {
-        background-color: $color-primary-300;
+        background-color: $color-palette-primary-200;
 
         a:hover {
-            background-color: $color-primary-100;
+            background-color: $color-palette-primary-100;
         }
     }
 }
@@ -41,7 +41,7 @@ $nav-size: 80px;
 
 .edit-page-nav__item {
     align-items: center;
-    color: $gray-dark;
+    color: $color-palette-gray-800;
     display: flex;
     flex-direction: column;
     font-size: 11px;
@@ -56,7 +56,7 @@ $nav-size: 80px;
     }
 
     &:hover {
-        background-color: $gray-bg;
+        background-color: $color-palette-gray-200;
     }
 
     & > .fa {
@@ -76,10 +76,10 @@ $nav-size: 80px;
     background-color: $white;
     color: $black;
     pointer-events: none;
-    border-bottom: 1px solid $gray-lighter;
+    border-bottom: 1px solid $color-palette-gray-300;
     border-top: 1px solid transparent;
 }
 
 .edit-page-nav li:not(:first-child) .edit-page-nav__item--active {
-    border-color: $gray-lighter;
+    border-color: $color-palette-gray-300;
 }

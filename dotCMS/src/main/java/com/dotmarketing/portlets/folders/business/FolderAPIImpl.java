@@ -236,7 +236,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		final List<Folder> allFolders = folderFactory.findFoldersByHost(host);
-		final List<Folder> subFolders = new ArrayList<Folder>(allFolders.size());
+		final List<Folder> subFolders = new ArrayList<>(allFolders.size());
 
 		for(Folder folder : allFolders)
 		    if(permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions))
@@ -254,7 +254,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		List<Folder> full = folderFactory.findThemesByHost(host);
-		List<Folder> ret = new ArrayList<Folder>(full.size());
+		List<Folder> ret = new ArrayList<>(full.size());
 		for(Folder ff : full)
 			if(permissionAPI.doesUserHavePermission(ff, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions))
 				ret.add(ff);
@@ -278,7 +278,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		List<Folder> subFolders = findSubFolders(folder, user, respectFrontEndPermissions);
-		List<Folder> toIterateOver = new ArrayList<Folder>(subFolders);
+		List<Folder> toIterateOver = new ArrayList<>(subFolders);
 		for (Folder f : toIterateOver) {
 			if (permissionAPI.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 				subFolders.addAll(findSubFoldersRecursively(f, user, respectFrontEndPermissions));
@@ -300,7 +300,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to read Host " + host.getHostname());
 		}
 		List<Folder> subFolders = folderFactory.findFoldersByHost(host);
-		List<Folder> toIterateOver = new ArrayList<Folder>(subFolders);
+		List<Folder> toIterateOver = new ArrayList<>(subFolders);
 		for (Folder f : toIterateOver) {
 			if (permissionAPI.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 				subFolders.addAll(findSubFoldersRecursively(f, user, respectFrontEndPermissions));
@@ -710,7 +710,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	@CloseDBIfOpened
 	public List<Map<String, Serializable>> DBSearch(Query query, User user, boolean respectFrontendRoles) throws ValidationException,
 			DotDataException {
-		Map<String, String> dbColToObjectAttribute = new HashMap<String, String>();
+		Map<String, String> dbColToObjectAttribute = new HashMap<>();
 
 		if (UtilMethods.isSet(query.getSelectAttributes())) {
 
@@ -718,7 +718,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				query.getSelectAttributes().add("title");
 			}
 		} else {
-			List<String> atts = new ArrayList<String>();
+			List<String> atts = new ArrayList<>();
 			atts.add("*");
 			atts.add("title");
 			query.setSelectAttributes(atts);

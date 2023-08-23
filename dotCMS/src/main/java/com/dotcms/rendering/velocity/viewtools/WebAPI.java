@@ -212,7 +212,7 @@ public class WebAPI implements ViewTool {
 	}
 
 	public List<String> splitString(String str, String sep) {
-		ArrayList<String> list = new ArrayList<String>();
+		ArrayList<String> list = new ArrayList<>();
 		String[] splitArr = str.split(sep);
 		for (int i = 0; i < splitArr.length; i++) {
 			list.add(splitArr[i]);
@@ -389,11 +389,11 @@ public class WebAPI implements ViewTool {
 		  // Language Fall Back
 		  cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), langId);
 
-		  if(!cvi.isPresent() && defaultLang != langId){
+		  if(cvi.isEmpty() && defaultLang != langId){
 		    cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), defaultLang);
 		  }
 
-		  if(!cvi.isPresent()) {
+		  if(cvi.isEmpty()) {
 		  	throw new DotDataException("Can't find Contentlet-version-info. Identifier: " + ident.getId() + ". Lang:" + defaultLang);
 		  }
 		  String conInode = PREVIEW_MODE && EDIT_MODE ? cvi.get().getWorkingInode()

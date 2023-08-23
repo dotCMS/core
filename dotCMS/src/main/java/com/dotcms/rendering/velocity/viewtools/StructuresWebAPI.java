@@ -85,7 +85,7 @@ public class StructuresWebAPI implements ViewTool {
 			}
 		}catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
-			return new ArrayList<Structure>();
+			return new ArrayList<>();
 		}
 	}
 
@@ -104,7 +104,7 @@ public class StructuresWebAPI implements ViewTool {
 			}
 		}catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
-			return new ArrayList<Structure>();
+			return new ArrayList<>();
 		}
 	}
 
@@ -123,7 +123,7 @@ public class StructuresWebAPI implements ViewTool {
 			}
 		}catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
-			return new ArrayList<Structure>();
+			return new ArrayList<>();
 		}
 	}
 

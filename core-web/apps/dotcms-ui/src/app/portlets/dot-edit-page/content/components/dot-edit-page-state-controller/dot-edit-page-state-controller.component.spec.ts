@@ -3,15 +3,17 @@
 import * as _ from 'lodash';
 import { of } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
+import { ConfirmationService } from 'primeng/api';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -19,22 +21,23 @@ import {
 } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_NAME,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     dotcmsContentletMock,
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
+    getExperimentMock,
     MockDotMessageService,
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';
@@ -66,7 +69,7 @@ const dotVariantDataMock: DotVariantData = {
     experimentId: EXPERIMENT_MOCK.id,
     experimentStatus: EXPERIMENT_MOCK.status,
     experimentName: EXPERIMENT_MOCK.name,
-    mode: 'preview'
+    mode: DotPageMode.PREVIEW
 };
 
 const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
@@ -99,7 +102,7 @@ describe('DotEditPageStateControllerComponent', () => {
     let personalizeService: DotPersonalizeService;
 
     beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [
                 TestHostComponent,
                 DotEditPageStateControllerComponent,
@@ -118,14 +121,23 @@ describe('DotEditPageStateControllerComponent', () => {
                     provide: DotPersonalizeService,
                     useClass: DotPersonalizeServiceMock
                 },
-                DotAlertConfirmService
+                DotAlertConfirmService,
+                ConfirmationService
             ],
-            imports: [InputSwitchModule, SelectButtonModule, TooltipModule, DotPipesModule]
+            imports: [
+                InputSwitchModule,
+                SelectButtonModule,
+                TooltipModule,
+                DotPipesModule,
+                DotMessagePipe,
+                CommonModule,
+                FormsModule
+            ]
         });
     }));
 
     beforeEach(() => {
-        fixtureHost = DOTTestBed.createComponent(TestHostComponent);
+        fixtureHost = TestBed.createComponent(TestHostComponent);
         deHost = fixtureHost.debugElement;
         componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-edit-page-state-controller'));
@@ -268,7 +280,7 @@ describe('DotEditPageStateControllerComponent', () => {
             it('should show only the preview tab when experiment is not Draft', async () => {
                 componentHost.variant = {
                     ...dotVariantDataMock,
-                    experimentStatus: DotExperimentStatusList.RUNNING
+                    experimentStatus: DotExperimentStatus.RUNNING
                 };
                 fixtureHost.detectChanges();
 
@@ -422,6 +434,38 @@ describe('DotEditPageStateControllerComponent', () => {
                 mockDotRenderedPage().page.identifier,
                 pageRenderStateMocked.viewAs.persona.keyTag
             );
+            expect(dotPageStateService.setLock).toHaveBeenCalledWith(
+                { mode: DotPageMode.EDIT },
+                true
+            );
+        });
+    });
+
+    describe('running experiment confirmation', () => {
+        beforeEach(() => {
+            const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                mockUser(),
+                new DotPageRender(mockDotRenderedPage()),
+                null,
+                EXPERIMENT_MOCK
+            );
+
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+        });
+
+        it('should update pageState service when confirmation dialog Success', async () => {
+            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+                conf.accept();
+            });
+            fixtureHost.detectChanges();
+            const selectButton = de.query(By.css('p-selectButton'));
+            selectButton.triggerEventHandler('onChange', {
+                value: DotPageMode.EDIT
+            });
+            await fixtureHost.whenStable();
+            expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(dialogService.confirm).toHaveBeenCalledTimes(1);
+
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
                 { mode: DotPageMode.EDIT },
                 true

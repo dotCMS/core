@@ -1,0 +1,60 @@
+.dijitTitlePane {
+    border-radius: $panel-border-radius;
+    box-shadow: $panel-normal-shadow;
+
+    &Hover {
+        box-shadow: $panel-hover-shadow;
+
+        .dijitTitlePaneContentOuter {
+            border: $panel-hover-border;
+            border-top: none;
+        }
+
+        .dijitTitlePaneTitle {
+            border: $panel-hover-border;
+            background-color: $panel-hover-title-bgcolor;
+            color: $panel-hover-title-textcolor;
+        }
+    }
+
+    &ContentOuter {
+        transition: border $field-animation-speed;
+        border: $panel-normal-border;
+        border-top: none;
+        padding: 1px $spacing-1 0;
+    }
+
+    &Title {
+        transition: all $field-animation-speed;
+        border: $panel-normal-border;
+        background-color: $panel-normal-title-bgcolor;
+        color: $panel-normal-title-textcolor;
+
+        &Closed {
+            .dijitArrowNode {
+                &:before {
+                    transform: rotate(-90deg);
+                }
+            }
+        }
+
+        .dijitArrowNode {
+            height: $panel-title-height;
+            position: relative;
+            width: $panel-title-height;
+
+            &:before {
+                @include create-arrow(5px, $color-palette-gray-800);
+            }
+        }
+
+        &Open {
+            background-color: $panel-open-title-bgcolor;
+            color: $panel-open-title-textcolor;
+        }
+
+        &Focus {
+            padding: 0 $spacing-1 0 0;
+        }
+    }
+}

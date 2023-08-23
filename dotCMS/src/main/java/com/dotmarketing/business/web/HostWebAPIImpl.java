@@ -82,7 +82,7 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
         Optional<Host> optionalHost = this.getCurrentHostFromRequest(request, user, respectAnonPerms);
 
-        if (!optionalHost.isPresent() && user.isBackendUser()){
+        if (optionalHost.isEmpty() && user.isBackendUser()){
             optionalHost = this.getCurrentHostFromSession(request, user, respectAnonPerms);
         }
 

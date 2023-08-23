@@ -95,42 +95,54 @@ var cmsfile=null;
 		var datePart=dijit.byId(varName + "Date");
 		var timePart=dijit.byId(varName + 'Time');
 
-		if(datePart != null) {
+        var includesDate = false;
+		if (datePart != null) {
 			var x = datePart.getValue();
-			if(x) {
+			if (x) {
 				var month = (x.getMonth() +1) + "";
 				month = (month.length < 2) ? "0" + month : month;
 				var day = (x.getDate() ) + "";
 				day = (day.length < 2) ? "0" + day : day;
-				year = x.getFullYear();
-				dateValue= year + "-" + month + "-" + day + " ";
+				var year = x.getFullYear();
+				dateValue= year + "-" + month + "-" + day;
+                includesDate = true
 			}
 		}
 
-		if(datePart==null || dateValue!="") {
+		if (datePart==null || includesDate) {
 			// if it is just time or date_time but the value exists
 			if (timePart != null) {
 				var time = timePart.value;
-				if(!isNaN(time) && time != null) {
+				if (!isNaN(time) && time != null) {
 					var hour = time.getHours();
 					if(hour < 10) hour = "0" + hour;
 					var min = time.getMinutes();
 					if(min < 10) min = "0" + min;
-					dateValue += hour + ":" + min;
-					if(datePart==null)
-						dateValue+=":00";
+                    var hourAndMin = hour + ":" + min;
+                    if (includesDate) {
+                        dateValue += " " + hourAndMin;
+                    } else {
+                        dateValue = hourAndMin;
+                    }
+					if (datePart==null) {
+                        dateValue += ":00";
+                    }
+				} else if (includesDate) {
+					dateValue += " 00:00";
 				}
-				else{
-					dateValue += "00:00";
-				}
-			} else {
-				dateValue += "00:00";
+			} else if (includesDate) {
+				dateValue += " 00:00";
 			}
 		}
 
 
         <%String offset = new SimpleDateFormat("Z").format(Calendar.getInstance(APILocator.systemTimeZone()).getTime());%>
-		field.value = dateValue + " <%=offset%>";
+		const timeZoneOffset = " <%=offset%>";
+        if (includesDate) {
+            field.value = dateValue + timeZoneOffset;
+        } else {
+            field.value = dateValue;
+        }
 
 		if(typeof updateStartRecurrenceDate === 'function' && (varName == 'startDate' || varName == 'endDate')){
 		    updateStartRecurrenceDate(varName);
@@ -339,10 +351,15 @@ var cmsfile=null;
 
 	function insertAssetInEditor(dotAssets) {
 		dotAssets.forEach(async (asset) => {
+            const languageQuery = asset.languageId ? `&language=${asset.languageId}` : "";
 			let results = await fetch(
-				`/api/v1/content/resourcelinks?identifier=${asset.identifier}`
+				`/api/v1/content/resourcelinks?identifier=${asset.identifier}${languageQuery}`
 			);
 			results = await results.json();
+            if (!results || !results.entity) {
+                showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "an-unexpected-system-error-occurred")) %>');
+                return;
+            }
 
 			const mimeWhiteList = [
 				"image/jpeg",

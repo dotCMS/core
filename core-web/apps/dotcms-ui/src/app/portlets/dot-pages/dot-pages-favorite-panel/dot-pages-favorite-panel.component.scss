@@ -1,72 +1,47 @@
 @use "variables" as *;
 
 ::ng-deep {
-    .p-panel-toggleable {
-        border: 1px solid $gray-lighter;
-
-        &.p-panel-expanded {
-            border-color: $white;
-        }
-    }
-
-    .p-panel-header {
-        font-size: $font-size-x-large;
-        margin: $spacing-1 0;
-        padding: $spacing-3 0;
-        position: relative;
-
-        .p-panel-icons span {
-            color: $brand-primary;
-            font-size: $font-size-x-large;
-            margin-left: $spacing-1;
-            margin-right: $spacing-2;
-        }
-    }
-
-    .dot-pages-panel-action__button {
+    button.dot-pages-panel-action__button {
         display: none;
         position: absolute;
-        right: $spacing-3;
+        right: $spacing-8;
         top: $spacing-1;
+        text-transform: none;
+
+        .p-button-label {
+            text-transform: none;
+        }
 
         span.p-button-label {
-            font-size: $font-size-medium;
+            font-size: $font-size-md;
         }
     }
 
     .p-panel-expanded .dot-pages-panel-action__button {
         display: block;
         position: absolute;
+        background: $white;
     }
 
     .p-toggleable-content .p-panel-content {
         column-gap: $spacing-4;
         row-gap: $spacing-4;
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        height: 266px;
+        grid-template-columns: repeat(auto-fill, 250px);
+        height: 100%;
         overflow: hidden;
         position: relative;
-    }
-
-    .dot-pages-panel__expanded .p-toggleable-content .p-panel-content {
-        overflow: unset;
-        height: unset;
+        padding-left: $spacing-3;
+        padding-right: $spacing-3;
+        padding-bottom: $spacing-4;
     }
 
     .dot-pages-panel__empty-state .p-toggleable-content .p-panel-content {
         height: 250px;
     }
 
-    .dot-pages-panel__empty-state .p-toggleable-content .p-panel-content {
-        max-width: 1280px;
-        overflow: hidden;
-    }
-
     dot-pages-card,
     dot-pages-card-empty {
-        min-height: 250px;
-
         p-card {
             cursor: pointer;
         }
@@ -84,9 +59,37 @@
         top: 45px;
         width: max-content;
 
-        dot-icon {
-            color: $brand-primary;
+        i.pi {
+            color: $color-palette-primary;
+            font-size: $font-size-xxl;
             margin-bottom: $spacing-3;
+        }
+    }
+
+    .pi-star-fill {
+        color: $color-palette-primary;
+        margin-right: $spacing-1;
+    }
+
+    .dot-pages-panel__header {
+        display: flex;
+        align-items: center;
+        margin-left: $spacing-3;
+    }
+
+    .p-panel-header-icon {
+        .pi {
+            border: 1px solid;
+            border-radius: 100px;
+            height: $spacing-5;
+            width: $spacing-5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pi:before {
+            font-size: $spacing-2;
         }
     }
 }
@@ -95,7 +98,7 @@
     font-size: large;
 }
 
-p-panel {
-    display: block;
-    margin-bottom: $spacing-5;
+.dot-pages-empty__content {
+    color: $color-palette-gray-700;
+    text-align: center;
 }

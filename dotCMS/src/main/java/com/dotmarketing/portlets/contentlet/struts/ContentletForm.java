@@ -55,7 +55,7 @@ public class ContentletForm extends ValidatorForm {
     public static final String HAS_VALIDATION_ERRORS = "hasvalidationerrors";
     public static final String HOST_FOLDER_KEY = "hostOrFolder";
     
-    private Map<String, Object> map = new HashMap<String, Object>();     
+    private Map<String, Object> map = new HashMap<>();     
     
 	/** identifier field */    	
 	private List AllStructures;
@@ -157,7 +157,7 @@ public class ContentletForm extends ValidatorForm {
 	public void setDisabledWysiwyg(String disabledWysiwyg) {
 		if(disabledWysiwyg != null){
 			String[] s = disabledWysiwyg.split(",");
-			List<String> l = new ArrayList<String>();
+			List<String> l = new ArrayList<>();
 			for (String inode : s) {
 				l.add(inode);
 			}
@@ -244,7 +244,7 @@ public class ContentletForm extends ValidatorForm {
 	 * The keys used in the map will be the velocity variables names
 	 */
 	public Map<String, Object> getMap() throws DotRuntimeException {
-		return new HashMap<String, Object>(map);
+		return new HashMap<>(map);
 	}
 
 	/**

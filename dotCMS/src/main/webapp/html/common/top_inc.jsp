@@ -139,14 +139,15 @@ THIS FILE AND ITS INCLUDES
 
   <style>
     :root {
-      --color-background: #3a3847;
-      --color-main: #c336e5;
-      --color-main_mod: #d369ec;
-      --color-main_rgb: 195, 54, 229;
-      --color-sec: #54428e;
-      --color-sec_rgb: 84, 66, 142;
-      --color-white: #fff;
-      --color-white_rgb: 255, 255, 255;
+			--color-background: #3a3847;
+        --color-main: #426bf0;
+        --color-main_mod: #4656ba;
+        --color-main_rgb: 74, 144, 226;
+        --color-sec: #9747ff;
+        --color-sec_rgb: 151, 71, 255;
+        --color-white: #fff;
+        --color-white_rgb: 255, 255, 255;
+        --empty-message: '';
 
       /* Basics */
       --border-radius: 2px;

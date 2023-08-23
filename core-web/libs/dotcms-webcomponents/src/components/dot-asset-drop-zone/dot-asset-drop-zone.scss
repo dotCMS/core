@@ -1,11 +1,12 @@
 @import "../../global/variables";
+@import "../../../../dotcms-scss/shared/colors";
 
 dot-asset-drop-zone {
     .dot-asset-drop-zone__indicators {
         --mdc-dialog-scrim-color: transparent;
         --mdc-dialog-max-width: 400px;
         align-items: center;
-        background-color: rgba(255, 255, 255, 0.8);
+        background-color: $color-palette-white-op-80;
         border: 3px solid transparent;
         bottom: 0;
         display: flex;
@@ -23,7 +24,7 @@ dot-asset-drop-zone {
         &.drag-enter,
         &.active {
             pointer-events: all;
-            border: 3px dashed var(--color-sec);
+            border: 3px dashed $color-palette-secondary-500;
             opacity: 1;
 
             .dot-asset-drop-zone__icon {
@@ -45,7 +46,7 @@ dot-asset-drop-zone {
 
             span {
                 display: block;
-                color: var(--color-sec);
+                color: $color-palette-secondary-500;
                 margin-top: -20px;
                 font-size: 20px;
                 text-align: center;
@@ -69,7 +70,7 @@ dot-asset-drop-zone {
     }
 
     mwc-icon {
-        color: var(--color-sec);
+        color: $color-palette-secondary-500;
         --mdc-icon-size: 200px;
     }
 

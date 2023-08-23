@@ -34,13 +34,13 @@ $box-height: 206px;
 .box {
     background: linear-gradient(
         to bottom,
-        $gray-bg 0,
-        $gray-bg $box-header-height,
+        $color-palette-gray-200 0,
+        $color-palette-gray-200 $box-header-height,
         $white $box-header-height,
         $white 100%
     );
-    border-radius: $border-radius;
-    border: 1px solid $gray-lighter;
+    border-radius: $border-radius-xs;
+    border: 1px solid $color-palette-gray-300;
     display: flex;
     height: $box-height;
     justify-content: space-between;
@@ -67,11 +67,11 @@ $box-height: 206px;
     z-index: 1;
 
     &::ng-deep .dot-icon-button {
-        background-color: $gray-bg;
+        background-color: $color-palette-gray-200;
 
         &:hover {
-            background-color: rgba($brand-primary_rgb, 0.2);
-            color: $brand-primary;
+            background-color: $color-palette-primary-op-20;
+            color: $color-palette-primary;
         }
     }
 }

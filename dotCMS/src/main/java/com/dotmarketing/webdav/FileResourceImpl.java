@@ -117,7 +117,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 			return workingFile.length();
 		} catch (Exception e) {
 			Logger.warnAndDebug(this.getClass(), "Webdav unable to read file length for " + this.path,e);
-			return new Long(0);
+			return Long.valueOf(0);
 		}
 	}
 
@@ -152,7 +152,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
   }
 
 	public Long getMaxAgeSeconds() {
-		return new Long(0);
+		return Long.valueOf(0);
 	}
 
 	public void sendContent(OutputStream out, Range arg1, Map<String, String> arg2, String arg3) throws IOException {

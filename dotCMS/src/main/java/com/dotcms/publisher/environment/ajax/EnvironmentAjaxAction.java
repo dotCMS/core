@@ -126,7 +126,7 @@ public class EnvironmentAjaxAction extends AjaxAction {
         	environment.setPushToAll("pushToAll".equals(request.getParameter("pushType")));
 
         	List<String> whoCanUse = Arrays.asList(whoCanUseTmp.split(","));
-        	List<Permission> permissions = new ArrayList<Permission>();
+        	List<Permission> permissions = new ArrayList<>();
 
 			for (String perm : whoCanUse) {
 				if(!UtilMethods.isSet(perm)){
@@ -180,7 +180,7 @@ public class EnvironmentAjaxAction extends AjaxAction {
         	environment.setPushToAll("pushToAll".equals(request.getParameter("pushType")));
 
         	List<String> whoCanUse = Arrays.asList(whoCanUseTmp.split(","));
-        	List<Permission> permissions = new ArrayList<Permission>();
+        	List<Permission> permissions = new ArrayList<>();
 
 			for (String perm : whoCanUse) {
 				if(!UtilMethods.isSet(perm)){

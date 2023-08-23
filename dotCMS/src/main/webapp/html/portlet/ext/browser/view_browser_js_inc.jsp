@@ -748,7 +748,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     //AJAX callback to load the left hand side of the browser
     function selectFolderContentCallBack (content) {
 
-
         var subFoldersCount = 0;
 
         //Loading the contents table at the rigth hand side
@@ -902,7 +901,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                     '   <td style="padding:0px" class="descriptionTD" id="' + asset.inode + '-DescriptionTD">' +
                     '<table style="width:100%;">' +
                     '<tr style="height:15px">' +
-                    '<td style="padding:0px; border:0px; width:60px;">'+ languageHTML +
+                    '<td style="padding:0px; border:0px; width:80px;">'+ languageHTML +
                     '</td>' +
                     '<td style="text-align:left; border:0px">'+title+'</td>' +
                     ' </tr>' +

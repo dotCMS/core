@@ -149,7 +149,7 @@ public class Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegra
         dc.addParam("remote_identifier" + System.currentTimeMillis());
         dc.addParam("html_page" + System.currentTimeMillis());
         dc.addParam(remoteIP);
-        dc.addParam(new Long("1"));
+        dc.addParam(Long.valueOf("1"));
 
         dc.loadResult();
     }

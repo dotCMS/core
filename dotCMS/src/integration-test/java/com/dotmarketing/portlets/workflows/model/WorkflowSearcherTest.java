@@ -24,7 +24,7 @@ public class WorkflowSearcherTest {
      */
     @Test
     public void issue4134() throws Exception {
-        Map<String,Object> params=new HashMap<String,Object>();
+        Map<String,Object> params=new HashMap<>();
         params.put("open",true);
         params.put("assignedTo", APILocator.getUserAPI().getSystemUser());
         WorkflowSearcher searcher = new WorkflowSearcher(params, APILocator.getUserAPI().getSystemUser());

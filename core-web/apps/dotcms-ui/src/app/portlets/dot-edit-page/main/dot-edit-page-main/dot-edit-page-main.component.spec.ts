@@ -143,7 +143,7 @@ describe('DotEditPageMainComponent', () => {
                                 url: '/about-us/index'
                             }
                         },
-                        queryParams: of({ editPageTab: 'a', variantName: 'b', experimentId: 'c' })
+                        queryParams: of({ mode: 'a', variantName: 'b', experimentId: 'c' })
                     }
                 },
 
@@ -330,7 +330,7 @@ describe('DotEditPageMainComponent', () => {
     });
 
     describe('Edit Page in Variant Mode', () => {
-        it('should add class edit-page-variant-mode to the page nav if exist editPageTab, variationName, experimentId as query params', () => {
+        it('should add class edit-page-variant-mode to the page nav if exist mode, variationName, experimentId as query params', () => {
             const nav: DotEditPageNavComponent = fixture.debugElement.query(
                 By.css('dot-edit-page-nav')
             ).nativeElement;

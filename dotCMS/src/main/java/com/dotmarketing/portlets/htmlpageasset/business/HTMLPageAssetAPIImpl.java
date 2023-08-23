@@ -196,6 +196,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             throw new DotStateException("Page Copy Failed", e);
         }
         pa.setHost(con.getHost());
+        pa.setVariantId(con.getVariantId());
         if(UtilMethods.isSet(con.getFolder())){
             try{
                 Identifier ident = identifierAPI.find(con);
@@ -230,7 +231,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
 		}
         
-
         return pa;
     }
 
@@ -263,11 +263,11 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 Optional<ContentletVersionInfo> cinfo = versionableAPI
                         .getContentletVersionInfo( id.getId(), languageId, currentVariantId);
 
-                if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
+                if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
 
                     cinfo = versionableAPI.getContentletVersionInfo( id.getId(), languageId);
 
-                    if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
+                    if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
                         return null;
                     }
                 }
@@ -332,7 +332,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 			boolean deleted, int limit, int offset, String sortBy, User user,
 			boolean respectFrontEndRoles) throws DotDataException,
 			DotSecurityException {
-		List<IHTMLPage> pages = new ArrayList<IHTMLPage>();
+		List<IHTMLPage> pages = new ArrayList<>();
 		StringBuffer query = new StringBuffer();
 		String liveWorkingDeleted = (live) ? " +live:true "
 				: (deleted) ? " +working:true +deleted:true "
@@ -562,7 +562,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     @Override
     public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,boolean include,Date startDate, Date endDate) {
 
-        Set<String> ret = new HashSet<String>();
+        Set<String> ret = new HashSet<>();
         
         String likepattern=RegEX.replaceAll(pattern, "%", "\\*");
         
@@ -674,7 +674,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             Logger.error(this,"can't get modified page assets sql:"+bob,e);
         }
         
-        return new ArrayList<String>(ret);
+        return new ArrayList<>(ret);
     }
     
     @Override
@@ -744,13 +744,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         
 
         Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), viewingLang );
-        if((!cinfo.isPresent() || cinfo.get().getLiveInode() == null)
+        if((cinfo.isEmpty() || cinfo.get().getLiveInode() == null)
                 && viewingLang!=languageAPI.getDefaultLanguage().getId()
                 && languageAPI.canDefaultPageToDefaultLanguage()){
           cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageAPI.getDefaultLanguage().getId() );
         }
         // if we still have nothing.
-        if (!InodeUtils.isSet(ident.getId()) || !cinfo.isPresent()
+        if (!InodeUtils.isSet(ident.getId()) || cinfo.isEmpty()
                 || cinfo.get().getLiveInode() == null && liveMode) {
             throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
         }

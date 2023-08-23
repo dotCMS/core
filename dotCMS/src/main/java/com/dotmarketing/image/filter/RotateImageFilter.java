@@ -27,7 +27,7 @@ public class RotateImageFilter extends ImageFilter {
 			return resultFile;
 		}
 
-		float x = new Double(java.lang.Math.toRadians(a)).floatValue();
+		float x = Double.valueOf(java.lang.Math.toRadians(a)).floatValue();
 		RotateFilter filter = new RotateFilter(x, true);
 		filter.setEdgeAction(RotateFilter.ZERO);
 

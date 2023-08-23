@@ -267,7 +267,7 @@ public class RoleResource {
 		Role userRole = roleAPI.loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
 		List<Role> roles = roleAPI.findRolesByNameFilter(name, -1, -1);
 
-		LinkedHashMap<String, Object> resultTree = new LinkedHashMap<String, Object>();
+		LinkedHashMap<String, Object> resultTree = new LinkedHashMap<>();
 
 		for (Role r : roles) {
 
@@ -288,7 +288,7 @@ public class RoleResource {
 				if(existingMap!=null) {
 					buildTree(existingMap, nodes); // if exists past the existing HashMap to continue looking for children
 				} else {
-					resultTree.put(node,  buildTree(new LinkedHashMap<String, Object>(), nodes)); // if does not exist put the key and continue building recursively
+					resultTree.put(node,  buildTree(new LinkedHashMap<>(), nodes)); // if does not exist put the key and continue building recursively
 				}
 
 			} else {
@@ -329,7 +329,7 @@ public class RoleResource {
 			if(existingMap!=null) {
 				buildTree(existingMap, subNodes); // if exists pass the existing HashMap to continue looking for children
 			} else {
-				map.put(node,  buildTree(new LinkedHashMap<String, Object>(), subNodes)); // if does not exist put the key and continue building recursively
+				map.put(node,  buildTree(new LinkedHashMap<>(), subNodes)); // if does not exist put the key and continue building recursively
 			}
 
 		} else {

@@ -1,8 +1,10 @@
 package com.dotcms.storage;
 
-import static com.dotmarketing.util.UtilMethods.isSet;
 
+import static com.dotmarketing.util.FileUtil.binaryPath;
+import static com.dotmarketing.util.UtilMethods.isSet;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -18,18 +20,21 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,17 +55,29 @@ import java.util.stream.Stream;
  */
 public class FileMetadataAPIImpl implements FileMetadataAPI {
 
+    public static final String BASIC_METADATA_OVERRIDE_KEYS = "BASIC_METADATA_OVERRIDE_KEYS";
     private final FileStorageAPI fileStorageAPI;
     private final MetadataCache metadataCache;
+
+    private Lazy<Set<String>> basicMetadataKeySet;
 
     public FileMetadataAPIImpl() {
         this(APILocator.getFileStorageAPI(), CacheLocator.getMetadataCache());
     }
 
+    private FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache) {
+        this(fileStorageAPI, metadataCache, () -> Arrays.stream(
+                        Config.getStringProperty(BASIC_METADATA_OVERRIDE_KEYS,
+                                String.join(",", BasicMetadataFields.keyMap().keySet())).split(","))
+                .map(String::trim).collect(Collectors.toSet()));
+    }
+
     @VisibleForTesting
-    FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache) {
+    FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache,
+            Supplier<? extends Set<String>> basicMetadataKeySetSupplier) {
         this.fileStorageAPI = fileStorageAPI;
         this.metadataCache = metadataCache;
+        this.basicMetadataKeySet = Lazy.of(basicMetadataKeySetSupplier);
     }
 
     /**
@@ -437,8 +454,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     private Map<String, Serializable> filterNonBasicMetadataFields(final Map<String, Serializable> originalMap) {
-        final Set<String> basicMetadataFieldsSet = BasicMetadataFields.keyMap().keySet();
-        return originalMap.entrySet().stream().filter(entry -> basicMetadataFieldsSet
+        return originalMap.entrySet().stream().filter(entry -> basicMetadataKeySet.get()
                 .contains(entry.getKey()) || entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
                 Collectors.toMap(Entry::getKey, Entry::getValue));
     }
@@ -540,8 +556,53 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     public Map<String, Set<String>> removeMetadata(final Contentlet contentlet) {
         final Map<String,Set<String>> removedMetaPaths = new HashMap<>();
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
-        final String metadataBucketName = Config
-                .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+        removedMetaPaths.putAll(removeMetadataFromFields(contentlet, storageType, metadataBucketName));
+        removedMetaPaths.putAll(removeMetadataFromPaths(contentlet, storageType, metadataBucketName));
+        return removedMetaPaths;
+    }
+
+    /**
+     * Given that depending on the strategy used to remove the CT where the contentlet belongs to
+     * we might end up missing the fields' info. Therefore, we need to iterate over the binary fields themselves to compute metadata keys
+     * @param contentlet
+     * @param storageType
+     * @param metadataBucketName
+     * @return
+     */
+    private Map<String, Set<String>> removeMetadataFromPaths(final Contentlet contentlet,
+            final StorageType storageType, final String metadataBucketName) {
+        final String prefix = APILocator.getFileAssetAPI().getRealAssetsRootPath();
+        final String suffix = FileMetadataAPI.METADATA_JSON;
+        final Map<String, Set<String>> removedMetaPaths = new HashMap<>();
+        final Optional<Path> rootPath = binaryPath(contentlet);
+        if (rootPath.isPresent()) {
+            try (Stream<Path> walk = Files.walk(rootPath.get())) {
+                final Set<String> paths = walk.sorted(Comparator.reverseOrder())
+                        .filter(path -> path.toString().endsWith(suffix))
+                        .map(path -> path.toString().replace(prefix, File.separator))
+                        .collect(Collectors.toSet());
+
+                for (final String path : paths) {
+                    if (fileStorageAPI.removeMetaData(
+                            new FetchMetadataParams.Builder()
+                                    .storageKey(new StorageKey.Builder().group(metadataBucketName)
+                                            .path(path).storage(storageType).build()).build()
+                    )) {
+                        removedMetaPaths.computeIfAbsent(metadataBucketName, k -> new HashSet<>())
+                                .add(path);
+                    }
+                }
+
+            } catch (IOException | DotDataException e) {
+                Logger.error(ESContentletAPIImpl.class, e.getMessage(), e);
+            }
+        }
+        return removedMetaPaths;
+    }
+
+    private Map<String, Set<String>> removeMetadataFromFields(final Contentlet contentlet, final StorageType storageType, final String metadataBucketName) {
+        final Map<String,Set<String>> removedMetaPaths = new HashMap<>();
         final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(
                 contentlet);
         final Set<String> fields = Stream

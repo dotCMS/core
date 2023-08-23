@@ -1,0 +1,24 @@
+.categories-selector__breadcrumbs,
+.categories-selector__toolbar {
+    margin-bottom: $spacing-1 * 2;
+}
+
+.categories-selector__breadcrumbs a {
+    text-decoration: none;
+
+    &:last-child {
+        color: $font-color-base;
+    }
+}
+
+.categories-selector__toolbar {
+    display: flex;
+    justify-content: space-between;
+}
+
+.categories-selector-toolbar-actions-secondary {
+    & > div {
+        display: flex;
+        justify-content: flex-end;
+    }
+}

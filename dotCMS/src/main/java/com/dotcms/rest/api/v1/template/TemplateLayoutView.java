@@ -124,7 +124,7 @@ public class TemplateLayoutView {
                 newValues.put(containerId, containerNewValues);
             } else if (!oldValue.equals(newValue)) {
                 final Map<String, String> containerChanges = changes.getOrDefault(containerId,
-                        new HashMap<String, String>());
+                        new HashMap<>());
                 containerChanges.put(oldValue, newValue);
                 changes.put(containerId, containerChanges);
             }

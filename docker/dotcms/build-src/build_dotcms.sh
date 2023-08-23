@@ -9,9 +9,6 @@ build_id=$2
 echo "Build source: ${build_source}"
 echo "Build id: ${build_id}"
 
-build_target_dir=/build/cms
-mkdir -p "${build_target_dir}"
-
 build_by_commit() {
   cd /build/src/core
 
@@ -31,11 +28,20 @@ build_by_commit() {
     git clean -f -d
   fi
 
-  rm -rf /build/src/core/dist
-  cd dotCMS && ./gradlew createDistPrep
-  find ../dist/  -name "*.sh" -exec chmod 500 {} \;
-  mv ../dist/* "${build_target_dir}"
+  rm -rf ./dist ./dotCMS/build ./core-web/node_modules
+  cd dotCMS
+  ./gradlew clean generateDependenciesFromMaven
+  ./gradlew createDistPrep
+  cd ..
+  du -hs ./core-web/node_modules
+  rm -rf ./core-web/node_modules
+
+  find ./dist/  -name "*.sh" -exec chmod 500 {} \;
+  mv ./dist/* "${build_target_dir}"
 }
+
+build_target_dir=/build/cms
+mkdir -p "${build_target_dir}"
 
 case "${build_source}" in
 

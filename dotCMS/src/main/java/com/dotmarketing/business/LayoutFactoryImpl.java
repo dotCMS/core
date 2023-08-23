@@ -133,7 +133,7 @@ public class LayoutFactoryImpl extends LayoutFactory {
 		hu.setQuery("from com.dotmarketing.business.PortletsLayouts where layout_id = ? order by portlet_order");
 		hu.setParam(layout.getId());
 		List<PortletsLayouts> pls = hu.list();
-		List<String> pids = new ArrayList<String>();
+		List<String> pids = new ArrayList<>();
 		if(pls != null && pls.size()>0){
 			for (PortletsLayouts pl : pls) {
 				pids.add(pl.getPortletId());

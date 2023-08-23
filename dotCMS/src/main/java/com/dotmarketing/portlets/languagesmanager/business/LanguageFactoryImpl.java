@@ -38,7 +38,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,7 +76,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 	private final AtomicReference<Language> createDefaultLanguageLock = new AtomicReference<>();
 
-	private final Map<String, Date> readTimeStamps = new HashMap<String, Date>();
+	private final Map<String, Date> readTimeStamps = new HashMap<>();
 
 	/**
 	 * Creates a new instance of the {@link LanguageFactory}.
@@ -503,11 +502,11 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			// Create empty file
 			File from = new java.io.File(filePath);
 			if (!from.exists()) {
-				return new ArrayList<LanguageKey>();
+				return new ArrayList<>();
 			}
 
 
-			list = new LinkedList<LanguageKey>();
+			list = new LinkedList<>();
 			LineNumberReader lineNumberReader = null;
 			InputStreamReader is = null;
 			InputStream fs = null;
@@ -852,7 +851,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		if (resultSet == null) {
 			return null;
 		}
-		return new LanguageTransformer(Collections.singletonList(resultSet)).findFirst();
+		return new LanguageTransformer(List.of(resultSet)).findFirst();
 	}
 
 }

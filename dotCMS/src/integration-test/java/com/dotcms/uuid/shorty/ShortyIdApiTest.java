@@ -481,11 +481,11 @@ public class ShortyIdApiTest {
 
             // no shorty when the db is exhausted
             shorty = api.getShorty(shortyInode);
-            assert (!shorty.isPresent());
+            assert (shorty.isEmpty());
 
             // no shorty when the db is exhausted
             shorty = api.getShorty(shortyIdentifier);
-            assert (!shorty.isPresent());
+            assert (shorty.isEmpty());
             
 
         } finally {
@@ -522,12 +522,12 @@ public class ShortyIdApiTest {
         String uuid = UUIDGenerator.generateUuid();
         String testUuid = uuid.replace("-","");
         ShortyIdAPI api = APILocator.getShortyAPI();
-        assert(!api.getShorty(uuid).isPresent());
-        assert(!api.getShorty(testUuid).isPresent());
+        assert(api.getShorty(uuid).isEmpty());
+        assert(api.getShorty(testUuid).isEmpty());
         
         for(int i=testUuid.length();i>ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;i--) {
             String test=testUuid.substring(0, i);
-            assert(!api.getShorty(test).isPresent());
+            assert(api.getShorty(test).isEmpty());
         }
         
         
@@ -557,12 +557,12 @@ public class ShortyIdApiTest {
         String uuid = UUIDGenerator.generateUuid();
         String testUuid = uuid.replace("-","");
         ShortyIdAPI api = APILocator.getShortyAPI();
-        assert(!api.getShorty(uuid).isPresent());
-        assert(!api.getShorty(testUuid).isPresent());
+        assert(api.getShorty(uuid).isEmpty());
+        assert(api.getShorty(testUuid).isEmpty());
         
         for(int i=testUuid.length();i>ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;i--) {
             String test=testUuid.substring(0, i);
-            assert(!api.getShorty(test).isPresent());
+            assert(api.getShorty(test).isEmpty());
         }
         
         

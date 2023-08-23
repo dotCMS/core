@@ -29,7 +29,7 @@ import org.junit.Test;
 public class PublishingEndPointAPITest extends IntegrationTestBase{
 
 	private static PublishingEndPointAPI api;
-	private static ArrayList<PublishingEndPoint> _endPoints = new ArrayList<PublishingEndPoint>();
+	private static ArrayList<PublishingEndPoint> _endPoints = new ArrayList<>();
 	
 	public static PublishingEndPoint createPublishingEndPoint(String id, String groupId, String serverName, String address, String port, String protocol, boolean enabled, String authKey, boolean sending) {
 		final com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory factory =

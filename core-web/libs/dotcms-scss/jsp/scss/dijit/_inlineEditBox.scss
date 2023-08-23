@@ -1,0 +1,24 @@
+.dijitInline {
+    .dijitButton {
+        margin: 5px 5px 0 0;
+        line-height: normal;
+    }
+
+    &.dijitTextBox .dijitInputInner {
+        height: 100%;
+        padding: 0;
+    }
+
+    &EditBoxDisplayMode {
+        &Hover {
+            border-radius: 2px;
+            border: solid $inlineeditbox-hover-border-size $inlineeditbox-hover-border-color;
+            background: $inlineeditbox-hover-bgcolor;
+        }
+
+        // TODO: check why the original class don't work
+        &.dijitOffScreen {
+            display: none;
+        }
+    }
+}

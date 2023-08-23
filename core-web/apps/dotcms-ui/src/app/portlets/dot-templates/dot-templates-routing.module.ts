@@ -1,8 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { LayoutEditorCanDeactivateGuardService } from '@dotcms/app/api/services/guards/layout-editor-can-deactivate-guard.service';
-
 import { DotTemplateCreateEditResolver } from './dot-template-create-edit/resolvers/dot-template-create-edit.resolver';
 import { DotTemplateListResolver } from './dot-template-list/dot-template-list-resolver.service';
 import { DotTemplateListComponent } from './dot-template-list/dot-template-list.component';
@@ -27,7 +25,7 @@ const routes: Routes = [
     },
     {
         path: 'edit/:id',
-        canDeactivate: [LayoutEditorCanDeactivateGuardService],
+
         loadChildren: () =>
             import(
                 '@portlets/dot-templates/dot-template-create-edit/dot-template-create-edit.module'

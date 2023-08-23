@@ -141,7 +141,7 @@ public class ContentTool implements ViewTool {
 	 * @return  Returns empty List if no results are found
 	 */
 	public List<ContentMap> pull(String query, String limit, String sort){
-        int l = new Integer(limit);
+        int l = Integer.valueOf(limit);
         return pull(query, l, sort);
 	}
 	
@@ -167,7 +167,7 @@ public class ContentTool implements ViewTool {
 	
 	public PaginatedArrayList<ContentMap> pull(String query, int offset,int limit, String sort){
 	    try {
-    	    PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
+    	    PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<>();
 
     	    PaginatedArrayList<Contentlet> cons = ContentUtils.pull(
     	    		ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req),
@@ -238,7 +238,7 @@ public class ContentTool implements ViewTool {
 	 * 
 	 */
 	public PaginatedContentList<ContentMap> pullPerPage(String query, int currentPage, int contentsPerPage, String sort){
-		PaginatedContentList<ContentMap> ret = new PaginatedContentList<ContentMap>();
+		PaginatedContentList<ContentMap> ret = new PaginatedContentList<>();
 		try {
     	    PaginatedArrayList<Contentlet> cons = ContentUtils.pullPerPage(
     	    		ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req), currentPage, contentsPerPage, sort,
@@ -396,7 +396,7 @@ public class ContentTool implements ViewTool {
     public List<ContentMap> pullRelated(final String relationshipName, final String contentletIdentifier,
             final String condition, final boolean pullParents, final int limit, final String sort) {
         try {
-            final PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
+            final PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<>();
 
 			long langId = UtilMethods.isSet(condition) && condition.contains("languageId") ? -1 :
 					language.getId();
@@ -564,7 +564,7 @@ public class ContentTool implements ViewTool {
 	
     private String addPersonalizationToQuery(String query) {
         Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(this.req);
-        if (!opt.isPresent() || query == null) {
+        if (opt.isEmpty() || query == null) {
             return query;
         }
         query = query.toLowerCase();

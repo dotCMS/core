@@ -17,8 +17,15 @@ interface Command {
   cmd: string
   args: string[]
   workingDir?: string
+  preCommands?: PreCommand[]
   outputDir: string
   reportDir: string
+}
+
+interface PreCommand {
+  cmd: string
+  args: string[]
+  workingDir?: string
 }
 
 export interface Commands {
@@ -30,6 +37,7 @@ export const COMMANDS: Commands = {
   gradle: {
     cmd: './gradlew',
     args: ['test', '--stacktrace'],
+    preCommands: [{cmd: './gradlew', args: ['generateDependenciesFromMaven'], workingDir: dotCmsRoot}],
     workingDir: dotCmsRoot,
     outputDir: outputDir,
     reportDir: reportDir
@@ -50,6 +58,18 @@ export const COMMANDS: Commands = {
  * @returns a number representing the command exit code
  */
 export const runTests = async (cmd: Command): Promise<number> => {
+  if (cmd.preCommands) {
+    for (const preCmd of cmd.preCommands) {
+      core.info(`Executing pre-command: ${preCmd.cmd} ${preCmd.args.join(' ')}`)
+      try {
+        await exec.exec(preCmd.cmd, preCmd.args, {cwd: preCmd.workingDir})
+      } catch (err) {
+        core.setFailed(`Pre-command failed due to: ${err}`)
+        return 127
+      }
+    }
+  }
+
   prepareTests()
 
   resolveParams(cmd)

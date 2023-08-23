@@ -14,7 +14,7 @@ import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 
 public class Task00006CreateSystemLayout implements StartupTask {
-	List<String> missingPortlets=new ArrayList<String>();
+	List<String> missingPortlets=new ArrayList<>();
 
 	@Override
 	@WrapInTransaction
@@ -24,7 +24,7 @@ public class Task00006CreateSystemLayout implements StartupTask {
 			LayoutAPI api=APILocator.getLayoutAPI();
 			List<String> portletIds=layout.getPortletIds();
 			if (portletIds==null) {
-				portletIds=new ArrayList<String>();
+				portletIds=new ArrayList<>();
 			}
 			portletIds.addAll(missingPortlets);
 			api.setPortletIdsToLayout(layout, portletIds);

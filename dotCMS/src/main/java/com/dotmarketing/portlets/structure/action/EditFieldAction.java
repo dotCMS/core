@@ -425,8 +425,8 @@ public class EditFieldAction extends DotPortletAction {
                 fieldForm.setElement(FieldAPI.ELEMENT_FIELD);
             }
 
-            List<String> values = new ArrayList<String>();
-            List<String> names = new ArrayList<String>();
+            List<String> values = new ArrayList<>();
+            List<String> names = new ArrayList<>();
             fieldForm.setDataType(field.getDataType());
             fieldForm.setFreeContentletFieldsValue(values);
             fieldForm.setFreeContentletFieldsName(names);

@@ -1,0 +1,31 @@
+// In this file we are doing overwrite for DotCMS admin of global things in the Dojo Widgets
+
+.dijitTextBox,
+.dijitSelect {
+    width: 100%;
+    max-width: $content-edit-field-max-width;
+}
+
+.dijitComboBox {
+    width: auto;
+}
+
+// MultiSelect widget in Dojo 1.8.3 doesn't have any special class or behaviour, we just style it as usual
+select[multiple] {
+    border: $field-normal-border;
+    min-height: 80px;
+    width: 100%;
+
+    &:hover {
+        border: $field-hover-border;
+    }
+}
+
+.dotCMSHostFileFilteringSelect {
+    .dijitTextBox {
+        width: auto;
+    }
+}
+.dijitHostFoldersTreeWrapper {
+    min-width: 250px;
+}

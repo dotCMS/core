@@ -357,6 +357,8 @@
 
 		if (variantName) {
 			formData[formData.length] = '<%=VariantAPI.VARIANT_KEY%>' + nameValueSeparator + variantName;
+		} else {
+			formData[formData.length] = '<%=VariantAPI.VARIANT_KEY%>' + nameValueSeparator + 'DEFAULT';
 		}
 
         return formData;
@@ -746,19 +748,22 @@
         var x = dijit.byId("versions");
         var y =Math.floor(Math.random()*1123213213);
 
+		const variantName = window.sessionStorage.getItem('variantName') || 'DEFAULT';
+
         var myCp = dijit.byId("contentletVersionsCp");
         if (myCp) {
-            myCp.attr("href", "/html/portlet/ext/contentlet/contentlet_versions_inc.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y);
+            myCp.attr("href", "/html/portlet/ext/contentlet/contentlet_versions_inc.jsp?variantName=" +  variantName + "&contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y);
             return;
         }
         var myDiv = dijit.byId("contentletVersionsDiv");
         if (myDiv) {
             dojo.empty(myDiv);
         }
-        myCp = new dijit.layout.ContentPane({
+
+		myCp = new dijit.layout.ContentPane({
             id : "contentletVersionsCp",
             style: "height:100%",
-            href: "/html/portlet/ext/contentlet/contentlet_versions_inc.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y
+            href: "/html/portlet/ext/contentlet/contentlet_versions_inc.jsp?variantName=" +  variantName + "&contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y
         }).placeAt("contentletVersionsDiv");
     }
 

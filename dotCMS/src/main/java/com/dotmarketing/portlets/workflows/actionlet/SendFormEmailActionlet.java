@@ -61,7 +61,7 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
     
 
     
-    List<WorkflowActionletParameter> params = new ArrayList<WorkflowActionletParameter>();
+    List<WorkflowActionletParameter> params = new ArrayList<>();
     params.add(new WorkflowActionletParameter(FROM_EMAIL, "From Email", "$company.emailAddress", true));
     params.add(new WorkflowActionletParameter(FROM_NAME, "From Name", "dotCMS", true));
     params.add(new WorkflowActionletParameter(TO_EMAIL, "To Email", "${content.formEmail}", true));

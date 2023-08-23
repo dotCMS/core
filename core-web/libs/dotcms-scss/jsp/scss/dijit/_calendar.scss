@@ -1,0 +1,167 @@
+.dijitA11ySideArrow {
+    display: none;
+}
+
+.dijitCalendar {
+    &Arrow {
+        cursor: pointer;
+    }
+
+    &Container th {
+        text-align: center;
+    }
+
+    &DayLabelTemplate,
+    &DateTemplate {
+        transition: background-color $field-animation-speed;
+        background-color: $calendar-date-bgcolor;
+        color: $calendar-date-textcolor;
+        height: $calendar-item-size;
+        text-align: center;
+        width: $calendar-item-size;
+    }
+
+    &DayLabelTemplate {
+        background-color: $calendar-weekday-label-bgcolor;
+        color: $calendar-weekday-label-textcolor;
+        font-weight: bold;
+    }
+
+    &HoveredDate {
+        background-color: $calendar-date-hover-bgcolor;
+        color: $calendar-date-hover-textcolor;
+    }
+
+    &IncrementControl {
+        position: relative;
+        width: $calendar-item-size;
+    }
+
+    &Decrease {
+        &:before {
+            // TODO: add option for image icon
+            @include create-arrow(
+                $calendar-dropdown-arrow-size,
+                $calendar-dropdown-arrow-color,
+                left
+            );
+        }
+    }
+
+    &Increase {
+        &:before {
+            @include create-arrow(
+                $calendar-dropdown-arrow-size,
+                $calendar-dropdown-arrow-color,
+                right
+            );
+        }
+    }
+
+    &MonthContainer {
+        background-color: $calendar-month-bgcolor;
+        color: $calendar-month-textcolor;
+        height: $field-height-md;
+
+        .dijitCalendarMonthLabel,
+        .dijitDropDownButton .dijitArrowButtonInner {
+            height: calc($field-height-md - 0.625rem);
+            line-height: calc($field-height-md - 0.625rem);
+        }
+
+        .dijitDropDownButton {
+            border-radius: 0;
+            background-color: transparent;
+            height: calc(calc($field-height-md - 0.625rem) + ($field-border-size * 2));
+            border: $calendar-dropdown-arrow-border;
+            color: $calendar-dropdown-color;
+
+            .dijitSpacer {
+                height: 0;
+            }
+
+            .dijitArrowButtonInner {
+                width: calc($field-height-md - 0.625rem);
+
+                &:before {
+                    border-top-color: $calendar-dropdown-color;
+                }
+
+                .dijitButtonText {
+                    height: $calendar-item-size;
+                    line-height: $calendar-item-size;
+                }
+            }
+        }
+    }
+
+    // Popup menu months
+    &MonthMenu.dijitMenu {
+        margin: 0; // removing the top margin from _menu.scss
+    }
+
+    // Popup menu months item
+    &MonthLabel {
+        height: $calendar-item-size;
+        line-height: $calendar-item-size;
+
+        &Hover {
+            background-color: $color-palette-gray-200;
+        }
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    &PreviousMonth,
+    &NextMonth {
+        background-color: $calendar-prev-next-month-date-bgcolor;
+        color: $calendar-prev-next-month-date-textcolor;
+
+        &.dijitCalendarHoveredDate {
+            background-color: $calendar-prev-next-month-date-hover-bgcolor;
+            color: $calendar-prev-next-month-date-hover-textcolor;
+        }
+    }
+
+    &NextYear,
+    &PreviousYear {
+        color: $color-palette-white-op-10;
+    }
+
+    &SelectedDate {
+        .dijitCalendarDateLabel {
+            border-radius: $field-border-radius;
+            background-color: $calendar-date-seleted-bgcolor;
+            color: $calendar-date-seleted-textcolor;
+            display: block;
+            height: $field-height-md;
+            line-height: $field-height-md;
+            width: $field-height-md;
+        }
+    }
+
+    &SelectedYear {
+        color: $white;
+        font-weight: bold;
+    }
+
+    &CurrentDate {
+        background-color: $calendar-date-current-bgcolor;
+        color: $calendar-date-seleted-textcolor;
+    }
+
+    &YearLabel {
+        background-color: $calendar-year-label-bgcolor;
+        display: table;
+        height: $calendar-item-size;
+        width: 100%;
+
+        span {
+            display: table-cell;
+            margin: 0;
+            text-align: center;
+        }
+    }
+}

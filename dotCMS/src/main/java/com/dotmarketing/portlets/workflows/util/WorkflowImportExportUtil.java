@@ -145,7 +145,7 @@ public class WorkflowImportExportUtil {
 
 				Logger.debug(this, () -> "Importing step: " + step);
 			    if(step.getEscalationAction()!=null) {
-			        stepsWithActions.add(new Tuple2<String, String>(step.getId(), step.getEscalationAction()));
+			        stepsWithActions.add(new Tuple2<>(step.getId(), step.getEscalationAction()));
 			        step.setEscalationAction(null);
 			    }
 				workflowAPI.saveStep(step, user);
@@ -268,13 +268,13 @@ public class WorkflowImportExportUtil {
 			throws DotDataException, DotSecurityException {
 
 		final WorkflowAPI workflowAPI  = APILocator.getWorkflowAPI();
-		final List<WorkflowStep> steps = new ArrayList<WorkflowStep>();
+		final List<WorkflowStep> steps = new ArrayList<>();
 		final Set<String> workflowIds  = schemes.stream().map(scheme -> scheme.getId()).collect(Collectors.toSet());
 		final List<SystemActionWorkflowActionMapping> schemeSystemActionWorkflowActionMappings = new ArrayList<>();
 		final List<SystemActionWorkflowActionMapping> contentTypeSystemActionWorkflowActionMappings = new ArrayList<>();
-		final List<WorkflowAction> actions 			  = new ArrayList<WorkflowAction>();
-		final List<WorkflowActionClass> actionClasses = new ArrayList<WorkflowActionClass>();
-		final List<WorkflowActionClassParameter> actionClassParams = new ArrayList<WorkflowActionClassParameter>();
+		final List<WorkflowAction> actions 			  = new ArrayList<>();
+		final List<WorkflowActionClass> actionClasses = new ArrayList<>();
+		final List<WorkflowActionClassParameter> actionClassParams = new ArrayList<>();
 		final List<Map<String, String>> actionStepsListMap 		   = new ArrayList<>();
 
 

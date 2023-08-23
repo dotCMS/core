@@ -20,6 +20,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -138,7 +139,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
                 DotHostTesterComponent,
                 TestDynamicFieldPropertyDirective
             ],
-            imports: [ReactiveFormsModule, DotPipesModule],
+            imports: [ReactiveFormsModule, DotPipesModule, DotMessagePipe],
             providers: [
                 UntypedFormBuilder,
                 ComponentFactoryResolver,

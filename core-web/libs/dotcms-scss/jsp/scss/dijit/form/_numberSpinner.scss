@@ -1,0 +1,148 @@
+.dijitSpinner {
+    background-color: $spinner-normal-bgcolor;
+    border: $spinner-normal-border;
+    padding: 0 0 0 $field-padding;
+
+    .dijitSpinnerButtonContainer {
+        border-left: $spinner-normal-border;
+        width: $field-height-md;
+
+        .dijitDownArrowButton {
+            border-top: $spinner-normal-border !important; // Overwrite dijit important
+        }
+    }
+
+    .dijitArrowButton {
+        height: 100%;
+        border-left: $spinner-normal-arrow-border;
+        background-color: $spinner-normal-arrow-bgcolor;
+
+        &:before {
+            @include create-arrow($spinner-arrow-size, $spinner-normal-arrow-color);
+        }
+    }
+
+    .dijitUpArrowButton {
+        &:before {
+            transform: rotate(180deg);
+        }
+    }
+
+    &Hover {
+        background-color: $spinner-hover-bgcolor;
+        border: $spinner-hover-border;
+
+        .dijitSpinnerButtonContainer {
+            border-left: $spinner-hover-border;
+
+            .dijitDownArrowButton {
+                border-top: $spinner-hover-border !important; // Overwrite dijit important
+            }
+        }
+
+        .dijitArrowButton {
+            border-left: $spinner-hover-arrow-border;
+
+            &:before {
+                border-top-color: $spinner-hover-arrow-color;
+            }
+        }
+
+        .dijitDownArrowButtonHover,
+        .dijitUpArrowButtonHover {
+            background-color: $spinner-hoverarrow-arrow-bgcolor;
+            border-left: $spinner-hoverarrow-arrow-border;
+
+            &:before {
+                border-top-color: $spinner-hoverarrow-arrow-color;
+            }
+        }
+    }
+
+    &Focused {
+        background-color: $spinner-focused-bgcolor;
+        border: $spinner-focused-border;
+
+        .dijitSpinnerButtonContainer {
+            border-left: $spinner-focused-border;
+
+            .dijitDownArrowButton {
+                border-top: $spinner-focused-border !important; // Overwrite dijit important
+            }
+        }
+
+        .dijitArrowButton {
+            border-left: $spinner-focused-arrow-border;
+
+            &:before {
+                border-top-color: $spinner-focused-arrow-color;
+            }
+        }
+
+        .dijitDownArrowButtonHover,
+        .dijitUpArrowButtonHover {
+            background-color: $spinner-focusedarrow-arrow-bgcolor;
+            border-left: $spinner-focusedarrow-arrow-border;
+
+            &:before {
+                border-top-color: $spinner-focusedarrow-arrow-color;
+            }
+        }
+    }
+
+    &Disabled {
+        background-color: $spinner-disabled-bgcolor;
+        border: $spinner-disabled-border;
+
+        .dijitSpinnerButtonContainer {
+            border-left: $spinner-disabled-border;
+
+            .dijitDownArrowButton {
+                border-top: $spinner-disabled-border !important; // Overwrite dijit important
+            }
+        }
+
+        .dijitArrowButton {
+            border-left: $spinner-disabled-arrow-border;
+            background-color: $spinner-disabled-arrow-bgcolor;
+
+            &:before {
+                border-top-color: $spinner-disabled-arrow-color;
+            }
+        }
+
+        .dijitInputInner {
+            color: $spinner-disabled-textcolor;
+        }
+    }
+
+    &Error {
+        border: $field-error-border;
+
+        .dijitValidationContainer {
+            margin-right: 0;
+        }
+
+        .dijitArrowButton {
+            border-left: $field-error-border;
+
+            &:before {
+                border-top-color: $error;
+            }
+        }
+
+        .dijitSpinnerButtonContainer .dijitDownArrowButton {
+            border-top-color: $error !important;
+        }
+    }
+
+    .dijitDownArrowButtonActive,
+    .dijitUpArrowButtonActive {
+        background-color: $spinner-activearrow-arrow-bgcolor;
+        border-left: $spinner-activearrow-arrow-border;
+
+        &:before {
+            border-top-color: $spinner-activearrow-arrow-color;
+        }
+    }
+}

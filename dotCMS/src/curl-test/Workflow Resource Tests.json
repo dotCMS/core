@@ -4,8 +4,7 @@
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727",
-		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-db565cd2-753d-472c-bf5c-ed73de913fb6?action=share&creator=5403727&source=collection_link"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{

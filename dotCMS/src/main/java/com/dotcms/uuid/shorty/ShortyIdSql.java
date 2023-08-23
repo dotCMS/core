@@ -13,28 +13,32 @@ public class ShortyIdSql {
   }
 
   protected static final String SELECT_SHORTY_SQL_LIKE =
-      "select inode as id, 'inode' as type, type as subtype from inode where inode like ? union select id,'identifier', asset_type from identifier where id like ?";
+      "(SELECT inode AS id, 'inode' AS type, type AS subtype FROM inode WHERE inode LIKE ? UNION ALL SELECT id,'identifier', asset_type FROM identifier WHERE id LIKE ?)";
 
   protected static final String SELECT_WF_SCHEME_SHORTY_SQL_LIKE =
-          "select id, 'workflow_scheme' as type, 'workflow_scheme' as subtype from workflow_scheme where id like ?";
+          "SELECT id, 'workflow_scheme' AS type, 'workflow_scheme' AS subtype FROM workflow_scheme WHERE id LIKE ?";
 
   protected static final String SELECT_WF_STEP_SHORTY_SQL_LIKE =
-          "select id, 'workflow_step' as type, 'workflow_step' as subtype from workflow_step where id like ?";
+          "SELECT id, 'workflow_step' AS type, 'workflow_step' AS subtype FROM workflow_step WHERE id LIKE ?";
 
   protected static final String SELECT_WF_ACTION_SHORTY_SQL_LIKE =
-          "select id, 'workflow_action' as type, 'workflow_action' as subtype from workflow_action where id like ?";
+          "SELECT id, 'workflow_action' AS type, 'workflow_action' AS subtype FROM workflow_action WHERE id LIKE ?";
 
   // EQUALS
 
   protected static final String SELECT_SHORTY_SQL_EQUALS =
-      "select inode as id, 'inode' as type, type as subtype from inode where inode = ? union select id,'identifier', asset_type from identifier where id = ?";
+      "(SELECT inode AS id, 'inode' AS type, type AS subtype FROM inode WHERE inode = ? UNION ALL SELECT id,'identifier', asset_type FROM identifier WHERE id = ?) limit 1";
 
   protected static final String SELECT_WF_SCHEME_SHORTY_SQL_EQUALS =
-          "select id, 'workflow_scheme' as type, 'workflow_scheme' as subtype from workflow_scheme where id = ?";
+          "SELECT id, 'workflow_scheme' AS type, 'workflow_scheme' AS subtype FROM workflow_scheme WHERE id = ?";
 
   protected static final String SELECT_WF_STEP_SHORTY_SQL_EQUALS =
-          "select id, 'workflow_step' as type, 'workflow_step' as subtype from workflow_step where id = ?";
+          "SELECT id, 'workflow_step' AS type, 'workflow_step' AS subtype FROM workflow_step WHERE id = ?";
 
   protected static final String SELECT_WF_ACTION_SHORTY_SQL_EQUALS =
-          "select id, 'workflow_action' as type, 'workflow_action' as subtype from workflow_action where id = ?";
+          "SELECT id, 'workflow_action' AS type, 'workflow_action' AS subtype FROM workflow_action WHERE id = ?";
+
+
+
+
 }

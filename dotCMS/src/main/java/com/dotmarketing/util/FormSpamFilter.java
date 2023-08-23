@@ -118,7 +118,7 @@ public class FormSpamFilter {
 		Pattern p = Pattern
 				.compile("([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)");
 
-		Map<String, Integer> map = new HashMap<String, Integer>();
+		Map<String, Integer> map = new HashMap<>();
 		Matcher m = p.matcher(fieldValue);
 
 		boolean result = m.find();

@@ -37,7 +37,7 @@ public class PushPublishResourceUtil {
             errorKey = AuthCredentialPushPublishUtil.EXPIRED_TOKEN_ERROR_KEY;
         } else if (pushPublishAuthenticationToken.isJWTTokenWay()) {
             final Optional<User> optionalUser = pushPublishAuthenticationToken.getToken().getActiveUser();
-            if (!optionalUser.isPresent() || !optionalUser.get().isAdmin()) {
+            if (optionalUser.isEmpty() || !optionalUser.get().isAdmin()) {
                 message = String.format(
                         "Receiver at %s:> JWT Token is grant just for Admin user for ip: %s",
                         localAddress,

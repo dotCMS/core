@@ -6,6 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotKeyValueTableInputRowComponent } from './dot-key-value-table-input-row.component';
@@ -17,7 +18,8 @@ import { DotKeyValueTableInputRowComponent } from './dot-key-value-table-input-r
         InputSwitchModule,
         InputTextModule,
         FormsModule,
-        DotPipesModule
+        DotPipesModule,
+        DotMessagePipe
     ],
     exports: [DotKeyValueTableInputRowComponent],
     declarations: [DotKeyValueTableInputRowComponent]

@@ -1,0 +1,117 @@
+.dijit {
+    &TreeContainer {
+        float: none;
+    }
+
+    &TreeNode {
+        background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/i.gif");
+        background-repeat: repeat-y;
+        zoom: 1;
+
+        .dojoDndItemBefore,
+        .dojoDndItemAfter {
+            border-bottom: none;
+            border-top: none;
+        }
+        .dojoDndItemBefore &TreeContent {
+            border-top: 2px solid #369;
+        }
+        .dojoDndItemAfter &TreeContent {
+            border-bottom: 2px solid #369;
+        }
+    }
+
+    &TreeIsLast {
+        background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/i_half.gif")
+            no-repeat;
+    }
+
+    &TreeIsRoot {
+        margin-left: 0;
+        background-image: none;
+    }
+
+    &TreeExpando {
+        width: 18px;
+        height: 18px;
+        background-position: 3px 1px;
+    }
+
+    &TreeRow {
+        padding: 2px 0;
+
+        .dijitTreeIcon,
+        .dijitTreeExpando {
+            display: inline-block;
+            vertical-align: sub;
+        }
+    }
+
+    &TreeContent {
+        min-height: 18px;
+        min-width: 18px;
+    }
+
+    &TreeExpand {
+        width: 18px;
+        height: 18px;
+        background-repeat: no-repeat;
+    }
+
+    &TreeExpandoLeaf {
+        background-position: 0 -2px;
+        background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_leaf.gif");
+    }
+
+    &TreeLabel {
+        margin: 0;
+    }
+
+    &TreeLabelFocused {
+        outline: 1px invert dotted;
+    }
+
+    &TreeRowSelected {
+        font-weight: bold;
+    }
+
+    &TreeNodeSelected &TreeLabel {
+        background: #e2ebfe;
+    }
+
+    &TreeExpandoOpened {
+        background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_minus.gif");
+    }
+
+    &TreeExpandoClosed {
+        background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_plus.gif");
+    }
+
+    &TreeExpandoLoading {
+        background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_loading.gif");
+    }
+
+    &TreeIcon {
+        width: 16px;
+        height: 16px;
+    }
+
+    &FolderOpened,
+    &FolderClosed {
+        margin: 3px 3px 0 3px;
+    }
+
+    &FolderOpened {
+        background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/folderOpened.gif")
+            no-repeat;
+    }
+
+    &FolderClosed {
+        background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/folderClosed.gif")
+            no-repeat;
+    }
+
+    &Leaf {
+        background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/leaf.gif") no-repeat;
+    }
+}

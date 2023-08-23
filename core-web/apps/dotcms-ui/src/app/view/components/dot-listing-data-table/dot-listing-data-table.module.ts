@@ -10,7 +10,7 @@ import { TableModule } from 'primeng/table';
 
 import { DotCrudService } from '@dotcms/data-access';
 import { DotcmsConfigService, LoggerService } from '@dotcms/dotcms-js';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { ActionHeaderModule } from './action-header/action-header.module';
@@ -34,7 +34,8 @@ import { DotActionMenuButtonModule } from '../_common/dot-action-menu-button/dot
         RouterModule,
         DotPipesModule,
         CheckboxModule,
-        ContextMenuModule
+        ContextMenuModule,
+        DotMessagePipe
     ],
     providers: [DotCrudService, DotcmsConfigService, LoggerService]
 })

@@ -1,0 +1,29 @@
+.dijitTooltip {
+    max-width: 300px;
+
+    &Container {
+        background: $tooltip-normal-bgcolor;
+        border: $tooltip-normal-border;
+        color: inherit;
+        font-size: inherit;
+        padding: $spacing-1;
+        margin-left: 7px;
+        border-radius: $field-border-radius;
+        &:before {
+            width: 8px;
+            height: 8px;
+            content: "";
+            position: absolute;
+            top: 12px;
+            left: 3px;
+            transform: rotate(-45deg);
+            background: #fff;
+            border-left: 1px solid $color-palette-gray-700;
+            border-top: 1px solid $color-palette-gray-700;
+        }
+    }
+
+    &FocusNode {
+        padding: $tooltop-normal-padding;
+    }
+}

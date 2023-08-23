@@ -32,7 +32,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -65,7 +64,7 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
 
         // associated the scheme to the type
         workflowAPI.saveSchemesForStruct(new StructureTransformer(customContentType).asStructure(),
-                Collections.singletonList(schemeStepActionResult.getScheme()));
+                List.of(schemeStepActionResult.getScheme()));
 
         setDebugMode(false);
     }

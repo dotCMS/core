@@ -1,0 +1,15 @@
+.dijit {
+    &Popup {
+        background: $white;
+        color: $black;
+        border: 0 none;
+        border-radius: $border-radius-md;
+        box-shadow: $md-shadow-6;
+        padding: $spacing-1;
+        margin-top: $spacing-1;
+    }
+
+    &TimePickerPopup {
+        border: $popup-border;
+    }
+}

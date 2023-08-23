@@ -55,7 +55,7 @@ public class ContainerLoader implements DotLoader {
                     .replaceAll(HOST_NAME_SEPARATOR_IN_VELOCITY_KEY, PERIOD);
             final Optional<Container> optionalContainer = APILocator.getContainerAPI().findContainer(containerIdOrPath, APILocator.systemUser(), key.mode.showLive, key.mode.respectAnonPerms);
 
-            if (!optionalContainer.isPresent()) {
+            if (optionalContainer.isEmpty()) {
 
                 final DotStateException dotStateException = new DotStateException("Cannot find container for : " + key);
                 new ContainerExceptionNotifier(dotStateException, UtilMethods.isSet(key.id1) ? key.id1 : key.path).notifyUser();
@@ -106,8 +106,6 @@ public class ContainerLoader implements DotLoader {
             container.setIdentifier(path);
         }
 
-
-
         for(final PageMode mode:PageMode.values()) {
 
             // Here's an example of how the key actually looks like when stored in the the velocity 2 cache.
@@ -121,8 +119,6 @@ public class ContainerLoader implements DotLoader {
                 // Now removing by path //demo.dotcms.com/application/containers/large-column/
                 this.invalidateContainer(container, cacheKeyMask, velocityResourceCache, mode, ContainerUUID.UUID_DEFAULT_VALUE);
             }
-
-
         }
         // Sometimes the in-cache key is the file site/path or path it self.
         // it's pretty difficult at this point knowing exactly what was used to put this thing in cache. So here we go trying a few options
@@ -171,7 +167,6 @@ public class ContainerLoader implements DotLoader {
         final StringBuilder velocityCodeBuilder = new StringBuilder();
         final List<ContainerStructure> containerContentTypeList = APILocator.getContainerAPI()
                 .getContainerStructures(container);
-
 
         // let's write this puppy out to our file
         velocityCodeBuilder.append("#set ($SERVER_NAME =$host.getHostname() )");
@@ -305,6 +300,7 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#set($ContentletTitle = '')");
                 velocityCodeBuilder.append("#set($CONTENT_TYPE_ID = '')");
                 velocityCodeBuilder.append("#set($CONTENT_TYPE = '')");
+                velocityCodeBuilder.append("#set($CONTENT_VARIANT = '')");
                 velocityCodeBuilder.append("#set($ON_NUMBER_OF_PAGES = '')");
                 
                 // read in the content
@@ -326,6 +322,8 @@ public class ContainerLoader implements DotLoader {
                         .append("\"$contentletId\"")
                         .append(" data-dot-type=")
                         .append("\"$CONTENT_TYPE\"")
+                        .append(" data-dot-variant=")
+                        .append("\"$CONTENT_VARIANT\"")
                         .append(" data-dot-basetype=")
                         .append("\"$CONTENT_BASE_TYPE\"")
                         .append(" data-dot-lang=")

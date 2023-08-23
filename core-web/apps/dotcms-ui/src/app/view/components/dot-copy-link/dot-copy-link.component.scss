@@ -1,11 +1,6 @@
-button {
-    all: unset;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+@use "variables" as *;
 
-dot-icon {
-    margin-left: 0.15rem;
+:host {
+    max-width: 100%;
+    overflow: hidden;
 }

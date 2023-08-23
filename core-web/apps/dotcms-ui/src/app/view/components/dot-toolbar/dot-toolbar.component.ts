@@ -4,7 +4,7 @@ import { Component, Input, OnInit } from '@angular/core';
 
 import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotcmsConfigService, DotcmsEventsService, Site, SiteService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService, Site, SiteService } from '@dotcms/dotcms-js';
 
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
@@ -22,7 +22,6 @@ export class DotToolbarComponent implements OnInit {
     constructor(
         private dotRouterService: DotRouterService,
         private dotcmsEventsService: DotcmsEventsService,
-        private dotCmsConfigService: DotcmsConfigService,
         private dotNavLogoService: DotNavLogoService,
         private siteService: SiteService,
         public dotNavigationService: DotNavigationService,
@@ -40,11 +39,13 @@ export class DotToolbarComponent implements OnInit {
     }
 
     siteChange(site: Site): void {
-        this.siteService.switchSite(site);
-
-        if (this.dotRouterService.isEditPage()) {
-            this.dotRouterService.goToSiteBrowser();
-        }
+        this.siteService.switchSite(site).subscribe(() => {
+            // wait for the site to be switched
+            // before redirecting to the site browser
+            if (this.dotRouterService.isEditPage()) {
+                this.dotRouterService.goToSiteBrowser();
+            }
+        });
     }
 
     handleMainButtonClick(): void {

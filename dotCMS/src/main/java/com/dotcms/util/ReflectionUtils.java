@@ -65,7 +65,7 @@ public class ReflectionUtils implements Serializable {
 
             try {
 
-                t = clazz.newInstance();
+                t = clazz.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
 
                 if (Logger.isErrorEnabled(ReflectionUtils.class)) {

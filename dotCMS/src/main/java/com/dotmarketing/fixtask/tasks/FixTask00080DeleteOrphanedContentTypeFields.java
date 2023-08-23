@@ -48,7 +48,7 @@ import java.util.Map;
  */
 public class FixTask00080DeleteOrphanedContentTypeFields implements FixTask {
 
-	private List<Map<String, String>> modifiedData = new ArrayList<Map<String, String>>();
+	private List<Map<String, String>> modifiedData = new ArrayList<>();
 
 	/** Lookup invalid inodes in Field table referencing the Structure table */
 	private static final String VERIFICATION_QUERY = "SELECT inode FROM field WHERE structure_inode NOT IN (SELECT inode FROM structure)";
@@ -58,7 +58,7 @@ public class FixTask00080DeleteOrphanedContentTypeFields implements FixTask {
 			DotRuntimeException {
 		Logger.info(FixTask00080DeleteOrphanedContentTypeFields.class,
 				"Beginning DeleteOrphanedContentTypeFields");
-		List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> returnValue = new ArrayList<>();
 
 		if (!FixAssetsProcessStatus.getRunning()) {
 			HibernateUtil.startTransaction();

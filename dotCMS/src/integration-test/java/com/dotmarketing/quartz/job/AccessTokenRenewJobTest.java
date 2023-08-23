@@ -8,6 +8,7 @@ import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.AccessTokenFetchMode;
 import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
@@ -112,7 +113,11 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
         analyticsAPI.resetAccessToken(analyticsApp);
 
         final Instant issueDate = Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL);
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp, true).withIssueDate(issueDate);
+        AccessToken accessToken = analyticsAPI
+            .getAccessToken(
+                analyticsApp,
+                AccessTokenFetchMode.FORCE_RENEW)
+            .withIssueDate(issueDate);
         analyticsCache.putAccessToken(accessToken);
 
         accessTokenRenewJob.execute(getJobContext());
@@ -125,7 +130,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
 
     /**
      * Given an {@link AnalyticsApp}
-     * Then try to renew the about to expire {@link AccessToken} associated with it
+     * Then try to renew soon to be expired {@link AccessToken} associated with it
      * And verify it is created
      */
     @Test
@@ -133,7 +138,11 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
         analyticsAPI.resetAccessToken(analyticsApp);
 
         final Instant issueDate = Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL).plusSeconds(30);
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp, true).withIssueDate(issueDate);
+        AccessToken accessToken = analyticsAPI
+            .getAccessToken(
+                analyticsApp,
+                AccessTokenFetchMode.FORCE_RENEW)
+            .withIssueDate(issueDate);
         analyticsCache.putAccessToken(accessToken);
 
         accessTokenRenewJob.execute(getJobContext());
@@ -190,7 +199,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
     @Test
     public void test_accessTokenRenew_whenOk() throws Exception {
         analyticsAPI.resetAccessToken(analyticsApp);
-        analyticsAPI.getAccessToken(analyticsApp, true);
+        analyticsAPI.getAccessToken(analyticsApp, AccessTokenFetchMode.FORCE_RENEW);
 
         accessTokenRenewJob.execute(getJobContext());
         Thread.sleep(2000);

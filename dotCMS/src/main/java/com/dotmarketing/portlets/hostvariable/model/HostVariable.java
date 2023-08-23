@@ -60,7 +60,7 @@ public class HostVariable    {
 		return id;
 	}
 	public Map<String, Object> getMap() {
-		Map<String, Object> returnMap = new HashMap<String, Object>();
+		Map<String, Object> returnMap = new HashMap<>();
 		returnMap.put("id", id);
 		returnMap.put("hostId", hostId);
 		returnMap.put("name", name);

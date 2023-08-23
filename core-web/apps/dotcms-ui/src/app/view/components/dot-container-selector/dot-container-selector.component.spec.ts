@@ -25,6 +25,7 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotContainer } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -55,6 +56,7 @@ describe('ContainerSelectorComponent', () => {
                 FormsModule,
                 ButtonModule,
                 DotPipesModule,
+                DotMessagePipe,
                 HttpClientTestingModule
             ],
             providers: [
@@ -124,10 +126,10 @@ describe('ContainerSelectorComponent', () => {
                 'ng-reflect-persistent-placeholder': 'true',
                 'ng-reflect-placeholder': 'editpage.container.add.label',
                 'ng-reflect-rows': '5',
-                'ng-reflect-width': '172px',
+                'ng-reflect-width': 'fit-content',
                 overlayWidth: '440px',
                 persistentPlaceholder: 'true',
-                width: '172px'
+                width: 'fit-content'
             })
         );
     });

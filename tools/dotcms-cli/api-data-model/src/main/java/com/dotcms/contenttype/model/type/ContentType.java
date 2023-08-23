@@ -3,10 +3,16 @@ package com.dotcms.contenttype.model.type;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
+import com.dotcms.contenttype.model.field.Workflow;
 import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
-import com.fasterxml.jackson.annotation.*;
+import com.dotcms.model.views.CommonViews;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
@@ -35,16 +41,25 @@ import org.immutables.value.Value.Default;
 })
 @JsonIgnoreProperties(value = {
     "systemActionMappings",
-    "workflows",
     "nEntries",
     "sortOrder",
     "versionable",
-    "multilingualable"
+    "multilingualable",
+    "pagination"
 })
 public abstract class ContentType {
 
     public static final String SYSTEM_HOST = "SYSTEM_HOST";
     public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
+
+    final String TYPE = "ContentType";
+
+    @JsonView(CommonViews.InternalView.class)
+    @JsonProperty("dotCMSObjectType")
+    @Value.Derived
+    public String dotCMSObjectType() {
+        return TYPE;
+    }
 
     @Nullable
     public abstract String id();
@@ -122,6 +137,9 @@ public abstract class ContentType {
 
     @Nullable
     public abstract String urlMapPattern();
+
+    @Nullable
+    public abstract List<Workflow> workflows();
 
     /**
      * Class id resolver allows us using smaller ClassNames that eventually get mapped to the fully qualified class name

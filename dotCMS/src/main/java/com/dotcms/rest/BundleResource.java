@@ -19,12 +19,10 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublishQueueElementTransformer;
-import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestUtil;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import org.apache.commons.io.IOUtils;
@@ -55,20 +53,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.Reader;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.StreamingOutput;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -95,7 +85,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
-import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -433,7 +422,7 @@ public class BundleResource {
         this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder()
                 .setMessage(message)
                 .setLife(DateUtil.TEN_SECOND_MILLIS)
-                .setSeverity(MessageSeverity.ERROR).create(), Collections.singletonList(initData.getUser().getUserId()));
+                .setSeverity(MessageSeverity.ERROR).create(), List.of(initData.getUser().getUserId()));
     }
 
     private void sendWarningDeleteBundleMessage(final int bundleDeletesSize,
@@ -452,7 +441,7 @@ public class BundleResource {
         this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder()
                 .setMessage(message)
                 .setLife(DateUtil.SEVEN_SECOND_MILLIS)
-                .setSeverity(MessageSeverity.WARNING).create(), Collections.singletonList(userId));
+                .setSeverity(MessageSeverity.WARNING).create(), List.of(userId));
 
         APILocator.getSystemEventsAPI().push(SystemEventType.DELETE_BUNDLE,
                 new Payload(
@@ -475,7 +464,7 @@ public class BundleResource {
         this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder()
                 .setMessage(message)
                 .setLife(DateUtil.SEVEN_SECOND_MILLIS)
-                .setSeverity(MessageSeverity.INFO).create(), Collections.singletonList(userId));
+                .setSeverity(MessageSeverity.INFO).create(), List.of(userId));
 
         APILocator.getSystemEventsAPI().push(SystemEventType.DELETE_BUNDLE,
                 new Payload(
@@ -1015,7 +1004,7 @@ public class BundleResource {
 
         final Optional<Reader> manifestInputStreamOptional = ManifestUtil.getManifestInputStream(bundleTarGzipFile);
 
-        if (!manifestInputStreamOptional.isPresent()) {
+        if (manifestInputStreamOptional.isEmpty()) {
                 throw new DoesNotExistException("Manifest not exists in bundle: " + bundleId);
         }
 

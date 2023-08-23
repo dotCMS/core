@@ -10,7 +10,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIconComponent, DotIconModule } from '@dotcms/ui';
 
 import { DotMessageDisplayComponent } from './dot-message-display.component';
@@ -38,7 +37,7 @@ describe('DotMessageDisplayComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [ToastModule, DotIconModule, UiDotIconButtonModule, BrowserAnimationsModule],
+            imports: [ToastModule, DotIconModule, BrowserAnimationsModule],
             declarations: [DotMessageDisplayComponent],
             providers: [
                 { provide: DotMessageDisplayService, useValue: dotMessageDisplayServiceMock }

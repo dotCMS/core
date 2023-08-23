@@ -237,6 +237,12 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
       rc = 127
     }
 
+    fs.writeFileSync(path.join(reportFolder, `${normalized}.rc`), `test_results_rc=${rc}`, {
+      encoding: 'utf8',
+      flag: 'a+',
+      mode: 0o666
+    })
+
     const end = new Date().getTime()
     const duration = (end - start) / 1000
     core.info(`Collection ${collection} took ${duration} seconds to run`)

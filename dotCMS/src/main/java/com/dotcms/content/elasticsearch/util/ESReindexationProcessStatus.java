@@ -59,7 +59,7 @@ public class ESReindexationProcessStatus implements Serializable {
 
     @CloseDBIfOpened
     public static Map<String, Object> getProcessIndexationMap() throws DotDataException {
-        Map<String, Object> theMap = new Hashtable<String, Object>();
+        Map<String, Object> theMap = new Hashtable<>();
         boolean inFullReindexation = inFullReindexation();
         theMap.put("inFullReindexation", inFullReindexation);
 

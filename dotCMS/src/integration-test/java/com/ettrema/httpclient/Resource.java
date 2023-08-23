@@ -73,7 +73,7 @@ public abstract class Resource {
     private final Long quotaAvailableBytes;
     private final Long quotaUsedBytes;
     private final Long crc;
-    final List<ResourceListener> listeners = new ArrayList<ResourceListener>();
+    final List<ResourceListener> listeners = new ArrayList<>();
     private String lockOwner;
     private String lockToken;
 
@@ -251,7 +251,7 @@ public abstract class Resource {
         if (this.parent != null) {
             this.parent.notifyOnChildRemoved(this);
         }
-        List<ResourceListener> l2 = new ArrayList<ResourceListener>(listeners);
+        List<ResourceListener> l2 = new ArrayList<>(listeners);
         for (ResourceListener l : l2) {
             l.onDeleted(this);
         }

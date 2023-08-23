@@ -687,7 +687,7 @@ public class ImportUtil {
 
         try {
             //Building a values HashMap based on the headers/columns position
-            HashMap<Integer, Object> values = new HashMap<Integer, Object>();
+            HashMap<Integer, Object> values = new HashMap<>();
             Set<Category> categories = new HashSet<>();
             boolean headersIncludeHostField = false;
             for ( Integer column : headers.keySet() ) {
@@ -1822,7 +1822,7 @@ public class ImportUtil {
         public int contentUpdated = 0;
         public int contentUpdatedDuplicated = 0;
 
-        private Collection<Map<String, String>> keys = new ArrayList<Map<String, String>>();
+        private Collection<Map<String, String>> keys = new ArrayList<>();
 
         /**
          * @return the newContentCounter
@@ -1898,7 +1898,7 @@ public class ImportUtil {
 
             if ( !matchKey( key, value ) ) {
 
-                Map<String, String> keyMap = new HashMap<String, String>();
+                Map<String, String> keyMap = new HashMap<>();
                 keyMap.put( key, value );
 
                 keys.add( keyMap );

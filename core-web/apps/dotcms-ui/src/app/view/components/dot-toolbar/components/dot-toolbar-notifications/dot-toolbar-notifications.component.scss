@@ -6,11 +6,11 @@ $notification-padding: $spacing-3;
     position: relative;
 
     .badge {
-        background-color: $brand-primary;
+        background-color: $color-palette-primary;
         border-radius: 2px;
         color: $white;
-        font-size: $font-size-small;
-        line-height: $font-size-small;
+        font-size: $font-size-sm;
+        line-height: $font-size-sm;
         padding: 2px 5px;
         position: absolute;
         left: 16px;
@@ -35,14 +35,14 @@ $notification-padding: $spacing-3;
 
     .toolbar-notifications__heading {
         display: flex;
-        margin-bottom: $font-size-x-small;
+        margin-bottom: $font-size-xs;
         justify-content: space-between;
         padding-right: $notification-padding;
     }
 
     .toolbar-notifications__title {
         align-self: center;
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
         margin: 0;
     }
 

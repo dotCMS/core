@@ -24,7 +24,7 @@
                     }
                 ],
                 "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                    "includePaths": ["libs/dotcms-scss/angular"]
                 },
                 "allowedCommonJsDependencies": ["lodash.isequal"],
                 "vendorChunk": true,

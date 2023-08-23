@@ -81,6 +81,7 @@ public class URLMapAPIImplTest {
 
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
+        when(request.getSession(true)).thenReturn(session);
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
     }
@@ -170,7 +171,7 @@ public class URLMapAPIImplTest {
                         urlPattern.replace("{urlTitle}", newsOnSystemHost.getStringProperty("urlTitle")));
 
         urlMapInfoOptional = urlMapAPI.processURLMap(context);
-        assert(!urlMapInfoOptional.isPresent());
+        assert(urlMapInfoOptional.isEmpty());
 
         
         
@@ -192,7 +193,7 @@ public class URLMapAPIImplTest {
 
         urlMapInfoOptional = urlMapAPI.processURLMap(context);
 
-        assert(!urlMapInfoOptional.isPresent());
+        assert(urlMapInfoOptional.isEmpty());
         
         
         
@@ -215,7 +216,7 @@ public class URLMapAPIImplTest {
     /**
      * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
      * Given Scenario: Process a URL Map url when both the Content Type and Content exists
-     * ExpectedResult: Should return a {@link URLMapInfo} with the right content ans detail page
+     * ExpectedResult: Should return a {@link URLMapInfo} with the right content and detail page
      */
     @Test
     public void shouldReturnContentletWhenTheContentExists()
@@ -235,6 +236,8 @@ public class URLMapAPIImplTest {
                 urlMapInfo.getContentlet().getStringProperty("urlMap"));
         assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
     }
+
+
 
     /**
      * MethodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}

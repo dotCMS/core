@@ -1,0 +1,106 @@
+.view-workflow .dijitDropDownActionButton,
+.view-workflow .view-workflow__add-comment {
+    float: right;
+}
+
+.portlet-sidebar .portlet-sidebar__input-spacer {
+    height: 6px;
+}
+
+.portlet-sidebar .dijitCheckBox {
+    position: relative;
+    bottom: 2px;
+}
+
+.dijitContentPane .buttonRow {
+    margin-bottom: 15px;
+}
+
+.view-actions__who-can-use {
+    width: 80%;
+
+    .who-can-use__list {
+        min-width: 230px;
+    }
+}
+
+.view-actions {
+    .container-fluid {
+        margin: $spacing-3;
+
+        main.row {
+            display: grid;
+            gap: $spacing-5;
+            grid-template-columns: 1fr 1fr 15rem;
+        }
+    }
+}
+
+.view-actions__back-btn {
+    position: absolute;
+    padding: 0px;
+    left: -12px;
+    top: 10px;
+
+    .dijitButtonNode {
+        padding: 0 $spacing-1;
+    }
+
+    .fa-level-up {
+        transform: rotate(-90deg);
+        line-height: 28px;
+    }
+}
+
+.view-actions__sub-actions {
+    .listingTable {
+        width: 100%;
+        margin: $spacing-1 * 4 0;
+    }
+
+    tr:first-child td {
+        border-top: 1px solid $color-palette-gray-400;
+    }
+}
+
+.view-actions__permissions,
+.view-actions__sub-actions,
+.view-actions__workflow-actions {
+    position: relative;
+    border-left: 1px solid $color-palette-gray-400;
+    padding-left: $spacing-4;
+}
+
+.view-actions__permissions,
+.view-actions__sub-actions {
+    h3 {
+        background-color: $color-palette-gray-400;
+        line-height: 40px;
+        padding-left: $spacing-1 * 2;
+        margin-bottom: $spacing-1 * 4;
+    }
+    .row {
+        margin-bottom: $spacing-1;
+    }
+}
+
+.view-actions__workflow-actions {
+    border-left: 1px solid $color-palette-gray-400;
+    height: 100%;
+}
+
+.view-actions__arrow-right {
+    position: absolute;
+    font-size: $spacing-1 * 2;
+    left: -7px;
+    top: 10px;
+    background: $white;
+    color: $color-palette-gray-500;
+}
+
+@media only screen and (max-width: $screen-sm) {
+    .view-actions__sub-actions .dijitComboBox {
+        width: 80%;
+        margin-bottom: $spacing-1 * 2;
+    }
+}

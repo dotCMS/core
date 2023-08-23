@@ -1,9 +1,11 @@
 package com.dotcms.analytics.metrics;
 
 
+import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -14,12 +16,14 @@ import java.util.Set;
 
 public enum MetricType {
     REACH_PAGE(new Builder()
-            .goalName("Maximize Reaching a Page")
-            .allRequiredParameters (Parameter.builder().name("url").build()) //TODO we can create singletons of these Parameters in order to reuse
-            .optionalParameters(Parameter.builder().name("referer").build())
+            .label("Reaching a Page")
+            .allRequiredParameters (Parameters.URL) //TODO we can create singletons of these Parameters in order to reuse
+            .optionalParameters(
+                    Parameters.REFERER,
+                    Parameters.VISIT_BEFORE)
             .availableOperators(Operator.EQUALS, Operator.CONTAINS)),
     CLICK_ON_ELEMENT(new Builder()
-            .goalName("Maximize Clicking on Element")
+            .label("Clicking on Element")
             .allRequiredParameters(Parameter.builder().name("pageUrl").build())
             .anyRequiredParameters(
                     Parameter.builder().name("id").build(),
@@ -27,11 +31,26 @@ public enum MetricType {
                     Parameter.builder().name("target").build()
             )
             .availableOperators(Operator.EQUALS, Operator.CONTAINS)),
-    BOUNCE_RATE(new Builder()
-            .goalName("Minimize Bounce Rate")
-            .optionalParameters(Parameter.builder().name("url").build()));
+    EXIT_RATE(new Builder()
+            .label("Exit Rate")
+            .optionalParameters(Parameters.URL)),
 
-    private final String goalName;
+    BOUNCE_RATE(new Builder()
+            .label("Bounce Rate")
+            .optionalParameters(Parameters.URL)),
+
+    URL_PARAMETER(new Builder()
+            .label("Url Parameter")
+            .allRequiredParameters(
+                    Parameter.builder().name("queryParameter")
+                        .valueGetter(new QueryParameterValuesGetter())
+                        .type(AbstractParameter.Type.QUERY_PARAMETER)
+                        .build()
+            )
+            .optionalParameters(Parameters.VISIT_BEFORE)
+    );
+
+    private final String label;
 
     private final Set<Operator> availableOperators;
 
@@ -42,14 +61,14 @@ public enum MetricType {
     private final Set<Parameter> optionalParameters;
 
     private static class Builder {
-        private String goalName;
+        private String label;
         private final Set<Operator> availableOperators = new HashSet<>();
         private final Set<Parameter> allRequiredParameters = new HashSet<>();
         private final Set<Parameter> anyRequiredParameters= new HashSet<>();
         private final Set<Parameter> optionalParameters= new HashSet<>();
 
-        public Builder goalName(String goalName) {
-            this.goalName = goalName;
+        public Builder label(String label) {
+            this.label = label;
             return this;
         }
 
@@ -75,15 +94,15 @@ public enum MetricType {
     }
 
     MetricType(final Builder builder) {
-        this.goalName = builder.goalName;
+        this.label = builder.label;
         this.allRequiredParameters = builder.allRequiredParameters;
         this.anyRequiredParameters = builder.anyRequiredParameters;
         this.optionalParameters = builder.optionalParameters;
         this.availableOperators = builder.availableOperators;
     }
 
-    public String goalName() {
-        return goalName;
+    public String label() {
+        return label;
     }
 
     @JsonIgnore
@@ -106,5 +125,13 @@ public enum MetricType {
         availableParameters.addAll(optionalParameters);
         availableParameters.addAll(anyRequiredParameters);
         return availableParameters;
+    }
+
+    @JsonIgnore
+    public Optional<Parameter> getParameter(final String parameterName) {
+        return availableParameters().stream()
+                .filter(parameter -> parameter.name().equals(parameterName))
+                .limit(1)
+                .findFirst();
     }
 }

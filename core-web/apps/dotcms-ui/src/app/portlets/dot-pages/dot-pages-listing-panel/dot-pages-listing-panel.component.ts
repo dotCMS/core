@@ -1,8 +1,21 @@
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
-import { Component, EventEmitter, Output } from '@angular/core';
+import {
+    AfterViewInit,
+    Component,
+    EventEmitter,
+    HostListener,
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewChild
+} from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
+import { ContextMenu } from 'primeng/contextmenu';
+import { Table } from 'primeng/table';
+
+import { filter, takeUntil } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -14,10 +27,16 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     templateUrl: './dot-pages-listing-panel.component.html',
     styleUrls: ['./dot-pages-listing-panel.component.scss']
 })
-export class DotPagesListingPanelComponent {
+export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterViewInit {
+    @ViewChild('cm') cm: ContextMenu;
+    @ViewChild('table') table: Table;
     @Output() goToUrl = new EventEmitter<string>();
     @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
+    @Output() pageChange = new EventEmitter<void>();
 
+    private domIdMenuAttached = '';
+    private destroy$ = new Subject<boolean>();
+    private scrollElement?: HTMLElement;
     vm$: Observable<DotPagesState> = this.store.vm$;
 
     dotStateLabels = {
@@ -28,6 +47,48 @@ export class DotPagesListingPanelComponent {
     };
 
     constructor(private store: DotPageStore, private dotMessageService: DotMessageService) {}
+
+    ngOnInit() {
+        this.store.actionMenuDomId$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((actionMenuDomId) => !!actionMenuDomId)
+            )
+            .subscribe((actionMenuDomId: string) => {
+                if (actionMenuDomId.includes('tableRow')) {
+                    this.cm.show();
+                    this.domIdMenuAttached = actionMenuDomId;
+                    // To hide when the menu is opened
+                } else this.cm.hide();
+            });
+    }
+
+    ngAfterViewInit(): void {
+        this.scrollElement = document.querySelector('dot-pages');
+
+        this.scrollElement?.addEventListener('scroll', () => {
+            this.closeContextMenu();
+        });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+        this.scrollElement?.removeAllListeners('scroll');
+    }
+
+    /**
+     * Closes the context menu when the user clicks outside of it
+     *
+     * @memberof DotPagesListingPanelComponent
+     */
+    @HostListener('window:click')
+    private closeContextMenu(): void {
+        if (this.domIdMenuAttached.includes('tableRow')) {
+            this.cm.hide();
+            this.store.clearMenuActions();
+        }
+    }
 
     /**
      * Event lazy loads pages data
@@ -44,6 +105,29 @@ export class DotPagesListingPanelComponent {
     }
 
     /**
+     * Event to show/hide actions menu when each contentlet is clicked
+     *
+     * @param {DotActionsMenuEventParams} params
+     * @memberof DotPagesComponent
+     */
+    showActionsContextMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
+        event.stopPropagation();
+        this.store.clearMenuActions();
+        this.cm.hide();
+
+        this.store.showActionsMenu({ item, actionMenuDomId });
+    }
+
+    /**
+     * Event to reset status of menu actions when closed
+     *
+     * @memberof DotPagesComponent
+     */
+    closedActionsContextMenu() {
+        this.domIdMenuAttached = '';
+    }
+
+    /**
      * Event sets filter and loads data
      *
      * @param {string} keyword
@@ -52,6 +136,7 @@ export class DotPagesListingPanelComponent {
     filterData(keyword: string): void {
         this.store.setKeyword(keyword);
         this.store.getPages({ offset: 0 });
+        this.store.setSessionStorageFilterParams();
     }
 
     /**
@@ -61,7 +146,11 @@ export class DotPagesListingPanelComponent {
      * @memberof DotPagesListingPanelComponent
      */
     onRowSelect(event: Event): void {
-        this.goToUrl.emit(event['data'].urlMap || event['data'].url);
+        const url = `${event['data'].urlMap || event['data'].url}?language_id=${
+            event['data'].languageId
+        }&device_inode=`;
+
+        this.goToUrl.emit(url);
     }
 
     /**
@@ -73,6 +162,7 @@ export class DotPagesListingPanelComponent {
     setPagesLanguage(languageId: string): void {
         this.store.setLanguageId(languageId);
         this.store.getPages({ offset: 0 });
+        this.store.setSessionStorageFilterParams();
     }
 
     /**
@@ -84,5 +174,6 @@ export class DotPagesListingPanelComponent {
     setPagesArchived(archived: string): void {
         this.store.setArchived(archived);
         this.store.getPages({ offset: 0 });
+        this.store.setSessionStorageFilterParams();
     }
 }

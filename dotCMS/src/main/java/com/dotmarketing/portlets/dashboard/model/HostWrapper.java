@@ -22,7 +22,7 @@ public class HostWrapper extends Host{
 	
 	private long pageViewsDiff;
 	
-	private Map<String, Object> contentletMap = new HashMap<String, Object>(); 
+	private Map<String, Object> contentletMap = new HashMap<>(); 
 	
 
 	public HostWrapper(Host host, long pageViews) throws IllegalAccessException, InvocationTargetException{

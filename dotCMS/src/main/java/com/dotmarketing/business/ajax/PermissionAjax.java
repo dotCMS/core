@@ -90,8 +90,8 @@ public class PermissionAjax {
 
 		PermissionAPI permAPI = APILocator.getPermissionAPI();
 
-		List<Map<String, Object>> toReturn = new ArrayList<Map<String,Object>>();
-		Map<String, Map<String, Object>> roles = new TreeMap<String, Map<String, Object>>();
+		List<Map<String, Object>> toReturn = new ArrayList<>();
+		Map<String, Map<String, Object>> roles = new TreeMap<>();
 
 		Permissionable perm = retrievePermissionable(assetId, languageId, user, respectFrontendRoles);
 
@@ -119,7 +119,7 @@ public class PermissionAjax {
 
 	@SuppressWarnings("unchecked")
 	private void addPermissionToRoleList(Permissionable perm, Permission p, Map<String, Map<String, Object>> roles, boolean inheritable) throws DotDataException, DotSecurityException {
-		Map<String, Permissionable> inodeCache = new HashMap<String, Permissionable>();
+		Map<String, Permissionable> inodeCache = new HashMap<>();
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		HostAPI hostAPI = APILocator.getHostAPI();
@@ -203,7 +203,7 @@ public class PermissionAjax {
 		}
 		List<Map<String, Object>> rolePermissions = (List<Map<String, Object>>) roleMap.get("permissions");
 		if(rolePermissions == null) {
-			rolePermissions = new ArrayList<Map<String,Object>>();
+			rolePermissions = new ArrayList<>();
 			roleMap.put("permissions", rolePermissions);
 		}
 		Map<String, Object> permissionMap = p.getMap();
@@ -230,7 +230,7 @@ public class PermissionAjax {
 			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 			Permissionable asset = retrievePermissionable(assetId, language, user, respectFrontendRoles);
 
-			List<Permission> newSetOfPermissions = new ArrayList<Permission>();
+			List<Permission> newSetOfPermissions = new ArrayList<>();
 			for(Map<String, String> permission: permissions) {
 				String roleId = permission.get("roleId");
 				String individualPermission = permission.get("individualPermission");

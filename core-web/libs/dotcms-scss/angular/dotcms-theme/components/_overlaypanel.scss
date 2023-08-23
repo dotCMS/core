@@ -1,0 +1,31 @@
+@use "variables" as *;
+
+.p-overlaypanel {
+    background: $white;
+    color: $black;
+    border: 0 none;
+    border-radius: $border-radius-xs;
+    box-shadow: 0 11px 15px -7px $color-palette-black-op-20,
+        0 24px 38px 3px $color-palette-black-op-10, 0 9px 46px 8px $color-palette-black-op-10;
+}
+
+.p-overlaypanel .p-overlaypanel-content {
+    padding: $spacing-4;
+}
+
+.p-overlaypanel .p-overlaypanel-close {
+    background: $color-palette-primary;
+    color: $white;
+    width: $spacing-5;
+    height: $spacing-5;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    border-radius: 50%;
+    position: absolute;
+    top: -$spacing-3;
+    right: -$spacing-3;
+}
+
+.p-overlaypanel .p-overlaypanel-close:enabled:hover {
+    background: $bg-hover;
+    color: $white;
+}

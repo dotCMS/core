@@ -158,7 +158,7 @@ public class Category extends Inode implements Serializable, ManifestItem {
 	}
 
 	public Map<String, Object> getMap () {
-        HashMap<String, Object> map = new HashMap<String, Object> ();
+        HashMap<String, Object> map = new HashMap<> ();
         map.put("categoryName", this.getCategoryName());
         map.put("description", this.getDescription());
         map.put("key", this.getKey());
@@ -189,7 +189,7 @@ public class Category extends Inode implements Serializable, ManifestItem {
      */
 	@Override
 	public List<PermissionSummary> acceptedPermissions() {
-		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
+		List<PermissionSummary> accepted = new ArrayList<>();
 		accepted.add(new PermissionSummary("use",
 				"use-permission-description", PermissionAPI.PERMISSION_USE));
 		accepted.add(new PermissionSummary("add-children",

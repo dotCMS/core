@@ -6,11 +6,9 @@ import { MenuModule } from 'primeng/menu';
 
 import { DotActionButtonComponent } from './dot-action-button.component';
 
-import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
-
 @NgModule({
     declarations: [DotActionButtonComponent],
     exports: [DotActionButtonComponent],
-    imports: [CommonModule, ButtonModule, MenuModule, UiDotIconButtonModule]
+    imports: [CommonModule, ButtonModule, MenuModule]
 })
 export class DotActionButtonModule {}

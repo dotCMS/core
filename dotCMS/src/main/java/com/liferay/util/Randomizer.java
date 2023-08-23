@@ -54,7 +54,7 @@ public class Randomizer extends Random {
 
 		for (int i = 0; i < size; i++) {
 			while (true) {
-				Integer value = new Integer(nextInt(n));
+				Integer value = Integer.valueOf(nextInt(n));
 
 				if (!set.contains(value)) {
 					set.add(value);

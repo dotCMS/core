@@ -283,6 +283,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				}
 			}
 		}
+
+		fileAsset.setVariantId(con.getVariantId());
 		this.contentletCache.add(fileAsset);
 		return fileAsset;
 	}
@@ -298,7 +300,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 
 	public List<IFileAsset> fromContentletsI(final List<Contentlet> contentlets) {
-		final List<IFileAsset> fileAssets = new ArrayList<IFileAsset>();
+		final List<IFileAsset> fileAssets = new ArrayList<>();
 		for (Contentlet con : contentlets) {
 			fileAssets.add(fromContentlet(con));
 		}

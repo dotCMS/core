@@ -1,5 +1,10 @@
 @use "variables" as *;
 
+:host:hover {
+    box-shadow: $md-shadow-5;
+    transition: box-shadow 0.35s ease-in-out;
+}
+
 ::ng-deep {
     .p-card .p-card-header {
         padding: 0;
@@ -7,10 +12,6 @@
 
     .p-card-content {
         display: flex;
-    }
-
-    .dot-favorite-page-highlight ::ng-deep i {
-        color: $brand-primary;
     }
 
     .dot-pages-favorite-card-content__image {
@@ -28,7 +29,7 @@
     }
 
     .dot-pages-favorite-card-content__container {
-        margin-left: $spacing-1;
+        margin: 0 $spacing-1;
         min-width: 0;
     }
 
@@ -46,7 +47,7 @@
     }
 
     .p-card .p-card-body {
-        box-shadow: 0px -15px 20px -20px rgba(0, 0, 0, 0.3);
-        padding: $spacing-4 $spacing-1 $spacing-4 $spacing-4;
+        box-shadow: 0px -15px 20px -20px $color-palette-black-op-30;
+        padding: $spacing-3 $spacing-1 $spacing-3 $spacing-3;
     }
 }

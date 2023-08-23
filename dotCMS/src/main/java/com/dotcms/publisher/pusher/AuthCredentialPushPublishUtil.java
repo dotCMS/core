@@ -106,13 +106,13 @@ public enum AuthCredentialPushPublishUtil {
 
             Logger.info(AuthCredentialPushPublishUtil.class, String.format("Token from request?: %s", jwTokenOptional));
 
-            if (!jwTokenOptional.isPresent()){
+            if (jwTokenOptional.isEmpty()){
                 return PushPublishAuthenticationToken.INVALID_TOKEN;
             }
 
             final Optional<User> optionalUser = jwTokenOptional.get().getActiveUser();
             Logger.info(AuthCredentialPushPublishUtil.class, String.format("User from token?: %s", optionalUser));
-            if (!optionalUser.isPresent()){
+            if (optionalUser.isEmpty()){
                 return PushPublishAuthenticationToken.INVALID_TOKEN;
             }
 
@@ -138,7 +138,7 @@ public enum AuthCredentialPushPublishUtil {
 
         Logger.info(AuthCredentialPushPublishUtil.class, String.format("PublishingEndPoint key: %s", key));
 
-        if(!key.isPresent()) {
+        if(key.isEmpty()) {
             return Optional.empty();
         }
 

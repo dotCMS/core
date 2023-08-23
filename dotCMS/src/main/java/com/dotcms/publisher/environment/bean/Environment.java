@@ -29,7 +29,7 @@ public class Environment implements Permissionable,Serializable{
 
 	@JsonIgnore
 	public List<PermissionSummary> acceptedPermissions() {
-		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
+		List<PermissionSummary> accepted = new ArrayList<>();
 		accepted.add(new PermissionSummary("use",
 				"use-permission-description", PermissionAPI.PERMISSION_USE));
 		return accepted;

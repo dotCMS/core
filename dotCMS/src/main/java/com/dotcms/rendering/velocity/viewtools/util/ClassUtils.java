@@ -137,7 +137,7 @@ public class ClassUtils
      */
     public static List<URL> getResources(String name, Object caller)
     {
-        Set<String> urls = new LinkedHashSet<String>();
+        Set<String> urls = new LinkedHashSet<>();
 
         // try to load all from the current thread context classloader
         addResources(name, urls, getThreadContextLoader());
@@ -158,7 +158,7 @@ public class ClassUtils
 
         if (!urls.isEmpty())
         {
-            List<URL> result = new ArrayList<URL>(urls.size());
+            List<URL> result = new ArrayList<>(urls.size());
             try
             {
                 for (String url : urls)

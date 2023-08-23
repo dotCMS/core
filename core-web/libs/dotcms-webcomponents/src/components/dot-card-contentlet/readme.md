@@ -2,6 +2,7 @@
 
 <!-- Auto Generated Below -->
 
+
 ## Properties
 
 | Property             | Attribute              | Description | Type                    | Default     |
@@ -12,6 +13,7 @@
 | `showVideoThumbnail` | `show-video-thumbnail` |             | `boolean`               | `false`     |
 | `thumbnailSize`      | `thumbnail-size`       |             | `string`                | `'260'`     |
 
+
 ## Events
 
 | Event              | Description | Type                                  |
@@ -19,38 +21,47 @@
 | `checkboxChange`   |             | `CustomEvent<DotCardContentletEvent>` |
 | `contextMenuClick` |             | `CustomEvent<MouseEvent>`             |
 
+
 ## Methods
 
 ### `hideMenu() => Promise<void>`
 
+
+
 #### Returns
 
 Type: `Promise<void>`
+
+
 
 ### `showMenu(x: number, y: number) => Promise<void>`
 
+
+
 #### Returns
 
 Type: `Promise<void>`
+
+
+
 
 ## Dependencies
 
 ### Used by
 
--   [dot-card-view](../../collections/dot-card-view)
+ - [dot-card-view](../../collections/dot-card-view)
 
 ### Depends on
 
--   [dot-card](../../elements/dot-card)
--   [dot-contentlet-thumbnail](../../elements/dot-contentlet-thumbnail)
--   [dot-tooltip](../../elements/dot-tooltip)
--   [dot-state-icon](../../elements/dot-state-icon)
--   [dot-badge](../../elements/dot-badge)
--   [dot-contentlet-lock-icon](../../elements/dot-contentlet-lock-icon)
--   [dot-context-menu](../dot-context-menu)
+- [dot-card](../../elements/dot-card)
+- [dot-contentlet-thumbnail](../../elements/dot-contentlet-thumbnail)
+- [dot-tooltip](../../elements/dot-tooltip)
+- [dot-state-icon](../../elements/dot-state-icon)
+- [dot-badge](../../elements/dot-badge)
+- [dot-contentlet-lock-icon](../../elements/dot-contentlet-lock-icon)
+- [dot-context-menu](../dot-context-menu)
 
 ### Graph
-
 ```mermaid
 graph TD;
   dot-card-contentlet --> dot-card
@@ -67,6 +78,6 @@ graph TD;
   style dot-card-contentlet fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
----
+----------------------------------------------
 
-_Built with [StencilJS](https://stenciljs.com/)_
+*Built with [StencilJS](https://stenciljs.com/)*

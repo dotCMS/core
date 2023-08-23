@@ -18,8 +18,8 @@ public class SelectMap {
 	/**
 	 * All the possible options
 	 */
-	private List<String> options = new ArrayList<String>();
-	private List<String> values = new ArrayList<String>();
+	private List<String> options = new ArrayList<>();
+	private List<String> values = new ArrayList<>();
 	private Object selectValue;
 	
 	public SelectMap(Field field, Contentlet content) {

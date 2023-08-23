@@ -1,0 +1,30 @@
+@use "variables" as *;
+:host {
+    width: 33.875rem;
+    display: block;
+}
+
+.dialog__auto-complete-container {
+    .auto-complete-container__label {
+        margin: 0;
+        color: $black;
+    }
+}
+
+.dialog__actions-container {
+    display: flex;
+    justify-content: end;
+    padding: 1.25rem $spacing-5;
+}
+
+::ng-deep {
+    .p-autocomplete.p-autocomplete-multiple
+        .p-autocomplete-multiple-container
+        .p-autocomplete-token {
+        margin-right: 0;
+    }
+
+    .p-autocomplete-multiple-container {
+        gap: 0.25rem;
+    }
+}

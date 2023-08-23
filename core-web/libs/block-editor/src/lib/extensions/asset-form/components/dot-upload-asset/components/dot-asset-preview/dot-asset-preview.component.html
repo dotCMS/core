@@ -4,7 +4,7 @@
     </ng-container>
     <ng-container *ngSwitchCase="'video'">
         <video controls preload="metadata">
-            <source [src]="src || file.objectURL" [type]="file.type" />
+            <source [src]="src || file.objectURL" />
         </video>
     </ng-container>
     <p *ngSwitchDefault>Select an accepted asset type</p>

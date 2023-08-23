@@ -39,7 +39,7 @@ var browsingTimeMachine=false;
 dojo.require('dojo.data.ItemFileReadStore');
 
 /*
- * 
+ *
 function resized() {
 	var viewport = dijit.getViewport();
     var viewport_height = viewport.h;
@@ -49,8 +49,8 @@ function resized() {
     var p = dojo.byId("iframeWrapper");
     dojo.style(p, "height", viewport_height -225+ "px");
     //dijit.byId("borderContainer").resize();
-    
-   
+
+
 } */
 
 dojo.ready(function(){
@@ -79,7 +79,7 @@ var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
 function timeChange() {
     var time=dijit.byId('timesel').get('value');
     var langid=dijit.byId('langsel').get('value');
-	
+
 	// in with time and lang set
     if(time && time.length>0 && langid && langid.length>0) {
     	dojo.xhr('GET',{
@@ -94,17 +94,17 @@ function timeChange() {
                 dijit.byId('closeBtn').setDisabled(false);
                 browsingTimeMachine=true;
                 showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>");
-                
+
     		}
     	});
     }
-	
+
  	// with time  set
     else if(time && time.length>0 && (langid == undefined || langid.length==0)) {
     	var myUrl="/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/getAvailableLangForTimeMachine/hostIdentifier/<%=hostIdentifier%>/date/"+time+ "/r/" + Math.floor(Math.random()*11232132132131);
         dijit.byId('langsel').set('store',new dojo.data.ItemFileReadStore({url:myUrl}));
     }
-	
+
 	// init and changing the time
     else{
         dijit.byId('timesel').setValue("");
@@ -126,21 +126,21 @@ function stopBrowing() {
 
             dijit.byId('timesel').required=false;
             dijit.byId('timesel').setValue(null);
-            
+
             dijit.byId('langsel').setValue("");
             dijit.byId('langsel').required=false;
-            
+
             dijit.byId('fdate').setValue(null);
             dijit.byId('fdate').required=false;
-            
+
             dijit.byId('flang').setValue("");
             dijit.byId('flang').required=false;
-            
+
             dojo.create("div", {
                 "innerHTML": '<div ><span class="clockIcon"></span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME")) %>',
                 "style": "padding:40px;text-align:center;white-space: nowrap;line-height: 20px;"
             }, dojo.byId('iframeWrapper'));
-            
+
             browsingTimeMachine=false;
         }
     });
@@ -165,8 +165,8 @@ function showSettings() {
 
         }
     });
-	
-	
+
+
     dialog.show();
 
     dojo.style(dialog.domNode,'top','10px');
@@ -200,7 +200,7 @@ function futureChange() {
 		var month=fdate.getMonth()+1;
 		var year=fdate.getFullYear();
 		var formated=year+"-"+month+"-"+day;
-		
+
 		var flang=dijit.byId('flang').getValue();
 		if(flang && flang.length>0){
 			dojo.xhr('GET',{
@@ -213,14 +213,14 @@ function futureChange() {
 		                "style": "border: 0; width: 100%; height: 100%;"
 		            }, dojo.byId('iframeWrapper'));
 		            dijit.byId('closeBtn').setDisabled(false);
-		
+
 		            showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>");
 		            browsingTimeMachine=true;
 		        }
 		    });
 		}
 	}
-	
+
 }
 </script>
 
@@ -229,18 +229,18 @@ function futureChange() {
 <div class="portlet-main">
 	<div id="timemachineMain">
 		<!-- START Toolbar -->
-		<div class="portlet-toolbar">
+		<div class="portlet-toolbar" style="margin-top: 1rem;">
 			<div class="portlet-toolbar__actions-primary">
 				<div class="inline-form">
-		         	<input type="radio" dojoType="dijit.form.RadioButton" name="sn" id="past" onChange="toggleDatePick()" checked='true'/><label for="past"><%= LanguageUtil.get(pageContext, "Past") %></label>&nbsp; 
+		         	<input type="radio" dojoType="dijit.form.RadioButton" name="sn" id="past" onChange="toggleDatePick()" checked='true'/><label for="past"><%= LanguageUtil.get(pageContext, "Past") %></label>&nbsp;
 		         	<input type="radio" dojoType="dijit.form.RadioButton" name="sn" id="future"/><label for="future"><%= LanguageUtil.get(pageContext, "Future") %></label>
-	
-		           	<span id="pastPicker">           
+
+		           	<span id="pastPicker">
 		               <select id="timesel" dojoType="dijit.form.FilteringSelect"
 		                  labelAttr="pretty" searchDelay="400" searchAttr="pretty"
 		                  onFocus="timeChange()" onChange="timeChange()" pageSize="20">
 		               </select>
-		
+
 		               <select id="langsel" dojoType="dijit.form.FilteringSelect"
 		                  labelAttr="pretty" searchDelay="400" searchAttr="pretty"
 		                  onChange="timeChange()" pageSize="20">
@@ -258,7 +258,7 @@ function futureChange() {
 				</div>
 			</div>
 			<div class="portlet-toolbar__info">
-				
+
 			</div>
 	    	<div class="portlet-toolbar__actions-secondary">
 	    		<script language="Javascript">
@@ -275,12 +275,12 @@ function futureChange() {
 						t.start();
 					});
 				</script>
-				<!-- START Actions -->			
+				<!-- START Actions -->
 				<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"'>
 					<span></span>
-					
+
 					<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
-					
+
 						<%if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){ %>
 			              <!-- <span id="settings" > -->
 							<div data-dojo-type="dijit/MenuItem" id="settingsBtn" onClick="showSettings()">
@@ -288,30 +288,30 @@ function futureChange() {
 							</div>
 			              <!-- </span> -->
 			            <%} %>
-	                
+
 						<div data-dojo-type="dijit/MenuItem" id="closeBtn" onClick="stopBrowing()">
 							<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE_SNAP")%>
 						</div>
-				
+
 					</div>
 				</div>
 				<!-- END Actions -->
-				
-	            
+
+
 	    	</div>
 	   </div>
 	   <!-- END Toolbar -->
-       		
 
-           
 
-        
+
+
+
         <div id="iframeWrapper" style="width: 100%; position: absolute; left: 0; top: 80px; right:0; bottom:0px;border-top: 1px solid #ECEDEE;">
 	       <div style="padding:40px;text-align:center;white-space: nowrap;line-height: 20px;">
 				<span class="clockIcon"></span><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME") %>
-	       </div> 
+	       </div>
 	    </div>
-	    
+
     </div>
 </div>
 

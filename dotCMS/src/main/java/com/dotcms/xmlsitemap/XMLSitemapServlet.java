@@ -54,7 +54,7 @@ public class XMLSitemapServlet extends HttpServlet {
 			HostWebAPI hostWebAPI = new HostWebAPIImpl();
 			Host host = hostWebAPI.getCurrentHost(request);
 			String hostId = host.getIdentifier();
-			List<Contentlet> itemsList = new ArrayList<Contentlet>();
+			List<Contentlet> itemsList = new ArrayList<>();
 
 			
 			Folder folder = folderAPI.findFolderByPath(Config.getStringProperty("org.dotcms.XMLSitemap.XML_SITEMAPS_FOLDER","/XMLSitemaps/"), hostId, userAPI.getSystemUser(), true);

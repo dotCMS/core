@@ -198,6 +198,7 @@ public final class WebKeys {
     
     public static final String TEMPLATE_HOSTS = "com.dotmarketing.template.hosts";
 
+    public static final String HTMLPAGE_DEPTH = "depth";
     public static final String HTMLPAGE_EDIT = "com.dotmarketing.htmlpages.edit";
     public static final String HTMLPAGE_REFERER = "com.dotmarketing.htmlpages.referer";
     public static final String HTMLPAGES_VIEW = "com.dotmarketing.htmlpages.view";

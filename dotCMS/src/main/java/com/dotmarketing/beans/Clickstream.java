@@ -14,8 +14,8 @@ public class Clickstream implements Serializable {
     
     private static final long serialVersionUID = 1L;
  	@SuppressWarnings("unchecked")
-	private List<ClickstreamRequest> clickstreamRequests = Collections.synchronizedList(new ArrayList<ClickstreamRequest> ());
- 	private List<Clickstream404> clickstream404s = Collections.synchronizedList(new ArrayList<Clickstream404> ());
+	private List<ClickstreamRequest> clickstreamRequests = Collections.synchronizedList(new ArrayList<> ());
+ 	private List<Clickstream404> clickstream404s = Collections.synchronizedList(new ArrayList<> ());
     private long clickstreamId;
     private Map attributes = new HashMap();
     private String hostname;

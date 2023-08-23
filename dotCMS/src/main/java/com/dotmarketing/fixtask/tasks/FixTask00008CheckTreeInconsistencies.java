@@ -36,7 +36,7 @@ public class FixTask00008CheckTreeInconsistencies  implements FixTask {
 			DotRuntimeException {
 		
 		Logger.info(CMSMaintenanceFactory.class, "Beginning fixAssetsInconsistencies");
-	    List <Map <String,Object>>  returnValue = new ArrayList <Map <String,Object>>();
+	    List <Map <String,Object>>  returnValue = new ArrayList <>();
 		int counter = 0;
 		
 		

@@ -43,7 +43,7 @@ public class CheckURLAccessibilityActionlet extends WorkFlowActionlet {
 		
 		try{
 			if(null==paramList){
-				paramList = new ArrayList<WorkflowActionletParameter>();
+				paramList = new ArrayList<>();
 				paramList.add(new WorkflowActionletParameter("fieldList", 
 				        LanguageUtil.get(APILocator.getUserAPI().getSystemUser(), "checkURL.fieldList"), "", true));
 			}

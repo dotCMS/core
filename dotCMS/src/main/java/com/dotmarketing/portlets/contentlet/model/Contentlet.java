@@ -49,6 +49,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.annotations.VisibleForTesting;
@@ -177,6 +178,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   private transient boolean needsReindex;
 
   private transient boolean loadedTags = false;
+
+	private String variantId = VariantAPI.DEFAULT_VARIANT.name();
 
 	/**
 	 * Returns true if this contentlet needs reindex
@@ -1060,7 +1063,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	@JsonIgnore
 	public List<PermissionSummary> acceptedPermissions() {
-		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
+		List<PermissionSummary> accepted = new ArrayList<>();
 		accepted.add(new PermissionSummary("view", "view-permission-description", PermissionAPI.PERMISSION_READ));
 		accepted.add(new PermissionSummary("edit", "edit-permission-description", PermissionAPI.PERMISSION_WRITE));
 		accepted.add(new PermissionSummary("publish", "publish-permission-description", PermissionAPI.PERMISSION_PUBLISH));
@@ -1612,11 +1615,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     public void setVariantId(final String variantId) {
-		map.put(VARIANT_ID, variantId);
+		this.variantId = UtilMethods.isSet(variantId) ? variantId : VariantAPI.DEFAULT_VARIANT.name();
     }
 
 	public String getVariantId() {
-		return map.getOrDefault(VARIANT_ID, VariantAPI.DEFAULT_VARIANT.name()).toString();
+		if (!UtilMethods.isSet(variantId)) {
+			this.variantId = VariantAPI.DEFAULT_VARIANT.name();
+		}
+
+		return this.variantId;
 	}
 
 	@VisibleForTesting
@@ -1703,7 +1710,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			if (!ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
 				throw new DotStateException(e);
 			} else {
-				Logger.warn(this,
+				Logger.debug(this,
 						() -> String.format(
 								"Unable to find Content Type for Contentlet [%s], Content Type deleted? - [%s]",
 								this.getIdentifier(),

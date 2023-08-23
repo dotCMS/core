@@ -69,10 +69,10 @@ public class ServerDetector {
 			Class c = sd.getClass();
 
 			if (c.getResource(JBOSS_CLASS) != null) {
-				sd._jBoss = new Boolean(true);
+				sd._jBoss = Boolean.valueOf(true);
 			}
 			else {
-				sd._jBoss = new Boolean(false);
+				sd._jBoss = Boolean.valueOf(false);
 			}
 		}
 
@@ -86,10 +86,10 @@ public class ServerDetector {
 			Class c = sd.getClass();
 
 			if (c.getResource(JETTY_CLASS) != null) {
-				sd._jetty = new Boolean(true);
+				sd._jetty = Boolean.valueOf(true);
 			}
 			else {
-				sd._jetty = new Boolean(false);
+				sd._jetty = Boolean.valueOf(false);
 			}
 		}
 
@@ -103,10 +103,10 @@ public class ServerDetector {
 			Class c = sd.getClass();
 
 			if (c.getResource(JONAS_CLASS) != null) {
-				sd._jonas = new Boolean(true);
+				sd._jonas = Boolean.valueOf(true);
 			}
 			else {
-				sd._jonas = new Boolean(false);
+				sd._jonas = Boolean.valueOf(false);
 			}
 		}
 
@@ -120,10 +120,10 @@ public class ServerDetector {
 			Class c = sd.getClass();
 
 			if (c.getResource(OC4J_CLASS) != null) {
-				sd._oc4j = new Boolean(true);
+				sd._oc4j = Boolean.valueOf(true);
 			}
 			else {
-				sd._oc4j = new Boolean(false);
+				sd._oc4j = Boolean.valueOf(false);
 			}
 		}
 
@@ -137,10 +137,10 @@ public class ServerDetector {
 			Class c = sd.getClass();
 
 			if (c.getResource(ORION_CLASS) != null) {
-				sd._orion = new Boolean(true);
+				sd._orion = Boolean.valueOf(true);
 			}
 			else {
-				sd._orion = new Boolean(false);
+				sd._orion = Boolean.valueOf(false);
 			}
 		}
 
@@ -154,10 +154,10 @@ public class ServerDetector {
 			Class c = sd.getClass();
 
 			if (c.getResource(PRAMATI_CLASS) != null) {
-				sd._pramati = new Boolean(true);
+				sd._pramati = Boolean.valueOf(true);
 			}
 			else {
-				sd._pramati = new Boolean(false);
+				sd._pramati = Boolean.valueOf(false);
 			}
 		}
 
@@ -171,10 +171,10 @@ public class ServerDetector {
 			Class c = sd.getClass();
 
 			if (c.getResource(REXIP_CLASS) != null) {
-				sd._rexIP = new Boolean(true);
+				sd._rexIP = Boolean.valueOf(true);
 			}
 			else {
-				sd._rexIP = new Boolean(false);
+				sd._rexIP = Boolean.valueOf(false);
 			}
 		}
 
@@ -197,10 +197,10 @@ public class ServerDetector {
 			Class c = sd.getClass();
 
 			if (c.getResource(SUN7_CLASS) != null) {
-				sd._sun7 = new Boolean(true);
+				sd._sun7 = Boolean.valueOf(true);
 			}
 			else {
-				sd._sun7 = new Boolean(false);
+				sd._sun7 = Boolean.valueOf(false);
 			}
 		}
 
@@ -214,10 +214,10 @@ public class ServerDetector {
 			Class c = sd.getClass();
 
 			if (c.getResource(SUN8_CLASS) != null) {
-				sd._sun8 = new Boolean(true);
+				sd._sun8 = Boolean.valueOf(true);
 			}
 			else {
-				sd._sun8 = new Boolean(false);
+				sd._sun8 = Boolean.valueOf(false);
 			}
 		}
 
@@ -231,10 +231,10 @@ public class ServerDetector {
 			Class c = sd.getClass();
 
 			if (c.getResource(TOMCAT_CLASS) != null) {
-				sd._tomcat = new Boolean(true);
+				sd._tomcat = Boolean.valueOf(true);
 			}
 			else {
-				sd._tomcat = new Boolean(false);
+				sd._tomcat = Boolean.valueOf(false);
 			}
 		}
 
@@ -248,10 +248,10 @@ public class ServerDetector {
 			Class c = sd.getClass();
 
 			if (c.getResource(WEBLOGIC_CLASS) != null) {
-				sd._webLogic = new Boolean(true);
+				sd._webLogic = Boolean.valueOf(true);
 			}
 			else {
-				sd._webLogic = new Boolean(false);
+				sd._webLogic = Boolean.valueOf(false);
 			}
 		}
 
@@ -265,10 +265,10 @@ public class ServerDetector {
 			Class c = sd.getClass();
 
 			if (c.getResource(WEBSPHERE_CLASS) != null) {
-				sd._webSphere = new Boolean(true);
+				sd._webSphere = Boolean.valueOf(true);
 			}
 			else {
-				sd._webSphere = new Boolean(false);
+				sd._webSphere = Boolean.valueOf(false);
 			}
 		}
 

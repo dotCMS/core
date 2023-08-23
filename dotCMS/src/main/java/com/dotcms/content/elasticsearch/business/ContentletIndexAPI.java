@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
@@ -84,6 +85,9 @@ public interface ContentletIndexAPI {
 
     public void removeContentFromIndexByStructureInode(String structureInode)
             throws DotDataException, DotSecurityException;
+
+    public void removeContentFromIndexByContentType(final ContentType contentType)
+            throws DotDataException;
 
     void fullReindexAbort();
 

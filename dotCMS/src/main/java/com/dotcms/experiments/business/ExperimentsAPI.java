@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResults;
@@ -23,7 +24,9 @@ import java.util.Optional;
 
 public interface ExperimentsAPI {
 
-    Lazy<Integer> EXPERIMENTS_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MAX_DURATION", 35));
+    String PRIMARY_GOAL = "primary";
+    Lazy<Integer> EXPERIMENTS_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MAX_DURATION", 90));
+    Lazy<Integer> EXPERIMENTS_MIN_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MIN_DURATION", 14));
     Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 10));
 
 
@@ -47,9 +50,15 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     * Deletes the Experiment matching the provided id
+     * Deletes the Experiment matching the provided id, validate that the Experiment
+     * is in DRAFT or SCHEDULED state to be deleted
      */
     void delete(String id, User user) throws DotDataException, DotSecurityException;
+
+    /**
+     * Deletes the Experiment matching the provided id, and just Validate Permission
+     */
+    public void forceDelete(final String id, final User user) throws DotDataException, DotSecurityException;
 
     /**
      * Returns experiments based on the provided filters in {@link ExperimentFilter}
@@ -82,6 +91,13 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
+     * Similar to #start, but it forces the start of the Experiment even if there is an Experiment
+     * already running for the same page, which would then be stopped.
+     */
+    Experiment forceStart(final String experimentId, final User user)
+            throws DotDataException, DotSecurityException;
+
+    /**
      * Starts the SCHEDULED Experiment with the given id
      * @param experimentId the id
      * @param user the user
@@ -93,8 +109,8 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     * Ends an already started {@link Experiment}. The Experiment needs to be in
-     * {@link Status#RUNNING} status to be able to end it.
+     * Ends an already started {@link Experiment}. The Experiment needs to be in either
+     * {@link Status#RUNNING} or {@link  Status#SCHEDULED} status to be able to end it.
      */
     Experiment end(String experimentId, User user) throws DotDataException, DotSecurityException;
 
@@ -178,17 +194,22 @@ public interface ExperimentsAPI {
      * Return the Experiment partial or total result.
      *
      * @param experiment
+     * @param user
      * @return
      */
-    ExperimentResults getResults(final Experiment experiment)
+    ExperimentResults getResults(final Experiment experiment, User user)
             throws DotDataException, DotSecurityException;
+
+    List<Experiment> cacheRunningExperiments() throws DotDataException;
 
     /**
      * Return a list of the Events into an Experiment group by {@link BrowserSession}
+     *
      * @param experiment
+     * @param user
      * @return
      */
-    List<BrowserSession> getEvents(final Experiment experiment);
+    List<BrowserSession> getEvents(final Experiment experiment, User user) throws DotDataException;
 
     /*
      * Ends finalized {@link com.dotcms.experiments.model.Experiment}s
@@ -197,4 +218,28 @@ public interface ExperimentsAPI {
      *     state and whose {@link  Scheduling#endDate()} is in the past
      */
     void endFinalizedExperiments(final User user) throws DotDataException;
+
+    /**
+     * Promotes a Variant to the default one for the given Experiment
+     */
+    Experiment promoteVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException;
+
+    /*
+     * Cancels a Scheduled {@link com.dotcms.experiments.model.Experiment}.
+     * By Canceling an Experiment, its future execution will not take place.
+     * In order to be canceled, the Experiment needs to be in the
+     * {@link com.dotcms.experiments.model.Experiment.Status#SCHEDULED} state.
+     */
+    Experiment cancel(String experimentId, User user) throws DotDataException, DotSecurityException;
+
+    /**
+     * Return the RUNNING Experiments for the given page if it has any,
+     * Otherwise return an empty Optional
+     *
+     * @param pageId
+     * @return
+     * @throws DotDataException
+     */
+    Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException;
 }

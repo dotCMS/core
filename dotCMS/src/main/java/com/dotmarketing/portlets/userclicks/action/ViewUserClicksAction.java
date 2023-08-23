@@ -111,7 +111,7 @@ public class ViewUserClicksAction extends DotPortletAction {
 			throw new ActionException (e.getMessage());
 
 		}
-		req.setAttribute("numrows",(new Integer(numrows)));
+		req.setAttribute("numrows",(Integer.valueOf(numrows)));
 		req.setAttribute(WebKeys.USER_CLICKS_VIEW, l);
 
 		Logger.debug(this, "Done with ViewHTMLPageViewsAction");

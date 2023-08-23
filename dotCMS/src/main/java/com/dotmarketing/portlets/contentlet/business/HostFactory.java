@@ -84,6 +84,27 @@ public interface HostFactory {
     List<Host> findAll(final int limit, final int offset, final String orderBy) throws DotDataException, DotSecurityException;
 
     /**
+     * Returns the list of Sites in your dotCMS repository retrieved <b>directly from the data source</b> matching the
+     * specified search criteria.
+     *
+     * @param limit             Limit of results returned in the response, for pagination purposes. If set equal or
+     *                          lower than zero, this parameter will be ignored.
+     * @param offset            Expected offset of results in the response, for pagination purposes. If set equal or
+     *                          lower than zero, this parameter will be ignored.
+     * @param orderBy           Optional sorting criterion, as specified by the available columns in: {@link
+     *                          com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST} .
+     * @param includeSystemHost If the System Host should be included in the results, set to {@code true}.
+     *
+     * @return The list of {@link Host} objects.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this
+     *                              operation.
+     */
+    List<Host> findAll(final int limit, final int offset, final String orderBy, final boolean includeSystemHost)
+            throws DotDataException, DotSecurityException;
+
+    /**
      * Retrieves the System Host object.
      *
      * @param user                 The {@link User} performing this action.
@@ -226,4 +247,18 @@ public interface HostFactory {
      */
     long count() throws DotDataException;
 
+    /** 
+     * Finds live and stopped hosts based on the provided filter criteria and returns them as a list of Host objects.
+     *
+     * @param siteNameFilter A string used to filter the hosts by site name.
+     * @param limit The maximum number of hosts to return.
+     * @param offset The starting index of the hosts to return.
+     * @param showSystemHost A boolean indicating to include or not system hosts in the results.
+     * @param user The user performing the search.
+     * @param respectFrontendRoles A boolean indicating to respect or not frontend roles when performing the search.
+     * @return An Optional object containing a list of Host objects that match the provided criteria, or an empty Optional if no matches are found.
+     */
+    Optional<List<Host>> findLiveAndStopped(final String siteNameFilter,
+                                            final int limit, final int offset, final boolean showSystemHost,
+                                            final User user, boolean respectFrontendRoles);
 }

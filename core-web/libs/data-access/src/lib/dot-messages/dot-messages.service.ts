@@ -1,8 +1,8 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { formatMessage } from '@dotcms/utils';
 
 import { DotLocalstorageService } from '../dot-localstorage/dot-localstorage.service';
@@ -21,8 +21,8 @@ export class DotMessageService {
     private BUILDATE_LOCALSTORAGE_KEY = 'buildDate';
 
     constructor(
-        private coreWebService: CoreWebService,
-        private dotLocalstorageService: DotLocalstorageService
+        private readonly http: HttpClient,
+        private readonly dotLocalstorageService: DotLocalstorageService
     ) {}
 
     /**
@@ -76,13 +76,11 @@ export class DotMessageService {
     }
 
     private getAll(lang: string): void {
-        this.coreWebService
-            .requestView({
-                url: this.geti18nURL(lang)
-            })
+        this.http
+            .get(this.geti18nURL(lang))
             .pipe(take(1), pluck('entity'))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messageMap = messages;
+            .subscribe((messages) => {
+                this.messageMap = messages as { [key: string]: string };
                 this.dotLocalstorageService.setItem(
                     this.MESSAGES_LOCALSTORAGE_KEY,
                     this.messageMap

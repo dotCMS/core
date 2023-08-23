@@ -156,6 +156,20 @@ public interface ContentTypeAPI {
   List<ContentType> findUrlMapped() throws DotDataException;
 
   /**
+   * Returns a list of {@link ContentType#urlMapPattern()} for a specified
+   * {@link com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset}'s id.
+   *
+   * @param pageIdentifier The {@link com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset}'s id to search for.
+   *
+   * @return The list of {@link ContentType#urlMapPattern()}  that are link to the specified
+   * {@link com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset}'s id.
+   *
+   * @throws DotDataException An error occurred when interacting with the data source.
+   */
+  List<String> findUrlMappedPattern(final String pageIdentifier) throws DotDataException;
+
+
+  /**
    * Counts the amount of Content Types in the DB filtered by the given condition.
    * 
    * @return Amount of Content Types

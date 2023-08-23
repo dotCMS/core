@@ -4,13 +4,13 @@
     width: auto;
     min-height: $dot-secondary-toolbar-height;
     display: block;
-    border-bottom: 1px solid $gray-lighter;
+    border-bottom: 1px solid $color-palette-gray-300;
     margin-left: -$spacing-3;
     margin-right: -$spacing-3;
     margin-top: -$spacing-3;
 
     h2 {
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
         margin: 0;
         margin-left: $spacing-1;
     }

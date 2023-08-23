@@ -186,7 +186,7 @@ public class OSGISystem {
                     // Try to load first non-empty, non-commented line.
                     if ((s.length() > 0) && (s.charAt(0) != '#')) {
                         Logger.info(OSGIUtil.class, "Loading Factory " + s);
-                        return (FrameworkFactory) Class.forName(s).newInstance();
+                        return (FrameworkFactory) Class.forName(s).getDeclaredConstructor().newInstance();
                     }
                 }
             }

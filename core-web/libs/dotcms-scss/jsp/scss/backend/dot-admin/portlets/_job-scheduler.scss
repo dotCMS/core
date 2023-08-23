@@ -1,0 +1,7 @@
+.job-scheduler__host-list {
+    margin-top: $spacing-1 * 2;
+}
+
+.job-scheduler__host-list-actions {
+    @extend #cell-actions;
+}

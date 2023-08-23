@@ -74,7 +74,7 @@ public abstract class ImportSupport {
      * somewhat cute...)
      */
     protected String acquireString(String url, long timeout) throws IOException, Exception {
-    	   return acquireString(url, timeout, new HashMap<String, String>());
+    	   return acquireString(url, timeout, new HashMap<>());
     }
     /**
      *
@@ -161,7 +161,7 @@ public abstract class ImportSupport {
     }
     protected Reader acquireReader(final String url, final long timeout) throws IOException, Exception
     {
-    	return acquireReader(url, timeout, new HashMap<String, String>());
+    	return acquireReader(url, timeout, new HashMap<>());
     }
     /**
      *

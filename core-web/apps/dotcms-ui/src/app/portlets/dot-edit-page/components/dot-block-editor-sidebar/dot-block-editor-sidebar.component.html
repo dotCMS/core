@@ -18,11 +18,12 @@
             [allowedContentTypes]="blockEditorInput.fieldVariables.allowedContentTypes"
             [value]="blockEditorInput.content"
             [customStyles]="blockEditorInput.fieldVariables.styles"
+            [contentletIdentifier]="blockEditorInput.contentletIdentifier"
         >
         </dot-block-editor>
         <footer>
             <button
-                class="p-button-secondary"
+                class="p-button-outlined"
                 [label]="'Cancel' | dm"
                 (click)="closeSidebar()"
                 pButton

@@ -1062,7 +1062,7 @@
 <div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;width:300px" draggable="true" title="<%= LanguageUtil.get(pageContext, "add-category") %>" >
 	<div dojoType="dijit.layout.ContentPane">
 		<span id="savedMessage"></span>
-		<form id="addCatPropertiesForm" dojoType="dijit.form.Form" style="max-width: 260px; max-height: 300px;">
+		<form id="addCatPropertiesForm" dojoType="dijit.form.Form" style="max-width: 260px; max-height: 330px;">
 			<div class="form-inline">
 				<dl>
 					<dt><label for="addCatVelVarName" id="VariableIdTitle"><%= LanguageUtil.get(pageContext, "Variable-ID") %></label></dt>

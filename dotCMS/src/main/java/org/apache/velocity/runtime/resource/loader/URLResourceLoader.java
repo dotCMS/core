@@ -215,7 +215,7 @@ public class URLResourceLoader extends ResourceLoader
     {
         if (timeout > 0)
         {
-            Object[] arg = new Object[] { new Integer(timeout) };
+            Object[] arg = new Object[] { Integer.valueOf(timeout) };
             try
             {
                 timeoutMethods[0].invoke(conn, arg);

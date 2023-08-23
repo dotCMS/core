@@ -298,7 +298,7 @@ public class Container extends WebAsset implements Serializable, ManifestItem {
 	@JsonIgnore
 	@Override
 	public List<PermissionSummary> acceptedPermissions() {
-		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
+		List<PermissionSummary> accepted = new ArrayList<>();
 		accepted.add(new PermissionSummary("view", "view-permission-description", PermissionAPI.PERMISSION_READ));
 		accepted.add(new PermissionSummary("edit", "edit-permission-description", PermissionAPI.PERMISSION_WRITE));
 		accepted.add(new PermissionSummary("publish", "publish-permission-description", PermissionAPI.PERMISSION_PUBLISH));

@@ -27,8 +27,8 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -144,7 +144,7 @@ public class AuthenticationResource implements Serializable {
             try {
 
                 res = Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView
-                        (Collections.singletonList(new ErrorEntity("your-account-is-not-active",
+                        (List.of(new ErrorEntity("your-account-is-not-active",
                                 LanguageUtil.format(locale,
                                         "your-account-is-not-active", new LanguageWrapper[]{
                                                 new LanguageWrapper("<b><i>", userId, "</i></b>")},
