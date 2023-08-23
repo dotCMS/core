@@ -72,8 +72,8 @@ public class ImageFilterAPIImplTest {
         File incomingFile = new File(url.getFile());
         Dimension dim = imageApi.getWidthHeight(incomingFile);
 
-        Assert.assertTrue(dim.getWidth() == 320);
-        Assert.assertTrue(dim.getHeight() == 240);
+        Assert.assertEquals(dim.getWidth() , 320);
+        Assert.assertEquals(dim.getHeight() , 240);
 
     }
 
