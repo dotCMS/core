@@ -50,16 +50,7 @@
             }
 
             .p-autocomplete-token {
-                align-items: center;
-                background: $color-palette-primary-op-10;
-                border-radius: $border-radius-sm;
-                color: $color-palette-primary;
-                display: flex;
-                gap: $spacing-1;
-                justify-content: center;
-                padding: $spacing-1;
-                height: 1.5rem;
-                font-size: $font-size-sm;
+                @extend #field-chips;
             }
 
             .p-autocomplete-input-token {
