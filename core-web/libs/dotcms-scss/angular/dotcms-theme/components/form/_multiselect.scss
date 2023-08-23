@@ -67,7 +67,7 @@
         }
 
         .p-multiselect-token {
-            @extend #field-chips;
+            @extend #field-chip;
         }
     }
 }

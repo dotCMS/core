@@ -144,15 +144,15 @@
     }
 }
 
-#field-chips {
+#field-chip {
     height: 1.5rem;
     padding: $spacing-1;
-    background: $color-palette-primary-op-10;
+    background: $color-palette-primary-200;
     border-radius: $border-radius-sm;
     color: $color-palette-primary;
     font-size: $font-size-sm;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: $spacing-1;
+    gap: $spacing-0;
 }
