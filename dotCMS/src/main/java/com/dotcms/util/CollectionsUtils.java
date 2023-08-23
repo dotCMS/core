@@ -981,6 +981,22 @@ public class CollectionsUtils implements Serializable {
 	    return new ImmutableListCollector<>();
     }
 
+    /**
+     * Returns a {@code Collector} that accumulates the input elements into a
+     * new {@link ImmutableSet}.
+     *
+     * @param collections
+     * @return
+     * @param <T>
+     */
+    public static <T> Collection<T> addAll(Collection<T>... collections) {
+        final List<T> result = new ArrayList<>();
+        for (Collection<T> collection : collections) {
+            result.addAll(collection);
+        }
+        return Collections.unmodifiableList(result);
+    }
+
     private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {
         @Override
         public Supplier<ImmutableList.Builder<T>> supplier() {
