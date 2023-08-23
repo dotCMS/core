@@ -1,6 +1,5 @@
 package com.dotcms.experiments.business.result;
 
-import com.dotcms.experiments.business.result.ExperimentResults.TotalSession;
 import java.util.Map;
 
 /**
@@ -114,7 +113,7 @@ public class VariantResults {
             return uniqueBySession;
         }
 
-        public float getConvertionRate() {
+        public float getConversionRate() {
             return totalSessions > 0 ? (float) (uniqueBySession * 100) / totalSessions : 0;
         }
 
