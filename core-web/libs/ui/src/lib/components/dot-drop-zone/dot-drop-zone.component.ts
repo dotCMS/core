@@ -116,10 +116,11 @@ export class DotDropZoneComponent {
         const extension = file.name.split('.').pop().toLowerCase();
         const mimeType = file.type.toLowerCase();
 
-        return (
-            this.allowedExtensions.includes(`.${extension}`) ||
-            this._allowedMimeTypes.includes(mimeType)
+        const mimeTypeIsValid = this._allowedMimeTypes.some((allowedMimeType) =>
+            mimeType.includes(allowedMimeType)
         );
+
+        return this.allowedExtensions.includes(`.${extension}`) || mimeTypeIsValid;
     }
 
     /**
