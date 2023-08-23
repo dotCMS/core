@@ -75,6 +75,13 @@ export class DotDropZoneComponent {
         this.active = !multiple; // Only show the active state when a single file is dropped
     }
 
+    @HostListener('dragover', ['$event'])
+    onDragOver(event: DragEvent) {
+        // Prevent the default behavior to allow drop
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
     @HostListener('dragleave', ['$event'])
     onDragLeave(_event: DragEvent) {
         this.active = false;
