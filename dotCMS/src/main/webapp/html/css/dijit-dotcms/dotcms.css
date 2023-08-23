@@ -4072,7 +4072,7 @@
   overflow: hidden;
 }
 .dijitComboBox input {
-  height: auto;
+  height: 100%;
   padding: 0;
 }
 .dijitComboBox .dijitArrowButton {
