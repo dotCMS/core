@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
@@ -14,10 +15,17 @@ import java.sql.SQLException;
 public class Task230426AlterVarcharLengthOfLockedByCol implements StartupTask {
     private void alterTables() throws SQLException {
         final DotConnect dc = new DotConnect();
-        dc.executeStatement("alter table contentlet_version_info alter column locked_by type varchar (100)");
-        dc.executeStatement("alter table container_version_info alter column locked_by type varchar (100)");
-        dc.executeStatement("alter table template_version_info alter column locked_by type varchar (100)");
-        dc.executeStatement("alter table link_version_info alter column locked_by type varchar (100)");
+        if (DbConnectionFactory.isMsSql()) {
+            dc.executeStatement("alter table contentlet_version_info alter column locked_by varchar (100)");
+            dc.executeStatement("alter table container_version_info alter column locked_by varchar (100)");
+            dc.executeStatement("alter table template_version_info alter column locked_by varchar (100)");
+            dc.executeStatement("alter table link_version_info alter column locked_by varchar (100)");
+        }else {
+            dc.executeStatement("alter table contentlet_version_info alter column locked_by type varchar (100)");
+            dc.executeStatement("alter table container_version_info alter column locked_by type varchar (100)");
+            dc.executeStatement("alter table template_version_info alter column locked_by type varchar (100)");
+            dc.executeStatement("alter table link_version_info alter column locked_by type varchar (100)");
+        }
     }
     @Override
     public boolean forceRun() {
