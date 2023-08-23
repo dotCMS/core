@@ -14,6 +14,7 @@ import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VA
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.util.DateUtil.isTimeReach;
 
+import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.model.BayesianInput;
@@ -26,6 +27,7 @@ import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.metrics.MetricsUtil;
+import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cube.CubeJSClient;
@@ -110,7 +112,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -132,6 +133,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
     final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
     final BayesianAPI bayesianAPI = APILocator.getBayesianAPI();
+    final AnalyticsAPI analyticsAPI = APILocator.getAnalyticsAPI();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -1149,9 +1151,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
             "The Experiment must be RUNNING or ENDED to get results");
 
-        final List<BrowserSession> events = getEvents(experimentFromDataBase, user);
+        final AnalyticsApp analyticsApp = resolveAnalyticsApp(user);
+        final AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        final List<BrowserSession> events = getEvents(experimentFromDataBase, user, analyticsApp, accessToken);
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
-                experimentFromDataBase, events);
+                experimentFromDataBase, events, accessToken );
 
         experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
 
@@ -1188,51 +1192,47 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public List<BrowserSession> getEvents(final Experiment experiment, final User user) throws DotDataException {
-        try{
-            final AnalyticsApp analyticsApp = resolveAnalyticsApp(user);
+    public List<BrowserSession> getEvents(final Experiment experiment,
+                                          final User user,
+                                          final AnalyticsApp analyticsApp,
+                                          final AccessToken accessToken) throws DotDataException {
+        final CubeJSClient cubeClient = new CubeJSClient(
+                analyticsApp.getAnalyticsProperties().analyticsReadUrl(),
+                accessToken);
+        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
+                .create(experiment);
+        final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
 
-            final CubeJSClient cubeClient = new CubeJSClient(
-                    analyticsApp.getAnalyticsProperties().analyticsReadUrl());
+        String previousLookBackWindow = null;
+        final List<Event> currentEvents = new ArrayList<>();
+        final List<BrowserSession> sessions = new ArrayList<>();
 
-            final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
-                    .create(experiment);
+        for (final ResultSetItem resultSetItem : cubeJSResultSet) {
+            final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
+                    .map(Object::toString)
+                    .orElse(StringPool.BLANK);
 
-            final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
-
-            String previousLookBackWindow = null;
-            final List<Event> currentEvents = new ArrayList<>();
-            final List<BrowserSession> sessions = new ArrayList<>();
-
-            for (final ResultSetItem resultSetItem : cubeJSResultSet) {
-                final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
-                        .map(Object::toString)
-                        .orElse(StringPool.BLANK);
-
-                if (!currentLookBackWindow.equals(previousLookBackWindow)) {
-                    if (!currentEvents.isEmpty()) {
-                        sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-                        currentEvents.clear();
-                    }
+            if (!currentLookBackWindow.equals(previousLookBackWindow)) {
+                if (!currentEvents.isEmpty()) {
+                    sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
+                    currentEvents.clear();
                 }
-
-                currentEvents.add(new Event(resultSetItem.getAll(),
-                            EventType.get(resultSetItem.get("Events.eventType")
-                                    .map(Object::toString)
-                                    .orElseThrow(() -> new IllegalStateException("Type into Event is expected")))
-                ));
-
-                previousLookBackWindow = currentLookBackWindow;
             }
 
-            if (!currentEvents.isEmpty()) {
-                sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-            }
+            currentEvents.add(new Event(resultSetItem.getAll(),
+                        EventType.get(resultSetItem.get("Events.eventType")
+                                .map(Object::toString)
+                                .orElseThrow(() -> new IllegalStateException("Type into Event is expected")))
+            ));
 
-            return sessions;
-        } catch (DotDataException | DotSecurityException e) {
-            throw new RuntimeException(e);
+            previousLookBackWindow = currentLookBackWindow;
         }
+
+        if (!currentEvents.isEmpty()) {
+            sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
+        }
+
+        return sessions;
     }
 
     private AnalyticsApp resolveAnalyticsApp(final User user) throws DotDataException, DotSecurityException {
@@ -1245,7 +1245,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     LanguageUtil.get(
                         user,
                         "analytics.app.not.configured",
-                        AnalyticsHelper.extractMissingAnalyticsProps(e)))
+                        AnalyticsHelper.get().extractMissingAnalyticsProps(e)))
                     .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())));
         }
     }

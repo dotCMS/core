@@ -196,7 +196,7 @@ public class AnalyticsHelper {
      * @param tokenStatus token status
      * @return true if it has a {@link TokenStatus#OK} or {@link TokenStatus#IN_WINDOW}
      */
-    private static boolean canUseToken(final TokenStatus tokenStatus) {
+    private boolean canUseToken(final TokenStatus tokenStatus) {
         return tokenStatus.matchesAny(TokenStatus.OK, TokenStatus.IN_WINDOW);
     }
 
@@ -402,7 +402,7 @@ public class AnalyticsHelper {
      * @param exception provided exception
      * @return missing analytics properties
      */
-    public static String extractMissingAnalyticsProps(final IllegalStateException exception) {
+    public String extractMissingAnalyticsProps(final IllegalStateException exception) {
         final int openBracket = exception.getMessage().indexOf("[");
         final int closeBracket = exception.getMessage().indexOf("]");
 
