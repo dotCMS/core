@@ -32,8 +32,6 @@ export interface SeoRulesResult {
     itemIcon: string;
 }
 
-export interface SeoMeta {
-    key: string;
-    value?: string;
-    element: HTMLElement;
+export interface MetaTags {
+    [key: string]: string | NodeListOf<Element> | string[] | undefined;
 }

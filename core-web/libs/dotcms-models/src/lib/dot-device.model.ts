@@ -10,7 +10,3 @@ export interface DotDevice {
 export interface DotDeviceListItem extends DotDevice {
     icon: string;
 }
-
-export interface MetaTags {
-    [key: string]: string | NodeListOf<Element> | string[] | undefined;
-}

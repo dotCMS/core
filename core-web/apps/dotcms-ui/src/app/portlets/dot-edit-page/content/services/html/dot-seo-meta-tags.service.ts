@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { MetaTags } from '@dotcms/dotcms-models';
 
 import {
+    MetaTags,
     SEO_LIMITS,
     SEO_OPTIONS,
     SEO_RULES_COLORS,
