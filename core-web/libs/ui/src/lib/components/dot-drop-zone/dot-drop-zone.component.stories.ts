@@ -1,3 +1,4 @@
+import { action } from '@storybook/addon-actions';
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
@@ -11,11 +12,25 @@ export default {
         moduleMetadata({
             imports: [CommonModule]
         })
-    ]
+    ],
+    parameters: {
+        // https://storybook.js.org/docs/6.5/angular/essentials/actions#action-event-handlers
+        actions: {
+            // detect if the component is emitting the correct HTML events
+            handles: ['fileDrop', 'dragStart', 'dragStop', 'dropZoneError']
+        }
+    }
 } as Meta<DotDropZoneComponent>;
 
 const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
-    props: args,
+    props: {
+        ...args,
+        // https://storybook.js.org/docs/6.5/angular/essentials/actions#action-args
+        fileDrop: action('fileDrop'),
+        dragStart: action('dragStart'),
+        dragStop: action('dragStop'),
+        dropZoneError: action('dropZoneError')
+    },
     styles: [
         `
         .drop-zone-active .content {
@@ -41,7 +56,14 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
     `
     ],
     template: `
-        <dot-drop-zone [allowedExtensions]="allowedExtensions" [allowedMimeTypes]="allowedMimeTypes">
+        <dot-drop-zone
+            [allowedExtensions]="allowedExtensions"
+            [allowedMimeTypes]="allowedMimeTypes"
+            (fileDrop)="fileDrop($event)"
+            (dragStart)="dragStart($event)"
+            (dragStop)="dragStop($event)"
+            (dropZoneError)="dropZoneError($event)"
+        >
             <div class="content">
                 Drop files here.
 
