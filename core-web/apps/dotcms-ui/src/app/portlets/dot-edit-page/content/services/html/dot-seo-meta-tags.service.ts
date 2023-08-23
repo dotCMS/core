@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { MetaTags } from '@dotcms/dotcms-models';
 
 import {
     SEO_LIMITS,
@@ -93,7 +94,7 @@ export class DotSeoMetaTagsService {
         return result.sort((a, b) => a.sort - b.sort);
     }
 
-    private getFaviconItems(metaTagsObject) {
+    private getFaviconItems(metaTagsObject: MetaTags) {
         const items = [];
         const favicon = metaTagsObject['favicon'];
         const faviconElements = metaTagsObject['faviconElements'];
@@ -145,7 +146,7 @@ export class DotSeoMetaTagsService {
         };
     }
 
-    private getDescriptionItems(metaTagsObject) {
+    private getDescriptionItems(metaTagsObject: MetaTags) {
         const result = [];
         const ogDescription = metaTagsObject['og:description'];
         const description = metaTagsObject['description'];
@@ -177,7 +178,7 @@ export class DotSeoMetaTagsService {
         return result;
     }
 
-    private getTitleItems(metaTagsObject) {
+    private getTitleItems(metaTagsObject: MetaTags) {
         const result = [];
         const title = metaTagsObject['title'];
         const titleElements = metaTagsObject['titleElements'];
