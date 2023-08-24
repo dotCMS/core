@@ -55,7 +55,7 @@
     box-shadow: $md-shadow-6;
     padding: $spacing-1;
     margin-top: $spacing-1;
-    height: 17.5rem !important;
+    max-height: 17.5rem !important;
 
     .dijitMenuItem {
         display: flex;

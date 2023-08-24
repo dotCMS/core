@@ -5007,7 +5007,7 @@
   box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
   padding: 0.5rem;
   margin-top: 0.5rem;
-  height: 17.5rem !important;
+  max-height: 17.5rem !important;
 }
 .dijitComboBoxMenuPopup .dijitMenuItem {
   display: flex;
