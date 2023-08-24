@@ -1,7 +1,7 @@
 # ----------------------------------------------
 # Stage 1:  Minimal java image with sdkman + Ubuntu LTS
 # ----------------------------------------------
-FROM ubuntu:20.04 as base-builder
+FROM mcr.microsoft.com/openjdk/jdk:11-ubuntu as base-builder
 
 WORKDIR /srv
 
@@ -23,7 +23,7 @@ RUN wget -O - https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/c
     chmod a+x /usr/bin/curl 
 
 # Downloading sdkman
-RUN curl -sL "https://get.sdkman.io" | bash
+#RUN curl -sL "https://get.sdkman.io" | bash
 
 # Installing Java via sdkman 
     # Modules included
@@ -38,11 +38,7 @@ RUN curl -sL "https://get.sdkman.io" | bash
     # jdk.compiler needed to build
     # jdk.zipfs needed for gradle
 
-RUN bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
-    sdk list java && \
-    yes | sdk install java $JAVA_VERSION " && \
-    # Create a java runtime image to run dotCMS
-    /root/.sdkman/candidates/java/$JAVA_VERSION/bin/jlink \
+RUN jlink \
     --verbose \
     --add-modules \
         java.base,jdk.crypto.ec,jdk.jdwp.agent,jdk.management,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi,jdk.compiler,jdk.zipfs,jdk.naming.dns,jdk.localedata,java.xml,jdk.xml.dom \
@@ -63,4 +59,3 @@ RUN rm -rf /root/.sdkman && \
 # ----------------------------------------------
 FROM scratch
 COPY --from=base-builder / /
-
