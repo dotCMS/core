@@ -69,7 +69,7 @@
                     >
                         <button
                             class="device-list__button"
-                            (click)="changeTileEvent(tile.label); op.hide()"
+                            (click)="changeSeoMediaEvent(tile.label); op.hide()"
                         >
                             <i [class]="tile.icon"></i>
                             <span class="device-list-item__name">{{ tile.label }}</span>
@@ -89,7 +89,7 @@
                 <ul class="device-list">
                     <li
                         class="device-list-item device-list-item-media"
-                        (click)="changeTileEvent('Google'); op.hide()"
+                        (click)="changeSeoMediaEvent('Google'); op.hide()"
                     >
                         <i class="pi pi-google"></i>
                         <span class="device-list-item__name">Google</span>

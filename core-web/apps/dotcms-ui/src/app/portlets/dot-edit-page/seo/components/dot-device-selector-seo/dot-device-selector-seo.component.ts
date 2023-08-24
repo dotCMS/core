@@ -49,7 +49,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
-    @Output() changeTile = new EventEmitter<string>();
+    @Output() changeSeoMedia = new EventEmitter<string>();
     @ViewChild('op') overlayPanel: OverlayPanel;
     previewUrl: string;
     protected linkToAddDevice = '/c/content';
@@ -136,8 +136,8 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
      * Emit selected changes
      * @param DotDevice device
      */
-    changeTileEvent(tile: string) {
-        this.changeTile.emit(tile);
+    changeSeoMediaEvent(tile: string) {
+        this.changeSeoMedia.emit(tile);
     }
 
     /**
