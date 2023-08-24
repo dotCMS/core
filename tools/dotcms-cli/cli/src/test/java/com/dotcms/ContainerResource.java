@@ -26,6 +26,7 @@ import java.util.Map;
 @QuarkusTest
 public class ContainerResource implements QuarkusTestResourceLifecycleManager {
 
+    private static final boolean TESTCONTAINERS_ENABLED;
     private static final int POSTGRES_SERVICE_PORT;
     private static final int ELASTICSEARCH_SERVICE_PORT;
     private static final int DOTCMS_SERVICE_PORT;
@@ -34,6 +35,7 @@ public class ContainerResource implements QuarkusTestResourceLifecycleManager {
     static DockerComposeContainer<?> COMPOSE_CONTAINER;
 
     static {
+        TESTCONTAINERS_ENABLED = Boolean.parseBoolean(ConfigProvider.getConfig().getValue("testcontainers.enabled", String.class));
 
         POSTGRES_SERVICE_PORT = Integer.parseInt(ConfigProvider.getConfig().getValue("testcontainers.postgres.service.port", String.class));
         ELASTICSEARCH_SERVICE_PORT = Integer.parseInt(ConfigProvider.getConfig().getValue("testcontainers.elasticsearch.service.port", String.class));
@@ -64,6 +66,10 @@ public class ContainerResource implements QuarkusTestResourceLifecycleManager {
     @Override
     public Map<String, String> start() {
 
+        if (!TESTCONTAINERS_ENABLED) {
+            return new HashMap<>();
+        }
+
         COMPOSE_CONTAINER.start();
         final Map<String, String> conf = new HashMap<>();
         conf.put("%test.dotcms.url", COMPOSE_CONTAINER.getServiceHost("dotcms", DOTCMS_SERVICE_PORT) + ":" + COMPOSE_CONTAINER.getServicePort("dotcms", DOTCMS_SERVICE_PORT));
@@ -73,6 +79,9 @@ public class ContainerResource implements QuarkusTestResourceLifecycleManager {
 
     @Override
     public void stop() {
+        if (!TESTCONTAINERS_ENABLED) {
+            return;
+        }
         COMPOSE_CONTAINER.stop();
     }
 }

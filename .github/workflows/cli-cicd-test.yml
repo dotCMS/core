@@ -40,7 +40,7 @@ jobs:
             BUILD_ID=$(basename "${{ github.ref }}")
           fi
           
-          ./mvnw clean verify
+          ./mvnw clean verify -Dtest.failure.ignore=true
           
           FAILURES=$(find target -name TEST-*.xml | xargs grep '<failure' | wc -l)
           
