@@ -15,12 +15,14 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.model.User;
 
 import java.time.Instant;
 
 import static com.dotcms.analytics.app.AnalyticsApp.ANALYTICS_APP_CONFIG_URL_KEY;
 import static com.dotcms.analytics.app.AnalyticsApp.ANALYTICS_APP_READ_URL_KEY;
 import static com.dotcms.analytics.app.AnalyticsApp.ANALYTICS_APP_WRITE_URL_KEY;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -94,6 +96,7 @@ public class AnalyticsTestUtils {
 
         final AnalyticsHelper mockAnalyticsHelper = mock(AnalyticsHelper.class);
         when(mockAnalyticsHelper.appFromHost(currentHost)).thenReturn(mockAnalyticsApp);
+        when(mockAnalyticsHelper.resolveAnalyticsApp(any(User.class))).thenReturn(mockAnalyticsApp);
 
         return mockAnalyticsHelper;
     }

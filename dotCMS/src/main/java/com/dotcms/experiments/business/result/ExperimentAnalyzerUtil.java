@@ -8,7 +8,6 @@ import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.MetricType;
 
-import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSQuery.Builder;
@@ -23,6 +22,7 @@ import com.dotcms.experiments.model.Goal.GoalType;
 import com.dotcms.experiments.model.Goals;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -36,8 +36,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 
 /**
@@ -74,12 +72,10 @@ public enum ExperimentAnalyzerUtil {
      *
      * @param experiment
      * @param browserSessions
-     * @param accessToken
      * @return
      */
     public ExperimentResults getExperimentResult(final Experiment experiment,
-                                                 final List<BrowserSession> browserSessions,
-                                                 final AccessToken accessToken)
+                                                 final List<BrowserSession> browserSessions)
             throws DotDataException, DotSecurityException {
 
         final Goals goals = experiment.goals()
@@ -95,8 +91,7 @@ public enum ExperimentAnalyzerUtil {
         if (!browserSessions.isEmpty()) {
             final CubeJSResultSet pageViewsByVariants = getPageViewsByVariants(
                     experiment,
-                    variants,
-                    accessToken);
+                    variants);
             pageViewsByVariants.forEach(row -> {
                 final String variantId = row.get("Events.variant")
                         .map(Object::toString)
@@ -160,8 +155,7 @@ public enum ExperimentAnalyzerUtil {
     }
 
     private static CubeJSResultSet getPageViewsByVariants(
-            final Experiment experiment, final SortedSet<ExperimentVariant> variants,
-            final AccessToken accessToken)
+            final Experiment experiment, final SortedSet<ExperimentVariant> variants)
             throws DotDataException, DotSecurityException {
 
         final CubeJSQuery cubeJSQuery = new Builder()
@@ -174,10 +168,7 @@ public enum ExperimentAnalyzerUtil {
 
         final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
         final AnalyticsApp analyticsApp = analyticsHelper.appFromHost(currentHost);
-
-        final CubeJSClient cubeClient = new CubeJSClient(
-                analyticsApp.getAnalyticsProperties().analyticsReadUrl(),
-                accessToken);
+        final CubeJSClient cubeClient = FactoryLocator.getCubeJSClientFactory().create(analyticsApp);
 
         return cubeClient.send(cubeJSQuery);
     }

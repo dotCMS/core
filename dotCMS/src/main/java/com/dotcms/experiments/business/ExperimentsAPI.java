@@ -209,14 +209,9 @@ public interface ExperimentsAPI {
      *
      * @param experiment
      * @param user
-     * @param analyticsApp
-     * @param accessToken
      * @return
      */
-    List<BrowserSession> getEvents(Experiment experiment,
-                                   User user,
-                                   AnalyticsApp analyticsApp,
-                                   AccessToken accessToken) throws DotDataException;
+    List<BrowserSession> getEvents(Experiment experiment, User user) throws DotDataException, DotSecurityException;
 
     /*
      * Ends finalized {@link com.dotcms.experiments.model.Experiment}s

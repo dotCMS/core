@@ -14,8 +14,6 @@ import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VA
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.util.DateUtil.isTimeReach;
 
-import com.dotcms.analytics.AnalyticsAPI;
-import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.model.BayesianInput;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
@@ -27,10 +25,11 @@ import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.metrics.MetricsUtil;
-import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cube.CubeJSClient;
+import com.dotcms.cube.CubeJSClientFactory;
+import com.dotcms.cube.CubeJSClientFactoryImpl;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
@@ -72,7 +71,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -95,7 +93,6 @@ import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
@@ -133,7 +130,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
     final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
     final BayesianAPI bayesianAPI = APILocator.getBayesianAPI();
-    final AnalyticsAPI analyticsAPI = APILocator.getAnalyticsAPI();
+    final CubeJSClientFactory cubeJSClientFactory = FactoryLocator.getCubeJSClientFactory();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -1151,11 +1148,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
             "The Experiment must be RUNNING or ENDED to get results");
 
-        final AnalyticsApp analyticsApp = resolveAnalyticsApp(user);
-        final AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
-        final List<BrowserSession> events = getEvents(experimentFromDataBase, user, analyticsApp, accessToken);
+        final List<BrowserSession> events = getEvents(experimentFromDataBase, user);
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
-                experimentFromDataBase, events, accessToken );
+                experimentFromDataBase, events);
 
         experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
 
@@ -1193,12 +1188,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public List<BrowserSession> getEvents(final Experiment experiment,
-                                          final User user,
-                                          final AnalyticsApp analyticsApp,
-                                          final AccessToken accessToken) throws DotDataException {
-        final CubeJSClient cubeClient = new CubeJSClient(
-                analyticsApp.getAnalyticsProperties().analyticsReadUrl(),
-                accessToken);
+                                          final User user) throws DotDataException, DotSecurityException {
+        final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
         final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
                 .create(experiment);
         final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
@@ -1233,21 +1224,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return sessions;
-    }
-
-    private AnalyticsApp resolveAnalyticsApp(final User user) throws DotDataException, DotSecurityException {
-        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
-        try {
-            return analyticsHelper.appFromHost(currentHost);
-        } catch (final IllegalStateException e) {
-            throw new DotDataException(
-                Try.of(() ->
-                    LanguageUtil.get(
-                        user,
-                        "analytics.app.not.configured",
-                        AnalyticsHelper.get().extractMissingAnalyticsProps(e)))
-                    .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())));
-        }
     }
 
     @Override

@@ -8,20 +8,15 @@ import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.cube.CubeJSQuery.Builder;
-
-
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
-
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
 
 import com.liferay.util.StringPool;
 
-
 import java.net.HttpURLConnection;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;

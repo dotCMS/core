@@ -12,8 +12,6 @@ import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 
-import com.dotcms.analytics.model.AccessToken;
-import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -57,7 +55,7 @@ public class ExperimentAnalyzerUtilIntegrationTest {
     }
 
     /**
-     * Method to test: {@link ExperimentAnalyzerUtil#getExperimentResult(Experiment, List, AccessToken)}
+     * Method to test: {@link ExperimentAnalyzerUtil#getExperimentResult(Experiment, List)}
      * When:
      * - You have 4 pages: A, B, C and D
      * - Create a Experiment with a PAGE_REACH goal where:
@@ -128,7 +126,7 @@ public class ExperimentAnalyzerUtilIntegrationTest {
                 browserSession_5);
 
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE
-                .getExperimentResult(experiment, browserSessions, getAccessToken());
+                .getExperimentResult(experiment, browserSessions);
 
         assertEquals(3, experimentResults.getSessions());
 
@@ -156,17 +154,6 @@ public class ExperimentAnalyzerUtilIntegrationTest {
             }
         }
 
-    }
-
-    private static AccessToken getAccessToken() {
-        return AnalyticsTestUtils.createAccessToken(
-            "123456789",
-            "client",
-            null,
-            "some-scope",
-            "Bearer",
-            TokenStatus.OK,
-            Instant.now());
     }
 
     private static List<BrowserSession> createBrowserSessions(
@@ -197,7 +184,7 @@ public class ExperimentAnalyzerUtilIntegrationTest {
     }
 
     /**
-     * Method to test: {@link ExperimentAnalyzerUtil#getExperimentResult(Experiment, List, AccessToken)}
+     * Method to test: {@link ExperimentAnalyzerUtil#getExperimentResult(Experiment, List)}
      * When:
      * - You have 4 pages: A, B, and C
      * - Create an Experiment with a EXIT_RATE goal where:
@@ -267,7 +254,7 @@ public class ExperimentAnalyzerUtilIntegrationTest {
                 browserSession_3.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
 
         final ExperimentResults experimentResult = ExperimentAnalyzerUtil.INSTANCE
-                .getExperimentResult(experiment, browserSessions, getAccessToken());
+                .getExperimentResult(experiment, browserSessions);
 
         assertEquals(2, experimentResult.getSessions());
 
