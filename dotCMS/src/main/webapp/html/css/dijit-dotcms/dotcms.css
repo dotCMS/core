@@ -4851,7 +4851,11 @@
   position: relative;
   width: 2.5rem;
 }
-.dijitCalendarDecrease:before {
+.dijitCalendarDecrementArrow {
+  position: absolute;
+}
+.dijitCalendarDecrementArrow:before {
+  position: relative;
   left: 50%;
   margin-left: -2.5px;
   margin-top: -5px;
@@ -4864,7 +4868,12 @@
   height: 0;
   width: 0;
 }
-.dijitCalendarIncrease:before {
+.dijitCalendarIncrementArrow {
+  position: absolute;
+  right: 0.5rem;
+}
+.dijitCalendarIncrementArrow:before {
+  position: relative;
   left: 50%;
   margin-left: -2.5px;
   margin-top: -5px;
@@ -4888,6 +4897,7 @@
   line-height: 1.875rem;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton {
+  margin-top: 0.25rem;
   border-radius: 0;
   background-color: transparent;
   height: calc(1.875rem + 3px);
