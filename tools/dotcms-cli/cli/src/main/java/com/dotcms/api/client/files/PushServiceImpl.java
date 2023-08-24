@@ -137,11 +137,13 @@ public class PushServiceImpl implements PushService {
                 var errors = pushTreeFuture.get();
                 if (!errors.isEmpty()) {
                     failed = true;
-                    output.info(String.format("\n\nFound [@|bold,red %s|@] errors during the push process:",
-                            errors.size()));
+                    output.info(String.format("\n\nFound [@|bold,red %s|@] errors during the push process:", errors.size()));
+                    long count = errors.stream().filter(TraversalTaskException.class::isInstance).count();
+                    int c = 0;
                     for (var error : errors) {
                         if (error instanceof TraversalTaskException) {
-                            output.error(String.format("%s --- %s", error.getMessage(), error.getCause().getMessage()));
+                            c++;
+                            output.handleCommandException(error, String. format("%s --- %s %n", error.getMessage(), error.getCause().getMessage()), c == count);
                         } else {
                             output.error(error.getMessage());
                         }

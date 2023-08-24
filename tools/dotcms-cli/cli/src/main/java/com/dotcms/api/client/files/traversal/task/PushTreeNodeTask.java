@@ -97,6 +97,8 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                 processAsset(rootNode.folder(), asset);
             } catch (Exception e) {
                 if (failFast) {
+                    //This adds a line so when the exception gets written to the console it looks consistent
+                    this.progressBar.done();
                     throw e;
                 } else {
                     errors.add(e);
