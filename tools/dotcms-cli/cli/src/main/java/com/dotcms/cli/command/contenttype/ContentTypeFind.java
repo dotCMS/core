@@ -76,7 +76,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
     private int list() {
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
         final int pageSize = 10;
-        int page = 0;
+        int page = 1;
         while (true) {
             final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.getContentTypes(
                     null, page, null, "variable", null, null, null);
