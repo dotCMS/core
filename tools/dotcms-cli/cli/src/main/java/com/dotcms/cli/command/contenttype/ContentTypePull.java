@@ -10,6 +10,7 @@ import com.dotcms.common.WorkspaceManager;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.Workspace;
+import com.dotcms.model.views.CommonViews;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -64,11 +65,11 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
                 final ContentType contentType = responseEntityView.entity();
                 final ObjectMapper objectMapper = formatOption.objectMapper();
 
-                if(shortOutputOption.isShortOutput()) {
-                    final String asString = shortFormat(contentType);
-                    output.info(asString);
-                } else {
-                    final String asString = objectMapper.writeValueAsString(contentType);
+        if(shortOutputOption.isShortOutput()) {
+            final String asString = shortFormat(contentType);
+            output.info(asString);
+        } else {
+                    final String asString = objectMapper.writerWithView(CommonViews.InternalView.class).writeValueAsString(contentType);
                     if(output.isVerbose()) {
                         output.info(asString);
                     }
