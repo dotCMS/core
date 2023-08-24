@@ -92,7 +92,7 @@ describe('DotDropZoneComponent', () => {
 
         describe('when multiple files are being dragged', () => {
             it('should set multiFileError to true if multiplefiles are being dragged', () => {
-                const spyError = spyOn(spectator.component.dropZoneError, 'emit');
+                const spyError = spyOn(spectator.component.fileDropError, 'emit');
                 const file1 = new File([''], 'filename', { type: 'text/html' });
                 const file2 = new File([''], 'filename', { type: 'text/html' });
                 mockDataTransfer.items.add(file1);
@@ -117,7 +117,7 @@ describe('DotDropZoneComponent', () => {
 
             it('should set invalidFile to true if file is not valid', () => {
                 const spy = spyOn(spectator.component.fileDrop, 'emit');
-                const spyError = spyOn(spectator.component.dropZoneError, 'emit');
+                const spyError = spyOn(spectator.component.fileDropError, 'emit');
 
                 const event = new DragEvent('drop', {
                     dataTransfer: mockDataTransfer
@@ -132,8 +132,8 @@ describe('DotDropZoneComponent', () => {
     });
 
     describe('onDragEnter', () => {
-        it('should emit dragStart to true and add drop-zone-active class', () => {
-            const spy = spyOn(spectator.component.dragStart, 'emit');
+        it('should emit fileDragEnter to true and add drop-zone-active class', () => {
+            const spy = spyOn(spectator.component.fileDragEnter, 'emit');
             const event = new DragEvent('dragenter');
 
             spectator.component.onDragEnter(event);
@@ -183,8 +183,8 @@ describe('DotDropZoneComponent', () => {
     });
 
     describe('onDragLeave', () => {
-        it('should set active & error to false', () => {
-            const spy = spyOn(spectator.component.dragStop, 'emit');
+        it('should emit fileDragLeave and set active/error to false', () => {
+            const spy = spyOn(spectator.component.fileDragLeave, 'emit');
             spectator.component.active = true;
             spectator.component.error = true;
 

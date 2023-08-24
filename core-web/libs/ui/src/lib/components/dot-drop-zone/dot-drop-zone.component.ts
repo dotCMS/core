@@ -24,9 +24,9 @@ export enum DropZoneError {
 })
 export class DotDropZoneComponent {
     @Output() fileDrop = new EventEmitter<File>();
-    @Output() dropZoneError = new EventEmitter<DropZoneError>();
-    @Output() dragStart = new EventEmitter<boolean>();
-    @Output() dragStop = new EventEmitter<boolean>();
+    @Output() fileDropError = new EventEmitter<DropZoneError>();
+    @Output() fileDragEnter = new EventEmitter<boolean>();
+    @Output() fileDragLeave = new EventEmitter<boolean>();
 
     @Input() set accept(types: string[]) {
         this._accept = types.map((type) => {
@@ -77,7 +77,7 @@ export class DotDropZoneComponent {
         event.stopPropagation();
         event.preventDefault();
         this.setActive();
-        this.dragStart.emit(true);
+        this.fileDragEnter.emit(true);
     }
 
     @HostListener('dragover', ['$event'])
@@ -93,7 +93,7 @@ export class DotDropZoneComponent {
         event.stopPropagation();
         event.preventDefault();
         this.setDesactive();
-        this.dragStop.emit(true);
+        this.fileDragLeave.emit(true);
     }
 
     /**
@@ -139,7 +139,7 @@ export class DotDropZoneComponent {
      */
     private emitError(error: DropZoneError) {
         this.error = true;
-        this.dropZoneError.emit(error);
+        this.fileDropError.emit(error);
     }
 
     /**
