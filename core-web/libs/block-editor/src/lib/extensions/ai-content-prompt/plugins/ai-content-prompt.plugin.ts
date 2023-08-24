@@ -120,7 +120,7 @@ export class AIContentPromptView {
 
     show() {
         this.tippy?.show();
-        this.component.instance.input.nativeElement.focus();
+        this.component.instance.focusField();
     }
 
     hide() {

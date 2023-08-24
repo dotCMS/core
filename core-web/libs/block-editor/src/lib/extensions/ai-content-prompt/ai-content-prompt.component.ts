@@ -1,7 +1,7 @@
 import { of } from 'rxjs';
 
 import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { catchError } from 'rxjs/operators';
 
@@ -23,7 +23,9 @@ export class AIContentPromptComponent {
     @Output() formSubmission = new EventEmitter<boolean>();
 
     loading = false;
-    form: FormGroup;
+    form = new FormGroup({
+        textPrompt: new FormControl('')
+    });
 
     constructor(private fb: FormBuilder, private aiContentService: AiContentService) {
         this.buildForm();
@@ -48,6 +50,10 @@ export class AIContentPromptComponent {
 
     cleanForm() {
         this.form.reset();
+    }
+
+    focusField() {
+        this.input.nativeElement.focus();
     }
 
     private buildForm() {
