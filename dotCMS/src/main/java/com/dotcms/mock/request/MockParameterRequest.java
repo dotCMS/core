@@ -66,4 +66,9 @@ public class MockParameterRequest extends HttpServletRequestWrapper implements M
         
 
     }
+
+    @Override
+    public String[] getParameterValues(String name) {
+        return params.containsKey(name) ? new String[]{params.get(name)} : null;
+    }
 }
