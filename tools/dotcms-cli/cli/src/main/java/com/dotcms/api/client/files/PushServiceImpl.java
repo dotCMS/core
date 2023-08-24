@@ -102,7 +102,7 @@ public class PushServiceImpl implements PushService {
         do {
 
             if (retryAttempts > 0) {
-                output.info(String.format("\n↺ Retrying push process [%d of %d]...", retryAttempts, maxRetryAttempts));
+                output.info(String.format("%n↺ Retrying push process [%d of %d]...", retryAttempts, maxRetryAttempts));
             }
 
             // ConsoleProgressBar instance to handle the push progress bar
@@ -137,13 +137,12 @@ public class PushServiceImpl implements PushService {
                 var errors = pushTreeFuture.get();
                 if (!errors.isEmpty()) {
                     failed = true;
-                    output.info(String.format("\n\nFound [@|bold,red %s|@] errors during the push process:", errors.size()));
+                    output.info(String.format("%n%nFound [@|bold,red %s|@] errors during the push process:", errors.size()));
                     long count = errors.stream().filter(TraversalTaskException.class::isInstance).count();
                     int c = 0;
                     for (var error : errors) {
                         if (error instanceof TraversalTaskException) {
                             c++;
-                            //"Error in command [%s] with message: %n "
                             output.handleCommandException(error, String. format("%s %n", error.getMessage()), c == count);
 
                         } else {
