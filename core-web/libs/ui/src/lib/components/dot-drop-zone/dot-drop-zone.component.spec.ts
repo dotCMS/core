@@ -42,7 +42,7 @@ describe('DotDropZoneComponent', () => {
 
     describe('onDrop', () => {
         it('should emit fileDrop and set active to false', () => {
-            const spy = spyOn(spectator.component.fileDrop, 'emit');
+            const spy = spyOn(spectator.component.fileDropped, 'emit');
             spectator.component.active = true;
 
             const event = new DragEvent('drop', {
@@ -76,7 +76,7 @@ describe('DotDropZoneComponent', () => {
             });
 
             it('should emit fileDrop and set active to false', () => {
-                const spy = spyOn(spectator.component.fileDrop, 'emit');
+                const spy = spyOn(spectator.component.fileDropped, 'emit');
                 spectator.component.active = true;
 
                 const event = new DragEvent('drop', {
@@ -116,7 +116,7 @@ describe('DotDropZoneComponent', () => {
             });
 
             it('should set invalidFile to true if file is not valid', () => {
-                const spy = spyOn(spectator.component.fileDrop, 'emit');
+                const spy = spyOn(spectator.component.fileDropped, 'emit');
                 const spyError = spyOn(spectator.component.fileDropError, 'emit');
 
                 const event = new DragEvent('drop', {

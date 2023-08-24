@@ -26,7 +26,7 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
     props: {
         ...args,
         // https://storybook.js.org/docs/6.5/angular/essentials/actions#action-args
-        fileDrop: action('fileDrop'),
+        fileDropped: action('fileDropped'),
         fileDropError: action('fileDropError'),
         fileDragEnter: action('fileDragEnter'),
         fileDragLeave: action('fileDragLeave')
@@ -58,7 +58,7 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
     template: `
         <dot-drop-zone
             [accept]="accept"
-            (fileDrop)="fileDrop($event)"
+            (fileDropped)="fileDropped($event)"
             (fileDragEnter)="fileDragEnter($event)"
             (fileDragLeave)="fileDragLeave($event)"
             (fileDropError)="fileDropError($event)"

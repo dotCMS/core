@@ -23,7 +23,7 @@ export enum DropZoneError {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotDropZoneComponent {
-    @Output() fileDrop = new EventEmitter<File>();
+    @Output() fileDropped = new EventEmitter<File>();
     @Output() fileDropError = new EventEmitter<DropZoneError>();
     @Output() fileDragEnter = new EventEmitter<boolean>();
     @Output() fileDragLeave = new EventEmitter<boolean>();
@@ -69,7 +69,7 @@ export class DotDropZoneComponent {
 
         dataTransfer.items?.clear();
         dataTransfer.clearData();
-        this.fileDrop.emit(file);
+        this.fileDropped.emit(file);
     }
 
     @HostListener('dragenter', ['$event'])

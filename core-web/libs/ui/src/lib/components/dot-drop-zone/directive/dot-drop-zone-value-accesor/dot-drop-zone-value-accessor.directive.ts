@@ -26,7 +26,7 @@ export class DotDropZoneValueAccessorDirective implements ControlValueAccessor, 
     }
 
     ngOnInit() {
-        this._dotDropZone.fileDrop.subscribe((files: File[]) => {
+        this._dotDropZone.fileDropped.subscribe((files: File[]) => {
             this.onChange(files);
             this.onTouched();
         });
