@@ -1,11 +1,5 @@
 @use "variables" as *;
 
-$main-card-width: 47.6rem;
-$card-favicon-radius: 6.25rem;
-$version-small: 24.375rem;
-$result-card-width: 47.6rem;
-$line-height: 1.3rem;
-
 :host {
     width: 100%;
     overflow: scroll;
@@ -19,7 +13,7 @@ $line-height: 1.3rem;
 }
 
 .results-seo-tool__main-card {
-    width: $main-card-width;
+    width: 47.6rem;
     border-radius: $border-radius-xl;
     box-shadow: $md-shadow-6;
     margin: $spacing-6 0;
@@ -56,7 +50,7 @@ $line-height: 1.3rem;
 }
 
 .results-seo-tool__card-favicon {
-    border-radius: $card-favicon-radius;
+    border-radius: 6.25rem;
     background: $color-palette-gray-200;
     padding: $spacing-1;
 }
@@ -72,11 +66,11 @@ $line-height: 1.3rem;
 }
 
 .results-seo-tool__version--small {
-    width: $version-small;
+    width: 24.375rem;
 }
 
 .results-seo-tool__result-card {
-    width: $result-card-width;
+    width: 47.6rem;
     margin-bottom: $spacing-4;
 }
 
@@ -117,7 +111,7 @@ $line-height: 1.3rem;
     display: flex;
     align-items: flex-start;
     gap: $spacing-1;
-    line-height: $line-height;
+    line-height: 1.3rem;
     color: $color-palette-gray-900;
     font-size: $font-size-sm;
 }

@@ -187,8 +187,12 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
         this.dotPageStateService.setDevice(device);
     }
 
-    changeSeoTile(seoTile: string): void {
-        this.dotPageStateService.setSeoTile(seoTile);
+    /**
+     * Change SEO Media
+     * @param seoMedia
+     */
+    changeSeoMedia(seoMedia: string): void {
+        this.dotPageStateService.setSeoMedia(seoMedia);
     }
 
     private canTakeLock(pageState: DotPageRenderState): boolean {

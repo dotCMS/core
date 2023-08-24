@@ -238,8 +238,13 @@ export class DotPageStateService {
         this.state$.next(this.currentState);
     }
 
-    setSeoTile(seoTitle: string): void {
-        this.currentState.seoTile = seoTitle;
+    /**
+     * Set the SEO media to show in the page
+     * @param seoTitle
+     */
+
+    setSeoMedia(seoTitle: string): void {
+        this.currentState.seoMedia = seoTitle;
         this.state$.next(this.currentState);
     }
 

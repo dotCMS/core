@@ -3,12 +3,14 @@ import { Injectable } from '@angular/core';
 import { DotMessageService } from '@dotcms/data-access';
 
 import {
-    MetaTags,
+    SeoMetaTags,
     SEO_LIMITS,
     SEO_OPTIONS,
     SEO_RULES_COLORS,
     SEO_RULES_ICONS,
-    SeoRulesResult
+    SeoKeyResult,
+    SeoRulesResult,
+    SeoMetaTagsResult
 } from '../dot-edit-content-html/models/meta-tags-model';
 
 @Injectable()
@@ -16,11 +18,11 @@ export class DotSeoMetaTagsService {
     constructor(private dotMessageService: DotMessageService) {}
 
     /**
-     * Get meta tags
+     * Get meta tags from the document
      * @param pageDocument
      * @returns
      */
-    public getMetaTags(pageDocument: Document) {
+    getMetaTags(pageDocument: Document): SeoMetaTags {
         const metaTags = pageDocument.getElementsByTagName('meta');
         let metaTagsObject = {};
 
@@ -44,12 +46,12 @@ export class DotSeoMetaTagsService {
     }
 
     /**
-     * Get getMetaTagsResults
+     * Get the object with the SEO Result
      * @param pageDocument
      * @returns
      */
-    public getMetaTagsResults(pageDocument: Document) {
-        const result = [];
+    getMetaTagsResults(pageDocument: Document): SeoMetaTagsResult[] {
+        const result: SeoMetaTagsResult[] = [];
         const metaTagsObject = this.getMetaTags(pageDocument);
         Object.keys(metaTagsObject).forEach((key) => {
             if (key === SEO_OPTIONS.FAVICON) {
@@ -94,8 +96,8 @@ export class DotSeoMetaTagsService {
         return result.sort((a, b) => a.sort - b.sort);
     }
 
-    private getFaviconItems(metaTagsObject: MetaTags) {
-        const items = [];
+    private getFaviconItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
+        const items: SeoRulesResult[] = [];
         const favicon = metaTagsObject['favicon'];
         const faviconElements = metaTagsObject['faviconElements'];
 
@@ -126,7 +128,7 @@ export class DotSeoMetaTagsService {
         return items;
     }
 
-    private getKeyValues(items: SeoRulesResult[]) {
+    private getKeyValues(items: SeoRulesResult[]): SeoKeyResult {
         let keyIcon = SEO_RULES_ICONS.CHECK_CIRCLE;
         let keyColor = SEO_RULES_COLORS.DONE;
 
@@ -146,8 +148,8 @@ export class DotSeoMetaTagsService {
         };
     }
 
-    private getDescriptionItems(metaTagsObject: MetaTags) {
-        const result = [];
+    private getDescriptionItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
+        const result: SeoRulesResult[] = [];
         const ogDescription = metaTagsObject['og:description'];
         const description = metaTagsObject['description'];
 
@@ -178,8 +180,8 @@ export class DotSeoMetaTagsService {
         return result;
     }
 
-    private getTitleItems(metaTagsObject: MetaTags) {
-        const result = [];
+    private getTitleItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
+        const result: SeoRulesResult[] = [];
         const title = metaTagsObject['title'];
         const titleElements = metaTagsObject['titleElements'];
 

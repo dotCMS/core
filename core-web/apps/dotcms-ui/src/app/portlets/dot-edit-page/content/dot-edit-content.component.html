@@ -48,54 +48,55 @@
     <div class="dot-edit-content__wrapper">
         <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
         <dot-results-seo-tool
-            *ngIf="pageState.seoTile"
+            *ngIf="pageState.seoMedia; else dotEditIframe"
             [seoOGTagsResults]="seoOGTagsResults"
             [seoOGTags]="seoOGTags"
             [pageState]="pageState"
         ></dot-results-seo-tool>
-
-        <div
-            class="dot-edit__page-wrapper"
-            *ngIf="!pageState.seoTile"
-            [class.dot-edit__page-wrapper--deviced]="pageState.viewAs.device"
-        >
+        <ng-template #dotEditIframe>
             <div
-                class="dot-edit__device-wrapper"
-                [ngStyle]="{
-                    width: pageState.viewAs.device
-                        ? pageState.viewAs.device.cssWidth + 'px'
-                        : '100%',
-                    height: pageState.viewAs.device
-                        ? pageState.viewAs.device.cssHeight + 'px'
-                        : '100%'
-                }"
+                class="dot-edit__page-wrapper"
+                [class.dot-edit__page-wrapper--deviced]="pageState.viewAs.device"
             >
-                <div class="dot-edit__iframe-wrapper">
-                    <dot-overlay-mask
-                        *ngIf="showOverlay"
-                        (click)="iframeOverlayService.hide()"
-                    ></dot-overlay-mask>
-                    <dot-whats-changed
-                        *ngIf="showWhatsChanged"
-                        [languageId]="pageState.viewAs.language.id"
-                        [pageId]="pageState.page.identifier"
-                    ></dot-whats-changed>
-                    <iframe
-                        class="dot-edit__iframe"
-                        #iframe
-                        *ngIf="showIframe"
-                        [ngStyle]="{
-                            visibility: showWhatsChanged ? 'hidden' : '',
-                            position: showWhatsChanged ? 'absolute' : ''
-                        }"
-                        (load)="onLoad($event)"
-                        frameborder="0"
-                        height="100%"
-                        width="100%"
-                    ></iframe>
+                <div
+                    class="dot-edit__device-wrapper"
+                    [ngStyle]="{
+                        width: pageState.viewAs.device
+                            ? pageState.viewAs.device.cssWidth + 'px'
+                            : '100%',
+                        height: pageState.viewAs.device
+                            ? pageState.viewAs.device.cssHeight + 'px'
+                            : '100%'
+                    }"
+                >
+                    <div class="dot-edit__iframe-wrapper">
+                        <dot-overlay-mask
+                            *ngIf="showOverlay"
+                            (click)="iframeOverlayService.hide()"
+                        ></dot-overlay-mask>
+                        <dot-whats-changed
+                            *ngIf="showWhatsChanged"
+                            [languageId]="pageState.viewAs.language.id"
+                            [pageId]="pageState.page.identifier"
+                        ></dot-whats-changed>
+                        <iframe
+                            class="dot-edit__iframe"
+                            #iframe
+                            *ngIf="showIframe"
+                            [ngStyle]="{
+                                visibility: showWhatsChanged ? 'hidden' : '',
+                                position: showWhatsChanged ? 'absolute' : ''
+                            }"
+                            (load)="onLoad($event)"
+                            frameborder="0"
+                            height="100%"
+                            width="100%"
+                        ></iframe>
+                    </div>
                 </div>
             </div>
-        </div>
+        </ng-template>
+
         <div
             class="dot-edit-content__palette"
             *ngIf="(isEnterpriseLicense$ | async) && isEditMode && allowedContent"

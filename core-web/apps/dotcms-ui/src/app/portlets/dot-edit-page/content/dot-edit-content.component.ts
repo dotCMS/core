@@ -49,11 +49,12 @@ import {
     PageModelChangeEventType
 } from './services/dot-edit-content-html/models';
 import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
-import { MetaTags } from './services/dot-edit-content-html/models/meta-tags-model';
+
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 
 import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
 import { DotPageContent } from '../shared/models';
+import { SeoMetaTags } from './services/dot-edit-content-html/models/meta-tags-model';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
@@ -87,7 +88,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     isEnterpriseLicense$ = of(false);
     variantData: Observable<DotVariantData>;
     featureFlagSeo = FeaturedFlags.FEATURE_FLAG_SEO_IMPROVEMENTS;
-    seoOGTags: MetaTags;
+    seoOGTags: SeoMetaTags;
     seoOGTagsResults = null;
 
     private readonly customEventsHandler;

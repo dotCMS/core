@@ -32,6 +32,20 @@ export interface SeoRulesResult {
     itemIcon: string;
 }
 
-export interface MetaTags {
+export interface SeoKeyResult {
+    keyIcon: string;
+    keyColor: string;
+}
+
+export interface SeoMetaTagsResult {
+    key: string;
+    keyIcon: string;
+    keyColor: string;
+    items: SeoRulesResult[];
+    sort: number;
+    info?: string;
+}
+
+export interface SeoMetaTags {
     [key: string]: string | NodeListOf<Element> | string[] | undefined;
 }
