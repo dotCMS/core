@@ -63,7 +63,7 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer>, 
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
 
         final int pageSize = 10;
-        int page = 0;
+        int page = 1;
 
         boolean live = true;
 
