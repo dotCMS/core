@@ -3343,6 +3343,7 @@
   color: #14151a;
   font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   padding: 0.5rem;
+  font-size: 1rem;
 }
 .dijitTextAreaHover {
   background-color: #ffffff;
@@ -8849,37 +8850,27 @@ Styles for commons fields along the backend
 }
 
 .tagLink {
-  background: #f3f3f4;
-  border-radius: 0.125rem;
-  border: solid 1.5px #d1d4db;
-  display: inline-block;
-  font-size: 12px;
-  margin: 2px 5px 2px 0px;
-  padding: 3px 25px 4px 5px;
-  position: relative;
+  height: 1.5rem;
+  padding: 0.5rem;
+  background: var(--color-palette-primary-200);
+  border-radius: 0.25rem;
+  color: var(--color-palette-primary-500);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
   text-decoration: none;
-  vertical-align: middle;
-}
-.tagLink.persona {
-  padding: 3px 25px 4px;
 }
 .tagLink.persona:before {
   content: "\f007";
-  display: block;
-  left: 8px;
-  position: absolute;
-  top: 2px;
+  display: flex;
 }
 .tagLink:after {
-  color: #6c7389;
+  color: var(--color-palette-primary-500);
   content: "✕";
-  font-size: 10px;
-  line-height: 21px;
-  position: absolute;
-  right: 0px;
+  font-size: 0.875rem;
   text-align: center;
-  top: 0px;
-  width: 20px;
 }
 .tagLink:hover {
   border: 1px solid var(--color-palette-primary-500);
@@ -8891,7 +8882,10 @@ Styles for commons fields along the backend
 .tagsWrapper .dijitTextBox {
   min-height: 2.5rem;
   height: auto;
-  padding: 3px 5px;
+  padding: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 .tagsWrapper .dijitInputContainer {
   display: inline-block;
