@@ -34,8 +34,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.jgroups.util.Util.assertTrue;
-
 public class BundleDataGen extends AbstractDataGen<Bundle> {
     public static AssignableFromMap<BundleDataGen.MetaData> howAddInBundle;
 
