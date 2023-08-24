@@ -42,6 +42,7 @@ import {
     DotShowCopyModal,
     DotRelocatePayload
 } from './models/dot-contentlets-events.model';
+import { SeoMetaTags, SeoMetaTagsResult } from './models/meta-tags-model';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
 import { DotCopyContentModalService } from '../dot-copy-content-modal/dot-copy-content-modal.service';
@@ -422,13 +423,23 @@ export class DotEditContentHtmlService {
         });
     }
 
-    getMetaTagsResults() {
+    /**
+     *  Returns the meta tags results
+     *
+     * @returns SeoMetaTagsResult[]
+     */
+    getMetaTagsResults(): SeoMetaTagsResult[] {
         const pageDocument = this.getEditPageDocument();
 
         return this.dotSeoMetaTagsService.getMetaTagsResults(pageDocument);
     }
 
-    getMetaTags() {
+    /**
+     * Returns the meta tags
+     *
+     * @returns SeoMetaTags
+     */
+    getMetaTags(): SeoMetaTags {
         const pageDocument = this.getEditPageDocument();
 
         return this.dotSeoMetaTagsService.getMetaTags(pageDocument);
