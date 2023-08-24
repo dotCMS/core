@@ -3,7 +3,10 @@ import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core
 
 import { CardModule } from 'primeng/card';
 
-import { DotPageRenderState } from '@dotcms/dotcms-models';
+import {
+    SeoMetaTags,
+    SeoMetaTagsResult
+} from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
 
 @Component({
     selector: 'dot-results-seo-tool',
@@ -14,9 +17,9 @@ import { DotPageRenderState } from '@dotcms/dotcms-models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotResultsSeoToolComponent implements OnInit {
-    @Input() pageState: DotPageRenderState;
-    @Input() seoOGTags;
-    @Input() seoOGTagsResults;
+    @Input() hostName: string;
+    @Input() seoOGTags: SeoMetaTags;
+    @Input() seoOGTagsResults: SeoMetaTagsResult[];
 
     mainPreview = [];
     readMore = [
@@ -33,14 +36,14 @@ export class DotResultsSeoToolComponent implements OnInit {
     ngOnInit() {
         this.mainPreview = [
             {
-                hostName: this.pageState.page.hostName,
+                hostName: this.hostName,
                 title: this.seoOGTags['og:title'],
                 description: this.seoOGTags.description,
                 type: 'Desktop',
                 isMobile: false
             },
             {
-                hostName: this.pageState.page.hostName,
+                hostName: this.hostName,
                 title: this.seoOGTags['og:title'],
                 description: this.seoOGTags.description,
                 type: 'Mobile',

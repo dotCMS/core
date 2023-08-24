@@ -1,7 +1,5 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
-import { mockDotRenderedPageState } from '@dotcms/utils-testing';
-
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
 
 const seoOGTagsMock = {
@@ -64,7 +62,7 @@ describe('DotResultsSeoToolComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                pageState: mockDotRenderedPageState,
+                hostName: 'A title',
                 seoOGTags: seoOGTagsMock,
                 seoOGTagsResults: seoOGTagsResultMock
             }
@@ -73,7 +71,7 @@ describe('DotResultsSeoToolComponent', () => {
 
     it('should display title', () => {
         const title = spectator.query(byTestId('page-title'));
-        expect(title).toHaveText(spectator.component.pageState.page.title);
+        expect(title).toHaveText(spectator.component.hostName);
     });
 
     it('should display SEO Tags', () => {
