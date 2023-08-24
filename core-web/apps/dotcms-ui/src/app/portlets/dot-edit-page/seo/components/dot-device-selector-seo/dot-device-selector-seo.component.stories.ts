@@ -50,7 +50,8 @@ export default {
                 PanelModule,
                 DividerModule,
                 DotMessagePipe,
-                BrowserAnimationsModule
+                BrowserAnimationsModule,
+                ActivatedRoute
             ],
             providers: [
                 DotDevicesService,

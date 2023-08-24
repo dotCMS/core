@@ -3,13 +3,8 @@
 :host {
     width: 100%;
     overflow: scroll;
-}
-
-.results-seo-tool__container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
+    display: grid;
+    place-items: center;
 }
 
 .results-seo-tool__main-card {
