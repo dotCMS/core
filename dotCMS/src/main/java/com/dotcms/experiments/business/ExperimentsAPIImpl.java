@@ -1385,13 +1385,18 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 "You don't have permission to cancel the Experiment. "
                         + "Experiment Id: " + persistedExperimentOpt.get().id());
 
-        DotPreconditions.isTrue(experimentFromFactory.status()== SCHEDULED, ()->
-                "Only SCHEDULED experiments can be canceled", DotStateException.class);
+        DotPreconditions.isTrue(canBeCanceled(experimentFromFactory), ()->
+                "Only SCHEDULED/RUNNING experiments can be canceled", DotStateException.class);
 
         DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
                 ()-> "Scheduling not valid.", DotStateException.class);
 
         return save(experimentFromFactory.withStatus(DRAFT), user);
+    }
+
+    private static boolean canBeCanceled(final Experiment experimentFromFactory) {
+        return experimentFromFactory.status() == SCHEDULED
+                || experimentFromFactory.status() == RUNNING;
     }
 
     @Override

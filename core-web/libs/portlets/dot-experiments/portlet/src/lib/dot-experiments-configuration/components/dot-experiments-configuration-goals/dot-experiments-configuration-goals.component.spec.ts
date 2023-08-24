@@ -13,7 +13,13 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { Card } from 'primeng/card';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus, ExperimentSteps, Goals, StepStatus } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    ExperimentSteps,
+    GOAL_TYPES,
+    Goals,
+    StepStatus
+} from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
@@ -34,10 +40,30 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.add': 'button add',
     'experiments.goal.reach_page.name': 'reach_page',
     'experiments.goal.reach_page.description': 'description',
-    'experiments.configure.goals.no.seleted.goal.message': 'empty message'
+    'experiments.configure.goals.no.seleted.goal.message': 'empty message',
+    'experiments.goal.conditions.query.parameter': 'Query Parameter'
 });
 const EXPERIMENT_MOCK = getExperimentMock(0);
 const EXPERIMENT_MOCK_WITH_GOAL = getExperimentMock(2);
+
+function getVmMock(goals = GoalsMock): {
+    experimentId: string;
+    goals: Goals;
+    status: StepStatus;
+    isExperimentADraft: boolean;
+} {
+    return {
+        experimentId: EXPERIMENT_MOCK.id,
+        goals: goals,
+        status: {
+            status: ComponentStatus.IDLE,
+            isOpen: false,
+            experimentStep: null
+        },
+        isExperimentADraft: true
+    };
+}
+
 describe('DotExperimentsConfigurationGoalsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalsComponent>;
     let store: DotExperimentsConfigurationStore;
@@ -101,23 +127,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         });
 
         test('should disable the button of add goal if a goal was selected already', () => {
-            const vmMock$: {
-                experimentId: string;
-                goals: Goals;
-                status: StepStatus;
-                isExperimentADraft: boolean;
-            } = {
-                experimentId: EXPERIMENT_MOCK.id,
-                goals: GoalsMock,
-                status: {
-                    status: ComponentStatus.IDLE,
-                    isOpen: false,
-                    experimentStep: null
-                },
-                isExperimentADraft: true
-            };
-
-            spectator.component.vm$ = of(vmMock$);
+            spectator.component.vm$ = of(getVmMock());
             spectator.detectComponentChanges();
 
             const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
@@ -173,6 +183,19 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             spectator.detectComponentChanges();
 
             expect(confirmationService.confirm).toHaveBeenCalled();
+        });
+
+        test('should render the params header correctly', () => {
+            spectator.component.vm$ = of(
+                getVmMock({
+                    ...GoalsMock,
+                    primary: { ...GoalsMock.primary, type: GOAL_TYPES.URL_PARAMETER }
+                })
+            );
+            spectator.detectComponentChanges();
+            const paramsHeader = spectator.query(byTestId('goal-header-parameter'));
+
+            expect(paramsHeader).toContainText('Query Parameter');
         });
     });
 });

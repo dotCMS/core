@@ -26,7 +26,10 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
@@ -67,11 +70,9 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
                     "fileAsset", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
-            //System.out.println(output);
             final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
             final ContentType contentType = objectMapper.readValue(output, ContentType.class);
             Assertions.assertNotNull(contentType.variable());
-            //  System.out.println(workspace);
         } finally {
             workspaceManager.destroy(workspace);
         }
@@ -96,12 +97,89 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
                 final Path path = Path.of(workspace.contentTypes().toString(), fileName);
                 Assert.assertTrue(Files.exists(path));
                 byte[] bytes = Files.readAllBytes(path);
+                final String content = new String(bytes);
+                //Verify that the pulled CT does not come with the generated workflow array
+                //Because this array is only intended to be consumed by the endpoint that updates the CT
+                Pattern pattern = Pattern.compile("\"workflow\"\\s*:\\s*(\\[.*?\\])");
+                Matcher matcher = pattern.matcher(content);
+                Assert.assertFalse(matcher.find());
                 final ObjectMapper objectMapper = new YAMLMapperSupplier().get();
                 final ContentType contentType = objectMapper.readValue(bytes, ContentType.class);
                 Assertions.assertNotNull(contentType.variable());
                 status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
                         fileName, "--format", "YML", "--workspace", workspace.root().toString());
                 Assertions.assertEquals(ExitCode.OK, status);
+            } finally {
+                workspaceManager.destroy(workspace);
+            }
+        }
+    }
+
+    /**
+     * here we're validating that when updating a CT that has associated Workflows
+     * It still retains that information after an update op is performed
+     * Given scenario: We pull FileAsset save it locally as a file then we push it back in via Push command
+     * Expected Result: When the FileAsset is pulled down for the first time it
+     * @throws IOException
+     */
+    @Test
+    void Test_Command_Content_Type_Pull_Then_Push_Json() throws IOException {
+        final Workspace workspace = workspaceManager.getOrCreate();
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String contentTypeVarName = "FileAsset";
+            int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    contentTypeVarName, "--format", "JSON", "--workspace",
+                    workspace.root().toString()
+            );
+            Assertions.assertEquals(ExitCode.OK, status);
+            try {
+                final String fileName = String.format("%s.json", contentTypeVarName);
+                final Path path = Path.of(workspace.contentTypes().toString(), fileName);
+                Assert.assertTrue(Files.exists(path));
+
+                byte[] bytes = Files.readAllBytes(path);
+                final String content = new String(bytes);
+                //Verify that the pulled CT does not come with the generated workflow array
+                //Because this array is only intended to be consumed by the endpoint that updates the CT
+                Pattern pattern = Pattern.compile("\"workflow\"\\s*:\\s*(\\[.*?\\])");
+                Matcher matcher = pattern.matcher(content);
+                Assert.assertFalse(matcher.find());
+
+                final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
+                final ContentType contentType = objectMapper.readValue(bytes, ContentType.class);
+                Assertions.assertNotNull(contentType.variable());
+                Assertions.assertFalse(
+                        Objects.requireNonNull(contentType.workflows(),
+                                "We're expecting to comeback with workflows" ).isEmpty(),
+                        "We're expecting the CT to have a workflow already assigned."
+                );
+
+                writer.getBuffer().setLength(0); //Clear output so we can get access to the new results only
+
+                status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                        fileName, "--format", "JSON", "--workspace",
+                        workspace.root().toString()
+                );
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                Files.delete(path);
+
+                //Now request the CT once again to verify we still get consistent data in the workflow department
+                status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                        contentTypeVarName, "--format", "JSON", "--workspace",
+                        workspace.root().toString());
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                //Re verify the contentlet
+                Assert.assertTrue(Files.exists(path));
+
+                byte[]  updatedBytes = Files.readAllBytes(path);
+                final ContentType updatedContentType = objectMapper.readValue(updatedBytes, ContentType.class);
+                Assertions.assertNotNull(updatedContentType.variable());
+
             } finally {
                 workspaceManager.destroy(workspace);
             }
