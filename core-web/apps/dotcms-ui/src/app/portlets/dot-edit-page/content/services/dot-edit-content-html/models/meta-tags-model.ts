@@ -21,9 +21,9 @@ export enum SEO_LIMITS {
 }
 
 export enum SEO_RULES_COLORS {
-    DONE = 'var(--color-alert-green)',
-    ERROR = 'var(--color-alert-red)',
-    WARNING = 'var(--color-alert-yellow)'
+    DONE = 'results-seo-tool__result-icon--alert-green',
+    ERROR = 'results-seo-tool__result-icon--alert-red',
+    WARNING = 'results-seo-tool__result-icon--alert-yellow'
 }
 
 export interface SeoRulesResult {

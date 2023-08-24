@@ -33,15 +33,14 @@
         <div class="results-seo-tool__result-card-title">
             <i
                 class="results-seo-tool__result-icon pi"
-                [ngClass]="result.keyIcon"
-                [style.color]="result.keyColor"
+                [ngClass]="[result.keyColor, result.keyIcon]"
             ></i>
             <span data-testId="result-key"> {{ result.key | titlecase }}</span>
         </div>
     </ng-template>
     <ul class="results-seo-tool__result-card-list">
         <li *ngFor="let item of result.items" data-testId="seo-tag">
-            <i class="pi" [ngClass]="item.itemIcon" [style.color]="item.color"> </i>
+            <i class="pi" [ngClass]="[result.keyColor, result.keyIcon]"> </i>
             <span>{{ item.message }}</span>
         </li>
     </ul>

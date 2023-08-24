@@ -116,6 +116,18 @@
     color: $color-palette-primary-500;
 }
 
+.results-seo-tool__result-icon--alert-red {
+    color: $color-alert-red;
+}
+
+.results-seo-tool__result-icon--alert-yellow {
+    color: $color-alert-yellow;
+}
+
+.results-seo-tool__result-icon--alert-green {
+    color: $color-alert-green;
+}
+
 :host ::ng-deep {
     .results-seo-tool__result-card .p-card {
         border: 1px solid $color-palette-gray-400;

@@ -15,20 +15,24 @@ const seoOGTagsResultMock = [
     {
         key: 'Favicon',
         keyIcon: 'pi-check-circle',
-        keyColor: 'var(--color-alert-green)',
+        keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
-            { message: 'FavIcon found!', color: 'var(--color-alert-green)', itemIcon: 'pi-check' }
+            {
+                message: 'FavIcon found!',
+                color: 'results-seo-tool__result-icon--alert-green',
+                itemIcon: 'pi-check'
+            }
         ],
         sort: 1
     },
     {
         key: 'Description',
         keyIcon: 'pi-exclamation-triangle',
-        keyColor: 'var(--color-alert-red)',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
                 message: 'Meta Description not found! Showing Description instead.',
-                color: 'var(--color-alert-red)',
+                color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
         ],
@@ -38,11 +42,11 @@ const seoOGTagsResultMock = [
     {
         key: 'Title',
         keyIcon: 'pi-exclamation-triangle',
-        keyColor: 'var(--color-alert-yellow)',
+        keyColor: 'results-seo-tool__result-icon--alert-yellow',
         items: [
             {
                 message: 'HTML Title found, but has fewer than 30 characters of content.',
-                color: 'var(--color-alert-yellow)',
+                color: 'results-seo-tool__result-icon--alert-yellow',
                 itemIcon: 'pi-exclamation-circle'
             }
         ],

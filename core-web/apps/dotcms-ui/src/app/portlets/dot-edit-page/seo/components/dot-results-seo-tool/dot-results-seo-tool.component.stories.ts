@@ -24,7 +24,7 @@ export default {
                 {
                     provide: DotMessageService,
                     useValue: {
-                        get: () => 'Copy'
+                        get: () => 'Read More'
                     }
                 }
             ]
