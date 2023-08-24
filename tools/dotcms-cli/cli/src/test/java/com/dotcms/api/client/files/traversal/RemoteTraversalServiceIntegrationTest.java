@@ -2,7 +2,7 @@ package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.client.ServiceManager;
-import com.dotcms.cli.common.FilesHelperIntegrationTest;
+import com.dotcms.cli.common.FilesTestHelper;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class RemoteTraversalServiceIntegrationTest extends FilesHelperIntegrationTest {
+class RemoteTraversalServiceIntegrationTest extends FilesTestHelper {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;

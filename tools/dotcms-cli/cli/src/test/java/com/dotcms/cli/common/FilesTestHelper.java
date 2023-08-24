@@ -25,7 +25,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 
-public class FilesHelperIntegrationTest {
+public class FilesTestHelper {
 
     @Inject
     RestClientFactory clientFactory;

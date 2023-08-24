@@ -3,7 +3,7 @@ package com.dotcms.api.client.files;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
-import com.dotcms.cli.common.FilesHelperIntegrationTest;
+import com.dotcms.cli.common.FilesTestHelper;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.ServiceBean;
@@ -21,7 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class PushServiceIntegrationTest extends FilesHelperIntegrationTest {
+class PushServiceIntegrationTest extends FilesTestHelper {
 
     @Inject
     AuthenticationContext authenticationContext;
