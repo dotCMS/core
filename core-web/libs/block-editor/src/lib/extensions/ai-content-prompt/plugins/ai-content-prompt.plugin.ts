@@ -105,10 +105,16 @@ export class AIContentPromptView {
             return;
         }
 
-        this.tippy = tippy(editorElement.parentElement, {
+        this.tippy = tippy(editorElement, {
             ...TIPPY_OPTIONS,
             ...this.tippyOptions,
-            content: this.element
+            content: this.element,
+            onHide: () => {
+                this.editor.commands.closeAIPrompt();
+            },
+            onShow: (instance) => {
+                (instance.popper as HTMLElement).style.width = '100%';
+            }
         });
     }
 
@@ -118,7 +124,6 @@ export class AIContentPromptView {
     }
 
     hide() {
-        this.editor.commands.closeAIPrompt();
         this.tippy?.hide();
         this.editor.view.focus();
     }
