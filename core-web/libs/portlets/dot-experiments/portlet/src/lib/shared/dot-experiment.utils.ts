@@ -42,7 +42,7 @@ export const orderVariants = (arrayToOrder: Array<string>): Array<string> => {
  * @return {number[]} - An array of conversion Rate values.
  */
 export const getParsedChartData = (data: Record<string, DotResultDate>): number[] => {
-    return [0, ...Object.values(data).map((day) => day.convertionRate)];
+    return [0, ...Object.values(data).map((day) => day.conversionRate)];
 };
 
 export const getPropertyColors = (index: number): LineChartColorsProperties => {
