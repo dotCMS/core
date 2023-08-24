@@ -55,6 +55,20 @@ describe('DotDropZoneComponent', () => {
             expect(spectator.component.active).toBeFalsy();
         });
 
+        it('should prevent default', () => {
+            const event = new DragEvent('drop', {
+                dataTransfer: mockDataTransfer
+            });
+
+            const spyEventPrevent = spyOn(event, 'preventDefault');
+            const spyEventStop = spyOn(event, 'stopPropagation');
+
+            spectator.component.onDrop(event);
+
+            expect(spyEventPrevent).toHaveBeenCalled();
+            expect(spyEventStop).toHaveBeenCalled();
+        });
+
         describe('when file is valid', () => {
             beforeEach(() => {
                 spectator.component.accept = ['.html', 'text/html'];
@@ -72,6 +86,25 @@ describe('DotDropZoneComponent', () => {
                 spectator.component.onDrop(event);
 
                 expect(spy).toHaveBeenCalledWith(mockFile);
+                expect(spectator.component.active).toBeFalsy();
+            });
+        });
+
+        describe('when multiple files are being dragged', () => {
+            it('should set multiFileError to true if multiplefiles are being dragged', () => {
+                const spyError = spyOn(spectator.component.dropZoneError, 'emit');
+                const file1 = new File([''], 'filename', { type: 'text/html' });
+                const file2 = new File([''], 'filename', { type: 'text/html' });
+                mockDataTransfer.items.add(file1);
+                mockDataTransfer.items.add(file2);
+
+                const event = new DragEvent('drop', {
+                    dataTransfer: mockDataTransfer
+                });
+
+                spectator.component.onDrop(event);
+                expect(spyError).toHaveBeenCalledWith(DropZoneError.MULTIFILE_ERROR);
+                expect(spectator.component.error).toBeTrue();
                 expect(spectator.component.active).toBeFalsy();
             });
         });
@@ -99,38 +132,53 @@ describe('DotDropZoneComponent', () => {
     });
 
     describe('onDragEnter', () => {
-        it('should set active to true and add drop-zone-active class', () => {
+        it('should emit dragStart to true and add drop-zone-active class', () => {
             const spy = spyOn(spectator.component.dragStart, 'emit');
-            const event = new DragEvent('dragenter', {
-                dataTransfer: mockDataTransfer
-            });
+            const event = new DragEvent('dragenter');
 
             spectator.component.onDragEnter(event);
-
             spectator.detectChanges();
 
             expect(spectator.component.active).toBeTrue();
+            expect(spectator.component.error).toBeFalsy();
             expect(spectator.element.classList).toContain('drop-zone-active');
             expect(spy).toHaveBeenCalledWith(true);
         });
 
-        describe('when multiple files are being dragged', () => {
-            it('should set multiFileError to true if multiplefiles are being dragged', () => {
-                const spyError = spyOn(spectator.component.dropZoneError, 'emit');
-                const file1 = new File([''], 'filename', { type: 'text/html' });
-                const file2 = new File([''], 'filename', { type: 'text/html' });
-                mockDataTransfer.items.add(file1);
-                mockDataTransfer.items.add(file2);
+        it('should prevent default', () => {
+            const event = new DragEvent('dragenter');
 
-                const event = new DragEvent('dragenter', {
-                    dataTransfer: mockDataTransfer
-                });
+            const spyEventPrevent = spyOn(event, 'preventDefault');
+            const spyEventStop = spyOn(event, 'stopPropagation');
 
-                spectator.component.onDragEnter(event);
-                expect(spyError).toHaveBeenCalledWith(DropZoneError.MULTIFILE_ERROR);
-                expect(spectator.component.error).toBeTrue();
-                expect(spectator.component.active).toBeFalsy();
-            });
+            spectator.component.onDragEnter(event);
+
+            expect(spyEventPrevent).toHaveBeenCalled();
+            expect(spyEventStop).toHaveBeenCalled();
+        });
+    });
+
+    describe('onDragOver', () => {
+        it('should prevent default', () => {
+            const event = new DragEvent('dragover');
+            spectator.component.onDragOver(event);
+            spectator.detectChanges();
+
+            expect(spectator.component.active).toBeTrue();
+            expect(spectator.component.error).toBeFalsy();
+            expect(spectator.element.classList).toContain('drop-zone-active');
+        });
+
+        it('should prevent default', () => {
+            const event = new DragEvent('dragover');
+
+            const spyEventPrevent = spyOn(event, 'preventDefault');
+            const spyEventStop = spyOn(event, 'stopPropagation');
+
+            spectator.component.onDragOver(event);
+
+            expect(spyEventPrevent).toHaveBeenCalled();
+            expect(spyEventStop).toHaveBeenCalled();
         });
     });
 
@@ -149,6 +197,18 @@ describe('DotDropZoneComponent', () => {
             expect(spectator.component.active).toBeFalse();
             expect(spectator.component.error).toBeFalse();
             expect(spy).toHaveBeenCalledWith(true);
+        });
+
+        it('should prevent default', () => {
+            const event = new DragEvent('dragleave');
+
+            const spyEventPrevent = spyOn(event, 'preventDefault');
+            const spyEventStop = spyOn(event, 'stopPropagation');
+
+            spectator.component.onDragLeave(event);
+
+            expect(spyEventPrevent).toHaveBeenCalled();
+            expect(spyEventStop).toHaveBeenCalled();
         });
     });
 });

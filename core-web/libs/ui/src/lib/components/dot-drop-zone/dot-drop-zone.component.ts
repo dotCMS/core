@@ -49,15 +49,20 @@ export class DotDropZoneComponent {
         event.preventDefault();
         this.active = false;
 
-        if (this.error) return;
-
         const { dataTransfer } = event;
-        const { items, files } = dataTransfer;
-        const file = items ? Array.from(items)[0].getAsFile() : Array.from(files)[0];
+        const files = this.getFiles(dataTransfer);
+        const file = files[0];
+
+        if (files.length === 0) return;
+
+        if (files.length > 1) {
+            this.emitError(DropZoneError.MULTIFILE_ERROR);
+
+            return;
+        }
 
         if (!this.isValidFile(file)) {
-            this.error = true;
-            this.dropZoneError.emit(DropZoneError.INVALID_FILE);
+            this.emitError(DropZoneError.INVALID_FILE);
 
             return;
         }
@@ -71,18 +76,8 @@ export class DotDropZoneComponent {
     onDragEnter(event: DragEvent) {
         event.stopPropagation();
         event.preventDefault();
+        this.setActive();
         this.dragStart.emit(true);
-
-        const { items, files } = event.dataTransfer;
-        const length = items ? items.length : files.length;
-        const multipleFile = length > 1;
-
-        if (multipleFile) {
-            this.dropZoneError.emit(DropZoneError.MULTIFILE_ERROR);
-        }
-
-        this.error = multipleFile;
-        this.active = !multipleFile;
     }
 
     @HostListener('dragover', ['$event'])
@@ -90,13 +85,15 @@ export class DotDropZoneComponent {
         // Prevent the default behavior to allow drop
         event.stopPropagation();
         event.preventDefault();
+        this.setActive();
     }
 
     @HostListener('dragleave', ['$event'])
-    onDragLeave(_event: DragEvent) {
+    onDragLeave(event: DragEvent) {
+        event.stopPropagation();
+        event.preventDefault();
+        this.setDesactive();
         this.dragStop.emit(true);
-        this.active = false;
-        this.error = false;
     }
 
     /**
@@ -131,5 +128,59 @@ export class DotDropZoneComponent {
      */
     private areValidationsEnabled(): boolean {
         return this._accept.length > 0;
+    }
+
+    /**
+     * Emit the error event
+     *
+     * @private
+     * @param {DropZoneError} error
+     * @memberof DotDropZoneComponent
+     */
+    private emitError(error: DropZoneError) {
+        this.error = true;
+        this.dropZoneError.emit(error);
+    }
+
+    /**
+     * Get the files from the dataTransfer object
+     *
+     * @private
+     * @param {DataTransfer} dataTransfer
+     * @return {*}  {File[]}
+     * @memberof DotDropZoneComponent
+     */
+    private getFiles(dataTransfer: DataTransfer): File[] {
+        const { items, files } = dataTransfer;
+
+        if (items) {
+            return Array.from(items)
+                .filter((item) => item.kind === 'file')
+                .map((item) => item.getAsFile());
+        }
+
+        return Array.from(files) || [];
+    }
+
+    /**
+     *  Set the active state to true and error to false
+     *
+     * @private
+     * @memberof DotDropZoneComponent
+     */
+    private setActive(): void {
+        this.active = true;
+        this.error = false;
+    }
+
+    /**
+     * Set the active state to false and error to false
+     *
+     * @private
+     * @memberof DotDropZoneComponent
+     */
+    private setDesactive(): void {
+        this.active = false;
+        this.error = false;
     }
 }
