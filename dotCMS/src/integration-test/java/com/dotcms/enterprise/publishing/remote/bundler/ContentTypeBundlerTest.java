@@ -31,8 +31,6 @@ import java.io.File;
 import java.io.IOException;
 
 import static com.dotcms.util.CollectionsUtils.*;
-import static org.jgroups.util.Util.assertEquals;
-import static org.jgroups.util.Util.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(DataProviderRunner.class)

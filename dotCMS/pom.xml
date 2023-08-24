@@ -646,14 +646,6 @@
             <artifactId>shedlock-provider-jdbc</artifactId>
         </dependency>
 
-
-        <dependency>
-            <!-- JGroups: Reliable Multicast Communication -->
-            <groupId>org.jgroups</groupId>
-            <artifactId>jgroups</artifactId>
-        </dependency>
-
-
         <!--
          *****************************
             API Client Support
