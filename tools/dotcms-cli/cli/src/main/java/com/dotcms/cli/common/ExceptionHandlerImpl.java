@@ -1,11 +1,15 @@
 package com.dotcms.cli.common;
 
+import static org.apache.commons.lang3.StringUtils.*;
+
 import io.quarkus.security.ForbiddenException;
 import io.quarkus.security.UnauthorizedException;
+import java.util.function.Supplier;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -48,11 +52,20 @@ public class ExceptionHandlerImpl implements ExceptionHandler {
      * @return
      */
      private  WebApplicationException handle(WebApplicationException in){
+         String serverError = in.getMessage();
          final Response response = in.getResponse();
          final int status = response.getStatus();
-         final String errorMessage =  config.messages().containsKey(status) ? config.messages().get(status) : config.defaultMessage();
+         final String errorMessage = config.override() ?
+                 messageOverride(status, ()-> getIfEmpty(serverError,()->config.fallback())) :
+                 in.getMessage() ;
          return new WebApplicationException(Response.status(status,errorMessage).build());
      }
+
+    private String messageOverride(final int status, final Supplier<String> fallback) {
+        return config.messages().containsKey(status) ?
+               config.messages().get(status) :
+                fallback.get();
+    }
 
     /**
      * Sometimes OurRest endpoint will respond with a descendant of  SecurityException instead of WebApplicationException

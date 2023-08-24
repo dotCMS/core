@@ -143,7 +143,9 @@ public class PushServiceImpl implements PushService {
                     for (var error : errors) {
                         if (error instanceof TraversalTaskException) {
                             c++;
-                            output.handleCommandException(error, String. format("%s --- %s %n", error.getMessage(), error.getCause().getMessage()), c == count);
+                            //"Error in command [%s] with message: %n "
+                            output.handleCommandException(error, String. format("%s %n", error.getMessage()), c == count);
+
                         } else {
                             output.error(error.getMessage());
                         }
