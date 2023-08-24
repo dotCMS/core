@@ -37,6 +37,8 @@ import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrat
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
+import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.FolderIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -476,6 +478,8 @@ import org.junit.runners.Suite.SuiteClasses;
         StaticPublisherIntegrationTest.class,
         HostIntegrityCheckerTest.class,
         FolderIntegrityCheckerTest.class,
+        ContentFileAssetIntegrityCheckerTest.class,
+        ContentPageIntegrityCheckerTest.class,
         MetaWebInterceptorTest.class,
         BrowserUtilTest.class,
         Task211101AddContentletAsJsonColumnTest.class,

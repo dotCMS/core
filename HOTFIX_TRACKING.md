@@ -174,3 +174,4 @@ This maintenance release includes the following code fixes:
 145. https://github.com/dotCMS/core/issues/24829 : NavTool method getNav must return only published links #24829
 146. https://github.com/dotCMS/core/issues/25371 : PP: pushing new folder with limited user fails #25371
 147. https://github.com/dotCMS/core/issues/25797 : When uploading multiple files, the files are always in English #25797
+148. https://github.com/dotCMS/core/issues/25229 : PP - Integrity Checker, fixing conflicts is not populating the contentlet_as_json field #25229
