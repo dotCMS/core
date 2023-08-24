@@ -1,9 +1,7 @@
 package com.dotcms.rest.api.v1.user;
 
-import com.dotcms.auth.providers.saml.v1.SAMLHelper;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.InitDataObject;
@@ -22,12 +20,10 @@ import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -35,13 +31,10 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
 import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.PrincipalThreadLocal;
@@ -73,7 +66,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
@@ -504,13 +496,20 @@ public class UserResource implements Serializable {
 	 * @param req    The {@link HttpServletRequest} object.
 	 * @param userID The ID of the user that is being impersonated.
 	 *
-	 * @throws DotDataException     An error ocurred when accessing the data source.
+	 * @throws DotDataException     An error occurred when accessing the data source.
 	 * @throws DotSecurityException The specified user does not have permissions to perform this action.
+	 * @throws DotRuntimeException  There are missing session attributes, or the User doesn't have access to any Site.
 	 */
 	private void setImpersonatedUserSite(final HttpServletRequest req, final String userID) throws DotDataException, DotSecurityException {
 		final HttpSession session = req.getSession();
 		final User user = this.userAPI.loadUserById(userID);
 		final String currentSiteID = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		if (UtilMethods.isNotSet(currentSiteID)) {
+			final String errorMsg = String.format("The CMS_SELECTED_HOST_ID attribute is not present in the session " +
+					"for User '%s'", userID);
+			Logger.error(this, errorMsg);
+			throw new DotRuntimeException(errorMsg);
+		}
 		Host currentSite;
 		try {
 			currentSite = this.siteAPI.find(currentSiteID, user, false);

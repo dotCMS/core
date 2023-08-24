@@ -15,10 +15,6 @@
 }
 
 .template-builder-box--medium {
-    .template-builder-box__header-container {
-        justify-content: center;
-    }
-
     ::ng-deep {
         .p-button-text {
             margin: $spacing-3 0;
@@ -35,6 +31,12 @@
         .p-dropdown .p-dropdown-trigger {
             width: 0.875rem; // 14px
             height: 0.875rem; // 14px
+            background-color: transparent;
+        }
+
+        p-dropdown {
+            height: 2rem;
+            width: 2rem;
         }
 
         .p-dropdown {
@@ -43,9 +45,6 @@
             align-items: center;
             border-radius: 50%;
             padding: 0.5625rem; // 9px
-            margin-top: $spacing-3;
-            margin-bottom: $spacing-3;
-            margin-right: $spacing-1;
             height: 2rem;
             width: 2rem;
             border: none;
@@ -87,12 +86,6 @@ p-dropdown {
     width: 100%;
     background-color: $white;
     overflow: hidden;
-
-    ::ng-deep {
-        .edit-classes-button {
-            margin-right: $spacing-1;
-        }
-    }
 }
 
 .template-builder-box__header-container {
@@ -102,6 +95,11 @@ p-dropdown {
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    .header-container__last-buttons {
+        display: flex;
+        gap: $spacing-1;
+    }
 }
 
 .template-builder-box__item {

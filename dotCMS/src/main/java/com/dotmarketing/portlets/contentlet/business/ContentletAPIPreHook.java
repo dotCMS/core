@@ -118,6 +118,17 @@ public interface ContentletAPIPreHook {
 	 * @param variant
 	 * @return
 	 */
+	default boolean findContentletByIdentifierAnyLanguage(final String identifier, final String variant,
+			final boolean includeDeleted) throws DotDataException{
+		return true;
+	}
+
+	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
+	 * @param variant
+	 * @return
+	 */
 	default boolean findContentletByIdentifierAnyLanguage (String identifier, String variant) {
 		return true;
 	}

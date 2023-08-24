@@ -1,15 +1,15 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.cli.command.contenttype.*;
+import com.dotcms.cli.command.contenttype.ContentTypeCommand;
 import com.dotcms.cli.command.files.FilesCommand;
 import com.dotcms.cli.command.language.LanguageCommand;
-import com.dotcms.cli.command.site.*;
+import com.dotcms.cli.command.site.SiteCommand;
 import com.dotcms.cli.common.ExceptionHandlerImpl;
+import com.dotcms.cli.common.LoggingExecutionStrategy;
 import com.dotcms.cli.common.OutputOptionMixin;
 import io.quarkus.arc.Unremovable;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
@@ -64,6 +64,8 @@ class CustomConfiguration {
         CommandLine customCommandLine( final PicocliCommandLineFactory factory) {
                 return factory.create()
                         .setCaseInsensitiveEnumValuesAllowed(true)
+                        .setExecutionStrategy(
+                                new LoggingExecutionStrategy(new CommandLine.RunLast()))
                         .setExecutionExceptionHandler((ex, commandLine, parseResult) -> {
                                 final Object object = commandLine.getCommand();
                                 if (object instanceof DotCommand) {

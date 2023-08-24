@@ -6,6 +6,7 @@ import static org.apache.commons.lang3.StringUtils.abbreviate;
 
 import io.quarkus.arc.Arc;
 import io.quarkus.devtools.messagewriter.MessageWriter;
+import io.quarkus.logging.Log;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,7 +22,7 @@ public class OutputOptionMixin implements MessageWriter {
     @CommandLine.Option(names = { "-e", "--errors" }, description = "Display error messages.", hidden = true)
     boolean showErrors;
 
-    @CommandLine.Option(names = { "--verbose" }, description = "Verbose mode.", hidden = true)
+    @CommandLine.Option(names = { "-v", "--verbose" }, description = "Verbose mode.", hidden = true)
     boolean verbose;
 
     @CommandLine.Option(names = {"--cli-test" }, description = "Manually set output streams for unit test purposes.", hidden = true)
@@ -183,6 +184,7 @@ public class OutputOptionMixin implements MessageWriter {
                 handledEx.getMessage() != null ? abbreviate(handledEx.getMessage(), "...", 200)
                         : "No error message was provided");
         error(message);
+        Log.error(message, ex);
         //Won't print unless the "showErrors" flag is on
         printStackTrace(unwrappedEx);
         //We show the show message notice only if we're not already showing errors
