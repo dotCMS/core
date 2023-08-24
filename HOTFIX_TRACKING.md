@@ -172,3 +172,4 @@ This maintenance release includes the following code fixes:
 143. https://github.com/dotCMS/core/issues/24176 : "(Default)" marker in Site Search interferes with reindexing #24176
 144. https://github.com/dotCMS/core/issues/24683 : Copy button on Page Edit portlet should copy the entire URL, not just the path #24683
 145. https://github.com/dotCMS/core/issues/24829 : NavTool method getNav must return only published links #24829
+146. https://github.com/dotCMS/core/issues/25371 : PP: pushing new folder with limited user fails #25371
