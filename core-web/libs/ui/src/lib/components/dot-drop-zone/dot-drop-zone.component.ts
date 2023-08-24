@@ -28,15 +28,14 @@ export class DotDropZoneComponent {
     @Output() dragStart = new EventEmitter<boolean>();
     @Output() dragStop = new EventEmitter<boolean>();
 
-    @Input() allowedExtensions: string[] = [];
-    @Input() set allowedMimeTypes(mineTypes: string[]) {
-        this._allowedMimeTypes = mineTypes.map((type) => {
+    @Input() set accept(types: string[]) {
+        this._accept = types.map((type) => {
             // Remove the wildcard character
             return type.toLowerCase().replace(/\*/g, '');
         });
     }
 
-    private _allowedMimeTypes: string[] = [];
+    private _accept: string[] = [];
 
     @HostBinding('class.drop-zone-active')
     active = false;
@@ -116,11 +115,11 @@ export class DotDropZoneComponent {
         const extension = file.name.split('.').pop().toLowerCase();
         const mimeType = file.type.toLowerCase();
 
-        const mimeTypeIsValid = this._allowedMimeTypes.some((allowedMimeType) =>
-            mimeType.includes(allowedMimeType)
+        const isValidType = this._accept.some(
+            (type) => mimeType.includes(type) || type.includes(`.${extension}`)
         );
 
-        return this.allowedExtensions.includes(`.${extension}`) || mimeTypeIsValid;
+        return isValidType;
     }
 
     /**
@@ -131,6 +130,6 @@ export class DotDropZoneComponent {
      * @memberof DotDropzoneComponent
      */
     private areValidationsEnabled(): boolean {
-        return this.allowedExtensions.length > 0 || this._allowedMimeTypes.length > 0;
+        return this._accept.length > 0;
     }
 }

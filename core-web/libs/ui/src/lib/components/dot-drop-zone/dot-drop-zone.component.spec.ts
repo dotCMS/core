@@ -57,9 +57,7 @@ describe('DotDropZoneComponent', () => {
 
         describe('when file is valid', () => {
             beforeEach(() => {
-                spectator.component.allowedExtensions = ['html'];
-                spectator.component.allowedMimeTypes = ['text/html'];
-
+                spectator.component.accept = ['.html', 'text/html'];
                 spectator.detectChanges();
             });
 
@@ -80,9 +78,7 @@ describe('DotDropZoneComponent', () => {
 
         describe('when file is invalid', () => {
             beforeEach(() => {
-                spectator.component.allowedExtensions = ['png'];
-                spectator.component.allowedMimeTypes = ['image/'];
-
+                spectator.component.accept = ['.png', 'image/'];
                 spectator.detectChanges();
             });
 

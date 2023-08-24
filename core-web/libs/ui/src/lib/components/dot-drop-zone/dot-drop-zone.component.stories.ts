@@ -57,8 +57,7 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
     ],
     template: `
         <dot-drop-zone
-            [allowedExtensions]="allowedExtensions"
-            [allowedMimeTypes]="allowedMimeTypes"
+            [accept]="accept"
             (fileDrop)="fileDrop($event)"
             (dragStart)="dragStart($event)"
             (dragStop)="dragStop($event)"
@@ -67,12 +66,8 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
             <div class="content">
                 Drop files here.
 
-                <div *ngIf="allowedExtensions.length">
-                    <strong>Allowed extensions:</strong> {{ allowedExtensions }}
-                </div>
-
-                <div *ngIf="allowedMimeTypes.length">
-                    <strong>Allowed mime types:</strong> {{ allowedMimeTypes }}
+                <div *ngIf="accept.length">
+                    <strong>Allowed Type:</strong> {{ accept }}
                 </div>
             </div>
         </dot-drop-zone>
@@ -82,27 +77,5 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
 export const Base = Template.bind({});
 
 Base.args = {
-    allowedExtensions: [],
-    allowedMimeTypes: []
-};
-
-export const ValidExtensions = Template.bind({});
-
-ValidExtensions.args = {
-    allowedExtensions: ['.png', '.ts'],
-    allowedMimeTypes: []
-};
-
-export const ValidMimeTypes = Template.bind({});
-
-ValidMimeTypes.args = {
-    allowedExtensions: [],
-    allowedMimeTypes: ['video/*', 'image/png', 'image/jpeg']
-};
-
-export const ValidMimeTypeAndExtensions = Template.bind({});
-
-ValidMimeTypeAndExtensions.args = {
-    allowedExtensions: ['.png'],
-    allowedMimeTypes: ['video/*']
+    accept: []
 };
