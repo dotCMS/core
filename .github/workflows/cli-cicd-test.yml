@@ -40,6 +40,12 @@ jobs:
             BUILD_ID=$(basename "${{ github.ref }}")
           fi
           
+          if [[ -z "${GITHUB_SHA}" ]]; then
+            BUILD_HASH=$(git log -1 --pretty=%h)
+          else
+            BUILD_HASH=${GITHUB_SHA::7}
+          fi
+          
           ./mvnw clean verify -Dtest.failure.ignore=true
           
           FAILURES=$(find target -name TEST-*.xml | xargs grep '<failure' | wc -l)
@@ -84,6 +90,7 @@ jobs:
           cat ${CICD_RES_PATH}/cli/cli-results-footer.html >> ${INDEX_FILE}
 
           echo "BUILD_ID=${BUILD_ID}" >> "$GITHUB_ENV"
+          echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
           echo "results_location=${XML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
           echo "results_report_location=${HTML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
           
