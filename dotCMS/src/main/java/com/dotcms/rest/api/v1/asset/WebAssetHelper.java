@@ -562,7 +562,8 @@ public class WebAssetHelper {
             throws DotDataException, DotSecurityException {
         final Contentlet contentlet = new Contentlet();
         contentlet.setContentTypeId(contentTypeAPI.find("FileAsset").id());
-        return updateFileAsset(file, host, folder, lang, contentlet);
+        final Contentlet fileAsset = updateFileAsset(file, host, folder, lang, contentlet);
+        return contentletAPI.checkin(fileAsset, APILocator.systemUser(),false);
     }
 
 
