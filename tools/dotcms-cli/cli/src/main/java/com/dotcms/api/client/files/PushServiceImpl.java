@@ -151,7 +151,7 @@ public class PushServiceImpl implements PushService {
             } catch (InterruptedException | ExecutionException e) {
 
                 var errorMessage = String.format("Error occurred while pushing contents: [%s].", e.getMessage());
-                logger.debug(errorMessage, e);
+                logger.error(errorMessage, e);
                 throw new RuntimeException(errorMessage, e);
             } catch (Exception e) {// Fail fast
 
