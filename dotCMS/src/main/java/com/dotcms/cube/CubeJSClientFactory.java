@@ -5,6 +5,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
+/**
+ * Factory to create {@link CubeJSClient} instances.
+ *
+ * @author vico
+ */
 public interface CubeJSClientFactory {
 
     /**
