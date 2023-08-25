@@ -3341,7 +3341,7 @@
   background-color: #ffffff;
   border: solid 1.5px #d1d4db;
   color: #14151a;
-  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   padding: 0.5714rem;
   font-size: 1rem;
 }
@@ -5145,7 +5145,7 @@
 }
 .dojoxGrid .dojoxGridRow .dojoxGridRowTable .dojoxGridCell,
 .dojoxGrid .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
-  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   padding: 10px 0.5714rem;
 }
 .dojoxGrid .dojoxGridPaginator {
@@ -11088,7 +11088,7 @@ Resize Handle
   border: solid 1px #f3f3f4;
   border-radius: 0.4285rem;
   color: #6c7389;
-  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 1rem;
   line-height: 2.8571428571rem;
   padding-left: 0.5714rem;
@@ -11114,30 +11114,30 @@ Resize Handle
 
 /* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
 @font-face {
-  font-family: "Roboto";
+  font-family: "Assistant";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local(""), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2") format("woff2"), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  src: local(""), url("/dotAdmin/assets/Assistant-Regular.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-Regular.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 /* roboto-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
 @font-face {
-  font-family: "Roboto";
+  font-family: "Assistant";
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: local(""), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff2") format("woff2"), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  src: local(""), url("/dotAdmin/assets/Assistant-SemiBold.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-SemiBold.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 /* roboto-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
 @font-face {
-  font-family: "Roboto";
+  font-family: "Assistant";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: local(""), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff2") format("woff2"), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  src: local(""), url("/dotAdmin/assets/Assistant-Bold.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-Bold.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 html {
-  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 0.875rem;
   color: #14151a;
 }
