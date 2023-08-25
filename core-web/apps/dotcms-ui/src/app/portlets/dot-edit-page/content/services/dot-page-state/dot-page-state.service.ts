@@ -239,6 +239,15 @@ export class DotPageStateService {
     }
 
     /**
+     * Set the SEO media to show in the page
+     * @param seoTitle
+     */
+    setSeoMedia(seoMedia: string): void {
+        this.currentState.seoMedia = seoMedia;
+        this.state$.next(this.currentState);
+    }
+
+    /**
      * Update page content status
      *
      * @param {PageModelChangeEvent} event

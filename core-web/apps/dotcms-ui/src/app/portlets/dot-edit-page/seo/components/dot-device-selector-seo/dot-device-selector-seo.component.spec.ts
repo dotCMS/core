@@ -150,4 +150,26 @@ describe('DotDeviceSelectorSeoComponent', () => {
         const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
         expect(link.properties.href).toContain('/c/content');
     });
+
+    it('should have link to open in a new tab', () => {
+        fixtureHost.detectChanges();
+
+        const addContent: DebugElement = de.query(
+            By.css('[data-testId="dot-device-selector-link"]')
+        );
+        expect(addContent.nativeElement.href).toContain(
+            '/an/url/test?language_id=1&disabledNavigateMode=true'
+        );
+    });
+
+    it('should trigger the changeSeoMedia', () => {
+        spyOn(component, 'changeSeoMediaEvent');
+        fixtureHost.detectChanges();
+
+        const buttonMedia = de.query(By.css('[data-testId="device-list-button-media"]'));
+
+        buttonMedia.triggerEventHandler('click', 'Google');
+
+        expect(component.changeSeoMediaEvent).toHaveBeenCalled();
+    });
 });
