@@ -500,7 +500,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                     .filter(key -> !copyMap.containsKey(key)).collect(Collectors.joining(","));
 
             assertTrue(String.format(" baseType `%s` should have same (or more) number of properties. Missing properties %s" ,baseTypeName, missingKeys),copyMap.size() >= sourceMap.size());
-            final String assertMessage =  " contentType:`%s` , id: `%s` ,  key: `%s` ";
+            final String assertMessage =  "Base contentType:`%s` , id: `%s` ,  key: `%s` ";
 
             for (final String propertyName : sourceMap.keySet()) {
 
@@ -526,7 +526,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 if (isStoryBlockField) {
                     final LinkedHashMap<String, Object> jsonMap =
                             Try.of(() -> APILocator.getStoryBlockAPI().toMap(object1)).getOrElse(new LinkedHashMap<>());
-                    assertEquals(String.format(assertMessage, baseTypeName, original.getIdentifier(), propertyName), jsonMap, object2);
+                    assertEquals(String.format(assertMessage, baseTypeName, original, propertyName), jsonMap, object2);
                 } else {
                     assertEquals(String.format(assertMessage, baseTypeName, original.getIdentifier(), propertyName), object1, object2);
                 }
