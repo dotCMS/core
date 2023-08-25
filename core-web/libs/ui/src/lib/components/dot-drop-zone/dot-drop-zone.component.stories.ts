@@ -17,7 +17,7 @@ export default {
         // https://storybook.js.org/docs/6.5/angular/essentials/actions#action-event-handlers
         actions: {
             // detect if the component is emitting the correct HTML events
-            handles: ['fileDrop', 'fileDragEnter', 'fileDragLeave', 'fileDropError']
+            handles: ['fileDrop', 'fileDragEnter', 'fileDragLeave']
         }
     }
 } as Meta<DotDropZoneComponent>;
@@ -27,20 +27,11 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
         ...args,
         // https://storybook.js.org/docs/6.5/angular/essentials/actions#action-args
         fileDropped: action('fileDropped'),
-        fileDropError: action('fileDropError'),
         fileDragEnter: action('fileDragEnter'),
         fileDragLeave: action('fileDragLeave')
     },
     styles: [
         `
-        .drop-zone-active .content {
-            background-color: #f2f2f2;
-        }
-
-        .drop-zone-error .content {
-            background-color: rgba(230, 57, 70, 0.2);
-        }
-
         .content {
             width: 100%;
             height: 200px;
@@ -58,10 +49,10 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
     template: `
         <dot-drop-zone
             [accept]="accept"
+            [maxLength]="maxLength"
             (fileDropped)="fileDropped($event)"
             (fileDragEnter)="fileDragEnter($event)"
             (fileDragLeave)="fileDragLeave($event)"
-            (fileDropError)="fileDropError($event)"
         >
             <div class="content">
                 Drop files here.
@@ -77,5 +68,6 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
 export const Base = Template.bind({});
 
 Base.args = {
-    accept: []
+    accept: [],
+    maxLength: 1000000
 };

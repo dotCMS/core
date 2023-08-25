@@ -1,7 +1,7 @@
 import { Directive, Host, OnInit, Optional, forwardRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { DotDropZoneComponent } from '../../dot-drop-zone.component';
+import { DotDropZoneComponent, DropZoneFileEvent } from '../../dot-drop-zone.component';
 
 @Directive({
     selector: '[dotDropZoneValueAccessor]',
@@ -14,7 +14,7 @@ import { DotDropZoneComponent } from '../../dot-drop-zone.component';
     ]
 })
 export class DotDropZoneValueAccessorDirective implements ControlValueAccessor, OnInit {
-    private onChange: (value: File[]) => void;
+    private onChange: (value: File) => void;
     private onTouched: () => void;
 
     constructor(@Optional() @Host() private _dotDropZone: DotDropZoneComponent) {
@@ -26,8 +26,8 @@ export class DotDropZoneValueAccessorDirective implements ControlValueAccessor, 
     }
 
     ngOnInit() {
-        this._dotDropZone.fileDropped.subscribe((files: File[]) => {
-            this.onChange(files);
+        this._dotDropZone.fileDropped.subscribe(({ file }: DropZoneFileEvent) => {
+            this.onChange(file); // Only File
             this.onTouched();
         });
     }

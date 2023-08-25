@@ -2,7 +2,7 @@ import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
 
-import { DotDropZoneComponent, DropZoneError } from './dot-drop-zone.component';
+import { DotDropZoneComponent } from './dot-drop-zone.component';
 
 describe('DotDropZoneComponent', () => {
     let spectator: SpectatorHost<DotDropZoneComponent>;
@@ -41,25 +41,29 @@ describe('DotDropZoneComponent', () => {
     });
 
     describe('onDrop', () => {
-        it('should emit fileDrop and set active to false', () => {
+        it('should emit fileDrop', () => {
             const spy = spyOn(spectator.component.fileDropped, 'emit');
-            spectator.component.active = true;
-
             const event = new DragEvent('drop', {
                 dataTransfer: mockDataTransfer
             });
 
             spectator.component.onDrop(event);
 
-            expect(spy).toHaveBeenCalledWith(mockFile);
-            expect(spectator.component.active).toBeFalsy();
+            expect(spy).toHaveBeenCalledWith({
+                file: mockFile,
+                validity: {
+                    isFileTypeMismatch: false,
+                    isFileTooBig: false,
+                    multipleFiles: false,
+                    valid: true
+                }
+            });
         });
 
         it('should prevent default', () => {
             const event = new DragEvent('drop', {
                 dataTransfer: mockDataTransfer
             });
-
             const spyEventPrevent = spyOn(event, 'preventDefault');
             const spyEventStop = spyOn(event, 'stopPropagation');
 
@@ -75,24 +79,30 @@ describe('DotDropZoneComponent', () => {
                 spectator.detectChanges();
             });
 
-            it('should emit fileDrop and set active to false', () => {
+            it('should emit fileDrop', () => {
                 const spy = spyOn(spectator.component.fileDropped, 'emit');
-                spectator.component.active = true;
-
                 const event = new DragEvent('drop', {
                     dataTransfer: mockDataTransfer
                 });
 
                 spectator.component.onDrop(event);
 
-                expect(spy).toHaveBeenCalledWith(mockFile);
-                expect(spectator.component.active).toBeFalsy();
+                expect(spy).toHaveBeenCalledWith({
+                    file: mockFile,
+                    validity: {
+                        isFileTypeMismatch: false,
+                        isFileTooBig: false,
+                        multipleFiles: false,
+                        valid: true
+                    }
+                });
             });
         });
 
         describe('when multiple files are being dragged', () => {
             it('should set multiFileError to true if multiplefiles are being dragged', () => {
-                const spyError = spyOn(spectator.component.fileDropError, 'emit');
+                const spy = spyOn(spectator.component.fileDropped, 'emit');
+
                 const file1 = new File([''], 'filename', { type: 'text/html' });
                 const file2 = new File([''], 'filename', { type: 'text/html' });
                 mockDataTransfer.items.add(file1);
@@ -103,9 +113,16 @@ describe('DotDropZoneComponent', () => {
                 });
 
                 spectator.component.onDrop(event);
-                expect(spyError).toHaveBeenCalledWith(DropZoneError.MULTIFILE_ERROR);
-                expect(spectator.component.error).toBeTrue();
-                expect(spectator.component.active).toBeFalsy();
+
+                expect(spy).toHaveBeenCalledWith({
+                    file: null,
+                    validity: {
+                        isFileTypeMismatch: false,
+                        isFileTooBig: false,
+                        multipleFiles: true,
+                        valid: false
+                    }
+                });
             });
         });
 
@@ -115,39 +132,39 @@ describe('DotDropZoneComponent', () => {
                 spectator.detectChanges();
             });
 
-            it('should set invalidFile to true if file is not valid', () => {
+            it('should emit fileDropped event with validity isFileTypeMismatch to true', () => {
                 const spy = spyOn(spectator.component.fileDropped, 'emit');
-                const spyError = spyOn(spectator.component.fileDropError, 'emit');
-
                 const event = new DragEvent('drop', {
                     dataTransfer: mockDataTransfer
                 });
 
                 spectator.component.onDrop(event);
-                expect(spectator.component.error).toBeTrue();
-                expect(spyError).toHaveBeenCalledWith(DropZoneError.INVALID_FILE);
-                expect(spy).not.toHaveBeenCalled();
+                expect(spy).toHaveBeenCalledWith({
+                    file: mockFile,
+                    validity: {
+                        isFileTypeMismatch: true,
+                        isFileTooBig: false,
+                        multipleFiles: false,
+                        valid: false
+                    }
+                });
             });
         });
     });
 
     describe('onDragEnter', () => {
-        it('should emit fileDragEnter to true and add drop-zone-active class', () => {
+        it('should emit fileDragEnter event', () => {
             const spy = spyOn(spectator.component.fileDragEnter, 'emit');
             const event = new DragEvent('dragenter');
 
             spectator.component.onDragEnter(event);
             spectator.detectChanges();
 
-            expect(spectator.component.active).toBeTrue();
-            expect(spectator.component.error).toBeFalsy();
-            expect(spectator.element.classList).toContain('drop-zone-active');
             expect(spy).toHaveBeenCalledWith(true);
         });
 
         it('should prevent default', () => {
             const event = new DragEvent('dragenter');
-
             const spyEventPrevent = spyOn(event, 'preventDefault');
             const spyEventStop = spyOn(event, 'stopPropagation');
 
@@ -161,17 +178,6 @@ describe('DotDropZoneComponent', () => {
     describe('onDragOver', () => {
         it('should prevent default', () => {
             const event = new DragEvent('dragover');
-            spectator.component.onDragOver(event);
-            spectator.detectChanges();
-
-            expect(spectator.component.active).toBeTrue();
-            expect(spectator.component.error).toBeFalsy();
-            expect(spectator.element.classList).toContain('drop-zone-active');
-        });
-
-        it('should prevent default', () => {
-            const event = new DragEvent('dragover');
-
             const spyEventPrevent = spyOn(event, 'preventDefault');
             const spyEventStop = spyOn(event, 'stopPropagation');
 
@@ -183,25 +189,18 @@ describe('DotDropZoneComponent', () => {
     });
 
     describe('onDragLeave', () => {
-        it('should emit fileDragLeave and set active/error to false', () => {
+        it('should emit fileDragLeave event', () => {
             const spy = spyOn(spectator.component.fileDragLeave, 'emit');
-            spectator.component.active = true;
-            spectator.component.error = true;
-
             const event = new DragEvent('dragleave');
 
             spectator.component.onDragLeave(event);
-
             spectator.detectChanges();
 
-            expect(spectator.component.active).toBeFalse();
-            expect(spectator.component.error).toBeFalse();
             expect(spy).toHaveBeenCalledWith(true);
         });
 
         it('should prevent default', () => {
             const event = new DragEvent('dragleave');
-
             const spyEventPrevent = spyOn(event, 'preventDefault');
             const spyEventStop = spyOn(event, 'stopPropagation');
 
