@@ -1,10 +1,7 @@
 package com.dotmarketing.portlets.Files.Actions;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.PortletDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -42,69 +39,71 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
 
 public class UploadMultipleFilesActionTest extends IntegrationTestBase {
-    @BeforeClass
-    public static void prepare() throws Exception {
-        //Setting web app environment
-        IntegrationTestInitService.getInstance().init();
-    }
+        @BeforeClass
+        public static void prepare() throws Exception {
+                //Setting web app environment
+                IntegrationTestInitService.getInstance().init();
+        }
 
-    /**
-     * Method to test:
-     * Given Scenario:
-     * ExpectedResult:
-     *
-     */
-    @Test
-    public void  test_uploadMultipleFiles_shouldUploadFilesOnSelectedLanguage() throws Exception {
-        final UploadMultipleFilesAction action = new UploadMultipleFilesAction();
-        User adminUser = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", APILocator.systemUser(), false);
+        /**
+         * Method to test:
+         * Given Scenario:
+         * ExpectedResult:
+         *
+         */
+        @Test
+        public void  test_uploadMultipleFiles_shouldUploadFilesOnSelectedLanguage() throws Exception {
+                final UploadMultipleFilesAction action = new UploadMultipleFilesAction();
+                User adminUser = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", APILocator.systemUser(), false);
 
-        final String hostName = "demo.dotcms.com-" + System.currentTimeMillis();
-        final Host host = new SiteDataGen().name(hostName).nextPersisted();
-        final Folder folderImages = new FolderDataGen().site(host).name("images").nextPersisted();
+                final String hostName = "demo.dotcms.com-" + System.currentTimeMillis();
+                final Host host = new SiteDataGen().name(hostName).nextPersisted();
+                final Folder folderImages = new FolderDataGen().site(host).name("images").nextPersisted();
+                Portlet portlet = new Portlet("site-browser", "com.liferay.portlet.JSPPortlet", new HashMap<>());
+                PortletConfig portletConfig = APILocator.getPortletAPI().getPortletConfig(portlet);
+                PortletContext portletCtx = portletConfig.getPortletContext();
 
-        final PortletDataGen portletDataGen = new PortletDataGen();
-        final Portlet portlet = portletDataGen.nextPersisted();
-        PortletConfig portletConfig = APILocator.getPortletAPI().getPortletConfig(portlet);
-        PortletContext portletCtx = portletConfig.getPortletContext();
+                final ConcretePortletWrapper concretePortletWrapper = mock(ConcretePortletWrapper.class);
+                final WindowState windowState = mock(WindowState.class);
+                final PortletMode portletMode = mock(PortletMode.class);
+                final PortletPreferences portletPrefs = mock(PortletPreferences.class);
+                final String layoutId = "1";
 
-        final ConcretePortletWrapper concretePortletWrapper = mock(ConcretePortletWrapper.class);
-        final WindowState windowState = mock(WindowState.class);
-        final PortletMode portletMode = mock(PortletMode.class);
-        final PortletPreferences portletPrefs = mock(PortletPreferences.class);
-        final String layoutId = "1";
+                Map<String, String> requestParams = Map.of(
+                        WebKeys.PORTLET_URL_PORTLET_NAME, portlet.getPortletId(),
+                        WebKeys.PORTLET_URL_ACTION, Boolean.TRUE.toString(),
+                        "parent", folderImages.getIdentifier(),
+                        "fileNames", "Test-file-1.jpgcom.dotmarketing.contentlet.form_name_value_separatorTest-file-2.jpg"
+                );
+                MockHeaderRequest headerRequest = new MockHeaderRequest(new MockHttpRequestIntegrationTest(
+                        hostName, "/upload-multiple-files").request());
+                headerRequest.setHeader("Content-Type", "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW");
+                MockParameterRequest paramReq = new MockParameterRequest(
+                        new MockSessionRequest(headerRequest), requestParams);
+                final UploadServletRequest uploadRequest = new UploadServletRequest(paramReq);
 
-        Map<String, String> requestParams = Map.of(
-                WebKeys.PORTLET_URL_PORTLET_NAME, portlet.getPortletId(),
-                WebKeys.PORTLET_URL_ACTION, Boolean.TRUE.toString(),
-                "parent", folderImages.getIdentifier(),
-                "fileNames", "test-file-1.txt"
-        );
+                uploadRequest.getSession().setAttribute(com.dotmarketing.util.WebKeys.CONTENT_SELECTED_LANGUAGE, 2);
+                uploadRequest.getSession().setAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED, 2);
+                ActionRequestImpl actionRequest =
+                        new ActionRequestImpl(uploadRequest, portlet, concretePortletWrapper, portletCtx, windowState, portletMode, portletPrefs, layoutId );
 
-        MockHeaderRequest headerRequest = new MockHeaderRequest(new MockHttpRequestIntegrationTest(
-                hostName, "/upload-multiple-files").request());
-        headerRequest.setHeader("Content-Type", "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW");
-        MockParameterRequest paramReq = new MockParameterRequest(
-                new MockSessionRequest(headerRequest), requestParams);
-        final UploadServletRequest uploadRequest = new UploadServletRequest(paramReq);
+                final ActionResponse actionResponse = mock(ActionResponse.class);
+                final ActionForm actionForm = mock(ActionForm.class);
 
-        ActionRequestImpl actionRequest =
-                new ActionRequestImpl(uploadRequest, portlet, concretePortletWrapper, portletCtx, windowState, portletMode, portletPrefs, layoutId );
-
-        final ActionResponse actionResponse = mock(ActionResponse.class);
-        final ActionForm actionForm = mock(ActionForm.class);
-
-        actionRequest.setAttribute("struts_action","/ext/files/upload_multiple");
-        action._saveFileAsset(actionRequest,actionResponse,portletConfig, actionForm, adminUser ,"upload");
+                actionRequest.setAttribute("struts_action","/ext/files/upload_multiple");
+                action._saveFileAsset(actionRequest,actionResponse,portletConfig, actionForm, adminUser ,"upload");
 
 
-    }
+        }
 }
