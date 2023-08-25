@@ -24,14 +24,13 @@ export class DotSeoMetaTagsService {
      */
     getMetaTags(pageDocument: Document): SeoMetaTags {
         const metaTags = pageDocument.getElementsByTagName('meta');
-        let metaTagsObject = {};
+        const metaTagsObject = {};
 
         for (const metaTag of metaTags) {
-            metaTagsObject = {
-                ...metaTagsObject,
-                [metaTag.getAttribute('name') || metaTag.getAttribute('property')]:
-                    metaTag.getAttribute('content')
-            };
+            const name = metaTag.getAttribute('name');
+            const property = metaTag.getAttribute('property');
+            const content = metaTag.getAttribute('content');
+            metaTagsObject[name || property] = content;
         }
 
         const favicon = pageDocument.querySelectorAll('link[rel="icon"]');

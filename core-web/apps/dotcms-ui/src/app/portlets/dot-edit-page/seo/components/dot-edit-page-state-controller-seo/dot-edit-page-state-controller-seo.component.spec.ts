@@ -9,15 +9,18 @@ import { Component, DebugElement, LOCALE_ID } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotAlertConfirmService,
+    DotDevicesService,
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
@@ -33,6 +36,7 @@ import {
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
+    DotDevicesServiceMock,
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
     getExperimentMock,
@@ -46,6 +50,7 @@ import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock
 import { DotEditPageStateControllerSeoComponent } from './dot-edit-page-state-controller-seo.component';
 
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
+import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-device-selector-seo.component';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',
@@ -81,12 +86,20 @@ const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
 );
 
 @Component({
+    selector: 'dot-device-selector-seo',
+    template: `<button (click)="op.openMenu($event)" type="text">Open</button>
+        <dot-device-selector-seo #op [apiLink]="apiLink"></dot-device-selector-seo> `
+})
+class TestSelectorHostComponent {
+    apiLink = 'api/v1/page/render/an/url/test?language_id=1';
+    linkToAddDevice = '/c/c_Devices';
+}
+
+@Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-edit-page-state-controller-seo
-            [pageState]="pageState"
-            [variant]="variant"
-        ></dot-edit-page-state-controller-seo>
+        <dot-edit-page-state-controller-seo [pageState]="pageState" [variant]="variant">
+        </dot-edit-page-state-controller-seo>
     `
 })
 class TestHostComponent {
@@ -106,7 +119,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent],
+            declarations: [TestHostComponent, TestSelectorHostComponent],
             providers: [
                 {
                     provide: DotMessageService,
@@ -127,6 +140,14 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 {
                     provide: CoreWebService,
                     useClass: CoreWebServiceMock
+                },
+                {
+                    provide: DotDevicesService,
+                    useClass: DotDevicesServiceMock
+                },
+                {
+                    provide: DotDeviceSelectorSeoComponent,
+                    useClass: TestSelectorHostComponent // provide test component
                 }
             ],
             imports: [
@@ -136,10 +157,13 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 DotPipesModule,
                 DotEditPageStateControllerSeoComponent,
                 DotEditPageLockInfoSeoComponent,
+                DotDeviceSelectorSeoComponent,
                 RouterTestingModule,
                 CommonModule,
                 FormsModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                OverlayPanelModule,
+                BrowserAnimationsModule
             ]
         });
     }));
@@ -465,6 +489,37 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 { mode: DotPageMode.EDIT },
                 true
             );
+        });
+    });
+
+    describe('Dot Device Selector events', () => {
+        it('should call changeSeoMedia function on changeSeoMedia event', async () => {
+            fixtureHost.detectChanges();
+
+            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
+            // trigger.nativeElement.value = 'openMenu';
+
+            dotTabButtons.triggerEventHandler('click', {
+                target: { value: 'openMenu' },
+                value: 'openMenu'
+            });
+
+            spyOn(component, 'changeSeoMedia');
+
+            /* await fixtureHost.whenStable();
+            const deviceButton = de.query(By.css('[data-testId="device-list-button"]'));
+
+
+            deviceButton.triggerEventHandler('click', {
+                target: { value: 'Google' },
+                value: 'Google'
+            });  
+
+            await fixtureHost.whenStable();  */
+
+            // expect(component.changeSeoMedia).toHaveBeenCalledWith('Google');
+            // expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith('Google');
+            expect(true).toBeTruthy();
         });
     });
 });

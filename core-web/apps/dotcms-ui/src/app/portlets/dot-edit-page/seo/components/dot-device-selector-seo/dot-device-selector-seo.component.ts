@@ -50,7 +50,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
     @Output() changeSeoMedia = new EventEmitter<string>();
-    @ViewChild('op') overlayPanel: OverlayPanel;
+    @ViewChild('deviceSelector') overlayPanel: OverlayPanel;
     previewUrl: string;
     protected linkToAddDevice = '/c/content';
     protected linkToEditDeviceQueryParams = {
