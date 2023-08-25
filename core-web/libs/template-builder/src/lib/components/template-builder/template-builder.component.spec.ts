@@ -90,11 +90,7 @@ describe('TemplateBuilderComponent', () => {
                     body: FULL_DATA_MOCK,
                     header: true,
                     footer: true,
-                    sidebar: {
-                        location: 'left',
-                        width: 'small',
-                        containers: []
-                    },
+                    sidebar: null,
                     width: 'Mobile',
                     title: 'Test Title'
                 },
@@ -245,6 +241,14 @@ describe('TemplateBuilderComponent', () => {
         expect(fixGridStackNodeOptionsMock).toHaveBeenCalled();
     });
 
+    it('should set layoutProperties to default values if sidebar null', () => {
+        expect(spectator.component.layoutProperties).toEqual({
+            header: true,
+            footer: true,
+            sidebar: { location: '', width: 'medium', containers: [] }
+        });
+    });
+
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
@@ -267,7 +271,6 @@ describe('TemplateBuilderComponent', () => {
             });
 
             store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {
-                expect(true).toBeTruthy();
                 expect(layoutChangeMock).toHaveBeenCalledWith({
                     layout: {
                         body: FULL_DATA_MOCK,
@@ -285,6 +288,37 @@ describe('TemplateBuilderComponent', () => {
                 });
                 done();
             });
+        });
+    });
+
+    it('should emit layoutChange when the layoutProperties changes', (done) => {
+        const LAYOUT_PROPERTIES_MOCK = {
+            header: false,
+            footer: true,
+            sidebar: {
+                containers: [],
+                location: 'right',
+                width: 'medium'
+            }
+        };
+
+        const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+
+        store.updateLayoutProperties(LAYOUT_PROPERTIES_MOCK);
+
+        spectator.detectChanges();
+
+        store.vm$.pipe(pluck('layoutProperties'), take(1)).subscribe(() => {
+            expect(layoutChangeMock).toHaveBeenCalledWith({
+                layout: {
+                    ...LAYOUT_PROPERTIES_MOCK,
+                    body: FULL_DATA_MOCK,
+                    width: 'Mobile',
+                    title: 'Test Title'
+                },
+                themeId: '123'
+            });
+            done();
         });
     });
 

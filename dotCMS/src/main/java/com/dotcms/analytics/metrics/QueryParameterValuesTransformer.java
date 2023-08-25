@@ -35,22 +35,26 @@ public class QueryParameterValuesTransformer implements ParameterValuesTransform
     @Override
     public Values transform(
             final Collection<QueryParameter> valuesFromEvent,
-            final AbstractCondition condition) {
+            final AbstractCondition<QueryParameter> condition) {
 
+        final QueryParameter configuration = condition.value();
+        final String name = configuration.getName().toLowerCase();
+        final String conditionValue = UtilMethods.isSetOrGet(configuration.getValue(), StringPool.BLANK).toString();
+
+        final Set<String> realValues = valuesFromEvent.stream()
+                .filter(queryParameter -> queryParameter.getName().toLowerCase().equals(name))
+                .map(queryParameter -> queryParameter.getValue())
+                .collect(Collectors.toSet());
+        return new Values(conditionValue, realValues);
+
+    }
+
+    @Override
+    public QueryParameter deserialize(final String jsonStringValue) {
         try {
-            final Map<String, Object> configuration = JsonUtil.getJsonFromString(condition.value());
-            final String name = configuration.get("name").toString().toLowerCase();
-            final String conditionValue = UtilMethods.isSetOrGet(configuration.get("value"), StringPool.BLANK).toString();
-
-            final Set<String> realValues = valuesFromEvent.stream()
-                    .filter(queryParameter -> queryParameter.getName().toLowerCase().equals(name))
-                    .map(queryParameter -> queryParameter.getValue())
-                    .collect(Collectors.toSet());
-            return new Values(conditionValue, realValues);
-
+            return JsonUtil.getObjectFromJson(jsonStringValue, QueryParameter.class);
         } catch (IOException e) {
-            throw new DotRuntimeException(e);
+            throw new RuntimeException(e);
         }
-
     }
 }

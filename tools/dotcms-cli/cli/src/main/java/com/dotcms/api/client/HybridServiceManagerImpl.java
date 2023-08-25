@@ -46,7 +46,7 @@ public class HybridServiceManagerImpl implements ServiceManager {
                 ServiceBean strippedCredentialsBean = ServiceBean.builder().from(service).credentials(strippedTokenBean).build();
                 defaultManager.persist(strippedCredentialsBean);
             } catch (StoreSecureException  e) {
-                logger.warn(String.format("Unable to persist credentials for service [%s] using the Key-Chain. access credentials will be stored as plain text.", service.name()), e);
+                logger.warn("Credentials are stored in plain text!");
                 //Now upon error we need to fall back to YML file for storage
                 defaultManager.persist(service);
             }
@@ -77,7 +77,7 @@ public class HybridServiceManagerImpl implements ServiceManager {
                         continue;
                     }
                 } catch (StoreSecureException e) {
-                    logger.warn(String.format("Unable to recover token from key-chain for service [%s]", service.name()), e);
+                    logger.warn("Unable to recover token from key-chain. it probably stored as plain text.");
                     //Upon error, we need to return the original list
                     return services;
                 }
@@ -99,7 +99,7 @@ public class HybridServiceManagerImpl implements ServiceManager {
                 try {
                     passwordStore.deletePassword(service.name(), credentialsBean.user());
                 } catch (StoreSecureException e) {
-                    logger.warn(String.format("Unable to delete token from key-chain for service [%s]", service.name()), e);
+                    logger.warn("Token wasn't deleted from key-chain. it probably stored as plain text.");
                 }
             }
         }

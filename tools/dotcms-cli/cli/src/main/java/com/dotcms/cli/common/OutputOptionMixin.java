@@ -2,9 +2,10 @@ package com.dotcms.cli.common;
 
 import static io.quarkus.devtools.messagewriter.MessageIcons.ERROR_ICON;
 import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.abbreviate;
 
 import io.quarkus.devtools.messagewriter.MessageWriter;
+import io.quarkus.logging.Log;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,7 +21,7 @@ public class OutputOptionMixin implements MessageWriter {
     @CommandLine.Option(names = { "-e", "--errors" }, description = "Display error messages.", hidden = true)
     boolean showErrors;
 
-    @CommandLine.Option(names = { "--verbose" }, description = "Verbose mode.", hidden = true)
+    @CommandLine.Option(names = { "-v", "--verbose" }, description = "Verbose mode.", hidden = true)
     boolean verbose;
 
     @CommandLine.Option(names = {"--cli-test" }, description = "Manually set output streams for unit test purposes.", hidden = true)
@@ -156,21 +157,25 @@ public class OutputOptionMixin implements MessageWriter {
             CommandLine.UnmatchedArgumentException.printSuggestions(
                     (CommandLine.ParameterException) ex, out());
         }
-            //Yeah, this doesn't look like the right logic
-            //in the sense that we're printing out the error only when the showErrors is false
-            //But there's a reason for that.
-            //ShowErrors is on when we want to see the full stack trace and this block is meant to be used to show a shorten output
-            if (!isShowErrors()) {
-                if (null != ex) {
-                    //Extract the proper exception and remove all server side noise
-                    ex = ExceptionHandler.handle(ex);
-                    message = String.format("%s %s  ", message,
-                            ex.getMessage() != null ? abbreviate(ex.getMessage(), "...", 200)
-                                    : "No error message was provided");
-                }
-                error(message);
-                info("@|bold,yellow run with -e or --errors for full details on the exception.|@");
-            }
+
+        if (null != ex) {
+            //Extract the proper exception and remove all server side noise
+            ex = ExceptionHandler.handle(ex);
+            message = String.format("%s %s  ", message,
+                    ex.getMessage() != null ? abbreviate(ex.getMessage(), "...", 200)
+                            : "No error message was provided");
+        }
+
+        Log.error(message, ex);
+
+        //Yeah, this doesn't look like the right logic
+        //in the sense that we're printing out the error only when the showErrors is false
+        //But there's a reason for that.
+        //ShowErrors is on when we want to see the full stack trace and this block is meant to be used to show a shorten output
+        if (!isShowErrors()) {
+            error(message);
+            info("@|bold,yellow run with -e or --errors for full details on the exception.|@");
+        }
 
         final CommandLine cmd = mixee.commandLine();
         return cmd.getExitCodeExceptionMapper() != null ? cmd.getExitCodeExceptionMapper()

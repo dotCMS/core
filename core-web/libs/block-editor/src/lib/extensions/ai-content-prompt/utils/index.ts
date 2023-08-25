@@ -5,17 +5,20 @@ export const TIPPY_OPTIONS: Partial<Props> = {
     interactive: true,
     maxWidth: '100%',
     trigger: 'manual',
-    hideOnClick: 'toggle',
+    hideOnClick: true,
     placement: 'top',
     popperOptions: {
         modifiers: [
             {
                 name: 'flip',
-                options: { fallbackPlacements: ['bottom', 'right', 'left'] }
+                enabled: false
+            },
+            {
+                name: 'preventOverflow',
+                options: {
+                    altAxis: true
+                }
             }
         ]
-    },
-    onShow: (instance) => {
-        (instance.popper as HTMLElement).style.width = '100%';
     }
 };

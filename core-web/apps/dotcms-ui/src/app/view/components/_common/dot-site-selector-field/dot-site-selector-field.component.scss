@@ -1,7 +1,0 @@
-@use "variables" as *;
-
-dot-site-selector {
-    ::ng-deep .p-button:enabled {
-        border: 1px solid $color-palette-gray;
-    }
-}

@@ -1,7 +1,7 @@
 import { of } from 'rxjs';
 
 import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { catchError } from 'rxjs/operators';
 
@@ -20,11 +20,13 @@ export class AIContentPromptComponent {
     @ViewChild('input') input: ElementRef;
 
     @Output() formValues = new EventEmitter<FormValues>();
-    @Output() hide = new EventEmitter<boolean>();
+    @Output() formSubmission = new EventEmitter<boolean>();
     @Output() aiResponse = new EventEmitter<string>();
 
     loading = false;
-    form: FormGroup;
+    form = new FormGroup({
+        textPrompt: new FormControl('')
+    });
 
     constructor(private fb: FormBuilder, private aiContentService: AiContentService) {
         this.buildForm();
@@ -36,7 +38,7 @@ export class AIContentPromptComponent {
         if (textPrompt) {
             this.formValues.emit({ textPrompt });
 
-            this.hide.emit(true);
+            this.formSubmission.emit(true);
 
             this.aiContentService
                 .getIAContent(textPrompt)
@@ -47,13 +49,17 @@ export class AIContentPromptComponent {
         }
     }
 
+    cleanForm() {
+        this.form.reset();
+    }
+
+    focusField() {
+        this.input.nativeElement.focus();
+    }
+
     private buildForm() {
         this.form = this.fb.group({
             textPrompt: ['', Validators.required]
         });
-    }
-
-    cleanForm() {
-        this.form.reset();
     }
 }

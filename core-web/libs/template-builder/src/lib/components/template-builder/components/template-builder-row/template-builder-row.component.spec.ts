@@ -72,6 +72,17 @@ describe('TemplateBuilderRowComponent', () => {
 
         store = TestBed.inject(DotTemplateBuilderStore);
 
+        store.setState({
+            rows: [],
+            layoutProperties: {
+                header: false,
+                footer: false,
+                sidebar: null
+            },
+            resizingRowID: '',
+            containerMap: {}
+        });
+
         fixture.detectChanges();
     });
 

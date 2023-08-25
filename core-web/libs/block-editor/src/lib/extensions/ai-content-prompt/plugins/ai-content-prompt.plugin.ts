@@ -18,7 +18,7 @@ interface AIContentPromptProps {
     pluginKey: PluginKey;
     editor: Editor;
     element: HTMLElement;
-    tippyOptions?: Partial<Props>;
+    tippyOptions: Partial<Props>;
     component: ComponentRef<AIContentPromptComponent>;
 }
 
@@ -42,7 +42,7 @@ export class AIContentPromptView {
 
     public tippy: Instance | undefined;
 
-    public tippyOptions?: Partial<Props>;
+    public tippyOptions: Partial<Props>;
 
     public pluginKey: PluginKey;
 
@@ -67,14 +67,12 @@ export class AIContentPromptView {
             this.editor.commands.updateValue(data);
         });
 
-        this.component.instance.hide.pipe(takeUntil(this.$destroy)).subscribe(() => {
+        this.component.instance.formSubmission.pipe(takeUntil(this.$destroy)).subscribe(() => {
             this.editor.commands.closeAIPrompt();
         });
 
-        document.body.addEventListener('mousedown', this.handleOutsideClick, { capture: true });
-
-        this.component.instance.aiResponse.pipe(takeUntil(this.$destroy)).subscribe((response) => {
-            this.insertAINode(response);
+        this.component.instance.aiResponse.pipe(takeUntil(this.$destroy)).subscribe((content) => {
+            this.editor.commands.insertAINode(content);
         });
     }
 
@@ -88,7 +86,7 @@ export class AIContentPromptView {
             return;
         }
 
-        if (next.open) {
+        if (!next.open) {
             this.component.instance.cleanForm();
         }
 
@@ -111,16 +109,22 @@ export class AIContentPromptView {
             return;
         }
 
-        this.tippy = tippy(editorElement.parentElement, {
+        this.tippy = tippy(editorElement, {
             ...TIPPY_OPTIONS,
             ...this.tippyOptions,
-            content: this.element
+            content: this.element,
+            onHide: () => {
+                this.editor.commands.closeAIPrompt();
+            },
+            onShow: (instance) => {
+                (instance.popper as HTMLElement).style.width = '100%';
+            }
         });
     }
 
     show() {
         this.tippy?.show();
-        this.component.instance.input.nativeElement.focus();
+        this.component.instance.focusField();
     }
 
     hide() {
@@ -132,23 +136,10 @@ export class AIContentPromptView {
         this.tippy?.destroy();
         this.$destroy.next(true);
         this.$destroy.complete();
-        document.body.removeEventListener('mousedown', this.handleOutsideClick);
     }
-
-    handleOutsideClick = (event: MouseEvent) => {
-        const target = event.target as HTMLElement;
-
-        if (!this.tippy?.popper.contains(target)) {
-            this.editor.commands.closeAIPrompt();
-        }
-    };
 
     private tippyRect() {
         return document.querySelector('#ai-text-prompt')?.getBoundingClientRect();
-    }
-
-    private insertAINode(content: string) {
-        this.editor.commands.showGeneratedContent(content);
     }
 }
 

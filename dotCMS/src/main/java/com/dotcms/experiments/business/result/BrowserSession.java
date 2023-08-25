@@ -1,9 +1,7 @@
 package com.dotcms.experiments.business.result;
 
-import com.dotcms.util.DotPreconditions;
-import java.util.Iterator;
+import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -37,6 +35,14 @@ public class BrowserSession {
     public Optional<String> getVariant() {
         if (!events.isEmpty()) {
             return events.get(0).getVariant();
+        }
+
+        return Optional.empty();
+    }
+
+    public Optional<Instant> getDate(){
+        if (!events.isEmpty()) {
+            return events.get(0).getDate();
         }
 
         return Optional.empty();
