@@ -3,7 +3,7 @@ import { Node } from '@tiptap/core';
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         AIContentNode: {
-            showGeneratedContent: (content?: string) => ReturnType;
+            insertAINode: (content?: string) => ReturnType;
         };
     }
 }
@@ -44,7 +44,7 @@ export const AIContentNode = Node.create({
     addCommands() {
         return {
             ...this.parent?.(),
-            showGeneratedContent:
+            insertAINode:
                 (content?: string) =>
                 ({ commands }) => {
                     return commands.insertContent({

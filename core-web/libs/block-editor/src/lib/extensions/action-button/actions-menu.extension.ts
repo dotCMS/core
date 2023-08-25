@@ -174,7 +174,7 @@ function execCommand({
         superscript: () => editor.chain().setSuperscript().focus().run(),
         video: () => editor.commands.openAssetForm({ type: 'video' }),
         aiContentPrompt: () => editor.commands.openAIPrompt(),
-        aiContent: () => editor.commands.showGeneratedContent()
+        aiContent: () => editor.commands.insertAINode()
     };
 
     getCustomActions(customBlocks).forEach((option) => {
