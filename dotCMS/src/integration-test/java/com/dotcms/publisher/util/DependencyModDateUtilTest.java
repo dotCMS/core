@@ -1,7 +1,7 @@
 package com.dotcms.publisher.util;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static org.jgroups.util.Util.assertFalse;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;

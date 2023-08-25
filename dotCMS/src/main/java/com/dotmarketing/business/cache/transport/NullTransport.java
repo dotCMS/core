@@ -1,4 +1,4 @@
-package com.dotmarketing.business.jgroups;
+package com.dotmarketing.business.cache.transport;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotmarketing.business.cache.transport.CacheTransport;
