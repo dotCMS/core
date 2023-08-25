@@ -2,11 +2,12 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
+import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCopyLinkComponent } from './dot-copy-link.component';
@@ -33,7 +34,7 @@ describe('DotCopyLinkComponent', () => {
                 },
                 DotClipboardUtil
             ],
-            imports: [UiDotIconButtonModule, TooltipModule, DotIconModule]
+            imports: [ButtonModule, TooltipModule, DotIconModule]
         }).compileComponents();
     }));
 

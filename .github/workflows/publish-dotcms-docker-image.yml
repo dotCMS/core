@@ -15,8 +15,8 @@ on:
         default: 'false'
       multi_arch:
         description: 'Multi-arch flag, true: linux/amd64,linux/arm64 or false: linux/amd64'
-        required: false
-        default: 'false'
+        required: true
+        default: 'true'
       dry_run:
         description: 'Dry Run (does not publish to docker hub)'
         required: false

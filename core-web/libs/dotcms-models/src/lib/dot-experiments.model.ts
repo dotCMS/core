@@ -112,16 +112,23 @@ export type GoalsLevels = 'primary';
 export interface Goal {
     name: string;
     type: GOAL_TYPES;
-    conditions?: Array<GoalCondition>;
+    conditions: Array<UrlParameterGoalCondition | ReachPageGoalCondition>;
 }
 
 export type Goals = Record<GoalsLevels, Goal>;
 
-export interface GoalCondition {
+interface ReachPageGoalCondition {
     parameter: GOAL_PARAMETERS | string;
     operator: GOAL_OPERATORS;
     value: string;
-    isDefault?: boolean;
+}
+interface UrlParameterGoalCondition {
+    parameter: GOAL_PARAMETERS;
+    operator: GOAL_OPERATORS;
+    value: {
+        name: string;
+        value: string;
+    };
 }
 
 export interface RangeOfDateAndTime {
@@ -174,12 +181,11 @@ export enum GOAL_PARAMETERS {
 }
 
 /**
- * Default condition by type of goal in Goal Selection Sidebar
+ * Allowed condition operators by type of goal
  */
-export const ConditionDefaultByTypeOfGoal: Partial<Record<GOAL_TYPES, GOAL_PARAMETERS>> = {
-    [GOAL_TYPES.BOUNCE_RATE]: GOAL_PARAMETERS.URL,
-    [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.REFERER,
-    [GOAL_TYPES.CLICK_ON_ELEMENT]: GOAL_PARAMETERS.URL
+export const AllowedConditionOperatorsByTypeOfGoal = {
+    [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.URL,
+    [GOAL_TYPES.URL_PARAMETER]: 'queryParameter'
 };
 
 const dotCMSThemeColors = {

@@ -34,6 +34,7 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.test.util.FileTestUtil;
@@ -1768,6 +1769,100 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguage(String, String)}
+     * When: The contentlet had just one version not in the DEFAULT variant
+     * Should: return {@link Optional#empty()}
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void findContentletByIdentifierAnyLanguageSpecificVariant() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+        final Contentlet contentletByIdentifierAnyLanguage = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), variant.name());
+
+        assertNotNull(contentletByIdentifierAnyLanguage);
+
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierAnyLanguage.getIdentifier());
+        assertEquals(contentlet.getInode(), contentletByIdentifierAnyLanguage.getInode());
+
+        final Contentlet contentletByIdentifierAnyLanguageDefualt = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(contentlet.getIdentifier());
+
+        assertNull(contentletByIdentifierAnyLanguageDefualt);
+
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguage(String, String, boolean)}
+     * When: The contentlet had just one version not in the DEFAULT variant. but is archived
+     * Should:
+     * - Before Archived it should return the COntentlet no matter the value of archivedDeletedIncluded
+     * - After Archived it should return {@link Optional#empty()} if archivedDeletedIncluded is false
+     * but return the Contentlet if archivedDeletedIncluded is true
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void findContentletByIdentifierAnyLanguageSpecificVariantAndArchived() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+        final Contentlet contentletByIdentifierBeforeArchivedDeletedIncluded = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), variant.name(), true);
+
+        assertNotNull(contentletByIdentifierBeforeArchivedDeletedIncluded);
+
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierBeforeArchivedDeletedIncluded.getIdentifier());
+        assertEquals(contentlet.getInode(), contentletByIdentifierBeforeArchivedDeletedIncluded.getInode());
+
+        final Contentlet contentletByIdentifierBeforeArchivedDeletedNotIncluded = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), variant.name(), false);
+
+        assertNotNull(contentletByIdentifierBeforeArchivedDeletedNotIncluded);
+
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierBeforeArchivedDeletedNotIncluded.getIdentifier());
+        assertEquals(contentlet.getInode(), contentletByIdentifierBeforeArchivedDeletedNotIncluded.getInode());
+
+        ContentletDataGen.archive(contentlet);
+
+        final Contentlet contentletByIdentifierAfterArchivedDeletedIncluded = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), variant.name(), true);
+
+        assertNotNull(contentletByIdentifierAfterArchivedDeletedIncluded);
+
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierAfterArchivedDeletedIncluded.getIdentifier());
+        assertEquals(contentlet.getInode(), contentletByIdentifierAfterArchivedDeletedIncluded.getInode());
+
+        final Contentlet contentletByIdentifierAfterArchivedDeletedNotIncluded = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), variant.name(), false);
+
+        assertNull(contentletByIdentifierAfterArchivedDeletedNotIncluded);
+    }
+
+    /**
      * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguageAnyVariant(String)} (String)}
      * When: The contentlet had just one version not in the DEFAULT variant
      * Should: return the {@link Contentlet} anyway
@@ -2544,4 +2639,125 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#unpublish(Contentlet, User, boolean)}
+     * When: Unpublish a {@link Contentlet} with a DRAFT {@link Experiment}
+     * Shpuld: Unpublish the Page
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void unPublishPageWithNoDraftExperiment() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        HTMLPageDataGen.publish(htmlPageAsset);
+
+        final List<ContentletVersionInfo> contentletVersionInfosPublish = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(htmlPageAsset.getIdentifier());
+        assertEquals(1, contentletVersionInfosPublish.size());
+
+        final ContentletVersionInfo contentletVersionInfoPublish = contentletVersionInfosPublish.get(0);
+
+        assertEquals(htmlPageAsset.getInode(), contentletVersionInfoPublish.getLiveInode());
+
+        new ExperimentDataGen().page(htmlPageAsset).nextPersisted();
+
+        HTMLPageDataGen.unpublish(htmlPageAsset);
+
+        final List<ContentletVersionInfo> contentletVersionInfosUnpublish = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(htmlPageAsset.getIdentifier());
+
+        assertEquals(1, contentletVersionInfosUnpublish.size());
+
+        final ContentletVersionInfo contentletVersionInfoUnpublish = contentletVersionInfosUnpublish.get(0);
+        assertNull( contentletVersionInfoUnpublish.getLiveInode());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#unpublish(Contentlet, User, boolean)}
+     * When: Unpublish a {@link Contentlet} with a ENDED {@link Experiment}
+     * Shpuld: Unpublish the Page
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void unPublishPageWithEndedExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        HTMLPageDataGen.publish(htmlPageAsset);
+
+        final List<ContentletVersionInfo> contentletVersionInfosPublish = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(htmlPageAsset.getIdentifier());
+        assertEquals(1, contentletVersionInfosPublish.size());
+
+        final ContentletVersionInfo contentletVersionInfoPublish = contentletVersionInfosPublish.get(0);
+
+        assertEquals(htmlPageAsset.getInode(), contentletVersionInfoPublish.getLiveInode());
+
+        final Experiment experiment = new ExperimentDataGen().page(htmlPageAsset).nextPersisted();
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+        APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        HTMLPageDataGen.unpublish(htmlPageAsset);
+
+        final List<ContentletVersionInfo> contentletVersionInfosUnpublish = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(htmlPageAsset.getIdentifier());
+
+        assertEquals(1, contentletVersionInfosUnpublish.size());
+
+        final ContentletVersionInfo contentletVersionInfoUnpublish = contentletVersionInfosUnpublish.get(0);
+        assertNull( contentletVersionInfoUnpublish.getLiveInode());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#unpublish(Contentlet, User, boolean)}
+     * When: Unpublish a {@link Contentlet} with a RUNNING {@link Experiment}
+     * Shpuld: throw an {@link DotRuntimeException}
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void unPublishPageWithRunningExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        HTMLPageDataGen.publish(htmlPageAsset);
+
+        final List<ContentletVersionInfo> contentletVersionInfosPublish = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(htmlPageAsset.getIdentifier());
+        assertEquals(1, contentletVersionInfosPublish.size());
+
+        final ContentletVersionInfo contentletVersionInfoPublish = contentletVersionInfosPublish.get(0);
+
+        assertEquals(htmlPageAsset.getInode(), contentletVersionInfoPublish.getLiveInode());
+
+        final Experiment experiment = new ExperimentDataGen().page(htmlPageAsset).nextPersisted();
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        try {
+            final Contentlet contentlet = APILocator.getContentletAPI()
+                    .find(htmlPageAsset.getInode(), APILocator.systemUser(), false);
+            try {
+                APILocator.getContentletAPI().unpublish(contentlet, APILocator.systemUser(), false);
+                throw new AssertionError("Should throw an exception");
+            } catch (RunningExperimentUnpublishException e) {
+                final String expectedMessage = String.format(
+                        "Cannot unpublish a Page %s because it has a RUNNING Experiment: %s",
+                        htmlPageAsset.getIdentifier(), experiment.id().get());
+
+                assertEquals(expectedMessage, e.getMessage());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
+        }
+
+    }
 }

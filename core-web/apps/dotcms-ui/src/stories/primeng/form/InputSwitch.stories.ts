@@ -12,7 +12,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'InputSwitch is used to select a boolean value.: https://primefaces.org/primeng/showcase/#/inputswitch'
+                    'InputSwitch is used to select a boolean value.: https://primeng.org/inputswitch'
             }
         }
     },

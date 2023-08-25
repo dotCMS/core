@@ -10,7 +10,7 @@ import { DataViewModule } from 'primeng/dataview';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule } from '@dotcms/ui';
 import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { SearchableDropdownComponent } from '.';
@@ -28,17 +28,17 @@ export default {
     },
     decorators: [
         moduleMetadata({
-            declarations: [DotMessagePipe, SearchableDropdownComponent],
+            declarations: [SearchableDropdownComponent],
             imports: [
                 BrowserAnimationsModule,
                 ButtonModule,
                 CommonModule,
                 DataViewModule,
-                UiDotIconButtonModule,
                 DotIconModule,
                 FormsModule,
                 InputTextModule,
-                OverlayPanelModule
+                OverlayPanelModule,
+                DotMessagePipe
             ]
         })
     ],
@@ -72,7 +72,7 @@ export default {
         },
         data: [
             {
-                label: 'This is an option',
+                label: 'This is a really long option to test the power of the ellipsis in this component',
                 value: 'option1'
             },
             {

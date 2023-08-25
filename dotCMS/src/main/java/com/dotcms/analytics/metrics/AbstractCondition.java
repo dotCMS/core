@@ -9,11 +9,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.Arrays;
-
 import java.util.Collection;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
@@ -31,10 +26,10 @@ import org.immutables.value.Value.Default;
 @Value.Immutable
 @JsonSerialize(as = Condition.class)
 @JsonDeserialize(as = Condition.class)
-public interface AbstractCondition {
+public interface AbstractCondition<T> {
     String parameter();
     Operator operator();
-    String value();
+    T value();
 
     /**
      * Return true is the Condition is meet on the {@link Event} using the {@link MetricType}.
@@ -51,7 +46,7 @@ public interface AbstractCondition {
         final Collection values = parameter.getValueGetter().getValuesFromEvent(parameter, event);
 
         final Values filterAndTransformValues = parameter.type().getTransformer()
-                .transform(values, this);
+                .transform(values, (AbstractCondition<Object>) this);
 
         final String conditionValue = filterAndTransformValues.getConditionValue();
 
@@ -107,7 +102,7 @@ public interface AbstractCondition {
 
         @Default
         default ParameterValueGetter getValueGetter() {
-            return new DefaultParameterValuesGetter();
+            return new EventAttributeParameterValuesGetter();
         }
 
         /**

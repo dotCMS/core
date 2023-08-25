@@ -26,11 +26,7 @@ public class TreeNode {
      * @param folder The folder to use as the root node for the tree.
      */
     public TreeNode(final FolderView folder) {
-        this.folder = folder;
-        this.children = new ArrayList<>();
-        if (folder.assets() != null) {
-            this.assets = folder.assets().versions();
-        }
+        this(folder, false);
     }
 
     /**
@@ -42,14 +38,15 @@ public class TreeNode {
      *                     ({@code false})
      */
     public TreeNode(final FolderView folder, final boolean ignoreAssets) {
+
         this.folder = folder;
         this.children = new ArrayList<>();
+        this.assets = new ArrayList<>();
+
         if (!ignoreAssets) {
             if (folder.assets() != null) {
-                this.assets = folder.assets().versions();
+                this.assets.addAll(folder.assets().versions());
             }
-        } else {
-            this.assets = new ArrayList<>();
         }
     }
 
@@ -106,12 +103,15 @@ public class TreeNode {
      *                         node. If set to true, all folders will be included. If set to false,
      *                         only folders containing assets or having children with assets will be
      *                         included.
+     * @param filterForPushChanges A boolean indicating whether the filter should be applied for a push process or
+     *                             a regular tree handling.
      * @return A new TreeNode that is a clone of the current node, with its assets filtered based on
      * the provided status and language, and its folders filtered based on the showEmptyFolders
      * parameter.
      */
     public TreeNode cloneAndFilterAssets(final boolean live, final String language,
-                                         final boolean showEmptyFolders) {
+                                         final boolean showEmptyFolders,
+                                         final boolean filterForPushChanges) {
 
         TreeNode newNode = new TreeNode(this.folder, true);
 
@@ -139,14 +139,29 @@ public class TreeNode {
                 continue;
             }
 
-            TreeNode clonedChild = child.cloneAndFilterAssets(live, language, showEmptyFolders);
+            TreeNode clonedChild = child.cloneAndFilterAssets(live, language, showEmptyFolders, filterForPushChanges);
 
-            if (showEmptyFolders
-                    || !clonedChild.assets.isEmpty()
-                    || hasAssetsInSubtree(clonedChild)) {
+            if (filterForPushChanges) {
 
-                if (clonedChild.folder.implicitGlobInclude() || hasIncludeInSubtree(clonedChild)) {
-                    newNode.addChild(clonedChild);
+                if (showEmptyFolders
+                        || !clonedChild.assets.isEmpty()
+                        || (child.folder().markForPush().isPresent() || child.folder().markForDelete().isPresent())
+                        || hasAssetsWithChangesInSubtree(clonedChild)
+                        || hasAFolderWithChangesInSubtree(clonedChild)) {
+
+                    if (clonedChild.folder.implicitGlobInclude() || hasIncludeInSubtree(clonedChild)) {
+                        newNode.addChild(clonedChild);
+                    }
+                }
+            } else {
+
+                if (showEmptyFolders
+                        || !clonedChild.assets.isEmpty()
+                        || hasAssetsInSubtree(clonedChild)) {
+
+                    if (clonedChild.folder.implicitGlobInclude() || hasIncludeInSubtree(clonedChild)) {
+                        newNode.addChild(clonedChild);
+                    }
                 }
             }
         }
@@ -170,10 +185,10 @@ public class TreeNode {
     /**
      * Collects unique statuses and languages from the current tree node and its children.
      *
-     * @param showEmptyFolders A boolean indicating whether to include empty folders
-     * @param nodeInfo         A TreeNodeInfo object containing the collected statuses and languages
+     * @param collectEmptyFoldersInfo A boolean indicating whether to include empty folders
+     * @param nodeInfo                A TreeNodeInfo object containing the collected statuses and languages
      */
-    private void collectUniqueStatusesAndLanguagesHelper(TreeNodeInfo nodeInfo, final boolean showEmptyFolders) {
+    private void collectUniqueStatusesAndLanguagesHelper(TreeNodeInfo nodeInfo, final boolean collectEmptyFoldersInfo) {
 
         boolean includeAssets = includeAssets();
         if (includeAssets && assets() != null) {
@@ -199,15 +214,90 @@ public class TreeNode {
                 continue;
             }
 
-            if (showEmptyFolders
+            if (collectEmptyFoldersInfo
                     || !child.assets().isEmpty()
                     || hasAssetsInSubtree(child)) {
 
                 if (child.folder().implicitGlobInclude() || hasIncludeInSubtree(child)) {
 
-                    child.collectUniqueStatusesAndLanguagesHelper(nodeInfo, showEmptyFolders);
+                    child.collectUniqueStatusesAndLanguagesHelper(nodeInfo, collectEmptyFoldersInfo);
 
                     nodeInfo.incrementFoldersCount();
+                }
+            }
+        }
+    }
+
+    /**
+     * Collects push information from the current node and its children.
+     *
+     * @return A TreeNodePushInfo object containing the collected push information.
+     */
+    public TreeNodePushInfo collectTreeNodePushInfo() {
+
+        var nodeInfo = new TreeNodePushInfo();
+        collectTreeNodePushInfoHelper(nodeInfo);
+        return nodeInfo;
+    }
+
+    /**
+     * Collects push information from the current tree node and its children.
+     *
+     * @param nodeInfo A TreeNodePushInfo object containing the collected push information.
+     */
+    private void collectTreeNodePushInfoHelper(TreeNodePushInfo nodeInfo) {
+
+        boolean includeAssets = includeAssets();
+        if (includeAssets && assets() != null) {
+            for (AssetView asset : assets()) {
+
+                if (asset.markForPush().isPresent()) {
+                    if (asset.markForPush().get()) {
+
+                        nodeInfo.incrementAssetsToPushCount();
+
+                        if (asset.pushTypeNew().isPresent()) {
+                            if (asset.pushTypeNew().get()) {
+                                nodeInfo.incrementAssetsNewCount();
+                            }
+                        }
+                        if (asset.pushTypeModified().isPresent()) {
+                            if (asset.pushTypeModified().get()) {
+                                nodeInfo.incrementAssetsModifiedCount();
+                            }
+                        }
+                    }
+                }
+
+                if (asset.markForDelete().isPresent()) {
+                    if (asset.markForDelete().get()) {
+                        nodeInfo.incrementAssetsToDeleteCount();
+                    }
+                }
+            }
+        }
+
+        for (TreeNode child : children()) {
+
+            // If we have an explicit rule to exclude this folder, we skip it
+            if (child.folder().explicitGlobExclude()) {
+                continue;
+            }
+
+            if (child.folder().implicitGlobInclude() || hasIncludeInSubtree(child)) {
+
+                child.collectTreeNodePushInfoHelper(nodeInfo);
+
+                if (child.folder().markForPush().isPresent()) {
+                    if (child.folder().markForPush().get()) {
+                        nodeInfo.incrementFoldersToPushCount();
+                    }
+                }
+
+                if (child.folder().markForDelete().isPresent()) {
+                    if (child.folder().markForDelete().get()) {
+                        nodeInfo.incrementFoldersToDeleteCount();
+                    }
                 }
             }
         }
@@ -252,6 +342,50 @@ public class TreeNode {
         return node.children().
                 stream().
                 anyMatch(this::hasAssetsInSubtree);
+    }
+
+    /**
+     * Recursively checks if the given node or any of its children contains assets with changes, i.e., assets marked
+     * for push or delete.
+     *
+     * @param node The TreeNode to check for assets with changes.
+     * @return {@code true} if the node or any of its children contains assets with changes, {@code false} otherwise.
+     */
+    private boolean hasAssetsWithChangesInSubtree(final TreeNode node) {
+
+        if (!node.assets().isEmpty()) {
+            for (var asset : node.assets()) {
+                if (asset.markForPush().isPresent() || asset.markForDelete().isPresent()) {
+                    return true;
+                }
+            }
+        }
+
+        return node.children().
+                stream().
+                anyMatch(this::hasAssetsWithChangesInSubtree);
+    }
+
+    /**
+     * Recursively checks if the given node or any of its children contains a folder marked for push or delete.
+     *
+     * @param node The TreeNode to check for folders with changes.
+     * @return {@code true} if the node or any of its children contains a folder marked for push or
+     * delete, {@code false} otherwise.
+     */
+    private boolean hasAFolderWithChangesInSubtree(final TreeNode node) {
+
+        if (!node.children().isEmpty()) {
+            for (var child : node.children()) {
+                if (child.folder().markForPush().isPresent() || child.folder().markForDelete().isPresent()) {
+                    return true;
+                }
+            }
+        }
+
+        return node.children().
+                stream().
+                anyMatch(this::hasAFolderWithChangesInSubtree);
     }
 
     /**

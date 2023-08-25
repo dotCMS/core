@@ -1,13 +1,16 @@
 package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
 import com.dotcms.cli.common.WorkspaceMixin;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.Workspace;
+import com.dotcms.model.views.CommonViews;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,12 +35,10 @@ import picocli.CommandLine.Parameters;
                 " By default files are saved to the current directory. in json format.",
                 " The format can be changed using the @|yellow --format|@ option.",
                 " format can be either @|yellow JSON|@ or @|yellow YAML|@.",
-                " File location can be changed using the @|yellow --saveTo|@ option.",
-                " Use @|yellow --idOrName|@ to pass the CT identifier or name.",
                 "" // empty line left here on purpose to make room at the end
         }
 )
-public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer> {
+public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "pull";
     @CommandLine.Mixin(name = "format")
@@ -56,21 +57,22 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
     String idOrVar;
 
     @Override
-    public Integer call() {
+    public Integer call() throws IOException {
 
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
-            try {
+
                 final ResponseEntityView<ContentType> responseEntityView = contentTypeAPI.getContentType(idOrVar, null, null);
                 final ContentType contentType = responseEntityView.entity();
                 final ObjectMapper objectMapper = formatOption.objectMapper();
 
-                if(shortOutputOption.isShortOutput()) {
-                    final String asString = shortFormat(contentType);
-                    output.info(asString);
-                } else {
-                    final String asString = objectMapper.writeValueAsString(contentType);
-                    output.info(asString);
-
+        if(shortOutputOption.isShortOutput()) {
+            final String asString = shortFormat(contentType);
+            output.info(asString);
+        } else {
+                    final String asString = objectMapper.writerWithView(CommonViews.InternalView.class).writeValueAsString(contentType);
+                    if(output.isVerbose()) {
+                        output.info(asString);
+                    }
                     final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
                     final String fileName = String.format("%s.%s",contentType.variable(), formatOption.getInputOutputFormat().getExtension());
                     final Path path = Path.of(workspace.contentTypes().toString(), fileName);
@@ -78,13 +80,18 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
                     Files.writeString(path, asString);
                     output.info(String.format("Output has been written to file [%s].",path));
                 }
-            } catch (IOException | NotFoundException e) {
-                output.error(String.format(
-                        "Error occurred while pulling ContentType: [%s] with message: [%s:%s].",
-                        idOrVar,  e.getClass().getSimpleName(), e.getMessage()));
-                return CommandLine.ExitCode.SOFTWARE;
-            }
+
         return CommandLine.ExitCode.OK;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 
 }

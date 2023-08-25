@@ -9,30 +9,22 @@
     <div class="flex flex-column dot-experiment-report-content">
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
             <dot-experiments-experiment-summary
-                *ngIf="vm.showSummary"
                 [goals]="vm.experiment.goals"
                 [scheduling]="vm.experiment.scheduling"
                 [sessionsReached]="vm.results ? vm.results.sessions.total : 0"
                 [suggestedWinner]="vm.winnerLegendSummary"
             />
 
-            <div class="flex justify-content-center w-full container">
+            <div class="flex align-items-center flex-column w-full container gap-3">
                 <p-tabView>
                     <p-tabPanel header="{{ 'experiments.reports.chart.title' | dm }}">
                         <div class="flex flex-column gap-2 content">
                             <dot-experiments-reports-chart
                                 [config]="axisLabelsProbabilityChart"
-                                [data]="vm.dailyChartData"
-                                [isEmpty]="!vm.hasEnoughSessions"
+                                [data]="vm.dailyChart.chartData"
+                                [isEmpty]="!vm.dailyChart.hasEnoughData"
                                 [isLoading]="vm.isLoading"
                                 data-testId="daily-chart"
-                            />
-
-                            <dot-experiments-report-daily-details
-                                [detailData]="vm.detailData"
-                                [experimentId]="vm.experiment.id"
-                                [hasEnoughSessions]="vm.hasEnoughSessions"
-                                [promotedVariantId]="vm.promotedVariant"
                             />
                         </div>
                     </p-tabPanel>
@@ -41,8 +33,8 @@
                         <div class="flex flex-column gap-2 content">
                             <dot-experiments-reports-chart
                                 [config]="axisLabelsBayesianChart"
-                                [data]="vm.bayesianChartData"
-                                [isEmpty]="!vm.hasEnoughSessions"
+                                [data]="vm.bayesianChart.chartData"
+                                [isEmpty]="!vm.bayesianChart.hasEnoughData"
                                 [isLinearAxis]="true"
                                 [isLoading]="vm.isLoading"
                                 data-testId="bayesian-chart"
@@ -50,6 +42,12 @@
                         </div>
                     </p-tabPanel>
                 </p-tabView>
+                <dot-experiments-report-daily-details
+                    [detailData]="vm.detailData"
+                    [experimentId]="vm.experiment.id"
+                    [hasEnoughSessions]="vm.dailyChart.hasEnoughData"
+                    [promotedVariantId]="vm.promotedVariant"
+                />
             </div>
         </ng-container>
     </div>

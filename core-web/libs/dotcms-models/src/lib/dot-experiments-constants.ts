@@ -15,6 +15,8 @@ export const TIME_90_DAYS = 7776e6;
 
 export const PROP_NOT_FOUND = 'NOT_FOUND';
 
+export const MINIMUM_SESSIONS_TO_SHOW_CHART = 10;
+
 export enum ExperimentsConfigProperties {
     EXPERIMENTS_MIN_DURATION = 'EXPERIMENTS_MIN_DURATION',
     EXPERIMENTS_MAX_DURATION = 'EXPERIMENTS_MAX_DURATION'
@@ -237,8 +239,10 @@ type DotExperimentListAction =
     | 'delete'
     | 'configuration'
     | 'archive'
+    | 'end'
     | 'addToBundle'
-    | 'pushPublish';
+    | 'pushPublish'
+    | 'cancelSchedule';
 export const AllowedActionsByExperimentStatus: Record<
     DotExperimentListAction,
     Array<DotExperimentStatus>
@@ -247,9 +251,12 @@ export const AllowedActionsByExperimentStatus: Record<
     ['configuration']: [
         DotExperimentStatus.RUNNING,
         DotExperimentStatus.ENDED,
-        DotExperimentStatus.ARCHIVED
+        DotExperimentStatus.ARCHIVED,
+        DotExperimentStatus.SCHEDULED,
+        DotExperimentStatus.DRAFT
     ],
     ['archive']: [DotExperimentStatus.ENDED],
+    ['end']: [DotExperimentStatus.RUNNING],
     ['addToBundle']: [
         DotExperimentStatus.DRAFT,
         DotExperimentStatus.RUNNING,
@@ -263,7 +270,8 @@ export const AllowedActionsByExperimentStatus: Record<
         DotExperimentStatus.ENDED,
         DotExperimentStatus.ARCHIVED,
         DotExperimentStatus.SCHEDULED
-    ]
+    ],
+    ['cancelSchedule']: [DotExperimentStatus.SCHEDULED]
 };
 
 export const CONFIGURATION_CONFIRM_DIALOG_KEY = 'confirmDialog';

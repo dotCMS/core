@@ -31,7 +31,8 @@ import { DotPageStateService } from '@portlets/dot-edit-page/content/services/do
 
 enum DotConfirmationType {
     LOCK,
-    PERSONALIZATION
+    PERSONALIZATION,
+    RUNNING_EXPERIMENT
 }
 
 @Component({
@@ -209,13 +210,20 @@ export class DotEditPageStateControllerComponent implements OnChanges {
         return this.pageState.page.canLock && this.pageState.state.lockedByAnotherUser;
     }
 
+    private shouldAskOnRunningExperiment(): boolean {
+        return !!this.pageState.state.runningExperiment;
+    }
+
     private shouldAskPersonalization(): boolean {
         return this.pageState.viewAs.persona && !this.isPersonalized();
     }
 
     private shouldShowConfirmation(mode: DotPageMode): boolean {
         return (
-            mode === DotPageMode.EDIT && (this.shouldAskToLock() || this.shouldAskPersonalization())
+            mode === DotPageMode.EDIT &&
+            (this.shouldAskToLock() ||
+                this.shouldAskPersonalization() ||
+                this.shouldAskOnRunningExperiment())
         );
     }
 
@@ -226,18 +234,22 @@ export class DotEditPageStateControllerComponent implements OnChanges {
     private showConfirmation(): Observable<DotConfirmationType> {
         return from(
             new Promise<DotConfirmationType>((resolve, reject) => {
-                if (this.shouldAskToLock()) {
-                    this.showLockConfirmDialog()
-                        .then(() => {
-                            resolve(DotConfirmationType.LOCK);
-                        })
-                        .catch(() => reject());
-                }
-
                 if (this.shouldAskPersonalization()) {
                     this.showPersonalizationConfirmDialog()
                         .then(() => {
                             resolve(DotConfirmationType.PERSONALIZATION);
+                        })
+                        .catch(() => reject());
+                } else if (this.shouldAskOnRunningExperiment()) {
+                    this.showRunningExperimentConfirmDialog()
+                        .then(() => {
+                            resolve(DotConfirmationType.RUNNING_EXPERIMENT);
+                        })
+                        .catch(() => reject());
+                } else if (this.shouldAskToLock()) {
+                    this.showLockConfirmDialog()
+                        .then(() => {
+                            resolve(DotConfirmationType.LOCK);
                         })
                         .catch(() => reject());
                 }
@@ -271,6 +283,17 @@ export class DotEditPageStateControllerComponent implements OnChanges {
         });
     }
 
+    private showRunningExperimentConfirmDialog(): Promise<string> {
+        return new Promise((resolve, reject) => {
+            this.dotAlertConfirmService.confirm({
+                accept: resolve,
+                reject: reject,
+                header: this.dotMessageService.get('experiment.running'),
+                message: this.getRunningExperimentConfirmMessage()
+            });
+        });
+    }
+
     private getPersonalizationConfirmMessage(): string {
         let message = this.dotMessageService.get(
             'editpage.personalization.confirm.message',
@@ -278,13 +301,38 @@ export class DotEditPageStateControllerComponent implements OnChanges {
         );
 
         if (this.shouldAskToLock()) {
-            message += this.dotMessageService.get(
-                'editpage.personalization.confirm.with.lock',
-                this.pageState.page.lockedByName
-            );
+            message += this.getBlockedPageNote();
+        }
+
+        if (this.shouldAskOnRunningExperiment()) {
+            message += this.getRunningExperimentNote();
         }
 
         return message;
+    }
+
+    private getRunningExperimentConfirmMessage(): string {
+        let message = this.dotMessageService.get('experiment.running.edit.confirmation');
+
+        if (this.shouldAskToLock()) {
+            message += this.getBlockedPageNote();
+        }
+
+        return message;
+    }
+
+    private getBlockedPageNote(): string {
+        return this.dotMessageService.get(
+            'editpage.personalization.confirm.with.lock',
+            this.pageState.page.lockedByName
+        );
+    }
+
+    private getRunningExperimentNote(): string {
+        return this.dotMessageService.get(
+            'experiment.running.edit.lock.confirmation.note',
+            this.pageState.page.lockedByName
+        );
     }
 
     private updatePageState(options: DotPageRenderOptions, lock: boolean = null) {

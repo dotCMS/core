@@ -1,10 +1,13 @@
 package com.dotcms.cli.command.files;
 
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.traversal.RemoteFolderTraversalService;
+import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.language.Language;
+import org.apache.commons.lang3.tuple.Pair;
 import picocli.CommandLine;
 import picocli.CommandLine.Parameters;
 
@@ -28,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
                 "" // empty string here so we can have a new line
         }
 )
-public class FilesTree extends AbstractFilesCommand implements Callable<Integer> {
+public class FilesTree extends AbstractFilesCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "tree";
 
@@ -79,24 +82,23 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
     String includeAssetPatternsOption;
 
     @Inject
-    RemoteFolderTraversalService folderTraversalService;
+    RemoteTraversalService remoteTraversalService;
 
     @Override
     public Integer call() throws Exception {
-
-        try {
 
             var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
             var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);
             var excludeFolderPatterns = parsePatternOption(excludeFolderPatternsOption);
             var excludeAssetPatterns = parsePatternOption(excludeAssetPatternsOption);
 
-            CompletableFuture<TreeNode> folderTraversalFuture = CompletableFuture.supplyAsync(
+            CompletableFuture<Pair<List<Exception>, TreeNode>> folderTraversalFuture = CompletableFuture.supplyAsync(
                     () -> {
                         // Service to handle the traversal of the folder
-                        return folderTraversalService.traverse(
+                        return remoteTraversalService.traverseRemoteFolder(
                                 folderPath,
                                 depth,
+                                true,
                                 includeFolderPatterns,
                                 includeAssetPatterns,
                                 excludeFolderPatterns,
@@ -132,15 +134,22 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
 
             // Display the result
             StringBuilder sb = new StringBuilder();
-            TreePrinter.getInstance().filteredFormat(sb, result, !excludeEmptyFolders, languages);
+            TreePrinter.getInstance().filteredFormat(sb, result.getRight(), !excludeEmptyFolders, languages);
 
             output.info(sb.toString());
 
-        } catch (Exception e) {
-            return handleFolderTraversalExceptions(folderPath, e);
-        }
 
-        return CommandLine.ExitCode.OK;
+            return CommandLine.ExitCode.OK;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 
 }

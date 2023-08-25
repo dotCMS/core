@@ -143,7 +143,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-                assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/" + htmlPageAsset.getPageUrl() + "(\\/?\\?.*)?$",
+                assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/" + htmlPageAsset.getPageUrl() + "(\\/?\\?.*)?$",
                         selectedExperiments.getExperiments().get(0).redirectPattern());
                 assertEquals(runningId.id(), selectedExperiments.getExperiments().get(0).getRunningId());
 
@@ -202,7 +202,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-                final String regexExpected = "^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/blog(\\/[iI][nN][dD][eE][xX]|\\/)?(\\/?\\?.*)?$" ;
+                final String regexExpected = "^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/blog(\\/index|\\/)?(\\/?\\?.*)?$" ;
                 assertEquals(regexExpected, selectedExperiments.getExperiments().get(0).redirectPattern());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
@@ -259,7 +259,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-                assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?(\\/[iI][nN][dD][eE][xX]|\\/)?(\\/?\\?.*)?$", selectedExperiments.getExperiments().get(0).redirectPattern());
+                assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?(\\/index|\\/)?(\\/?\\?.*)?$", selectedExperiments.getExperiments().get(0).redirectPattern());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
@@ -321,7 +321,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-                assertEquals("(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/store\\/products\\/(.+)(\\/?\\?.*)?", selectedExperiments.getExperiments().get(0).redirectPattern());
+                assertEquals("(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/store\\/products\\/(.+)(\\/?\\?.*)?", selectedExperiments.getExperiments().get(0).redirectPattern());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
@@ -390,7 +390,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-                assertEquals("(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/store\\/products\\/(.+)(\\/?\\?.*)?|(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/products\\/detail\\/(.+)(\\/?\\?.*)?",
+                assertEquals("(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/store\\/products\\/(.+)(\\/?\\?.*)?|(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/products\\/detail\\/(.+)(\\/?\\?.*)?",
                         selectedExperiments.getExperiments().get(0).redirectPattern());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
