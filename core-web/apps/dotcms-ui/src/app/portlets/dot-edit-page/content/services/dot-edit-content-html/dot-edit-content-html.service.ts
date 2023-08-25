@@ -42,12 +42,14 @@ import {
     DotShowCopyModal,
     DotRelocatePayload
 } from './models/dot-contentlets-events.model';
+import { SeoMetaTags, SeoMetaTagsResult } from './models/meta-tags-model';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
 import { DotCopyContentModalService } from '../dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
+import { DotSeoMetaTagsService } from '../html/dot-seo-meta-tags.service';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
 
 export enum DotContentletAction {
@@ -121,7 +123,8 @@ export class DotEditContentHtmlService {
         private dotLicenseService: DotLicenseService,
         private dotCopyContentModalService: DotCopyContentModalService,
         private dotCopyContentService: DotCopyContentService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService
+        private dotLoadingIndicatorService: DotLoadingIndicatorService,
+        private dotSeoMetaTagsService: DotSeoMetaTagsService
     ) {
         this.contentletEvents$.subscribe(
             (
@@ -418,6 +421,28 @@ export class DotEditContentHtmlService {
             identifier,
             addedContentId
         });
+    }
+
+    /**
+     *  Returns the meta tags results
+     *
+     * @returns SeoMetaTagsResult[]
+     */
+    getMetaTagsResults(): SeoMetaTagsResult[] {
+        const pageDocument = this.getEditPageDocument();
+
+        return this.dotSeoMetaTagsService.getMetaTagsResults(pageDocument);
+    }
+
+    /**
+     * Returns the meta tags
+     *
+     * @returns SeoMetaTags
+     */
+    getMetaTags(): SeoMetaTags {
+        const pageDocument = this.getEditPageDocument();
+
+        return this.dotSeoMetaTagsService.getMetaTags(pageDocument);
     }
 
     private setMaterialIcons(): void {
