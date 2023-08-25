@@ -86,16 +86,6 @@ const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
 );
 
 @Component({
-    selector: 'dot-device-selector-seo',
-    template: `<button (click)="op.openMenu($event)" type="text">Open</button>
-        <dot-device-selector-seo #op [apiLink]="apiLink"></dot-device-selector-seo> `
-})
-class TestSelectorHostComponent {
-    apiLink = 'api/v1/page/render/an/url/test?language_id=1';
-    linkToAddDevice = '/c/c_Devices';
-}
-
-@Component({
     selector: 'dot-test-host-component',
     template: `
         <dot-edit-page-state-controller-seo [pageState]="pageState" [variant]="variant">
@@ -119,7 +109,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, TestSelectorHostComponent],
+            declarations: [TestHostComponent],
             providers: [
                 {
                     provide: DotMessageService,
@@ -144,10 +134,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 {
                     provide: DotDevicesService,
                     useClass: DotDevicesServiceMock
-                },
-                {
-                    provide: DotDeviceSelectorSeoComponent,
-                    useClass: TestSelectorHostComponent // provide test component
                 }
             ],
             imports: [
@@ -493,33 +479,30 @@ describe('DotEditPageStateControllerSeoComponent', () => {
     });
 
     describe('Dot Device Selector events', () => {
-        it('should call changeSeoMedia function on changeSeoMedia event', async () => {
+        it('should call  changeSeoMedia event', async () => {
             fixtureHost.detectChanges();
+            spyOn(dotPageStateService, 'setSeoMedia');
+            const dotSelector = de.query(By.css('[data-testId="dot-device-selector"]'));
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
-            // trigger.nativeElement.value = 'openMenu';
+            dotSelector.triggerEventHandler('changeSeoMedia', 'Google');
 
-            dotTabButtons.triggerEventHandler('click', {
-                target: { value: 'openMenu' },
-                value: 'openMenu'
-            });
+            expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith('Google');
+        });
 
-            spyOn(component, 'changeSeoMedia');
+        it('should call  changeSeoMedia event', async () => {
+            spyOn(dotPageStateService, 'setDevice');
+            const dotSelector = de.query(By.css('[data-testId="dot-device-selector"]'));
+            const event = {
+                identifier: 'string',
+                cssHeight: 'string',
+                cssWidth: 'string',
+                name: 'string',
+                inode: 'string',
+                stInode: 'string'
+            };
+            dotSelector.triggerEventHandler('selected', event);
 
-            /* await fixtureHost.whenStable();
-            const deviceButton = de.query(By.css('[data-testId="device-list-button"]'));
-
-
-            deviceButton.triggerEventHandler('click', {
-                target: { value: 'Google' },
-                value: 'Google'
-            });  
-
-            await fixtureHost.whenStable();  */
-
-            // expect(component.changeSeoMedia).toHaveBeenCalledWith('Google');
-            // expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith('Google');
-            expect(true).toBeTruthy();
+            expect(dotPageStateService.setDevice).toHaveBeenCalledWith(event);
         });
     });
 });

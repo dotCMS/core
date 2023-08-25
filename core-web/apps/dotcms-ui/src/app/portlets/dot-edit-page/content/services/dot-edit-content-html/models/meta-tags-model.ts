@@ -47,5 +47,10 @@ export interface SeoMetaTagsResult {
 }
 
 export interface SeoMetaTags {
-    [key: string]: string | NodeListOf<Element> | string[] | undefined;
+    favicon?: string;
+    title?: string;
+    faviconElements?: NodeListOf<Element>;
+    titleElements?: NodeListOf<Element>;
+    description?: string;
+    'og:description'?: string;
 }
