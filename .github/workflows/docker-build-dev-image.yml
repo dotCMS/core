@@ -1,4 +1,4 @@
-#  This job builds the dotCMS dev image: dotcms/dev:master_latest_SNAPSHOT
+#  This job builds the dotCMS dev image: dotcms/dotcms-dev:master_latest_SNAPSHOT
 #  every night.  For more information about this docker image, see
 #  https://github.com/dotCMS/core/tree/master/docker/dev-env
 
@@ -21,7 +21,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            dotcms/dev
+            dotcms/dotcms-dev
           # generate Docker tags based on the following events/attributes
           tags: |
             type=sha,enable=true,priority=100,prefix=master_,suffix=_SNAPSHOT,format=short
