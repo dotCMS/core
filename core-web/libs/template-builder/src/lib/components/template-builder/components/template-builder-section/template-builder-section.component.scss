@@ -1,12 +1,23 @@
 @use "variables" as *;
 
 :host {
-    display: flex;
-    justify-content: center;
+    display: grid;
     align-items: center;
+    grid-template-columns: repeat(3, 1fr);
     background: $color-palette-primary-200;
     height: 5rem;
     color: $color-palette-primary;
     font-size: $font-size-xl;
     border-radius: $spacing-1;
+    padding: 0 $spacing-0;
+
+    .template-builder-section__content {
+        text-align: center;
+        grid-column: 2/2;
+    }
+
+    p-button {
+        grid-column: 3/3;
+        justify-self: flex-end;
+    }
 }

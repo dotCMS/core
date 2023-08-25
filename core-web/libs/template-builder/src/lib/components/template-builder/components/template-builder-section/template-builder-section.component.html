@@ -1,1 +1,8 @@
-<ng-content></ng-content>
+<div class="template-builder-section__content"><ng-content></ng-content></div>
+<p-button
+    (click)="deleteSection.emit()"
+    styleClass="p-button-rounded p-button-text"
+    icon="pi pi-trash"
+    data-testId="delete-section-button"
+>
+</p-button>

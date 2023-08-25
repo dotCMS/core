@@ -6,6 +6,7 @@ import {
     Component,
     EventEmitter,
     Input,
+    OnChanges,
     OnDestroy,
     OnInit,
     Output
@@ -30,7 +31,7 @@ import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-p
     styleUrls: ['./template-builder-actions.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
+export class TemplateBuilderActionsComponent implements OnInit, OnDestroy, OnChanges {
     @Input() layoutProperties: DotTemplateLayoutProperties;
 
     @Output() selectTheme: EventEmitter<void> = new EventEmitter();
@@ -50,7 +51,9 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
             footer: new UntypedFormControl(this.layoutProperties.footer ?? true),
             sidebar: new UntypedFormControl(
                 this.layoutProperties.sidebar ?? {
-                    location: ''
+                    location: '',
+                    width: 'medium',
+                    containers: []
                 }
             )
         });
@@ -58,6 +61,17 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
         this.group.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
             this.store.updateLayoutProperties(value);
         });
+    }
+
+    ngOnChanges(): void {
+        this.group?.setValue(
+            {
+                header: this.layoutProperties.header,
+                footer: this.layoutProperties.footer,
+                sidebar: this.layoutProperties.sidebar
+            },
+            { emitEvent: false }
+        );
     }
 
     ngOnDestroy(): void {

@@ -18,10 +18,11 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
     @Input()
     label: string;
 
+    @Input()
+    value = false;
+
     @Output()
     switch: EventEmitter<boolean> = new EventEmitter();
-
-    value: boolean;
 
     propagateChange = (_: unknown) => {
         /**/
