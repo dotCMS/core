@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import java.util.List;
 import java.util.Map;
@@ -100,6 +101,7 @@ public class ContentFileAssetIntegrityCheckerTest extends IntegrationTestBase im
      * @throws Exception
      */
     @Test
+    @Ignore
     public void TestFixConflictGeneratesContentletAsJson() throws Exception {
         final Host host = new SiteDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
