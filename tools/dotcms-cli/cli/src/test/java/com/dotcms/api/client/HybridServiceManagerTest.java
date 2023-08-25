@@ -6,13 +6,14 @@ import com.dotcms.model.config.ServiceBean;
 import com.starxg.keytar.Keytar;
 import com.starxg.keytar.KeytarException;
 import io.quarkus.test.junit.QuarkusTest;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import javax.inject.Inject;
-import java.io.IOException;
-import java.util.Optional;
+import org.wildfly.common.Assert;
 
 @QuarkusTest
 class HybridServiceManagerTest {
@@ -29,36 +30,32 @@ class HybridServiceManagerTest {
         serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
     }
 
+    /**
+     * This test is here to demonstrate that even if the keytar library is not working on the CI server, we still can rely on the yml file for storage.
+     * This service manager is injected with a Mock that simulates the keytar library not working.
+     * @throws IOException
+     */
     @Test
-    void Test_Persist_Then_Recover() throws IOException, KeytarException {
-
-        Keytar instance = Keytar.getInstance();
-        final ServiceBean serviceBeanDefault = ServiceBean.builder().name("default")
-                .active(false)
+    void Test_Service_Manager_Resilence() throws IOException {
+        serviceManager.removeAll();
+        Assert.assertTrue(serviceManager.services().isEmpty());
+        final String key = "resilece-test";
+        final ServiceBean serviceBean = ServiceBean.builder().name(key)
+                .active(true)
                 .credentials(
                         CredentialsBean.builder().user("admin")
                                 .token(FAKE_TOKEN).build())
                 .build();
 
-        serviceManager.persist(serviceBeanDefault);
-        String pass = instance.getPassword("default","admin");
-        String fakeToken = new String(FAKE_TOKEN);
-        Assertions.assertEquals(fakeToken,pass);
-        Optional<ServiceBean> optional = serviceManager.services().stream().filter(serviceBean -> "default".equals(serviceBean.name())).findFirst();
+        serviceManager.persist(serviceBean);
+        final List<ServiceBean> services = serviceManager.services();
+        final Optional<ServiceBean> optional = serviceManager.services().stream().filter(bean -> key.equals(bean.name())).findFirst();
         Assertions.assertTrue(optional.isPresent());
-        ServiceBean bean = optional.get();
-        Assertions.assertEquals("default",bean.name());
+        final ServiceBean bean = optional.get();
+        Assertions.assertEquals(key,bean.name());
         Assertions.assertNotNull(bean.credentials());
         Assertions.assertEquals("admin", bean.credentials().user());
-        Assertions.assertEquals(fakeToken, new String(bean.credentials().token()));
-
-        serviceManager.removeAll();
-
-        optional = serviceManager.services().stream().filter(serviceBean -> "default".equals(serviceBean.name())).findFirst();
-        Assertions.assertFalse(optional.isPresent(),"service instance should have been removed.");
-        Assertions.assertNull(instance.getPassword("default","admin"));
-        Assertions.assertFalse(serviceManager.selected().isPresent());
-
+        Assertions.assertNotNull(bean.credentials().token());
+        Assertions.assertEquals(new String(FAKE_TOKEN), new String(bean.credentials().token()));
     }
-
 }

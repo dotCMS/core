@@ -11,7 +11,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'Listbox is used to select one or more values from a list of items: https://primefaces.org/primeng/showcase/#/listbox'
+                    'Listbox is used to select one or more values from a list of items: https://primeng.org/listbox'
             }
         }
     },

@@ -247,7 +247,7 @@ public class RemoteFolderTraversalTask extends RecursiveTask<Pair<List<Exception
             return this.filter.apply(foundFolder);
         } catch (Exception e) {
             var message = String.format("Error retrieving folder information [%s]", folderPath);
-            logger.debug(message, e);
+            logger.error(message, e);
             throw new TraversalTaskException(message, e);
         }
     }

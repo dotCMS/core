@@ -32,6 +32,7 @@ public interface AbstractLanguage {
 
     Optional<String> country();
 
+    @JsonView(CommonViews.InternalView.class)
     Optional<Boolean> defaultLanguage();
 
     String isoCode();

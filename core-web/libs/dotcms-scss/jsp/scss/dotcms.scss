@@ -5,12 +5,14 @@
 @import "font-awesome-4.7.0/core";
 @import "font-awesome-4.7.0/icons";
 
-// TODO: get rid of Bootstrap, need to find if we are using it
-@import "bootstrap-sass-3.3.7/assets/stylesheets/bootstrap/variables";
-@import "bootstrap-sass-3.3.7/assets/stylesheets/bootstrap/mixins";
-@import "bootstrap-sass-3.3.7/assets/stylesheets/bootstrap/grid";
-
 @import "variables";
+
+*,
+*:before,
+*:after {
+    outline: none; // not 100% sure about this, google it
+    box-sizing: border-box;
+}
 
 :root {
     @include root-colors();
@@ -40,10 +42,8 @@
     gap: 0.5rem;
 }
 
-#structure_inode_popup .dijitMenuItem .separator {
-    height: 1px;
-    margin: -1px -10px 0px -10px;
-    background: #ddd;
+#structure_inode_popup .dijitMenuItem:has(> .separator) {
+    border-top: 1px solid $color-palette-gray-400;
 }
 
 // GOOGLE FONTS
@@ -87,12 +87,15 @@
             format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
-body {
-    margin: 0;
-    padding: 0;
+html {
     font-family: $font-default;
     font-size: $font-size-default;
     color: $font-color-base;
+}
+
+body {
+    margin: 0;
+    padding: 0;
 }
 
 .material-icons {

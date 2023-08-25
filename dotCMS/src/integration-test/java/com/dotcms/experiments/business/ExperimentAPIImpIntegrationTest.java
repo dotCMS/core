@@ -3,6 +3,7 @@ package com.dotcms.experiments.business;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.mapAll;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -25,6 +26,7 @@ import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
+import com.dotcms.analytics.metrics.QueryParameter;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.analytics.model.AnalyticsProperties;
@@ -50,6 +52,7 @@ import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.GoalResults;
 import com.dotcms.experiments.business.result.VariantResults;
 import com.dotcms.experiments.business.result.VariantResults.ResultResumeItem;
+import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -61,12 +64,14 @@ import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
 import com.dotcms.http.server.mock.MockHttpServerContext.RequestContext;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -122,6 +127,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import net.bytebuddy.utility.RandomString;
 import org.apache.commons.lang.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -3193,7 +3199,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .findFirst()
                 .orElseThrow();
 
-        assertEquals("{\"name\":\"testName\", \"value\":\"testValue\"}", queryParameter.value());
+        final QueryParameter queryParameterExpected = new QueryParameter("testName", "testValue");
+
+        assertEquals(queryParameterExpected, queryParameter.value());
     }
 
     /**
@@ -3861,7 +3869,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage,
-                Operator.CONTAINS, "{\"name\":\"testName\", \"value\":\"testValue\"}");
+                Operator.CONTAINS, new QueryParameter("testName", "testValue"));
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -3963,7 +3971,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage,
-                Operator.CONTAINS, "{\"name\":\"testName\", \"value\":\"RightValue\"}");
+                Operator.CONTAINS, new QueryParameter("testName", "RightValue"));
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -4070,7 +4078,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage,
-                Operator.CONTAINS, "{\"name\":\"testName\", \"value\":\"RightValue\"}");
+                Operator.CONTAINS, new QueryParameter("testName", "RightValue"));
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -4173,7 +4181,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage,
-                Operator.EXISTS, "{\"name\":\"testName\"}");
+                Operator.EXISTS, new QueryParameter("testName", null));
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -4279,7 +4287,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage,
-                Operator.EXISTS, "{\"name\":\"testName\"}");
+                Operator.EXISTS, new QueryParameter("testName", null));
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -4568,11 +4576,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     private static Experiment createExperimentWithUrlParameterGoal(
             final HTMLPageAsset experimentPage) {
         return createExperimentWithUrlParameterGoal(experimentPage, Operator.EQUALS,
-                "{\"name\":\"testName\", \"value\":\"testValue\"}");
+                new QueryParameter("testName", "testValue"));
     }
 
     private static Experiment createExperimentWithUrlParameterGoal(
-            final HTMLPageAsset experimentPage, final Operator operator, final String value) {
+            final HTMLPageAsset experimentPage, final Operator operator, final QueryParameter value) {
 
         final Condition queryParameterCondition = Condition.builder()
                 .parameter("queryParameter")
@@ -6197,7 +6205,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
-        
+
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
 
@@ -6738,7 +6746,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset pageD = new HTMLPageDataGen(folder, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithUrlParameterGoal(pageB,
-                Operator.EQUALS, "{\"name\":\"testName\", \"value\":\"testValue\"}");
+                Operator.EQUALS, new QueryParameter("testName", "testValue"));
 
         final String variantName = getNotDefaultVariantName(experiment);
 
@@ -7564,7 +7572,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             ContentletDataGen.update(contentlet2Variant,
                     map("title", "WORKING contentlet2_variant"));
 
-            addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+           addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                     PermissionAPI.PERMISSION_READ,
                     PermissionAPI.PERMISSION_EDIT, PermissionAPI.PERMISSION_PUBLISH);
             addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
@@ -7622,6 +7630,42 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getRunningExperimentPerPage(String)}
+     * When: The Page has a Experiment but is not RUNNING
+     * Should: The Method return a empty Optional but after Start the Experiment the
+     * method should return the Experiment
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void getRunningExperimentPerPage() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .page(experimentPage)
+                .nextPersisted();
+
+        final Optional<Experiment> runningExperiment = APILocator.getExperimentsAPI()
+                .getRunningExperimentPerPage(experimentPage.getIdentifier());
+
+        assertFalse(runningExperiment.isPresent());
+
+        APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
+
+        try {
+            final Optional<Experiment> runningExperiment2 = APILocator.getExperimentsAPI()
+                    .getRunningExperimentPerPage(experimentPage.getIdentifier());
+
+            assertTrue(runningExperiment2.isPresent());
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+        }
+    }
     private static void checkVersion(final Contentlet contentlet, final boolean live,
             final Variant defaultVariant, final String value, final Field titleField)
             throws DotDataException, DotSecurityException {
@@ -7640,4 +7684,863 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         Assert.assertEquals(value, contentlet1DefaultVariantFromDataBase
                 .getStringProperty(titleField.variable()));
     }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have four pages: A, B, C and D
+     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
+     * - You have the follow page_view to the pages order by timestamp:
+     * First day:
+     *      First Session: A, B, D and C
+     *      Second Session: A and D
+     *      Third Session: A and B
+     * Second day:
+     *      First Session: B and D
+     *      Second Session: D and C
+     *      Third Session: A, B and C
+     * Third day:
+     *      First Session: C, B, D
+     *      Second Session: A, C, and D
+     *      Third Session: B and A
+     * Fourth day:
+     *      First Session: A, B and D
+     *      Second Session: D
+     *      Third Session: B
+     *
+     * Should:  get the follow results
+     *
+     * First day:
+     *      uniqueBySession: 1
+     *      totalSessions: 2
+     *      Convertion Rate: 50
+     * Second day:
+     *      uniqueBySession: 1
+     *      totalSessions: 2
+     *      Convertion Rate: 50
+     *
+     * Third day:
+     *      uniqueBySession: 1
+     *      totalSessions: 2
+     *      Convertion Rate: 50
+     *
+     * Fourth day:
+     *      uniqueBySession: 1
+     *      totalSessions: 2
+     *      Convertion Rate: 50
+     */
+    @Test
+    public void convertionRateMultiDays() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageB, pageD);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstDate = Instant.now();
+
+        final List<Map<String, String>> firstDateFirstSession = createPageViewEvents(firstDate,
+                experiment, variantName, pageA, pageB, pageD, pageC);
+
+        final List<Map<String, String>> firstDateSecondSession = createPageViewEvents(firstDate,
+                experiment, variantName, pageA, pageD);
+
+        final List<Map<String, String>> firstDateThirdSession = createPageViewEvents(firstDate,
+                experiment, variantName, pageA, pageB);
+
+        final Instant secondDate = firstDate.plus(1, ChronoUnit.DAYS);
+
+        final List<Map<String, String>> secondDateFirstSession = createPageViewEvents(secondDate,
+                experiment, variantName, pageB, pageD);
+
+        final List<Map<String, String>> secondDateSecondSession = createPageViewEvents(secondDate,
+                experiment, variantName, pageD, pageC);
+
+        final List<Map<String, String>> secondDateThirdSession = createPageViewEvents(secondDate,
+                experiment, variantName, pageA, pageB, pageC);
+
+        final Instant thirdDate = secondDate.plus(1, ChronoUnit.DAYS);
+
+        final List<Map<String, String>> thirdDateFirstSession = createPageViewEvents(thirdDate,
+                experiment, variantName, pageC, pageB, pageD);
+
+        final List<Map<String, String>> thirdDateSecondSession = createPageViewEvents(thirdDate,
+                experiment, variantName, pageA, pageC, pageD);
+
+        final List<Map<String, String>> thirdDateThirdSession = createPageViewEvents(thirdDate,
+                experiment, variantName, pageB, pageA);
+
+        final Instant forthDate = thirdDate.plus(1, ChronoUnit.DAYS);
+
+        final List<Map<String, String>> forthDateFirstSession = createPageViewEvents(forthDate,
+                experiment, variantName, pageA, pageB, pageD);
+
+        final List<Map<String, String>> forthDateSecondSession = createPageViewEvents(forthDate,
+                experiment, variantName, pageD);
+
+        final List<Map<String, String>> forthDateThirdSession = createPageViewEvents(forthDate,
+                experiment, variantName, pageB);
+
+        final List<Instant> days = Arrays.asList(firstDate, secondDate, thirdDate, forthDate);
+
+        final Collection<Map<String, String>> cubeJsQueryData = CollectionsUtils.addAll(firstDateFirstSession,
+                firstDateSecondSession, firstDateThirdSession, secondDateFirstSession, secondDateSecondSession,
+                secondDateThirdSession, thirdDateFirstSession, thirdDateSecondSession, thirdDateThirdSession,
+                forthDateFirstSession, forthDateSecondSession, forthDateThirdSession);
+
+        final Map<String, Collection<Map<String, String>>> cubeJsQueryResult = map("data",
+                cubeJsQueryData);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+       APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+       try {
+           IPUtils.disabledIpPrivateSubnet(true);
+
+           final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+           addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+           final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+           final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                   map("Events.variant", variantName, "Events.count", "27")
+           );
+
+           addContext(mockhttpServer, queryTotalPageViews,
+                   JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+           addCountQueryContext(experiment, 27, mockhttpServer);
+
+           mockhttpServer.start();
+
+           final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+
+           ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
+           final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
+           final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                   experiment,
+                   APILocator.systemUser());
+
+           mockhttpServer.validate();
+
+           assertEquals(8, experimentResults.getSessions().getTotal());
+
+           for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+
+               int successExpected = 0;
+               int sessionsExpected = 0;
+               int successPerDayExpected = 0;
+               int sessionsPerDayExpected = 0;
+               int convertionRatePerDayExpected = 0;
+
+               if (variantResult.getVariantName().equals(variantName)) {
+                   assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                   assertEquals(27, variantResult.getTotalPageViews());
+
+                   successExpected = 4;
+                   sessionsExpected = 8;
+                   successPerDayExpected = 1;
+                   convertionRatePerDayExpected = 50;
+                   sessionsPerDayExpected = 2;
+               } else {
+
+                   assertEquals("DEFAULT", variantResult.getVariantName());
+                   assertEquals("Original", variantResult.getVariantDescription());
+                   assertEquals(0, variantResult.getTotalPageViews());
+               }
+
+               Assert.assertEquals(successExpected, variantResult.getUniqueBySession().getCount());
+               Assert.assertEquals(successExpected, variantResult.getMultiBySession());
+               Assert.assertEquals(sessionsExpected, (long) experimentResults.getSessions()
+                       .getVariants().get(variantResult.getVariantName()));
+
+               final Map<String, ResultResumeItem> details = variantResult.getDetails();
+
+               for (Instant day : days) {
+                   final ResultResumeItem resultResumeItem = details.get(SIMPLE_FORMATTER.format(day));
+
+                   assertNotNull(resultResumeItem);
+
+                   Assert.assertEquals(successPerDayExpected, resultResumeItem.getUniqueBySession());
+                   Assert.assertEquals(successPerDayExpected, resultResumeItem.getMultiBySession());
+                   Assert.assertEquals(convertionRatePerDayExpected, resultResumeItem.getConvertionRate(), 0);
+                   Assert.assertEquals(sessionsPerDayExpected, resultResumeItem.getTotalSessions(), 0);
+
+                   Assert.assertEquals(2, experimentResults.getSessions().getTotalByDate(day));
+               }
+           }
+       } finally {
+           APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+           IPUtils.disabledIpPrivateSubnet(false);
+           mockhttpServer.stop();
+       }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When Try to archive a Page with a Running Experiment
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryArchivePageWithRunningExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        try {
+            APILocator.getContentletAPI()
+                    .archive(experimentPage, APILocator.systemUser(), false);
+
+            throw new AssertionError("Should throw a DotDataException");
+        } catch (DotDataException e) {
+            //expected
+            final String messageExpected = String.format(
+                    "Can't Archive a Page %s because it has a Running Experiment. Experiment ID %s"
+                    , experimentPage.getIdentifier(), experiment.id().orElseThrow());
+            assertEquals(messageExpected, e.getMessage());
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When Try to archive a Page with a DRAFT Experiment
+     * Should: Archive the page and keep the Experiment on DRAFT
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryArchivePageWithNotRunningExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        APILocator.getContentletAPI()
+                .archive(experimentPage, APILocator.systemUser(), false);
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .find(experimentPage.getInode(), APILocator.systemUser(), false);
+
+        assertTrue(contentlet.isArchived());
+
+        final Experiment experimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(experiment.getIdentifier(), APILocator.systemUser()).orElseThrow();
+
+        assertEquals(Experiment.Status.DRAFT, experimentFromDatabase.status());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When Try to delete an Experiment
+     * Should: Delete the Experiment and the Variants
+     * Also must delete the Variants and the COntentlets' version inside the Variants
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryDeleteExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment draftExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String notDefaultVariantName = getNotDefaultVariantName(draftExperiment);
+        final Variant notDefaultVariantStartedExperiment = APILocator.getVariantAPI()
+                .get(notDefaultVariantName)
+                .orElseThrow();
+
+        final Contentlet contentlet_1 = createContentletWithWorkingAndLiveVersion(notDefaultVariantStartedExperiment);
+
+        APILocator.getExperimentsAPI().delete(draftExperiment.id().orElseThrow(), APILocator.systemUser());
+
+        final Optional<Experiment> draftExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(draftExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertFalse(draftExperimentFromDatabase.isPresent());
+
+        final Optional<Variant> notDefaultVariantStartedExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantName);
+
+        assertFalse(notDefaultVariantStartedExperimentOptional.isPresent());
+
+        checkNotExistsAnyVersion(contentlet_1);
+
+    }
+
+    private static void checkNotExistsAnyVersion(Contentlet contentlet_1)
+            throws DotDataException, DotSecurityException {
+        final Identifier identifier = APILocator.getIdentifierAPI()
+                .find(contentlet_1.getIdentifier());
+
+        final List<Contentlet> allVersionsAfterDeleted = APILocator.getContentletAPI()
+                .findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(),
+                        false);
+
+        Assert.assertTrue(allVersionsAfterDeleted.isEmpty());
+    }
+
+    private static Contentlet createContentletWithWorkingAndLiveVersion(
+            final Variant notDefaultVariantStartedExperiment)
+            throws DotDataException, DotSecurityException {
+
+        final Field textField = new FieldDataGen()
+                .name("text")
+                .velocityVarName("text")
+                .type(TextField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(textField)
+                .nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .setProperty(textField.variable(), "LIVE")
+                .variant(notDefaultVariantStartedExperiment)
+                .nextPersisted();
+
+        final Contentlet variantLive = ContentletDataGen.createNewVersion(contentlet_1,
+                notDefaultVariantStartedExperiment,
+                map(textField.variable(), "Variant LIVE"));
+
+        ContentletDataGen.publish(variantLive);
+        ContentletDataGen.update(variantLive, map(textField.variable(), "WORKING"));
+        return contentlet_1;
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When Try to delete a Page with two Experiments: one Draft and the other Ended
+     * Should: Delete the Page and the experiments too
+     * Also must delete the Variants and the COntentlets' version inside the Variants
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryDeletePageWithNotRunningExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment draftExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+        final Experiment endedExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String notDefaultVariantDraftExperimentName = getNotDefaultVariantName(draftExperiment);
+        final Variant notDefaultVariantDraftExperiment = APILocator.getVariantAPI()
+                .get(notDefaultVariantDraftExperimentName)
+                .orElseThrow();
+        final Contentlet contentlet_1 = createContentletWithWorkingAndLiveVersion(notDefaultVariantDraftExperiment);
+
+        final String notDefaultVariantEndedExperimentName = getNotDefaultVariantName(endedExperiment);
+        final Variant notDefaultVariantEndedExperiment = APILocator.getVariantAPI()
+                .get(notDefaultVariantEndedExperimentName)
+                .orElseThrow();
+        final Contentlet contentlet_2 = createContentletWithWorkingAndLiveVersion(notDefaultVariantEndedExperiment);
+
+        APILocator.getExperimentsAPI().start(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+        APILocator.getExperimentsAPI().end(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+
+        APILocator.getContentletAPI()
+                .archive(experimentPage, APILocator.systemUser(), false);
+
+        APILocator.getContentletAPI()
+                .delete(experimentPage, APILocator.systemUser(), false);
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .find(experimentPage.getInode(), APILocator.systemUser(), false);
+
+        assertNull(contentlet);
+
+        final Optional<Experiment> draftExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(draftExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertFalse(draftExperimentFromDatabase.isPresent());
+
+        final Optional<Experiment> endedExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(endedExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertFalse(endedExperimentFromDatabase.isPresent());
+
+        final Optional<Variant> notDefaultVariantDraftExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantDraftExperimentName);
+
+        assertFalse(notDefaultVariantDraftExperimentOptional.isPresent());
+
+        final Optional<Variant> notDefaultVariantEndedExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantEndedExperimentName);
+
+        assertFalse(notDefaultVariantEndedExperimentOptional.isPresent());
+
+        checkNotExistsAnyVersion(contentlet_1);
+        checkNotExistsAnyVersion(contentlet_2);
+    }
+
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When A Not Admin user but with the follow permission:
+     * - Not Edit Permission on the Page
+     * - Edit Template/Layout Permission on the site.
+     *
+     * Try to delete a Page with two Experiments: one Draft and the other Ended
+     * Should: throw DotSecurityException
+     * Also must delete the Variants and the COntentlets' version inside the Variants
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryDeletePageWithNotRunningExperimentNoAdminUserNotEditPagePermission() throws DotDataException, DotSecurityException {
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(), PermissionAPI.PERMISSION_EDIT);
+
+        final Experiment draftExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+        final Experiment endedExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String notDefaultVariantDraftExperimentName = getNotDefaultVariantName(draftExperiment);
+        final String notDefaultVariantEndedExperimentName = getNotDefaultVariantName(endedExperiment);
+
+        APILocator.getExperimentsAPI().start(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+        APILocator.getExperimentsAPI().end(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+
+        APILocator.getContentletAPI()
+                .archive(experimentPage, APILocator.systemUser(), false);
+
+        try {
+            APILocator.getContentletAPI()
+                    .delete(experimentPage, limitedUser, false);
+
+            throw new AssertionError("Should throw DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String expectedMessage =  String.format("User: %s does not have Edit Permissions to lock content: %s",
+                    limitedUser.getUserId(), experimentPage.getIdentifier());
+            assertEquals(expectedMessage, e.getMessage());
+        }
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .find(experimentPage.getInode(), APILocator.systemUser(), false);
+
+        assertNotNull(contentlet);
+
+        final Optional<Experiment> draftExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(draftExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertTrue(draftExperimentFromDatabase.isPresent());
+
+        final Optional<Experiment> endedExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(endedExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertTrue(endedExperimentFromDatabase.isPresent());
+
+        final Optional<Variant> notDefaultVariantDraftExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantDraftExperimentName);
+
+        assertTrue(notDefaultVariantDraftExperimentOptional.isPresent());
+
+        final Optional<Variant> notDefaultVariantEndedExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantEndedExperimentName);
+
+        assertTrue(notDefaultVariantEndedExperimentOptional.isPresent());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When A Not Admin user but with the follow permission:
+     * - Edit Permission on the Page
+     * - Not Edit Template/Layout Permission on the site.
+     *
+     * Try to delete a Page with two Experiments: one Draft and the other Ended
+     * Should: Delete the Page and the experiments too
+     * Also must delete the Variants and the COntentlets' version inside the Variants
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryDeletePageWithNotRunningExperimentNoAdminUserNotTemplateLayoutPermission() throws DotDataException, DotSecurityException {
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+        final Experiment draftExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+        final Experiment endedExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String notDefaultVariantDraftExperimentName = getNotDefaultVariantName(draftExperiment);
+        final String notDefaultVariantEndedExperimentName = getNotDefaultVariantName(endedExperiment);
+
+        APILocator.getExperimentsAPI().start(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+        APILocator.getExperimentsAPI().end(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+
+        APILocator.getContentletAPI()
+                .archive(experimentPage, APILocator.systemUser(), false);
+
+        try {
+            APILocator.getContentletAPI()
+                    .delete(experimentPage, limitedUser, false);
+
+            throw new AssertionError("Should throw DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String expectedMessage =  String.format("User: %s does not have Edit Permissions to lock content: %s",
+                    limitedUser.getUserId(), experimentPage.getIdentifier());
+            assertEquals(expectedMessage, e.getMessage());
+        }
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .find(experimentPage.getInode(), APILocator.systemUser(), false);
+
+        assertNotNull(contentlet);
+
+        final Optional<Experiment> draftExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(draftExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertTrue(draftExperimentFromDatabase.isPresent());
+
+        final Optional<Experiment> endedExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(endedExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertTrue(endedExperimentFromDatabase.isPresent());
+
+        final Optional<Variant> notDefaultVariantDraftExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantDraftExperimentName);
+
+        assertTrue(notDefaultVariantDraftExperimentOptional.isPresent());
+
+        final Optional<Variant> notDefaultVariantEndedExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantEndedExperimentName);
+
+        assertTrue(notDefaultVariantEndedExperimentOptional.isPresent());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * When A Not Admin user but with the follow permission:
+     * - Edit Permission on the Page
+     * - Edit Template/Layout Permission on the site.
+     *
+     * Try to delete a Page with two Experiments: one Draft and the other Ended
+     * Should: Delete the Page and the experiments too
+     * Also must delete the Variants and the COntentlets' version inside the Variants
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryDeletePageWithNotRunningExperimentNoAdminUser() throws DotDataException, DotSecurityException {
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment draftExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+        final Experiment endedExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String notDefaultVariantDraftExperimentName = getNotDefaultVariantName(draftExperiment);
+        final String notDefaultVariantEndedExperimentName = getNotDefaultVariantName(endedExperiment);
+
+        APILocator.getExperimentsAPI().start(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+        APILocator.getExperimentsAPI().end(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+
+        APILocator.getContentletAPI()
+                .archive(experimentPage, APILocator.systemUser(), false);
+
+        try {
+            APILocator.getContentletAPI()
+                    .delete(experimentPage, limitedUser, false);
+
+            throw new AssertionError("Should throw DotSecurityException");
+        } catch (DotSecurityException e) {
+            //expected
+            final String expectedMessage =  String.format("User: %s does not have Edit Permissions to lock content: %s",
+                    limitedUser.getUserId(), experimentPage.getIdentifier());
+            assertEquals(expectedMessage, e.getMessage());
+        }
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .find(experimentPage.getInode(), APILocator.systemUser(), false);
+
+        assertNotNull(contentlet);
+
+        final Optional<Experiment> draftExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(draftExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertTrue(draftExperimentFromDatabase.isPresent());
+
+        final Optional<Experiment> endedExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(endedExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertTrue(endedExperimentFromDatabase.isPresent());
+
+        final Optional<Variant> notDefaultVariantDraftExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantDraftExperimentName);
+
+        assertTrue(notDefaultVariantDraftExperimentOptional.isPresent());
+
+        final Optional<Variant> notDefaultVariantEndedExperimentOptional = APILocator.getVariantAPI()
+                .get(notDefaultVariantEndedExperimentName);
+
+        assertTrue(notDefaultVariantEndedExperimentOptional.isPresent());
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
+     * When: Try to cancel a Scheduled Experiment
+     * Should: The Experiment come back to DRAFT
+     */
+    @Test
+    public void cancelScheduledExperiment() throws DotDataException, DotSecurityException {
+        final Instant startDate = Instant.now().plus(1, ChronoUnit.DAYS);
+        final Experiment experiment =  new ExperimentDataGen()
+                .scheduling(Scheduling.builder().startDate(startDate).build())
+                .nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        try {
+            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
+
+            assertEquals(Status.SCHEDULED, experimentAfterScheduled.status());
+
+            APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), APILocator.systemUser());
+
+            final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
+
+            assertEquals(Status.DRAFT, experimentAfterCancel.status());
+        } finally {
+            final Experiment experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.getIdentifier(), APILocator.systemUser())
+                    .orElseThrow();
+
+            if (experimentFromDB.status() == Status.RUNNING) {
+                APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
+     * When: Try to cancel a Running Experiment
+     * Should: The Experiment come back to DRAFT
+     */
+    @Test
+    public void cancelRunningExperiment() throws DotDataException, DotSecurityException {
+        final Experiment experiment =  new ExperimentDataGen()
+                .nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        try {
+            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
+
+            assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+
+            APILocator.getExperimentsAPI()
+                    .cancel(experimentAfterScheduled.getIdentifier(), APILocator.systemUser());
+
+            final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
+
+            assertEquals(Status.DRAFT, experimentAfterCancel.status());
+        } finally {
+            final Experiment experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.getIdentifier(), APILocator.systemUser())
+                    .orElseThrow();
+
+            if (experimentFromDB.status() == Status.RUNNING) {
+                APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
+     * When: Try to cancel a Running Experiment with a no Admin User but with:
+     * - Edit rights for the Page
+     * - Edit rights for Template-Layouts on the site
+     * Should: The Experiment come back to DRAFT
+     */
+    @Test
+    public void cancelExperimentWithNoAdminUser() throws DotDataException, DotSecurityException {
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
+                PermissionAPI.PERMISSION_EDIT);
+
+        final Instant startDate = Instant.now().plus(1, ChronoUnit.DAYS);
+        final Experiment experiment =  new ExperimentDataGen()
+                .page(experimentPage)
+                .nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        try {
+            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
+
+            assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+
+            APILocator.getExperimentsAPI().cancel(experimentAfterScheduled.getIdentifier(), limitedUser);
+
+            final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
+
+            assertEquals(Status.DRAFT, experimentAfterCancel.status());
+        } finally {
+            final Experiment experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.getIdentifier(), APILocator.systemUser())
+                    .orElseThrow();
+
+            if (experimentFromDB.status() == Status.RUNNING) {
+                APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
+     * When: Try to cancel a Running Experiment with a no Admin User:
+     * - Without Edit rights for the Page
+     * - With Edit rights for Template-Layouts on the site
+     * Should: Throw DotSecurityException
+     */
+    @Test
+    public void cancelExperimentWithUserNotEditPagePermission() throws DotDataException, DotSecurityException {
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ);
+        addPermission(host, limitedUser, PermissionableType.TEMPLATE_LAYOUTS.getCanonicalName(),
+                PermissionAPI.PERMISSION_EDIT);
+
+        final Instant startDate = Instant.now().plus(1, ChronoUnit.DAYS);
+        final Experiment experiment =  new ExperimentDataGen()
+                .page(experimentPage)
+                .nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        try {
+            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
+
+            assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+
+            try {
+                APILocator.getExperimentsAPI()
+                        .cancel(experimentAfterScheduled.getIdentifier(), limitedUser);
+                throw new AssertionError("Should throw DotSecurityException");
+            } catch (DotSecurityException e) {
+                //expected
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
+     * When: Try to cancel a Running Experiment with a no Admin User:
+     * - With Edit rights for the Page
+     * - Without Edit rights for Template-Layouts on the site
+     * Should: Throw DotSecurityException
+     */
+    @Test
+    public void cancelExperimentWithUserNotEditTemplateLayoutPermission() throws DotDataException, DotSecurityException {
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+
+        addPermission(experimentPage, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+
+        final Instant startDate = Instant.now().plus(1, ChronoUnit.DAYS);
+        final Experiment experiment =  new ExperimentDataGen()
+                .page(experimentPage)
+                .nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        try {
+            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
+
+            assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+
+            try {
+                APILocator.getExperimentsAPI()
+                        .cancel(experimentAfterScheduled.getIdentifier(), limitedUser);
+                throw new AssertionError("Should throw DotSecurityException");
+            } catch (DotSecurityException e) {
+                //expected
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+        }
+    }
 }
+

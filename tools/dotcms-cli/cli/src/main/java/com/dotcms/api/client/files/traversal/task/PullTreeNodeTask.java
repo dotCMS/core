@@ -154,7 +154,7 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
             }
         } catch (Exception e) {
             var message = String.format("Error creating folder [%s] to [%s]", remoteFolderURL, folderPath);
-            logger.debug(message, e);
+            logger.error(message, e);
             throw new TraversalTaskException(message, e);
         }
     }
@@ -210,7 +210,7 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
             }
         } catch (Exception e) {
             var message = String.format("Error pulling file [%s] to [%s]", remoteAssetURL, assetFilePath);
-            logger.debug(message, e);
+            logger.error(message, e);
             throw new TraversalTaskException(message, e);
         } finally {
             // File processed, updating the progress bar
