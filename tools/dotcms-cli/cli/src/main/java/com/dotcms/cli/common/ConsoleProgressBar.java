@@ -80,6 +80,13 @@ public class ConsoleProgressBar implements Runnable {
     }
 
     /**
+     * Just add a next line marker when done.
+     */
+    public synchronized void done(){
+        this.out.print("\n");
+    }
+
+    /**
      * Runs the progress bar animation until the associated future result is done.
      */
     @Override
