@@ -15,9 +15,4 @@ class DotCmsClientConfigIntegrationTest {
     public void testDefault() {
        Assertions.assertEquals("http://localhost:8080/api",config.servers().get("default").toString());
     }
-
-    @Test
-    public void testCustom() {
-       Assertions.assertEquals(5,1);
-    }
 }
