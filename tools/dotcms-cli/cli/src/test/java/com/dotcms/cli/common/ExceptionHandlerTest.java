@@ -67,7 +67,7 @@ class ExceptionHandlerTest {
         NotAllowedException moreNoise = new NotAllowedException("Not Allowed");
         handled = exceptionHandler.handle(moreNoise);
         Assertions.assertTrue(handled instanceof WebApplicationException);
-        Assertions.assertTrue(handled.getMessage().contains(config.defaultMessage()));
+        Assertions.assertTrue(handled.getMessage().contains(config.fallback()));
 
     }
 
