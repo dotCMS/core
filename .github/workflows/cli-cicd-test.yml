@@ -83,7 +83,7 @@ jobs:
             
             for report in surefire failsafe
             do
-              echo "<tr><td>${module}</td><td><a href=\"${module}/site/${report}-report.html\">${report} report</a></td></tr>" >> ${INDEX_FILE}
+              echo "<tr><td>${module}</td><td><a href=\"${module}/${report}-report.html\">${report} report</a></td></tr>" >> ${INDEX_FILE}
             done
           done
           
