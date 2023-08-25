@@ -1,4 +1,8 @@
-name: Build dotCMS Dev Env
+#  This job builds the dotCMS dev image: dotcms/dev:master_latest_SNAPSHOT
+#  every night.  For more information about this docker image, see
+#  https://github.com/dotCMS/core/tree/master/docker/dev-env
+
+name: Build dotCMS Dev Docker Image
 on:
   schedule:
     - cron: "18 2 * * *"
