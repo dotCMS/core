@@ -21,10 +21,7 @@ import {
 })
 export class AddWidgetComponent implements AfterViewInit {
     @Input() label = 'Add Widget';
-    @Input() icon = '';
     @Input() gridstackOptions: GridStackWidget;
-
-    protected imageError = false;
 
     constructor(private el: ElementRef) {}
 

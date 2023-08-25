@@ -4,15 +4,12 @@ import { By } from '@angular/platform-browser';
 
 import { AddWidgetComponent } from './add-widget.component';
 
-import { colIcon, rowIcon } from '../../assets/icons';
-
 @Component({
     selector: 'dotcms-host-component',
-    template: ` <dotcms-add-widget [label]="label" [icon]="icon"></dotcms-add-widget> `
+    template: ` <dotcms-add-widget [label]="label"></dotcms-add-widget> `
 })
 class HostComponent {
     @Input() label = 'Add Widget';
-    @Input() icon = rowIcon;
 }
 
 describe('AddWidgetComponent', () => {
@@ -41,16 +38,6 @@ describe('AddWidgetComponent', () => {
         it('should set label', () => {
             expect(component.label).toBe('Add Widget');
         });
-
-        it('should have row icon', () => {
-            expect(component.icon).toBe(rowIcon);
-        });
-
-        it('should have col icon', () => {
-            component.icon = colIcon;
-            fixture.detectChanges();
-            expect(component.icon).toBe(colIcon);
-        });
     });
 
     describe('template', () => {
@@ -58,23 +45,6 @@ describe('AddWidgetComponent', () => {
             de.query(By.css('[data-testid="cancelBtn"]'));
             const label = de.query(By.css('[data-testid="addWidgetLabel"]'));
             expect(label.nativeElement.textContent).toBe('Add Widget');
-        });
-
-        it('should have a image element with the row icon', () => {
-            component.icon = rowIcon;
-            fixture.detectChanges();
-            const img = de.query(By.css('img'));
-            expect(img.nativeElement.src).toContain(rowIcon);
-        });
-
-        it('it should have material icon element when image load fails', () => {
-            component.icon = 'add';
-            fixture.detectChanges();
-            const img = de.query(By.css('img'));
-            img.triggerEventHandler('error', null);
-            fixture.detectChanges();
-            const icon = de.query(By.css('.material-icons'));
-            expect(icon?.nativeElement.textContent).toContain('add');
         });
     });
 });

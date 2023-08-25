@@ -1,35 +1,25 @@
 @use "variables" as *;
 
 :host {
-    display: block;
-}
-
-.add-widget {
     display: flex;
     justify-content: center;
     align-items: center;
     padding: $spacing-1 $spacing-3;
-    gap: $spacing-3;
+    gap: $spacing-2;
     width: fit-content;
     background: $white;
     border: $field-border-size solid $color-palette-primary-500;
     border-radius: $border-radius-md;
 
-    &:hover {
+    &:hover,
+    // Class added by the gridstack library when the widget is being dragged
+    &.ui-draggable-dragging {
+        transform: rotate(-3.66deg);
         box-shadow: $md-shadow-6;
     }
 
-    .add-widget__label {
-        font-size: $font-size-md;
-        line-height: 140%;
-        color: $black;
-    }
-
-    .add-widget__icon {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-width: $spacing-4;
-        min-height: $spacing-4;
+    .material-icons {
+        color: $color-palette-primary;
+        font-size: $font-size-lg;
     }
 }
