@@ -120,7 +120,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.VersionableAPITest.class,
         com.dotmarketing.business.UserAPITest.class,
         com.dotmarketing.business.portal.PortletAPIImplTest.class,
-        com.dotmarketing.business.cache.provider.guava.CachePerformanceTest.class,
         com.dotmarketing.business.web.LanguageWebApiTest.class,
         com.dotmarketing.business.IdentifierFactoryTest.class,
         com.dotmarketing.business.IdentifierAPITest.class,

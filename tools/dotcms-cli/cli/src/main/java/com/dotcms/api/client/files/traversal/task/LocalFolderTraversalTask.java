@@ -187,7 +187,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                 checkAssetsToPush(workspaceFile, live, lang, parentFolderAssetVersionsViewBuilder, files, remoteFolder);
             } catch (Exception e) {
                 var message = String.format("Error processing folder [%s]", folderOrFile.getAbsolutePath());
-                logger.debug(message, e);
+                logger.error(message, e);
                 throw new TraversalTaskException(message, e);
             }
 
@@ -236,7 +236,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                 }
             } catch (Exception e) {
                 var message = String.format("Error processing file [%s]", folderOrFile.getAbsolutePath());
-                logger.debug(message, e);
+                logger.error(message, e);
                 throw new TraversalTaskException(message, e);
             }
 

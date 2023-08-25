@@ -302,6 +302,7 @@ $key-val-width: 500px;
     position: relative;
 
     .dijitTextBox {
+        min-height: $field-height-md;
         height: auto; // This fields grows while we add tags, we can't have a fix height.
         padding: 3px 5px;
     }

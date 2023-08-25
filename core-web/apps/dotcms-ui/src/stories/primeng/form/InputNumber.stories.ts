@@ -12,7 +12,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'InputNumber is an input component to provide numerical input: https://primefaces.org/primeng/showcase/#/inputnumber'
+                    'InputNumber is an input component to provide numerical input: https://primeng.org/inputnumber'
             }
         }
     },

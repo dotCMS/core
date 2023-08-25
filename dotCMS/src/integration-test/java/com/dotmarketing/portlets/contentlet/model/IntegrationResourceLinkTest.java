@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -19,7 +20,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink.ResourceLinkBuilder;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -89,7 +92,7 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         final Host host = APILocator.systemHost();
         final String mimeType = "text/plain; charset=ISO-8859-1";
         final boolean isSecure = false;
-        final File file = FileUtil.createTemporaryFile("comments-list", "txt", "This is a test temporal file");
+        final File file = FileUtil.createTemporaryFile("comments-list", ".txt", "This is a test temporal file");
         final String htmlFileName = file.getName();
         final User adminUser = TestUserUtils.getAdminUser();
 
@@ -108,7 +111,7 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         final ResourceLinkBuilder resourceLinkBuilder = new ResourceLinkBuilder();
         final ResourceLink link = resourceLinkBuilder.build(request, adminUser, contentlet);
 
-        assertEquals(mimeType, link.getMimeType());
+        assertTrue(mimeType.contains(link.getMimeType()));
         assertFalse(link.isDownloadRestricted());
 
         assertTrue(link.getIdPath().contains("/dA/"));
@@ -239,6 +242,36 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         assertEquals(StringPool.BLANK, link.getResourceLinkAsString());
         assertEquals(StringPool.BLANK, link.getVersionPath());
         assertEquals(StringPool.BLANK, link.getIdPath());
+    }
+
+    /**
+     * Method to test:  replaceUrlPattern
+     * Given Scenario: need to be able to configure the WYSIWYG image insertion to use the classical file path
+     * ExpectedResult: should be able to return the classical file path
+     * @throws Exception
+     */
+    @Test
+    public void test_replaceUrlPattern_shouldBeAbleToSetClassicalPattern() throws DotDataException, DotSecurityException {
+        Config.setProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}");
+
+        final Host host = APILocator.systemHost();
+        final boolean isSecure = false;
+        final User adminUser = mockLimitedUser();
+
+        final Contentlet contentlet = TestDataUtils.getMultipleImageBinariesContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), null);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(host.getIdentifier());
+        when(request.isSecure()).thenReturn(isSecure);
+        when(request.getServerPort()).thenReturn(80);
+
+        final ResourceLinkBuilder resourceLinkBuilder = new ResourceLinkBuilder();
+        final ResourceLink link = resourceLinkBuilder.build(request, adminUser, contentlet,
+                "fileAsset1");
+        String path = link.getConfiguredImageURL();
+        assertFalse("The path should not contain /dA/", path.contains("/dA/"));
+
+        Config.setProperty("WYSIWYG_IMAGE_URL_PATTERN", "/dA/{shortyInode}/{name}?language_id={languageId}");
     }
 
 

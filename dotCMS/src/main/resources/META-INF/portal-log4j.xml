@@ -120,10 +120,6 @@
 		<priority value="ERROR" />
 	</category>
 
-	<category name="org.jgroups">
-		<priority value="ERROR" />
-	</category>
-
 	<category name="org.quartz">
 		<priority value="ERROR" />
 	</category>
