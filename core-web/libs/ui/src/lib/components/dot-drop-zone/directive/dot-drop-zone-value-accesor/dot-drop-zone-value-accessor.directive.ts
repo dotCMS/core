@@ -1,5 +1,12 @@
 import { Directive, Host, OnInit, Optional, forwardRef } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {
+    AbstractControl,
+    ControlValueAccessor,
+    NG_VALUE_ACCESSOR,
+    Validator,
+    NG_VALIDATORS,
+    ValidationErrors
+} from '@angular/forms';
 
 import { DotDropZoneComponent, DropZoneFileEvent } from '../../dot-drop-zone.component';
 
@@ -10,10 +17,15 @@ import { DotDropZoneComponent, DropZoneFileEvent } from '../../dot-drop-zone.com
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotDropZoneValueAccessorDirective),
             multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => DotDropZoneValueAccessorDirective),
+            multi: true
         }
     ]
 })
-export class DotDropZoneValueAccessorDirective implements ControlValueAccessor, OnInit {
+export class DotDropZoneValueAccessorDirective implements ControlValueAccessor, Validator, OnInit {
     private onChange: (value: File) => void;
     private onTouched: () => void;
 
@@ -33,7 +45,9 @@ export class DotDropZoneValueAccessorDirective implements ControlValueAccessor, 
     }
 
     writeValue(_value: unknown) {
-        /* noop */
+        /*
+            We can set a value here by doing this._dotDropZone.setFile(value), if needed
+        */
     }
 
     registerOnChange(fn: (value: unknown) => void) {
@@ -42,5 +56,23 @@ export class DotDropZoneValueAccessorDirective implements ControlValueAccessor, 
 
     registerOnTouched(fn: () => void) {
         this.onTouched = fn;
+    }
+
+    validate(_control: AbstractControl): ValidationErrors | null {
+        const validity = this._dotDropZone.validity;
+
+        if (validity.valid) {
+            return null;
+        }
+
+        const errors = Object.entries(validity).reduce((acc, [key, value]) => {
+            if (value === true) {
+                acc[key] = value;
+            }
+
+            return acc;
+        }, {});
+
+        return errors;
     }
 }

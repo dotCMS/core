@@ -49,7 +49,7 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
     template: `
         <dot-drop-zone
             [accept]="accept"
-            [maxLength]="maxLength"
+            [maxFileSize]="maxFileSize"
             (fileDropped)="fileDropped($event)"
             (fileDragEnter)="fileDragEnter($event)"
             (fileDragLeave)="fileDragLeave($event)"
@@ -60,6 +60,10 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
                 <div *ngIf="accept.length">
                     <strong>Allowed Type:</strong> {{ accept }}
                 </div>
+
+                <div *ngIf="maxFileSize">
+                    <strong>Max File Size:</strong> {{ maxFileSize }}
+                </div>
             </div>
         </dot-drop-zone>
     `
@@ -69,5 +73,5 @@ export const Base = Template.bind({});
 
 Base.args = {
     accept: [],
-    maxLength: 1000000
+    maxFileSize: 1000000
 };

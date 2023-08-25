@@ -14,9 +14,9 @@ export interface DropZoneFileEvent {
 }
 
 export interface DropZoneFileValidity {
-    isFileTypeMismatch: boolean;
-    isFileTooBig: boolean;
-    multipleFiles: boolean;
+    fileTypeMismatch: boolean;
+    maxFileSizeExceeded: boolean;
+    multipleFilesDropped: boolean;
     valid: boolean;
 }
 
@@ -33,7 +33,7 @@ export class DotDropZoneComponent {
     @Output() fileDragEnter = new EventEmitter<boolean>();
     @Output() fileDragLeave = new EventEmitter<boolean>();
 
-    @Input() maxLength: number;
+    @Input() maxFileSize: number;
 
     @Input() set accept(types: string[]) {
         this._accept = types.map((type) => {
@@ -43,12 +43,16 @@ export class DotDropZoneComponent {
     }
 
     private _accept: string[] = [];
-    private validity: DropZoneFileValidity = {
-        isFileTypeMismatch: false,
-        isFileTooBig: false,
-        multipleFiles: false,
+    private _validity: DropZoneFileValidity = {
+        fileTypeMismatch: false,
+        maxFileSizeExceeded: false,
+        multipleFilesDropped: false,
         valid: true
     };
+
+    get validity(): DropZoneFileValidity {
+        return this._validity;
+    }
 
     @HostListener('drop', ['$event'])
     onDrop(event: DragEvent) {
@@ -67,7 +71,7 @@ export class DotDropZoneComponent {
         dataTransfer.clearData();
         this.fileDropped.emit({
             file, // Only one file is allowed
-            validity: this.validity
+            validity: this._validity
         });
     }
 
@@ -101,7 +105,7 @@ export class DotDropZoneComponent {
      * @memberof DotDropzoneComponent
      */
     private typeMatch(file: File): boolean {
-        if (!this.areValidationsEnabled()) {
+        if (!this._accept.length) {
             return true;
         }
 
@@ -113,17 +117,6 @@ export class DotDropZoneComponent {
         );
 
         return isValidType;
-    }
-
-    /**
-     * Check if the validations are enabled
-     *
-     * @private
-     * @return {*}  {boolean}
-     * @memberof DotDropzoneComponent
-     */
-    private areValidationsEnabled(): boolean {
-        return this._accept.length > 0;
     }
 
     /**
@@ -155,15 +148,15 @@ export class DotDropZoneComponent {
      * @memberof DotDropZoneComponent
      */
     private isFileTooLong(file: File): boolean {
-        if (!this.maxLength) {
+        if (!this.maxFileSize) {
             return false;
         }
 
-        return file.size > this.maxLength;
+        return file.size > this.maxFileSize;
     }
 
     /**
-     * Set the validity object
+     * Set the _validity object
      *
      * @private
      * @param {File} file
@@ -171,16 +164,16 @@ export class DotDropZoneComponent {
      */
     private setValidity(files: File[]): void {
         const file = files[0]; // Only one file is allowed
-        const multipleFiles = files.length > 1;
-        const isFileTypeMismatch = !this.typeMatch(file);
-        const isFileTooBig = this.isFileTooLong(file);
-        const valid = !isFileTypeMismatch && !isFileTooBig && !multipleFiles;
+        const multipleFilesDropped = files.length > 1;
+        const fileTypeMismatch = !this.typeMatch(file);
+        const maxFileSizeExceeded = this.isFileTooLong(file);
+        const valid = !fileTypeMismatch && !maxFileSizeExceeded && !multipleFilesDropped;
 
-        this.validity = {
-            ...this.validity,
-            multipleFiles,
-            isFileTypeMismatch,
-            isFileTooBig,
+        this._validity = {
+            ...this._validity,
+            multipleFilesDropped,
+            fileTypeMismatch,
+            maxFileSizeExceeded,
             valid
         };
     }

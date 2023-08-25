@@ -4,6 +4,13 @@ import { CommonModule } from '@angular/common';
 
 import { DotDropZoneComponent } from './dot-drop-zone.component';
 
+const MOCK_VALIDITY = {
+    fileTypeMismatch: false,
+    maxFileSizeExceeded: false,
+    multipleFilesDropped: false,
+    valid: true
+};
+
 describe('DotDropZoneComponent', () => {
     let spectator: SpectatorHost<DotDropZoneComponent>;
     let mockFile: File;
@@ -52,10 +59,7 @@ describe('DotDropZoneComponent', () => {
             expect(spy).toHaveBeenCalledWith({
                 file: mockFile,
                 validity: {
-                    isFileTypeMismatch: false,
-                    isFileTooBig: false,
-                    multipleFiles: false,
-                    valid: true
+                    ...MOCK_VALIDITY
                 }
             });
         });
@@ -90,10 +94,7 @@ describe('DotDropZoneComponent', () => {
                 expect(spy).toHaveBeenCalledWith({
                     file: mockFile,
                     validity: {
-                        isFileTypeMismatch: false,
-                        isFileTooBig: false,
-                        multipleFiles: false,
-                        valid: true
+                        ...MOCK_VALIDITY
                     }
                 });
             });
@@ -117,9 +118,8 @@ describe('DotDropZoneComponent', () => {
                 expect(spy).toHaveBeenCalledWith({
                     file: null,
                     validity: {
-                        isFileTypeMismatch: false,
-                        isFileTooBig: false,
-                        multipleFiles: true,
+                        ...MOCK_VALIDITY,
+                        multipleFilesDropped: true,
                         valid: false
                     }
                 });
@@ -129,10 +129,11 @@ describe('DotDropZoneComponent', () => {
         describe('when file is invalid', () => {
             beforeEach(() => {
                 spectator.component.accept = ['.png', 'image/'];
+                spectator.component.maxFileSize = 10;
                 spectator.detectChanges();
             });
 
-            it('should emit fileDropped event with validity isFileTypeMismatch to true', () => {
+            it('should emit fileDropped event with validity  to true', () => {
                 const spy = spyOn(spectator.component.fileDropped, 'emit');
                 const event = new DragEvent('drop', {
                     dataTransfer: mockDataTransfer
@@ -142,9 +143,30 @@ describe('DotDropZoneComponent', () => {
                 expect(spy).toHaveBeenCalledWith({
                     file: mockFile,
                     validity: {
-                        isFileTypeMismatch: true,
-                        isFileTooBig: false,
-                        multipleFiles: false,
+                        ...MOCK_VALIDITY,
+                        fileTypeMismatch: true,
+                        valid: false
+                    }
+                });
+            });
+
+            it('should emit fileDropped event with validity maxFileSizeExceeded to true', () => {
+                const file = new File([''], 'mockfile.png', { type: 'image/png' });
+                Object.defineProperty(file, 'size', { value: 2000000 });
+                const mockDataTransfer = new DataTransfer();
+                mockDataTransfer.items.add(file);
+
+                const spy = spyOn(spectator.component.fileDropped, 'emit');
+                const event = new DragEvent('drop', {
+                    dataTransfer: mockDataTransfer
+                });
+
+                spectator.component.onDrop(event);
+                expect(spy).toHaveBeenCalledWith({
+                    file: mockFile,
+                    validity: {
+                        ...MOCK_VALIDITY,
+                        maxFileSizeExceeded: true,
                         valid: false
                     }
                 });
