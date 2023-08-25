@@ -2,6 +2,8 @@ import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
 import { AddWidgetComponent } from './add-widget.component';
 
+import { rowIcon, colIcon } from '../../assets/icons';
+
 export default {
     title: 'Library/Template Builder/Components/Add',
     component: AddWidgetComponent,
@@ -23,11 +25,13 @@ export const AddBox = Template.bind({});
 export const MaterialIcon = Template.bind({});
 
 AddRow.args = {
-    label: 'Add Row'
+    label: 'Add Row',
+    icon: rowIcon
 };
 
 AddBox.args = {
-    label: 'Add Box'
+    label: 'Add Box',
+    icon: colIcon
 };
 
 MaterialIcon.args = {
