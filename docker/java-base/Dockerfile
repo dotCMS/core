@@ -49,7 +49,7 @@ RUN jlink \
     
 # Cleanup
 RUN rm -rf /root/.sdkman && \
-    apt purge -y zip unzip wget && \
+    apt purge -y zip unzip wget msopenjdk-11 packages-microsoft-prod fontconfig-config && \
     apt autoremove -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
