@@ -40,7 +40,6 @@ import {
     DotContainerMap
 } from '@dotcms/dotcms-models';
 
-import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
@@ -109,8 +108,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public rows$: Observable<DotLayoutBody>;
     public vm$: Observable<DotTemplateBuilderState> = this.store.vm$;
 
-    public readonly rowIcon = rowIcon;
-    public readonly colIcon = colIcon;
     public readonly boxWidth = BOX_WIDTH;
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
     public readonly rowOptions = rowInitialOptions;
