@@ -214,6 +214,18 @@ public class SamlWebUtils {
     }
 
 
+    /**
+     * Return the relay state for the SAML request if it is possible
+     * it could be a specific delegate class implemented or a generic one based on the velocity template indexed by the property auth.relaystate on the app SAML config
+     * for instance this config: auth.relaystate=companyCode=request.getParameter('companyCode')
+     * Will took the companyCode parameter from the request and will put it on the relay state
+     * Otherwise null will be returned
+     * @param request
+     * @param response
+     * @param identityProviderConfiguration
+     * @param siteIdentifier
+     * @return
+     */
     public String getRelayState(final HttpServletRequest request,
                                 final HttpServletResponse response,
                                 final IdentityProviderConfiguration identityProviderConfiguration,
@@ -221,7 +233,28 @@ public class SamlWebUtils {
 
         final String relayState = identityProviderConfiguration.containsOptionalProperty(AUTH_RELAYSTATE_KEY)?
                 identityProviderConfiguration.getOptionalProperty(AUTH_RELAYSTATE_KEY).toString(): null;
-        request.setAttribute(AUTH_RELAYSTATE_KEY, relayState);
+        return getRelayState(request, response, identityProviderConfiguration, relayState, siteIdentifier);
+    }
+
+    /**
+     * Based on the relayStateTemplate value will find a specific delegate class implemented or a generic one based on the velocity template
+     * for instance if the value for the parameter relayStateTemplate is: companyCode=request.getParameter('companyCode')
+     * Will took the companyCode parameter from the request and will put it on the relay state
+     * Otherwise null will be returned
+     * @param request
+     * @param response
+     * @param identityProviderConfiguration
+     * @param relayStateTemplate
+     * @param siteIdentifier
+     * @return
+     */
+    public String getRelayState(final HttpServletRequest request,
+                                final HttpServletResponse response,
+                                final IdentityProviderConfiguration identityProviderConfiguration,
+                                final String relayStateTemplate,
+                                final String siteIdentifier) {
+
+        request.setAttribute(AUTH_RELAYSTATE_KEY, relayStateTemplate);
 
         final RelayStateStrategy relayStateStrategy = RELAY_STATE_STRATEGY_MAP.getOrDefault(siteIdentifier, DEFAULT_VELOCITY_RELAY_STATE_STRATEGY);
 
