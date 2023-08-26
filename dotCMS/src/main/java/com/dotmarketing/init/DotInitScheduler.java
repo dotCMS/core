@@ -7,18 +7,7 @@ import com.dotcms.job.system.event.SystemEventsJob;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.job.AccessTokenRenewJob;
-import com.dotmarketing.quartz.job.BinaryCleanupJob;
-import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
-import com.dotmarketing.quartz.job.ContentReindexerThread;
-import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
-import com.dotmarketing.quartz.job.DeleteOldClickstreams;
-import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJob;
-import com.dotmarketing.quartz.job.EsReadOnlyMonitorJob;
-import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
-import com.dotmarketing.quartz.job.ServerHeartbeatJob;
-import com.dotmarketing.quartz.job.TrashCleanupJob;
-import com.dotmarketing.quartz.job.UsersToDeleteThread;
+import com.dotmarketing.quartz.job.*;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -121,40 +110,10 @@ public class DotInitScheduler {
 
 
 
+			// this is now wrapped up in the BinaryCleanupJob
+			sched.deleteJob("WebDavCleanupJob", DOTCMS_JOB_GROUP_NAME);
 
-			if(UtilMethods.isSet(Config.getStringProperty("WEBDAV_CLEANUP_JOB_CRON_EXPRESSION"))) {
-				try {
-					isNew = false;
 
-					try {
-						if ((job = sched.getJobDetail("WebDavCleanupJob", DOTCMS_JOB_GROUP_NAME)) == null) {
-							job = new JobDetail("WebDavCleanupJob", DOTCMS_JOB_GROUP_NAME, WebDavCleanupJob.class);
-							isNew = true;
-						}
-					} catch (SchedulerException se) {
-						sched.deleteJob("WebDavCleanupJob", DOTCMS_JOB_GROUP_NAME);
-						job = new JobDetail("WebDavCleanupJob", DOTCMS_JOB_GROUP_NAME, WebDavCleanupJob.class);
-						isNew = true;
-					}
-					calendar = GregorianCalendar.getInstance();
-					trigger = new CronTrigger("trigger10", "group10", "WebDavCleanupJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty("WEBDAV_CLEANUP_JOB_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-					sched.addJob(job, true);
-
-					if (isNew)
-						sched.scheduleJob(trigger);
-					else
-						sched.rescheduleJob("trigger10", "group8", trigger);
-				} catch (Exception e) {
-					Logger.error(DotInitScheduler.class, e.getMessage(),e);
-				}
-			} else {
-		        Logger.info(DotInitScheduler.class, "WebDavCleanupJob Cron Job schedule disabled on this server");
-		        Logger.info(DotInitScheduler.class, "Deleting WebDavCleanupJob Job");
-				if ((job = sched.getJobDetail("WebDavCleanupJob", DOTCMS_JOB_GROUP_NAME)) != null) {
-					sched.deleteJob("WebDavCleanupJob", DOTCMS_JOB_GROUP_NAME);
-				}
-			}
 			//http://jira.dotmarketing.net/browse/DOTCMS-1073
 			if(UtilMethods.isSet(Config.getStringProperty("BINARY_CLEANUP_JOB_CRON_EXPRESSION"))) {
 				try {

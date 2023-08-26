@@ -43,17 +43,14 @@ public class BinaryCleanupJob implements StatefulJob {
   public void execute(JobExecutionContext ctx) throws JobExecutionException {
 
 
-    Logger.info(this.getClass(), "Deleting old files from /assets/tmp_upload");
+    Logger.info(this.getClass(), "STARTING TMP FILE CLEANUP");
+
     cleanUpTmpUploadedFiles();
-
-    Logger.info(this.getClass(), "Deleting old bundles from /assets/bundles ");
     cleanUpOldBundles();
-
-    Logger.info(this.getClass(), "Deleting old files from /dotsecure/trash ");
     cleanUpTrashFolder();
-
-    Logger.info(this.getClass(), "Deleting from files from /dotsecure/backup ");
     cleanUpLocalBackupDirectory();
+
+    Logger.info(this.getClass(), "ENDING TMP FILE CLEANUP");
 
   }
 
@@ -65,7 +62,7 @@ public class BinaryCleanupJob implements StatefulJob {
     final int hours = Config.getIntProperty("BINARY_CLEANUP_FILE_LIFE_HOURS", 3);
     Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
-    Logger.info(this.getClass(), "Deleting tmp files older than " + olderThan + " from " + ConfigUtils.getAssetTempPath());
+    Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + ConfigUtils.getAssetTempPath());
     final File folder = new File(ConfigUtils.getAssetTempPath());
     FileUtil.cleanTree(folder, olderThan);
   }
@@ -79,7 +76,7 @@ public class BinaryCleanupJob implements StatefulJob {
         return;
       }
       Date olderThan =  Date.from(Instant.now().minus(Duration.ofDays(days)));
-      Logger.info(this.getClass(), "Deleting bundle files older than " + olderThan + " from " + ConfigUtils.getBundlePath());
+      Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + ConfigUtils.getBundlePath());
       final File bundleFolder = new File(ConfigUtils.getBundlePath());
       FileUtil.cleanTree(bundleFolder, olderThan);
   }
@@ -92,7 +89,7 @@ public class BinaryCleanupJob implements StatefulJob {
     Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
     TrashUtils trash = new TrashUtils();
-    Logger.info(this.getClass(), "Deleting trashed files older than " + olderThan + " from " + trash.getTrashFolder());
+    Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + trash.getTrashFolder());
     FileUtil.cleanTree(trash.getTrashFolder(), olderThan);
     new TrashUtils().emptyTrash();
   }
@@ -109,7 +106,7 @@ public class BinaryCleanupJob implements StatefulJob {
     }
     Date olderThan = Date.from(Instant.now().minus(Duration.ofDays(days)));
 
-    Logger.info(this.getClass(), "Deleting backups files older than " + olderThan + " from " + ConfigUtils.getBackupPath());
+    Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + ConfigUtils.getBackupPath());
     final File folder = new File(ConfigUtils.getBackupPath() );
     FileUtil.cleanTree(folder, olderThan);
   }

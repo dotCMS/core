@@ -65,6 +65,13 @@ public class ConfigUtils {
 		return getDynamicContentPath() + File.separator + "graphql";
 	}
 
+	public static String getACheckerPath() {
+		return com.liferay.util.FileUtil.getRealPath("/WEB-INF/achecker_sql");
+	}
+
+	public static String getLucenePath() {
+		return getDynamicContentPath() + File.separator + "dotlucene";
+	}
 
 	public static String getBackupPath() {
 		return getDynamicContentPath() + File.separator + "backup";

@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.contentlet.business.MetadataCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -718,7 +719,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     * Build a tmp resource path so that temp files will get created under a more suitable location
     */
     private String tempResourcePath(final String tempResourceId){
-        return File.separator + FileAssetAPI.TMP_UPLOAD + File.separator + tempResourceId + File.separator +  tempResourceId + META_TMP;
+        return ConfigUtils.getAssetTempPath() + File.separator + tempResourceId + File.separator +  tempResourceId + META_TMP;
     }
 
     /**
