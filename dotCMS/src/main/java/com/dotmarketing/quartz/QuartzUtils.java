@@ -513,6 +513,9 @@ public class QuartzUtils {
 	public static boolean removeJob(final String jobName, final String jobGroup) throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
 
+
+
+
 		return removeJob(jobName, jobGroup, scheduler);
 	}
 
@@ -532,6 +535,13 @@ public class QuartzUtils {
 	}
 
 
+	/**
+	 * This method avoids all the Quartz madness and just delete the job from the db
+	 * @param jobName
+	 * @param jobGroup
+	 * @return
+	 * @throws DotDataException
+	 */
 	@WrapInTransaction
 	public static boolean deleteJobDB(final String jobName, final String jobGroup) throws DotDataException {
 		DotConnect db = new DotConnect();
@@ -541,37 +551,37 @@ public class QuartzUtils {
 				.addParam(jobGroup)
 				.loadObjectResults();
 
-		if (results.isEmpty()) {
-			return false;
+		for(Map<String,Object> map : results) {
+
+
+			String trigger_name = map.get("trigger_name").toString();
+			String trigger_group = map.get("trigger_group").toString();
+
+			db.setSQL("delete from qrtz_excl_cron_triggers where trigger_name=? and trigger_group=?")
+					.addParam(trigger_name)
+					.addParam(trigger_group)
+					.loadResult();
+
+			db.setSQL("delete from qrtz_excl_triggers where trigger_name=? and trigger_group=?")
+					.addParam(trigger_name)
+					.addParam(trigger_group)
+					.loadResult();
+
+			db.setSQL("delete from qrtz_excl_paused_trigger_grps where trigger_group=?")
+					.addParam(trigger_group)
+					.loadResult();
+
+
+			db.setSQL("delete from qrtz_excl_trigger_listeners where trigger_name=? and trigger_group=?")
+					.addParam(trigger_name)
+					.addParam(trigger_group)
+					.loadResult();
+
+			db.setSQL("delete from qrtz_excl_simple_triggers where trigger_name=? and trigger_group=?")
+					.addParam(trigger_name)
+					.addParam(trigger_group)
+					.loadResult();
 		}
-
-		String trigger_name = results.get(0).get("trigger_name").toString();
-		String trigger_group = results.get(0).get("trigger_group").toString();
-
-		db.setSQL("delete from qrtz_excl_cron_triggers where trigger_name=? and trigger_group=?")
-				.addParam(trigger_name)
-				.addParam(trigger_group)
-				.loadResult();
-
-		db.setSQL("delete from qrtz_excl_triggers where trigger_name=? and trigger_group=?")
-				.addParam(trigger_name)
-				.addParam(trigger_group)
-				.loadResult();
-
-		db.setSQL("delete from qrtz_excl_paused_trigger_grps where trigger_group=?")
-				.addParam(trigger_group)
-				.loadResult();
-
-
-		db.setSQL("delete from qrtz_excl_trigger_listeners where trigger_name=? and trigger_group=?")
-				.addParam(trigger_name)
-				.addParam(trigger_group)
-				.loadResult();
-
-		db.setSQL("delete from qrtz_excl_simple_triggers where trigger_name=? and trigger_group=?")
-				.addParam(trigger_name)
-				.addParam(trigger_group)
-				.loadResult();
 
 		db.setSQL("delete from qrtz_excl_job_details where job_name=? and job_group=?")
 				.addParam(jobName)
