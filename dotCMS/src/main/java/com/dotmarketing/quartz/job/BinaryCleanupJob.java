@@ -8,15 +8,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 
-import com.dotmarketing.util.TrashUtils;
+import com.dotmarketing.util.*;
+import jdk.jshell.execution.Util;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
 
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
 
 /**
@@ -43,14 +41,15 @@ public class BinaryCleanupJob implements StatefulJob {
   public void execute(JobExecutionContext ctx) throws JobExecutionException {
 
 
-    Logger.info(this.getClass(), "STARTING TMP FILE CLEANUP");
+    Logger.info(this.getClass(), "STARTING TMP/TRASH FILE CLEANUP");
 
     cleanUpTmpUploadedFiles();
     cleanUpOldBundles();
     cleanUpTrashFolder();
     cleanUpLocalBackupDirectory();
+    cleanUpJavaIoTmpFiles();
 
-    Logger.info(this.getClass(), "ENDING TMP FILE CLEANUP");
+    Logger.info(this.getClass(), "ENDING TMP/TRASH FILE CLEANUP");
 
   }
 
@@ -59,7 +58,7 @@ public class BinaryCleanupJob implements StatefulJob {
    */
   void cleanUpTmpUploadedFiles(){
 
-    final int hours = Config.getIntProperty("BINARY_CLEANUP_FILE_LIFE_HOURS", 3);
+    final int hours = Config.getIntProperty("CLEANUP_TMP_FILES_OLDER_THAN_HOURS", 3);
     Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
     Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + ConfigUtils.getAssetTempPath());
@@ -108,6 +107,24 @@ public class BinaryCleanupJob implements StatefulJob {
 
     Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + ConfigUtils.getBackupPath());
     final File folder = new File(ConfigUtils.getBackupPath() );
+    FileUtil.cleanTree(folder, olderThan);
+  }
+
+
+
+  /**
+   * Deletes from java.io.tmpdir
+   */
+  void cleanUpJavaIoTmpFiles(){
+    String javaTmpDir = System.getProperty("java.io.tmpdir");
+    if(UtilMethods.isEmpty(javaTmpDir)) {
+      return;
+    }
+    final int hours = Config.getIntProperty("CLEANUP_TMP_FILES_OLDER_THAN_HOURS", 3);
+    Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
+
+    Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + javaTmpDir);
+    final File folder = new File(javaTmpDir);
     FileUtil.cleanTree(folder, olderThan);
   }
 
