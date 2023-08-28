@@ -1,5 +1,6 @@
 .dijitMenu {
     padding: 0;
+    border: 0 none;
 
     .dijitMenuItem {
         display: flex;
@@ -54,6 +55,7 @@
     box-shadow: $md-shadow-6;
     padding: $spacing-1;
     margin-top: $spacing-1;
+    max-height: 17.5rem !important;
 
     .dijitMenuItem {
         display: flex;

@@ -646,14 +646,6 @@
             <artifactId>shedlock-provider-jdbc</artifactId>
         </dependency>
 
-
-        <dependency>
-            <!-- JGroups: Reliable Multicast Communication -->
-            <groupId>org.jgroups</groupId>
-            <artifactId>jgroups</artifactId>
-        </dependency>
-
-
         <!--
          *****************************
             API Client Support
@@ -761,7 +753,6 @@
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-runtime</artifactId>
-            <scope>provided</scope>
         </dependency>
 
         <!-- Castor: Replace with JaxB -->

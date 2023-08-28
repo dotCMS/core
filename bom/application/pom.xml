@@ -810,15 +810,6 @@
                 <version>${shedlock.version}</version>
             </dependency>
 
-
-            <dependency>
-                <!-- JGroups: Reliable Multicast Communication -->
-                <groupId>org.jgroups</groupId>
-                <artifactId>jgroups</artifactId>
-                <version>3.6.1.Final</version>
-            </dependency>
-
-
             <!--
              *****************************
                 API Client Support

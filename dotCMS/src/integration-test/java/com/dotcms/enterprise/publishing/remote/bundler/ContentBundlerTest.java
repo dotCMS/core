@@ -1,7 +1,6 @@
 package com.dotcms.enterprise.publishing.remote.bundler;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 

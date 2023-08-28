@@ -1659,7 +1659,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         var pageAssetDialog = new dijit.Dialog({
             id   : "addPageAssetDialog",
             title: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "addpage.dialog")) %>",
-            style: "width: 311px; height:160px; overflow: auto"
+            style: "height:160px; overflow: auto"
         });
         var dialogHtml = getHTMLPageAssetDialogHtml();
 
