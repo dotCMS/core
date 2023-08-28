@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
     selector: 'dot-containers-dropdown-mock',
-    template: ` <p-dropdown dotContainerOptions></p-dropdown>`
+    template: ` <p-dropdown [groupByHost]="groupByHost" dotContainerOptions></p-dropdown>`
 })
-export class MockContainersDropdownComponent {}
+export class MockContainersDropdownComponent {
+    @Input() groupByHost = false;
+}
