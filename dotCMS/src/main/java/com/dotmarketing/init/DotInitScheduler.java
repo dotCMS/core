@@ -89,9 +89,9 @@ public class DotInitScheduler {
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
-					calendar.add(Calendar.SECOND, Config.getIntProperty("USERS_TO_DELETE_THREAD_INIT_DELAY"));
+					calendar.add(Calendar.MINUTE, 6);
 					trigger = new CronTrigger("trigger7", "group7", "UsersToDeleteJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty("USERS_TO_DELETE_THREAD_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
 					sched.addJob(job, true);
 
 					if (isNew)
@@ -128,8 +128,9 @@ public class DotInitScheduler {
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
+					calendar.add(Calendar.MINUTE, 7);
 				    trigger = new CronTrigger("trigger11", "group11", "BinaryCleanupJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,Config.getStringProperty("BINARY_CLEANUP_JOB_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
 					sched.addJob(job, true);
 
 					if (isNew)
@@ -165,8 +166,9 @@ public class DotInitScheduler {
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
-				    trigger = new CronTrigger("trigger19", "group19", "PublishQueueJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,Config.getStringProperty("PUBLISHER_QUEUE_THREAD_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					calendar.add(Calendar.MINUTE, 3);
+				    trigger = new CronTrigger("trigger19", "group19", "PublishQueueJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,Config.getStringProperty("PUBLISHER_QUEUE_THREAD_CRON_EXPRESSION","0 0/1 * * * "));
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
 					sched.addJob(job, true);
 
 					if (isNew)
@@ -208,8 +210,9 @@ public class DotInitScheduler {
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
+					calendar.add(Calendar.MINUTE, 10);
 					trigger = new CronTrigger(ETtriggerName, ETtriggerGroup, ETjobName, ETjobGroup, calendar.getTime(), null,Config.getStringProperty("ESCALATION_CHECK_INTERVAL_CRON", "0/30 * * * * ?"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
 					sched.addJob(job, true);
 
 					if (isNew)
@@ -246,8 +249,9 @@ public class DotInitScheduler {
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
+					calendar.add(Calendar.MINUTE, 2);
 					trigger = new CronTrigger(FSCtriggerName, FSCtriggerGroup, FSCjobName, FSCobGroup, calendar.getTime(), null,Config.getStringProperty("HEARTBEAT_CRON_EXPRESSION", "0 0/1 * * * ?"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
 					sched.addJob(job, true);
 
 					if (isNew)
@@ -284,6 +288,7 @@ public class DotInitScheduler {
                         isNew = true;
                     }
                     calendar = GregorianCalendar.getInstance();
+					calendar.add(Calendar.MINUTE, 30);
                     //By default, the job runs once a day at 12 AM
                     trigger = new CronTrigger(CUUtriggerName, CUUtriggerGroup, CUUjobName, CUUjobGroup, calendar.getTime(), null,Config.getStringProperty("CLEAN_USERS_CRON_EXPRESSION", "0 0 0 1/1 * ? *"));
                     trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
@@ -346,7 +351,7 @@ public class DotInitScheduler {
 					.setTriggerGroup(DOSEtriggerGroup)
 					.setCronExpressionProp("DELETE_OLD_SYSTEM_EVENTS_CRON_EXPRESSION")
 					.setCronExpressionPropDefault("0 0 0 1/3 * ? *")
-					.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
 			scheduleJob(deleteOldSystemEventsJob);
 		} else {
 
@@ -389,7 +394,7 @@ public class DotInitScheduler {
 							.setTriggerGroup(triggerGroup)
 							.setCronExpressionProp("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION")
 							.setCronExpressionPropDefault(Config.getStringProperty("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION", CRON_EXPRESSION_EVERY_5_MINUTES))
-							.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+							.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
 					scheduleJob(elasticReadOnlyMonitorJob);
 			} else {
 
@@ -419,7 +424,7 @@ public class DotInitScheduler {
 						.setTriggerGroup(triggerGroup)
 						.setCronExpressionProp("DELETE_OLD_ES_INDICES_JOB_CRON_EXPRESSION")
 						.setCronExpressionPropDefault("0 0 1 ? * *")
-						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
 				scheduleJob(deleteOldESIndicesJob);
 			} else {
 				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
@@ -501,7 +506,7 @@ public class DotInitScheduler {
 						.setTriggerGroup(triggerGroup)
 						.setCronExpressionProp("START_END_SCHEDULED_EXPERIMENTS_JOB_CRON_EXPRESSION")
 						.setCronExpressionPropDefault("0 /30 * ? * *")
-						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
 				scheduleJob(endFinalizedExperimentsJob);
 			} else {
 				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
