@@ -64,7 +64,7 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy, OnCha
     }
 
     ngOnChanges(): void {
-        this.group?.setValue(
+        this.group?.patchValue(
             {
                 header: this.layoutProperties.header,
                 footer: this.layoutProperties.footer,
