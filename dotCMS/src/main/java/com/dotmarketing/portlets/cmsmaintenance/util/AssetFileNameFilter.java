@@ -33,7 +33,7 @@ public class AssetFileNameFilter implements FileFilter {
 	private final BloomFilter<String> bloomFilter;
 
     private static final String[] EXCLUDE_FOLDERS_LIST = { "license", "bundles", "tmp_upload",
-                    "timemachine", "integrity", "server", "dotGenerated", "monitor"};
+                    "timemachine", "integrity", "server", "dotGenerated", "monitor", "messages"};
 
 	private static final String[] EXCLUDE_FILE_LIST = {"license.zip", ".DS_Store", "license_pack.zip"};
 
