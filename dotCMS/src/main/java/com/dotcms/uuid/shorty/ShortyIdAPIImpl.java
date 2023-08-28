@@ -38,7 +38,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   private final Map<ShortyInputType, DBLikeStrategy> dbLikeStrategyMap =
           map(
                   ShortyInputType.CONTENT,         (final DotConnect db, final String uuidIfy) -> {
-                    final String sqlUnion = (ShortyIdSql.SELECT_SHORTY_SQL_LIKE + " UNION " + ShortyIdSql.SELECT_SHORTY_SQL_LIKE);
+                    final String sqlUnion = "(" + ShortyIdSql.SELECT_SHORTY_SQL_LIKE + " UNION ALL " + ShortyIdSql.SELECT_SHORTY_SQL_LIKE + ")" + " limit 1";
                     final String deterministicId = uuidIfy.replaceAll("-","");
                     db.setSQL(sqlUnion).addParam(uuidIfy + "%").addParam(uuidIfy + "%").addParam(deterministicId + "%").addParam(deterministicId + "%");
                   },

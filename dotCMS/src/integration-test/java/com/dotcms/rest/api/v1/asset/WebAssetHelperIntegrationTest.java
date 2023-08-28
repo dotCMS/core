@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.asset;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -28,6 +30,8 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -40,6 +44,8 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.glassfish.jersey.internal.util.Base64;
@@ -202,10 +208,45 @@ public class WebAssetHelperIntegrationTest {
     }
 
     /**
-     * Helper method to create a FormDataContentDisposition object
-     * @param newTestFile
-     * @return
+     * We're testing that even when no System Workflow is assigned to FileAsset we can still save content
+     * Given scenario:  We remove system wf from FileAsset then we create a new file using WebAssetHelper
+     * Expected Results: Even when no system-workflow is available we should be able to save content
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
      */
+    @Test
+    public void Test_Save_FilAsset_No_System_Workflow() throws DotDataException, DotSecurityException, IOException {
+        final User user = APILocator.systemUser();
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        ContentType fileAssetContentType = contentTypeAPI.find("FileAsset");
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final List<WorkflowScheme> schemesForContentType = workflowAPI.findSchemesForContentType(fileAssetContentType);
+
+        try {
+            workflowAPI.saveSchemeIdsForContentType(fileAssetContentType, Set.of());
+            WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+
+            final File newTestFile = FileUtil.createTemporaryFile("lol", ".txt",
+                    RandomStringUtils.random(1000));
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+            final Language lang = new LanguageDataGen().nextPersisted();
+
+            final Contentlet contentlet = webAssetHelper.makeFileAsset(newTestFile, host, folder, lang);
+            final Contentlet savedAsset = webAssetHelper.checkinOrPublish(contentlet, user, true);
+            Assert.assertTrue(savedAsset.isLive());
+        }finally {
+            workflowAPI.saveSchemeIdsForContentType(fileAssetContentType,
+                    schemesForContentType.stream().map(WorkflowScheme::getId).collect(Collectors.toSet())
+            );
+        }
+    }
+
+        /**
+         * Helper method to create a FormDataContentDisposition object
+         * @param newTestFile
+         * @return
+         */
     private static FormDataContentDisposition getFormDataContentDisposition(File newTestFile) {
         return FormDataContentDisposition
                 .name(newTestFile.getName())

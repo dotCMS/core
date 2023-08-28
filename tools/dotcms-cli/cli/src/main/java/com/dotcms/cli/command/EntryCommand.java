@@ -1,14 +1,18 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.cli.command.contenttype.*;
+import com.dotcms.cli.command.contenttype.ContentTypeCommand;
 import com.dotcms.cli.command.files.FilesCommand;
 import com.dotcms.cli.command.language.LanguageCommand;
-import com.dotcms.cli.command.site.*;
+import com.dotcms.cli.command.site.SiteCommand;
+import com.dotcms.cli.common.ExceptionHandlerImpl;
+import com.dotcms.cli.common.LoggingExecutionStrategy;
 import com.dotcms.cli.common.OutputOptionMixin;
+import io.quarkus.arc.Unremovable;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
+import javax.inject.Inject;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.ParameterException;
@@ -40,6 +44,11 @@ import picocli.CommandLine.ParameterException;
 )
 public class EntryCommand  {
 
+    // Declared here, so we have an instance available via Arc container
+    @Unremovable
+    @Inject
+    ExceptionHandlerImpl exceptionHandler;
+
 }
 
 @ApplicationScoped
@@ -55,6 +64,8 @@ class CustomConfiguration {
         CommandLine customCommandLine( final PicocliCommandLineFactory factory) {
                 return factory.create()
                         .setCaseInsensitiveEnumValuesAllowed(true)
+                        .setExecutionStrategy(
+                                new LoggingExecutionStrategy(new CommandLine.RunLast()))
                         .setExecutionExceptionHandler((ex, commandLine, parseResult) -> {
                                 final Object object = commandLine.getCommand();
                                 if (object instanceof DotCommand) {
@@ -69,7 +80,7 @@ class CustomConfiguration {
                                 return ExitCode.SOFTWARE;
                         }).setExitCodeExceptionMapper(t -> {
                                // customize exit code
-                              // We usually throw an IllegalArgumentException to detonate that a invalid param has been passed
+                              // We usually throw an IllegalArgumentException to denote that an invalid param has been passed
                                 if (t instanceof ParameterException || t instanceof IllegalArgumentException) {
                                         return ExitCode.USAGE;
                                 }

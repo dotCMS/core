@@ -2,6 +2,9 @@ package com.dotcms.cube;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.analytics.helper.AnalyticsHelper;
+import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.exception.AnalyticsException;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
@@ -10,10 +13,12 @@ import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+
+import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,10 +45,12 @@ import java.util.Map;
 public class CubeJSClient {
 
     private int PAGE_SIZE = 1000;
-    private String url;
+    private final String url;
+    private final AccessToken accessToken;
 
-    public CubeJSClient(final String url) {
+    public CubeJSClient(final String url, final AccessToken accessToken) {
         this.url = url;
+        this.accessToken = accessToken;
     }
 
     /**
@@ -113,13 +120,20 @@ public class CubeJSClient {
      */
     public CubeJSResultSet send(final CubeJSQuery query) {
         DotPreconditions.notNull(query, "Query not must be NULL");
+        DotPreconditions.notNull(accessToken, "Access token not must be NULL");
 
-        final CircuitBreakerUrl cubeJSClient = CircuitBreakerUrl.builder()
-                .setMethod(Method.GET)
-                .setUrl(String.format("%s/cubejs-api/v1/load", url))
-                .setParams(map("query", query.toString()))
-                .setTimeout(4000)
-                .build();
+        final CircuitBreakerUrl cubeJSClient;
+        try {
+            cubeJSClient = CircuitBreakerUrl.builder()
+                    .setMethod(Method.GET)
+                    .setHeaders(cubeJsHeaders(accessToken))
+                    .setUrl(String.format("%s/cubejs-api/v1/load", url))
+                    .setParams(map("query", query.toString()))
+                    .setTimeout(4000)
+                    .build();
+        } catch (AnalyticsException e) {
+            throw new RuntimeException(e);
+        }
 
         final Response<String> response = Try.of(cubeJSClient::doResponse)
                 .onFailure(e -> Logger.warnAndDebug(EventLogRunnable.class, e.getMessage(), e))
@@ -136,7 +150,18 @@ public class CubeJSClient {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-
     }
+
+    /**
+     * Prepares access token request headers in a {@link Map} with values found in a {@link AccessToken} instance.
+     *
+     * @param accessToken access token
+     * @return map representation of http headers
+     */
+    private Map<String, String> cubeJsHeaders(final AccessToken accessToken) throws AnalyticsException {
+        return ImmutableMap.<String, String>builder()
+            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
+            .build();
+    }
+
 }
