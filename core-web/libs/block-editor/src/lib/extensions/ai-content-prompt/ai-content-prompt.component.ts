@@ -22,7 +22,6 @@ export class AIContentPromptComponent {
     @Output() formValues = new EventEmitter<FormValues>();
     @Output() formSubmission = new EventEmitter<boolean>();
 
-    loading = false;
     form = new FormGroup({
         textPrompt: new FormControl('')
     });
