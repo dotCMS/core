@@ -54,7 +54,6 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
         );
 
         if (this.control) {
-            this.control.group = this.groupByHost;
             this.control.optionLabel = DEFAULT_LABEL_NAME_INDEX;
             this.control.optionValue = DEFAULT_VALUE_NAME_INDEX;
             this.control.optionDisabled = 'inactive';
@@ -95,7 +94,7 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
                     }))
                     .sort((a, b) => a.label.localeCompare(b.label));
             }),
-            map((options) => (this.groupByHost ? this.getGroupedOptionsByHost(options) : options)),
+            map((options) => (this.groupByHost ? this.getOptionsGroupedByHost(options) : options)),
             catchError(() => {
                 return this.handleContainersLoadError();
             })
@@ -125,9 +124,31 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
      * @return {*}
      * @memberof DotContainerOptionsDirective
      */
-    private getGroupedOptionsByHost(options: DotDropdownSelectOption<DotContainer>[]) {
-        // Group by host
-        const group = options.reduce((acc, option) => {
+    private getOptionsGroupedByHost(options: DotDropdownSelectOption<DotContainer>[]) {
+        const groupByHost = this.getContainerGroupedByHost(options);
+
+        return Object.keys(groupByHost).map((key) => {
+            return {
+                label: key,
+                items: groupByHost[key].items
+            };
+        });
+    }
+
+    /**
+     * Group containers by host
+     *
+     * @private
+     * @param {DotDropdownSelectOption<DotContainer>[]} options
+     * @return {*}  {{
+     *         [key: string]: { items: DotDropdownSelectOption<DotContainer>[] };
+     *     }}
+     * @memberof DotContainerOptionsDirective
+     */
+    private getContainerGroupedByHost(options: DotDropdownSelectOption<DotContainer>[]): {
+        [key: string]: { items: DotDropdownSelectOption<DotContainer>[] };
+    } {
+        return options.reduce((acc, option) => {
             const { hostname } = option.value.parentPermissionable;
 
             if (!acc[hostname]) {
@@ -138,14 +159,6 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
 
             return acc;
         }, {});
-
-        // Convert to array
-        return Object.keys(group).map((key) => {
-            return {
-                label: key,
-                items: group[key].items
-            };
-        });
     }
 
     ngOnDestroy() {
