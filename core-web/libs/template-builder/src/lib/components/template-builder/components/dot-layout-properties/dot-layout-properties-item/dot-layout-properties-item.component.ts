@@ -18,7 +18,6 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
     @Input()
     label: string;
 
-    @Input()
     value = false;
 
     @Output()
@@ -41,7 +40,7 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
      * @memberof DotLayoutPropertiesItemComponent
      */
     writeValue(value: boolean): void {
-        if (value) {
+        if (typeof value === 'boolean') {
             this.value = value;
         }
     }

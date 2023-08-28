@@ -6,7 +6,6 @@ import {
     Component,
     EventEmitter,
     Input,
-    OnChanges,
     OnDestroy,
     OnInit,
     Output
@@ -31,8 +30,19 @@ import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-p
     styleUrls: ['./template-builder-actions.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TemplateBuilderActionsComponent implements OnInit, OnDestroy, OnChanges {
-    @Input() layoutProperties: DotTemplateLayoutProperties;
+export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
+    @Input() set layoutProperties(layoutProperties: DotTemplateLayoutProperties) {
+        this.group?.patchValue(
+            {
+                ...layoutProperties
+            },
+            { emitEvent: false }
+        );
+
+        this._layoutProperties = { ...layoutProperties };
+    }
+
+    private _layoutProperties: DotTemplateLayoutProperties;
 
     @Output() selectTheme: EventEmitter<void> = new EventEmitter();
 
@@ -47,10 +57,10 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy, OnCha
 
     ngOnInit(): void {
         this.group = new UntypedFormGroup({
-            header: new UntypedFormControl(this.layoutProperties.header ?? true),
-            footer: new UntypedFormControl(this.layoutProperties.footer ?? true),
+            header: new UntypedFormControl(this._layoutProperties.header ?? true),
+            footer: new UntypedFormControl(this._layoutProperties.footer ?? true),
             sidebar: new UntypedFormControl(
-                this.layoutProperties.sidebar ?? {
+                this._layoutProperties.sidebar ?? {
                     location: '',
                     width: 'medium',
                     containers: []
@@ -61,17 +71,6 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy, OnCha
         this.group.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
             this.store.updateLayoutProperties(value);
         });
-    }
-
-    ngOnChanges(): void {
-        this.group?.patchValue(
-            {
-                header: this.layoutProperties.header,
-                footer: this.layoutProperties.footer,
-                sidebar: this.layoutProperties.sidebar
-            },
-            { emitEvent: false }
-        );
     }
 
     ngOnDestroy(): void {
