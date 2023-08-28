@@ -1,14 +1,6 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import {
-    ChangeDetectorRef,
-    Directive,
-    Input,
-    OnDestroy,
-    OnInit,
-    Optional,
-    Self
-} from '@angular/core';
+import { ChangeDetectorRef, Directive, OnDestroy, OnInit, Optional, Self } from '@angular/core';
 
 import { Dropdown } from 'primeng/dropdown';
 
@@ -40,8 +32,6 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
     private readonly loadErrorMessage: string;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    @Input() groupByHost = false;
-
     constructor(
         @Optional() @Self() private readonly primeDropdown: Dropdown,
         private readonly dotContainersService: DotContainersService,
@@ -54,6 +44,7 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
         );
 
         if (this.control) {
+            this.control.group = true;
             this.control.optionLabel = DEFAULT_LABEL_NAME_INDEX;
             this.control.optionValue = DEFAULT_VALUE_NAME_INDEX;
             this.control.optionDisabled = 'inactive';
@@ -67,7 +58,6 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
         this.fetchContainerOptions().subscribe((options) => {
             this.control.options = this.control.options || options; // avoid overwriting if they were already set
         });
-        this.control.group = this.groupByHost;
         this.control.onFilter
             .pipe(
                 takeUntil(this.destroy$),
@@ -81,20 +71,19 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
 
     private fetchContainerOptions(
         filter: string = ''
-    ): Observable<
-        DotDropdownGroupSelectOption<DotContainer>[] | DotDropdownSelectOption<DotContainer>[]
-    > {
+    ): Observable<DotDropdownGroupSelectOption<DotContainer>[]> {
         return this.dotContainersService.getFiltered(filter, this.maxOptions, true).pipe(
             map((containerEntities) => {
-                return containerEntities
+                const options = containerEntities
                     .map((container) => ({
                         label: container.title,
                         value: container,
                         inactive: false
                     }))
                     .sort((a, b) => a.label.localeCompare(b.label));
+
+                return this.getOptionsGroupedByHost(options);
             }),
-            map((options) => (this.groupByHost ? this.getOptionsGroupedByHost(options) : options)),
             catchError(() => {
                 return this.handleContainersLoadError();
             })
@@ -107,11 +96,7 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
         return of([]);
     }
 
-    private setOptions(
-        options: Array<
-            DotDropdownSelectOption<DotContainer> | DotDropdownGroupSelectOption<DotContainer>
-        >
-    ) {
+    private setOptions(options: Array<DotDropdownGroupSelectOption<DotContainer>>) {
         this.control.options = [...options];
         this.changeDetectorRef.detectChanges();
     }

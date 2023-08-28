@@ -63,51 +63,25 @@ describe('ContainerOptionsDirective', () => {
         ]
     });
 
-    describe('Dropdown list', () => {
-        beforeEach(() => {
-            spectator = createHost(`<dot-containers-dropdown-mock></dot-containers-dropdown-mock>`);
-            spectator.detectChanges();
-            mockMatchMedia();
-        });
-
-        it('should add the options obtained from the service', async () => {
-            const dropdownButton = spectator.query('.p-dropdown');
-            spectator.click(dropdownButton);
-            const options = spectator.debugElement.queryAll(By.css('.p-dropdown-item'));
-            expect(options.length).toEqual(containersMock.length);
-        });
-
-        it('should set the options sorted by naame', () => {
-            const dropdown = spectator.debugElement.query(By.css('p-dropdown'));
-            const dropdownInstance = dropdown.componentInstance;
-
-            expect(dropdownInstance.options).toEqual(sortedContainersMock);
-        });
+    beforeEach(() => {
+        spectator = createHost(`<dot-containers-dropdown-mock></dot-containers-dropdown-mock>`);
+        spectator.detectChanges();
+        mockMatchMedia();
     });
 
-    describe('Dropdown list group by host', () => {
-        beforeEach(() => {
-            spectator = createHost(
-                `<dot-containers-dropdown-mock [groupByHost]="true"></dot-containers-dropdown-mock>`
-            );
-            spectator.detectChanges();
-            mockMatchMedia();
-        });
+    it('should set the group property of the dropdown to true', () => {
+        // get the dropdown component
+        const dropdown = spectator.debugElement.query(By.css('p-dropdown'));
+        // Get the dropdown component instance
+        const dropdownInstance = dropdown.componentInstance;
 
-        it('should set the group property of the dropdown to true', () => {
-            // get the dropdown component
-            const dropdown = spectator.debugElement.query(By.css('p-dropdown'));
-            // Get the dropdown component instance
-            const dropdownInstance = dropdown.componentInstance;
+        expect(dropdownInstance.group).toBeTruthy();
+    });
 
-            expect(dropdownInstance.group).toBeTruthy();
-        });
+    it('should group containers by host', () => {
+        const dropdown = spectator.debugElement.query(By.css('p-dropdown'));
+        const dropdownInstance = dropdown.componentInstance;
 
-        it('should group containers by host', () => {
-            const dropdown = spectator.debugElement.query(By.css('p-dropdown'));
-            const dropdownInstance = dropdown.componentInstance;
-
-            expect(dropdownInstance.options).toEqual(getGroupByHostContainersMock());
-        });
+        expect(dropdownInstance.options).toEqual(getGroupByHostContainersMock());
     });
 });
