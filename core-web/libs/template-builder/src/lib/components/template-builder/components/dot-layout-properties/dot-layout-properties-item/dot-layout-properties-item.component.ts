@@ -18,7 +18,7 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
     @Input()
     label: string;
 
-    value = false;
+    value: boolean;
 
     @Output()
     switch: EventEmitter<boolean> = new EventEmitter();
