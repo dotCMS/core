@@ -162,7 +162,7 @@ public class TemplateAjax {
 			templateMap.put("hostName", parentHost.getHostname());
 			templateMap.put("hostId", parentHost.getIdentifier());
 			templateMap.put("fullTitle",   templateMap.get("title") + " (" + parentHost.getHostname() + ")" );
-			templateMap.put("htmlTitle",  "<div><div style='float:left'>" + templateMap.get("title") + "</div><div style='float:right'>" + parentHost.getHostname() + "</div></div>" );
+			templateMap.put("htmlTitle",  "<div>" + templateMap.get("title") + "</div><small>" + parentHost.getHostname() + "</div></small>" );
 		} else {
 			templateMap.put("fullTitle", templateMap.get("title"));
 			templateMap.put("htmlTitle", templateMap.get("title"));
