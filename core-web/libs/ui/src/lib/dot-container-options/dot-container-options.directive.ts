@@ -1,13 +1,25 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { ChangeDetectorRef, Directive, OnDestroy, OnInit, Optional, Self } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Directive,
+    Input,
+    OnDestroy,
+    OnInit,
+    Optional,
+    Self
+} from '@angular/core';
 
 import { Dropdown } from 'primeng/dropdown';
 
-import { catchError, debounceTime, map, switchMap, take, takeUntil } from 'rxjs/operators';
+import { catchError, debounceTime, map, switchMap, takeUntil } from 'rxjs/operators';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
-import { DotContainer, DotDropdownSelectOption } from '@dotcms/dotcms-models';
+import {
+    DotContainer,
+    DotDropdownGroupSelectOption,
+    DotDropdownSelectOption
+} from '@dotcms/dotcms-models';
 
 const DEFAULT_LABEL_NAME_INDEX = 'label';
 const DEFAULT_VALUE_NAME_INDEX = 'value';
@@ -28,6 +40,8 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
     private readonly loadErrorMessage: string;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
+    @Input() groupByHost = false;
+
     constructor(
         @Optional() @Self() private readonly primeDropdown: Dropdown,
         private readonly dotContainersService: DotContainersService,
@@ -40,6 +54,7 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
         );
 
         if (this.control) {
+            this.control.group = this.groupByHost;
             this.control.optionLabel = DEFAULT_LABEL_NAME_INDEX;
             this.control.optionValue = DEFAULT_VALUE_NAME_INDEX;
             this.control.optionDisabled = 'inactive';
@@ -53,6 +68,7 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
         this.fetchContainerOptions().subscribe((options) => {
             this.control.options = this.control.options || options; // avoid overwriting if they were already set
         });
+        this.control.group = this.groupByHost;
         this.control.onFilter
             .pipe(
                 takeUntil(this.destroy$),
@@ -66,16 +82,20 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
 
     private fetchContainerOptions(
         filter: string = ''
-    ): Observable<DotDropdownSelectOption<DotContainer>[]> {
+    ): Observable<
+        DotDropdownGroupSelectOption<DotContainer>[] | DotDropdownSelectOption<DotContainer>[]
+    > {
         return this.dotContainersService.getFiltered(filter, this.maxOptions, true).pipe(
-            take(1),
             map((containerEntities) => {
-                return containerEntities.map((container) => ({
-                    label: container.title,
-                    value: container,
-                    inactive: false
-                }));
+                return containerEntities
+                    .map((container) => ({
+                        label: container.title,
+                        value: container,
+                        inactive: false
+                    }))
+                    .sort((a, b) => a.label.localeCompare(b.label));
             }),
+            map((options) => (this.groupByHost ? this.getGroupedOptionsByHost(options) : options)),
             catchError(() => {
                 return this.handleContainersLoadError();
             })
@@ -88,9 +108,44 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
         return of([]);
     }
 
-    private setOptions(options: Array<DotDropdownSelectOption<DotContainer>>) {
+    private setOptions(
+        options: Array<
+            DotDropdownSelectOption<DotContainer> | DotDropdownGroupSelectOption<DotContainer>
+        >
+    ) {
         this.control.options = [...options];
         this.changeDetectorRef.detectChanges();
+    }
+
+    /**
+     * Group options by host
+     *
+     * @private
+     * @param {DotDropdownSelectOption<DotContainer>[]} options
+     * @return {*}
+     * @memberof DotContainerOptionsDirective
+     */
+    private getGroupedOptionsByHost(options: DotDropdownSelectOption<DotContainer>[]) {
+        // Group by host
+        const group = options.reduce((acc, option) => {
+            const { hostname } = option.value.parentPermissionable;
+
+            if (!acc[hostname]) {
+                acc[hostname] = { items: [] };
+            }
+
+            acc[hostname].items.push(option);
+
+            return acc;
+        }, {});
+
+        // Convert to array
+        return Object.keys(group).map((key) => {
+            return {
+                label: key,
+                items: group[key].items
+            };
+        });
     }
 
     ngOnDestroy() {

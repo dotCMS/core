@@ -34,9 +34,10 @@
                 [placeholder]="dropdownLabel"
                 [formControl]="formControl"
                 [autoDisplayFirst]="false"
+                [groupByHost]="true"
                 (onChange)="onContainerSelect($event)"
-                data-testId="btn-plus"
                 dotContainerOptions
+                data-testId="btn-plus"
                 appendTo="body"
                 dropdownIcon="pi pi-plus"
                 optionLabel="label"
