@@ -32,4 +32,8 @@ export class DotPageStateServiceMock {
     setPersona(_persona: DotPersona): void {
         /* */
     }
+
+    setSeoMedia(_seoMedia: string): void {
+        /* */
+    }
 }
