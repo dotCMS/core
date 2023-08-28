@@ -144,7 +144,14 @@ public class OutputOptionMixin implements MessageWriter {
         out().println(colorScheme().ansi().new Text("@|yellow " + WARN_ICON + " " + msg + "|@", colorScheme()));
     }
 
-    // CommandLine must be passed in (forwarded commands)
+    /**
+     * Throws an UnmatchedArgumentException if there are any unmatched arguments in the given
+     * CommandLine object.
+     *
+     * @param cmd the CommandLine object to check for unmatched arguments
+     * @throws CommandLine.UnmatchedArgumentException if there are any unmatched arguments in the
+     *                                                CommandLine object
+     */
     public void throwIfUnmatchedArguments(CommandLine cmd) {
         List<String> unmatchedArguments = cmd.getUnmatchedArguments();
         if (!unmatchedArguments.isEmpty()) {

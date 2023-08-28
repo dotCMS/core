@@ -52,8 +52,15 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer>, 
     @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name or Id.")
     String siteNameOrId;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws IOException {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         return pull();
     }
 

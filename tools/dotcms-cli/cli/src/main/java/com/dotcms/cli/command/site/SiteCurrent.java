@@ -24,8 +24,15 @@ import picocli.CommandLine;
 public class SiteCurrent extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
     static final String NAME = "current";
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         return current();
     }
 
