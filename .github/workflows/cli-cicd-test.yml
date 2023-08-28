@@ -48,7 +48,7 @@ jobs:
           
           ./mvnw clean verify -Dtest.failure.ignore=true
           
-          FAILURES=$(find target -name TEST-*.xml | xargs grep '<failure' | wc -l)
+          FAILURES=$(find . -name TEST-*.xml | xargs grep '<failure' | wc -l)
           
           if [ $FAILURES -eq 0 ]; then
               OUTPUT_STATUS="PASSED"
