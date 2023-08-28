@@ -1,6 +1,10 @@
 import { describe, expect, it } from '@jest/globals';
 
+import { CONTAINER_SOURCE } from '@dotcms/dotcms-models';
+import { containersMock } from '@dotcms/utils-testing';
+
 import {
+    getContainerReference,
     getRemainingSpaceForBox,
     parseFromDotObjectToGridStack,
     parseFromGridStackToDotObject,
@@ -121,5 +125,19 @@ describe('getRemainingSpaceForBox', () => {
                 x: 7
             })
         ).toBe(0);
+    });
+});
+
+describe('getContainerReference', () => {
+    it.each(
+        containersMock.map((container) => ({
+            container,
+            source: container.source,
+            expected:
+                container.source === CONTAINER_SOURCE.DB ? container.identifier : container.path,
+            property: container.source === CONTAINER_SOURCE.DB ? 'identifier' : 'path'
+        }))
+    )('should return $property when container source is $source', ({ container, expected }) => {
+        expect(getContainerReference(container)).toBe(expected);
     });
 });

@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 
-import { DotLayoutBody } from '@dotcms/dotcms-models';
+import { CONTAINER_SOURCE, DotContainer, DotLayoutBody } from '@dotcms/dotcms-models';
 
 import { EMPTY_ROWS_VALUE } from './mocks';
 
@@ -265,4 +265,16 @@ function simulateRowSpace(boxes: DotGridStackWidget[] = [], newBox?: DotGridStac
     });
 
     return rowSpace;
+}
+
+/**
+ * Based on the container source, it returns the identifier that should be used as reference.
+ *
+ * @param dotContainer
+ * @returns string
+ */
+export function getContainerReference(dotContainer: DotContainer): string {
+    return dotContainer.source === CONTAINER_SOURCE.FILE
+        ? dotContainer.path
+        : dotContainer.identifier;
 }
