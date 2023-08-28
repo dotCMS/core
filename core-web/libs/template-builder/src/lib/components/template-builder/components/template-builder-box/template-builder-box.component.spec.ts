@@ -127,7 +127,9 @@ describe('TemplateBuilderBoxComponent', () => {
 
     it('should trigger addContainer when click on plus button', () => {
         const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
-        const addButton = spectator.debugElement.query(By.css('.p-dropdown'));
+        const addButton = spectator.debugElement.query(
+            By.css('[data-testId="btn-plus"]>.p-dropdown') // The parent element is not listening to the click event
+        );
         spectator.click(addButton);
         const option = spectator.query('.p-dropdown-item');
 
@@ -137,21 +139,21 @@ describe('TemplateBuilderBoxComponent', () => {
 
     it('should emit addContainer with a identifier as identifier when source is DB', () => {
         const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
-        const addButton = spectator.debugElement.query(By.css('.p-dropdown'));
-        spectator.click(addButton);
-        const option = spectator.query('.p-dropdown-item');
 
-        spectator.click(option);
+        spectator.triggerEventHandler("[data-testId='btn-plus']", 'onChange', {
+            value: containersMock[0]
+        });
+
         expect(addContainerMock).toHaveBeenCalledWith(containersMock[0]);
     });
 
     it('should emit addContainer with a path as identifier when source is FILE', () => {
         const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
-        const addButton = spectator.debugElement.query(By.css('.p-dropdown'));
-        spectator.click(addButton);
-        const option = spectator.queryAll('.p-dropdown-item')[2];
 
-        spectator.click(option);
+        spectator.triggerEventHandler("[data-testId='btn-plus']", 'onChange', {
+            value: containersMock[2]
+        });
+
         expect(addContainerMock).toHaveBeenCalledWith({
             ...containersMock[2],
             identifier: containersMock[2].path
