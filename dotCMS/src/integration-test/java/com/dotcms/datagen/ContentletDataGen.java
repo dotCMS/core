@@ -4,6 +4,7 @@ import static com.dotmarketing.business.ModDateTestUtil.updateContentletVersionD
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.util.JsonUtil;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -230,6 +231,13 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     @Override
     public Contentlet persist(Contentlet contentlet) {
+        if ((contentlet.getContentTypeId().equals("2a3e91e4-fbbf-4876-8c5b-2233c1739b05")
+                || contentlet.getContentTypeId().equalsIgnoreCase("webPageContent"))
+                && this.properties.containsKey("body") && !JsonUtil.isValidJSON(this.properties.get("body").toString())) {
+            throw new DotRuntimeException("ERROR!! This contentlet has a body property that is " +
+                    "not a valid JSON. Please fix it before persisting.");
+        }
+
         final Contentlet checkin = checkin(contentlet, null != policy ? policy : IndexPolicy.FORCE);
 
         if (modDate != null) {
