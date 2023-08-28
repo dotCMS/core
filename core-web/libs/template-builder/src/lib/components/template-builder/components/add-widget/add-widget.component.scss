@@ -10,7 +10,7 @@
     background: $white;
     border: $field-border-size solid $color-palette-primary-500;
     border-radius: $border-radius-md;
-    transition: all 0.3s ease-in-out;
+    transition: transform 100ms ease-in;
 
     .material-icons {
         font-size: $font-size-lg;
@@ -18,7 +18,7 @@
     }
 
     &:hover:not(.ui-draggable-dragging) {
-        transform: rotate(-3.66deg) translate(-0.25rem);
+        transform: rotate(-3.66deg) translate(0, -0.5rem);
         box-shadow: $md-shadow-6;
     }
 
