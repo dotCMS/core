@@ -58,7 +58,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     let deHost: DebugElement;
     let component: DotDeviceSelectorSeoComponent;
     let de: DebugElement;
-
+    let dotCurrentUserService: DotCurrentUserService;
     const messageServiceMock = new MockDotMessageService({
         'editpage.device.selector.title': 'Devices',
         'editpage.device.selector.media.tile': 'Social Media Tiles',
@@ -108,6 +108,8 @@ describe('DotDeviceSelectorSeoComponent', () => {
         component = de.componentInstance;
         TestBed.inject(DotDevicesService);
         spyOn(component, 'getOptions').and.returnValue(of(mockDotDevices));
+
+        dotCurrentUserService = de.injector.get(DotCurrentUserService);
 
         fixtureHost.detectChanges();
         const buttonEl = fixtureHost.debugElement.query(By.css('button')).nativeElement;
@@ -177,11 +179,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should not have a link to add device', () => {
-        spyOn(DotCurrentUserServiceMock, 'getCurrentUser').and.returnValue(
-            of({
-                admin: false
-            })
-        );
+        spyOn(dotCurrentUserService, 'getCurrentUser').and.returnValue(of(CurrentUserDataMock));
 
         fixtureHost.detectChanges();
 
