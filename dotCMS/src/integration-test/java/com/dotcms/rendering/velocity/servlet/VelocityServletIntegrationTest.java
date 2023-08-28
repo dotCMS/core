@@ -61,7 +61,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.liferay.portal.model.User;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -316,7 +315,7 @@ public class VelocityServletIntegrationTest {
                     .languageId(1)
                     .host(host)
                     .setProperty("title", "content1")
-                    .setProperty("body", "content1")
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                     .nextPersisted();
 
             ContentletDataGen.publish(contentlet);

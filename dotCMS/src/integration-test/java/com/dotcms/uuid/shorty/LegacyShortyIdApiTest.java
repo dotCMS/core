@@ -104,10 +104,10 @@ public class LegacyShortyIdApiTest {
                 .find("webPageContent");
         new ContentletDataGen(contentGenericType.id())
                 .setProperty("title", "TestContent")
-                .setProperty("body", "TestBody").nextPersisted();
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).nextPersisted();
         new ContentletDataGen(contentGenericType.id())
                 .setProperty("title", "TestContent")
-                .setProperty("body", "TestBody").nextPersisted();
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).nextPersisted();
 		dc.setSQL(GET_ID_CONTENTLETS, 2);
 		res = dc.loadObjectResults();
         builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "contentlet" });

@@ -239,7 +239,7 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content1")
-                .setProperty("body", "content1")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         contentlet1.setIndexPolicy(IndexPolicy.FORCE);

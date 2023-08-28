@@ -27,9 +27,7 @@ import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.PersonaContentType;
-import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -89,6 +87,52 @@ public class TestDataUtils {
     public static final String FILE_ASSET_1 = "fileAsset1";
     public static final String FILE_ASSET_2 = "fileAsset2";
     public static final String FILE_ASSET_3 = "fileAsset3";
+    public static final String BLOCK_EDITOR_DUMMY_CONTENT =
+            "{" +
+                    "\"type\":\"doc\"," +
+                    "\"attrs\":" +
+                        "{" +
+                            "\"chartCount\":20," +
+                            "\"wordCount\":3," +
+                            "\"readingTime\":1" +
+                        "}," +
+                    "\"content\":" +
+                        "[{" +
+                            "\"type\":\"paragraph\"," +
+                            "\"attrs\":" +
+                                "{" +
+                                    "\"textAlign\":\"left\"" +
+                                "}," +
+                            "\"content\":" +
+                                "[{" +
+                                    "\"type\":\"text\"," +
+                                    "\"text\":\"Generic Content Body\"" +
+                                "}]" +
+                        "}]" +
+            "}";
+    public static final String BLOCK_EDITOR_DUMMY_CONTENT_UNICODE_CHARS =
+            "{" +
+                    "\"type\":\"doc\"," +
+                    "\"attrs\":" +
+                        "{" +
+                            "\"chartCount\":20," +
+                            "\"wordCount\":3," +
+                            "\"readingTime\":1" +
+                        "}," +
+                    "\"content\":" +
+                        "[{" +
+                            "\"type\":\"paragraph\"," +
+                            "\"attrs\":" +
+                                "{" +
+                                "\"textAlign\":\"left\"" +
+                                "}," +
+                            "\"content\":" +
+                                "[{" +
+                                    "\"type\":\"text\"," +
+                                    "\"text\":\"Numéro de téléphone\"" +
+                                "}]" +
+                        "}]" +
+            "}";
 
     public static ContentType getBlogLikeContentType() {
         return getBlogLikeContentType("Blog" + System.currentTimeMillis());
@@ -1009,7 +1053,7 @@ public class TestDataUtils {
                     .setProperty("contentHost", site)
                     .setProperty("title", "genericContent")
                     .setProperty("author", "systemUser")
-                    .setProperty("body", "{\"type\":\"doc\",\"attrs\":{\"chartCount\":20,\"wordCount\":3,\"readingTime\":1},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Generic Content Body\"}]}]}");
+                    .setProperty("body", BLOCK_EDITOR_DUMMY_CONTENT);
 
             if (persist) {
                 return contentletDataGen.nextPersisted();

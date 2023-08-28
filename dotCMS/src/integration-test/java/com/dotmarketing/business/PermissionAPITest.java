@@ -274,7 +274,9 @@ public class PermissionAPITest extends IntegrationTestBase {
         final ContentType contentGenericType   = contentTypeAPI.find("webPageContent");
         final Contentlet contentletDefaultLang = new ContentletDataGen(contentGenericType.id())
                 .setProperty("title", "TestContent")
-                .setProperty("body",  "TestBody" ).languageId(defaultLanguage.getId()).nextPersisted();
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
         final Language newLanguage             = new LanguageDataGen().languageCode("es").country("MX").nextPersisted();
 
         assertFalse(permissionAPI.doesUserHavePermission(contentletDefaultLang, PermissionAPI.PERMISSION_USE, user, PageMode.get().respectAnonPerms));

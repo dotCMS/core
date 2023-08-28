@@ -706,11 +706,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     .languageName("French").nextPersisted();
 
             final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
-            final String unicodeText = "Numéro de téléphone";
+            //final String unicodeText = "Numéro de téléphone";
 
             final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
             contentlet = contentletDataGen.setProperty("title", "TestContent")
-                    .setProperty("body", unicodeText ).languageId(frenchLanguage.getId()).nextPersisted();
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT_UNICODE_CHARS).languageId(frenchLanguage.getId()).nextPersisted();
             final WorkflowStep workflowStep           = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
             //UnassignedWorkflowContentletCheckinListener.assigned is called by default creating a task. So we better reset here before we get an duplicate entry violation.
             workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);

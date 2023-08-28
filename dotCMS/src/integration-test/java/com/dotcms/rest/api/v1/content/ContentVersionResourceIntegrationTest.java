@@ -256,7 +256,8 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
         final Contentlet testContentlet = contentletDataGen
                 .setProperty("title", "TestContent_" + System.currentTimeMillis())
-                .setProperty("body", "TestBody_" + System.currentTimeMillis()).languageId(1)
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .languageId(1)
                 .nextPersisted();
 
         assertNotNull(testContentlet);

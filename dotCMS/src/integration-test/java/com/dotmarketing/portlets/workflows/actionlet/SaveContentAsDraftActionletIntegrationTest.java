@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -47,7 +48,7 @@ public class SaveContentAsDraftActionletIntegrationTest extends BaseWorkflowInte
         final Contentlet contentlet = new ContentletDataGen("webPageContent")
                 .host(APILocator.systemHost())
                 .setProperty("title", "title-test")
-                .setProperty("body",  "body-test")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         final Optional<Role> role = APILocator.getRoleAPI().findAllAssignableRoles(true).stream().findAny();

@@ -111,7 +111,7 @@ public class ContentMapTest extends IntegrationTestBase {
                 .host(defaultHost);
 
         contentletDataGen.setProperty("title", "test");
-        contentletDataGen.setProperty("body", "test");
+        contentletDataGen.setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT);
 
         // Persist dummy "News" contents to ensure at least one result will be returned
         final Contentlet contentlet = contentletDataGen.nextPersisted();

@@ -261,7 +261,7 @@ public class PageResourceTest {
                 .folder(APILocator.getFolderAPI().findSystemFolder())
                 .host(host)
                 .setProperty("title", "content1")
-                .setProperty("body", "content1")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         final Persona persona    = new PersonaDataGen().keyTag("persona"+System.currentTimeMillis()).hostFolder(host.getIdentifier()).nextPersisted();
@@ -524,7 +524,7 @@ public class PageResourceTest {
 
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
         final Contentlet contentlet = contentletDataGen.setProperty("title", "title")
-                .setProperty("body", "body").languageId(languageId).nextPersisted();
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).languageId(languageId).nextPersisted();
 
 
         final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
@@ -964,7 +964,7 @@ public class PageResourceTest {
                 .folder(folder)
                 .host(host)
                 .setProperty("title", "content1")
-                .setProperty("body", "content1")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
@@ -1070,7 +1070,7 @@ public class PageResourceTest {
                 .folder(folder)
                 .host(host)
                 .setProperty("title", "content1")
-                .setProperty("body", "content1")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
