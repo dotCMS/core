@@ -9,7 +9,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
+import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import {
     DotDevicesServiceMock,
@@ -18,6 +18,30 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.component';
+
+export const CurrentUserAdminDataMock = {
+    admin: true,
+    email: 'admin@dotcms.com',
+    givenName: 'TEST',
+    roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
+    surnaname: 'User',
+    userId: 'testId'
+};
+
+export const CurrentUserDataMock = {
+    admin: false,
+    email: 'admin@dotcms.com',
+    givenName: 'TEST',
+    roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
+    surnaname: 'User',
+    userId: 'testId'
+};
+
+export class DotCurrentUserServiceMock {
+    getCurrentUser() {
+        return of(CurrentUserAdminDataMock);
+    }
+}
 
 @Component({
     selector: 'dot-test-host-component',
@@ -70,7 +94,8 @@ describe('DotDeviceSelectorSeoComponent', () => {
                 {
                     provide: CoreWebService,
                     useClass: CoreWebServiceMock
-                }
+                },
+                { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock }
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
@@ -149,6 +174,19 @@ describe('DotDeviceSelectorSeoComponent', () => {
 
         const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
         expect(link.properties.href).toContain('/c/content');
+    });
+
+    it('should not have a link to add device', () => {
+        spyOn(DotCurrentUserServiceMock, 'getCurrentUser').and.returnValue(
+            of({
+                admin: false
+            })
+        );
+
+        fixtureHost.detectChanges();
+
+        const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
+        expect(link).toBeNull();
     });
 
     it('should have link to open in a new tab', () => {

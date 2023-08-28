@@ -21,8 +21,8 @@ import { PanelModule } from 'primeng/panel';
 
 import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
-import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
-import { DotDevice, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
+import { DotCurrentUser, DotDevice, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -52,6 +52,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Output() changeSeoMedia = new EventEmitter<string>();
     @ViewChild('deviceSelector') overlayPanel: OverlayPanel;
     previewUrl: string;
+    isCMSAdmin: boolean;
     protected linkToAddDevice = '/c/content';
     protected linkToEditDeviceQueryParams = {
         devices: null
@@ -116,11 +117,13 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     constructor(
         private dotDevicesService: DotDevicesService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private dotCurrentUser: DotCurrentUserService
     ) {}
 
     ngOnInit() {
         this.options$ = this.getOptions();
+        this.getCurrentUserAdmin();
     }
 
     /**
@@ -153,7 +156,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
      *
      * @returns Observable<DotDevice[]>
      */
-    public getOptions(): Observable<DotDevice[]> {
+    getOptions(): Observable<DotDevice[]> {
         return this.dotDevicesService.get().pipe(
             take(1),
             mergeMap((devices: DotDevice[]) => {
@@ -164,6 +167,12 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
             toArray()
         );
+    }
+
+    getCurrentUserAdmin(): void {
+        this.dotCurrentUser.getCurrentUser().subscribe((user: DotCurrentUser) => {
+            this.isCMSAdmin = user.admin;
+        });
     }
 
     @Input()
