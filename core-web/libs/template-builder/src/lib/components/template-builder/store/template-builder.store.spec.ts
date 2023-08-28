@@ -35,18 +35,22 @@ describe('DotTemplateBuilderStore', () => {
     let containerMap$: Observable<DotContainerMap>;
     let initialState: DotGridStackWidget[];
     const mockContainer = containersMock[0];
+    const mockFileContainer = containersMock[2];
     const minDataMockContainer = {
         identifier: mockContainer.identifier
     };
+    const minDataMockFileContainer = {
+        identifier: mockFileContainer.path
+    };
 
-    const addContainer = () => {
+    const addContainer = (container = mockContainer) => {
         const parentRow = initialState[0];
 
         const columnToAddContainer: DotGridStackWidget = {
             ...parentRow.subGridOpts?.children[0],
             parentId: parentRow.id as string
         };
-        service.addContainer({ affectedColumn: columnToAddContainer, container: mockContainer });
+        service.addContainer({ affectedColumn: columnToAddContainer, container });
     };
 
     beforeEach(() => {
@@ -431,6 +435,15 @@ describe('DotTemplateBuilderStore', () => {
         });
     });
 
+    it('should add a file container to the sidebar', (done) => {
+        expect.assertions(1);
+        service.addSidebarContainer(mockFileContainer);
+        service.vm$.subscribe(({ layoutProperties }) => {
+            expect(layoutProperties.sidebar.containers[0]).toEqual(minDataMockFileContainer);
+            done();
+        });
+    });
+
     it('should add a container to container map when adding it to sidebar', (done) => {
         expect.assertions(1);
         service.addSidebarContainer(mockContainer);
@@ -458,6 +471,19 @@ describe('DotTemplateBuilderStore', () => {
         rows$.subscribe((items) => {
             const row = items.find((item) => item.id === initialState[0].id);
             expect(row?.subGridOpts?.children[0]?.containers).toContainEqual(minDataMockContainer);
+            done();
+        });
+    });
+
+    it('should add a file container to specific box', (done) => {
+        expect.assertions(1);
+        addContainer(mockFileContainer);
+
+        rows$.subscribe((items) => {
+            const row = items.find((item) => item.id === initialState[0].id);
+            expect(row?.subGridOpts?.children[0]?.containers).toContainEqual(
+                minDataMockFileContainer
+            );
             done();
         });
     });

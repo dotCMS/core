@@ -22,7 +22,8 @@ import {
     createDotGridStackWidgetFromNode,
     parseMovedNodeToWidget,
     willBoxFitInRow,
-    getRemainingSpaceForBox
+    getRemainingSpaceForBox,
+    getContainerReference
 } from '../utils/gridstack-utils';
 
 /**
@@ -350,6 +351,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         if (!container) return state;
 
+        const containerReference = getContainerReference(container);
+
         return {
             ...state,
             layoutProperties: {
@@ -359,12 +362,12 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     containers: [
                         ...(layoutProperties.sidebar.containers ?? []),
                         {
-                            identifier: container.identifier
+                            identifier: containerReference
                         }
                     ]
                 }
             },
-            containerMap: { ...state.containerMap, [container.identifier]: container }
+            containerMap: { ...state.containerMap, [containerReference]: container }
         };
     });
 
@@ -405,6 +408,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         ) => {
             const { rows } = state;
 
+            const containerReference = getContainerReference(container);
+
             const updatedItems = rows.map((row) => {
                 if (row.id != affectedColumn.parentId) {
                     return row;
@@ -415,7 +420,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                         if (!child.containers) child.containers = [];
 
                         child.containers.push({
-                            identifier: container.identifier
+                            identifier: containerReference
                         });
                     }
 
@@ -428,7 +433,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             return {
                 ...state,
                 rows: updatedItems,
-                containerMap: { ...state.containerMap, [container.identifier]: container }
+                containerMap: { ...state.containerMap, [containerReference]: container }
             };
         }
     );
