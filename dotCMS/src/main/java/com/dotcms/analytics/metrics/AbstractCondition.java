@@ -111,6 +111,7 @@ public interface AbstractCondition<T> {
          */
         enum Type {
             SIMPLE(new DefaultParameterValuesTransformer()),
+            CASE_INSENSITIVE(new LowerCaseParameterValuesTransformer()),
             QUERY_PARAMETER(new QueryParameterValuesTransformer());
 
             final ParameterValuesTransformer parameterValuesTransformer;

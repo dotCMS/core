@@ -36,8 +36,8 @@ public class QueryParameterValuesTransformerTest {
 
         Assert.assertEquals(1, transforms.getRealValues().size());
 
-        Assert.assertEquals("anyValue", transforms.getRealValues().iterator().next());
-        Assert.assertEquals("testValue", transforms.getConditionValue());
+        Assert.assertEquals("anyvalue", transforms.getRealValues().iterator().next());
+        Assert.assertEquals("testvalue", transforms.getConditionValue());
     }
 
 }
