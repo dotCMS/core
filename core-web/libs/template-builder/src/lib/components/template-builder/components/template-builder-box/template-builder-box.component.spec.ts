@@ -11,7 +11,7 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotContainersServiceMock, mockMatchMedia } from '@dotcms/utils-testing';
+import { containersMock, DotContainersServiceMock, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
@@ -133,6 +133,29 @@ describe('TemplateBuilderBoxComponent', () => {
 
         spectator.click(option);
         expect(addContainerMock).toHaveBeenCalled();
+    });
+
+    it('should emit addContainer with a identifier as identifier when source is DB', () => {
+        const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
+        const addButton = spectator.debugElement.query(By.css('.p-dropdown'));
+        spectator.click(addButton);
+        const option = spectator.query('.p-dropdown-item');
+
+        spectator.click(option);
+        expect(addContainerMock).toHaveBeenCalledWith(containersMock[0]);
+    });
+
+    it('should emit addContainer with a path as identifier when source is FILE', () => {
+        const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
+        const addButton = spectator.debugElement.query(By.css('.p-dropdown'));
+        spectator.click(addButton);
+        const option = spectator.queryAll('.p-dropdown-item')[2];
+
+        spectator.click(option);
+        expect(addContainerMock).toHaveBeenCalledWith({
+            ...containersMock[2],
+            identifier: containersMock[2].path
+        });
     });
 
     it('should trigger editClasses when click on palette button', () => {
