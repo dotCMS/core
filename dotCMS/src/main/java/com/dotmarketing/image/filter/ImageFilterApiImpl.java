@@ -170,7 +170,8 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
         }
     }
 
-    String[] providersToIgnore = {"net.sf.javavp8decoder.imageio.WebPImageReaderSpi"};
+    private String[] providersToIgnore = Config.getStringArrayProperty("IMAGE_READER_SPIS_TO_DEREGISTER", new String[]{"net.sf.javavp8decoder.imageio.WebPImageReaderSpi"});
+
 
     private void deregisterProviders()  {
 
