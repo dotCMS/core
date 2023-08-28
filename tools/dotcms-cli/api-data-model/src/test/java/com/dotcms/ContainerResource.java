@@ -55,6 +55,7 @@ public class ContainerResource implements QuarkusTestResourceLifecycleManager {
         dockerComposeContainer.withExposedService("dotcms", DOTCMS_SERVICE_PORT, Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(dockerComposeStartupTimeout)));
         dockerComposeContainer.withEnv("DOTCMS_IMAGE", dockerImage);
         dockerComposeContainer.withEnv("DOTCMS_LICENSE_FILE", dotcmsLicenseFile);
+        dockerComposeContainer.withPull(true);
 
         if (isLoggerEnabled) {
             dockerComposeContainer.withLogConsumer("dotcms", new Slf4jLogConsumer(LOGGER));
