@@ -901,7 +901,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                     '   <td style="padding:0px" class="descriptionTD" id="' + asset.inode + '-DescriptionTD">' +
                     '<table style="width:100%;">' +
                     '<tr style="height:15px">' +
-                    '<td style="padding:0px; border:0px; width:60px;">'+ languageHTML +
+                    '<td style="padding:0px; border:0px; width:80px;">'+ languageHTML +
                     '</td>' +
                     '<td style="text-align:left; border:0px">'+title+'</td>' +
                     ' </tr>' +
@@ -1659,7 +1659,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         var pageAssetDialog = new dijit.Dialog({
             id   : "addPageAssetDialog",
             title: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "addpage.dialog")) %>",
-            style: "width: 311px; height:160px; overflow: auto"
+            style: "height:160px; overflow: auto"
         });
         var dialogHtml = getHTMLPageAssetDialogHtml();
 

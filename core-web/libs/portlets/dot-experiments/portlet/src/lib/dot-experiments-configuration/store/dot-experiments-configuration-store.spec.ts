@@ -577,6 +577,39 @@ describe('DotExperimentsConfigurationStore', () => {
             });
         });
 
+        it('should allow only conditions in AllowedConditionOperatorsByTypeOfGoal', (done) => {
+            const experimentMock = {
+                ...EXPERIMENT_MOCK,
+                goals: {
+                    primary: {
+                        name: 'default',
+                        type: GOAL_TYPES.URL_PARAMETER,
+                        conditions: [
+                            {
+                                parameter: 'queryParameter',
+                                operator: GOAL_OPERATORS.CONTAINS,
+                                value: 'index'
+                            },
+                            {
+                                parameter: 'invalid-parameter',
+                                operator: GOAL_OPERATORS.CONTAINS,
+                                value: 'test'
+                            }
+                        ]
+                    }
+                }
+            };
+
+            dotExperimentsService.getById.mockReturnValue(of({ ...experimentMock }));
+
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+
+            store.goals$.subscribe(({ primary }) => {
+                expect(primary.conditions.length).toBe(1);
+                done();
+            });
+        });
+
         it('should delete a Goal from an experiment', (done) => {
             const goalLevelToDelete: GoalsLevels = 'primary';
             const experimentWithGoals: DotExperiment = {

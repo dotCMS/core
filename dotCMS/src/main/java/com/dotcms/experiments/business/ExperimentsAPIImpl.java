@@ -14,7 +14,6 @@ import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VA
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.util.DateUtil.isTimeReach;
 
-import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.model.BayesianInput;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
@@ -29,6 +28,8 @@ import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cube.CubeJSClient;
+import com.dotcms.cube.CubeJSClientFactory;
+import com.dotcms.cube.CubeJSClientFactoryImpl;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
@@ -70,7 +71,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -93,7 +93,6 @@ import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
@@ -109,6 +108,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -130,6 +130,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
     final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
     final BayesianAPI bayesianAPI = APILocator.getBayesianAPI();
+    final CubeJSClientFactory cubeJSClientFactory = FactoryLocator.getCubeJSClientFactory();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -446,25 +447,58 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @WrapInTransaction
     public void delete(final String id, final User user)
             throws DotDataException, DotSecurityException {
+        innerDelete(id, user, (experiment)-> {
+            if(experiment.status() != DRAFT &&
+                    experiment.status() != Status.SCHEDULED) {
+                throw new DotStateException("Only DRAFT or SCHEDULED experiments can be deleted");
+            }
+        });
+
+    }
+
+    @Override
+    @WrapInTransaction
+    public void forceDelete(final String id, final User user)
+            throws DotDataException, DotSecurityException {
+        innerDelete(id, user, null);
+    }
+
+    @WrapInTransaction
+    private void innerDelete(final String id, final User user, final Consumer<Experiment> extraValidation)
+            throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 invalidLicenseMessageSupplier);
         DotPreconditions.checkArgument(UtilMethods.isSet(id), "id must be provided.");
 
-        final Optional<Experiment> persistedExperiment =  find(id, user);
+        final Optional<Experiment> persistedExperimentOptional =  find(id, user);
 
-        DotPreconditions.isTrue(persistedExperiment.isPresent(),()-> "Experiment with provided id not found",
+        DotPreconditions.isTrue(persistedExperimentOptional.isPresent(),()-> "Experiment with provided id not found",
                 DoesNotExistException.class);
 
-        validatePageEditPermissions(user, persistedExperiment.get(),
-                "You don't have permission to delete the Experiment. "
-                        + "Experiment Id: " + persistedExperiment.get().id());
+        final Experiment persistedExperiment = persistedExperimentOptional.get();
 
-        if(persistedExperiment.get().status() != DRAFT &&
-                persistedExperiment.get().status() != Status.SCHEDULED) {
-            throw new DotStateException("Only DRAFT or SCHEDULED experiments can be deleted");
+        validatePageEditPermissions(user, persistedExperiment,
+                "You don't have permission to delete the Experiment. "
+                        + "Experiment Id: " + persistedExperiment.id());
+
+        if (extraValidation != null) {
+            extraValidation.accept(persistedExperiment);
         }
 
-        factory.delete(persistedExperiment.get());
+        persistedExperiment.trafficProportion().variants().stream()
+                .filter(variant -> !VariantAPI.DEFAULT_VARIANT.name().equals(variant.id()))
+                .forEach(variant -> deleteVariant(variant));
+
+        factory.delete(persistedExperiment);
+    }
+
+    private void deleteVariant(ExperimentVariant variant) {
+        try {
+            variantAPI.archive(variant.id());
+            variantAPI.delete(variant.id());
+        } catch (DotDataException e) {
+            Logger.error(this, "Error deleting variant", e);
+        }
     }
 
     @Override
@@ -1153,66 +1187,43 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public List<BrowserSession> getEvents(final Experiment experiment, final User user) throws DotDataException {
-        try{
-            final AnalyticsApp analyticsApp = resolveAnalyticsApp(user);
+    public List<BrowserSession> getEvents(final Experiment experiment,
+                                          final User user) throws DotDataException, DotSecurityException {
+        final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
+        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
+                .create(experiment);
+        final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
 
-            final CubeJSClient cubeClient = new CubeJSClient(
-                    analyticsApp.getAnalyticsProperties().analyticsReadUrl());
+        String previousLookBackWindow = null;
+        final List<Event> currentEvents = new ArrayList<>();
+        final List<BrowserSession> sessions = new ArrayList<>();
 
-            final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
-                    .create(experiment);
+        for (final ResultSetItem resultSetItem : cubeJSResultSet) {
+            final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
+                    .map(Object::toString)
+                    .orElse(StringPool.BLANK);
 
-            final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
-
-            String previousLookBackWindow = null;
-            final List<Event> currentEvents = new ArrayList<>();
-            final List<BrowserSession> sessions = new ArrayList<>();
-
-            for (final ResultSetItem resultSetItem : cubeJSResultSet) {
-                final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
-                        .map(Object::toString)
-                        .orElse(StringPool.BLANK);
-
-                if (!currentLookBackWindow.equals(previousLookBackWindow)) {
-                    if (!currentEvents.isEmpty()) {
-                        sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-                        currentEvents.clear();
-                    }
+            if (!currentLookBackWindow.equals(previousLookBackWindow)) {
+                if (!currentEvents.isEmpty()) {
+                    sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
+                    currentEvents.clear();
                 }
-
-                currentEvents.add(new Event(resultSetItem.getAll(),
-                            EventType.get(resultSetItem.get("Events.eventType")
-                                    .map(Object::toString)
-                                    .orElseThrow(() -> new IllegalStateException("Type into Event is expected")))
-                ));
-
-                previousLookBackWindow = currentLookBackWindow;
             }
 
-            if (!currentEvents.isEmpty()) {
-                sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-            }
+            currentEvents.add(new Event(resultSetItem.getAll(),
+                        EventType.get(resultSetItem.get("Events.eventType")
+                                .map(Object::toString)
+                                .orElseThrow(() -> new IllegalStateException("Type into Event is expected")))
+            ));
 
-            return sessions;
-        } catch (DotDataException | DotSecurityException e) {
-            throw new RuntimeException(e);
+            previousLookBackWindow = currentLookBackWindow;
         }
-    }
 
-    private AnalyticsApp resolveAnalyticsApp(final User user) throws DotDataException, DotSecurityException {
-        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
-        try {
-            return analyticsHelper.appFromHost(currentHost);
-        } catch (final IllegalStateException e) {
-            throw new DotDataException(
-                Try.of(() ->
-                    LanguageUtil.get(
-                        user,
-                        "analytics.app.not.configured",
-                        AnalyticsHelper.extractMissingAnalyticsProps(e)))
-                    .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())));
+        if (!currentEvents.isEmpty()) {
+            sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
         }
+
+        return sessions;
     }
 
     @Override
@@ -1350,13 +1361,18 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 "You don't have permission to cancel the Experiment. "
                         + "Experiment Id: " + persistedExperimentOpt.get().id());
 
-        DotPreconditions.isTrue(experimentFromFactory.status()== SCHEDULED, ()->
-                "Only SCHEDULED experiments can be canceled", DotStateException.class);
+        DotPreconditions.isTrue(canBeCanceled(experimentFromFactory), ()->
+                "Only SCHEDULED/RUNNING experiments can be canceled", DotStateException.class);
 
         DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
                 ()-> "Scheduling not valid.", DotStateException.class);
 
         return save(experimentFromFactory.withStatus(DRAFT), user);
+    }
+
+    private static boolean canBeCanceled(final Experiment experimentFromFactory) {
+        return experimentFromFactory.status() == SCHEDULED
+                || experimentFromFactory.status() == RUNNING;
     }
 
     @Override
@@ -1493,6 +1509,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                             + EXPERIMENTS_MAX_DURATION.get() +" days. ");
         }
         return toReturn;
+    }
+
+    @Override
+    public Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException {
+
+        return getRunningExperiments().stream()
+                .filter(experiment ->
+                        experiment.pageId().equals(pageId)
+                )
+                .findFirst();
     }
 
     private boolean hasValidLicense(){

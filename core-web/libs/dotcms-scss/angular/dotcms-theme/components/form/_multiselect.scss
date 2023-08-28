@@ -1,0 +1,153 @@
+@use "variables" as *;
+@import "common";
+@import "mixins";
+
+.p-multiselect {
+    @extend #form-field-base;
+    min-width: 13rem;
+    padding-right: 0;
+    min-height: $field-height-md;
+    height: auto;
+
+    &:not(.p-multiselect-open):hover {
+        @extend #form-field-hover;
+    }
+
+    &:not(.p-disabled).p-focus,
+    &.p-multiselect-open {
+        @extend #form-field-focus;
+    }
+
+    .p-multiselect-label-container {
+        display: flex;
+        align-items: center;
+        padding-right: $spacing-1;
+
+        .p-multiselect-label:not(.p-placeholder) {
+            color: $black;
+            @include truncate-text;
+
+            &:has(> .p-multiselect-token) {
+                padding: $spacing-1 0;
+                height: auto;
+                flex-wrap: wrap;
+                overflow: visible;
+            }
+        }
+    }
+
+    .p-multiselect-trigger {
+        @extend #field-trigger;
+        height: auto;
+
+        .p-multiselect-trigger-icon {
+            @extend #field-trigger-icon;
+        }
+    }
+
+    &.p-disabled {
+        @extend #form-field-disabled;
+
+        .p-multiselect-label-container .p-multiselect-label {
+            color: $color-palette-gray-700;
+        }
+
+        .p-multiselect-trigger {
+            .p-multiselect-trigger-icon {
+                color: $color-palette-gray-700;
+            }
+        }
+    }
+
+    &.p-multiselect-chip {
+        color: $color-palette-gray-800;
+
+        .p-multiselect-label {
+            gap: $spacing-0;
+        }
+
+        .p-multiselect-token {
+            @extend #field-chip;
+        }
+    }
+}
+
+.p-multiselect-panel {
+    @extend #field-panel;
+
+    .p-multiselect-header {
+        @extend #field-panel-header;
+
+        .p-multiselect-filter-container {
+            .p-multiselect-filter {
+                @extend #field-panel-filter;
+            }
+
+            .p-multiselect-filter-icon {
+                @extend #field-panel-filter-icon;
+            }
+        }
+
+        .p-checkbox {
+            @extend #field-panel-item-checkbox;
+        }
+
+        .p-multiselect-close {
+            margin-left: $spacing-1;
+            width: $spacing-5;
+            height: $spacing-5;
+            color: $color-palette-primary;
+            border: 0 none;
+            background: transparent;
+            border-radius: 50%;
+
+            &:hover {
+                background-color: $color-palette-primary-op-10;
+            }
+
+            &:active {
+                background-color: $color-palette-primary-op-20;
+            }
+
+            &:focus {
+                background-color: transparent;
+                @include field-focus;
+            }
+        }
+    }
+
+    .p-multiselect-items {
+        @extend #field-panel-items;
+
+        .p-multiselect-item {
+            @extend #field-panel-item;
+
+            &.p-highlight {
+                @extend #field-panel-item-highlight;
+            }
+
+            &:not(.p-highlight):not(.p-disabled):hover {
+                @extend #field-panel-item-hover;
+            }
+
+            &:focus {
+                @extend #field-panel-item-highlight;
+            }
+
+            &.p-disabled,
+            &.p-highlight.p-disabled {
+                @extend #field-panel-item-disabled;
+            }
+
+            .p-checkbox {
+                @extend #field-panel-item-checkbox;
+            }
+        }
+
+        .p-multiselect-empty-message {
+            padding: $spacing-2 $spacing-2;
+            color: $black;
+            background: transparent;
+        }
+    }
+}

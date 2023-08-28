@@ -11,6 +11,8 @@ import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotcms.jitsu.EventsPayload.EventPayload;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.json.JSONObject;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
@@ -27,13 +29,19 @@ import java.util.Optional;
  */
 public class EventLogRunnable implements Runnable {
 
-    private static final Map<String, String> POSTING_HEADERS = ImmutableMap.of(
+    public static final Map<String, String> POSTING_HEADERS = ImmutableMap.of(
         HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
     private final AnalyticsApp analyticsApp;
     private final EventsPayload eventPayload;
 
-    EventLogRunnable(final Host host, final EventsPayload eventPayload) {
+    @VisibleForTesting
+    public EventLogRunnable(final Host host) {
+        analyticsApp = AnalyticsHelper.get().appFromHost(host);
+        eventPayload = null;
+    }
+
+    public EventLogRunnable(final Host host, final EventsPayload eventPayload) {
         analyticsApp = AnalyticsHelper.get().appFromHost(host);
 
         if (StringUtils.isBlank(analyticsApp.getAnalyticsProperties().analyticsWriteUrl())) {
@@ -53,12 +61,7 @@ public class EventLogRunnable implements Runnable {
 
         final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
 
-        final CircuitBreakerUrlBuilder builder = CircuitBreakerUrl.builder()
-                .setMethod(Method.POST)
-                .setUrl(url)
-                .setParams(map("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
-                .setTimeout(4000)
-                .setHeaders(POSTING_HEADERS);
+        final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilder(url);
 
         for (EventPayload payload : eventPayload.payloads()) {
 
@@ -78,7 +81,17 @@ public class EventLogRunnable implements Runnable {
 
     }
 
-    private Optional<Response> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
+    private CircuitBreakerUrlBuilder getCircuitBreakerUrlBuilder(String url) {
+        final CircuitBreakerUrlBuilder builder = CircuitBreakerUrl.builder()
+                .setMethod(Method.POST)
+                .setUrl(url)
+                .setParams(map("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
+                .setTimeout(4000)
+                .setHeaders(POSTING_HEADERS);
+        return builder;
+    }
+
+    public Optional<Response> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
         final CircuitBreakerUrl postLog = builder
                 .setRawData(payload.toString())
                 .build();
@@ -87,6 +100,17 @@ public class EventLogRunnable implements Runnable {
                         Try.of(postLog::doResponse)
                                 .onFailure(e -> Logger.warnAndDebug(EventLogRunnable.class, e.getMessage(), e))
                                 .getOrElse(CircuitBreakerUrl.EMPTY_RESPONSE));
+    }
+
+    public Optional<Response> sendTestEvent() {
+        final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
+        final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilder(url);
+
+        final Map<String, Object> testObject = Map.of("test", "test");
+
+        return sendEvent(builder,
+                new EventPayload(new JSONObject(testObject)));
+
     }
 
 }

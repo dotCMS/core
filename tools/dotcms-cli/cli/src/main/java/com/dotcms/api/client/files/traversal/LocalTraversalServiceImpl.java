@@ -88,7 +88,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
 
             localPathStructure.setLanguageExists(false);
 
-            // Site doesn't exist on remote server
+            // Language doesn't exist on remote server
             logger.debug(String.format("Language [%s] doesn't exist on remote server.", localPathStructure.language()));
         }
 

@@ -1,7 +1,10 @@
 package com.dotmarketing.cms.urlmap;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static org.jgroups.util.Util.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 

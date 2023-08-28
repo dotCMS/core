@@ -22,7 +22,7 @@
 
     dot-field-helper {
         @include dot-field-helper-on-input;
-        top: 0.4rem;
+        top: $spacing-0;
     }
 
     .p-info {

@@ -14,7 +14,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'Textarea is a multi-line text input element.: https://primefaces.org/primeng/showcase/#/inputtextarea'
+                    'Textarea is a multi-line text input element.: https://primeng.org/inputtextarea'
             }
         }
     },
@@ -26,14 +26,66 @@ export default {
 } as Meta;
 
 const InputTextAreaTemplate = `
-  <textarea pInputTextarea [rows]="5" [cols]="30" placeholder="Some placeholder"></textarea>
+<div class="flex flex-column gap-3">
+    <div class="flex flex-column gap-2">
+        <label htmlFor="test">Label</label>
+        <textarea pInputTextarea [rows]="5" [cols]="30" placeholder="Some placeholder"></textarea>
+        <small id="test-help">You can resize this text area</small>
+    </div>
+    <div class="flex flex-column gap-2">
+        <label htmlFor="test-error">Label</label>
+        <textarea pInputTextarea [rows]="5" [cols]="30" placeholder="Some placeholder" class="ng-invalid ng-dirty"></textarea>
+        <small id="test-help-error">Please enter a valid text</small>
+    </div>
+    <div class="flex flex-column gap-2">
+        <label htmlFor="test-disabled">Disabled</label>
+        <textarea pInputTextarea [rows]="5" [cols]="30" placeholder="Disabled" disabled></textarea>
+    </div>
+</div>
+
 `;
 
 const InputTextAreaTemplateAutoRezise = `
-  <textarea [rows]="5" [cols]="30" pInputTextarea autoResize="autoResize"></textarea>
+<div class="flex flex-column gap-3">
+    <div class="flex flex-column gap-2">
+        <label htmlFor="test">Label</label>
+        <textarea
+            pInputTextarea
+            [rows]="5"
+            [cols]="30"
+            placeholder="Some placeholder"
+            [autoResize]="true"
+        ></textarea>
+        <small id="test-help">You can resize this text area</small>
+    </div>
+    <div class="flex flex-column gap-2">
+        <label htmlFor="test-error">Label</label>
+        <textarea
+            pInputTextarea
+            [rows]="5"
+            [cols]="30"
+            placeholder="Some placeholder"
+            [autoResize]="true"
+            class="ng-invalid ng-dirty"
+        ></textarea>
+        <small id="test-help-error">Please enter a valid text</small>
+    </div>
+    <div class="flex flex-column gap-2">
+        <label htmlFor="test-disabled">Disabled</label>
+        <textarea
+            pInputTextarea
+            [rows]="5"
+            [cols]="30"
+            placeholder="Disabled"
+            [autoResize]="true"
+            disabled
+        ></textarea>
+    </div>
+</div>
+
 `;
 
-const Template: Story<never> = (props: never) => {
+const MainTextArea: Story<never> = (props: never) => {
     const template = InputTextAreaTemplate;
 
     return {
@@ -42,9 +94,18 @@ const Template: Story<never> = (props: never) => {
     };
 };
 
-export const Basic: Story = Template.bind({});
+const AutoResizeTextArea: Story<never> = (props: never) => {
+    const template = InputTextAreaTemplateAutoRezise;
 
-export const AutoRezise: Story = Template.bind({});
+    return {
+        props,
+        template
+    };
+};
+
+export const Basic: Story = MainTextArea.bind({});
+
+export const AutoRezise: Story = AutoResizeTextArea.bind({});
 
 Basic.parameters = {
     docs: {

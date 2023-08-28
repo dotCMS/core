@@ -1,6 +1,7 @@
 import { moduleMetadata } from '@storybook/angular';
 import { Meta, Story } from '@storybook/angular/types-6-0';
 
+import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { RadioButtonModule } from 'primeng/radiobutton';
@@ -11,13 +12,13 @@ export default {
         docs: {
             description: {
                 component:
-                    'RadioButton is an extension to standard radio button element with theming: https://primefaces.org/primeng/showcase/#/radiobutton'
+                    'RadioButton is an extension to standard radio button element with theming: https://primeng.org/radiobutton'
             }
         }
     },
     decorators: [
         moduleMetadata({
-            imports: [RadioButtonModule, BrowserAnimationsModule]
+            imports: [RadioButtonModule, BrowserAnimationsModule, FormsModule]
         })
     ],
     args: {
