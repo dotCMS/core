@@ -235,7 +235,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
                 || contentlet.getContentTypeId().equalsIgnoreCase("webPageContent"))
                 && this.properties.containsKey("body") && !JsonUtil.isValidJSON(this.properties.get("body").toString())) {
             throw new DotRuntimeException("ERROR!! This contentlet has a body property that is " +
-                    "not a valid JSON. Please fix it before persisting.");
+                    "not a valid JSON. Please fix it before persisting: " + this.properties.get("body"));
         }
 
         final Contentlet checkin = checkin(contentlet, null != policy ? policy : IndexPolicy.FORCE);

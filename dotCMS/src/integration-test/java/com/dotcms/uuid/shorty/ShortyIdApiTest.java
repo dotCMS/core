@@ -211,10 +211,10 @@ public class ShortyIdApiTest {
 
         new ContentletDataGen(contentGenericType.id())
                 .setProperty("title", "TestContent")
-                .setProperty("body", "TestBody").nextPersisted();
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).nextPersisted();
         new ContentletDataGen(contentGenericType.id())
                 .setProperty("title", "TestContent")
-                .setProperty("body", "TestBody").nextPersisted();
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).nextPersisted();
         dc.setSQL(GET_ID_CONTENTLETS, 2);
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "contentlet" });
@@ -467,7 +467,7 @@ public class ShortyIdApiTest {
         
         
         final Contentlet con = new ContentletDataGen(contentGenericType.id())
-                        .setProperty("title", "TestContent test404CacheWhenDBDown").setProperty("body", "TestBody")
+                        .setProperty("title", "TestContent test404CacheWhenDBDown").setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                         .nextPersisted();
 
         

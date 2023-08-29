@@ -363,7 +363,8 @@ public class VelocityServletIntegrationTest {
             velocityServlet.service(mockRequest, mockResponse);
 
             verify(mockResponse, never()).sendError(anyInt());
-            verify(outputStream).write("<div>content1</div>".getBytes());
+            final String pageContent = "<div>" + TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT + "</div>";
+            verify(outputStream).write(pageContent.getBytes());
         } finally {
             Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
                     defaultContentToDefaultLanguage);

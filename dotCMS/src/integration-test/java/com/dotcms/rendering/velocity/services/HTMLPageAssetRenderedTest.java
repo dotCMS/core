@@ -256,7 +256,7 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content2")
-                .setProperty("body", "content2")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         contentlet2English.setIndexPolicy(IndexPolicy.FORCE);
@@ -267,7 +267,7 @@ public class HTMLPageAssetRenderedTest {
         Contentlet contentlet2Spanish = contentletAPI.checkout(contentlet2English.getInode(),
                 systemUser, false);
         contentlet2Spanish.setProperty("title", "content2Spa");
-        contentlet2Spanish.setProperty("body", "content2Spa");
+        contentlet2Spanish.setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT);
         contentlet2Spanish.setLanguageId(spanishLanguage.getId());
         contentlet2Spanish.setIndexPolicy(IndexPolicy.FORCE);
         contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.FORCE);
@@ -288,7 +288,7 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content3Spa")
-                .setProperty("body", "content3Spa")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         contentlet3.setIndexPolicy(IndexPolicy.FORCE);
@@ -303,7 +303,7 @@ public class HTMLPageAssetRenderedTest {
         final Contentlet contentlet4 = new ContentletDataGen(contentGenericType.id())
                 .languageId(1)
                 .setProperty("title", "content4")
-                .setProperty("body", "content4")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         contentlet4.setIndexPolicy(IndexPolicy.FORCE);

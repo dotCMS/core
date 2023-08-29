@@ -981,7 +981,7 @@ public class PageResourceTest {
 
         final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) ((ResponseEntityView) response.getEntity()).getEntity();
 
-        assertEquals(htmlPageAssetRendered.getHtml(), "<div>content1</div><div></div>");
+        assertEquals("Rendered HTML Page is NOT the same as the expected one", "<div>" + TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT + "</div><div></div>", htmlPageAssetRendered.getHtml());
 
         final ObjectMapper MAPPER = new ObjectMapper();
         final String layoutString =
@@ -1009,7 +1009,7 @@ public class PageResourceTest {
                 "}";
 
         final PageForm.Builder builder = MAPPER.readValue(layoutString, PageForm.Builder.class);
-        final Response layoutResponse = pageResource.saveLayout(request, this.response, builder.build());
+        pageResource.saveLayout(request, this.response, builder.build());
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
 
