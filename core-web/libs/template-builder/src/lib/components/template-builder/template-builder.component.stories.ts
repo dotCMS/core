@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 
 import { AsyncPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
@@ -54,7 +55,8 @@ export default {
                 ButtonModule,
                 ToolbarModule,
                 DividerModule,
-                DropdownModule
+                DropdownModule,
+                FormsModule
             ],
             providers: [
                 DotTemplateBuilderStore,
