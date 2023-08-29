@@ -187,6 +187,14 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
         this.dotPageStateService.setDevice(device);
     }
 
+    /**
+     * Change SEO Media
+     * @param seoMedia
+     */
+    changeSeoMedia(seoMedia: string): void {
+        this.dotPageStateService.setSeoMedia(seoMedia);
+    }
+
     private canTakeLock(pageState: DotPageRenderState): boolean {
         return pageState.page.canLock && pageState.state.lockedByAnotherUser;
     }
