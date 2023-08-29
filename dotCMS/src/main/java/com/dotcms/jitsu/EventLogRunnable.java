@@ -9,7 +9,6 @@ import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotcms.jitsu.EventsPayload.EventPayload;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;

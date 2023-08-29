@@ -4,24 +4,23 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 
+import com.dotcms.analytics.AnalyticsTestUtils;
+import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.cube.CubeJSQuery.Builder;
-
-
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
-
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
 
 import com.liferay.util.StringPool;
 
-
 import java.net.HttpURLConnection;
-
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import org.junit.Ignore;
+
 import org.junit.Test;
 
 public class CubeJSClientTest {
@@ -79,7 +78,9 @@ public class CubeJSClientTest {
             mockhttpServer.addContext(mockHttpServerContext);
             mockhttpServer.start();
 
-            final CubeJSClient cubeClient =  new CubeJSClient(String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+            final CubeJSClient cubeClient =  new CubeJSClient(
+                String.format("http://%s:%s", cubeServerIp, cubeJsServerPort),
+                getAccessToken());
             final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
 
             mockhttpServer.validate();
@@ -98,6 +99,17 @@ public class CubeJSClientTest {
             IPUtils.disabledIpPrivateSubnet(false);
             mockhttpServer.stop();
         }
+    }
+
+    private static AccessToken getAccessToken() {
+            return AnalyticsTestUtils.createAccessToken(
+                "a1b2c3d4e5f6",
+                "some-client",
+                null,
+                "some-scope",
+                "some-token-type",
+                TokenStatus.OK,
+                Instant.now());
     }
 
     /**
@@ -122,7 +134,8 @@ public class CubeJSClientTest {
                     .build();
 
             final CubeJSClient cubeClient = new CubeJSClient(
-                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort),
+                    getAccessToken());
             final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
 
             assertEquals(0, cubeJSResultSet.size());
@@ -155,7 +168,9 @@ public class CubeJSClientTest {
             mockhttpServer.addContext(mockHttpServerContext);
             mockhttpServer.start();
 
-            final CubeJSClient cubeClient =  new CubeJSClient(String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+            final CubeJSClient cubeClient =  new CubeJSClient(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort),
+                    getAccessToken());
 
             try {
                 cubeClient.send(null);

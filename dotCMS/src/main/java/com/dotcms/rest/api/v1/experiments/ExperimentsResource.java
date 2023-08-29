@@ -1,25 +1,20 @@
 package com.dotcms.rest.api.v1.experiments;
 
-import static com.dotcms.jitsu.EventLogRunnable.POSTING_HEADERS;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.experiments.business.ExperimentFilter;
 import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.business.ExperimentsAPI.Health;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
-import com.dotcms.http.CircuitBreakerUrl;
-import com.dotcms.http.CircuitBreakerUrl.Method;
-import com.dotcms.http.CircuitBreakerUrl.Response;
-import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotcms.jitsu.EventLogRunnable;
-import com.dotcms.jitsu.EventsPayload;
-import com.dotcms.jitsu.EventsPayload.EventPayload;
-import com.dotcms.rest.*;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.PATCH;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.DotPreconditions;
@@ -29,7 +24,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -53,7 +47,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -67,6 +60,8 @@ public class ExperimentsResource {
 
     private final WebResource webResource;
     private final ExperimentsAPI experimentsAPI;
+
+    private static final String HEALTH_KEY = "health";
 
     public ExperimentsResource() {
         webResource =  new WebResource();
@@ -536,12 +531,12 @@ public class ExperimentsResource {
                 .getOrNull();
 
         if(analyticsApp==null) {
-            return new ResponseEntityView<>(Map.of("healthy", false));
+            return new ResponseEntityView<>(Map.of(HEALTH_KEY, Health.NOT_CONFIGURED));
         }
 
         final EventLogRunnable eventLogRunnable = new EventLogRunnable(host);
-        return new ResponseEntityView<>(Map.of("healthy", eventLogRunnable.sendTestEvent()
-                .isPresent()));
+        return new ResponseEntityView<>(Map.of(HEALTH_KEY, eventLogRunnable.sendTestEvent()
+                .isPresent()?Health.OK:Health.CONFIGURATION_ERROR));
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,

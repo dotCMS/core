@@ -4,6 +4,8 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.analytics.AnalyticsTestUtils;
+import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.EventType;
@@ -72,6 +74,9 @@ public class ExperimentAnalyzerUtilIntegrationTest {
      */
     @Test
     public void analyzerDataReachPage() throws DotDataException, DotSecurityException {
+        final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
+        ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
@@ -195,6 +200,9 @@ public class ExperimentAnalyzerUtilIntegrationTest {
      */
     @Test
     public void analyzerDataExitRate() throws DotDataException, DotSecurityException {
+        final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
+        ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 

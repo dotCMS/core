@@ -49,7 +49,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
-    @ViewChild('op') overlayPanel: OverlayPanel;
+    @Output() changeSeoMedia = new EventEmitter<string>();
+    @ViewChild('deviceSelector') overlayPanel: OverlayPanel;
     previewUrl: string;
     protected linkToAddDevice = '/c/content';
     protected linkToEditDeviceQueryParams = {
@@ -66,16 +67,16 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
             icon: 'pi pi-mobile',
-            cssHeight: '390',
-            cssWidth: '844',
+            cssHeight: '844',
+            cssWidth: '390',
             inode: '0',
             identifier: ''
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.landscape'),
             icon: 'pi pi-mobile',
-            cssHeight: '844',
-            cssWidth: '390',
+            cssHeight: '390',
+            cssWidth: '844',
             inode: '0',
             identifier: ''
         },
@@ -98,16 +99,16 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         {
             name: this.dotMessageService.get('editpage.device.selector.tablet.portrait'),
             icon: 'pi pi-tablet',
-            cssHeight: '820',
-            cssWidth: '1180',
+            cssHeight: '1180',
+            cssWidth: '820',
             inode: '0',
             identifier: ''
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.tablet.landscape'),
             icon: 'pi pi-tablet',
-            cssHeight: '1180',
-            cssWidth: '820',
+            cssHeight: '820',
+            cssWidth: '1180',
             inode: '0',
             identifier: ''
         }
@@ -129,6 +130,14 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     change(device: DotDevice) {
         this.selected.emit(device);
         this.overlayPanel.hide();
+    }
+
+    /**
+     * Emit selected changes
+     * @param DotDevice device
+     */
+    changeSeoMediaEvent(tile: string) {
+        this.changeSeoMedia.emit(tile);
     }
 
     /**
