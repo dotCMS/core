@@ -976,20 +976,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 label: this.dotMessageService.get('experiments.configure.scheduling.cancel'),
                 visible: experiment?.status === DotExperimentStatus.SCHEDULED,
                 command: () => {
-                    this.confirmationService.confirm({
-                        key: CONFIGURATION_CONFIRM_DIALOG_KEY,
-                        header: this.dotMessageService.get(
-                            'experiments.configure.scheduling.cancel'
-                        ),
-                        message: this.dotMessageService.get(
-                            'experiments.action.cancel.schedule-confirm'
-                        ),
-                        acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
-                        rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
-                        rejectButtonStyleClass: 'p-button-secondary',
-                        accept: () => {
-                            this.cancelSchedule(experiment);
-                        }
+                    this.sendConfirmation({
+                        header: 'experiments.configure.scheduling.cancel',
+                        message: 'experiments.action.cancel.schedule-confirm',
+                        acceptLabel: 'dot.common.dialog.accept',
+                        rejectLabel: 'dot.common.dialog.reject',
+                        fn: () => this.cancelSchedule(experiment)
                     });
                 }
             },
