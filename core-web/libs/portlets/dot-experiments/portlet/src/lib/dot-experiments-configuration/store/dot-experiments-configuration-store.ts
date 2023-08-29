@@ -1006,12 +1006,10 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     private setStartLabel(experiment: DotExperiment): string {
         const { scheduling } = experiment ? experiment : { scheduling: null };
-        const schedulingLabel =
-            scheduling === null || Object.values(experiment.scheduling).includes(null)
-                ? this.dotMessageService.get('experiments.action.start-experiment')
-                : this.dotMessageService.get('experiments.action.schedule-experiment');
 
-        return schedulingLabel;
+        return scheduling === null || Object.values(experiment.scheduling).includes(null)
+            ? this.dotMessageService.get('experiments.action.start-experiment')
+            : this.dotMessageService.get('experiments.action.schedule-experiment');
     }
 
     private sendConfirmation(data: {

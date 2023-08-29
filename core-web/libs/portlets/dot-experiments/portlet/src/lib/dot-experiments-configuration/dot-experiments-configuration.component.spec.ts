@@ -159,7 +159,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
     });
 
-    it('should show Stop Experiment  after confirmation', () => {
+    it('should show End Experiment after confirmation', () => {
         jest.spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
         dotExperimentsService.stop.mockReturnValue(of());
 
@@ -187,7 +187,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         //Add to bundle
-        spectator.query(Menu).model[4].command();
+        spectator.query(Menu).model[6].command();
 
         spectator.detectComponentChanges();
 
@@ -213,7 +213,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         expect(spectator.query(Menu)).toExist();
-        spectator.query(Menu).model[2].command();
+        spectator.query(Menu).model[3].command();
 
         spectator.query(ConfirmDialog).accept();
 

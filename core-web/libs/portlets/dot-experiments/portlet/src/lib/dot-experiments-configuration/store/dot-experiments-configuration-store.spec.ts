@@ -195,10 +195,12 @@ describe('DotExperimentsConfigurationStore', () => {
             expect(menuItems[0].disabled).toEqual(false);
             // End Experiment
             expect(menuItems[1].visible).toEqual(false);
-            // Schedule Experiment
+            // Abort Experiment
             expect(menuItems[2].visible).toEqual(false);
+            // Schedule Experiment
+            expect(menuItems[3].visible).toEqual(false);
             // Add to Bundle
-            expect(menuItems[3].visible).toEqual(true);
+            expect(menuItems[4].visible).toEqual(true);
             done();
         });
     });
@@ -215,10 +217,12 @@ describe('DotExperimentsConfigurationStore', () => {
             expect(menuItems[0].visible).toEqual(false);
             // End Experiment
             expect(menuItems[1].visible).toEqual(true);
+            // Abort Experiment
+            expect(menuItems[2].visible).toEqual(true);
             // Schedule Experiment
-            expect(menuItems[2].visible).toEqual(false);
+            expect(menuItems[3].visible).toEqual(false);
             // Add to Bundle
-            expect(menuItems[3].visible).toEqual(true);
+            expect(menuItems[4].visible).toEqual(true);
             done();
         });
     });
@@ -235,10 +239,12 @@ describe('DotExperimentsConfigurationStore', () => {
             expect(menuItems[0].visible).toEqual(false);
             // End Experiment
             expect(menuItems[1].visible).toEqual(false);
+            // Abort Experiment
+            expect(menuItems[2].visible).toEqual(false);
             // Schedule Experiment
-            expect(menuItems[2].visible).toEqual(true);
-            // Add to Bundle
             expect(menuItems[3].visible).toEqual(true);
+            // Add to Bundle
+            expect(menuItems[4].visible).toEqual(true);
             done();
         });
     });
@@ -255,14 +261,14 @@ describe('DotExperimentsConfigurationStore', () => {
             expect(dotExperimentsService.start).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
             // Push Publish
-            menuItems[3].command();
+            menuItems[4].command();
             expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
                 assetIdentifier: EXPERIMENT_MOCK.id,
                 title: 'Push Publish'
             });
 
             // Add to Bundle
-            menuItems[4].command();
+            menuItems[5].command();
             expect(store.showAddToBundle).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
             // test the ones with confirm dialog in the DotExperimentsConfigurationComponent.
