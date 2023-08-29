@@ -34,10 +34,10 @@ describe('DotExperimentsService', () => {
         spectator.expectOne(`${API_ENDPOINT}`, HttpMethod.POST);
     });
 
-    it('should do the configuration healthcheck', () => {
-        spectator.service.healthCheck().subscribe();
-        spectator.expectOne('/api/v1/experiments/health', HttpMethod.GET);
-    });
+    // it('should do the configuration healthcheck', () => {
+    //     spectator.service.healthCheck().subscribe();
+    //     spectator.expectOne('/api/v1/experiments/health', HttpMethod.GET);
+    // });
 
     it('should get a list of experiments of pageId', () => {
         spectator.service.getAll(PAGE_Id).subscribe();

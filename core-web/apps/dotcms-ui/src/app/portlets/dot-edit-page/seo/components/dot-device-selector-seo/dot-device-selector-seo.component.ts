@@ -19,10 +19,10 @@ import { DropdownModule } from 'primeng/dropdown';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
 
-import { filter, mergeMap, take, toArray } from 'rxjs/operators';
+import { filter, map, mergeMap, take, toArray } from 'rxjs/operators';
 
-import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
-import { DotDevice, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
+import { DotCurrentUser, DotDevice, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -52,12 +52,14 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Output() changeSeoMedia = new EventEmitter<string>();
     @ViewChild('deviceSelector') overlayPanel: OverlayPanel;
     previewUrl: string;
+
     protected linkToAddDevice = '/c/content';
     protected linkToEditDeviceQueryParams = {
         devices: null
     };
 
     options$: Observable<DotDevice[]>;
+    isCMSAdmin$: Observable<boolean>;
     socialMediaTiles = [
         { label: 'Facebook', icon: 'pi pi-facebook' },
         { label: 'Twitter', icon: 'pi pi-twitter' },
@@ -116,11 +118,13 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     constructor(
         private dotDevicesService: DotDevicesService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private dotCurrentUser: DotCurrentUserService
     ) {}
 
     ngOnInit() {
         this.options$ = this.getOptions();
+        this.isCMSAdmin$ = this.checkIfCMSAdmin();
     }
 
     /**
@@ -153,7 +157,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
      *
      * @returns Observable<DotDevice[]>
      */
-    public getOptions(): Observable<DotDevice[]> {
+    getOptions(): Observable<DotDevice[]> {
         return this.dotDevicesService.get().pipe(
             take(1),
             mergeMap((devices: DotDevice[]) => {
@@ -163,6 +167,14 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             }),
             filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
             toArray()
+        );
+    }
+
+    checkIfCMSAdmin(): Observable<boolean> {
+        return this.dotCurrentUser.getCurrentUser().pipe(
+            map((user: DotCurrentUser) => {
+                return user.admin;
+            })
         );
     }
 
