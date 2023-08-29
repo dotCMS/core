@@ -55,8 +55,10 @@ import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-de
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',
+    'editpage.toolbar.edit.page.clipboard': 'Edit Page Content',
     'editpage.toolbar.live.page': 'Live',
     'editpage.toolbar.preview.page': 'Preview',
+    'editpage.toolbar.preview.page.clipboard': 'Preview Page',
     'editpage.content.steal.lock.confirmation.message.header': 'Lock',
     'editpage.content.steal.lock.confirmation.message': 'Steal lock',
     'editpage.personalization.confirm.message': 'Are you sure?',
@@ -182,8 +184,18 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 await fixtureHost.whenRenderingDone();
                 expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options).toEqual([
-                    { label: 'Edit', value: 'EDIT_MODE', disabled: false },
-                    { label: 'Preview', value: 'PREVIEW_MODE', disabled: false }
+                    {
+                        label: 'Edit',
+                        value: 'EDIT_MODE',
+                        clipboard: 'Edit Page Content',
+                        disabled: false
+                    },
+                    {
+                        label: 'Preview',
+                        value: 'PREVIEW_MODE',
+                        clipboard: 'Preview Page',
+                        disabled: false
+                    }
                 ]);
             });
 
@@ -196,14 +208,17 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
                 const lockerDe = de.query(By.css('p-inputSwitch'));
+                const lockerContainerDe = de.query(By.css('[data-testId="lock-container"]'));
                 const locker = lockerDe.componentInstance;
 
                 await fixtureHost.whenRenderingDone();
 
                 expect(lockerDe.classes.warn).toBe(true, 'warn class');
                 expect(lockerDe.attributes.appendTo).toBe('target');
-                expect(lockerDe.attributes['ng-reflect-text']).toBe('Page locked by Some One');
-                expect(lockerDe.attributes['ng-reflect-tooltip-position']).toBe('top');
+                expect(lockerContainerDe.attributes['ng-reflect-text']).toBe(
+                    'Page locked by Some One'
+                );
+                expect(lockerContainerDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
                 expect(locker.modelValue).toBe(false, 'checked');
                 expect(locker.disabled).toBe(false, 'disabled');
             });
@@ -230,6 +245,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons.options[1]).toEqual({
                     label: 'Preview',
                     value: 'PREVIEW_MODE',
+                    clipboard: 'Preview Page',
                     disabled: true
                 });
                 expect(dotTabButtons.mode).toBe(DotPageMode.PREVIEW);
@@ -250,6 +266,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons.options[0]).toEqual({
                     label: 'Edit',
                     value: 'EDIT_MODE',
+                    clipboard: 'Edit Page Content',
                     disabled: true
                 });
                 expect(dotTabButtons.mode).toBe(DotPageMode.PREVIEW);
