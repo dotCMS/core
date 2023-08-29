@@ -1341,7 +1341,7 @@ dd.leftdl {
                 <tr>
                     <td>&nbsp;</td>
                     <td align="right" style="white-space: nowrap;">
-                        <select name="cName" dojoType="dijit.form.ComboBox" autocomplete="true" value="<%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>">
+                        <select id="cache_list" name="cName" dojoType="dijit.form.ComboBox" autocomplete="true" value="<%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>">
                             <option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"Flush-All-Caches") %></option>
                             <% Object[] caches = (Object[])CacheLocator.getCacheIndexes();
                             String[] indexValue = new String[caches.length];
