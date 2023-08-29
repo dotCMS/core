@@ -20,6 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotAlertConfirmService,
+    DotCurrentUserService,
     DotDevicesService,
     DotMessageService,
     DotPersonalizeService
@@ -134,7 +135,8 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 {
                     provide: DotDevicesService,
                     useClass: DotDevicesServiceMock
-                }
+                },
+                DotCurrentUserService
             ],
             imports: [
                 InputSwitchModule,

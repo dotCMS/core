@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -32,9 +32,11 @@ export class DotExperimentsService {
      * @memberof DotExperimentsService
      */
     healthCheck(): Observable<boolean> {
-        return this.http
-            .get<DotCMSResponseExperiment<{ healthy: boolean }>>('/api/v1/experiments/health')
-            .pipe(pluck('entity', 'healthy'));
+        // change to avoid block the UI b/c endpoint change.
+        return of(true);
+        // return this.http
+        //     .get<DotCMSResponseExperiment<{ healthy: boolean }>>('/api/v1/experiments/health')
+        //     .pipe(pluck('entity', 'healthy'));
     }
     /**
      * Add a new experiment
