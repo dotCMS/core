@@ -10,7 +10,7 @@
                     {{ 'editpage.device.selector.title' | dm }}
                 </h3>
                 <a
-                    *ngIf="isCMSAdmin"
+                    *ngIf="isCMSAdmin$"
                     [routerLink]="linkToAddDevice"
                     [queryParams]="linkToEditDeviceQueryParams"
                     data-testId="dot-device-link-add"

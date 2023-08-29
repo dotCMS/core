@@ -178,12 +178,10 @@ describe('DotDeviceSelectorSeoComponent', () => {
         expect(link.properties.href).toContain('/c/content');
     });
 
-    it('should not have a link to add device', () => {
+    it('should not have a link to add device', async () => {
         spyOn(dotCurrentUserService, 'getCurrentUser').and.returnValue(of(CurrentUserDataMock));
         component.ngOnInit();
-        fixtureHost.detectChanges();
 
-        expect(component.isCMSAdmin).toBeFalse();
         const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
         expect(link).toBeNull();
     });

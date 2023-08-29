@@ -19,7 +19,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
 
-import { filter, mergeMap, take, toArray } from 'rxjs/operators';
+import { filter, map, mergeMap, take, toArray } from 'rxjs/operators';
 
 import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotCurrentUser, DotDevice, DotDeviceListItem } from '@dotcms/dotcms-models';
@@ -52,13 +52,14 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Output() changeSeoMedia = new EventEmitter<string>();
     @ViewChild('deviceSelector') overlayPanel: OverlayPanel;
     previewUrl: string;
-    isCMSAdmin: boolean;
+
     protected linkToAddDevice = '/c/content';
     protected linkToEditDeviceQueryParams = {
         devices: null
     };
 
     options$: Observable<DotDevice[]>;
+    isCMSAdmin$: Observable<boolean>;
     socialMediaTiles = [
         { label: 'Facebook', icon: 'pi pi-facebook' },
         { label: 'Twitter', icon: 'pi pi-twitter' },
@@ -123,7 +124,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     ngOnInit() {
         this.options$ = this.getOptions();
-        this.checkIfCMSAdmin();
+        this.isCMSAdmin$ = this.checkIfCMSAdmin();
     }
 
     /**
@@ -169,10 +170,12 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         );
     }
 
-    checkIfCMSAdmin(): void {
-        this.dotCurrentUser.getCurrentUser().subscribe((user: DotCurrentUser) => {
-            this.isCMSAdmin = user.admin;
-        });
+    checkIfCMSAdmin(): Observable<boolean> {
+        return this.dotCurrentUser.getCurrentUser().pipe(
+            map((user: DotCurrentUser) => {
+                return user.admin;
+            })
+        );
     }
 
     @Input()
