@@ -123,7 +123,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     ngOnInit() {
         this.options$ = this.getOptions();
-        this.getCurrentUserAdmin();
+        this.checkIfCMSAdmin();
     }
 
     /**
@@ -169,7 +169,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         );
     }
 
-    getCurrentUserAdmin(): void {
+    checkIfCMSAdmin(): void {
         this.dotCurrentUser.getCurrentUser().subscribe((user: DotCurrentUser) => {
             this.isCMSAdmin = user.admin;
         });
