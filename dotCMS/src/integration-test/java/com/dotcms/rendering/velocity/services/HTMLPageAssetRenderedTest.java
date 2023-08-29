@@ -239,7 +239,7 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content1")
-                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1"))
                 .nextPersisted();
 
         contentlet1.setIndexPolicy(IndexPolicy.FORCE);
@@ -256,7 +256,7 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content2")
-                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2"))
                 .nextPersisted();
 
         contentlet2English.setIndexPolicy(IndexPolicy.FORCE);
@@ -267,7 +267,7 @@ public class HTMLPageAssetRenderedTest {
         Contentlet contentlet2Spanish = contentletAPI.checkout(contentlet2English.getInode(),
                 systemUser, false);
         contentlet2Spanish.setProperty("title", "content2Spa");
-        contentlet2Spanish.setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT);
+        contentlet2Spanish.setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2Spa"));
         contentlet2Spanish.setLanguageId(spanishLanguage.getId());
         contentlet2Spanish.setIndexPolicy(IndexPolicy.FORCE);
         contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.FORCE);
@@ -288,7 +288,7 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content3Spa")
-                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content3Spa"))
                 .nextPersisted();
 
         contentlet3.setIndexPolicy(IndexPolicy.FORCE);
@@ -303,7 +303,7 @@ public class HTMLPageAssetRenderedTest {
         final Contentlet contentlet4 = new ContentletDataGen(contentGenericType.id())
                 .languageId(1)
                 .setProperty("title", "content4")
-                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content4"))
                 .nextPersisted();
 
         contentlet4.setIndexPolicy(IndexPolicy.FORCE);
@@ -423,7 +423,7 @@ public class HTMLPageAssetRenderedTest {
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
                 .getMultiTrees(pageEnglishVersion, container);
         Assert.assertNotNull(multiTrees);
-        Assert.assertEquals(4, multiTrees.size());
+        assertEquals(4, multiTrees.size());
 
         int contentletSpaCount = 0;
         for (final MultiTree multiTree : multiTrees) {
@@ -440,7 +440,7 @@ public class HTMLPageAssetRenderedTest {
             }
         }
 
-        Assert.assertEquals(2, contentletSpaCount);
+        assertEquals(2, contentletSpaCount);
 
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
@@ -494,7 +494,7 @@ public class HTMLPageAssetRenderedTest {
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
                 .getMultiTrees(pageEnglishVersion, container);
         Assert.assertNotNull(multiTrees);
-        Assert.assertEquals(4, multiTrees.size());
+        assertEquals(4, multiTrees.size());
 
         int contentletSpaCount = 0;
         for (final MultiTree multiTree : multiTrees) {
@@ -511,7 +511,7 @@ public class HTMLPageAssetRenderedTest {
             }
         }
 
-        Assert.assertEquals(2, contentletSpaCount);
+        assertEquals(2, contentletSpaCount);
 
         //request page ESP version
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -1041,7 +1041,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue("ENG = " + html, html.contains("content1") && html.contains("content2"));
+        assertTrue("Expected text is NOT present in generated HTML = " + html, html.contains("content1") && html.contains("content2"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(
@@ -1485,7 +1485,7 @@ public class HTMLPageAssetRenderedTest {
     @UseDataProvider("cases")
     public void shouldReturnPageHTMLForLegacyUUID(  final TestContainerType containerType) throws Exception {
 
-        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+        final TestContainerFactory containerFactory = TestContainerFactory.getInstance();
 
         final Container container = containerFactory.getContainer(containerType);
 
@@ -1533,7 +1533,9 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("content2content1", html);
+        final String generatedHtml = String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1");
+        assertEquals("The content in the page is NOT the expected one", html, generatedHtml);
     }
 
     /**
@@ -1597,7 +1599,9 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("content2content1", html);
+        final String expectedHtml = String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1");
+        assertEquals("Expected HTML code was NOT found", html, expectedHtml);
     }
 
     /**
@@ -1949,7 +1953,7 @@ public class HTMLPageAssetRenderedTest {
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
                 .getContainerMultiTrees(container.getIdentifier());
         Assert.assertNotNull(multiTrees);
-        Assert.assertEquals(8, multiTrees.size());
+        assertEquals(8, multiTrees.size());
 
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
@@ -1967,7 +1971,11 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("content1content2content1content2", html);
+        final String expectedHtml = String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2");
+        assertEquals("Container added twice is NOT showing the expected HTML code", expectedHtml, html);
     }
 
     /**
@@ -2004,7 +2012,7 @@ public class HTMLPageAssetRenderedTest {
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
                 .getContainerMultiTrees(container.getIdentifier());
         Assert.assertNotNull(multiTrees);
-        Assert.assertEquals(8, multiTrees.size());
+        assertEquals(8, multiTrees.size());
 
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
@@ -2022,7 +2030,11 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue(html.contains("content1content2content1content2"));
+        final String generatedHtml = String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2");
+        assertTrue("The content in the page is NOT the expected one", html.contains(generatedHtml));
     }
 
     @Test
@@ -2064,13 +2076,14 @@ public class HTMLPageAssetRenderedTest {
                         .build(),
                 mockRequest, mockResponse);
 
-        final String toFind = "content1content2";
+        final String toFind = String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2");
 
         final int firstIndex = html.indexOf(toFind);
         final int secondIndex = html.indexOf(toFind, firstIndex + toFind.length());
         final int thirdIndex = html.indexOf(toFind, secondIndex + toFind.length());
 
-        assertTrue(firstIndex != -1 && secondIndex != -1 && firstIndex != secondIndex
+        assertTrue("Expected HTML code was NOT found", firstIndex != -1 && secondIndex != -1 && firstIndex != secondIndex
                 && thirdIndex == -1);
     }
 
@@ -2184,7 +2197,7 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content1")
-                .setProperty("body", defaultPersona.getKeyTag())
+                .setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, defaultPersona.getKeyTag()))
                 .nextPersisted();
 
         final Contentlet notDefaultPersonaContentlet = new ContentletDataGen(
@@ -2193,7 +2206,7 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content1")
-                .setProperty("body", notDefaultPersona.getKeyTag())
+                .setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, notDefaultPersona.getKeyTag()))
                 .nextPersisted();
 
         ContentletDataGen.publish(page);
