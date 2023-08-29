@@ -40,9 +40,15 @@ jobs:
             BUILD_ID=$(basename "${{ github.ref }}")
           fi
           
-          ./mvnw clean verify
+          if [[ -z "${GITHUB_SHA}" ]]; then
+            BUILD_HASH=$(git log -1 --pretty=%h)
+          else
+            BUILD_HASH=${GITHUB_SHA::7}
+          fi
           
-          FAILURES=$(find target -name TEST-*.xml | xargs grep '<failure' | wc -l)
+          ./mvnw clean verify -Dtest.failure.ignore=true
+          
+          FAILURES=$(find . -name TEST-*.xml | xargs grep '<failure' | wc -l)
           
           if [ $FAILURES -eq 0 ]; then
               OUTPUT_STATUS="PASSED"
@@ -77,13 +83,14 @@ jobs:
             
             for report in surefire failsafe
             do
-              echo "<tr><td>${module}</td><td><a href=\"${module}/site/${report}-report.html\">${report} report</a></td></tr>" >> ${INDEX_FILE}
+              echo "<tr><td>${module}</td><td><a href=\"${module}/${report}-report.html\">${report} report</a></td></tr>" >> ${INDEX_FILE}
             done
           done
           
           cat ${CICD_RES_PATH}/cli/cli-results-footer.html >> ${INDEX_FILE}
 
           echo "BUILD_ID=${BUILD_ID}" >> "$GITHUB_ENV"
+          echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
           echo "results_location=${XML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
           echo "results_report_location=${HTML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
           
