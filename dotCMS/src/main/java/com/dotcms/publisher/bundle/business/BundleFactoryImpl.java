@@ -9,12 +9,15 @@ import java.util.UUID;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.util.PublisherUtil;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.ULID;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
 
 public class BundleFactoryImpl extends BundleFactory {
 
@@ -63,19 +66,29 @@ public class BundleFactoryImpl extends BundleFactory {
             return bundles;
         }
 
-        DotConnect dc = new DotConnect();
-        dc.setSQL( SELECT_UNSEND_BUNDLES );
-        dc.addParam( userId );
-        dc.setMaxRows( limit );
-        dc.setStartRow( offset );
+		try {
+			User user = APILocator.getUserAPI().loadUserById(userId);
 
-        List<Map<String, Object>> res = dc.loadObjectResults();
+			final DotConnect dc = new DotConnect();
+			if(APILocator.getUserAPI().isCMSAdmin(user)){
+				dc.setSQL(SELECT_UNSEND_BUNDLES_ADMIN);
+			}else {
+				dc.setSQL( SELECT_UNSEND_BUNDLES );
+				dc.addParam(userId);
+			}
+			dc.setMaxRows( limit );
+			dc.setStartRow( offset );
 
-        for ( Map<String, Object> row : res ) {
-            Bundle bundle = PublisherUtil.getBundleByMap( row );
-            bundles.add( bundle );
-        }
+			final List<Map<String, Object>> res = dc.loadObjectResults();
 
+			for ( Map<String, Object> row : res ) {
+				Bundle bundle = PublisherUtil.getBundleByMap( row );
+				bundles.add( bundle );
+			}
+
+		} catch (DotSecurityException e) {
+			throw new RuntimeException(e);
+		}
         return bundles;
     }
 
