@@ -28,7 +28,7 @@ export default {
     },
     decorators: [
         moduleMetadata({
-            declarations: [DotMessagePipe, SearchableDropdownComponent],
+            declarations: [SearchableDropdownComponent],
             imports: [
                 BrowserAnimationsModule,
                 ButtonModule,
@@ -37,7 +37,8 @@ export default {
                 DotIconModule,
                 FormsModule,
                 InputTextModule,
-                OverlayPanelModule
+                OverlayPanelModule,
+                DotMessagePipe
             ]
         })
     ],
@@ -71,7 +72,7 @@ export default {
         },
         data: [
             {
-                label: 'This is an option',
+                label: 'This is a really long option to test the power of the ellipsis in this component',
                 value: 'option1'
             },
             {
