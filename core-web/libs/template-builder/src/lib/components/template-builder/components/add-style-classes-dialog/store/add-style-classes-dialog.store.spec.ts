@@ -7,6 +7,10 @@ import { DotAddStyleClassesDialogStore } from './add-style-classes-dialog.store'
 
 import { MOCK_STYLE_CLASSES_FILE } from '../../../utils/mocks';
 
+jest.mock('uuid', () => ({
+    v4: () => 'test-id'
+}));
+
 describe('DotAddStyleClassesDialogStore', () => {
     let service: DotAddStyleClassesDialogStore;
     let httpTestingController: HttpTestingController;
@@ -25,7 +29,10 @@ describe('DotAddStyleClassesDialogStore', () => {
     it('should have selected style classes on init when passed classes', (done) => {
         service.init({ selectedClasses: ['class1', 'class2'] });
         service.state$.subscribe((state) => {
-            expect(state.selectedClasses).toEqual([{ cssClass: 'class1' }, { cssClass: 'class2' }]);
+            expect(state.selectedClasses).toEqual([
+                { cssClass: 'class1', id: 'test-id' },
+                { cssClass: 'class2', id: 'test-id' }
+            ]);
             done();
         });
     });
@@ -40,7 +47,7 @@ describe('DotAddStyleClassesDialogStore', () => {
     it('should add a class to selected ', (done) => {
         service.init({ selectedClasses: [] });
 
-        service.addClass({ cssClass: 'class1' });
+        service.addClass({ cssClass: 'class1', id: 'test-id' });
 
         service.state$.subscribe((state) => {
             expect(state.selectedClasses.length).toBe(1);
@@ -48,13 +55,16 @@ describe('DotAddStyleClassesDialogStore', () => {
         });
     });
 
-    it('should remove last class from selected ', (done) => {
-        service.init({ selectedClasses: ['class1', 'class2'] });
+    it('should remove a class from selected that have the same id', (done) => {
+        service.init({ selectedClasses: ['class1'] });
 
-        service.removeLastClass();
+        service.removeClass({
+            cssClass: 'class1',
+            id: 'test-id'
+        });
 
         service.state$.subscribe((state) => {
-            expect(state.selectedClasses).toEqual([{ cssClass: 'class1' }]);
+            expect(state.selectedClasses).toEqual([]);
             done();
         });
     });
@@ -66,7 +76,7 @@ describe('DotAddStyleClassesDialogStore', () => {
         req.flush(MOCK_STYLE_CLASSES_FILE);
         service.state$.subscribe((state) => {
             expect(state.styleClasses).toEqual(
-                MOCK_STYLE_CLASSES_FILE.classes.map((cssClass) => ({ cssClass }))
+                MOCK_STYLE_CLASSES_FILE.classes.map((cssClass) => ({ cssClass, id: 'test-id' }))
             );
             done();
         });
@@ -106,7 +116,7 @@ describe('DotAddStyleClassesDialogStore', () => {
         service.filterClasses(query);
 
         service.state$.subscribe((state) => {
-            expect(state.selectedClasses).toEqual([{ cssClass: 'align' }]);
+            expect(state.selectedClasses).toEqual([{ cssClass: 'align', id: 'test-id' }]);
             done();
         });
     });
@@ -117,7 +127,7 @@ describe('DotAddStyleClassesDialogStore', () => {
         service.filterClasses(query);
 
         service.state$.subscribe((state) => {
-            expect(state.selectedClasses).toEqual([{ cssClass: 'align' }]);
+            expect(state.selectedClasses).toEqual([{ cssClass: 'align', id: 'test-id' }]);
             done();
         });
     });
@@ -128,7 +138,7 @@ describe('DotAddStyleClassesDialogStore', () => {
         service.filterClasses(query);
 
         service.state$.subscribe((state) => {
-            expect(state.filteredClasses).toEqual([{ cssClass: query }]);
+            expect(state.filteredClasses).toEqual([{ cssClass: query, id: 'test-id' }]);
             done();
         });
     });
