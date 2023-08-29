@@ -953,7 +953,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                         message: 'experiments.action.stop.delete-confirm',
                         acceptLabel: 'experiments.action.end',
                         rejectLabel: 'dot.common.dialog.reject',
-                        fn: () => this.abortExperiment(experiment)
+                        fn: () => this.stopExperiment(experiment)
                     });
                 }
             },
@@ -997,7 +997,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             },
             // Add To bundle
             {
-                label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
+                label: 'Add Bundle',
                 visible: hasEnterpriseLicense,
                 command: () => this.showAddToBundle(experiment.id)
             }
