@@ -153,11 +153,13 @@ export const containersMockArray = [
 ];
 
 export const containersMock: DotContainer[] = containersMockArray.map(
-    ({ name, identifier, parentPermissionable }) => ({
+    ({ name, identifier, parentPermissionable, path, source }) => ({
         friendlyName: name,
         title: name,
         parentPermissionable: { hostname: parentPermissionable.hostname },
-        identifier: identifier
+        identifier: identifier,
+        source,
+        path
     })
 );
 
