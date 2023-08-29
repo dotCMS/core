@@ -527,6 +527,29 @@ export class DotExperimentsListStore
                     });
                 }
             },
+            // Abort experiment
+            {
+                label: this.dotMessageService.get('experiments.action.abort.experiment'),
+                visible: experiment?.status === DotExperimentStatus.RUNNING,
+                command: () => {
+                    this.confirmationService.confirm({
+                        key: CONFIGURATION_CONFIRM_DIALOG_KEY,
+                        header: this.dotMessageService.get('experiments.action.abort.experiment'),
+                        message: this.dotMessageService.get(
+                            'experiments.action.abort.confirm.message'
+                        ),
+                        acceptLabel: this.dotMessageService.get('experiments.action.cancel'),
+                        rejectLabel: this.dotMessageService.get(
+                            'experiments.action.abort.experiment'
+                        ),
+                        rejectButtonStyleClass: 'p-button-outlined',
+                        accept: () => {
+                            //Abort use the same endpoint as cancelSchedule.
+                            this.cancelSchedule(experiment);
+                        }
+                    });
+                }
+            },
 
             // Push Publish Action
             {
