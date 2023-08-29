@@ -63,10 +63,6 @@ export class AIContentPromptView {
         this.pluginKey = pluginKey;
         this.component = component;
 
-        this.component.instance.formValues.pipe(takeUntil(this.$destroy)).subscribe((data) => {
-            this.editor.commands.updateValue(data);
-        });
-
         this.component.instance.formSubmission.pipe(takeUntil(this.$destroy)).subscribe(() => {
             this.editor.commands.closeAIPrompt();
         });
@@ -91,12 +87,6 @@ export class AIContentPromptView {
         }
 
         this.createTooltip();
-
-        this.tippy?.setProps({
-            getReferenceClientRect: () => {
-                return this.tippyRect();
-            }
-        });
 
         next.open ? this.show() : this.hide();
     }
@@ -136,10 +126,6 @@ export class AIContentPromptView {
         this.tippy?.destroy();
         this.$destroy.next(true);
         this.$destroy.complete();
-    }
-
-    private tippyRect() {
-        return document.querySelector('#ai-text-prompt')?.getBoundingClientRect();
     }
 }
 

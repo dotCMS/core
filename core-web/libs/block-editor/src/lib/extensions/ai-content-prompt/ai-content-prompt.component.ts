@@ -23,7 +23,6 @@ export class AIContentPromptComponent {
     @Output() formSubmission = new EventEmitter<boolean>();
     @Output() aiResponse = new EventEmitter<string>();
 
-    loading = false;
     form = new FormGroup({
         textPrompt: new FormControl('')
     });
