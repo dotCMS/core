@@ -9,7 +9,7 @@
                 }"
                 [value]="item.value"
                 [disabled]="item.disabled"
-                [pTooltip]="item.clipboard"
+                [pTooltip]="'editpage.toolbar.' + item.label.toLowerCase() + '.page.clipboard' | dm"
                 data-testId="dot-tab-button-text"
                 tooltipPosition="bottom"
             >

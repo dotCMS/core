@@ -187,13 +187,11 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     {
                         label: 'Edit',
                         value: 'EDIT_MODE',
-                        clipboard: 'Edit Page Content',
                         disabled: false
                     },
                     {
                         label: 'Preview',
                         value: 'PREVIEW_MODE',
-                        clipboard: 'Preview Page',
                         disabled: false
                     }
                 ]);
@@ -245,7 +243,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons.options[1]).toEqual({
                     label: 'Preview',
                     value: 'PREVIEW_MODE',
-                    clipboard: 'Preview Page',
                     disabled: true
                 });
                 expect(dotTabButtons.mode).toBe(DotPageMode.PREVIEW);
@@ -266,7 +263,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons.options[0]).toEqual({
                     label: 'Edit',
                     value: 'EDIT_MODE',
-                    clipboard: 'Edit Page Content',
                     disabled: true
                 });
                 expect(dotTabButtons.mode).toBe(DotPageMode.PREVIEW);
