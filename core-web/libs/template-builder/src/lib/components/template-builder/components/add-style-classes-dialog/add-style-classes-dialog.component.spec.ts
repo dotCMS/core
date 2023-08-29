@@ -110,16 +110,16 @@ describe('AddStyleClassesDialogComponent', () => {
         expect(addClassMock).toHaveBeenCalled();
     });
 
-    it('should trigger removeLastClass when autocomplete emits onUnselect', () => {
+    it('should trigger removeClass when autocomplete emits onUnselect', () => {
         const autoComplete = spectator.query('p-autocomplete');
 
-        const removeLastClassMock = jest.spyOn(store, 'removeLastClass');
+        const removeClass = jest.spyOn(store, 'removeClass');
 
         spectator.dispatchFakeEvent(autoComplete, 'onUnselect');
 
         spectator.detectChanges();
 
-        expect(removeLastClassMock).toHaveBeenCalled();
+        expect(removeClass).toHaveBeenCalled();
     });
 
     it('should trigger saveClass when clicking on update-btn', () => {
