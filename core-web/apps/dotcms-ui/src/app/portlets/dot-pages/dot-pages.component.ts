@@ -1,4 +1,4 @@
-import { Subject, Subscription } from 'rxjs';
+import { Subject } from 'rxjs';
 
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import {
@@ -13,15 +13,14 @@ import {
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, take, takeUntil } from 'rxjs/operators';
+import { filter, skip, take, takeUntil } from 'rxjs/operators';
 
-import { DotCreateContentletComponent } from '@components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.component';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
-import { HttpCode } from '@dotcms/dotcms-js';
+import { HttpCode, SiteService } from '@dotcms/dotcms-js';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import {
@@ -48,7 +47,6 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
 
     private domIdMenuAttached = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
-    private contentletDialogShutdown: Subscription;
 
     constructor(
         private store: DotPageStore,
@@ -57,7 +55,8 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
         private dotEventsService: DotEventsService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotPageRenderService: DotPageRenderService,
-        private element: ElementRef
+        private element: ElementRef,
+        private dotSiteService: SiteService
     ) {
         this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
     }
@@ -178,6 +177,11 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
                     type: DotMessageType.SIMPLE_MESSAGE
                 });
             });
+
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
+            this.store.getPages({ offset: 0 });
+            this.scrollToTop(); // To reset the scroll so it shows the data it retrieves
+        });
     }
 
     ngOnDestroy(): void {
@@ -200,28 +204,25 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     }
 
     /**
-     * Subscribe to the shutdown event of the contentlet dialog
+     * Load pages on deactivation
      *
-     * @param {*} componentRef
-     * @return {*}
      * @memberof DotPagesComponent
      */
-    subscribeToShutdown(componentRef: Component): void {
-        if (!(componentRef instanceof DotCreateContentletComponent)) return;
-
-        this.contentletDialogShutdown = componentRef.shutdown.subscribe(() => {
-            this.store.getPages({
-                offset: 0
-            });
+    loadPagesOnDeactivation() {
+        this.store.getPages({
+            offset: 0
         });
     }
 
     /**
-     * Unsubscribe to the shutdown event of the contentlet dialog
+     * Scroll to top of the page
      *
      * @memberof DotPagesComponent
      */
-    unsubscribeToShutdown() {
-        if (this.contentletDialogShutdown) this.contentletDialogShutdown.unsubscribe();
+    scrollToTop(): void {
+        this.element.nativeElement?.scroll({
+            top: 0,
+            left: 0
+        });
     }
 }

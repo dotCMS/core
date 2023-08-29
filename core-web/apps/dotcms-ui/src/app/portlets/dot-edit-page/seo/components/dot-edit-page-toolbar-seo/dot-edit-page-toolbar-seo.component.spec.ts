@@ -94,14 +94,6 @@ class TestHostComponent {
 }
 
 @Component({
-    selector: 'dot-icon-button',
-    template: ''
-})
-class MockDotIconButtonComponent {
-    @Input() icon: string;
-}
-
-@Component({
     selector: 'dot-global-message',
     template: ''
 })
@@ -151,11 +143,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                TestHostComponent,
-                MockDotIconButtonComponent,
-                MockGlobalMessageComponent
-            ],
+            declarations: [TestHostComponent, MockGlobalMessageComponent],
             imports: [
                 DotEditPageToolbarSeoComponent,
                 HttpClientTestingModule,
@@ -291,9 +279,6 @@ describe('DotEditPageToolbarSeoComponent', () => {
             const dotEditPageInfo = de.query(By.css('dot-edit-page-info-seo')).componentInstance;
             expect(dotEditPageInfo.title).toBe('A title');
             expect(dotEditPageInfo.url).toBe('/an/url/test');
-            expect(dotEditPageInfo.innerApiLink).toBe(
-                'api/v1/page/render/an/url/test?language_id=1'
-            );
         });
     });
 
@@ -334,7 +319,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
     describe('dot-edit-page-view-as-controller', () => {
         it('should have pageState attr', () => {
             fixtureHost.detectChanges();
-            const dotEditPageViewAs = de.query(By.css('dot-edit-page-view-as-controller'));
+            const dotEditPageViewAs = de.query(By.css('dot-edit-page-view-as-controller-seo'));
             expect(dotEditPageViewAs.componentInstance.pageState).toBe(mockDotRenderedPageState);
         });
     });
@@ -395,7 +380,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
             fixtureHost.detectChanges();
 
             const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
-            expect(favoritePageIcon.componentInstance.icon).toBe('grade');
+            expect(favoritePageIcon.componentInstance.icon).toBe('pi pi-star-fill');
         });
 
         it('should show empty star icon on favorite page if NO contentlet exist', () => {
@@ -404,7 +389,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
             fixtureHost.detectChanges();
 
             const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
-            expect(favoritePageIcon.componentInstance.icon).toBe('star_outline');
+            expect(favoritePageIcon.componentInstance.icon).toBe('pi pi-star');
         });
     });
 

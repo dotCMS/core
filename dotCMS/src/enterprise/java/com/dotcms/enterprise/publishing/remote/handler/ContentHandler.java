@@ -310,6 +310,8 @@ public class ContentHandler implements IHandler {
                     content.getMap().remove(PAGE_FRIENDLY_NAME_FIELD_VAR.toLowerCase());
                 }
 
+				content.setVariantId(wrapper.getContent().getVariantId());
+
                 // get the local language and assign it to the version info, and content, since the id's might be different
                 final Language remoteLang = wrapper.getLanguage();
 				final Pair<Long,Long> remoteLocalLanguages = this.existingContentMap.getRemoteLocalLanguages(wrapper);

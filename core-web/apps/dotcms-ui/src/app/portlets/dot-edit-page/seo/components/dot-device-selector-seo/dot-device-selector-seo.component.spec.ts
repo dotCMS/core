@@ -5,6 +5,7 @@ import { CUSTOM_ELEMENTS_SCHEMA, Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
@@ -20,9 +21,13 @@ import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.compone
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-device-selector-seo></dot-device-selector-seo> `
+    template: `<button (click)="op.openMenu($event)" type="text">Open</button>
+        <dot-device-selector-seo #op [apiLink]="apiLink"></dot-device-selector-seo> `
 })
-class TestHostComponent {}
+class TestHostComponent {
+    apiLink = 'api/v1/page/render/an/url/test?language_id=1';
+    linkToAddDevice = '/c/c_Devices';
+}
 
 describe('DotDeviceSelectorSeoComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
@@ -50,7 +55,8 @@ describe('DotDeviceSelectorSeoComponent', () => {
                 DotDeviceSelectorSeoComponent,
                 HttpClientTestingModule,
                 OverlayPanelModule,
-                BrowserAnimationsModule
+                BrowserAnimationsModule,
+                RouterTestingModule
             ],
             providers: [
                 {
@@ -77,15 +83,13 @@ describe('DotDeviceSelectorSeoComponent', () => {
         component = de.componentInstance;
         TestBed.inject(DotDevicesService);
         spyOn(component, 'getOptions').and.returnValue(of(mockDotDevices));
+
+        fixtureHost.detectChanges();
+        const buttonEl = fixtureHost.debugElement.query(By.css('button')).nativeElement;
+        buttonEl.click();
     });
 
     it('should emit selected device on change', async () => {
-        const selectorButton: DebugElement = de.query(
-            By.css('[data-testId="device-selector-button"]')
-        );
-
-        selectorButton.nativeElement.click();
-
         await fixtureHost.whenStable();
         fixtureHost.detectChanges();
         spyOn(component.selected, 'emit');
@@ -101,11 +105,6 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should set user devices', async () => {
-        const selectorButton: DebugElement = de.query(
-            By.css('[data-testId="device-selector-button"]')
-        );
-
-        selectorButton.nativeElement.click();
         await fixtureHost.whenStable();
         fixtureHost.detectChanges();
 
@@ -116,30 +115,61 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should open the overlayPanel', () => {
-        const selectorButton: DebugElement = de.query(
-            By.css('[data-testId="device-selector-button"]')
-        );
+        const buttonEl = fixtureHost.debugElement.query(By.css('button')).nativeElement;
+        buttonEl.click();
+
         const devicesSelector: DebugElement = de.query(
             By.css('[data-testId="dot-devices-selector"]')
         );
-
-        selectorButton.nativeElement.click();
 
         fixtureHost.detectChanges();
         expect(devicesSelector).toBeDefined();
     });
 
     it('should close the overlayPanel', () => {
-        const selectorButton: DebugElement = de.query(
-            By.css('[data-testId="device-selector-button"]')
-        );
         const devicesSelector: DebugElement = de.query(
             By.css('[data-testId="dot-devices-selector"]')
         );
-
-        selectorButton.nativeElement.click();
-
-        fixtureHost.detectChanges();
         expect(devicesSelector).toBeNull();
+    });
+
+    it('should have link to open in a new tab', () => {
+        fixtureHost.detectChanges();
+
+        const addContent: DebugElement = de.query(
+            By.css('[data-testId="dot-device-selector-link"]')
+        );
+        expect(addContent.nativeElement.href).toContain(
+            '/an/url/test?language_id=1&disabledNavigateMode=true'
+        );
+    });
+
+    it('should have a link to add device', () => {
+        fixtureHost.detectChanges();
+
+        const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
+        expect(link.properties.href).toContain('/c/content');
+    });
+
+    it('should have link to open in a new tab', () => {
+        fixtureHost.detectChanges();
+
+        const addContent: DebugElement = de.query(
+            By.css('[data-testId="dot-device-selector-link"]')
+        );
+        expect(addContent.nativeElement.href).toContain(
+            '/an/url/test?language_id=1&disabledNavigateMode=true'
+        );
+    });
+
+    it('should trigger the changeSeoMedia', () => {
+        spyOn(component, 'changeSeoMediaEvent');
+        fixtureHost.detectChanges();
+
+        const buttonMedia = de.query(By.css('[data-testId="device-list-button-media"]'));
+
+        buttonMedia.triggerEventHandler('click', 'Google');
+
+        expect(component.changeSeoMediaEvent).toHaveBeenCalled();
     });
 });

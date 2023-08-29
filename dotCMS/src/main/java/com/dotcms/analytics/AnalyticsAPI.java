@@ -3,10 +3,13 @@ package com.dotcms.analytics;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.analytics.model.AccessTokenFetchMode;
+import com.dotcms.analytics.model.AccessTokenStatus;
+import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.exception.AnalyticsException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Config;
 
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -16,6 +19,7 @@ import java.util.concurrent.TimeUnit;
  */
 public interface AnalyticsAPI {
 
+    String ANALYTICS_USE_DUMMY_TOKEN_KEY = "analytics.use.dummy.token";
     String ANALYTICS_IDP_URL_KEY = "analytics.idp.url";
 
     String ANALYTICS_ACCESS_TOKEN_TTL_KEY = "analytics.accesstoken.ttl";
@@ -39,6 +43,15 @@ public interface AnalyticsAPI {
     int ANALYTICS_KEY_RENEW_TIMEOUT = Config.getIntProperty(ANALYTICS_KEY_RENEW_TIMEOUT_KEY, 4000);
 
     String ANALYTICS_ACCESS_TOKEN_THREAD_NAME = "access-token-renew";
+
+    AccessToken DUMMY_TOKEN = AccessToken.builder()
+        .accessToken("dummy_token")
+        .clientId("dummy")
+        .tokenType("Bearer")
+        .expiresIn(Integer.MAX_VALUE)
+        .status(AccessTokenStatus.builder().tokenStatus(TokenStatus.OK).build())
+        .issueDate(Instant.now())
+        .build();
 
     /**
      * Fetches an {@link AccessToken} instance from cache falling back to get the access token

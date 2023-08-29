@@ -20,6 +20,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.RelationshipBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.RuleBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.VariantBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundler;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.*;
@@ -486,6 +487,7 @@ public class PushPublisher extends Publisher {
 		if ( buildOSGIBundle ) {
 			list.add( OSGIBundler.class );
 		}
+
 		if ( buildAsset || buildLanguages) {
 			list.add( DependencyBundler.class );
 			list.add( HostBundler.class );
@@ -517,6 +519,7 @@ public class PushPublisher extends Publisher {
 		}
 		if(buildExperiments) {
 			list.add(ExperimentBundler.class);
+			list.add(VariantBundler.class);
 		}
 		return list;
 	}

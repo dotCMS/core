@@ -28,6 +28,7 @@ import {
     DotCurrentUserService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotLicenseService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -70,6 +71,7 @@ describe('DotContentletsComponent', () => {
                 DotContentletEditorService,
                 DotIframeService,
                 DotCustomEventHandlerService,
+                DotLicenseService,
                 {
                     provide: ActivatedRoute,
                     useValue: {

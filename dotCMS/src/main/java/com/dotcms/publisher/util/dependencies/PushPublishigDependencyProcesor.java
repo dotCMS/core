@@ -17,6 +17,7 @@ import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -52,6 +53,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -793,8 +795,12 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
 
     private void processExperimentDependencies(final Experiment experiment)  {
         try {
+
+
             final Contentlet parentPage = APILocator.getContentletAPI()
                     .findContentletByIdentifierAnyLanguage(experiment.pageId());
+
+            final long languageId = parentPage.getLanguageId();
 
             if (UtilMethods.isSet(parentPage)) {
                 tryToAddAsDependency(PusheableAsset.CONTENTLET, parentPage,
@@ -805,15 +811,42 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                                 experiment.pageId()));
             }
 
-//            final List<Contentlet> contentOnVariants = APILocator.getContentletAPI().getAllContentByVariants(user, false,
-//                            experiment.trafficProportion().variants().stream()
-//                                    .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
-//                                    .toArray(String[]::new)).stream()
-//                    .filter((contentlet -> Try.of(contentlet::isWorking)
-//                            .getOrElse(false))).collect(Collectors.toList());
-//
-//            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentOnVariants,
-//                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
+            List<Variant> variants = experiment.trafficProportion().variants().stream()
+                    .map((experimentVariant -> {
+                        try {
+                            return APILocator.getVariantAPI().get(experimentVariant.id()).orElseThrow();
+                        } catch (DotDataException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })).filter((variant) -> !variant.name().equals(DEFAULT_VARIANT.name())).collect(
+                            Collectors.toList());
+
+            tryToAddAllAndProcessDependencies(PusheableAsset.VARIANT, variants,
+                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
+
+            final List<Contentlet> contentDependencies = new ArrayList<>();
+
+            for (Variant variant : variants) {
+                List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
+                        .getMultiTreesByVariant(experiment.pageId(), variant.name());
+
+                for (MultiTree multiTree : multiTrees) {
+                    Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
+                            multiTree.getContentlet(), false, languageId, variant.name(), user,
+                            false);
+
+                    if(!UtilMethods.isSet(contentlet)) {
+                        contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
+                                multiTree.getContentlet(), false, languageId, DEFAULT_VARIANT.name(), user,
+                                false);
+                    }
+
+                    contentDependencies.add(contentlet);
+                }
+            }
+
+            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentDependencies,
+                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
 
         } catch (final DotDataException | DotSecurityException e) {
             Logger.error(this, String.format("An error occurred when processing dependencies on Experiment '%s' [%s]: %s",

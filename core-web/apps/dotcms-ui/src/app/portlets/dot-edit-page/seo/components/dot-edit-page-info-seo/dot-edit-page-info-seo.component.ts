@@ -36,7 +36,6 @@ export class DotEditPageInfoSeoComponent {
     @Input() title: string;
     @Input() url: string;
     innerApiLink: string;
-    previewUrl: string;
     baseUrl: string;
     seoImprovements: boolean;
 
@@ -44,20 +43,5 @@ export class DotEditPageInfoSeoComponent {
         this.baseUrl = document.defaultView.location.href.includes('edit-page')
             ? document.defaultView.location.origin
             : '';
-    }
-
-    @Input()
-    set apiLink(value: string) {
-        if (value) {
-            const frontEndUrl = `${value.replace('api/v1/page/render', '')}`;
-
-            this.previewUrl = `${frontEndUrl}${
-                frontEndUrl.indexOf('?') != -1 ? '&' : '?'
-            }disabledNavigateMode=true`;
-        } else {
-            this.previewUrl = value;
-        }
-
-        this.innerApiLink = value;
     }
 }

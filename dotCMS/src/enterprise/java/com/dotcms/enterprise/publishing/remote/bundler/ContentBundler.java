@@ -372,7 +372,7 @@ public class ContentBundler implements IBundler {
 
 		//Populate wrapper
 		Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI()
-				.getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
+				.getContentletVersionInfo(con.getIdentifier(), con.getLanguageId(), con.getVariantId());
 
 		if(info.isEmpty()) {
 			throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
@@ -423,7 +423,7 @@ public class ContentBundler implements IBundler {
             //Find the MultiTree records for this html page and add them to the wrapper
 			final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(con);
 			final Table<String, String, Set<PersonalizedContentlet>> pageContents =
-					APILocator.getMultiTreeAPI().getPageMultiTrees(htmlPageAsset, false);
+					APILocator.getMultiTreeAPI().getPageMultiTrees(htmlPageAsset, htmlPageAsset.getVariantId(), false);
 
 			for (final String containerId : pageContents.rowKeySet()) {
 				for (final String uniqueId : pageContents.row(containerId).keySet()) {

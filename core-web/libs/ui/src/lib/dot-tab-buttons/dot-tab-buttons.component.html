@@ -1,0 +1,32 @@
+<div class="dot-tab-buttons">
+    <div class="dot-tab-buttons__container" *ngFor="let item of options">
+        <div class="dot-tab" (click)="onClickOption($event)" data-testId="dot-tab-container">
+            <button
+                class="dot-tab__button"
+                [ngClass]="{
+                    'dot-tab--active': mode === item.value,
+                    'dot-tab__button--right': item.value === pageMode.PREVIEW
+                }"
+                [value]="item.value"
+                [disabled]="item.disabled"
+                data-testId="dot-tab-button-text"
+            >
+                {{ item.label }}
+            </button>
+
+            <button
+                class="dot-tab__dropdow"
+                *ngIf="item.value === pageMode.PREVIEW"
+                [ngClass]="{ 'dot-tab-dropdown--active': mode === pageMode.PREVIEW }"
+                value="openMenu"
+            >
+                <i class="dot-tab-dropdown__icon" [value]="'openMenu'" [class]="icon"></i>
+            </button>
+        </div>
+        <div
+            class="dot-tab-indicator"
+            *ngIf="mode === item.value"
+            data-testId="dot-tab-button"
+        ></div>
+    </div>
+</div>

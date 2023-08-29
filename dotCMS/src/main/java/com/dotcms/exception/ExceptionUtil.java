@@ -14,11 +14,15 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ValidationException;
+import com.dotcms.util.exceptions.DuplicateFileException;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DuplicateRoleKeyException;
+import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotDuplicateDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
@@ -36,6 +40,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.liferay.portal.DuplicateGroupException;
+import com.liferay.portal.DuplicateRoleException;
+import com.liferay.portal.DuplicateUserEmailAddressException;
+import com.liferay.portal.DuplicateUserIdException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -56,6 +64,19 @@ import javax.servlet.http.HttpServletRequest;
  * @author andrecurione
  */
 public class ExceptionUtil {
+
+    public static final Set<Class<? extends Throwable>> DUPLICATE_EXCEPTIONS = ImmutableSet
+            .of(
+                    DotDuplicateDataException.class,
+                    DuplicateFileException.class,
+                    DuplicateGroupException.class,
+                    DuplicateRoleException.class,
+                    com.dotmarketing.business.DuplicateRoleException.class,
+                    DuplicateRoleKeyException.class,
+                    DuplicateUserEmailAddressException.class,
+                    DuplicateUserException.class,
+                    DuplicateUserIdException.class
+            );
 
     public static final Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = ImmutableSet
             .of(

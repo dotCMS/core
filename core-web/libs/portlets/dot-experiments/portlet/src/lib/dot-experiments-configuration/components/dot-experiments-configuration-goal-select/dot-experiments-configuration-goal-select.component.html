@@ -21,18 +21,21 @@
                     <div class="field">
                         <dot-experiment-options formControlName="type">
                             <dot-experiment-options-item
+                                [icon]="goals.BOUNCE_RATE.icon"
                                 [value]="goalsTypes.BOUNCE_RATE"
                                 detail="{{ goals.BOUNCE_RATE.description | dm }}"
                                 title="{{ goals.BOUNCE_RATE.label | dm }}"
                             />
 
                             <dot-experiment-options-item
+                                [icon]="goals.EXIT_RATE.icon"
                                 [value]="goalsTypes.EXIT_RATE"
                                 detail="{{ goals.EXIT_RATE.description | dm }}"
                                 title="{{ goals.EXIT_RATE.label | dm }}"
                             />
 
                             <dot-experiment-options-item
+                                [icon]="goals.REACH_PAGE.icon"
                                 [value]="goalsTypes.REACH_PAGE"
                                 detail="{{ goals.REACH_PAGE.description | dm }}"
                                 title="{{ goals.REACH_PAGE.label | dm }}"
@@ -43,6 +46,7 @@
                             </dot-experiment-options-item>
 
                             <dot-experiment-options-item
+                                [icon]="goals.URL_PARAMETER.icon"
                                 [value]="goalsTypes.URL_PARAMETER"
                                 detail="{{ goals.URL_PARAMETER.description | dm }}"
                                 title="{{ goals.URL_PARAMETER.label | dm }}"

@@ -3,6 +3,7 @@ function setJitsuExperimentData (experimentData) {
     let experimentsShortData = {
         experiments: experimentData.experiments.map((experiment) => ({
                 experiment: experiment.id,
+                runningId: experiment.runningId,
                 variant: experiment.variant.name,
                 lookBackWindow: experiment.lookBackWindow.value
             })
@@ -29,7 +30,7 @@ function redirectIfNeedIt(experimentsData,
             const pattern = new RegExp(experimentsData.experiments[i].redirectPattern);
 
             if (additionalValidation(experimentsData.experiments[i]) &&
-                pattern.test(location.href)) {
+                pattern.test(location.href.toLowerCase())) {
 
                 const param = experimentsData.experiments[i].variant.name === 'DEFAULT' ?
                     '' : getParams(experimentsData.experiments[i]);

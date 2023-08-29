@@ -7,6 +7,7 @@ import {
     DotLayoutGrid,
     DotLayoutGridBox
 } from '@models/dot-edit-layout-designer';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 
 import { DotEditLayoutService } from './dot-edit-layout.service';
@@ -19,7 +20,7 @@ describe('DotEditLayoutService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [DotEditLayoutService, DotTemplateContainersCacheService]
+            providers: [DotEditLayoutService, DotTemplateContainersCacheService, DotRouterService]
         });
         dotEditLayoutService = TestBed.inject(DotEditLayoutService);
         templateContainersCacheService = TestBed.inject(DotTemplateContainersCacheService);
@@ -246,21 +247,5 @@ describe('DotEditLayoutService', () => {
         });
 
         dotEditLayoutService.addBox();
-    });
-
-    it('Should set _canBeDesactivated to true', (done) => {
-        dotEditLayoutService.changeDesactivateState(true);
-        dotEditLayoutService.canBeDesactivated$.subscribe((resp) => {
-            expect(resp).toBeTruthy();
-            done();
-        });
-    });
-
-    it('Should set _closeEditLayout to true', (done) => {
-        dotEditLayoutService.closeEditLayout$.subscribe((resp) => {
-            expect(resp).toBeTruthy();
-            done();
-        });
-        dotEditLayoutService.changeCloseEditLayoutState(true);
     });
 });

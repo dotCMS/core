@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v2.languages;
 
 import com.dotcms.rest.api.Validated;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 

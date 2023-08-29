@@ -222,7 +222,6 @@ import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletName;
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTable;
 import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariant;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantField;
-import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovable;
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTable;
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuProperty;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperiment;
@@ -236,6 +235,8 @@ import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByCo
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTables;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentlet;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentField;
+import com.dotmarketing.startup.runonce.Task230707CreateSystemTable;
+import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSize;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -530,7 +531,6 @@ public class TaskLocatorUtil {
 		.add(Task220512UpdateNoHTMLRegexValue.class)
 		.add(Task220606UpdatePushNowActionletName.class)
 		.add(Task220822CreateVariantTable.class)
-		.add(Task220825MakeSomeSystemFieldsRemovable.class)
     	.add(Task220822CreateVariantTable.class)
 		.add(Task220829CreateExperimentsTable.class)
 		.add(Task220912UpdateCorrectShowOnMenuProperty.class)
@@ -546,6 +546,8 @@ public class TaskLocatorUtil {
 		.add(Task230523CreateVariantFieldInContentlet.class)
 		.add(Task230630CreateRunningIdsExperimentField.class)
 		.add(Task230701AddHashIndicesToWorkflowTables.class)
+		.add(Task230707CreateSystemTable.class)
+		.add(Task230713IncreaseDisabledWysiwygColumnSize.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}

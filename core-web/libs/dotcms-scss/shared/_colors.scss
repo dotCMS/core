@@ -74,6 +74,16 @@ $color-palette-gray-800: #515667;
 $color-palette-gray-900: #3d404d;
 $color-palette-gray: #afb3c0;
 
+$color-palette-gray-op-10: rgba($color-palette-gray, 0.1);
+$color-palette-gray-op-20: rgba($color-palette-gray, 0.2);
+$color-palette-gray-op-30: rgba($color-palette-gray, 0.3);
+$color-palette-gray-op-40: rgba($color-palette-gray, 0.4);
+$color-palette-gray-op-50: rgba($color-palette-gray, 0.5);
+$color-palette-gray-op-60: rgba($color-palette-gray, 0.6);
+$color-palette-gray-op-70: rgba($color-palette-gray, 0.7);
+$color-palette-gray-op-80: rgba($color-palette-gray, 0.8);
+$color-palette-gray-op-90: rgba($color-palette-gray, 0.9);
+
 $color-alert-blue: $color-palette-primary-500;
 $color-alert-blue-light: $color-palette-primary-100;
 $color-alert-yellow: #ffb444;
@@ -85,14 +95,21 @@ $color-alert-red-light: #fff6f6;
 
 $color-accessible-text-red: #d82b2e;
 $color-accessible-text-red-bg: $color-alert-red-light;
+$color-accessible-text-red-op-10: rgba($color-accessible-text-red, 0.1);
+$color-accessible-text-red-op-20: rgba($color-accessible-text-red, 0.2);
+
 $color-accessible-text-green: #0b6948;
 $color-accessible-text-green-bg: $color-alert-green-light;
+
 $color-accessible-text-purple: $color-palette-secondary-600;
 $color-accessible-text-purple-bg: $color-palette-secondary-100;
+
 $color-accessible-text-blue: $color-palette-primary-500;
 $color-accessible-text-blue-bg: $color-palette-primary-200;
+
 $color-accessible-text-yellow: #bc5b0d; // TODO: why?
 $color-accessible-text-yellow-bg: $color-alert-yellow-light;
+
 $color-accessible-text-gray: $color-palette-gray-600;
 $color-accessible-text-gray-bg: $color-palette-gray-100;
 

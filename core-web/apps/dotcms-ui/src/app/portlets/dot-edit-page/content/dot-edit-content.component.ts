@@ -1,8 +1,8 @@
-import { fromEvent, merge, Observable, Subject } from 'rxjs';
+import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
 
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, NavigationStart, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -49,6 +49,7 @@ import {
     PageModelChangeEventType
 } from './services/dot-edit-content-html/models';
 import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
+import { SeoMetaTags } from './services/dot-edit-content-html/models/meta-tags-model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 
 import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
@@ -83,9 +84,11 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     allowedContent: string[] = null;
     isEditMode = false;
     paletteCollapsed = false;
-    isEnterpriseLicense = false;
+    isEnterpriseLicense$ = of(false);
     variantData: Observable<DotVariantData>;
     featureFlagSeo = FeaturedFlags.FEATURE_FLAG_SEO_IMPROVEMENTS;
+    seoOGTags: SeoMetaTags;
+    seoOGTagsResults = null;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -133,6 +136,8 @@ browse from the page internal links
                         pageRendered
                     );
 
+                    this.variantData = null; // internal navigation, reset variant data - leave experiments.
+
                     if (this.isInternallyNavigatingToSamePage(pageRendered.page.pageURI)) {
                         this.dotPageStateService.setLocalState(dotRenderedPageState);
                     } else {
@@ -168,12 +173,7 @@ browse from the page internal links
     }
 
     ngOnInit() {
-        this.dotLicenseService
-            .isEnterprise()
-            .pipe(take(1))
-            .subscribe((isEnterprise) => {
-                this.isEnterpriseLicense = isEnterprise;
-            });
+        this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise().pipe(take(1));
         this.dotLoadingIndicatorService.show();
         this.setInitalData();
         this.subscribeSwitchSite();
@@ -183,6 +183,18 @@ browse from the page internal links
         this.subscribeOverlayService();
         this.subscribeDraggedContentType();
         this.getExperimentResolverData();
+
+        /*This is needed when the user is in the edit mode in an experiment variant
+        and navigate to another page with the page menu and want to go back with the
+         browser back button */
+        this.router.events
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((event) => event instanceof NavigationEnd)
+            )
+            .subscribe((_event: NavigationStart) => {
+                this.getExperimentResolverData();
+            });
     }
 
     ngOnDestroy(): void {
@@ -499,16 +511,20 @@ browse from the page internal links
     private renderPage(pageState: DotPageRenderState): void {
         this.dotEditContentHtmlService.setCurrentPage(pageState.page);
         this.dotEditContentHtmlService.setCurrentPersona(pageState.viewAs.persona);
-
         if (this.shouldEditMode(pageState)) {
-            if (this.isEnterpriseLicense) {
-                this.setAllowedContent(pageState);
-            }
+            this.isEnterpriseLicense$.subscribe((isEnterpriseLicense) => {
+                if (isEnterpriseLicense) {
+                    this.setAllowedContent(pageState);
+                }
 
-            this.dotEditContentHtmlService.initEditMode(pageState, this.iframe);
-            this.isEditMode = true;
+                this.dotEditContentHtmlService.initEditMode(pageState, this.iframe);
+                this.isEditMode = true;
+            });
         } else {
-            this.dotEditContentHtmlService.renderPage(pageState, this.iframe);
+            this.dotEditContentHtmlService.renderPage(pageState, this.iframe)?.then(() => {
+                this.seoOGTags = this.dotEditContentHtmlService.getMetaTags();
+                this.seoOGTagsResults = this.dotEditContentHtmlService.getMetaTagsResults();
+            });
             this.isEditMode = false;
         }
     }

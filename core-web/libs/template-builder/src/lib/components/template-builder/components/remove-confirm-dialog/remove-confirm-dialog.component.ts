@@ -3,6 +3,7 @@ import {
     Component,
     EventEmitter,
     HostListener,
+    Input,
     Output
 } from '@angular/core';
 
@@ -22,6 +23,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     providers: [ConfirmationService, DotMessagePipe]
 })
 export class RemoveConfirmDialogComponent {
+    @Input() skipConfirmation: boolean;
     @Output() deleteConfirmed: EventEmitter<void> = new EventEmitter();
     @Output() deleteRejected: EventEmitter<void> = new EventEmitter();
     private currentPopup: ConfirmationService;
@@ -41,19 +43,23 @@ export class RemoveConfirmDialogComponent {
     }
 
     openConfirmationDialog(event: Event): void {
-        this.currentPopup = this.confirmationService.confirm({
-            closeOnEscape: true,
-            target: event.target,
-            message: this.dotMessagePipe.transform(
-                'dot.template.builder.comfirmation.popup.message'
-            ),
-            icon: 'pi pi-info-circle',
-            accept: () => {
-                this.deleteConfirmed.emit();
-            },
-            reject: () => {
-                this.deleteRejected.emit();
-            }
-        });
+        if (this.skipConfirmation) {
+            this.deleteConfirmed.emit();
+        } else {
+            this.currentPopup = this.confirmationService.confirm({
+                closeOnEscape: true,
+                target: event.target,
+                message: this.dotMessagePipe.transform(
+                    'dot.template.builder.comfirmation.popup.message'
+                ),
+                icon: 'pi pi-info-circle',
+                accept: () => {
+                    this.deleteConfirmed.emit();
+                },
+                reject: () => {
+                    this.deleteRejected.emit();
+                }
+            });
+        }
     }
 }
