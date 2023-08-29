@@ -316,6 +316,33 @@ export class DotExperimentsListStore
         );
     });
 
+    readonly abortExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
+        return experiment$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
+            switchMap((experiment) =>
+                this.dotExperimentsService.cancelSchedule(experiment.id).pipe(
+                    tapResponse(
+                        () => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.notification.abort.title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.notification.abort',
+                                    experiment.name
+                                )
+                            });
+                            this.loadExperiments(this.dotExperimentsStore.getPageId$);
+                        },
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                    )
+                )
+            )
+        );
+    });
+
     readonly archiveExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
         return experiment$.pipe(
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
@@ -562,8 +589,7 @@ export class DotExperimentsListStore
                         rejectLabel: this.dotMessageService.get('experiments.action.cancel'),
                         rejectButtonStyleClass: 'p-button-outlined',
                         accept: () => {
-                            //Abort use the same endpoint as cancelSchedule.
-                            this.cancelSchedule(experiment);
+                            this.abortExperiment(experiment);
                         }
                     });
                 }
