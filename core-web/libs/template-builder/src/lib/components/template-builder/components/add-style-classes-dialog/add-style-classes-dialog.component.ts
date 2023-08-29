@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -22,13 +22,15 @@ import { JsonClassesService } from './services/json-classes.service';
 export class AddStyleClassesDialogComponent implements OnInit {
     @ViewChild(AutoComplete) autoComplete: AutoComplete;
     suggestions: string[] = [];
+    filteredSuggestions: string[] = [];
     selectedClasses: string[] = [];
 
     constructor(
         private jsonClassesService: JsonClassesService,
         public dynamicDialogConfig: DynamicDialogConfig<{
             selectedClasses: string[];
-        }>
+        }>,
+        private ref: DynamicDialogRef
     ) {}
 
     ngOnInit() {
@@ -36,14 +38,38 @@ export class AddStyleClassesDialogComponent implements OnInit {
         this.selectedClasses = selectedClasses;
 
         this.jsonClassesService.getClasses().subscribe((res) => {
-            this.suggestions = res as string[];
+            this.suggestions = res.classes;
         });
     }
 
-    save() {
-        console.log(this.selectedClasses);
+    /**
+     * Filter the suggestions based on the query
+     *
+     * @param {{ query: string }} { query }
+     * @return {*}
+     * @memberof AddStyleClassesDialogComponent
+     */
+    filterClasses({ query }: { query: string }): void {
+        if (!query && query.trim().length) return;
+
+        this.filteredSuggestions = this.suggestions.filter((item) => item.startsWith(query));
     }
 
+    /**
+     * Save the selected classes
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
+    save() {
+        this.ref.close(this.selectedClasses);
+    }
+
+    /**
+     * Remove a class from the selected classes
+     *
+     * @param {KeyboardEvent} event
+     * @memberof AddStyleClassesDialogComponent
+     */
     onKeyUp(event: KeyboardEvent) {
         const target: HTMLInputElement = event.target as unknown as HTMLInputElement;
 

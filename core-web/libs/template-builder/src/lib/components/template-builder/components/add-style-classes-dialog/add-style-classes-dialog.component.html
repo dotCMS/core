@@ -1,8 +1,33 @@
 <div class="dialog__auto-complete-container field">
+    <ng-container *ngIf="suggestions.length; else noSuggestions">
+        <p-autoComplete
+            class="p-fluid"
+            [(ngModel)]="selectedClasses"
+            [dropdown]="true"
+            [autofocus]="true"
+            [suggestions]="filteredSuggestions"
+            [unique]="true"
+            [multiple]="true"
+            [size]="446"
+            (completeMethod)="filterClasses($event)"
+            (onKeyUp)="onKeyUp($event)"
+            appendTo="body"
+            inputId="auto-complete-input"
+        >
+        </p-autoComplete>
+        <small>{{ 'dot.template.builder.autocomplete.has.suggestions' | dm }}</small>
+    </ng-container>
+</div>
+<div class="dialog__actions-container">
+    <p-button (onClick)="save()" data-testId="update-btn">
+        {{ 'dot.template.builder.classes.dialog.update.button' | dm }}</p-button
+    >
+</div>
+
+<ng-template #noSuggestions>
     <p-autoComplete
         class="p-fluid"
         [(ngModel)]="selectedClasses"
-        [dropdown]="true"
         [autofocus]="true"
         [unique]="true"
         [multiple]="true"
@@ -12,10 +37,5 @@
         inputId="auto-complete-input"
     >
     </p-autoComplete>
-    <small>Start typing for suggestions and enter or click to add</small>
-</div>
-<div class="dialog__actions-container">
-    <p-button (onClick)="save()" data-testId="update-btn">
-        {{ 'dot.template.builder.classes.dialog.update.button' | dm }}</p-button
-    >
-</div>
+    <small>{{ 'dot.template.builder.autocomplete.no.suggestions' | dm }}</small>
+</ng-template>

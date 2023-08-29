@@ -14,7 +14,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
-import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
 
 import {
     CLASS_NAME_MOCK,
@@ -28,7 +27,6 @@ describe('AddStyleClassesDialogComponent', () => {
     let spectator: SpectatorHost<AddStyleClassesDialogComponent>;
     let input: HTMLInputElement;
     let ref: DynamicDialogRef;
-    let store: DotAddStyleClassesDialogStore;
 
     const createHost = createHostFactory({
         component: AddStyleClassesDialogComponent,
@@ -61,7 +59,6 @@ describe('AddStyleClassesDialogComponent', () => {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
             },
-            DotAddStyleClassesDialogStore,
             DynamicDialogRef
         ]
     });
@@ -72,7 +69,6 @@ describe('AddStyleClassesDialogComponent', () => {
         );
 
         ref = spectator.inject(DynamicDialogRef);
-        store = spectator.inject(DotAddStyleClassesDialogStore);
 
         spectator.detectChanges();
 
@@ -86,7 +82,7 @@ describe('AddStyleClassesDialogComponent', () => {
     });
 
     it('should trigger filterClasses when focusing on the input', () => {
-        const filterMock = jest.spyOn(store, 'filterClasses');
+        const filterMock = jest.spyOn(spectator.component, 'filterClasses');
         const query = CLASS_NAME_MOCK;
 
         input.value = query;
@@ -98,31 +94,7 @@ describe('AddStyleClassesDialogComponent', () => {
         expect(filterMock).toHaveBeenCalledWith(query);
     });
 
-    it('should trigger addClass when autocomplete emits onSelect', () => {
-        const autoComplete = spectator.query('p-autocomplete');
-
-        const addClassMock = jest.spyOn(store, 'addClass');
-
-        spectator.dispatchFakeEvent(autoComplete, 'onSelect');
-
-        spectator.detectChanges();
-
-        expect(addClassMock).toHaveBeenCalled();
-    });
-
-    it('should trigger removeClass when autocomplete emits onUnselect', () => {
-        const autoComplete = spectator.query('p-autocomplete');
-
-        const removeClass = jest.spyOn(store, 'removeClass');
-
-        spectator.dispatchFakeEvent(autoComplete, 'onUnselect');
-
-        spectator.detectChanges();
-
-        expect(removeClass).toHaveBeenCalled();
-    });
-
-    it('should trigger saveClass when clicking on update-btn', () => {
+    it('should trigger save when clicking on update-btn', () => {
         const closeMock = jest.spyOn(ref, 'close');
 
         const updateBtn = spectator.query(byTestId('update-btn'));
@@ -132,16 +104,5 @@ describe('AddStyleClassesDialogComponent', () => {
         spectator.detectChanges();
 
         expect(closeMock).toHaveBeenCalled();
-    });
-
-    it('should trigger addClass when enter is pressed', () => {
-        const addClassMock = jest.spyOn(store, 'addClass');
-
-        spectator.typeInElement(CLASS_NAME_MOCK, input);
-        spectator.keyboard.pressEnter(input);
-
-        spectator.detectChanges();
-
-        expect(addClassMock).toHaveBeenCalledWith({ cssClass: CLASS_NAME_MOCK });
     });
 });

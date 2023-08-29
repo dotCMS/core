@@ -9,7 +9,7 @@ export const STYLE_CLASSES_FILE_URL = '/application/templates/classes.json';
 export class JsonClassesService {
     constructor(private http: HttpClient) {}
 
-    getClasses(): Observable<unknown> {
-        return this.http.get(STYLE_CLASSES_FILE_URL);
+    getClasses(): Observable<{ classes: string[] }> {
+        return this.http.get<{ classes: string[] }>(STYLE_CLASSES_FILE_URL);
     }
 }

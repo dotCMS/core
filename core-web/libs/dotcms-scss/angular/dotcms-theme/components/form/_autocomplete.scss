@@ -38,6 +38,7 @@
             align-items: center;
             max-height: 13rem; // 208px
             overflow: auto; // Make it scrollable
+            gap: $spacing-0;
 
             &:hover,
             &:active,
@@ -46,7 +47,7 @@
             }
 
             &:has(> .p-autocomplete-token) {
-                padding: $spacing-1 0;
+                padding: $spacing-0 0;
             }
 
             .p-autocomplete-token {
