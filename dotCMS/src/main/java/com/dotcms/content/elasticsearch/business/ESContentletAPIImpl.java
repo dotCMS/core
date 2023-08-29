@@ -3106,37 +3106,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         this.sendDeleteEvent(contentletToDelete);
     }
 
-    @Subscriber
-    public void checkAndDeleteExperiment(final ContentletDeletedEvent event) throws DotDataException {
-
-        final Contentlet contentlet = event.getContentlet();
-        final User user = event.getUser();
-
-        final Optional<Experiment> experimentRunningOnPage = APILocator.getExperimentsAPI()
-                .getRunningExperimentPerPage(contentlet.getIdentifier());
-
-        if (experimentRunningOnPage.isPresent()) {
-            final String message = String.format(
-                    "Can't Delete a Page %s because it has a Running Experiment. Experiment ID %s",
-                    contentlet.getIdentifier(), experimentRunningOnPage.get().id().get());
-
-            throw new DotDataException(message);
-        }
-
-        final List<Experiment> pageExperiments = APILocator.getExperimentsAPI().list(
-                ExperimentFilter.builder().pageId(contentlet.getIdentifier()).build(), user);
-
-        for (final Experiment pageExperiment : pageExperiments) {
-            try {
-                APILocator.getExperimentsAPI().forceDelete(pageExperiment.id().orElseThrow(), user);
-            } catch (DotDataException | DotSecurityException e) {
-                final String message = String.format("Unable to delete experiment %s",
-                        pageExperiment.id().orElseThrow());
-                throw new DotRuntimeException(message, e);
-            }
-        }
-    }
-
     private List<Contentlet> validateAndFilterContentletsToDelete(
             final List<Contentlet> contentlets,
             final User user, final boolean respectFrontendRoles)

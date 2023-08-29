@@ -8088,11 +8088,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Experiment draftExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
         final Experiment endedExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+        final Experiment runningExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
 
         final String notDefaultVariantDraftExperimentName = getNotDefaultVariantName(draftExperiment);
         final Variant notDefaultVariantDraftExperiment = APILocator.getVariantAPI()
                 .get(notDefaultVariantDraftExperimentName)
                 .orElseThrow();
+
         final Contentlet contentlet_1 = createContentletWithWorkingAndLiveVersion(notDefaultVariantDraftExperiment);
 
         final String notDefaultVariantEndedExperimentName = getNotDefaultVariantName(endedExperiment);
@@ -8104,17 +8106,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         APILocator.getExperimentsAPI().start(endedExperiment.id().orElseThrow(), APILocator.systemUser());
         APILocator.getExperimentsAPI().end(endedExperiment.id().orElseThrow(), APILocator.systemUser());
 
+        APILocator.getExperimentsAPI().start(runningExperiment.id().orElseThrow(), APILocator.systemUser());
+
         APILocator.getContentletAPI()
                 .archive(experimentPage, APILocator.systemUser(), false);
 
         APILocator.getContentletAPI()
                 .delete(experimentPage, APILocator.systemUser(), false);
-
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
 
         final Contentlet contentlet = APILocator.getContentletAPI()
                 .find(experimentPage.getInode(), APILocator.systemUser(), false);
@@ -8143,6 +8141,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         checkNotExistsAnyVersion(contentlet_1);
         checkNotExistsAnyVersion(contentlet_2);
+
+        final Optional<Experiment> runningExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(runningExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertFalse(runningExperimentFromDatabase.isPresent());
     }
 
 

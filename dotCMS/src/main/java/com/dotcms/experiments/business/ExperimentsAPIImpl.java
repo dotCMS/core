@@ -27,6 +27,7 @@ import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSClientFactoryImpl;
@@ -55,6 +56,8 @@ import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -82,6 +85,7 @@ import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Condition;
@@ -143,6 +147,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @VisibleForTesting
     public ExperimentsAPIImpl(final AnalyticsHelper analyticsHelper) {
         this.analyticsHelper = analyticsHelper;
+
+        APILocator.getLocalSystemEventsAPI().subscribe(ContentletDeletedEvent.class,
+                (EventSubscriber<ContentletDeletedEvent>) event ->
+                        checkAndDeleteExperiment(event.getContentlet(), event.getUser()));
     }
 
     public ExperimentsAPIImpl() {
@@ -1529,4 +1537,27 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return (licenseValiditySupplierSupplier.hasValidLicense());
     }
 
+    private void checkAndDeleteExperiment(final Contentlet contentlet, final User user)  {
+
+        try {
+
+            final List<Experiment> pageExperiments = APILocator.getExperimentsAPI().list(
+                    ExperimentFilter.builder().pageId(contentlet.getIdentifier()).build(), user);
+
+            for (final Experiment pageExperiment : pageExperiments) {
+                try {
+                    APILocator.getExperimentsAPI()
+                            .forceDelete(pageExperiment.id().orElseThrow(), user);
+                } catch (DotDataException | DotSecurityException e) {
+                    final String message = String.format("Unable to delete experiment %s",
+                            pageExperiment.id().orElseThrow());
+                    throw new DotRuntimeException(message, e);
+                }
+            }
+        } catch (DotDataException e) {
+            final String message = String.format("Unable to delete experiment %s",
+                    contentlet.getIdentifier());
+            throw new DotRuntimeException(message, e);
+        }
+    }
 }
