@@ -15,4 +15,5 @@ public interface Cachable {
 	public String[] getGroups();
 	
 	public void clearCache();
+
 }

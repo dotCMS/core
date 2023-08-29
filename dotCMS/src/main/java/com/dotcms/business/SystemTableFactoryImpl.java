@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,23 +35,16 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
         Object value = null;
         if(UtilMethods.isSet(key)) {
 
-            value = this.systemCache.get(key);
-            if(Objects.isNull(value)) {
+            value = this.systemCache.getOrUpdate(key, ()-> {
 
-                final List<Map<String, Object>> result = new DotConnect()
+                final List<Map<String, Object>> result = Try.of(()->new DotConnect()
                         .setSQL(" SELECT * FROM system_table WHERE key = ? ")
                         .addParam(key)
-                        .loadObjectResults();
+                        .loadObjectResults()).getOrElse(Collections.emptyList());
 
-                value = result.isEmpty() ? null : result.get(0).get("value");
-
-                if(Objects.nonNull(value)) {
-                    this.systemCache.put(key, value);
-                } else {
-                    this.systemCache.put(key, VALUE_404);
-                    value = VALUE_404;
-                }
-            }
+                final Object v = result.isEmpty()? null : result.get(0).get("value");
+                return Objects.nonNull(v)?v.toString():VALUE_404;
+            });
         }
 
         return  Objects.isNull(value) || VALUE_404.equals(value)?
