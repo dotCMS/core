@@ -1541,6 +1541,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         try {
 
+            if (!contentlet.isHTMLPage()) {
+                return;
+            }
+
             final List<Experiment> pageExperiments = APILocator.getExperimentsAPI().list(
                     ExperimentFilter.builder().pageId(contentlet.getIdentifier()).build(), user);
 
