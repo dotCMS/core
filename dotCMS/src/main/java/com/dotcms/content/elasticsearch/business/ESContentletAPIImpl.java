@@ -52,6 +52,7 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
@@ -3038,7 +3039,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } else {
 
             if (contentletToDelete.isHTMLPage()) {
-                checkAndDeleteExperiment(contentletToDelete, user);
                 unlinkRelatedContentType(user, contentletToDelete);
             }
 
@@ -3106,7 +3106,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         this.sendDeleteEvent(contentletToDelete);
     }
 
-    private void checkAndDeleteExperiment(final Contentlet contentlet, final User user) throws DotDataException {
+    @Subscriber
+    public void checkAndDeleteExperiment(final ContentletDeletedEvent event) throws DotDataException {
+
+        final Contentlet contentlet = event.getContentlet();
+        final User user = event.getUser();
+
         final Optional<Experiment> experimentRunningOnPage = APILocator.getExperimentsAPI()
                 .getRunningExperimentPerPage(contentlet.getIdentifier());
 
@@ -3560,17 +3565,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final IndexPolicy indexPolicyDependencies,
             final Contentlet workingContentlet, final Contentlet liveContentlet)
             throws DotDataException, DotSecurityException {
-
-        final Optional<Experiment> experimentRunningOnPage = APILocator.getExperimentsAPI().getRunningExperimentPerPage(
-                workingContentlet.getIdentifier());
-
-        if (experimentRunningOnPage.isPresent()) {
-            final String message = String.format(
-                    "Can't Archive a Page %s because it has a Running Experiment. Experiment ID %s",
-                    workingContentlet.getIdentifier(), experimentRunningOnPage.get().id().get());
-
-            throw new DotDataException(message);
-        }
 
         if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
 
@@ -4042,15 +4036,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         this.canLock(contentlet, user);
-
-        if (contentlet.isHTMLPage()) {
-            final Optional<Experiment> runningExperiment = APILocator.getExperimentsAPI()
-                    .getRunningExperimentPerPage(contentlet.getIdentifier());
-
-            if (runningExperiment.isPresent()) {
-                throw new RunningExperimentUnpublishException(contentlet, runningExperiment.get());
-            }
-        }
 
         APILocator.getVersionableAPI().removeLive(contentlet);
 

@@ -156,14 +156,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 invalidLicenseMessageSupplier);
 
-        final Contentlet pageAsContent = contentletAPI
-                .findContentletByIdentifierAnyLanguage(experiment.pageId(), DEFAULT_VARIANT.name());
+        final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(experiment);
 
-        DotPreconditions.isTrue(pageAsContent!=null
-                && UtilMethods.isSet(pageAsContent.getIdentifier()),
-                DotStateException.class, ()->"Invalid Page provided");
+        DotPreconditions.isTrue(htmlPageAsset != null
+                && UtilMethods.isSet(htmlPageAsset.getIdentifier()),
+                DotStateException.class, ()->"htmlPageAsset Page provided");
 
-        validatePermissionToEdit(experiment, user, pageAsContent);
+        validatePermissionToEdit(experiment, user, htmlPageAsset);
 
         Experiment.Builder builder = Experiment.builder().from(experiment);
 
@@ -179,7 +178,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             MetricsUtil.INSTANCE.validateGoals(goals);
 
             addConditionIfIsNeed(goals,
-                    APILocator.getHTMLPageAssetAPI().fromContentlet(pageAsContent), builder);
+                    APILocator.getHTMLPageAssetAPI().fromContentlet(htmlPageAsset), builder);
         }
 
         if(experiment.targetingConditions().isPresent()) {
@@ -1303,6 +1302,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final PermissionLevel permissionLevel, final String errorMessage) throws DotDataException, DotSecurityException {
 
         final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(experiment);
+
+        if (!UtilMethods.isSet(htmlPageAsset)) {
+             return;
+        }
+
         final Host host = APILocator.getHostAPI().find(htmlPageAsset.getHost(), APILocator.systemUser(),
                 false);
 
@@ -1315,7 +1319,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     private HTMLPageAsset getHtmlPageAsset(Experiment experiment) throws DotDataException {
         final Contentlet pageAsContent = contentletAPI
-                .findContentletByIdentifierAnyLanguage(experiment.pageId(), DEFAULT_VARIANT.name());
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), DEFAULT_VARIANT.name(), true);
 
         final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI()
                 .fromContentlet(pageAsContent);

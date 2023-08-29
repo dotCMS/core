@@ -86,6 +86,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
@@ -7862,17 +7863,99 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         try {
             APILocator.getContentletAPI()
                     .archive(experimentPage, APILocator.systemUser(), false);
+            final Contentlet experimentPageAfterArchived = APILocator.getContentletAPI()
+                    .find(experimentPage.getInode(), APILocator.systemUser(), false);
+            assertTrue(experimentPageAfterArchived.isArchived());
 
-            throw new AssertionError("Should throw a DotDataException");
-        } catch (DotDataException e) {
-            //expected
-            final String messageExpected = String.format(
-                    "Can't Archive a Page %s because it has a Running Experiment. Experiment ID %s"
-                    , experimentPage.getIdentifier(), experiment.id().orElseThrow());
-            assertEquals(messageExpected, e.getMessage());
+            final Optional<Experiment> experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser());
+
+            assertTrue(experimentFromDB.isPresent());
+
+            assertEquals(Status.RUNNING, experimentFromDB.get().status());
         } finally {
             APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
         }
+    }
+
+    /**
+     * Method to test: Several method, we need to test that all the possible actio to an Experiment work
+     * for an Orphan Experiment
+     */
+    @Test
+    public void orphanExperiment() throws DotDataException, DotSecurityException {
+        final Experiment experiment = new ExperimentDataGen().nextPersisted();
+
+        APILocator.getExperimentsAPI().save(experiment, APILocator.systemUser());
+        Optional<Experiment> experimentFromDB = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        assertTrue(experimentFromDB.isPresent());
+        assertEquals(experiment.description(), experimentFromDB.get().description());
+
+        final Experiment experimentWithDescription = experiment.withDescription("New Description");
+
+        APILocator.getExperimentsAPI().save(experimentWithDescription, APILocator.systemUser());
+
+        experimentFromDB = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        assertTrue(experimentFromDB.isPresent());
+        assertEquals("New Description", experimentFromDB.get().description().get());
+
+        try {
+            APILocator.getExperimentsAPI()
+                    .start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+            experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser());
+
+            assertTrue(experimentFromDB.isPresent());
+            assertEquals(Status.RUNNING, experimentFromDB.get().status());
+
+            APILocator.getExperimentsAPI()
+                    .cancel(experiment.id().orElseThrow(), APILocator.systemUser());
+        } catch (Exception e) {
+            APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
+            throw e;
+        }
+
+        experimentFromDB = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        assertTrue(experimentFromDB.isPresent());
+        assertEquals(Status.DRAFT, experimentFromDB.get().status());
+
+        final Experiment experiment_2 = new ExperimentDataGen().nextPersisted();
+
+        APILocator.getExperimentsAPI()
+                .start(experiment_2.id().orElseThrow(), APILocator.systemUser());
+
+        APILocator.getExperimentsAPI().end(experiment_2.id().get(), APILocator.systemUser());
+
+        Optional<Experiment> experimentFromDB_2 = APILocator.getExperimentsAPI()
+                .find(experiment_2.id().orElseThrow(), APILocator.systemUser());
+
+        assertTrue(experimentFromDB_2.isPresent());
+        assertEquals(Status.ENDED, experimentFromDB_2.get().status());
+
+        APILocator.getExperimentsAPI().archive(experiment_2.id().get(), APILocator.systemUser());
+
+        experimentFromDB = APILocator.getExperimentsAPI()
+                .find(experiment_2.id().orElseThrow(), APILocator.systemUser());
+
+        assertTrue(experimentFromDB_2.isPresent());
+        assertEquals(Status.ENDED, experimentFromDB_2.get().status());
+
+        final Experiment experiment_3 = new ExperimentDataGen().nextPersisted();
+
+
+        APILocator.getExperimentsAPI().delete(experiment_3.id().get(), APILocator.systemUser());
+
+        Optional<Experiment> experimentFromDB_3 = APILocator.getExperimentsAPI()
+                .find(experiment_3.id().orElseThrow(), APILocator.systemUser());
+
+        assertFalse(experimentFromDB_3.isPresent());
     }
 
     /**
@@ -8026,6 +8109,12 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         APILocator.getContentletAPI()
                 .delete(experimentPage, APILocator.systemUser(), false);
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         final Contentlet contentlet = APILocator.getContentletAPI()
                 .find(experimentPage.getInode(), APILocator.systemUser(), false);
