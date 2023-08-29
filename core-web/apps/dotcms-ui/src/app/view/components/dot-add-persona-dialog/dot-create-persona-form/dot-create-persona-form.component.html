@@ -4,6 +4,7 @@
         <dot-site-selector-field
             id="content-type-form-host"
             [system]="true"
+            width="100%"
             formControlName="hostFolder"
         ></dot-site-selector-field>
     </div>
@@ -49,7 +50,7 @@
             <img [src]="tempUploadedFile.thumbnailUrl" />
             <span>{{ tempUploadedFile.fileName }}</span>
             <button
-                class="p-button-secondary p-button-sm"
+                class="p-button-outlined p-button-sm"
                 [label]="'dot.common.remove' | dm"
                 (click)="removeImage()"
                 pButton

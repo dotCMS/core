@@ -607,17 +607,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if(InodeUtils.isSet(contentlet.getInode())){
                 APILocator.getPermissionAPI().removePermissions(contentlet);
 
-                Optional<ContentletVersionInfo> verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+                Optional<ContentletVersionInfo> verInfo=APILocator.getVersionableAPI()
+                        .getContentletVersionInfo(contentlet.getIdentifier(),
+                                contentlet.getLanguageId(), contentlet.getVariantId());
 
                 if(verInfo.isPresent()) {
-                    if(UtilMethods.isSet(verInfo.get().getLiveInode()) && verInfo.get().getLiveInode().equals(contentlet.getInode()))
+                    if(UtilMethods.isSet(verInfo.get().getLiveInode())
+                            && verInfo.get().getLiveInode().equals(contentlet.getInode()))
                         try {
                             APILocator.getVersionableAPI().removeLive(contentlet);
                         } catch (Exception e) {
                             throw new DotDataException(e.getMessage(),e);
                         }
                     if(verInfo.get().getWorkingInode().equals(contentlet.getInode()))
-                        APILocator.getVersionableAPI().deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+                        APILocator.getVersionableAPI()
+                                .deleteContentletVersionInfo(contentlet.getIdentifier(),
+                                        contentlet.getLanguageId());
                 }
                 delete(contentlet.getInode());
             }

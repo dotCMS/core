@@ -13,9 +13,15 @@ import com.dotcms.exception.UnrecoverableAnalyticsException;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 
@@ -196,7 +202,7 @@ public class AnalyticsHelper {
      * @param tokenStatus token status
      * @return true if it has a {@link TokenStatus#OK} or {@link TokenStatus#IN_WINDOW}
      */
-    private static boolean canUseToken(final TokenStatus tokenStatus) {
+    private boolean canUseToken(final TokenStatus tokenStatus) {
         return tokenStatus.matchesAny(TokenStatus.OK, TokenStatus.IN_WINDOW);
     }
 
@@ -402,7 +408,7 @@ public class AnalyticsHelper {
      * @param exception provided exception
      * @return missing analytics properties
      */
-    public static String extractMissingAnalyticsProps(final IllegalStateException exception) {
+    public String extractMissingAnalyticsProps(final IllegalStateException exception) {
         final int openBracket = exception.getMessage().indexOf("[");
         final int closeBracket = exception.getMessage().indexOf("]");
 
@@ -411,6 +417,29 @@ public class AnalyticsHelper {
         }
 
         return exception.getMessage().substring(openBracket + 1, closeBracket);
+    }
+
+    /**
+     * Resolves the {@link AnalyticsApp} instance associated with the current host.
+     *
+     * @param user current user
+     * @return resolved analytics app
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public AnalyticsApp resolveAnalyticsApp(final User user) throws DotDataException, DotSecurityException {
+        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
+        try {
+            return appFromHost(currentHost);
+        } catch (final IllegalStateException e) {
+            throw new DotDataException(
+                Try.of(() ->
+                        LanguageUtil.get(
+                            user,
+                            "analytics.app.not.configured",
+                            AnalyticsHelper.get().extractMissingAnalyticsProps(e)))
+                    .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())));
+        }
     }
 
 }

@@ -2,10 +2,13 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils.SubnetInfo;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.netty.util.NetUtil;
 import io.vavr.control.Try;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -154,6 +157,56 @@ public class HttpRequestDataUtil {
 		}
 		String value = request.getParameter(name);
 		return value;
+	}
+
+
+	/**
+	 * Return the Query parameters from a URL String.
+	 *
+	 * If we have the follow URL: http://localhost/test?param1=value1&param2=value
+	 * It is going to return a Map with the follow keys -> values:
+	 *
+	 * param1 -> value1
+	 * param2 -> value2
+	 *
+	 * @param url
+	 * @return
+	 */
+	public static Map<String, String> getQueryParams(final String url) {
+		try {
+			Map<String, String> queryParams = new HashMap<>();
+
+			if (url != null) {
+				URI uri = new URI(url);
+				String query = uri.getQuery();
+
+				if (query != null) {
+					String[] params = query.split("&");
+
+					for (String param : params) {
+						String[] keyValue = param.split("=");
+						if (keyValue.length == 2) {
+							String key = decodeURL(keyValue[0]);
+							String value = decodeURL(keyValue[1]);
+							queryParams.put(key, value);
+						}
+					}
+				}
+			}
+
+			return queryParams;
+		} catch (URISyntaxException e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	private static String decodeURL(String url) {
+		try {
+			return URLDecoder.decode(url, "UTF-8");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "";
 	}
 
 	/**

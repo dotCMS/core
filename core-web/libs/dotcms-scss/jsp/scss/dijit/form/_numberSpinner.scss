@@ -5,7 +5,7 @@
 
     .dijitSpinnerButtonContainer {
         border-left: $spinner-normal-border;
-        width: $field-height;
+        width: $field-height-md;
 
         .dijitDownArrowButton {
             border-top: $spinner-normal-border !important; // Overwrite dijit important
@@ -13,7 +13,7 @@
     }
 
     .dijitArrowButton {
-        height: #{calc($field-height / ($field-border-size * 2))}px;
+        height: 100%;
         border-left: $spinner-normal-arrow-border;
         background-color: $spinner-normal-arrow-bgcolor;
 

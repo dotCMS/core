@@ -24,8 +24,6 @@ jobs:
     name: Build Core
     runs-on: ubuntu-latest
     if: success()
-    env:
-      DEBUG: true
     outputs:
       cache_metadata: ${{ steps.cache-core.outputs.cache_metadata }}
       commit_message: ${{ steps.get-commit-message.outputs.commit_message }}
@@ -77,8 +75,6 @@ jobs:
       tests_results_skip_report: ${{ steps.run-unit-tests.outputs.tests_results_skip_report }}
       tests_results_report_url: ${{ steps.github-publish-unit-tests.outputs.tests_report_url }}
       tests_results_log_url: ${{ steps.github-publish-unit-tests.outputs.test_logs_url }}
-    env:
-      DEBUG: true
     steps:
       - id: fetch-core
         name: Fetch Core Repo
@@ -107,8 +103,9 @@ jobs:
           test_type: unit
           pull_request: ${{ github.event.number }}
           tests_results_status: ${{ steps.run-unit-tests.outputs.tests_results_status }}
-          tests_results_report_location: ${{ steps.run-unit-tests.outputs.tests_results_report_location }}
           tests_results_location: ${{ steps.run-unit-tests.outputs.tests_results_location }}
+          tests_results_report_location: ${{ steps.run-unit-tests.outputs.tests_results_report_location }}
+          tests_results_log_location: ${{ github.WORKSPACE }}/dotCMS/*.log
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
         if: (success() || failure()) && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
@@ -133,8 +130,6 @@ jobs:
       postgres_tests_results_skip_report: ${{ steps.run-integration-tests.outputs.postgres_tests_results_skip_report }}
       postgres_tests_results_report_url: ${{ steps.github-publish-integration-tests.outputs.postgres_tests_report_url }}
       postgres_tests_results_log_url: ${{ steps.github-publish-integration-tests.outputs.postgres_test_logs_url }}
-    env:
-      DEBUG: true
     steps:
       - id: fetch-core
         name: Fetch Core Repo
@@ -176,8 +171,9 @@ jobs:
           db_type: ${{ matrix.db_type }}
           pull_request: ${{ github.event.number }}
           tests_results_status: ${{ steps.run-integration-tests.outputs.tests_results_status }}
-          tests_results_report_location: ${{ steps.run-integration-tests.outputs.tests_results_report_location }}
           tests_results_location: ${{ steps.run-integration-tests.outputs.tests_results_location }}
+          tests_results_report_location: ${{ steps.run-integration-tests.outputs.tests_results_report_location }}
+          tests_results_log_location: ${{ github.WORKSPACE }}/dotCMS/*.log
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
         if: (success() || failure()) && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
@@ -192,6 +188,7 @@ jobs:
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           tests_report_url: ${{ steps.github-publish-integration-tests.outputs.tests_report_url }}
         if: (success() || failure()) && steps.github-publish-integration-tests.outputs.tests_report_url != ''
+
   postman-tests-setup-job:
     name: Postman Matrix Setup
     runs-on: ubuntu-latest
@@ -225,9 +222,10 @@ jobs:
           build_id: ${{ env.BUILD_ID }}
           build_hash: ${{ env.BUILD_HASH }}
           test_type: postman
-          partial: init
+          mode: init
           pull_request: ${{ github.event.number }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+
   run-postman-tests-job:
     name: Run Postman Tests
     runs-on: ubuntu-latest
@@ -242,9 +240,6 @@ jobs:
       fail-fast: false
       matrix:
         parallel_collection: ['graphql', 'workflow', 'template', 'page', 'container', 'pp', 'experiment', 'container', '*']
-    env:
-      PUBLISH_MODE: ALL
-      DEBUG: true
     steps:
       - id: fetch-core
         name: Fetch Core Repo
@@ -273,7 +268,7 @@ jobs:
           license_key: ${{ secrets.DOTCMS_LICENSE }}
           tests: ${{ steps.get-commit-message.outputs.commit_message }}
           parallel_collection: ${{ matrix.parallel_collection }}
-          export_report: ${{ env.PUBLISH_MODE == 'ALL' || env.PUBLISH_MODE == 'RESULTS' }}
+          export_report: true
       - id: github-publish-postman-tests
         name: Github publish postman tests
         uses: ./.github/actions/publish-test-results
@@ -283,12 +278,14 @@ jobs:
           test_type: postman
           pull_request: ${{ github.event.number }}
           tests_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
-          tests_results_report_location: ${{ steps.run-postman-tests.outputs.tests_results_report_location }}
           tests_results_location: ${{ steps.run-postman-tests.outputs.tests_results_location }}
+          tests_results_report_location: ${{ steps.run-postman-tests.outputs.tests_results_report_location }}
+          tests_results_log_location: ${{ github.WORKSPACE }}/dotCMS/*.log
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          mode: ${{ env.PUBLISH_MODE }}
+          include: ALL
           run_identifier: ${{ steps.run-postman-tests.outputs.normalized_parallel_collection }}
         if: (success() || failure()) && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
+
   postman-tests-complete-job:
     name: Close Postman Tests
     runs-on: ubuntu-latest
@@ -314,7 +311,7 @@ jobs:
           build_id: ${{ env.BUILD_ID }}
           build_hash: ${{ env.BUILD_HASH }}
           test_type: postman
-          partial: close
+          mode: close
           pull_request: ${{ github.event.number }}
           tests_results_location: ${{ github.workspace }}/dotCMS/build/test-results/postmanTest
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}

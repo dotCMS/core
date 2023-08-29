@@ -1,8 +1,8 @@
 <div
     class="dot-options__item"
     *ngFor="let item of itemList; index as i"
+    [attr.data-testId]="'dot-options-item_' + item.val"
     [class.active]="expanded.has(i)"
-    data-testId="dot-options-item"
 >
     <ng-container
         [ngTemplateOutletContext]="{ $implicit: item, index: i }"
@@ -12,8 +12,8 @@
         class="option-item__content flex flex-grow-1 flex-column"
         *ngIf="item?.content"
         [@contentExpansion]="expanded.has(i) ? 'expanded' : 'collapsed'"
+        [attr.data-testId]="'dot-options-item-content_' + item.val"
         [class.expanded]="expanded.has(i)"
-        data-testId="dot-options-item-content"
     >
         <ng-container *ngIf="expanded.has(i) && item?.content?.templateRef">
             <ng-container *ngTemplateOutlet="item?.content?.templateRef"></ng-container>
@@ -24,10 +24,13 @@
 <ng-template #defaultHeader let-index="index" let-item>
     <header
         class="option__header"
+        [attr.data-testId]="'dot-options-item-header_' + item.val"
         (click)="item.selectItem(item, index)"
-        data-testId="dot-options-item-header"
     >
-        <h2>{{ item.title }}</h2>
-        <p>{{ item.detail }}</p>
+        <i *ngIf="item.icon" [class]="'pi ' + item.icon"></i>
+        <div>
+            <h2>{{ item.title }}</h2>
+            <p>{{ item.detail }}</p>
+        </div>
     </header>
 </ng-template>

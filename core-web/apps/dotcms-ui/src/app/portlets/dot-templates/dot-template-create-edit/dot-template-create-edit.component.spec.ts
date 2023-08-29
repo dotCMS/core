@@ -497,6 +497,41 @@ describe('DotTemplateCreateEditComponent', () => {
             });
 
             describe('edit layout', () => {
+                it('should save', () => {
+                    const builder = de.query(By.css('dot-template-builder'));
+                    builder.triggerEventHandler('save', {
+                        layout: {
+                            title: '',
+                            width: '',
+                            footer: true,
+                            header: false,
+                            sidebar: {},
+                            body: {
+                                rows: []
+                            }
+                        },
+                        themeId: '123'
+                    });
+                    expect(store.saveTemplate).toHaveBeenCalledWith({
+                        type: 'design',
+                        title: 'Some template',
+                        layout: {
+                            title: '',
+                            width: '',
+                            footer: true,
+                            header: false,
+                            sidebar: {},
+                            body: {
+                                rows: []
+                            }
+                        },
+                        identifier: '123',
+                        friendlyName: '',
+                        theme: '123',
+                        image: ''
+                    });
+                });
+
                 it('should call updateWorkingTemplate from store when updateTemplate', () => {
                     const builder = de.query(By.css('dot-template-builder'));
                     builder.triggerEventHandler('updateTemplate', {

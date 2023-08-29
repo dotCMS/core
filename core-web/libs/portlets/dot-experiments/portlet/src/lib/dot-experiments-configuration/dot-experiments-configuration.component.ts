@@ -7,6 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
@@ -52,7 +53,8 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
         InplaceModule,
         InputTextModule,
         MenuModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        ConfirmPopupModule
     ],
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',

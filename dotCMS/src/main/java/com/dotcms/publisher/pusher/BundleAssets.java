@@ -162,4 +162,7 @@ class BundleAssets {
     public Set<String> getExperiments() {
         return getAll(PusheableAsset.EXPERIMENT);
     }
+    public Set<String> getVariants() {
+        return getAll(PusheableAsset.VARIANT);
+    }
 }

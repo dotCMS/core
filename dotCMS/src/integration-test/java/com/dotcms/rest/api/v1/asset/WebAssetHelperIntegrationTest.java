@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.asset;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -19,13 +21,17 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -35,12 +41,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.glassfish.jersey.internal.util.Base64;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -101,6 +111,9 @@ public class WebAssetHelperIntegrationTest {
                 "/lol", "");
     }
 
+    String rootFolderPath(){
+        return String.format("//%s/", host.getHostname());
+    }
 
     /**
      *  Method to test :  {@link WebAssetHelper#getAssetInfo(String, User)}
@@ -162,26 +175,12 @@ public class WebAssetHelperIntegrationTest {
     @Test
     public void TestUploadFile() throws DotDataException, DotSecurityException, IOException {
 
-
-        final MockHeaderRequest request = new MockHeaderRequest(
-                (
-                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
-                ).request()
-        );
-
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
-        request.setHeader("User-Agent", "Fake-Agent");
-        request.setHeader("Host", "localhost");
-        request.setHeader("Origin", "localhost");
-        request.setAttribute(WebKeys.USER, APILocator.systemUser());
+        final MockHeaderRequest request = getMockHeaderRequest();
 
         File newTestFile = FileUtil.createTemporaryFile("lol", ".txt", RandomStringUtils.random(1000));
 
-        final FormDataContentDisposition formDataContentDisposition = FormDataContentDisposition
-                .name(newTestFile.getName())
-                .fileName(newTestFile.getName())
-                .size(newTestFile.length())
-                .build();
+        final FormDataContentDisposition formDataContentDisposition = getFormDataContentDisposition(
+                newTestFile);
 
         final String path = parentFolderPath() + newTestFile.getName();
 
@@ -208,6 +207,203 @@ public class WebAssetHelperIntegrationTest {
 
     }
 
+    /**
+     * We're testing that even when no System Workflow is assigned to FileAsset we can still save content
+     * Given scenario:  We remove system wf from FileAsset then we create a new file using WebAssetHelper
+     * Expected Results: Even when no system-workflow is available we should be able to save content
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void Test_Save_FilAsset_No_System_Workflow() throws DotDataException, DotSecurityException, IOException {
+        final User user = APILocator.systemUser();
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        ContentType fileAssetContentType = contentTypeAPI.find("FileAsset");
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final List<WorkflowScheme> schemesForContentType = workflowAPI.findSchemesForContentType(fileAssetContentType);
+
+        try {
+            workflowAPI.saveSchemeIdsForContentType(fileAssetContentType, Set.of());
+            WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+
+            final File newTestFile = FileUtil.createTemporaryFile("lol", ".txt",
+                    RandomStringUtils.random(1000));
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+            final Language lang = new LanguageDataGen().nextPersisted();
+
+            final Contentlet contentlet = webAssetHelper.makeFileAsset(newTestFile, host, folder, lang);
+            final Contentlet savedAsset = webAssetHelper.checkinOrPublish(contentlet, user, true);
+            Assert.assertTrue(savedAsset.isLive());
+        }finally {
+            workflowAPI.saveSchemeIdsForContentType(fileAssetContentType,
+                    schemesForContentType.stream().map(WorkflowScheme::getId).collect(Collectors.toSet())
+            );
+        }
+    }
+
+        /**
+         * Helper method to create a FormDataContentDisposition object
+         * @param newTestFile
+         * @return
+         */
+    private static FormDataContentDisposition getFormDataContentDisposition(File newTestFile) {
+        return FormDataContentDisposition
+                .name(newTestFile.getName())
+                .fileName(newTestFile.getName())
+                .size(newTestFile.length())
+                .build();
+    }
+
+    /**
+     * Helper method to create a MockHeaderRequest object
+     * @return
+     */
+    @NotNull
+    private static MockHeaderRequest getMockHeaderRequest() {
+        final MockHeaderRequest request = new MockHeaderRequest(
+                (
+                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                ).request()
+        );
+
+        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("User-Agent", "Fake-Agent");
+        request.setHeader("Host", "localhost");
+        request.setHeader("Origin", "localhost");
+        request.setAttribute(WebKeys.USER, APILocator.systemUser());
+        return request;
+    }
+
+
+    /**
+     * Scenario  We had a bug where stuff sent to live under site's root folder would end up in the system folder
+     * Expected Result: We send a file to live under the root folder, and it ends up there and not in the system folder.
+     * We validate checking the info saved on the identifier table verifying the host_inode is the same host inode and never SYSTEM_HOST
+     * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+     @Test
+     public void Test_Upload_File_Under_Root() throws DotDataException, DotSecurityException, IOException {
+        final MockHeaderRequest request = getMockHeaderRequest();
+        final File newTestFile = FileUtil.createTemporaryFile("robots", ".txt", RandomStringUtils.random(1000));
+        final FormDataContentDisposition formDataContentDisposition = getFormDataContentDisposition(newTestFile);
+        final String path = rootFolderPath() + newTestFile.getName();
+
+        final FileUploadDetail detail = new FileUploadDetail(path, language.toString(), true);
+
+        try(final InputStream inputStream = Files.newInputStream(newTestFile.toPath())){
+            final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+            final FileUploadData form = new FileUploadData();
+            form.setFileInputStream(inputStream);
+            form.setContentDisposition(formDataContentDisposition);
+            form.setAssetPath(path);
+            form.setDetail(detail);
+
+            final WebAssetView assetInfo = webAssetHelper.saveUpdateAsset(request, form, APILocator.systemUser());
+            Assert.assertNotNull(assetInfo);
+            Assert.assertTrue(assetInfo instanceof AssetView);
+            AssetView assetView = (AssetView) assetInfo;
+            Assert.assertTrue(assetView.live());
+
+            @SuppressWarnings("unchecked")
+            final List<Map<String,String>> results = new DotConnect().setSQL(
+                        "select * from identifier i where i.id = ?"
+                    ).addParam(assetView.identifier())
+                    .loadResults();
+
+            Assert.assertEquals(1, results.size());
+            final Map<String, String> map = results.get(0);
+            Assert.assertEquals(newTestFile.getName(), map.get("asset_name"));
+            Assert.assertEquals(host.getIdentifier(), map.get("host_inode"));
+        }
+     }
+
+    /**
+     * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
+     * Given Scenario: We submit a valid path and a file in two different languages
+     * Expected Result: We get the asset info back as proof of success and no exception should arise
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void Test_Upload_File_In_Multiple_Languages() throws DotDataException, DotSecurityException, IOException {
+
+        final Language secondLang = new LanguageDataGen().nextPersisted();
+        final File newTestFile = FileUtil.createTemporaryFile("multi-lang-example", ".txt", RandomStringUtils.random(1000));
+        final String path = rootFolderPath() + newTestFile.getName();
+
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString());
+        pushFileForLanguageThenValidate(newTestFile, path, secondLang.toString());
+    }
+
+    /**
+     * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
+     * Given Scenario: We submit a valid path and a file then we archive it
+     * Expected Result: We get the asset info back as proof of success and the asset should be unarchived
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void Test_Upload_File_Archive_Then_Update() throws DotDataException, DotSecurityException, IOException {
+
+        final File newTestFile = FileUtil.createTemporaryFile("archive-me", ".txt", RandomStringUtils.random(1000));
+        final String path = rootFolderPath() + newTestFile.getName();
+
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString());
+
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final WebAssetView assetInfo = webAssetHelper.getAssetInfo(path, APILocator.systemUser());
+
+        Assert.assertTrue(assetInfo instanceof AssetVersionsView);
+        final AssetVersionsView assetVersionsView = (AssetVersionsView) assetInfo;
+        AssetView assetView = assetVersionsView.versions().get(0);
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+        final Contentlet fileAsset = contentletAPI.findContentletByIdentifierAnyLanguage(assetView.identifier()) ;
+        contentletAPI.archive(fileAsset, APILocator.systemUser(), false);
+
+        //Pushing again should unarchive
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString());
+
+        final Contentlet unarchived = contentletAPI.findContentletByIdentifierAnyLanguage(
+                assetView.identifier());
+        Assert.assertFalse(unarchived.isArchived());
+
+    }
+
+    /**
+     * Helper method to Send a file in a given language and validate the result
+     * @param newTestFile
+     * @param path
+     * @param langString
+     * @throws IOException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private static void pushFileForLanguageThenValidate(final File newTestFile, final String path, final String langString) throws IOException, DotDataException, DotSecurityException {
+        final FormDataContentDisposition formDataContentDisposition = getFormDataContentDisposition(newTestFile);
+        try(final InputStream inputStream = Files.newInputStream(newTestFile.toPath())){
+            final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+            final MockHeaderRequest request = getMockHeaderRequest();
+            final FileUploadData form = new FileUploadData();
+            form.setFileInputStream(inputStream);
+            form.setContentDisposition(formDataContentDisposition);
+            form.setAssetPath(path);
+            form.setDetail(new FileUploadDetail(path, langString, true));
+
+            final WebAssetView assetInfo = webAssetHelper.saveUpdateAsset(request, form, APILocator.systemUser());
+            Assert.assertNotNull(assetInfo);
+            Assert.assertTrue(assetInfo instanceof AssetView);
+            AssetView assetView = (AssetView) assetInfo;
+            Assert.assertTrue(assetView.live());
+        }
+    }
 
     /**
      * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
@@ -220,27 +416,14 @@ public class WebAssetHelperIntegrationTest {
     @Test
     public void TestUploadEmptyFile() throws DotDataException, DotSecurityException, IOException {
 
-        final MockHeaderRequest request = new MockHeaderRequest(
-                (
-                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
-                ).request()
-        );
-
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
-        request.setHeader("User-Agent", "Fake-Agent");
-        request.setHeader("Host", "localhost");
-        request.setHeader("Origin", "localhost");
-        request.setAttribute(WebKeys.USER, APILocator.systemUser());
+        final MockHeaderRequest request = getMockHeaderRequest();
 
         File newTestFile = FileUtil.createTemporaryFile("lol", ".txt");
 
         Assert.assertEquals(0, newTestFile.length());
 
-        final FormDataContentDisposition formDataContentDisposition = FormDataContentDisposition
-                .name(newTestFile.getName())
-                .fileName(newTestFile.getName())
-                .size(newTestFile.length())
-                .build();
+        final FormDataContentDisposition formDataContentDisposition = getFormDataContentDisposition(
+                newTestFile);
 
         final String path = parentFolderPath() + newTestFile.getName();
 

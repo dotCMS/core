@@ -44,6 +44,7 @@ public interface AbstractAccessToken extends Serializable {
     @JsonProperty(value = "refresh_token", access = JsonProperty.Access.WRITE_ONLY)
     String refreshToken();
 
+    @Nullable
     @JsonProperty("scope")
     String scope();
 

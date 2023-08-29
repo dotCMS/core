@@ -88,7 +88,7 @@ import java.util.Set;
  */
 public class ExperimentBundler implements IBundler {
 
-	public final static String EXTENSION = ".experiment.xml";
+	public final static String EXTENSION = ".experiment.json";
 	public final static String NAME = "Experiment bundler";
 
 	private PushPublisherConfig config = null;
@@ -206,7 +206,8 @@ public class ExperimentBundler implements IBundler {
 	private void writeExperiment(final BundleOutput bundleOutput, final Experiment experiment)
 			throws IOException, DotDataException, DotSecurityException {
 
-		final ExperimentWrapper wrapper = new ExperimentWrapper(experiment);
+		final ExperimentWrapper wrapper = new ExperimentWrapper();
+		wrapper.setExperiment(experiment);
 		wrapper.setOperation(config.getOperation());
 		String uri = experiment.id().orElseThrow();
 		if (!uri.endsWith(EXTENSION)) {
@@ -214,7 +215,7 @@ public class ExperimentBundler implements IBundler {
 			uri += EXTENSION;
 		}
 		final User systemUser = APILocator.getUserAPI().getSystemUser();
-		Host host = null;
+		Host host;
 		final Contentlet pageAsContentlet = APILocator.getContentletAPI()
 				.findContentletByIdentifierAnyLanguage(experiment.pageId());
 		if (UtilMethods.isSet(pageAsContentlet)) {
@@ -228,7 +229,7 @@ public class ExperimentBundler implements IBundler {
 
 		if (!bundleOutput.exists(experimentFileUrl)) {
 			try (final OutputStream outputStream = bundleOutput.addFile(experimentFileUrl)) {
-				BundlerUtil.objectToXML(wrapper, outputStream);
+				BundlerUtil.objectToJSON(wrapper, outputStream);
 			}
 
 			bundleOutput.setLastModified(experimentFileUrl, Calendar.getInstance().getTimeInMillis());

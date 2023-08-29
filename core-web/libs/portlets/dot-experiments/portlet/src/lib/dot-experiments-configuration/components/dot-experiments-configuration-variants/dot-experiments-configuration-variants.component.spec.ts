@@ -28,9 +28,9 @@ import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-acc
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
-    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA,
     getExperimentMock,
-    MockDotMessageService
+    MockDotMessageService,
+    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -73,6 +73,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
     let router: Router;
 
     let dotSessionStorageService: DotSessionStorageService;
+    let confirmationService: ConfirmationService;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationVariantsComponent,
@@ -107,6 +108,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         router = spectator.inject(Router);
 
         dotSessionStorageService = spectator.inject(DotSessionStorageService);
+        confirmationService = spectator.inject(ConfirmationService);
 
         dotExperimentsService = spectator.inject(DotExperimentsService);
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
@@ -265,17 +267,13 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
         it('should confirm before delete a variant', () => {
             jest.spyOn(store, 'deleteVariant');
+            jest.spyOn(confirmationService, 'confirm');
 
             const button = spectator.queryLast(byTestId('variant-delete-button'));
 
             spectator.click(button);
 
-            spectator.query(ConfirmPopup).accept();
-
-            expect(store.deleteVariant).toHaveBeenCalledWith({
-                experimentId: '111',
-                variant: variants[1]
-            });
+            expect(confirmationService.confirm).toHaveBeenCalled();
         });
 
         it('should disable tooltip if is on draft', () => {

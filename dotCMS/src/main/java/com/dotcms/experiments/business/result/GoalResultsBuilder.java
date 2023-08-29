@@ -53,9 +53,8 @@ public class GoalResultsBuilder {
         final List<VariantResults> variantResults = variants.values().stream()
                 .map(variantResultsBuilder -> {
                     final String variantId = variantResultsBuilder.experimentVariant.id();
-                    variantResultsBuilder.setTotalSession(totalSessions.getTotal());
-                    variantResultsBuilder.setTotalSessionToVariant(
-                            totalSessions.getVariants().get(variantId));
+                    variantResultsBuilder.setTotalSession(totalSessions);
+                    variantResultsBuilder.setTotalSessionToVariant(totalSessions.getTotal(variantId));
                     variantResultsBuilder.weight(trafficProportionMap.get(variantId));
                     return variantResultsBuilder;
                 })

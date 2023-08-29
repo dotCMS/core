@@ -1,7 +1,11 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.WorkspaceMixin;
+import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.GetSiteByNameRequest;
@@ -11,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import picocli.CommandLine;
 
@@ -30,7 +35,7 @@ import picocli.CommandLine;
              "" // empty line left here on purpose to make room at the end
      }
 )
-public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
+public class SitePush extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "push";
 
@@ -39,6 +44,12 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
 
     @CommandLine.Option(names = { "-f", "--force" }, paramLabel = "force execution" ,description = "Force must me set to true to update a site name.")
     public boolean forceExecution;
+
+    @CommandLine.Mixin(name = "workspace")
+    WorkspaceMixin workspaceMixin;
+
+    @Inject
+    WorkspaceManager workspaceManager;
 
     @CommandLine.Parameters(index = "0", arity = "1", description = " The json/yaml formatted Site descriptor file to be pushed. ")
     File siteFile;
@@ -50,7 +61,6 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
 
     private int push() {
 
-        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
 
         if (null != siteFile) {
             if (!siteFile.exists() || !siteFile.canRead()) {
@@ -59,6 +69,8 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
                         siteFile.getAbsolutePath()));
                 return CommandLine.ExitCode.SOFTWARE;
             }
+
+            final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
 
             try {
                 final ObjectMapper objectMapper = formatOption.objectMapper(siteFile);
@@ -120,4 +132,13 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
         return false;
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

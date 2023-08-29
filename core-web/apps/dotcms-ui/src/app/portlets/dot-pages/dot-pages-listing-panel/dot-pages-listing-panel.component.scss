@@ -31,6 +31,10 @@
     .p-datatable .p-datatable-tbody tr td.dot-pages-listing__empty-content {
         text-align: center;
     }
+
+    .p-autocomplete-loader {
+        margin-right: $spacing-5;
+    }
 }
 
 .dot-pages-listing-header__inputs {
@@ -49,11 +53,13 @@
 }
 
 .dot-pages-table__status-field {
+    align-items: center;
+    display: flex;
+
     dot-badge,
     dot-contentlet-lock-icon {
         margin-left: $spacing-1;
     }
-    display: flex;
 }
 
 .pi.pi-times {

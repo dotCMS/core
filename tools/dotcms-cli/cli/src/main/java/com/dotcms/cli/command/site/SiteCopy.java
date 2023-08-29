@@ -1,6 +1,8 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
+import com.dotcms.cli.command.DotCommand;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CopySiteRequest;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
@@ -12,6 +14,7 @@ import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteCopy.NAME,
+        aliases = SiteCopy.ALIAS,
         header = "@|bold,blue Use this command to copy an existing site.|@",
         description = {
            " The command provides the ability to copy individually site elements such as: ",
@@ -21,8 +24,10 @@ import picocli.CommandLine;
            "" // empty line left here on purpose to make room at the end
         }
 )
-public class SiteCopy extends AbstractSiteCommand implements Callable<Integer> {
+public class SiteCopy extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
     static final String NAME = "copy";
+
+    static final String ALIAS = "cp";
 
     @CommandLine.Option(names = {"-cn", "--copyName"},  paramLabel = "copyName", description = "New Site name.")
     String copySiteName;
@@ -57,8 +62,8 @@ public class SiteCopy extends AbstractSiteCommand implements Callable<Integer> {
                 "--template"}, paramLabel = "Templates", description = "if specified templates will be copied.", defaultValue = "false")
         boolean copyTemplateContainers;
 
-        @CommandLine.Option(names = {"-v",
-                "--var"}, paramLabel = "Variables", description = "if specified site variables will be copied.", defaultValue = "false")
+        @CommandLine.Option(names = {"-var",
+                "--variable"}, paramLabel = "Variables", description = "if specified site variables will be copied.", defaultValue = "false")
         boolean copySiteVariables;
     }
 
@@ -71,26 +76,10 @@ public class SiteCopy extends AbstractSiteCommand implements Callable<Integer> {
     }
 
     private int copy() {
-
-        final Optional<SiteView> site = super.findSite(siteNameOrId);
-
-        if (site.isEmpty()) {
-            output.error(String.format(
-                    "Error occurred while pulling Site Info: [%s].", siteNameOrId));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
-
+        final SiteView site = findSite(siteNameOrId);
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-        final SiteView siteView = site.get();
-
-        try {
-            ResponseEntityView<SiteView> copy = siteAPI.copy(fromSite(siteView, copySiteName,
-                    copyAll));
-            output.info(String.format("New Copy Site is [%s].", copy.entity().hostName()));
-        }catch (Exception e){
-            output.error(String.format("An Error occurred copying site [%s] with error:[%s]. ",siteView.hostName(), e.getMessage()));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
+        ResponseEntityView<SiteView> copy = siteAPI.copy(fromSite(site, copySiteName, copyAll));
+        output.info(String.format("New Copy Site is [%s].", copy.entity().hostName()));
         return CommandLine.ExitCode.OK;
     }
 
@@ -132,6 +121,16 @@ public class SiteCopy extends AbstractSiteCommand implements Callable<Integer> {
                .copySiteVariables(copySiteVariables)
                .site(siteRequest)
                .build();
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 
 }

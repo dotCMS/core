@@ -1,7 +1,5 @@
-import { Subject } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
-import { Component, DebugElement, Input } from '@angular/core';
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -20,32 +18,18 @@ import { of } from 'rxjs/internal/observable/of';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotMessageService } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    DotcmsConfigService,
-    SiteService
-} from '@dotcms/dotcms-js';
-import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { CoreWebService, CoreWebServiceMock, DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
-    MockDotMessageService,
-    mockSites
+    MockDotMessageService
 } from '@dotcms/utils-testing';
 
 import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.component';
 
 import { DotPageStore } from '../dot-pages-store/dot-pages.store';
-
-@Component({
-    selector: 'dot-icon',
-    template: ''
-})
-class MockDotIconComponent {
-    @Input() name: string;
-}
 
 const messageServiceMock = new MockDotMessageService({});
 
@@ -75,8 +59,6 @@ describe('DotPagesListingPanelComponent', () => {
     let component: DotPagesListingPanelComponent;
     let de: DebugElement;
     let store: DotPageStore;
-
-    const switchSiteSubject = new Subject();
 
     class storeMock {
         get vm$() {
@@ -154,7 +136,7 @@ describe('DotPagesListingPanelComponent', () => {
     describe('Empty state', () => {
         beforeEach(() => {
             TestBed.configureTestingModule({
-                declarations: [DotPagesListingPanelComponent, MockDotIconComponent],
+                declarations: [DotPagesListingPanelComponent],
                 imports: [
                     CommonModule,
                     ButtonModule,
@@ -167,7 +149,6 @@ describe('DotPagesListingPanelComponent', () => {
                     SkeletonModule,
                     TableModule,
                     TooltipModule,
-                    UiDotIconButtonModule,
                     OverlayPanelModule
                 ],
                 providers: [
@@ -175,19 +156,7 @@ describe('DotPagesListingPanelComponent', () => {
                     { provide: DotcmsConfigService, useClass: DotcmsConfigServiceMock },
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotPageStore, useClass: storeMock },
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    {
-                        provide: SiteService,
-                        useValue: {
-                            get currentSite() {
-                                return undefined;
-                            },
-
-                            get switchSite$() {
-                                return switchSiteSubject.asObservable();
-                            }
-                        }
-                    }
+                    { provide: DotMessageService, useValue: messageServiceMock }
                 ]
             }).compileComponents();
         });
@@ -205,6 +174,7 @@ describe('DotPagesListingPanelComponent', () => {
             spyOn(store, 'setArchived');
             spyOn(store, 'setSessionStorageFilterParams');
             spyOn(component.goToUrl, 'emit');
+            spyOn(component.pageChange, 'emit');
 
             fixture.detectChanges();
             await fixture.whenStable();
@@ -301,10 +271,11 @@ describe('DotPagesListingPanelComponent', () => {
             );
         });
 
-        it('should reload portlet only when the site change', () => {
-            switchSiteSubject.next(mockSites[0]); // setting the site
-            switchSiteSubject.next(mockSites[1]); // switching the site
-            expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+        it('should emit page change', () => {
+            const elem = de.query(By.css('p-table'));
+            elem.triggerEventHandler('onPage');
+
+            expect(component.pageChange.emit).toHaveBeenCalled();
         });
     });
 });

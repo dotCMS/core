@@ -149,7 +149,7 @@ public class BrowserUtil {
                         ? Optional.of(folderByPath) : Optional.empty();
                 }
             } else {
-                Logger.warn(BrowserUtil.class, () -> "defaultPath variable not exists for field " + field.name());
+                Logger.debug(BrowserUtil.class, () -> "defaultPath variable not exists for field " + field.name());
                 return Optional.empty();
             }
         } catch (DotSecurityException | DotDataException e) {

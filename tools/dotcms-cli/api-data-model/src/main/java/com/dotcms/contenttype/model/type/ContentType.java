@@ -5,9 +5,15 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.Workflow;
 import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
-import com.fasterxml.jackson.annotation.*;
+import com.dotcms.model.views.CommonViews;
+import com.dotcms.model.views.CommonViews.SaveView;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
@@ -17,6 +23,8 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
@@ -46,6 +54,15 @@ public abstract class ContentType {
 
     public static final String SYSTEM_HOST = "SYSTEM_HOST";
     public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
+
+    static final String TYPE = "ContentType";
+
+    @JsonView(CommonViews.InternalView.class)
+    @JsonProperty("dotCMSObjectType")
+    @Value.Derived
+    public String dotCMSObjectType() {
+        return TYPE;
+    }
 
     @Nullable
     public abstract String id();
@@ -126,6 +143,19 @@ public abstract class ContentType {
 
     @Nullable
     public abstract List<Workflow> workflows();
+
+    /**
+     * This is a calculated field required only when sending the CT for a save or an update
+     * When pulling down the CT this shouldn't be present that's why it is surrounded by a JsonView
+     * @return
+     */
+    @JsonView(SaveView.class)
+    @Value.Derived
+    public Set<String> workflow(){
+        final List<Workflow> workflows = workflows();
+        return  workflows == null ? Set.of() : workflows.stream().map(Workflow::id).collect(
+                Collectors.toSet());
+    }
 
     /**
      * Class id resolver allows us using smaller ClassNames that eventually get mapped to the fully qualified class name

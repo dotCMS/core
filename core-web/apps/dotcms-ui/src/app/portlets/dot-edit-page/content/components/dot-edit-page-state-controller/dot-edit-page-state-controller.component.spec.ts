@@ -3,15 +3,17 @@
 import * as _ from 'lodash';
 import { of } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
+import { ConfirmationService } from 'primeng/api';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -100,7 +102,7 @@ describe('DotEditPageStateControllerComponent', () => {
     let personalizeService: DotPersonalizeService;
 
     beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [
                 TestHostComponent,
                 DotEditPageStateControllerComponent,
@@ -119,20 +121,23 @@ describe('DotEditPageStateControllerComponent', () => {
                     provide: DotPersonalizeService,
                     useClass: DotPersonalizeServiceMock
                 },
-                DotAlertConfirmService
+                DotAlertConfirmService,
+                ConfirmationService
             ],
             imports: [
                 InputSwitchModule,
                 SelectButtonModule,
                 TooltipModule,
                 DotPipesModule,
-                DotMessagePipe
+                DotMessagePipe,
+                CommonModule,
+                FormsModule
             ]
         });
     }));
 
     beforeEach(() => {
-        fixtureHost = DOTTestBed.createComponent(TestHostComponent);
+        fixtureHost = TestBed.createComponent(TestHostComponent);
         deHost = fixtureHost.debugElement;
         componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-edit-page-state-controller'));
@@ -429,6 +434,38 @@ describe('DotEditPageStateControllerComponent', () => {
                 mockDotRenderedPage().page.identifier,
                 pageRenderStateMocked.viewAs.persona.keyTag
             );
+            expect(dotPageStateService.setLock).toHaveBeenCalledWith(
+                { mode: DotPageMode.EDIT },
+                true
+            );
+        });
+    });
+
+    describe('running experiment confirmation', () => {
+        beforeEach(() => {
+            const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                mockUser(),
+                new DotPageRender(mockDotRenderedPage()),
+                null,
+                EXPERIMENT_MOCK
+            );
+
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+        });
+
+        it('should update pageState service when confirmation dialog Success', async () => {
+            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+                conf.accept();
+            });
+            fixtureHost.detectChanges();
+            const selectButton = de.query(By.css('p-selectButton'));
+            selectButton.triggerEventHandler('onChange', {
+                value: DotPageMode.EDIT
+            });
+            await fixtureHost.whenStable();
+            expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(dialogService.confirm).toHaveBeenCalledTimes(1);
+
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
                 { mode: DotPageMode.EDIT },
                 true

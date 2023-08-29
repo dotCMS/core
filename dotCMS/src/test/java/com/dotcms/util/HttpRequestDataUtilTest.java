@@ -1,5 +1,9 @@
 package com.dotcms.util;
 
+import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
+import com.dotcms.analytics.metrics.QueryParameter;
+import com.dotcms.analytics.metrics.QueryParameterValuesGetter;
+import com.dotcms.experiments.business.result.Event;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -74,4 +78,35 @@ public class HttpRequestDataUtilTest {
         }
     }
 
+    @Test
+    public void getQueryParamsFromUrlWithOneQueryParams(){
+
+        final Map<String, String> queryParams = HttpRequestDataUtil.getQueryParams(
+                "http://localhost:8080/test?testParam=testValue");
+
+        Assert.assertEquals(1, queryParams.size());
+
+        Assert.assertEquals("testValue", queryParams.get("testParam"));
+    }
+
+    @Test
+    public void getQueryParamsFromUrlWithMultiQueryParams(){
+
+        final Map<String, String> queryParams = HttpRequestDataUtil.getQueryParams(
+                "http://localhost:8080/test?testParam1=testValue1&testParam2=testValue2");
+
+
+        Assert.assertEquals(2, queryParams.size());
+
+        Assert.assertEquals("testValue1", queryParams.get("testParam1"));
+        Assert.assertEquals("testValue2", queryParams.get("testParam2"));
+    }
+
+    @Test
+    public void getQueryParamsFromUrlWithNoneQueryParams(){
+        final Map<String, String> queryParams = HttpRequestDataUtil.getQueryParams(
+                "http://localhost:8080/test");
+
+        Assert.assertEquals(0, queryParams.size());
+    }
 }

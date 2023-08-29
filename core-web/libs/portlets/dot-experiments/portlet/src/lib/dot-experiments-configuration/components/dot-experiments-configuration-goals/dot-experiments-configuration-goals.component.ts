@@ -11,7 +11,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -22,7 +21,7 @@ import {
     GoalsLevels,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
@@ -41,8 +40,7 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experimen
         DotMessagePipe,
         DotDynamicDirective,
         DotIconModule,
-        UiDotIconButtonTooltipModule,
-        UiDotIconButtonModule,
+
         DotExperimentsDetailsTableComponent,
         // PrimeNg
         ButtonModule,

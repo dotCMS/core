@@ -18,7 +18,7 @@
         }
 
         .p-dropdown-sm .p-dropdown .p-dropdown-label {
-            padding: 0;
+            padding-left: 0;
         }
 
         .p-dropdown:not(.p-disabled).p-focus {
@@ -37,12 +37,14 @@
 
     @media only screen and (max-width: $screen-lg-max) {
         .dot-device-selector.gap-3 {
-            gap: 0 !important;
+            gap: $spacing-1 !important;
         }
         ::ng-deep {
             p-dropdown .p-dropdown {
+                padding-left: 0;
                 .p-dropdown-label {
                     display: none;
+                    padding: 0;
                 }
             }
         }

@@ -31,6 +31,7 @@ import {
     DotCurrentUserService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotLicenseService,
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -107,6 +108,7 @@ describe('DotWorkflowTaskComponent', () => {
                     useClass: LoginServiceMock
                 },
                 DotCustomEventHandlerService,
+                DotLicenseService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 DotIframeService,
                 DotContentletEditorService,

@@ -9,8 +9,8 @@
     [style]="{ width: '542px' }"
     [draggable]="false"
     [resizable]="false"
-    [blockScroll]="true"
     [modal]="true"
+    [dismissableMask]="true"
     data-testId="edit-box-dialog"
 >
     <ng-container [ngTemplateOutlet]="largeTemplate"></ng-container>
@@ -35,8 +35,9 @@
                 [formControl]="formControl"
                 [autoDisplayFirst]="false"
                 (onChange)="onContainerSelect($event)"
-                data-testId="btn-plus"
+                scrollHeight="25rem"
                 dotContainerOptions
+                data-testId="btn-plus"
                 appendTo="body"
                 dropdownIcon="pi pi-plus"
                 optionLabel="label"
@@ -46,19 +47,19 @@
                     {{ dropdownLabel }}
                 </ng-template>
             </p-dropdown>
-
-            <div>
+            <div class="header-container__last-buttons">
                 <p-button
                     *ngIf="actions.includes('edit')"
                     (onClick)="editClasses.emit()"
                     data-testId="box-style-class-button"
                     icon="pi pi-palette"
-                    styleClass="p-button-rounded p-button-text p-button-sm edit-classes-button"
+                    styleClass="p-button-rounded p-button-text p-button-sm"
                 ></p-button>
 
                 <dotcms-remove-confirm-dialog
                     *ngIf="actions.includes('delete')"
-                    (deleteConfirmed)="deleteColumn.emit()"
+                    [skipConfirmation]="items.length === 0"
+                    (deleteConfirmed)="requestColumnDelete()"
                     (deleteRejected)="deleteColumnRejected.emit()"
                 >
                 </dotcms-remove-confirm-dialog>
@@ -101,6 +102,7 @@
         ></p-button>
         <dotcms-remove-confirm-dialog
             *ngIf="actions.includes('delete')"
+            [skipConfirmation]="items.length === 0"
             (deleteConfirmed)="deleteColumn.emit()"
             (deleteRejected)="deleteColumnRejected.emit()"
         >

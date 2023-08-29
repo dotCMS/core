@@ -15,7 +15,8 @@
         <dot-pages-listing-panel
             (goToUrl)="goToUrl($event)"
             (showActionsMenu)="showActionsMenu($event)"
-            (tableScroll)="closeMenu()"
+            (pageChange)="scrollToTop()"
+            data-testId="pages-listing-panel"
         ></dot-pages-listing-panel>
 
         <dot-add-to-bundle
@@ -34,7 +35,4 @@
     </ng-template>
 </div>
 
-<router-outlet
-    (activate)="subscribeToShutdown($event)"
-    (deactivate)="unsubscribeToShutdown()"
-></router-outlet>
+<router-outlet (deactivate)="loadPagesOnDeactivation()"></router-outlet>

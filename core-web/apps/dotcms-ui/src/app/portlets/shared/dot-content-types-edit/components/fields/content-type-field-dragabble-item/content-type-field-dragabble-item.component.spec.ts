@@ -7,7 +7,6 @@ import { ButtonModule } from 'primeng/button';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
@@ -36,7 +35,6 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         TestBed.configureTestingModule({
             declarations: [ContentTypesFieldDragabbleItemComponent],
             imports: [
-                UiDotIconButtonTooltipModule,
                 DotIconModule,
                 DotCopyLinkModule,
                 HttpClientTestingModule,

@@ -18,6 +18,8 @@ export class DotExperimentOptionsItemDirective {
     title: string;
     @Input()
     detail: string;
+    @Input()
+    icon: string;
 
     @ContentChild(DotExperimentOptionContentDirective)
     content: DotExperimentOptionContentDirective;

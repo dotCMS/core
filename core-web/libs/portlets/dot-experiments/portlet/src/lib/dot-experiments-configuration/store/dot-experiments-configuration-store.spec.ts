@@ -35,10 +35,10 @@ import {
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
-    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA,
     getExperimentMock,
     GoalsMock,
-    MockDotMessageService
+    MockDotMessageService,
+    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -257,13 +257,13 @@ describe('DotExperimentsConfigurationStore', () => {
             // Push Publish
             menuItems[3].command();
             expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
-                assetIdentifier: EXPERIMENT_MOCK.identifier,
+                assetIdentifier: EXPERIMENT_MOCK.id,
                 title: 'Push Publish'
             });
 
             // Add to Bundle
             menuItems[4].command();
-            expect(store.showAddToBundle).toHaveBeenCalledWith(EXPERIMENT_MOCK.identifier);
+            expect(store.showAddToBundle).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
             // test the ones with confirm dialog in the DotExperimentsConfigurationComponent.
             done();
@@ -573,6 +573,39 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.goals$.subscribe(({ primary }) => {
                 expect(primary.conditions.length).toBe(0);
+                done();
+            });
+        });
+
+        it('should allow only conditions in AllowedConditionOperatorsByTypeOfGoal', (done) => {
+            const experimentMock = {
+                ...EXPERIMENT_MOCK,
+                goals: {
+                    primary: {
+                        name: 'default',
+                        type: GOAL_TYPES.URL_PARAMETER,
+                        conditions: [
+                            {
+                                parameter: 'queryParameter',
+                                operator: GOAL_OPERATORS.CONTAINS,
+                                value: 'index'
+                            },
+                            {
+                                parameter: 'invalid-parameter',
+                                operator: GOAL_OPERATORS.CONTAINS,
+                                value: 'test'
+                            }
+                        ]
+                    }
+                }
+            };
+
+            dotExperimentsService.getById.mockReturnValue(of({ ...experimentMock }));
+
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+
+            store.goals$.subscribe(({ primary }) => {
+                expect(primary.conditions.length).toBe(1);
                 done();
             });
         });
