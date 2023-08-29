@@ -209,6 +209,7 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
         return {
             label: this.dotMessageService.get(`editpage.toolbar.${mode}.page`),
             value: DotPageMode[mode.toLocaleUpperCase()],
+            clipboard: this.dotMessageService.get(`editpage.toolbar.${mode}.page.clipboard`),
             disabled: disabled[mode]
         };
     }
