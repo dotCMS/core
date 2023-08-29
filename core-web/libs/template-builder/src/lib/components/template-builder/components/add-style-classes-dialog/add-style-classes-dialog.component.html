@@ -1,30 +1,21 @@
-<ng-container *ngIf="vm$ | async as vm">
-    <div class="dialog__auto-complete-container field">
-        <div class="p-fluid">
-            <p-autoComplete
-                [ngModel]="vm.selectedClasses"
-                [suggestions]="vm.filteredClasses"
-                [multiple]="true"
-                [completeOnFocus]="true"
-                [size]="446"
-                [tabindex]="1"
-                (onSelect)="onSelect($event)"
-                (onUnselect)="onUnselect($event)"
-                (completeMethod)="filterClasses($event)"
-                (onKeyUp)="onKeyUp($event)"
-                dataKey="cssClass"
-                field="cssClass"
-                appendTo="body"
-                inputId="auto-complete-input"
-                name="class"
-                type="text"
-            >
-            </p-autoComplete>
-        </div>
-    </div>
-    <div class="dialog__actions-container">
-        <p-button (onClick)="saveClass(vm.selectedClasses)" data-testId="update-btn">
-            {{ 'dot.template.builder.classes.dialog.update.button' | dm }}</p-button
-        >
-    </div>
-</ng-container>
+<div class="dialog__auto-complete-container field">
+    <p-autoComplete
+        class="p-fluid"
+        [(ngModel)]="selectedClasses"
+        [dropdown]="true"
+        [autofocus]="true"
+        [unique]="true"
+        [multiple]="true"
+        [size]="446"
+        (onKeyUp)="onKeyUp($event)"
+        appendTo="body"
+        inputId="auto-complete-input"
+    >
+    </p-autoComplete>
+    <small>Start typing for suggestions and enter or click to add</small>
+</div>
+<div class="dialog__actions-container">
+    <p-button (onClick)="save()" data-testId="update-btn">
+        {{ 'dot.template.builder.classes.dialog.update.button' | dm }}</p-button
+    >
+</div>
