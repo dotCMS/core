@@ -1034,7 +1034,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             header: this.dotMessageService.get(data.header),
             message: this.dotMessageService.get(data.message),
             acceptLabel: this.dotMessageService.get(data.acceptLabel),
-            acceptIcon: '_',
             rejectLabel: this.dotMessageService.get(data.rejectLabel),
             rejectButtonStyleClass: 'p-button-outlined',
             accept: data.fn

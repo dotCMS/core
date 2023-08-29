@@ -458,6 +458,24 @@ export class DotExperimentsListStore
                     experimentId: null
                 }
             },
+            // Go to Results Action
+            {
+                id: 'dot-experiments-go-to-results',
+                label: this.dotMessageService.get('experiments.action.view.results'),
+                visible: AllowedActionsByExperimentStatus['results'].includes(experiment.status),
+                routerLink: [
+                    '/edit-page/experiments/',
+                    experiment.pageId,
+                    experiment.id,
+                    'reports'
+                ],
+                queryParamsHandling: 'merge',
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                }
+            },
             // Cancel Scheduling
             {
                 id: 'dot-experiments-cancel-scheduling',
@@ -530,7 +548,7 @@ export class DotExperimentsListStore
             // Abort experiment
             {
                 label: this.dotMessageService.get('experiments.action.abort.experiment'),
-                visible: experiment?.status === DotExperimentStatus.RUNNING,
+                visible: AllowedActionsByExperimentStatus['abort'].includes(experiment.status),
                 command: () => {
                     this.confirmationService.confirm({
                         key: CONFIGURATION_CONFIRM_DIALOG_KEY,
@@ -538,10 +556,10 @@ export class DotExperimentsListStore
                         message: this.dotMessageService.get(
                             'experiments.action.abort.confirm.message'
                         ),
-                        acceptLabel: this.dotMessageService.get('experiments.action.cancel'),
-                        rejectLabel: this.dotMessageService.get(
+                        acceptLabel: this.dotMessageService.get(
                             'experiments.action.abort.experiment'
                         ),
+                        rejectLabel: this.dotMessageService.get('experiments.action.cancel'),
                         rejectButtonStyleClass: 'p-button-outlined',
                         accept: () => {
                             //Abort use the same endpoint as cancelSchedule.
@@ -574,7 +592,7 @@ export class DotExperimentsListStore
 
     private getConfigurationOptionLabel(status: DotExperimentStatus): string {
         return status === DotExperimentStatus.DRAFT
-            ? this.dotMessageService.get('experiments.action.edit')
-            : this.dotMessageService.get('experiments.action.view');
+            ? this.dotMessageService.get('experiments.action.edit.configuration')
+            : this.dotMessageService.get('experiments.action.view.configuration');
     }
 }
