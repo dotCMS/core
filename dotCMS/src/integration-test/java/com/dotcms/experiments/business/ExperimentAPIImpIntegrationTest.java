@@ -7825,7 +7825,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
                    Assert.assertEquals(successPerDayExpected, resultResumeItem.getUniqueBySession());
                    Assert.assertEquals(successPerDayExpected, resultResumeItem.getMultiBySession());
-                   Assert.assertEquals(convertionRatePerDayExpected, resultResumeItem.getConvertionRate(), 0);
+                   Assert.assertEquals(convertionRatePerDayExpected, resultResumeItem.getConversionRate(), 0);
                    Assert.assertEquals(sessionsPerDayExpected, resultResumeItem.getTotalSessions(), 0);
 
                    Assert.assertEquals(2, experimentResults.getSessions().getTotalByDate(day));
