@@ -4,6 +4,9 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Transform the values from the Event and {@link AbstractCondition} to lowercase
+ */
 public class LowerCaseParameterValuesTransformer implements ParameterValuesTransformer<String> {
 
     @Override
