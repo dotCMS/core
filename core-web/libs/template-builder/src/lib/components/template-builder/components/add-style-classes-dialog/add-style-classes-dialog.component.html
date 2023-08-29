@@ -1,18 +1,18 @@
 <div class="dialog__auto-complete-container field">
-    <ng-container *ngIf="suggestions.length; else noSuggestions">
+    <ng-container *ngIf="isJsonClasses$ | async; else noSuggestions">
         <p-autoComplete
             class="p-fluid"
             [(ngModel)]="selectedClasses"
+            [unique]="true"
+            [suggestions]="filteredSuggestions"
+            [size]="446"
+            [multiple]="true"
             [dropdown]="true"
             [autofocus]="true"
-            [suggestions]="filteredSuggestions"
-            [unique]="true"
-            [multiple]="true"
-            [size]="446"
-            (completeMethod)="filterClasses($event)"
             (onKeyUp)="onKeyUp($event)"
-            appendTo="body"
+            (completeMethod)="filterClasses($event)"
             inputId="auto-complete-input"
+            appendTo="body"
         >
         </p-autoComplete>
         <small>{{ 'dot.template.builder.autocomplete.has.suggestions' | dm }}</small>
@@ -28,13 +28,13 @@
     <p-autoComplete
         class="p-fluid"
         [(ngModel)]="selectedClasses"
-        [autofocus]="true"
         [unique]="true"
-        [multiple]="true"
         [size]="446"
+        [multiple]="true"
+        [autofocus]="true"
         (onKeyUp)="onKeyUp($event)"
-        appendTo="body"
         inputId="auto-complete-input"
+        appendTo="body"
     >
     </p-autoComplete>
     <small>{{ 'dot.template.builder.autocomplete.no.suggestions' | dm }}</small>

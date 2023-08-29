@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -5,6 +7,8 @@ import { FormsModule } from '@angular/forms';
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+
+import { map, tap } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -21,9 +25,11 @@ import { JsonClassesService } from './services/json-classes.service';
 })
 export class AddStyleClassesDialogComponent implements OnInit {
     @ViewChild(AutoComplete) autoComplete: AutoComplete;
-    suggestions: string[] = [];
-    filteredSuggestions: string[] = [];
+    filteredSuggestions = null;
     selectedClasses: string[] = [];
+
+    isJsonClasses$: Observable<boolean>;
+    classes;
 
     constructor(
         private jsonClassesService: JsonClassesService,
@@ -37,9 +43,12 @@ export class AddStyleClassesDialogComponent implements OnInit {
         const { selectedClasses } = this.dynamicDialogConfig.data;
         this.selectedClasses = selectedClasses;
 
-        this.jsonClassesService.getClasses().subscribe((res) => {
-            this.suggestions = res.classes;
-        });
+        this.isJsonClasses$ = this.jsonClassesService.getClasses().pipe(
+            tap(({ classes }) => {
+                this.classes = classes;
+            }),
+            map(({ classes }) => classes.length > 0)
+        );
     }
 
     /**
@@ -50,9 +59,8 @@ export class AddStyleClassesDialogComponent implements OnInit {
      * @memberof AddStyleClassesDialogComponent
      */
     filterClasses({ query }: { query: string }): void {
-        if (!query && query.trim().length) return;
-
-        this.filteredSuggestions = this.suggestions.filter((item) => item.startsWith(query));
+        // PrimeNG autocomplete doesn't support async pipe in the suggestions
+        this.filteredSuggestions = this.classes.filter((item) => item.includes(query));
     }
 
     /**
