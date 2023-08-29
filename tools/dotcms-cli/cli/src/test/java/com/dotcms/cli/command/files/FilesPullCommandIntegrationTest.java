@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 
 @QuarkusTest
-class FilesPullCommandTest extends CommandTest {
+class FilesPullCommandIntegrationTest extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;
