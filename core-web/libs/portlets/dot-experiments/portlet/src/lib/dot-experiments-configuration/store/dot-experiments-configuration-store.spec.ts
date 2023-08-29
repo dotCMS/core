@@ -52,6 +52,13 @@ const EXPERIMENT_MOCK_1 = getExperimentMock(1);
 const EXPERIMENT_MOCK_2 = getExperimentMock(2);
 const EXPERIMENT_MOCK_3 = getExperimentMock(3);
 
+const MENU_ITEMS_START_INDEX = 0;
+const MENU_ITEMS_END_INDEX = 1;
+const MENU_ITEMS_ABORT_INDEX = 2;
+const MENU_ITEMS_CANCEL_SCHEDULE_INDEX = 3;
+const MENU_ITEMS_PUSH_PUBLISH_INDEX = 4;
+const MENU_ITEMS_ADD_T0_BUNDLE_INDEX = 5;
+
 const ActivatedRouteMock = {
     snapshot: {
         params: {
@@ -191,16 +198,12 @@ describe('DotExperimentsConfigurationStore', () => {
 
         store.vm$.subscribe(({ menuItems }) => {
             // Start Experiment
-            expect(menuItems[0].visible).toEqual(true);
-            expect(menuItems[0].disabled).toEqual(false);
-            // End Experiment
-            expect(menuItems[1].visible).toEqual(false);
-            // Abort Experiment
-            expect(menuItems[2].visible).toEqual(false);
-            // Schedule Experiment
-            expect(menuItems[3].visible).toEqual(false);
-            // Add to Bundle
-            expect(menuItems[4].visible).toEqual(true);
+            expect(menuItems[MENU_ITEMS_START_INDEX].visible).toEqual(true);
+            expect(menuItems[MENU_ITEMS_START_INDEX].disabled).toEqual(false);
+            expect(menuItems[MENU_ITEMS_END_INDEX].visible).toEqual(false);
+            expect(menuItems[MENU_ITEMS_ABORT_INDEX].visible).toEqual(false);
+            expect(menuItems[MENU_ITEMS_CANCEL_SCHEDULE_INDEX].visible).toEqual(false);
+            expect(menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(true);
             done();
         });
     });
@@ -213,16 +216,11 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
         store.vm$.subscribe(({ menuItems }) => {
-            // Start Experiment
-            expect(menuItems[0].visible).toEqual(false);
-            // End Experiment
-            expect(menuItems[1].visible).toEqual(true);
-            // Abort Experiment
-            expect(menuItems[2].visible).toEqual(true);
-            // Schedule Experiment
-            expect(menuItems[3].visible).toEqual(false);
-            // Add to Bundle
-            expect(menuItems[4].visible).toEqual(true);
+            expect(menuItems[MENU_ITEMS_START_INDEX].visible).toEqual(false);
+            expect(menuItems[MENU_ITEMS_END_INDEX].visible).toEqual(true);
+            expect(menuItems[MENU_ITEMS_ABORT_INDEX].visible).toEqual(true);
+            expect(menuItems[MENU_ITEMS_CANCEL_SCHEDULE_INDEX].visible).toEqual(false);
+            expect(menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(true);
             done();
         });
     });
@@ -235,16 +233,11 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
         store.vm$.subscribe(({ menuItems }) => {
-            // Start Experiment
-            expect(menuItems[0].visible).toEqual(false);
-            // End Experiment
-            expect(menuItems[1].visible).toEqual(false);
-            // Abort Experiment
-            expect(menuItems[2].visible).toEqual(false);
-            // Schedule Experiment
-            expect(menuItems[3].visible).toEqual(true);
-            // Add to Bundle
-            expect(menuItems[4].visible).toEqual(true);
+            expect(menuItems[MENU_ITEMS_START_INDEX].visible).toEqual(false);
+            expect(menuItems[MENU_ITEMS_END_INDEX].visible).toEqual(false);
+            expect(menuItems[MENU_ITEMS_ABORT_INDEX].visible).toEqual(false);
+            expect(menuItems[MENU_ITEMS_CANCEL_SCHEDULE_INDEX].visible).toEqual(true);
+            expect(menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(true);
             done();
         });
     });
@@ -257,18 +250,18 @@ describe('DotExperimentsConfigurationStore', () => {
 
         store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
             // Start Experiment
-            menuItems[0].command();
+            menuItems[MENU_ITEMS_START_INDEX].command();
             expect(dotExperimentsService.start).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
             // Push Publish
-            menuItems[4].command();
+            menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].command();
             expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
                 assetIdentifier: EXPERIMENT_MOCK.id,
                 title: 'Push Publish'
             });
 
             // Add to Bundle
-            menuItems[5].command();
+            menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].command();
             expect(store.showAddToBundle).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
             // test the ones with confirm dialog in the DotExperimentsConfigurationComponent.
@@ -284,8 +277,7 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
 
         store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
-            // Push Publish
-            expect(menuItems[3].visible).toEqual(false);
+            expect(menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible).toEqual(false);
 
             done();
         });
@@ -299,11 +291,9 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
 
         store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
-            // Push Publish
-            expect(menuItems[3].visible).toEqual(false);
+            expect(menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible).toEqual(false);
 
-            //Add to Bundle
-            expect(menuItems[4].visible).toEqual(false);
+            expect(menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(false);
 
             done();
         });
@@ -315,7 +305,7 @@ describe('DotExperimentsConfigurationStore', () => {
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
         store.vm$.subscribe(({ menuItems }) => {
-            expect(menuItems[0].label).toEqual('schedule-experiment');
+            expect(menuItems[MENU_ITEMS_START_INDEX].label).toEqual('schedule-experiment');
             done();
         });
     });
@@ -327,7 +317,7 @@ describe('DotExperimentsConfigurationStore', () => {
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
 
         store.vm$.subscribe(({ menuItems }) => {
-            expect(menuItems[0].label).toEqual('Start Experiment');
+            expect(menuItems[MENU_ITEMS_START_INDEX].label).toEqual('Start Experiment');
             done();
         });
     });
@@ -339,7 +329,7 @@ describe('DotExperimentsConfigurationStore', () => {
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_3.id);
 
         store.vm$.subscribe(({ menuItems }) => {
-            expect(menuItems[0].label).toEqual('Start Experiment');
+            expect(menuItems[MENU_ITEMS_START_INDEX].label).toEqual('Start Experiment');
             done();
         });
     });
