@@ -65,11 +65,9 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer>, 
         final int pageSize = 10;
         int page = 1;
 
-        boolean live = true;
-
         while (true) {
 
-            final ResponseEntityView<List<Site>> response = siteAPI.getSites(null, null, live, false, page, pageSize);
+            final ResponseEntityView<List<Site>> response = siteAPI.getSites(null, null, false, false, page, pageSize);
 
             final List<Site> sites = response.entity();
             if (sites.isEmpty()) {
@@ -82,22 +80,10 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer>, 
             }
 
             //First we show live sites
-            if(live) {
-                //When we're showing live sites, and we run out of `live` sites
-                if (sites.size() < pageSize) {
-                    live = false; //We need to switch to `working` sites
-                    page = 0;  //Page needs to be reset
-                } else {
-                    // otherwise business as usual get me next page
-                    page++;
-                }
-              //At some point we run out of live sites time to show 'working' sites
-            } else {
-                if (sites.size() < pageSize) {
-                    break;
-                }
-                page++;
+            if(sites.size() < pageSize){
+                break;
             }
+            page++;
             if(interactiveOption.isInteractive() && !Prompt.yesOrNo(true,"Load next page? y/n: ")){
                 break;
             }

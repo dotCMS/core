@@ -75,6 +75,7 @@ export interface DotResultUniqueBySession {
 export interface DotResultDate {
     multiBySession: number;
     uniqueBySession: number;
+    conversionRate: number;
 }
 
 export interface DotResultSessions {
