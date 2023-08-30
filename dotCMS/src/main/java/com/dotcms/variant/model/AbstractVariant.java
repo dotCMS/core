@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.liferay.util.StringPool;
 import java.io.Serializable;
 import java.util.Optional;
 import org.immutables.value.Value;
@@ -27,11 +28,8 @@ public interface AbstractVariant extends Serializable, ManifestItem {
     @JsonProperty("name")
     String name();
 
-    @Value.Default
     @JsonProperty("description")
-    default Optional<String> description() {
-        return Optional.of("");
-    }
+    Optional<String> description();
 
     @Value.Default
     @JsonProperty("archived")
