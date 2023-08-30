@@ -100,8 +100,8 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
      *
      * @memberof AddStyleClassesDialogComponent
      */
-    onUnselect(): void {
-        this.store.removeLastClass();
+    onUnselect(deletedClass: StyleClassModel): void {
+        this.store.removeClass(deletedClass);
     }
 
     /**

@@ -3137,6 +3137,7 @@
 
 .dijitButton,
 .dijitComboButton,
+.dijitComboButton > *,
 .dijitDropDownButton,
 .dijitSelect,
 .dijitTextBox,
@@ -3226,40 +3227,40 @@
   height: 0;
   width: 0;
 }
-.dijitTextBoxHover {
+.dijitTextBoxHover, .dijitTextBox:hover {
   background-color: #ffffff;
   border: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitTextBoxHover .dijitInputInner {
+.dijitTextBoxHover .dijitInputInner, .dijitTextBox:hover .dijitInputInner {
   color: #14151a;
 }
-.dijitTextBoxHover .dijitArrowButton {
+.dijitTextBoxHover .dijitArrowButton, .dijitTextBox:hover .dijitArrowButton {
   background-color: #ffffff;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitTextBoxHover .dijitArrowButton:before {
+.dijitTextBoxHover .dijitArrowButton:before, .dijitTextBox:hover .dijitArrowButton:before {
   border-top-color: var(--color-palette-primary-500);
 }
-.dijitTextBoxHover .dijitDownArrowButtonHover {
+.dijitTextBoxHover .dijitDownArrowButtonHover, .dijitTextBox:hover .dijitDownArrowButtonHover {
   background-color: #ffffff;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitTextBoxHover .dijitDownArrowButtonHover:before {
+.dijitTextBoxHover .dijitDownArrowButtonHover:before, .dijitTextBox:hover .dijitDownArrowButtonHover:before {
   border-top-color: var(--color-palette-primary-500);
 }
-.dijitTextBoxFocused {
+.dijitTextBoxFocused, .dijitTextBox:focus {
   border: solid 1.5px var(--color-palette-primary-400);
   background-color: #ffffff;
   outline: 2.8px solid var(--color-palette-primary-op-20);
 }
-.dijitTextBoxFocused .dijitInputInner {
+.dijitTextBoxFocused .dijitInputInner, .dijitTextBox:focus .dijitInputInner {
   color: #14151a;
 }
-.dijitTextBoxFocused .dijitArrowButton {
+.dijitTextBoxFocused .dijitArrowButton, .dijitTextBox:focus .dijitArrowButton {
   background-color: #ffffff;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitTextBoxFocused .dijitArrowButton:before {
+.dijitTextBoxFocused .dijitArrowButton:before, .dijitTextBox:focus .dijitArrowButton:before {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3272,11 +3273,11 @@
   height: 0;
   width: 0;
 }
-.dijitTextBoxFocused .dijitDownArrowButtonHover {
+.dijitTextBoxFocused .dijitDownArrowButtonHover, .dijitTextBox:focus .dijitDownArrowButtonHover {
   background-color: var(--color-palette-primary-500);
   border-left: var(--color-palette-primary-500);
 }
-.dijitTextBoxFocused .dijitDownArrowButtonHover:before {
+.dijitTextBoxFocused .dijitDownArrowButtonHover:before, .dijitTextBox:focus .dijitDownArrowButtonHover:before {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3289,15 +3290,15 @@
   height: 0;
   width: 0;
 }
-.dijitTextBoxDisabled {
+.dijitTextBoxDisabled, .dijitTextBox:disabled {
   border: solid 1.5px #f3f3f4;
   background-color: #fafafb;
 }
-.dijitTextBoxDisabled .dijitArrowButton {
+.dijitTextBoxDisabled .dijitArrowButton, .dijitTextBox:disabled .dijitArrowButton {
   background-color: #fafafb;
   border-left: solid 1.5px #f3f3f4;
 }
-.dijitTextBoxDisabled .dijitArrowButton:before {
+.dijitTextBoxDisabled .dijitArrowButton:before, .dijitTextBox:disabled .dijitArrowButton:before {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3310,10 +3311,10 @@
   height: 0;
   width: 0;
 }
-.dijitTextBoxDisabled .dijitPlaceHolder {
+.dijitTextBoxDisabled .dijitPlaceHolder, .dijitTextBox:disabled .dijitPlaceHolder {
   color: #6c7389;
 }
-.dijitTextBoxDisabled .dijitInputInner {
+.dijitTextBoxDisabled .dijitInputInner, .dijitTextBox:disabled .dijitInputInner {
   color: #6c7389;
 }
 .dijitTextBoxError {
@@ -3342,6 +3343,7 @@
   color: #14151a;
   font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   padding: 0.5rem;
+  font-size: 1rem;
 }
 .dijitTextAreaHover {
   background-color: #ffffff;
@@ -3529,6 +3531,7 @@
 }
 .dijitButtonNode {
   border: none;
+  font-size: 1rem;
 }
 .dijitButtonHover {
   background-color: var(--color-palette-primary-100);
@@ -4070,7 +4073,7 @@
   overflow: hidden;
 }
 .dijitComboBox input {
-  height: auto;
+  height: 100%;
   padding: 0;
 }
 .dijitComboBox .dijitArrowButton {
@@ -4082,51 +4085,48 @@
 .dijitComboBox .dijitArrowButton:before {
   border-top-color: var(--color-palette-primary-500);
 }
-.dijitComboBoxHover {
+.dijitComboBoxHover, .dijitComboBox:hover {
   background-color: #ffffff;
   border: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitComboBoxHover .dijitArrowButton {
+.dijitComboBoxHover .dijitArrowButton, .dijitComboBox:hover .dijitArrowButton {
   background-color: #f3f3f4;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitComboBoxHover .dijitArrowButton:before {
+.dijitComboBoxHover .dijitArrowButton:before, .dijitComboBox:hover .dijitArrowButton:before {
   border-top-color: var(--color-palette-primary-500);
 }
-.dijitComboBoxHover .dijitDownArrowButtonHover {
+.dijitComboBoxHover .dijitDownArrowButtonHover, .dijitComboBox:hover .dijitDownArrowButtonHover {
   background-color: #f3f3f4;
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitComboBoxHover .dijitDownArrowButtonHover:before {
+.dijitComboBoxHover .dijitDownArrowButtonHover:before, .dijitComboBox:hover .dijitDownArrowButtonHover:before {
   border-top-color: var(--color-palette-primary-500);
 }
-.dijitComboBoxFocused {
+.dijitComboBoxFocused, .dijitComboBox:focus {
   border: solid 1.5px var(--color-palette-primary-400);
-  background-color: #ffffff;
 }
-.dijitComboBoxFocused .dijitArrowButton {
-  background-color: #f3f3f4;
+.dijitComboBoxFocused .dijitArrowButton, .dijitComboBox:focus .dijitArrowButton {
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitComboBoxFocused .dijitDownArrowButtonHover {
-  background-color: #f3f3f4;
+.dijitComboBoxFocused .dijitDownArrowButtonHover, .dijitComboBox:focus .dijitDownArrowButtonHover {
   border-left: solid 1.5px var(--color-palette-primary-400);
 }
-.dijitComboBoxDisabled {
+.dijitComboBoxDisabled, .dijitComboBox:disabled {
   border: solid 1.5px #f3f3f4;
   background-color: #f3f3f4;
 }
-.dijitComboBoxDisabled .dijitArrowButton {
+.dijitComboBoxDisabled .dijitArrowButton, .dijitComboBox:disabled .dijitArrowButton {
   background-color: #f3f3f4;
   border-left: solid 1.5px #f3f3f4;
 }
-.dijitComboBoxDisabled .dijitArrowButton:before {
+.dijitComboBoxDisabled .dijitArrowButton:before, .dijitComboBox:disabled .dijitArrowButton:before {
   border-top-color: #6c7389;
 }
-.dijitComboBoxDisabled .dijitPlaceHolder {
+.dijitComboBoxDisabled .dijitPlaceHolder, .dijitComboBox:disabled .dijitPlaceHolder {
   color: #afb3c0;
 }
-.dijitComboBoxDisabled .dijitInputInner {
+.dijitComboBoxDisabled .dijitInputInner, .dijitComboBox:disabled .dijitInputInner {
   color: #afb3c0;
 }
 .dijitComboBoxError {
@@ -4851,7 +4851,11 @@
   position: relative;
   width: 2.5rem;
 }
-.dijitCalendarDecrease:before {
+.dijitCalendarDecrementArrow {
+  position: absolute;
+}
+.dijitCalendarDecrementArrow:before {
+  position: relative;
   left: 50%;
   margin-left: -2.5px;
   margin-top: -5px;
@@ -4864,7 +4868,12 @@
   height: 0;
   width: 0;
 }
-.dijitCalendarIncrease:before {
+.dijitCalendarIncrementArrow {
+  position: absolute;
+  right: 0.5rem;
+}
+.dijitCalendarIncrementArrow:before {
+  position: relative;
   left: 50%;
   margin-left: -2.5px;
   margin-top: -5px;
@@ -4888,6 +4897,7 @@
   line-height: 1.875rem;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton {
+  margin-top: 0.25rem;
   border-radius: 0;
   background-color: transparent;
   height: calc(1.875rem + 3px);
@@ -4962,6 +4972,15 @@
 
 .dijitMenu {
   padding: 0;
+  border: 0 none;
+}
+.dijitMenu#templateSel_popup .dijitMenuItem {
+  height: auto;
+  padding: 0.5rem 0.75rem;
+  gap: 0.25rem;
+}
+.dijitMenu#templateSel_popup .dijitMenuItem small {
+  color: #6c7389;
 }
 .dijitMenu .dijitMenuItem {
   display: flex;
@@ -4996,6 +5015,10 @@
   height: auto;
   margin-top: 1px;
   border-bottom: 1px solid #d1d4db;
+}
+
+.dijitComboBoxMenuPopup#widget_cache_list_dropdown {
+  max-height: 17.5rem !important;
 }
 
 .dijitComboBoxMenuPopup {
@@ -8850,37 +8873,27 @@ Styles for commons fields along the backend
 }
 
 .tagLink {
-  background: #f3f3f4;
-  border-radius: 0.125rem;
-  border: solid 1.5px #d1d4db;
-  display: inline-block;
-  font-size: 12px;
-  margin: 2px 5px 2px 0px;
-  padding: 3px 25px 4px 5px;
-  position: relative;
+  height: 1.5rem;
+  padding: 0.5rem;
+  background: var(--color-palette-primary-200);
+  border-radius: 0.25rem;
+  color: var(--color-palette-primary-500);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
   text-decoration: none;
-  vertical-align: middle;
-}
-.tagLink.persona {
-  padding: 3px 25px 4px;
 }
 .tagLink.persona:before {
   content: "\f007";
-  display: block;
-  left: 8px;
-  position: absolute;
-  top: 2px;
+  display: flex;
 }
 .tagLink:after {
-  color: #6c7389;
+  color: var(--color-palette-primary-500);
   content: "✕";
-  font-size: 10px;
-  line-height: 21px;
-  position: absolute;
-  right: 0px;
+  font-size: 0.875rem;
   text-align: center;
-  top: 0px;
-  width: 20px;
 }
 .tagLink:hover {
   border: 1px solid var(--color-palette-primary-500);
@@ -8890,8 +8903,12 @@ Styles for commons fields along the backend
   position: relative;
 }
 .tagsWrapper .dijitTextBox {
+  min-height: 2.5rem;
   height: auto;
-  padding: 3px 5px;
+  padding: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 .tagsWrapper .dijitInputContainer {
   display: inline-block;
@@ -11130,12 +11147,15 @@ Resize Handle
   font-display: swap;
   src: local(""), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff2") format("woff2"), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
-body {
-  margin: 0;
-  padding: 0;
+html {
   font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 1rem;
   color: #14151a;
+}
+
+body {
+  margin: 0;
+  padding: 0;
 }
 
 .material-icons {
@@ -11154,3 +11174,5 @@ body {
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/*# sourceMappingURL=dotcms.css.map */

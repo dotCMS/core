@@ -35,8 +35,9 @@
                 [formControl]="formControl"
                 [autoDisplayFirst]="false"
                 (onChange)="onContainerSelect($event)"
-                data-testId="btn-plus"
+                scrollHeight="18.75rem"
                 dotContainerOptions
+                data-testId="btn-plus"
                 appendTo="body"
                 dropdownIcon="pi pi-plus"
                 optionLabel="label"
@@ -46,14 +47,13 @@
                     {{ dropdownLabel }}
                 </ng-template>
             </p-dropdown>
-
-            <div>
+            <div class="header-container__last-buttons">
                 <p-button
                     *ngIf="actions.includes('edit')"
                     (onClick)="editClasses.emit()"
                     data-testId="box-style-class-button"
                     icon="pi pi-palette"
-                    styleClass="p-button-rounded p-button-text p-button-sm edit-classes-button"
+                    styleClass="p-button-rounded p-button-text p-button-sm"
                 ></p-button>
 
                 <dotcms-remove-confirm-dialog

@@ -13,7 +13,7 @@
 
     <properties>
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
-        <twelvemonkeys.version>3.7.0</twelvemonkeys.version>
+        <twelvemonkeys.version>3.7.1</twelvemonkeys.version>
         <swagger.version>2.2.0</swagger.version>
         <bytebuddy.version>1.12.6</bytebuddy.version>
         <batik.version>1.16</batik.version>
@@ -809,15 +809,6 @@
                 <artifactId>shedlock-provider-jdbc</artifactId>
                 <version>${shedlock.version}</version>
             </dependency>
-
-
-            <dependency>
-                <!-- JGroups: Reliable Multicast Communication -->
-                <groupId>org.jgroups</groupId>
-                <artifactId>jgroups</artifactId>
-                <version>3.6.1.Final</version>
-            </dependency>
-
 
             <!--
              *****************************

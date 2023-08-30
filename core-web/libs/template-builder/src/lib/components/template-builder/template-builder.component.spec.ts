@@ -249,6 +249,30 @@ describe('TemplateBuilderComponent', () => {
         });
     });
 
+    it("should trigger deleteSection on header when clicking on 'Delete Section' button", () => {
+        const deleteSectionMock = jest.spyOn(spectator.component, 'deleteSection');
+        const headerComponent = spectator.query(byTestId('template-builder-header'));
+        const deleteSectionButton = headerComponent.querySelector(
+            '[data-testId="delete-section-button"]'
+        );
+
+        spectator.click(deleteSectionButton);
+
+        expect(deleteSectionMock).toHaveBeenCalledWith('header');
+    });
+
+    it("should trigger deleteSection on footer when clicking on 'Delete Section' button", () => {
+        const deleteSectionMock = jest.spyOn(spectator.component, 'deleteSection');
+        const footerComponent = spectator.query(byTestId('template-builder-footer'));
+        const deleteSectionButton = footerComponent.querySelector(
+            '[data-testId="delete-section-button"]'
+        );
+
+        spectator.click(deleteSectionButton);
+
+        expect(deleteSectionMock).toHaveBeenCalledWith('footer');
+    });
+
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
@@ -271,7 +295,6 @@ describe('TemplateBuilderComponent', () => {
             });
 
             store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {
-                expect(true).toBeTruthy();
                 expect(layoutChangeMock).toHaveBeenCalledWith({
                     layout: {
                         body: FULL_DATA_MOCK,
@@ -289,6 +312,37 @@ describe('TemplateBuilderComponent', () => {
                 });
                 done();
             });
+        });
+    });
+
+    it('should emit layoutChange when the layoutProperties changes', (done) => {
+        const LAYOUT_PROPERTIES_MOCK = {
+            header: false,
+            footer: true,
+            sidebar: {
+                containers: [],
+                location: 'right',
+                width: 'medium'
+            }
+        };
+
+        const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+
+        store.updateLayoutProperties(LAYOUT_PROPERTIES_MOCK);
+
+        spectator.detectChanges();
+
+        store.vm$.pipe(pluck('layoutProperties'), take(1)).subscribe(() => {
+            expect(layoutChangeMock).toHaveBeenCalledWith({
+                layout: {
+                    ...LAYOUT_PROPERTIES_MOCK,
+                    body: FULL_DATA_MOCK,
+                    width: 'Mobile',
+                    title: 'Test Title'
+                },
+                themeId: '123'
+            });
+            done();
         });
     });
 

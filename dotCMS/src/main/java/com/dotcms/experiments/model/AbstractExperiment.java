@@ -144,7 +144,7 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     @JsonIgnore
     default Permissionable getParentPermissionable() {
         return Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId(),
-                        DEFAULT_VARIANT.name()))
+                        DEFAULT_VARIANT.name(), true))
                 .getOrElseThrow((e)->{
                     throw new DotStateException(e.getMessage() + ". Page ID:" + pageId(), e);
                 });

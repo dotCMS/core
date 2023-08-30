@@ -178,7 +178,7 @@ public class Pusher {
             var response = assetAPI.push(uploadForm);
             return response.entity();
         } catch (IOException e) {
-            logger.debug(String.format("Error pushing asset %s", localAssetPath), e);
+            logger.error(String.format("Error pushing asset %s", localAssetPath), e);
             throw new IllegalStateException(e);
         }
     }

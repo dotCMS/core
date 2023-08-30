@@ -72,15 +72,16 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     Optional<Path> findProjectRoot(Path currentPath) {
 
         if (Files.exists(currentPath.resolve(DOT_WORKSPACE_YML))) {
-            logger.debug("Found workspace at: " + currentPath.toAbsolutePath());
+            logger.info("Found workspace at: " + currentPath.toAbsolutePath());
             return Optional.of(currentPath);
         } else {
             Path parent;
             Path workingPath = currentPath.toAbsolutePath();
-            logger.debug("looking up workspace, current path is : " + workingPath + " and parent is " + workingPath.getParent());
+            logger.info("looking up workspace, current path is : " + workingPath + " and parent is "
+                    + workingPath.getParent());
             while ((parent = workingPath.getParent()) != null) {
                 if (Files.exists(parent.resolve(DOT_WORKSPACE_YML))) {
-                    logger.debug("Found workspace at: " + currentPath.toAbsolutePath());
+                    logger.info("Found workspace at: " + currentPath.toAbsolutePath());
                     return Optional.of(parent);
                 }
                 workingPath = parent;

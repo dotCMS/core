@@ -1,5 +1,7 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.business.result.BrowserSession;
@@ -29,6 +31,10 @@ public interface ExperimentsAPI {
     Lazy<Integer> EXPERIMENTS_MIN_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MIN_DURATION", 14));
     Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 10));
 
+    enum Health {
+        OK, NOT_CONFIGURED, CONFIGURATION_ERROR
+    }
+
 
     /**
      * Save a new experiment when the Experiment doesn't have an id
@@ -50,9 +56,15 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     * Deletes the Experiment matching the provided id
+     * Deletes the Experiment matching the provided id, validate that the Experiment
+     * is in DRAFT or SCHEDULED state to be deleted
      */
     void delete(String id, User user) throws DotDataException, DotSecurityException;
+
+    /**
+     * Deletes the Experiment matching the provided id, and just Validate Permission
+     */
+    public void forceDelete(final String id, final User user) throws DotDataException, DotSecurityException;
 
     /**
      * Returns experiments based on the provided filters in {@link ExperimentFilter}
@@ -191,7 +203,7 @@ public interface ExperimentsAPI {
      * @param user
      * @return
      */
-    ExperimentResults getResults(final Experiment experiment, User user)
+    ExperimentResults getResults(Experiment experiment, User user)
             throws DotDataException, DotSecurityException;
 
     List<Experiment> cacheRunningExperiments() throws DotDataException;
@@ -203,7 +215,7 @@ public interface ExperimentsAPI {
      * @param user
      * @return
      */
-    List<BrowserSession> getEvents(final Experiment experiment, User user) throws DotDataException;
+    List<BrowserSession> getEvents(Experiment experiment, User user) throws DotDataException, DotSecurityException;
 
     /*
      * Ends finalized {@link com.dotcms.experiments.model.Experiment}s
@@ -220,8 +232,12 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /*
-     * Cancels a Scheduled {@link com.dotcms.experiments.model.Experiment}.
-     * By Canceling an Experiment, its future execution will not take place.
+     * Cancels a Scheduled or RUNNING {@link com.dotcms.experiments.model.Experiment}.
+     * By Canceling an Experiment:
+     *
+     * - If the current Status is Scheduled then it comes back to DRAFT and its future execution will not take place
+     * - If it is in RUNNING then it just comes back to DRAFT.
+     *
      * In order to be canceled, the Experiment needs to be in the
      * {@link com.dotcms.experiments.model.Experiment.Status#SCHEDULED} state.
      */
@@ -236,4 +252,5 @@ public interface ExperimentsAPI {
      * @throws DotDataException
      */
     Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException;
+
 }
