@@ -60,6 +60,7 @@ import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
+import com.dotcms.publisher.bundle.business.BundleFactoryImplTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
@@ -653,7 +654,8 @@ import org.junit.runners.Suite.SuiteClasses;
         AssetPathResolverImplIntegrationTest.class,
         WebAssetHelperIntegrationTest.class,
         Task230701AddHashIndicesToWorkflowTablesTest.class,
-        Task230713IncreaseDisabledWysiwygColumnSizeTest.class
+        Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
+        BundleFactoryImplTest.class,
 })
 
 public class MainSuite {
