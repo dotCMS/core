@@ -1,11 +1,26 @@
 .dijitButton,
 .dijitToggleButton {
+    height: $field-height-md;
+    border-radius: $border-radius-md;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
     .dijitButtonNode {
-        padding: 0 $button-padding;
+        padding: 0 $spacing-3;
+        margin: none;
+
+        .dijitIcon {
+            margin-right: $spacing-1;
+        }
     }
+
+    .dijitInline .dijitButtonNode {
+        margin: 0;
+    }
+
     .dijitButtonText {
-        line-height: $field-height - 2px;
-        height: $field-height - 2px; // Need to substract the border (top and bottom)
+        text-transform: capitalize;
     }
 }
 
@@ -26,12 +41,9 @@
             $button-normal-textcolor
         );
 
-        &Text {
-            text-transform: uppercase;
-        }
-
         &Node {
             border: none;
+            font-size: $font-size-md;
         }
 
         &Hover {
@@ -50,6 +62,8 @@
                 $button-active-border,
                 $button-active-textcolor
             );
+
+            @include field-focus;
         }
 
         &Disabled {
@@ -69,6 +83,11 @@
             $dropdownbutton-normal-border,
             $dropdownbutton-normal-textcolor
         );
+
+        .dijitButtonContents,
+        .dijitButtonNode {
+            height: 100%;
+        }
 
         .dijitButtonNode {
             padding-left: $button-padding;
@@ -305,8 +324,6 @@
             );
 
             .dijitArrowButtonInner {
-                border-left: $combobutton-disabled-arrow-border;
-
                 @if $combobutton-disabled-arrow-bgcolor != "transparent" {
                     background-color: $combobutton-disabled-arrow-bgcolor;
                 }
@@ -372,5 +389,137 @@
                 $togglebutton-disabled-textcolor
             );
         }
+    }
+
+    &DropDownActionButton {
+        background-color: $color-palette-primary;
+        border: none;
+        border-radius: 50%;
+        height: $field-height-md;
+        width: $field-height-md;
+
+        .actionIcon,
+        .fa-plus {
+            color: $white;
+            line-height: $field-height-md;
+            margin: 0;
+            font-size: $font-size-lg;
+        }
+
+        .dijitButtonNode {
+            height: $field-height-md;
+            width: $field-height-md;
+            padding: 0;
+        }
+
+        .dijitArrowButtonInner {
+            display: none;
+        }
+
+        &.dijitDropDownButtonHover {
+            background-color: $color-palette-primary-600;
+        }
+
+        &.dijitDropDownButtonActive {
+            background-color: $color-palette-primary-700;
+        }
+        &.dijitDropDownButtonFocused {
+            background-color: $color-palette-primary;
+            @include field-focus;
+        }
+
+        &.dijitDropDownButtonDisabled {
+            background-color: $color-palette-gray-200;
+
+            .actionIcon,
+            .fa-plus {
+                color: $color-palette-gray-500;
+            }
+        }
+    }
+
+    &ButtonFlat {
+        border: 0;
+        background-color: transparent;
+        box-shadow: none;
+        color: $black;
+
+        &.dijitButtonHover {
+            background-color: $color-palette-primary-100;
+        }
+
+        &.dijitDropDownButtonActive {
+            background-color: $color-palette-primary-op-20;
+        }
+        &.dijitDropDownButtonFocused {
+            background-color: $color-palette-primary;
+            @include field-focus;
+        }
+
+        &.dijitDropDownButtonDisabled {
+            background-color: $white;
+        }
+    }
+
+    &ButtonDanger {
+        border: 0;
+        background-color: $red;
+        color: $white;
+
+        &.dijitButtonHover {
+            background-color: darken($red, 10%);
+        }
+    }
+
+    &ButtonAction {
+        border: solid 1px transparent;
+        background-color: $color-palette-primary;
+        color: $white;
+
+        &.dijitButtonHover {
+            background-color: $color-palette-primary-400;
+        }
+    }
+}
+
+// CUSTOM BUTTONS FOR DOTCMS UI
+.fakeDojoButton {
+    @include btn(
+        $button-normal-shadow,
+        $button-normal-bgcolor,
+        $button-normal-border,
+        $button-normal-textcolor
+    );
+    transition: all $field-animation-speed;
+    border-radius: $field-border-radius;
+    display: inline-block;
+    height: $field-height-md;
+    line-height: $field-height-md;
+    padding: 0 $spacing-1 * 2;
+    text-decoration: none;
+    text-transform: uppercase;
+
+    &:hover {
+        @include btn(
+            $button-hover-shadow,
+            $button-hover-bgcolor,
+            $button-hover-border,
+            $button-hover-textcolor
+        );
+    }
+
+    img {
+        vertical-align: middle;
+        margin-top: -2px;
+    }
+}
+
+.fakeDojoButtonDanger {
+    background-color: $red;
+    color: $white;
+
+    &:hover {
+        background-color: darken($red, 10%);
+        color: $white;
     }
 }

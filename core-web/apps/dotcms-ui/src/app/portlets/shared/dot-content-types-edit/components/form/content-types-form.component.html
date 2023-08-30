@@ -47,6 +47,7 @@
             [system]="true"
             [tabindex]="4"
             formControlName="host"
+            width="100%"
         ></dot-site-selector-field>
     </div>
     <div class="field">
@@ -75,31 +76,35 @@
         *ngIf="form.get('workflows').disabled"
         >{{ 'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm }}</span
     >
-    <div class="p-formgrid grid">
-        <div class="field col">
+    <div class="content-type__form-dates">
+        <div class="field">
             <label for="content-type-form-publish-date-field">{{
                 'contenttypes.form.label.publish.date.field' | dm
             }}</label>
             <p-dropdown
                 id="content-type-form-publish-date-field"
                 [options]="dateVarOptions"
-                [style]="{ 'min-width': '90px' }"
                 [tabindex]="7"
+                [placeholder]="'contenttypes.form.date.field.placeholder' | dm"
+                [autoDisplayFirst]="false"
+                [showClear]="true"
                 (onChange)="handleDateVarChange($event, 'publishDateVar')"
                 appendTo="body"
                 name="publishDateVar"
                 formControlName="publishDateVar"
             ></p-dropdown>
         </div>
-        <div class="field col">
+        <div class="field">
             <label for="content-type-form-expire-date-field">{{
                 'contenttypes.form.field.expire.date.field' | dm
             }}</label>
             <p-dropdown
                 id="content-type-form-expire-date-field"
+                [showClear]="true"
+                [autoDisplayFirst]="false"
                 [options]="dateVarOptions"
-                [style]="{ 'min-width': '90px' }"
                 [tabindex]="8"
+                [placeholder]="'contenttypes.form.date.field.placeholder' | dm"
                 (onChange)="handleDateVarChange($event, 'expireDateVar')"
                 appendTo="body"
                 name="expireDateVar"
@@ -108,11 +113,12 @@
         </div>
     </div>
 
-    <div class="field" *ngIf="!dateVarOptions.length">
-        <small class="p-field-hint field__date-hint" id="field-dates-hint">{{
-            'contenttypes.form.message.no.date.fields.defined' | dm
-        }}</small>
-    </div>
+    <small
+        class="p-field-hint field__date-hint"
+        id="field-dates-hint"
+        *ngIf="!dateVarOptions.length"
+        >{{ 'contenttypes.form.message.no.date.fields.defined' | dm }}</small
+    >
 
     <div class="field" *ngIf="form.get('detailPage')">
         <label for="content-type-form-detail-page">

@@ -2,8 +2,7 @@ package com.dotcms.api.client.files;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.files.traversal.Downloader;
-import com.dotcms.api.client.files.traversal.FileSystemTreeBuilderTask;
+import com.dotcms.api.client.files.traversal.LocalTraversalService;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodeInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
@@ -13,14 +12,11 @@ import org.jboss.logging.Logger;
 
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ForkJoinPool;
 
 public class PullBase {
 
@@ -28,7 +24,7 @@ public class PullBase {
     protected Logger logger;
 
     @Inject
-    protected Downloader downloader;
+    LocalTraversalService traversalService;
 
     @Inject
     protected RestClientFactory clientFactory;
@@ -42,107 +38,77 @@ public class PullBase {
      * @param destination          the destination path to save the pulled files
      * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
+     * @param failFast             true to fail fast, false to continue on error
      * @param progressBar          the progress bar for tracking the pull progress
      */
     @ActivateRequestContext
-    protected void processTree(final TreeNode tree,
-                               final TreeNodeInfo treeNodeInfo,
-                               final String destination,
-                               final boolean overwrite,
-                               final boolean generateEmptyFolders,
-                               final ConsoleProgressBar progressBar) {
+    protected List<Exception> processTree(final TreeNode tree,
+                                          final TreeNodeInfo treeNodeInfo,
+                                          final File destination,
+                                          final boolean overwrite,
+                                          final boolean generateEmptyFolders,
+                                          final boolean failFast,
+                                          final ConsoleProgressBar progressBar) {
 
-        try {
+        // Preparing the languages for the tree
+        var treeLanguages = prepareLanguages(treeNodeInfo);
 
-            // Make sure we have a valid destination
-            var rootPath = checkBaseStructure(destination);
+        // Calculating the total number of steps
+        progressBar.setTotalSteps(
+                treeNodeInfo.assetsCount()
+        );
 
-            // Preparing the languages for the tree
-            var treeLanguages = prepareLanguages(treeNodeInfo);
+        // Sort the sets and convert them into lists
+        List<String> sortedLiveLanguages = new ArrayList<>(treeLanguages.liveLanguages);
+        Collections.sort(sortedLiveLanguages);
 
-            // Calculating the total number of steps
-            progressBar.setTotalSteps(
-                    treeNodeInfo.assetsCount()
-            );
+        List<String> sortedWorkingLanguages = new ArrayList<>(treeLanguages.workingLanguages);
+        Collections.sort(sortedWorkingLanguages);
 
-            // Sort the sets and convert them into lists
-            List<String> sortedLiveLanguages = new ArrayList<>(treeLanguages.liveLanguages);
-            Collections.sort(sortedLiveLanguages);
+        // Process the live tree
+        var errors = processTreeByStatus(true, sortedLiveLanguages, tree, destination.getAbsolutePath(),
+                overwrite, generateEmptyFolders, failFast, progressBar);
+        var foundErrors = new ArrayList<>(errors);
 
-            List<String> sortedWorkingLanguages = new ArrayList<>(treeLanguages.workingLanguages);
-            Collections.sort(sortedWorkingLanguages);
+        // Process the working tree
+        errors = processTreeByStatus(false, sortedWorkingLanguages, tree, destination.getAbsolutePath(),
+                overwrite, generateEmptyFolders, failFast, progressBar);
+        foundErrors.addAll(errors);
 
-            // Process the live tree
-            processTreeByStatus(true, sortedLiveLanguages, tree, rootPath, overwrite, generateEmptyFolders, progressBar);
-            // Process the working tree
-            processTreeByStatus(false, sortedWorkingLanguages, tree, rootPath, overwrite, generateEmptyFolders, progressBar);
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return foundErrors;
     }
 
     /**
      * Processes the file tree for a specific status and language.
      *
      * @param isLive               true if processing live tree, false for working tree
-     * @param sortedLanguages      the sorted list of languages
+     * @param languages            the list of languages
      * @param rootNode             the root node of the file tree
      * @param destination          the destination path to save the pulled files
      * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
+     * @param failFast             true to fail fast, false to continue on error
      * @param progressBar          the progress bar for tracking the pull progress
      */
     @ActivateRequestContext
-    protected void processTreeByStatus(boolean isLive, List<String> sortedLanguages, TreeNode rootNode,
-                                       final String destination, final boolean overwrite,
-                                       final boolean generateEmptyFolders, final ConsoleProgressBar progressBar) {
+    protected List<Exception> processTreeByStatus(boolean isLive, List<String> languages, TreeNode rootNode,
+                                                  final String destination, final boolean overwrite,
+                                                  final boolean generateEmptyFolders, final boolean failFast,
+                                                  final ConsoleProgressBar progressBar) {
 
-        if (sortedLanguages.isEmpty()) {
-            return;
+        var foundErrors = new ArrayList<Exception>();
+
+        if (languages.isEmpty()) {
+            return foundErrors;
         }
 
-        for (String lang : sortedLanguages) {
-
-            // Filter the tree by status and language
-            TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, lang, generateEmptyFolders);
-
-            var rootPath = Paths.get(destination, FilesUtils.StatusToString(isLive), lang, rootNode.folder().host());
-
-            // ---
-            var forkJoinPool = ForkJoinPool.commonPool();
-            var task = new FileSystemTreeBuilderTask(
-                    logger,
-                    downloader,
-                    filteredRoot,
-                    rootPath.toString(),
-                    overwrite,
-                    generateEmptyFolders,
-                    lang,
-                    progressBar);
-            forkJoinPool.invoke(task);
-        }
-    }
-
-
-    /**
-     * Checks the base structure of the destination path and creates the necessary directories.
-     *
-     * @param destination the destination path to save the pulled files
-     * @return the root path for storing the files
-     * @throws IOException if an I/O error occurs while creating directories
-     */
-    protected String checkBaseStructure(final String destination) throws IOException {
-
-        // For the pull of files, everything will be stored in a folder called "files"
-        var filesFolder = Paths.get(destination, "files");
-
-        // Create the folder if it does not exist
-        if (!Files.exists(filesFolder)) {
-            Files.createDirectories(filesFolder);
+        for (String lang : languages) {
+            var errors = traversalService.pullTreeNode(rootNode, destination, isLive, lang, overwrite,
+                    generateEmptyFolders, failFast, progressBar);
+            foundErrors.addAll(errors);
         }
 
-        return filesFolder.toString();
+        return foundErrors;
     }
 
     /**
@@ -165,7 +131,7 @@ public class PullBase {
 
         // If there are no unique live languages or working languages, fallback to the default language available
         if (uniqueLiveLanguages.isEmpty() && uniqueWorkingLanguages.isEmpty()) {
-            FilesUtils.FallbackDefaultLanguage(languages, uniqueLiveLanguages);
+            FilesUtils.fallbackDefaultLanguage(languages, uniqueLiveLanguages);
         }
 
         return new NodeLanguages(uniqueLiveLanguages, uniqueWorkingLanguages);

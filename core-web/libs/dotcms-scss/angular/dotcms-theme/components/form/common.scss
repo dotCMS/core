@@ -1,0 +1,157 @@
+@use "variables" as *;
+@import "mixins";
+
+#form-field-base {
+    background-color: $white;
+    height: $field-height-md;
+    border-radius: $field-border-radius;
+    border: $field-border-size solid $color-palette-gray-400;
+    padding: 0 $spacing-1;
+    color: $color-palette-gray-700;
+    font-size: $font-size-md;
+
+    &.p-filled {
+        color: $black;
+    }
+}
+
+#form-field-sm {
+    height: $field-height-sm;
+    font-size: $font-size-sm;
+    border-radius: $border-radius-sm;
+}
+
+#form-field-hover {
+    border-color: $color-palette-primary-400;
+}
+
+#form-field-focus {
+    border-color: $color-palette-primary-400;
+    @include field-focus;
+}
+
+#form-field-disabled {
+    border-color: $color-palette-gray-200;
+    background: $color-palette-gray-100;
+    color: $color-palette-gray-500;
+}
+
+#form-field-states {
+    &:enabled:hover,
+    &:hover {
+        @extend #form-field-hover;
+    }
+
+    &:enabled:active,
+    &:enabled:focus,
+    &:active,
+    &:focus {
+        @extend #form-field-focus;
+    }
+
+    &:disabled {
+        @extend #form-field-disabled;
+    }
+}
+
+#form-field-extend {
+    @extend #form-field-base;
+    @extend #form-field-states;
+}
+
+#field-trigger {
+    background: $color-palette-gray-200;
+    color: $color-palette-primary;
+    width: $field-height-md;
+    border-top-right-radius: $border-radius-md;
+    border-bottom-right-radius: $border-radius-md;
+    height: 100%;
+}
+
+#field-trigger-sm {
+    width: $field-height-sm;
+    border-top-right-radius: $border-radius-sm;
+    border-bottom-right-radius: $border-radius-sm;
+}
+
+#field-trigger-icon {
+    padding: $spacing-1 $spacing-1;
+    font-size: $icon-sm;
+}
+
+#field-panel {
+    background: $white;
+    color: $black;
+    border: 0 none;
+    border-radius: $border-radius-md;
+    box-shadow: $md-shadow-6;
+    padding: $spacing-1;
+    margin-top: $spacing-1;
+}
+
+#field-panel-header {
+    padding: $spacing-2;
+    border-bottom: $field-border-size solid $color-palette-black-op-10;
+    color: $black;
+    background: $white;
+    margin: 0;
+    border-top-right-radius: $border-radius-xs;
+    border-top-left-radius: $border-radius-xs;
+}
+
+#field-panel-filter {
+    padding-right: $spacing-7;
+    color: $black;
+}
+
+#field-panel-filter-icon {
+    right: $spacing-2;
+    color: $color-palette-primary;
+}
+
+#field-panel-items {
+    padding: 0;
+}
+
+#field-panel-item {
+    display: flex;
+    align-items: center;
+    padding: 0 $spacing-2;
+    color: $black;
+    height: $field-height-md;
+}
+
+#field-panel-item-highlight {
+    background: $color-palette-primary-200;
+}
+
+#field-panel-item-hover {
+    background: $color-palette-primary-100;
+}
+
+#field-panel-item-disabled {
+    @extend #form-field-disabled;
+    cursor: initial;
+}
+
+#field-panel-item-checkbox {
+    margin-right: $spacing-1;
+
+    .p-checkbox-box {
+        border-radius: $border-radius-sm;
+        border: 2px solid $color-palette-gray-400;
+    }
+}
+
+#field-chip {
+    height: 1.5rem;
+    padding: $spacing-1;
+    background: $color-palette-primary-200;
+    border-radius: $border-radius-sm;
+    color: $color-palette-primary;
+    font-size: $font-size-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-0;
+}

@@ -15,6 +15,8 @@ export const TIME_90_DAYS = 7776e6;
 
 export const PROP_NOT_FOUND = 'NOT_FOUND';
 
+export const MINIMUM_SESSIONS_TO_SHOW_CHART = 10;
+
 export enum ExperimentsConfigProperties {
     EXPERIMENTS_MIN_DURATION = 'EXPERIMENTS_MIN_DURATION',
     EXPERIMENTS_MAX_DURATION = 'EXPERIMENTS_MAX_DURATION'
@@ -235,21 +237,29 @@ export const ReportSummaryLegendByBayesianStatus: Record<BayesianLegendStatus, S
 
 type DotExperimentListAction =
     | 'delete'
+    | 'abort'
+    | 'results'
     | 'configuration'
     | 'archive'
+    | 'end'
     | 'addToBundle'
-    | 'pushPublish';
+    | 'pushPublish'
+    | 'cancelSchedule';
 export const AllowedActionsByExperimentStatus: Record<
     DotExperimentListAction,
     Array<DotExperimentStatus>
 > = {
     ['delete']: [DotExperimentStatus.DRAFT, DotExperimentStatus.SCHEDULED],
+    ['abort']: [DotExperimentStatus.RUNNING],
     ['configuration']: [
         DotExperimentStatus.RUNNING,
         DotExperimentStatus.ENDED,
-        DotExperimentStatus.ARCHIVED
+        DotExperimentStatus.ARCHIVED,
+        DotExperimentStatus.SCHEDULED,
+        DotExperimentStatus.DRAFT
     ],
     ['archive']: [DotExperimentStatus.ENDED],
+    ['end']: [DotExperimentStatus.RUNNING],
     ['addToBundle']: [
         DotExperimentStatus.DRAFT,
         DotExperimentStatus.RUNNING,
@@ -263,7 +273,9 @@ export const AllowedActionsByExperimentStatus: Record<
         DotExperimentStatus.ENDED,
         DotExperimentStatus.ARCHIVED,
         DotExperimentStatus.SCHEDULED
-    ]
+    ],
+    ['cancelSchedule']: [DotExperimentStatus.SCHEDULED],
+    ['results']: [DotExperimentStatus.RUNNING, DotExperimentStatus.ENDED]
 };
 
 export const CONFIGURATION_CONFIRM_DIALOG_KEY = 'confirmDialog';

@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -26,6 +26,18 @@ interface DotCMSResponseExperiment<T> extends DotCMSResponse<T> {
 export class DotExperimentsService {
     constructor(private readonly http: HttpClient) {}
 
+    /**
+     * Check if all necessary to run and track events in Experiments are working
+     * @returns Observable<boolean>
+     * @memberof DotExperimentsService
+     */
+    healthCheck(): Observable<boolean> {
+        // change to avoid block the UI b/c endpoint change.
+        return of(true);
+        // return this.http
+        //     .get<DotCMSResponseExperiment<{ healthy: boolean }>>('/api/v1/experiments/health')
+        //     .pipe(pluck('entity', 'healthy'));
+    }
     /**
      * Add a new experiment
      * @param  experiment

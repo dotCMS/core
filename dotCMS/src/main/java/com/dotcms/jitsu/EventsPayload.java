@@ -49,7 +49,7 @@ public class EventsPayload {
     public static class EventPayload {
         private JSONObject jsonObject;
 
-        private EventPayload(JSONObject jsonObject) {
+        public EventPayload(JSONObject jsonObject) {
             this.jsonObject = jsonObject;
         }
 

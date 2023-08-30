@@ -239,6 +239,15 @@ export class DotPageStateService {
     }
 
     /**
+     * Set the SEO media to show in the page
+     * @param seoTitle
+     */
+    setSeoMedia(seoMedia: string): void {
+        this.currentState.seoMedia = seoMedia;
+        this.state$.next(this.currentState);
+    }
+
+    /**
      * Update page content status
      *
      * @param {PageModelChangeEvent} event
@@ -293,7 +302,12 @@ export class DotPageStateService {
                                     favoritePage: DotCMSContentlet,
                                     experiment: DotExperiment
                                 ]) => {
-                                    return this.setLocalPageState(page, favoritePage, experiment);
+                                    return this.setLocalPageState(
+                                        page,
+                                        favoritePage,
+                                        experiment,
+                                        options.viewAs?.device
+                                    );
                                 }
                             )
                         );
@@ -308,7 +322,8 @@ export class DotPageStateService {
     private setLocalPageState(
         page: DotPageRenderParameters,
         favoritePage?: DotCMSContentlet,
-        runningExperiment?: DotExperiment
+        runningExperiment?: DotExperiment,
+        device?: DotDevice
     ): Observable<DotPageRenderState> {
         const pageState = new DotPageRenderState(
             this.getCurrentUser(),
@@ -316,6 +331,10 @@ export class DotPageStateService {
             favoritePage,
             runningExperiment
         );
+
+        if (!pageState.viewAs?.device && device) {
+            pageState.viewAs.device = device;
+        }
 
         this.setCurrentState(pageState);
 

@@ -30,7 +30,8 @@ import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-b
 class HostComponent {
     isResizing = false;
     row = {
-        id: '1'
+        id: '1',
+        willBoxFit: false
     };
 }
 
@@ -70,6 +71,17 @@ describe('TemplateBuilderRowComponent', () => {
         ).componentInstance;
 
         store = TestBed.inject(DotTemplateBuilderStore);
+
+        store.setState({
+            rows: [],
+            layoutProperties: {
+                header: false,
+                footer: false,
+                sidebar: null
+            },
+            resizingRowID: '',
+            containerMap: {}
+        });
 
         fixture.detectChanges();
     });

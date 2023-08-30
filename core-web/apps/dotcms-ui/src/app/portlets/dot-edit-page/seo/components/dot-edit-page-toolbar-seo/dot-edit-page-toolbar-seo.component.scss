@@ -1,11 +1,13 @@
 @use "variables" as *;
 
+$dot-secondary-toolbar-height: 3.75rem;
+
 .edit-page-toolbar__cancel {
     margin-right: $spacing-1;
 }
 
 .dot-edit__what-changed-button {
-    margin-left: $spacing-3;
+    margin-right: $spacing-3;
 }
 
 .main-toolbar-right {
@@ -20,6 +22,15 @@
 ::ng-deep {
     .dot-favorite-page-highlight i {
         color: $color-palette-primary;
+    }
+
+    .dot-secondary-toolbar__lower {
+        height: $dot-secondary-toolbar-height;
+        align-items: center;
+    }
+
+    .lower-toolbar-right {
+        justify-content: flex-end;
     }
 }
 

@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -459,7 +460,7 @@ public class RoleAPIImpl implements RoleAPI {
 	public void removeRoleFromUser(final Role role, final User user) throws DotDataException, DotStateException {
 		final Role roleFromDb = loadRoleById(role.getId());
 		roleFactory.removeRoleFromUser(roleFromDb, user);
-	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(Visibility.USER, user.getUserId()));
 	}
 
 	@Override
@@ -469,7 +470,7 @@ public class RoleAPIImpl implements RoleAPI {
 		for(Role role : roles) {
 			removeRoleFromUser(role, user);
 		}
-        APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(Visibility.USER, user.getUserId()));
 	}
 
 	@WrapInTransaction

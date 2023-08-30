@@ -22,6 +22,7 @@ import com.dotcms.experiments.model.Goal.GoalType;
 import com.dotcms.experiments.model.Goals;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -35,8 +36,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 
 /**
@@ -57,8 +56,9 @@ public enum ExperimentAnalyzerUtil {
     private static Map<MetricType, MetricExperimentAnalyzer> createHelpersMap() {
         return map(
                 MetricType.REACH_PAGE, new AfterLandOnPageExperimentAnalyzer(),
-                MetricType.BOUNCE_RATE, new BounceRateExperimentAnalyzer(),
-                MetricType.URL_PARAMETER, new AfterLandOnPageExperimentAnalyzer()
+                MetricType.EXIT_RATE, new ExitRateExperimentAnalyzer(),
+                MetricType.URL_PARAMETER, new AfterLandOnPageExperimentAnalyzer(),
+                MetricType.BOUNCE_RATE, new BounceRateExperimentAnalyzer()
         );
     }
 
@@ -89,11 +89,12 @@ public enum ExperimentAnalyzerUtil {
         builder.trafficProportion(experiment.trafficProportion());
 
         if (!browserSessions.isEmpty()) {
-            final CubeJSResultSet pageViewsByVariants = getPageViewsByVariants(experiment,
+            final CubeJSResultSet pageViewsByVariants = getPageViewsByVariants(
+                    experiment,
                     variants);
             pageViewsByVariants.forEach(row -> {
                 final String variantId = row.get("Events.variant")
-                        .map(variant -> variant.toString())
+                        .map(Object::toString)
                         .orElse(StringPool.BLANK);
                 final long pageViews = row.get("Events.count")
                         .map(object -> Long.parseLong(object.toString()))
@@ -131,7 +132,7 @@ public enum ExperimentAnalyzerUtil {
         for (final BrowserSession browserSession : browserSessions) {
 
             final boolean isIntoExperiment = browserSession.getEvents().stream()
-                    .map(event -> event.get("url").map(Object::toString).orElse(StringPool.BLANK))
+                    .map(event -> event.getUrl())
                     .anyMatch(url -> url.matches(urlRegexPattern));
 
             if (isIntoExperiment) {
@@ -167,9 +168,7 @@ public enum ExperimentAnalyzerUtil {
 
         final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
         final AnalyticsApp analyticsApp = analyticsHelper.appFromHost(currentHost);
-
-        final CubeJSClient cubeClient = new CubeJSClient(
-                analyticsApp.getAnalyticsProperties().analyticsReadUrl());
+        final CubeJSClient cubeClient = FactoryLocator.getCubeJSClientFactory().create(analyticsApp);
 
         return cubeClient.send(cubeJSQuery);
     }

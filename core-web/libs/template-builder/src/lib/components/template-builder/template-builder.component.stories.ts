@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 
 import { AsyncPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
@@ -54,7 +55,8 @@ export default {
                 ButtonModule,
                 ToolbarModule,
                 DividerModule,
-                DropdownModule
+                DropdownModule,
+                FormsModule
             ],
             providers: [
                 DotTemplateBuilderStore,
@@ -95,7 +97,7 @@ export default {
 const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponent) => ({
     props: args,
     template: `
-        <dotcms-template-builder
+        <dotcms-template-builder-lib
             [layout]="layout"
             [themeId]="themeId"
             [containerMap]="containerMap"
@@ -106,7 +108,7 @@ const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponen
                 type="button"
                 pButton
             ></button>
-        </dotcms-template-builder>
+        </dotcms-template-builder-lib>
     `
 });
 

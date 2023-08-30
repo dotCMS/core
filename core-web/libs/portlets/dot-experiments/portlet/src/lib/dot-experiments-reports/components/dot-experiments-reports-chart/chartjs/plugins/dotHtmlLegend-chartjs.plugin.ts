@@ -1,7 +1,13 @@
-const COLOR_PALETTE_GRAY_100 = '#fafafb';
+const COLOR_PALETTE_GRAY_100 = getComputedStyle(document.body).getPropertyValue(
+    '--color-palette-black-op-10'
+);
 
-const getOrCreateLegendList = (chart, id) => {
-    const legendContainer = document.getElementById(id);
+const getOrCreateLegendList = (chart) => {
+    const legendContainer = document
+        .getElementById(chart.canvas.parentElement.parentElement.id)
+        .closest('div')
+        .getElementsByClassName('legend-wrapper')[0];
+
     let listContainer = legendContainer.querySelector('ul');
 
     if (!listContainer) {
@@ -25,8 +31,8 @@ const getOrCreateLegendList = (chart, id) => {
  */
 export const htmlLegendPlugin = {
     id: 'dotHtmlLegend',
-    afterUpdate(chart, args, options) {
-        const ul = getOrCreateLegendList(chart, options.containerID);
+    afterUpdate(chart) {
+        const ul = getOrCreateLegendList(chart);
 
         while (ul.firstChild) {
             ul.firstChild.remove();
