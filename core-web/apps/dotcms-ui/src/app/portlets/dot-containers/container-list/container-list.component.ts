@@ -1,16 +1,16 @@
 import { Subject } from 'rxjs';
 
-import { Component, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotMessageService } from '@dotcms/data-access';
+import { SiteService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkResult,
     DotBulkFailItem,
@@ -20,7 +20,6 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-container-list',
@@ -32,9 +31,6 @@ export class ContainerListComponent implements OnDestroy {
     vm$ = this.store.vm$;
     notify$ = this.store.notify$;
 
-    @ViewChild('listing', { static: false })
-    listing: DotListingDataTableComponent;
-
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -42,11 +38,13 @@ export class ContainerListComponent implements OnDestroy {
         private dotMessageService: DotMessageService,
         private dotMessageDisplayService: DotMessageDisplayService,
         private dialogService: DialogService,
-        private dotRouterService: DotRouterService
+        private siteService: SiteService
     ) {
         this.notify$.pipe(takeUntil(this.destroy$)).subscribe(({ payload, message, failsInfo }) => {
             this.notifyResult(payload, failsInfo, message);
         });
+
+        this.store.getContainersByHost(this.siteService.switchSite$);
     }
 
     ngOnDestroy(): void {
@@ -60,10 +58,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     changeContentTypeSelector(value: string) {
-        value
-            ? this.listing.paginatorService.setExtraParams('content_type', value)
-            : this.listing.paginatorService.deleteExtraParams('content_type');
-        this.listing.loadFirstPage();
+        this.store.getContainersByContentType(value);
     }
 
     /**
@@ -92,10 +87,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     handleArchivedFilter(checked: boolean): void {
-        checked
-            ? this.listing.paginatorService.setExtraParams('archive', checked)
-            : this.listing.paginatorService.deleteExtraParams('archive');
-        this.listing.loadFirstPage();
+        this.store.getContainersByArchiveState(checked);
     }
 
     /**
@@ -126,28 +118,6 @@ export class ContainerListComponent implements OnDestroy {
         return this.store.getContainerActions(container);
     }
 
-    /**
-     * Return a list of containers with disableInteraction in system items.
-     * @param {DotContainer[]} containers
-     * @returns DotContainer[]
-     * @memberof DotContainerListComponent
-     */
-    getContainersWithDisabledEntities(containers: DotContainer[]): DotContainer[] {
-        return containers.map((container) => {
-            const copyContainer = structuredClone(container);
-            copyContainer.disableInteraction =
-                copyContainer.identifier.includes('/') ||
-                copyContainer.identifier === 'SYSTEM_CONTAINER' ||
-                copyContainer.source === CONTAINER_SOURCE.FILE;
-
-            if (copyContainer.path) {
-                copyContainer.pathName = new URL(`http:${container.path}`).pathname;
-            }
-
-            return copyContainer;
-        });
-    }
-
     private notifyResult(
         response: DotActionBulkResult | DotContainer,
         failsInfo: DotBulkFailItem[],
@@ -163,8 +133,8 @@ export class ContainerListComponent implements OnDestroy {
             this.showToastNotification(message);
         }
 
-        this.listing?.clearSelection();
-        this.listing?.loadCurrentPage();
+        this.store.clearSelectedContainers();
+        this.store.loadCurrentContainersPage();
     }
 
     private showToastNotification(message: string): void {
