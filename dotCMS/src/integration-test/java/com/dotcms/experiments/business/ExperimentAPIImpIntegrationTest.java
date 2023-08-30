@@ -6522,7 +6522,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
 
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
 
@@ -6628,7 +6628,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
