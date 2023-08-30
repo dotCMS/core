@@ -196,6 +196,8 @@ public class APILocator extends Locator<APIIndex> {
 		if (instance == null) {
 			instance = new APILocator();
 		}
+
+		Config.initSystemTableConfigSource();
 	}
 
 	/**

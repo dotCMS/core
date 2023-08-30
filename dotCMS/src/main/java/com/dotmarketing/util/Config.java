@@ -6,11 +6,13 @@ import com.dotcms.util.ConfigurationInterpolator;
 import com.dotcms.util.FileWatcherAPI;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
+import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.util.transform.StringToEntityTransformer;
 import com.dotmarketing.business.APILocator;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
@@ -50,7 +52,11 @@ public class Config {
 
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
 
-    private static final SystemTableConfigSource SYSTEM_TABLE_CONFIG_SOURCE = new SystemTableConfigSource();
+    private static SystemTableConfigSource SYSTEM_TABLE_CONFIG_SOURCE = null;
+
+    public static void initSystemTableConfigSource() {
+        SYSTEM_TABLE_CONFIG_SOURCE = new SystemTableConfigSource();
+    }
 
 
     /**
@@ -363,10 +369,28 @@ public class Config {
 
     private static String getSystemTableValue(final String ...names) {
 
-        for (final String name : names) {
-            final String value = SYSTEM_TABLE_CONFIG_SOURCE.getValue(name);
-            if (null != value) {
-                return value;
+        if (null != names && null != SYSTEM_TABLE_CONFIG_SOURCE) {
+
+            final String tag = ThreadContextUtil.getOrCreateContext().getTag();
+            if (UtilMethods.isSet(tag) && "ConfigSystemTable".equals(tag)) {
+                // we are already in the system table, so do not need to check inner system table calls (avoid recursion)
+                return null;
+            }
+
+            try {
+
+                ThreadContextUtil.getOrCreateContext().setTag("ConfigSystemTable");
+
+                for (final String name : names) {
+                    final String value = SYSTEM_TABLE_CONFIG_SOURCE.getValue(name);
+                    if (null != value) {
+                        return value;
+                    }
+                }
+
+            } finally {
+                // the result is done, do not need more the barrier tag
+                ThreadContextUtil.getOrCreateContext().setTag(null);
             }
         }
 
