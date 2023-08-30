@@ -249,6 +249,30 @@ describe('TemplateBuilderComponent', () => {
         });
     });
 
+    it("should trigger deleteSection on header when clicking on 'Delete Section' button", () => {
+        const deleteSectionMock = jest.spyOn(spectator.component, 'deleteSection');
+        const headerComponent = spectator.query(byTestId('template-builder-header'));
+        const deleteSectionButton = headerComponent.querySelector(
+            '[data-testId="delete-section-button"]'
+        );
+
+        spectator.click(deleteSectionButton);
+
+        expect(deleteSectionMock).toHaveBeenCalledWith('header');
+    });
+
+    it("should trigger deleteSection on footer when clicking on 'Delete Section' button", () => {
+        const deleteSectionMock = jest.spyOn(spectator.component, 'deleteSection');
+        const footerComponent = spectator.query(byTestId('template-builder-footer'));
+        const deleteSectionButton = footerComponent.querySelector(
+            '[data-testId="delete-section-button"]'
+        );
+
+        spectator.click(deleteSectionButton);
+
+        expect(deleteSectionMock).toHaveBeenCalledWith('footer');
+    });
+
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
