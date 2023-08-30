@@ -233,12 +233,18 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 				contentlet.setStructureInode(selectedStructureInode);
 				contentlet.setHost(hostId);
 				contentlet.setFolder(folder.getInode());
-				final Object searchedLang= session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
-				if (UtilMethods.isSet(searchedLang)) {
-					final long langId = Long.parseLong(searchedLang.toString());
-					final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-					contentlet.setLanguageId(langId == 0 ? defaultLanguageId : langId);
+				long contentLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+				if (config.getPortletName().contains("site-browser")) {
+					if(UtilMethods.isSet(session.getAttribute(WebKeys.LANGUAGE_SEARCHED))) {
+						final long searchedLangId = Long.parseLong(session.getAttribute(WebKeys.LANGUAGE_SEARCHED).toString());
+						contentLang = searchedLangId > 0 ? searchedLangId : contentLang;
+					}
+				} else {
+					if(UtilMethods.isSet(session.getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE))) {
+						contentLang = Long.parseLong(session.getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE).toString());
+					}
 				}
+				contentlet.setLanguageId(contentLang);
 				String fileName = fileNamesArray[k];
 				String title = getFriendlyName(fileName);
 
