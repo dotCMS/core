@@ -86,21 +86,6 @@ export class DotTemplatesService {
     }
 
     /**
-     * Save and Publish a template Old version, use saveAndPublish instead
-     * @param {DotTemplate} values
-     * @returns Observable<DotTemplate>
-     * @memberof DotTemplatesService
-     * @deprecated
-     */
-    saveAndPublishOld(values: DotTemplate): Observable<DotTemplate> {
-        return this.request<DotTemplate>({
-            method: 'PUT',
-            url: `${TEMPLATE_API_URL}_savepublish`,
-            body: values
-        });
-    }
-
-    /**
      * Save and Publish a template
      * @param {DotTemplate} values
      * @returns Observable<DotTemplate>
