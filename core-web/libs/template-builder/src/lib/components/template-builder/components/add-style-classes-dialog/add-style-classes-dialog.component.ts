@@ -45,10 +45,14 @@ export class AddStyleClassesDialogComponent implements OnInit {
 
         this.isJsonClasses$ = this.jsonClassesService.getClasses().pipe(
             tap(({ classes }) => {
-                this.classes = classes;
+                if (classes?.length) {
+                    this.classes = classes;
+                } else {
+                    this.classes = [];
+                }
             }),
             map(({ classes }) => {
-                return !!classes.length;
+                return !!classes?.length;
             }),
             catchError(() => {
                 this.classes = [];

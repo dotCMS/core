@@ -10,11 +10,12 @@
         [autofocus]="true"
         (onKeyUp)="onKeyUp($event)"
         (completeMethod)="filterClasses($event)"
+        data-testId="autocomplete"
         inputId="auto-complete-input"
         appendTo="body">
     </p-autoComplete>
     <ng-container *ngIf="isJsonClasses$ | async; else suggestionNotes">
-        <ul>
+        <ul data-testId="list">
             <li>
                 <i class="pi pi-info-circle"></i>
                 {{ 'dot.template.builder.autocomplete.has.suggestions' | dm }}
@@ -23,7 +24,7 @@
     </ng-container>
 
     <ng-template #suggestionNotes>
-        <ul>
+        <ul data-testId="list">
             <li>
                 <i class="pi pi-info-circle"></i>
                 {{ 'dot.template.builder.autocomplete.no.suggestions' | dm }}
