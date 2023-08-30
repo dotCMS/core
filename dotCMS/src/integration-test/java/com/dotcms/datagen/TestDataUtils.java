@@ -87,6 +87,7 @@ public class TestDataUtils {
     public static final String FILE_ASSET_1 = "fileAsset1";
     public static final String FILE_ASSET_2 = "fileAsset2";
     public static final String FILE_ASSET_3 = "fileAsset3";
+
     /**
      * This is a simple example of what the content of the Block Editor field with a simple
      * "Generic Content Body" message looks like.
@@ -114,6 +115,7 @@ public class TestDataUtils {
                                 "}]" +
                         "}]" +
             "}";
+
     /**
      * This is a simple example of what the content of the Block Editor field looks like, but it
      * allows you to add your own custom message via {@link String#format(String, Object...)}.
@@ -1070,7 +1072,7 @@ public class TestDataUtils {
         return getGenericContentContent(persist, languageId, null);
     }
 
-    public static Contentlet getGenericContentContent(Boolean persist, long languageId, Host site) {
+    public static Contentlet getGenericContentContent(final Boolean persist, final long languageId, Host site) {
 
         try {
 
@@ -1078,11 +1080,10 @@ public class TestDataUtils {
                 site = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
             }
 
-            ContentType webPageContentContentType = APILocator
+            final ContentType webPageContentContentType = APILocator
                     .getContentTypeAPI(APILocator.systemUser())
                     .find("webPageContent");
-
-            ContentletDataGen contentletDataGen = new ContentletDataGen(
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(
                     webPageContentContentType.id())
                     .languageId(languageId)
                     .host(site)
@@ -1090,13 +1091,8 @@ public class TestDataUtils {
                     .setProperty("title", "genericContent")
                     .setProperty("author", "systemUser")
                     .setProperty("body", BLOCK_EDITOR_DUMMY_CONTENT);
-
-            if (persist) {
-                return contentletDataGen.nextPersisted();
-            } else {
-                return contentletDataGen.next();
-            }
-        } catch (Exception e) {
+            return persist ? contentletDataGen.nextPersisted() : contentletDataGen.next();
+        } catch (final Exception e) {
             throw new DotRuntimeException(e);
         }
     }

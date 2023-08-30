@@ -972,7 +972,7 @@ public class PageResourceTest {
         contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         APILocator.getContentletAPI().publish(contentlet1, systemUser, false);
 
-        MultiTree multiTree = new MultiTree(page.getIdentifier(), container1.getIdentifier(), contentlet1.getIdentifier(),"1",0);
+        final MultiTree multiTree = new MultiTree(page.getIdentifier(), container1.getIdentifier(), contentlet1.getIdentifier(),"1",0);
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
         final Response response = pageResource
@@ -1078,7 +1078,7 @@ public class PageResourceTest {
         contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         APILocator.getContentletAPI().publish(contentlet1, systemUser, false);
 
-        MultiTree multiTree = new MultiTree(page.getIdentifier(), ((FileAssetContainer) container).getPath(), contentlet1.getIdentifier(),"1",0);
+        final MultiTree multiTree = new MultiTree(page.getIdentifier(), ((FileAssetContainer) container).getPath(), contentlet1.getIdentifier(),"1",0);
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
         final Response response = pageResource

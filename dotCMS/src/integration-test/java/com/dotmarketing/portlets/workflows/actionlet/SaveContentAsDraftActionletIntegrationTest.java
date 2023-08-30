@@ -13,7 +13,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.DateUtil;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -21,6 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Save Draft test
@@ -53,7 +56,7 @@ public class SaveContentAsDraftActionletIntegrationTest extends BaseWorkflowInte
 
         final Optional<Role> role = APILocator.getRoleAPI().findAllAssignableRoles(true).stream().findAny();
 
-        Assert.assertTrue(role.isPresent());
+        assertTrue(role.isPresent());
 
         final List<Permission> permissions = new ArrayList<>();
         permissions.add(new Permission(null, role.get().getId(), PermissionAPI.PERMISSION_READ));
@@ -68,9 +71,9 @@ public class SaveContentAsDraftActionletIntegrationTest extends BaseWorkflowInte
         DateUtil.sleep(DateUtil.SECOND_MILLIS*2); // we need to wait for the commit listener that saves the permissions
 
         final List<Permission> permissionsRecovery = APILocator.getPermissionAPI().getPermissions(contentlet);
-        Assert.assertNotNull(permissionsRecovery);
-        Assert.assertTrue(!permissionsRecovery.isEmpty());
-        Assert.assertTrue(permissionsRecovery.stream().anyMatch(permission -> contentlet.getIdentifier().equals(permission.getInode()) &&
+        assertNotNull(permissionsRecovery);
+        assertFalse(permissionsRecovery.isEmpty());
+        assertTrue(permissionsRecovery.stream().anyMatch(permission -> contentlet.getIdentifier().equals(permission.getInode()) &&
                 role.get().getId().equals(permission.getRoleId()) && PermissionAPI.PERMISSION_READ == permission.getPermission()));
 
     }

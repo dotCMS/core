@@ -1,19 +1,15 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.mock;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -43,6 +39,9 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
+import org.apache.velocity.context.Context;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -51,10 +50,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.velocity.context.Context;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 public class ContentMapTest extends IntegrationTestBase {
 
@@ -122,10 +120,10 @@ public class ContentMapTest extends IntegrationTestBase {
         final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
                 PageMode.LIVE,defaultHost,velocityContext);
 
-        Map<String, FieldVariable> fieldVariableMap = (Map<String, FieldVariable>) contentMap.getFieldVariables("title");
+        final Map<String, FieldVariable> fieldVariableMap = (Map<String, FieldVariable>) contentMap.getFieldVariables("title");
 
-        Assert.assertNotNull(fieldVariableMap);
-        Assert.assertEquals("txt", fieldVariableMap.get("format").value());
+        assertNotNull(fieldVariableMap);
+        assertEquals("txt", fieldVariableMap.get("format").value());
     }
 
     /**
@@ -181,7 +179,7 @@ public class ContentMapTest extends IntegrationTestBase {
                 PageMode.LIVE,defaultHost,velocityContext);
 
         //If is null no categories were pulled
-        Assert.assertNotNull(contentMap.get("categories"));
+        assertNotNull(contentMap.get("categories"));
 
         APILocator.getContentTypeAPI(user).delete(contentType);
         APILocator.getCategoryAPI().delete(categoryChild2,user,false);

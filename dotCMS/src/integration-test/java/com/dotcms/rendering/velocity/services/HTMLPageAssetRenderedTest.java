@@ -1,11 +1,5 @@
 package com.dotcms.rendering.velocity.services;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -17,12 +11,28 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerAsFileDataGen;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.MultiTreeDataGen;
+import com.dotcms.datagen.PersonaDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateAsFileDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -61,26 +71,34 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Function2;
+import org.jetbrains.annotations.NotNull;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
-import com.liferay.util.StringPool;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.Function2;
-import org.jetbrains.annotations.NotNull;
-import org.junit.*;
-import org.junit.runner.RunWith;
-import com.dotcms.visitor.domain.Visitor;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("JUnitMalformedDeclaration")
 @RunWith(DataProviderRunner.class)
@@ -422,7 +440,7 @@ public class HTMLPageAssetRenderedTest {
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
                 .getMultiTrees(pageEnglishVersion, container);
-        Assert.assertNotNull(multiTrees);
+        assertNotNull(multiTrees);
         assertEquals(4, multiTrees.size());
 
         int contentletSpaCount = 0;
@@ -493,7 +511,7 @@ public class HTMLPageAssetRenderedTest {
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
                 .getMultiTrees(pageEnglishVersion, container);
-        Assert.assertNotNull(multiTrees);
+        assertNotNull(multiTrees);
         assertEquals(4, multiTrees.size());
 
         int contentletSpaCount = 0;
@@ -1001,7 +1019,7 @@ public class HTMLPageAssetRenderedTest {
     public void ContentFallbackFalse_PageFallbackFalse_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3(
             final TestContainerType containerType) throws Exception {
 
-        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+        final TestContainerFactory containerFactory = TestContainerFactory.getInstance();
 
         final Container container = containerFactory.getContainer(containerType);
         final Template template = containerFactory.getTemplate(containerType);
@@ -1526,7 +1544,7 @@ public class HTMLPageAssetRenderedTest {
         final HttpSession session = createHttpSession(mockRequest);
         when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
 
-        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+        final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(page.getURI())
@@ -1952,11 +1970,11 @@ public class HTMLPageAssetRenderedTest {
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
                 .getContainerMultiTrees(container.getIdentifier());
-        Assert.assertNotNull(multiTrees);
+        assertNotNull(multiTrees);
         assertEquals(8, multiTrees.size());
 
         //request page ENG version
-        HttpServletRequest mockRequest = new MockSessionRequest(
+        final HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
@@ -1964,13 +1982,14 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+        final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
+        // These are the contents of the repeated Containers: [ content1, content2 ] must be present twice
         final String expectedHtml = String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
                 + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2")
                 + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
@@ -2011,11 +2030,11 @@ public class HTMLPageAssetRenderedTest {
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
                 .getContainerMultiTrees(container.getIdentifier());
-        Assert.assertNotNull(multiTrees);
+        assertNotNull(multiTrees);
         assertEquals(8, multiTrees.size());
 
         //request page ENG version
-        HttpServletRequest mockRequest = new MockSessionRequest(
+        final HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
@@ -2023,13 +2042,14 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+        final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
+        // These are the contents of the repeated Containers: [ content1, content2 ] must be present twice
         final String generatedHtml = String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
                 + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2")
                 + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")

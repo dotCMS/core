@@ -1,23 +1,5 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
-import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.MIMETYPE_FIELD;
-import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.TITLE_FIELD;
-import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.UNDERLYING_FILENAME;
-import static com.google.common.collect.ImmutableMap.of;
-import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.api.APIProvider;
 import com.dotcms.api.APIProvider.Builder;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -36,8 +18,6 @@ import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
-import com.dotcms.security.apps.AppsAPIImpl;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -55,8 +35,6 @@ import com.dotmarketing.portlets.contentlet.transform.strategy.DefaultTransformS
 import com.dotmarketing.portlets.contentlet.transform.strategy.FileAssetViewStrategy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolverImpl;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
-import com.dotcms.api.APIProvider;
-import com.dotcms.api.APIProvider.Builder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -69,24 +47,25 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
-import com.liferay.util.EncryptorException;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.API;
+import io.vavr.control.Try;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.file.Path;
-import java.security.Key;
 import java.sql.Timestamp;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
@@ -100,13 +79,23 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.vavr.control.Try;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
+import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.MIMETYPE_FIELD;
+import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.TITLE_FIELD;
+import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.UNDERLYING_FILENAME;
+import static com.google.common.collect.ImmutableMap.of;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
@@ -500,7 +489,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                     .filter(key -> !copyMap.containsKey(key)).collect(Collectors.joining(","));
 
             assertTrue(String.format(" baseType `%s` should have same (or more) number of properties. Missing properties %s" ,baseTypeName, missingKeys),copyMap.size() >= sourceMap.size());
-            final String assertMessage =  "Base contentType:`%s` , id: `%s` ,  key: `%s` ";
+            final String assertMessage =  "Base contentType: `%s` , content: `%s` ,  key: `%s` ";
 
             for (final String propertyName : sourceMap.keySet()) {
 
@@ -516,7 +505,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                     //Binaries are now formatted to their /dA/ path form.
                     final String dAPath = "/dA/%s/%s/";
                     final String binaryPath = String.format(dAPath, sourceMap.get("identifier"),propertyName);
-                    assertTrue(String.format(assertMessage, baseTypeName, original.getIdentifier(), propertyName), object2.toString().contains(binaryPath));
+                    assertTrue(String.format(assertMessage, baseTypeName, original, propertyName), object2.toString().contains(binaryPath));
                     continue;
                 }
 
@@ -559,7 +548,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                     //Binaries are now formatted to their /dA/ path form.
                     final String dAPath = "/dA/%s/%s/";
                     final String binaryPath = String.format(dAPath, contentlet1.getMap().get("identifier"),propertyName);
-                    assertTrue(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ", baseTypeName, contentlet1.getIdentifier(), propertyName), object2.toString().contains(binaryPath));
+                    assertTrue(String.format("Base contentType: `%s` , content: `%s` ,  key: `%s` ", baseTypeName, contentlet1, propertyName), object2.toString().contains(binaryPath));
                     continue;
                 }
 
@@ -569,9 +558,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 if (isStoryBlockField) {
                     final LinkedHashMap<String, Object> jsonMap =
                             Try.of(() -> APILocator.getStoryBlockAPI().toMap(object1)).getOrElse(new LinkedHashMap<>());
-                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ", baseTypeName, contentlet1.getIdentifier(), propertyName), jsonMap, object2);
+                    assertEquals(String.format("Base contentType: `%s` , content: `%s` ,  key: `%s` ", baseTypeName, contentlet1, propertyName), jsonMap, object2);
                 } else {
-                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ", baseTypeName, contentlet1.getIdentifier(), propertyName), object1, object2);
+                    assertEquals(String.format("Base contentType: `%s` , content: `%s` ,  key: `%s` ", baseTypeName, contentlet1, propertyName), object1, object2);
                 }
             }
         }

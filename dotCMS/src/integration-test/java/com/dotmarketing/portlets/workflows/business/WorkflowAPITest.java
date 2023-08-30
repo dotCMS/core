@@ -1,20 +1,14 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -76,12 +70,16 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
@@ -97,10 +95,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the workflowAPI
@@ -696,7 +699,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public void onLanguageDeletedEvent_Test() throws DotDataException, DotSecurityException {
 
         Language frenchLanguage = null;
-        Contentlet contentlet = null;
+        Contentlet contentlet;
 
         try {
             frenchLanguage = new LanguageDataGen()
@@ -706,7 +709,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     .languageName("French").nextPersisted();
 
             final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
-            //final String unicodeText = "Numéro de téléphone";
 
             final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
             contentlet = contentletDataGen.setProperty("title", "TestContent")
@@ -717,7 +719,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             final WorkflowTask workflowTask = workflowAPI.createWorkflowTask(contentlet, user, workflowStep, "test", "test");
             workflowAPI.saveWorkflowTask(workflowTask);
 
-            Optional<WorkflowStep> currentStepOpt = workflowAPI.findCurrentStep(contentlet);
+            final Optional<WorkflowStep> currentStepOpt = workflowAPI.findCurrentStep(contentlet);
             assertTrue(currentStepOpt.isPresent());
             assertEquals(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID, currentStepOpt.get().getId());
             APILocator.getLocalSystemEventsAPI().notify(new LanguageDeletedEvent(frenchLanguage));
