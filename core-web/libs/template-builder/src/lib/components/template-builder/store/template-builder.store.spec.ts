@@ -39,14 +39,17 @@ describe('DotTemplateBuilderStore', () => {
         identifier: mockContainer.identifier
     };
 
-    const addContainer = () => {
+    const addContainer = (container = mockContainer) => {
         const parentRow = initialState[0];
 
         const columnToAddContainer: DotGridStackWidget = {
             ...parentRow.subGridOpts?.children[0],
             parentId: parentRow.id as string
         };
-        service.addContainer({ affectedColumn: columnToAddContainer, container: mockContainer });
+        service.addContainer({
+            affectedColumn: columnToAddContainer,
+            container
+        });
     };
 
     beforeEach(() => {

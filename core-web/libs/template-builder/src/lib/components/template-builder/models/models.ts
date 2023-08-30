@@ -117,6 +117,7 @@ export interface DotTemplateLayoutProperties {
  */
 export interface StyleClassModel {
     cssClass: string;
+    id: string;
 }
 
 /**
