@@ -107,3 +107,4 @@ This maintenance release includes the following code fixes:
 86. https://github.com/dotCMS/core/issues/22533 : Relay State SAML improvement
 87. https://github.com/dotCMS/core/issues/25896 : Creating a contentlet in a 2nd language removes related content #25896
 88. https://github.com/dotCMS/core/issues/23733 : Stream Starter Zip Generation #23733
+89. https://github.com/dotCMS/core/issues/24829 : NavTool method getNav must return only published links #24829

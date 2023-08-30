@@ -66,6 +66,22 @@ public class NavTool implements ViewTool {
         }
     }
 
+    protected void setItemLinkValues(NavResult nav,Link itemLink, List<NavResult> children){
+        if (itemLink.getLinkType().equals(LinkType.CODE.toString()) && LinkType.CODE.toString() != null) {
+            nav.setCodeLink(itemLink.getLinkCode());
+        } else {
+            nav.setHref(itemLink.getWorkingURL());
+        }
+
+        nav.setTitle(itemLink.getTitle());
+        nav.setOrder(itemLink.getSortOrder());
+        nav.setType("link");
+        nav.setTarget(itemLink.getTarget());
+        nav.setPermissionId(itemLink.getPermissionId());
+        nav.setShowOnMenu(itemLink.isShowOnMenu());
+        children.add(nav);
+    }
+
     protected NavResult getNav(Host host, String path) throws DotDataException, DotSecurityException {
         return getNav(host, path, this.currentLanguage, this.systemUser);
     }
@@ -162,19 +178,13 @@ public class NavTool implements ViewTool {
                 Link itemLink = (Link) item;
                 NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), languageId);
 
-                if (itemLink.getLinkType()
-                        .equals(LinkType.CODE.toString()) && LinkType.CODE.toString() != null) {
-                    nav.setCodeLink(itemLink.getLinkCode());
+                if (!pageMode.showLive) {
+                    this.setItemLinkValues(nav, itemLink, children);
                 } else {
-                    nav.setHref(itemLink.getWorkingURL());
+                    if (itemLink.isLive() && itemLink.isWorking()){
+                        this.setItemLinkValues(nav, itemLink, children);
+                    }
                 }
-                nav.setTitle(itemLink.getTitle());
-                nav.setOrder(itemLink.getSortOrder());
-                nav.setType("link");
-                nav.setTarget(itemLink.getTarget());
-                nav.setPermissionId(itemLink.getPermissionId());
-                nav.setShowOnMenu(itemLink.isShowOnMenu());
-                children.add(nav);
             } else if ((Contentlet.class.cast(item)).isHTMLPage()) {
                 final IHTMLPage itemPage = APILocator.getHTMLPageAssetAPI().fromContentlet(Contentlet.class.cast(item));
 
