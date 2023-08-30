@@ -110,3 +110,4 @@ This maintenance release includes the following code fixes:
 89. https://github.com/dotCMS/core/issues/24829 : NavTool method getNav must return only published links #24829
 90. https://github.com/dotCMS/core/issues/25229 : PP - Integrity Checker, fixing conflicts is not populating the contentlet_as_json field #25229
 91. https://github.com/dotCMS/core/issues/25440 : Unable to Publish (all) of a folder #25440
+92. https://github.com/dotCMS/core/issues/24176 : "(Default)" marker in Site Search interferes with reindexing #24176
