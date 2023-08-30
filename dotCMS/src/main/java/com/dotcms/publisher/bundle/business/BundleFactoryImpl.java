@@ -74,15 +74,14 @@ public class BundleFactoryImpl extends BundleFactory {
 			if(APILocator.getUserAPI().isCMSAdmin(user)){
 				dc.setSQL(SELECT_UNSEND_BUNDLES_ADMIN);
 			}else {
-				dc.setSQL( SELECT_UNSEND_BUNDLES );
-				dc.addParam(userId);
+				dc.setSQL( SELECT_UNSEND_BUNDLES ).addParam( userId );
 			}
 			dc.setMaxRows( limit );
 			dc.setStartRow( offset );
 
-			final List<Map<String, Object>> res = dc.loadObjectResults();
+			final List<Map<String, Object>> response = dc.loadObjectResults();
 
-			for ( Map<String, Object> row : res ) {
+			for (final Map<String, Object> row : response ) {
 				final Bundle bundle = PublisherUtil.getBundleByMap( row );
 				bundles.add( bundle );
 			}
