@@ -67,9 +67,10 @@ public class BundleFactoryImpl extends BundleFactory {
         }
 
 		try {
-			User user = APILocator.getUserAPI().loadUserById(userId);
-
+			final User user = APILocator.getUserAPI().loadUserById(userId);
 			final DotConnect dc = new DotConnect();
+
+			//check if the user is a CMS Admin and depending on that, request by the owner or not
 			if(APILocator.getUserAPI().isCMSAdmin(user)){
 				dc.setSQL(SELECT_UNSEND_BUNDLES_ADMIN);
 			}else {
@@ -82,7 +83,7 @@ public class BundleFactoryImpl extends BundleFactory {
 			final List<Map<String, Object>> res = dc.loadObjectResults();
 
 			for ( Map<String, Object> row : res ) {
-				Bundle bundle = PublisherUtil.getBundleByMap( row );
+				final Bundle bundle = PublisherUtil.getBundleByMap( row );
 				bundles.add( bundle );
 			}
 
