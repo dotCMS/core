@@ -1,30 +1,37 @@
 @use "variables" as *;
+
 :host {
     width: 33.875rem;
     display: block;
 }
 
-.dialog__auto-complete-container {
-    .auto-complete-container__label {
-        margin: 0;
-        color: $black;
-    }
-}
-
 .dialog__actions-container {
     display: flex;
     justify-content: end;
-    padding: 1.25rem $spacing-5;
 }
 
-::ng-deep {
-    .p-autocomplete.p-autocomplete-multiple
-        .p-autocomplete-multiple-container
-        .p-autocomplete-token {
-        margin-right: 0;
-    }
+p-autoComplete {
+    margin-bottom: $spacing-3;
+    display: block;
+}
 
-    .p-autocomplete-multiple-container {
-        gap: 0.25rem;
-    }
+ul {
+    color: $color-palette-gray-700;
+    display: flex;
+    flex-direction: column;
+    font-size: $font-size-sm;
+    gap: $spacing-1;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+li {
+    display: flex;
+    align-items: center;
+    gap: $spacing-0;
+}
+
+.pi {
+    color: $color-palette-gray;
 }
