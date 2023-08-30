@@ -112,7 +112,7 @@ public abstract class AbstractSaveContentTypeRequest extends ContentType {
                         final JsonNode jsonNode = actionMappings.get(sa.name());
                         final JsonNode action = jsonNode.get("workflowAction");
                         if(null == action){
-                            throw new IllegalStateException("Invalid systemActionMappings attribute we're missing the workflowAction attribute");
+                            throw new IllegalStateException("Unable to transform actionMappings. We're missing a workflowAction attribute.");
                         }
                         String actionIdentifier = action.get("id").asText();
                         rootNode.put(sa.name(), actionIdentifier);
@@ -127,7 +127,7 @@ public abstract class AbstractSaveContentTypeRequest extends ContentType {
     }
 
     /**
-     * This
+     * Helper to create the override Builder
      */
     public static Builder builder() {
         return new Builder();
