@@ -29,7 +29,7 @@ export class AddStyleClassesDialogComponent implements OnInit {
     selectedClasses: string[] = [];
 
     isJsonClasses$: Observable<boolean>;
-    classes;
+    classes: string[];
 
     constructor(
         private jsonClassesService: JsonClassesService,
@@ -69,7 +69,7 @@ export class AddStyleClassesDialogComponent implements OnInit {
     filterClasses({ query }: { query: string }): void {
         /*
             https://github.com/primefaces/primeng/blob/master/src/app/components/autocomplete/autocomplete.ts#L739
-            
+
             Sadly we need to pass suggestions all the time, even if they are empty because on the set is where the primeng remove the loading icon
         */
 
