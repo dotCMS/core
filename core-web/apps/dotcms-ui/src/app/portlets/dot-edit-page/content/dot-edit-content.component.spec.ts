@@ -657,7 +657,7 @@ describe('DotEditContentComponent', () => {
 
                 it('should add inline styles to device wrapper', (done) => {
                     setTimeout(() => {
-                        const deviceWraper = de.query(By.css('.dot-edit__device-wrapper'));
+                        const deviceWraper = de.query(By.css('.dot-edit__iframe-wrapper'));
                         expect(deviceWraper.styles.cssText).toEqual('width: 100px; height: 100px;');
                         done();
                     }, 100);
