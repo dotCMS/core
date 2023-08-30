@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
@@ -8,7 +8,7 @@ import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { map, tap } from 'rxjs/operators';
+import { catchError, map, shareReplay, tap } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -47,7 +47,15 @@ export class AddStyleClassesDialogComponent implements OnInit {
             tap(({ classes }) => {
                 this.classes = classes;
             }),
-            map(({ classes }) => classes.length > 0)
+            map(({ classes }) => {
+                return !!classes.length;
+            }),
+            catchError(() => {
+                this.classes = [];
+
+                return of(false);
+            }),
+            shareReplay(1)
         );
     }
 
@@ -59,6 +67,12 @@ export class AddStyleClassesDialogComponent implements OnInit {
      * @memberof AddStyleClassesDialogComponent
      */
     filterClasses({ query }: { query: string }): void {
+        /*
+            https://github.com/primefaces/primeng/blob/master/src/app/components/autocomplete/autocomplete.ts#L739
+            
+            Sadly we need to pass suggestions all the time, even if they are empty because on the set is where the primeng remove the loading icon
+        */
+
         // PrimeNG autocomplete doesn't support async pipe in the suggestions
         this.filteredSuggestions = this.classes.filter((item) => item.includes(query));
     }
