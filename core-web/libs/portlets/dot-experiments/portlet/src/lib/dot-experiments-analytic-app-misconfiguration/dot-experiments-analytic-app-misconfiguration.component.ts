@@ -44,7 +44,9 @@ export class DotExperimentsAnalyticAppMisconfigurationComponent implements OnIni
                 'experiments.analytics-app-no-configured.subtitle'
             );
             this.pageTitle = 'experiments.analytics-app-no-configured.title';
-        } else if (healthStatus === HealthStatusTypes.CONFIGURATION_ERROR) {
+        }
+
+        if (healthStatus === HealthStatusTypes.CONFIGURATION_ERROR) {
             this.setConfiguration(
                 'experiments.analytics-app-misconfiguration.title',
                 'experiments.analytics-app-misconfiguration.subtitle'
