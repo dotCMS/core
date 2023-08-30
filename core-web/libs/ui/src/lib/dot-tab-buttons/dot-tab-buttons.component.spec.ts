@@ -1,16 +1,29 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+
 import { SelectItem } from 'primeng/api';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotPageMode } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTabButtonsComponent } from './dot-tab-buttons.component';
 
 describe('DotTabButtonsComponent', () => {
     let spectator: Spectator<DotTabButtonsComponent>;
-
+    const messageServiceMock = new MockDotMessageService({
+        'editpage.toolbar.edit.page.clipboard': 'Edit Page',
+        'editpage.toolbar.preview.page.clipboard': 'Preview Page'
+    });
     const createComponent = createComponentFactory({
-        component: DotTabButtonsComponent
+        component: DotTabButtonsComponent,
+        providers: [
+            HttpClientTestingModule,
+            DotMessagePipe,
+            { provide: DotMessageService, useValue: messageServiceMock }
+        ]
     });
     const optionsMock: SelectItem[] = [
         { label: 'Edit', value: DotPageMode.EDIT },
