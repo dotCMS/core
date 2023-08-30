@@ -406,15 +406,13 @@
 		function mapToCheckCurrentLangExists(listRelationships){
 			const idExists = new Map();
 			for (var indexK = 0; indexK < listRelationships.length; indexK++) {
+				idExists.set(listRelationships[indexK]['identifier'], false);
 				for (var indexL = 0; indexL < listRelationships.length; indexL++) {
 					if(listRelationships[indexK]['identifier'] == listRelationships[indexL]['identifier'] &&
 							listRelationships[indexL]['langId'] == <%= contentlet.getLanguageId() %>) {
 						idExists.set(listRelationships[indexK]['identifier'], true);
 						break;
 					}
-				}
-				if(!idExists.has(listRelationships[indexK]['identifier'])) {
-					idExists.set(listRelationships[indexK]['identifier'], false);
 				}
 			}
 			return idExists;
