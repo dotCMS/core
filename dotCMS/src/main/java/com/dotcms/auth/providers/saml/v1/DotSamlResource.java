@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.saml.v1;
 
+import com.dotcms.filters.interceptor.saml.SamlWebUtils;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.saml.Attributes;
@@ -51,6 +52,7 @@ public class DotSamlResource implements Serializable {
 
 	private static final long serialVersionUID = 8015545653539491684L;
 
+	private final SamlWebUtils samlWebUtils = new SamlWebUtils();
 	private final SamlConfigurationService             samlConfigurationService;
 	private final SAMLHelper           				   samlHelper;
 	private final SamlAuthenticationService            samlAuthenticationService;
@@ -114,9 +116,11 @@ public class DotSamlResource implements Serializable {
 					Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
 					this.samlHelper.doRequestLoginSecurityLog(httpServletRequest, identityProviderConfiguration);
 
+					final String relayState = this.samlWebUtils.getRelayState(httpServletRequest, httpServletResponse, identityProviderConfiguration, idpConfigId);
+
 					// This will redirect the user to the IdP Login Page.
 					this.samlAuthenticationService.authentication(httpServletRequest,
-							httpServletResponse, identityProviderConfiguration);
+							httpServletResponse, identityProviderConfiguration, relayState);
 
 					return Response.ok().build();
 				}
