@@ -289,8 +289,11 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.classes.dialog.update.button': 'Update',
     'dot.template.builder.sidebar.header.title': 'Sidebar',
     'dot.template.builder.row.box.wont.fit': 'Minimum 1 column needed for box drop.',
-    'dot.template.builder.autocomplete.has.suggestions': 'Add the message for suggestions case',
-    'dot.template.builder.autocomplete.no.suggestions': 'Add the message for no suggestions case'
+    'dot.template.builder.autocomplete.has.suggestions':
+        'Type and hit enter or select from suggestions to add a class',
+    'dot.template.builder.autocomplete.no.suggestions': 'Type and hit enter to add a class',
+    'dot.template.builder.autocomplete.setup.suggestions':
+        'You can set up predefined class suggestions. <a href="https://www.dotcms.com/docs/latest/designing-a-template-with-a-theme#ClassSuggestions">Get the setup guide</a>'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
