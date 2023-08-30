@@ -43,7 +43,9 @@
             *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
             [binary]="true"
             [label]="'dot.common.whats.changed' | dm"
+            [pTooltip]="'dot.common.whats.changed.clipboard' | dm"
             (onChange)="whatschange.emit($event.checked)"
+            tooltipPosition="bottom"
         ></p-checkbox>
         <dot-edit-page-view-as-controller-seo
             class="flex gap-2"

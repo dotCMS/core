@@ -87,12 +87,15 @@
             format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
-body {
-    margin: 0;
-    padding: 0;
+html {
     font-family: $font-default;
     font-size: $font-size-default;
     color: $font-color-base;
+}
+
+body {
+    margin: 0;
+    padding: 0;
 }
 
 .material-icons {

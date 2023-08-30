@@ -36,7 +36,8 @@ public class AfterLandOnPageExperimentAnalyzer implements MetricExperimentAnalyz
                 .map(condition -> condition.value())
                 .limit(1)
                 .findFirst()
-                .orElse(StringPool.BLANK);
+                .orElse(StringPool.BLANK)
+                .toString();
 
         final List<Event> events = getEventAfterVisitUrl(visitBeforeUrl, browserSession.getEvents())
                 .stream()

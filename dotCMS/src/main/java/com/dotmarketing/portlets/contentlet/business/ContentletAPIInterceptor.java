@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -951,6 +952,23 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@CloseDBIfOpened
+	@Override
+	public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final String variant,
+			final boolean includeDeleted) throws DotDataException{
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.findContentletByIdentifierAnyLanguage(identifier, variant, includeDeleted);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		Contentlet c = conAPI.findContentletByIdentifierAnyLanguage(identifier, variant, includeDeleted);
+		for(ContentletAPIPostHook post : postHooks){
+			post.findContentletByIdentifierAnyLanguage(identifier, variant);
+		}
+		return c;
+	}
 	@Override
 	public Contentlet findContentletForLanguage(long languageId, Identifier contentletId) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){

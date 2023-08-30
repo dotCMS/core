@@ -49,6 +49,7 @@ import {
     PageModelChangeEventType
 } from './services/dot-edit-content-html/models';
 import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
+import { SeoMetaTags } from './services/dot-edit-content-html/models/meta-tags-model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 
 import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
@@ -86,6 +87,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     isEnterpriseLicense$ = of(false);
     variantData: Observable<DotVariantData>;
     featureFlagSeo = FeaturedFlags.FEATURE_FLAG_SEO_IMPROVEMENTS;
+    seoOGTags: SeoMetaTags;
+    seoOGTagsResults = null;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -518,7 +521,10 @@ browse from the page internal links
                 this.isEditMode = true;
             });
         } else {
-            this.dotEditContentHtmlService.renderPage(pageState, this.iframe);
+            this.dotEditContentHtmlService.renderPage(pageState, this.iframe)?.then(() => {
+                this.seoOGTags = this.dotEditContentHtmlService.getMetaTags();
+                this.seoOGTagsResults = this.dotEditContentHtmlService.getMetaTagsResults();
+            });
             this.isEditMode = false;
         }
     }
