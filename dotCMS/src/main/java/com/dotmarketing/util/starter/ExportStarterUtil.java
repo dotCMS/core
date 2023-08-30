@@ -4,10 +4,12 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.util.CloseUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Clickstream404;
@@ -19,7 +21,9 @@ import com.dotmarketing.beans.PermissionReference;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.cmsmaintenance.util.AssetFileNameFilter;
@@ -44,6 +48,8 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnels;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -51,7 +57,6 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -60,8 +65,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -243,6 +253,7 @@ public class ExportStarterUtil {
             } catch (final IOException e) {
                 Logger.error(this, String.format("An error occurred when streaming file '%s' into starter file: " +
                         "%s", entry.fileName(), e.getMessage()), e);
+                throw new DotRuntimeException(e);
             }
 
         });
@@ -367,14 +378,15 @@ public class ExportStarterUtil {
                     if (!UtilMethods.isSet(resultList)) {
                         break;
                     }
-                    final String zippedFileName =
+                    final String jsonFileName =
                             clazz.getName() + StringPool.UNDERLINE + DEFAULT_JSON_FILE_DATA_FORMAT.format(i) + JSON_FILE_EXT;
                     final String contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
-                    final FileEntry jsonFileEntry = new FileEntry(zippedFileName, contentAsJson);
+                    Logger.debug(this, String.format("-> File: %s", jsonFileName));
+                    final FileEntry jsonFileEntry = new FileEntry(jsonFileName, contentAsJson);
                     starterFiles.add(jsonFileEntry);
                     total += resultList.size();
                 }
-                Logger.debug(this, total + " records were generated for " + clazz.getName());
+                Logger.debug(this, String.format("-> %d records were generated for class table '%s'", total, clazz.getName()));
             }
             Logger.debug(this, "Exportable JSON files have been generated successfully!");
         } catch (final Exception e) {
@@ -480,7 +492,7 @@ public class ExportStarterUtil {
      * @param includeAssets If the Starter file must contain all dotCMS assets as well, set this to {@code true}.
      */
     public void streamCompressedStarter(final OutputStream output, final boolean includeAssets) {
-        this.streamCompressedData(output, true, includeAssets, false);
+        this.streamCompressedData(output, true, includeAssets, false, true);
     }
 
     /**
@@ -491,8 +503,8 @@ public class ExportStarterUtil {
      *
      * @param output The {@link OutputStream} instance.
      */
-    public void streamCompressedAssets(final OutputStream output) {
-        this.streamCompressedData(output, false, false, true);
+    public void streamCompressedAssets(final OutputStream output, boolean includeOldAssets) {
+        this.streamCompressedData(output, false, false, true, includeOldAssets);
     }
 
     /**
@@ -507,21 +519,27 @@ public class ExportStarterUtil {
      *                                    {@code true}.
      */
     private void streamCompressedData(final OutputStream output, boolean includeStarterData,
-                                      final boolean includeStarterDataAndAssets, boolean includeAssetsOnly) {
+                                      final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean includeOldAssets) {
         try (final ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(output))) {
             if (includeStarterData) {
+                Logger.debug(this, "Including Starter Data");
                 this.getStarterDataAsJSON(zip);
             }
+            final AssetFileNameFilter fileFilter = includeOldAssets ? new AssetFileNameFilter() : new AssetFileNameFilter(getLiveWorkingBloomFilter());
             if (includeStarterDataAndAssets) {
-                this.getAssets(zip);
+                Logger.debug(this, "Including Starter Data and Assets");
+                this.getAssets(zip, fileFilter);
             }
             if (includeAssetsOnly) {
-                final AssetFileNameFilter fileFilter = new AssetFileNameFilter();
-                fileFilter.addExcludedFolder("messages");
+                Logger.debug(this, "Including Assets only");
                 this.getAssets(zip, fileFilter);
             }
         } catch (final Exception e) {
-            Logger.error(this, String.format("An error occurred when generating compressed data file with [ includeStarterData = %s, includeStarterDataAndAssets = %s, includeAssetsOnly = %s ] : %s", includeStarterData, includeStarterDataAndAssets, includeAssetsOnly, e.getMessage()), e);
+            Logger.error(this, String.format("An error occurred when generating compressed data file with [ " +
+                            "includeStarterData = %s, includeStarterDataAndAssets = %s, includeAssetsOnly = %s, " +
+                            "includeOldAssets = %s ] : %s", includeStarterData, includeStarterDataAndAssets,
+                    includeAssetsOnly, includeOldAssets, e.getMessage()), e);
+            throw new DotRuntimeException(e);
         }
     }
 
@@ -632,6 +650,61 @@ public class ExportStarterUtil {
             return "JSONFileEntry{" + "fileName='" + fileName + '\'' + '}';
         }
 
+    }
+
+    private static final String SELECT_ALL_LIVE_WORKING_CONTENTLETS=
+            "select " +
+                    "  live_inode as inode " +
+                    "from " +
+                    "  contentlet_version_info " +
+                    "where " +
+                    "  live_inode is not null " +
+                    "UNION " +
+                    "select " +
+                    "  working_inode as inode " +
+                    "from " +
+                    "  contentlet_version_info " +
+                    "where " +
+                    "  working_inode <> live_inode " +
+                    "and " +
+                    "  working_inode is not null " +
+                    "and " +
+                    "  deleted = false";
+
+    private static final String SELECT_ALL_LIVE_WORKING_CONTENTLETS_COUNT=
+            "select " +
+                    "count(*) as my_count " +
+                    "from (" + SELECT_ALL_LIVE_WORKING_CONTENTLETS + ") testing ";
+
+    @CloseDBIfOpened
+    BloomFilter<String> getLiveWorkingBloomFilter()  {
+        long contentCount = new DotConnect()
+                .setSQL(SELECT_ALL_LIVE_WORKING_CONTENTLETS_COUNT)
+                .getInt("my_count");
+
+        Logger.info(this.getClass(), "Creating BloomFilter with " + contentCount + " expected size");
+
+        final BloomFilter<String> bloomFilter = BloomFilter.create(
+                Funnels.stringFunnel(Charset.defaultCharset()),
+                contentCount,
+                0.01);
+
+        try (final Connection conn = DbConnectionFactory.getDataSource().getConnection();
+             final PreparedStatement statement = conn.prepareStatement(SELECT_ALL_LIVE_WORKING_CONTENTLETS)){
+            statement.setFetchSize(5000);
+            try (final ResultSet rs = statement.executeQuery()) {
+                int i = 0;
+                while (rs.next()) {
+                    bloomFilter.put(rs.getString("inode"));
+                    i++;
+                }
+                Logger.info(this.getClass(), "Added " + i + " contentlets to the BloomFilter");
+            }
+        } catch (final SQLException e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return bloomFilter;
     }
 
 }

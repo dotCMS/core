@@ -11,13 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -225,16 +219,17 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadAssets(@Context final HttpServletRequest request,
-                                         @Context final HttpServletResponse response) {
+                                         @Context final HttpServletResponse response,
+                                         @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets) {
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveAssetsFileName();
-        Logger.info(this, String.format("User '%s' is generating compressed Assets file '%s'", user.getUserId(),
-                zipName));
+        Logger.info(this, String.format("User '%s' is generating compressed Assets file '%s' with [ oldAssets = %s]", user.getUserId(),
+                zipName, oldAssets));
 
         final StreamingOutput stream = output -> {
 
-            exportStarterUtil.streamCompressedAssets(output);
+            exportStarterUtil.streamCompressedAssets(output, oldAssets);
             output.flush();
             output.close();
             Logger.info(this, String.format("Compressed Assets file '%s' has been generated successfully!", zipName));
@@ -294,8 +289,8 @@ public class MaintenanceResource implements Serializable {
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveStarterFileName();
-        Logger.info(this, String.format("User '%s' is generating compressed Starter file '%s'", user.getUserId(),
-                zipName));
+        Logger.info(this, String.format("User '%s' is generating compressed Starter file '%s' with [ includeAssets = %s ]", user.getUserId(),
+                zipName, includeAssets));
 
         final StreamingOutput stream = output -> {
 

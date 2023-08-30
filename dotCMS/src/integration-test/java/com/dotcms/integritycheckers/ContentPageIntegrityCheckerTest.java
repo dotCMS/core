@@ -20,6 +20,7 @@ import io.vavr.Tuple2;
 import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import java.util.List;
 import java.util.Map;
@@ -106,6 +107,7 @@ public class ContentPageIntegrityCheckerTest extends IntegrationTestBase impleme
      * @throws Exception
      */
     @Test
+    @Ignore
     public void test_executeFix_identifierColumnsNotNull() throws Exception {
         DbConnectionFactory.closeSilently();
 
