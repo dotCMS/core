@@ -5,6 +5,8 @@ import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.util.IntegrationTestInitService;
@@ -16,18 +18,28 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import io.vavr.Tuple2;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.sql.Connection;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import io.vavr.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
@@ -49,7 +61,6 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
     public void setup() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        LicenseTestUtil.getLicense();
 
         integrityChecker = new HostIntegrityChecker();
         user = APILocator.getUserAPI().getSystemUser();
@@ -159,6 +170,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
 
             integrityChecker.executeFix(endpointId);
             assertHostsFix(dc);
+            assertHostHasContentletAsJson(dc, host.getInode());
 
             HibernateUtil.startTransaction();
             removeHost(dc, host.getInode());
@@ -217,6 +229,12 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    private void assertHostHasContentletAsJson(DotConnect dc, String inode) throws Exception {
+        Assert.assertEquals(
+                1L,
+                dc.getRecordCount("contentlet", "WHERE inode = '" + inode + "' AND contentlet_as_json IS NOT NULL").longValue());
     }
 
     @NotNull
@@ -334,4 +352,5 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
         dotConnect.loadResult();
         return remoteIdentifier;
     }
+
 }

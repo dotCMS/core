@@ -38,9 +38,7 @@ import com.dotcms.experiments.business.ExperimentAPIImpIT;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIT;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
-import com.dotcms.integritycheckers.FolderIntegrityCheckerTest;
-import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
-import com.dotcms.integritycheckers.IntegrityUtilTest;
+import com.dotcms.integritycheckers.*;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
@@ -497,6 +495,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211012AddCompanyDefaultLanguageTest.class,
         HostIntegrityCheckerTest.class,
         FolderIntegrityCheckerTest.class,
+        ContentFileAssetIntegrityCheckerTest.class,
+        ContentPageIntegrityCheckerTest.class,
         MetaWebInterceptorTest.class,
         BrowserUtilTest.class,
         Task211101AddContentletAsJsonColumnTest.class,
