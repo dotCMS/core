@@ -402,10 +402,41 @@
                   dijit.byId("<%= relationJsName %>Dialog")._doSearchPage1();
 		}
 
+		function mapToCheckCurrentLangExists(listRelationships){
+			const idExists = new Map();
+			for (var indexK = 0; indexK < listRelationships.length; indexK++) {
+				for (var indexL = 0; indexL < listRelationships.length; indexL++) {
+					if(listRelationships[indexK]['identifier'] == listRelationships[indexL]['identifier'] &&
+							listRelationships[indexL]['langId'] == <%= contentlet.getLanguageId() %>) {
+						idExists.set(listRelationships[indexK]['identifier'], true);
+						break;
+					}
+				}
+				if(!idExists.has(listRelationships[indexK]['identifier'])) {
+					idExists.set(listRelationships[indexK]['identifier'], false);
+				}
+			}
+			return idExists;
+		}
+
 
 		//Invoked when a contentlet is selected to fill the contentlet data in the table
 		function <%= relationJsName %>_addRelationshipCallback(selectedData){
-			selectedData = selectedData.filter(sibling => sibling.langId == <%= contentlet.getLanguageId() %>);
+
+			const mapIdCurrentLangExist = mapToCheckCurrentLangExists(selectedData);
+			const newList = [];
+			for (var indexL = 0; indexL < selectedData.length; indexL++) {
+				var currentContent = selectedData[indexL];
+				var currentContentId = currentContent['identifier'];
+				var mapValue = mapIdCurrentLangExist.get(currentContentId);
+				if(mapValue && currentContent['langId'] == <%= contentlet.getLanguageId() %>){
+					newList.push(currentContent);
+				}
+				if(!mapValue){
+					newList.push(currentContent);
+				}
+			}
+
 			var data = new Array();
 			var dataToRelate = new Array();
             var entries = numberOfRows<%= relationJsName%>();

@@ -105,3 +105,4 @@ This maintenance release includes the following code fixes:
 84. https://github.com/dotCMS/core/issues/25371 : PP: pushing new folder with limited user fails #25371
 85. https://github.com/dotCMS/core/issues/25636 : We require a SAML app property to map old SAML configuration IDs to site IDs #25636
 86. https://github.com/dotCMS/core/issues/22533 : Relay State SAML improvement
+87. https://github.com/dotCMS/core/issues/25896 : Creating a contentlet in a 2nd language removes related content #25896
