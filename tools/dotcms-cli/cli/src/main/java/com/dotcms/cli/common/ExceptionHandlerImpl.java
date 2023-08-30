@@ -56,7 +56,7 @@ public class ExceptionHandlerImpl implements ExceptionHandler {
          final Response response = in.getResponse();
          final int status = response.getStatus();
          final String errorMessage = config.override() ?
-                 messageOverride(status, ()-> getIfEmpty(serverError,()->config.fallback())) :
+                 messageOverride(status, ()-> getIfEmpty(config.fallback(),()->serverError)) :
                  in.getMessage() ;
          return new WebApplicationException(Response.status(status,errorMessage).build());
      }

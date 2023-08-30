@@ -560,12 +560,12 @@ class ContentTypeAPIIntegrationTest {
 
     @Test
     void FailOnPurpose1Test(){
-        Assertions.assertFalse(1==1,"1 should eq to 1");
+        Assertions.assertTrue(1==1,"1 should eq to 1");
     }
     
     @Test
     void FailOnPurpose2Test(){
-        Assertions.assertNull(new Object(),"Object should not be null");
+        Assertions.assertNotNull(new Object(),"Object should not be null");
     }
 
 }

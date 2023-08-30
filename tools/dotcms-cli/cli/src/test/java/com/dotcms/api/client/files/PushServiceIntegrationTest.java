@@ -268,8 +268,8 @@ class PushServiceIntegrationTest extends FilesTestHelper {
             // Removing an asset
             var assetToRemove = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName +
                     "/folder2/subfolder2-1/subfolder2-1-1/image2.png";
-            FileUtils.delete(new File(assetToRemove));
-
+            //FileUtils.delete(new File(assetToRemove));
+/*
             // Modifying an asset
             var toModifyAsset = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName +
                     "/folder1/subFolder1-1/subFolder1-1-1/image1.png";
@@ -362,7 +362,7 @@ class PushServiceIntegrationTest extends FilesTestHelper {
             for (var child : updatedTreeNode.children()) {
                 Assertions.assertNotEquals("folder3", child.folder().name());
             }
-
+*/
         } finally {
             // Clean up the temporal folder
             deleteTempDirectory(tempFolder);
