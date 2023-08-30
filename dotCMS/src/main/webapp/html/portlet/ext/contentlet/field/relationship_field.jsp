@@ -402,14 +402,7 @@
                   dijit.byId("<%= relationJsName %>Dialog")._doSearchPage1();
 		}
 
-
-		//Invoked when a contentlet is selected to fill the contentlet data in the table
-
-		function createNewList(listRelationships){
-
-			return newList;
-		}
-
+		//Map to determine if a content is multiligual and if there is a version in the selected language
 		function mapToCheckCurrentLangExists(listRelationships){
 			const idExists = new Map();
 			for (var indexK = 0; indexK < listRelationships.length; indexK++) {
@@ -430,12 +423,12 @@
 
 		//Invoked when a contentlet is selected to fill the contentlet data in the table
 		function <%= relationJsName %>_addRelationshipCallback(selectedData){
-			//selectedData = selectedData.filter(sibling => sibling.langId == <%= contentlet.getLanguageId() %>);
 			console.log("selectedData");
 			console.log(selectedData);
 
+			//A new list will be created with all the relationships but will remove multilingual ones, and in that
+			//case will add the one of the selected language.
 			const mapIdCurrentLangExist = mapToCheckCurrentLangExists(selectedData);
-
 			const newList = [];
 			for (var indexL = 0; indexL < selectedData.length; indexL++) {
 				var currentContent = selectedData[indexL];
