@@ -12,16 +12,19 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.workflow.ImmutableActionMapping;
+import com.dotcms.contenttype.model.workflow.ImmutableWorkflowAction;
+import com.dotcms.contenttype.model.workflow.SystemAction;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
+import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest;
 import com.dotcms.model.contenttype.FilterContentTypesRequest;
+import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.SiteView;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.util.Date;
@@ -43,7 +46,7 @@ class ContentTypeAPIIntegrationTest {
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;
 
-    private static final Set<String> CONTENT_TYPE_VARS = ImmutableSet.of(
+    private static final Set<String> CONTENT_TYPE_VARS = Set.of(
             "HtmlPageAsset", "FileAsset", "Host",
             "forms", "VanityUrl", "htmlpageasset", "webPageContent",
             "dotAsset", "Languagevariable", "persona"
@@ -148,7 +151,7 @@ class ContentTypeAPIIntegrationTest {
     void Test_Post_Filtered_Paginated_ContentTypes() {
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
         final ResponseEntityView<List<ContentType>> response = client.filterContentTypes(FilterContentTypesRequest.builder()
-                .filter(ImmutableMap.of("types",
+                .filter(Map.of("types",
                         "VanityUrl,webPageContent,htmlpageasset,FileAsset"
                         )
                 ).page(1)
@@ -209,7 +212,10 @@ class ContentTypeAPIIntegrationTest {
                 ).build();
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
-        final ResponseEntityView<List<ContentType>> response = client.createContentTypes(ImmutableList.of(contentType));
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
+                .of(contentType).build();
+
+        final ResponseEntityView<List<ContentType>> response = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(response);
         final List<ContentType> contentTypes = response.entity();
         Assertions.assertNotNull(contentTypes);
@@ -220,7 +226,9 @@ class ContentTypeAPIIntegrationTest {
         client.getContentType(newContentType.variable(), 1L, true);
         //Now lets test update
         final ImmutableSimpleContentType updatedContentType = ImmutableSimpleContentType.builder().from(newContentType).description("Updated").build();
-        final ResponseEntityView<ContentType> responseEntityView = client.updateContentTypes(updatedContentType.variable(),updatedContentType);
+        final SaveContentTypeRequest request = AbstractSaveContentTypeRequest.builder()
+                .of(updatedContentType).build();
+        final ResponseEntityView<ContentType> responseEntityView = client.updateContentTypes(request.variable(),request);
         Assertions.assertEquals("Updated", responseEntityView.entity().description());
         //And finally test delete
         final ResponseEntityView<String> responseStringEntity = client.delete(updatedContentType.variable());
@@ -244,10 +252,96 @@ class ContentTypeAPIIntegrationTest {
         }
     }
 
-    /**
-     * We're trying to simplify the input file we want to se to the server via CLI so this basically test we are allowing the use of a Shorter name in the clazz field
-     * @throws JsonProcessingException
-     */
+    @Test
+    void Test_Create_Then_Update_Action_Mappings() throws JsonProcessingException {
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+        //We're only using this to extract the existing Workflows
+        final ResponseEntityView<ContentType> response = client.getContentType("FileAsset", 1L, false);
+        final ContentType fileAsset = response.entity();
+        Assertions.assertFalse(Objects.requireNonNull(fileAsset.workflows()).isEmpty());
+        final String systemWorkflowId = fileAsset.workflows().get(0).id();
+
+        final ObjectMapper mapper = new ObjectMapper();
+        final ImmutableWorkflowAction workflowAction = ImmutableWorkflowAction.builder()
+                .id("b9d89c80-3d88-4311-8365-187323c96436")
+                .name("Publish")
+                .assignable(false)
+                .commentable(false)
+                .condition("")
+                .icon("workflowIcon")
+                .nextAssign("654b0931-1027-41f7-ad4d-173115ed8ec1")
+                .nextStep("dc3c9cd0-8467-404b-bf95-cb7df3fbc293")
+                .nextStepCurrentStep(false)
+                .order(0)
+                .roleHierarchyForAssign(false)
+                .schemeId("d61a59e1-a49c-46f2-a929-db2b4bfa88b2")
+                .showOn(List.of("EDITING",
+                        "PUBLISHED",
+                        "UNLOCKED",
+                        "NEW",
+                        "UNPUBLISHED",
+                        "LISTING",
+                        "LOCKED"))
+                .build();
+
+        final ImmutableActionMapping actionMapping = ImmutableActionMapping.builder()
+                .workflowAction(workflowAction)
+                .identifier(systemWorkflowId)
+                .systemAction("NEW")
+                .build();
+
+        final Map<String, ImmutableActionMapping> actionMappings = Map.of(SystemAction.NEW.name(), actionMapping);
+        final JsonNode jsonNode = mapper.valueToTree(actionMappings);
+
+        final long identifier =  System.currentTimeMillis();
+        final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
+                .description("ct action mappings.")
+                .variable("_var_"+identifier)
+                .addFields(
+                        ImmutableBinaryField.builder()
+                                .name("_bin_var_"+identifier)
+                                .variable("anyField"+System.currentTimeMillis())
+                                .build()
+                ).workflows(fileAsset.workflows())
+                .systemActionMappings(jsonNode)
+                .build();
+
+        final String content = mapper.writerWithDefaultPrettyPrinter()
+                .writeValueAsString(contentType);
+
+        System.out.println(content);
+
+        final SaveContentTypeRequest request = AbstractSaveContentTypeRequest.builder()
+                .of(contentType).build();
+
+        final ResponseEntityView<List<ContentType>> response2 = client.createContentTypes(List.of(request));
+
+        final ContentType creted = response2.entity().get(0);
+        Assertions.assertNotNull(creted.systemActionMappings());
+
+        final ImmutableSimpleContentType modifiedContentType = ImmutableSimpleContentType.builder()
+                .from(creted).addFields(ImmutableBinaryField.builder()
+                        .contentTypeId(creted.id())
+                        .name("_bin_var_2" + identifier)
+                        .variable("anyField2" + System.currentTimeMillis())
+                        .build()).description("Modified!").build();
+
+        final SaveContentTypeRequest request2 = AbstractSaveContentTypeRequest.builder().of(modifiedContentType).build();
+        final ResponseEntityView<ContentType> entityView = client.updateContentTypes(
+                request2.variable(), request2
+        );
+
+        final ContentType updatedContentType = entityView.entity();
+        Assertions.assertNotNull(updatedContentType.systemActionMappings());
+        Assertions.assertEquals("Modified!",updatedContentType.description());
+        Assertions.assertEquals(2, updatedContentType.fields().size());
+
+    }
+
+        /**
+         * We're trying to simplify the input file we want to se to the server via CLI so this basically test we are allowing the use of a Shorter name in the clazz field
+         * @throws JsonProcessingException
+         */
     @Test
     void Test_Deserialize_Class_Alias_Content_Type() throws JsonProcessingException {
         String json = "{\n"
@@ -385,7 +479,10 @@ class ContentTypeAPIIntegrationTest {
                                 .build()
                 ).build();
 
-        final ResponseEntityView<List<ContentType>> contentTypeResponse1 = client.createContentTypes(ImmutableList.of(contentType1));
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
+                .of(contentType1).build();
+
+        final ResponseEntityView<List<ContentType>> contentTypeResponse1 = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse1);
         final List<ContentType> contentTypes1 = contentTypeResponse1.entity();
         Assertions.assertNotNull(contentTypes1);
@@ -408,7 +505,7 @@ class ContentTypeAPIIntegrationTest {
 
         final FolderAPI folderAPI = apiClientFactory.getClient(FolderAPI.class);
 
-        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(ImmutableList.of("/foo"), siteName);
+        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(List.of("/foo"), siteName);
         final List<Map<String, Object>> entity = makeFoldersResponse.entity();
         Assertions.assertNotNull(entity);
         final String inode = (String)entity.get(0).get("inode");
@@ -429,7 +526,10 @@ class ContentTypeAPIIntegrationTest {
                                 .build()
                 ).build();
 
-        final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(ImmutableList.of(contentType1));
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
+                .of(contentType1).build();
+
+        final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse2);
         final ContentType contentTypes = contentTypeResponse2.entity().get(0);
         Assertions.assertEquals(inode, contentTypes.folder());
@@ -456,7 +556,7 @@ class ContentTypeAPIIntegrationTest {
         //Now use Folder API And Create a folder under our default host and send it using the path name
         final FolderAPI folderAPI = apiClientFactory.getClient(FolderAPI.class);
         final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(
-                ImmutableList.of("/f1" + timeStamp, "/f1" + timeStamp + "/f2" + timeStamp),
+                List.of("/f1" + timeStamp, "/f1" + timeStamp + "/f2" + timeStamp),
                 siteName);
 
         final List<Map<String, Object>> makeFolders = makeFoldersResponse.entity();
@@ -474,7 +574,11 @@ class ContentTypeAPIIntegrationTest {
                                 .build()
                 ).build();
 
-        final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(ImmutableList.of(contentType2));
+
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
+                .of(contentType2).build();
+
+        final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse2);
         final List<ContentType> contentTypes2 = contentTypeResponse2.entity();
         Assertions.assertNotNull(contentTypes2);
@@ -523,12 +627,16 @@ class ContentTypeAPIIntegrationTest {
                 //.addLayout()   <-- Even though We have an addLayOuts method the server side only takes into account the layout fields sent as fields
                 .build();
 
-        final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
-        final String asString = objectMapper.writeValueAsString(contentType);
+        //final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
+        //final String asString = objectMapper.writeValueAsString(contentType);
         //System.out.println(asString);
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
-        final ResponseEntityView<List<ContentType>> contentTypeResponse = client.createContentTypes(ImmutableList.of(contentType));
+
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
+                .of(contentType).build();
+
+        final ResponseEntityView<List<ContentType>> contentTypeResponse = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse);
         final List<ContentType> contentTypes = contentTypeResponse.entity();
         Assertions.assertNotNull(contentTypes);
