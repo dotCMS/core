@@ -220,24 +220,23 @@ public class PublishFactory {
 
 		Logger.debug(PublishFactory.class, ()-> "*****I'm a Folder -- Publishing" + folder.getName());
 
-		//gets all links for this folder
-		java.util.List foldersListSubChildren = APILocator.getFolderAPI()
+		//gets all subfolders for this folder
+		List<Folder> foldersListSubChildren = APILocator.getFolderAPI()
 				.findSubFolders(folder, APILocator.getUserAPI().getSystemUser(), false);
 		//gets all links for this folder
-		java.util.List linksListSubChildren = APILocator.getFolderAPI()
+		List<Link> linksListSubChildren = APILocator.getFolderAPI()
 				.getWorkingLinks(folder, user, false);
 
-		//gets all subitems
-		java.util.List elements = new java.util.ArrayList();
-		elements.addAll(foldersListSubChildren);
-		elements.addAll(linksListSubChildren);
+		//Recursive call for publish items in the subfolders
+		for(final Folder subFolder : foldersListSubChildren){
+			publishAsset(subFolder,user,respectFrontendRoles,isNewVersion);
+		}
 
-		java.util.Iterator elementsIter = elements.iterator();
-		while (elementsIter.hasNext()) {
-			Inode inode = (Inode) elementsIter.next();
-			Logger.debug(PublishFactory.class,
-					"*****I'm a Folder -- Publishing my Inode Child=" + inode.getInode());
-			publishAsset(inode, user, respectFrontendRoles, isNewVersion);
+		//Publish links
+		for(final Link link : linksListSubChildren){
+			if(permissionAPI.doesUserHavePermission((link), PERMISSION_PUBLISH, user, respectFrontendRoles)){
+				publishAsset(link,user,respectFrontendRoles,isNewVersion);
+			}
 		}
 
 		java.util.List<Contentlet> contentlets = conAPI.findContentletsByFolder(folder, user,
@@ -508,33 +507,23 @@ public class PublishFactory {
 
 		Logger.debug(PublishFactory.class, "*****I'm a Folder -- PrePublishing" + folder.getName());
 
-		//gets all links for this folder
-		java.util.List foldersListSubChildren = APILocator.getFolderAPI()
+		//gets all subfolders
+		List<Folder> foldersListSubChildren = APILocator.getFolderAPI()
 				.findSubFolders(folder, APILocator.getUserAPI().getSystemUser(), false);
 		//gets all links for this folder
-		java.util.List linksListSubChildren = APILocator.getFolderAPI()
+		List<Link> linksListSubChildren = APILocator.getFolderAPI()
 				.getWorkingLinks(folder, user, false);
 
-		//gets all subitems
-		java.util.List elements = new java.util.ArrayList();
-		elements.addAll(foldersListSubChildren);
-		elements.addAll(linksListSubChildren);
+		//Recursive call for publish items in the subfolders
+		for(final Folder subFolder : foldersListSubChildren){
+			relatedAssets = getUnpublishedRelatedAssets(subFolder,relatedAssets,returnOnlyWebAssets,checkPublishPermissions,user,respectFrontendRoles);
+		}
 
-		java.util.Iterator elementsIter = elements.iterator();
-		while (elementsIter.hasNext()) {
-			Inode asset = (Inode) elementsIter.next();
-			if (asset instanceof WebAsset) {
-				if (!((WebAsset) asset).isLive() && (
-						permissionAPI.doesUserHavePermission(((WebAsset) asset), PERMISSION_PUBLISH,
-								user, respectFrontendRoles) || !checkPublishPermissions)) {
-					relatedAssets.add(asset);
-				}
-			} else if (!returnOnlyWebAssets) {
-				relatedAssets.add(asset);
+		//get unpublished links
+		for(final Link link : linksListSubChildren){
+			if((permissionAPI.doesUserHavePermission((link), PERMISSION_PUBLISH, user, respectFrontendRoles) || !checkPublishPermissions)) {
+				relatedAssets.add(link);
 			}
-			//if it exists it prepublishes it
-			relatedAssets = getUnpublishedRelatedAssets(asset, relatedAssets, returnOnlyWebAssets,
-					checkPublishPermissions, user, respectFrontendRoles);
 		}
 
 		java.util.List<Contentlet> contentlets = conAPI.findContentletsByFolder(folder, user,
