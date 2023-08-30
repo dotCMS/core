@@ -196,6 +196,15 @@ class PushServiceIntegrationTest extends FilesTestHelper {
                     true, 0);
 
             // ---
+            // Validate we pushed the data properly
+            try {
+                // Sleep for 5 seconds to give time to the server to process the push (indices)
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                Assertions.fail(e.getMessage());
+            }
+
+            // ---
             // Validate the new site was created
             var newSiteResults = remoteTraversalService.traverseRemoteFolder(
                     String.format("//%s", newSiteName),
