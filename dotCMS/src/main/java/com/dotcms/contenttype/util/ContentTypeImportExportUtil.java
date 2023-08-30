@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.starter.ExportStarterUtil;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -55,6 +56,26 @@ public class ContentTypeImportExportUtil {
 
     }
 
+    /**
+     * Queries all Content Types in the dotCMS instance and transforms them into their appropriate JSON representation.
+     *
+     * @return The list of {@link com.dotmarketing.util.starter.ExportStarterUtil.FileEntry} objects containing the
+     * JSON representation of all the Content Types in the system.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     * @throws IOException      An error occurred when mapping the results to their JSON representation.
+     */
+    public List<ExportStarterUtil.FileEntry> exportContentTypes() throws DotDataException, IOException {
+        final List<ExportStarterUtil.FileEntry> jsonDataFiles = new ArrayList<>();
+        int count = tapi.count();
+        for (int i = 0; i <= count / limit; i++) {
+            final String fileName = "dotCMSContentTypes-" + i + CONTENT_TYPE_FILE_EXTENSION;
+            final String content = this.getContentTypesAsJSON(i);
+            jsonDataFiles.add(new ExportStarterUtil.FileEntry(fileName, content));
+        }
+        return jsonDataFiles;
+    }
+
     public void importContentTypes(File fileOrDirectory) throws IOException, DotDataException {
 
         if(!fileOrDirectory.isDirectory()){
@@ -74,6 +95,32 @@ public class ContentTypeImportExportUtil {
             }
         }
 
+    }
+
+    /**
+     * Queries all Content Types in the dotCMS instance and transforms them into their appropriate JSON representation.
+     * For performance reasons, results will be paginated in batches of 1,000 records, by default.
+     *
+     * @param page The expected page of results.
+     *
+     * @return The JSON representation of all the Content Types in the system.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     * @throws IOException      An error occurred when mapping the results to their JSON representation.
+     */
+    private String getContentTypesAsJSON(final int page) throws DotDataException, IOException {
+        final List<ContentTypeWrapper> contentTypeList = new ArrayList<>();
+        int offset = limit * page;
+        final List<ContentType> exportableTypes = tapi.search(null, "mod_date", limit, offset);
+        for (final ContentType contentType : exportableTypes) {
+            final List<Field> fields = contentType.fields();
+            final List<FieldVariable> fieldVariables = new ArrayList<>();
+            for (final Field ff : fields) {
+                fieldVariables.addAll(ff.fieldVariables());
+            }
+            contentTypeList.add(new ContentTypeWrapper(contentType, fields, fieldVariables));
+        }
+        return mapper.writeValueAsString(contentTypeList);
     }
 
     private void streamingJsonExport(File file, int run) throws DotDataException, DotSecurityException, IOException {

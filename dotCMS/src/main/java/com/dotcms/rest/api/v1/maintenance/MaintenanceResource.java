@@ -144,8 +144,7 @@ public class MaintenanceResource implements Serializable {
 
         Logger.info(this.getClass(), "Requested logFile: " + logFile.getCanonicalPath());
 
-        response.setHeader( "Content-Disposition", "attachment; filename=" + fileName );
-        return Response.ok(logFile, MediaType.APPLICATION_OCTET_STREAM).build();
+        return this.buildFileResponse(response, logFile, fileName);
     }
 
     /**
@@ -180,8 +179,8 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadDb(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response) throws IOException {
-        User user = assertBackendUser(request, response).getUser();
+                                     @Context final HttpServletResponse response) {
+        final User user = assertBackendUser(request, response).getUser();
         
         final String hostName = Try.of(()-> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false).getHostname()).getOrElse("dotcms");
 
@@ -189,11 +188,8 @@ public class MaintenanceResource implements Serializable {
         final String fileName = StringUtils.sanitizeFileName(hostName)  + "_db_" + dateToString.format(new Date()) + ".sql.gz";
 
         SecurityLogger.logInfo(this.getClass(), "User : " + user.getEmailAddress() + " downloading database");
-        
-        response.setHeader("Content-Type", MediaType.APPLICATION_OCTET_STREAM);
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-        
-        return Response.ok(new PGDumpStreamingOutput()).build();
+
+        return this.buildFileResponse(response, new PGDumpStreamingOutput(), fileName);
     }
 
     
@@ -213,15 +209,15 @@ public class MaintenanceResource implements Serializable {
 
         }
     }
-    
-    
+
+
     /**
-     * This method attempts to send resolved DB dump file using an octet stream http response.
+     * Provides a compressed file with all the assets living in the current dotCMS instance.
      *
-     * @param request  http request
-     * @param response http response
-     * @return octet stream response with file contents
-     * @throws IOException
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     *
+     * @return The {@link StreamingOutput} with the compressed file.
      */
     @Path("/_downloadAssets")
     @GET
@@ -229,20 +225,24 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadAssets(@Context final HttpServletRequest request,
-                                         @Context final HttpServletResponse response) throws IOException {
-        final String assetsFile = AssetExporterUtil.resolveFileName();
-        response.setHeader("Content-Type", MediaType.APPLICATION_OCTET_STREAM);
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + assetsFile + "\"");
+                                         @Context final HttpServletResponse response) {
+        final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
+        final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
+        final String zipName = exportStarterUtil.resolveAssetsFileName();
+        Logger.info(this, String.format("User '%s' is generating compressed Assets file '%s'", user.getUserId(),
+                zipName));
 
-        final User user = Try.of(() -> assertBackendUser(request, response).getUser()).get();
-        SecurityLogger.logInfo(AssetExporterUtil.class, "User : " + user.getEmailAddress() + " downloading assets");
+        final StreamingOutput stream = output -> {
 
-        AssetExporterUtil.exportAssets(response.getOutputStream());
-        Logger.info(this.getClass(), "Requested assets file: " + assetsFile);
+            exportStarterUtil.streamCompressedAssets(output);
+            output.flush();
+            output.close();
+            Logger.info(this, String.format("Compressed Assets file '%s' has been generated successfully!", zipName));
 
-        return Response.ok(assetsFile, MediaType.APPLICATION_OCTET_STREAM).build();
+        };
+
+        return this.buildFileResponse(response, stream, zipName);
     }
-
     /**
      * This method attempts to download a zip file containing the starter with assets.
      *
@@ -257,8 +257,8 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarter(@Context final HttpServletRequest request,
-                                          @Context final HttpServletResponse response) throws IOException {
-        return downloadStarter(request, response, false, false);
+                                          @Context final HttpServletResponse response) {
+        return downloadStarter(request, response, false);
     }
 
     /**
@@ -275,42 +275,38 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarterWithAssets(@Context final HttpServletRequest request,
-                                                    @Context final HttpServletResponse response) throws IOException {
-        return downloadStarter(request, response, true, false);
+                                                    @Context final HttpServletResponse response) {
+        return downloadStarter(request, response, true);
     }
 
     /**
-     * This method attempts to download a zip file containing the starter whether it is with just data or assets.
+     * Generates and download a ZIP file with all the data structures and their respective records that are required to
+     * create a Starter Site in dotCMS.
      *
-     * @param request http request
-     * @param response http response
-     * @param withAssets flag telling to include or not assets
-     * @param download flag telling to download or to stream
-     * @return octet stream response with octet stream
-     * @throws IOException
+     * @param request       The current instance of the {@link HttpServletRequest}.
+     * @param response      The current instance of the {@link HttpServletResponse}.
+     * @param includeAssets If the generated Starter must include all assets as well, set this to {@code true}.
+     *
+     * @return The streamed Starter ZIP file.
      */
-    private Response downloadStarter(final HttpServletRequest request,
-                                     final HttpServletResponse response,
-                                     final boolean withAssets,
-                                     final boolean download) throws IOException {
-        assertBackendUser(request, response);
-
+    private Response downloadStarter(final HttpServletRequest request, final HttpServletResponse response,
+                                     final boolean includeAssets) {
+        final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
-        final Optional<File> starterFile = exportStarterUtil.zipStarter(
-                response.getOutputStream(),
-                withAssets,
-                download);
-        if (!starterFile.isPresent()) {
-            return Response.status(Status.UNAUTHORIZED).build();
-        }
+        final String zipName = exportStarterUtil.resolveStarterFileName();
+        Logger.info(this, String.format("User '%s' is generating compressed Starter file '%s'", user.getUserId(),
+                zipName));
 
-        final File file = starterFile.get();
-        Logger.info(this.getClass(), "Requested starter file: " + file.getCanonicalPath());
+        final StreamingOutput stream = output -> {
 
-        response.setHeader("Content-type", download ? "application/zip" : MediaType.APPLICATION_OCTET_STREAM);
-        response.setHeader("Content-Disposition", "attachment; filename=" + file.getName());
+            exportStarterUtil.streamCompressedStarter(output, includeAssets);
+            output.flush();
+            output.close();
+            Logger.info(this, String.format("Compressed Starter file '%s' has been generated successfully!", zipName));
 
-        return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM).build();
+        };
+
+        return this.buildFileResponse(response, stream, zipName);
     }
 
     /**
@@ -328,6 +324,21 @@ public class MaintenanceResource implements Serializable {
                 .rejectWhenNoUser(true)
                 .requiredPortlet("maintenance")
                 .init();
+    }
+
+    /**
+     * Builds a file response with the provided information. The {@code entity} parameter can be an actual File, or the
+     * Streaming Output of it.
+     *
+     * @param response The current {@link HttpServletResponse} instance.
+     * @param entity   The Entity being sent back as the response.
+     * @param fileName The name of the file in the response.
+     *
+     * @return The {@link Response} object.
+     */
+    private Response buildFileResponse(final HttpServletResponse response, final Object entity, final String fileName) {
+        response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+        return Response.ok(entity).build();
     }
 
 }

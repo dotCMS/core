@@ -198,4 +198,30 @@ public class ZipUtil {
 		return true;
 	}
 
+	/**
+	 * Adds a file entry in the form of an Input Stream to the specified ZIP file.
+	 *
+	 * @param zip            The contents of the ZIP file represented as the {@link ZipOutputStream}
+	 * @param entryName      The Zip's entry name, i.e.; the file name.
+	 * @param inputStream    The contents of the entry as an {@link InputStream}
+	 * @param flushZipStream If the contents of the {@link ZipOutputStream} need to be flushed as soon as an entry is
+	 *                       added to the ZIP file, set this to {@code true}.
+	 *
+	 * @throws IOException An error occurred when adding an entry to the ZIP file, or handling streams.
+	 */
+	public static void addZipEntry(final ZipOutputStream zip, final String entryName, final InputStream inputStream,
+								   final boolean flushZipStream) throws IOException {
+		if (inputStream != null) {
+			final ZipEntry zipEntry = new ZipEntry(entryName);
+			zip.putNextEntry(zipEntry);
+			// Write data into zip
+			IOUtils.copy(inputStream, zip);
+			zip.closeEntry();
+			inputStream.close();
+			if (flushZipStream) {
+				zip.flush();
+			}
+		}
+	}
+
 }
