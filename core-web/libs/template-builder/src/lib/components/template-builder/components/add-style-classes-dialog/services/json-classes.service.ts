@@ -10,6 +10,8 @@ export class JsonClassesService {
     constructor(private http: HttpClient) {}
 
     getClasses(): Observable<{ classes: string[] }> {
+        console.log('real');
+
         return this.http.get<{ classes: string[] }>(STYLE_CLASSES_FILE_URL);
     }
 }

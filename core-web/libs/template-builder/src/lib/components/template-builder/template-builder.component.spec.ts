@@ -15,7 +15,6 @@ import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
 
-import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotGridStackWidget, SCROLL_DIRECTION } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
@@ -71,7 +70,6 @@ describe('TemplateBuilderComponent', () => {
             DotTemplateBuilderStore,
             DialogService,
             DynamicDialogRef,
-            DotAddStyleClassesDialogStore,
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK

@@ -1,108 +1,71 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
+import { Spectator, createComponentFactory } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-
 import { AutoCompleteModule } from 'primeng/autocomplete';
-import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
-
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
-
-import {
-    CLASS_NAME_MOCK,
-    DOT_MESSAGE_SERVICE_TB_MOCK,
-    MOCK_SELECTED_STYLE_CLASSES,
-    MOCK_STYLE_CLASSES_FILE,
-    mockMatchMedia
-} from '../../utils/mocks';
+import { JsonClassesService } from './services/json-classes.service';
 
 describe('AddStyleClassesDialogComponent', () => {
-    let spectator: SpectatorHost<AddStyleClassesDialogComponent>;
-    let input: HTMLInputElement;
-    let ref: DynamicDialogRef;
-
-    const createHost = createHostFactory({
+    let spectator: Spectator<AddStyleClassesDialogComponent>;
+    const createComponent = createComponentFactory({
+        imports: [AutoCompleteModule],
         component: AddStyleClassesDialogComponent,
-        imports: [
-            AutoCompleteModule,
-            FormsModule,
-            ButtonModule,
-            DotMessagePipe,
-            NgIf,
-            AsyncPipe,
-            HttpClientModule,
-            NoopAnimationsModule
-        ],
-        providers: [
+        componentMocks: [JsonClassesService],
+        componentProviders: [
             {
-                provide: DynamicDialogConfig,
+                provide: JsonClassesService,
                 useValue: {
-                    data: {
-                        selectedClasses: MOCK_SELECTED_STYLE_CLASSES
+                    getClasses() {
+                        console.log('fake');
+
+                        return jest.fn().mockReturnValue(of({ classes: ['class1', 'class2'] }));
                     }
                 }
-            },
-            {
-                provide: HttpClient,
-                useValue: {
-                    get: () => of(MOCK_STYLE_CLASSES_FILE)
-                }
-            },
-            {
-                provide: DotMessageService,
-                useValue: DOT_MESSAGE_SERVICE_TB_MOCK
-            },
-            DynamicDialogRef
-        ]
+            }
+        ],
+        mocks: [DynamicDialogConfig, DynamicDialogRef],
+        detectChanges: false
     });
 
     beforeEach(() => {
-        spectator = createHost(
-            '<dotcms-add-style-classes-dialog></dotcms-add-style-classes-dialog>'
-        );
+        spectator = createComponent();
+    });
 
-        ref = spectator.inject(DynamicDialogRef);
+    it('should create', () => {
+        expect(spectator.component).toBeTruthy();
+    });
 
+    it('should initialize selectedClasses from DynamicDialogConfig data', () => {
+        spectator.inject(DynamicDialogConfig).data.selectedClasses = ['class1'];
         spectator.detectChanges();
 
-        input = spectator.query('#auto-complete-input');
-
-        mockMatchMedia();
+        expect(spectator.component.selectedClasses).toEqual(['class1']);
     });
 
-    it('should have an update button', () => {
-        expect(spectator.query(byTestId('update-btn'))).toBeTruthy();
-    });
-
-    it('should trigger filterClasses when focusing on the input', () => {
-        const filterMock = jest.spyOn(spectator.component, 'filterClasses');
-        const query = CLASS_NAME_MOCK;
-
-        input.value = query;
-
-        spectator.click(input);
-
+    it('should call getClasses from jsonClassesService on init', () => {
+        const service = spectator.inject(JsonClassesService);
+        service.getClasses.and.returnValue(of({ classes: ['class1', 'class2'] }));
         spectator.detectChanges();
 
-        expect(filterMock).toHaveBeenCalledWith(query);
+        expect(service.getClasses).toHaveBeenCalled();
     });
 
-    it('should trigger save when clicking on update-btn', () => {
-        const closeMock = jest.spyOn(ref, 'close');
+    it('should filter classes based on query', () => {
+        spectator.component.classes = ['class1', 'class2', 'class3'];
+        spectator.component.filterClasses({ query: 'class1' });
 
-        const updateBtn = spectator.query(byTestId('update-btn'));
-
-        spectator.dispatchFakeEvent(updateBtn, 'onClick');
-
-        spectator.detectChanges();
-
-        expect(closeMock).toHaveBeenCalled();
+        expect(spectator.component.filteredSuggestions).toEqual(['class1']);
     });
+
+    it('should save selected classes and close the dialog', () => {
+        const dialogRef = spectator.inject(DynamicDialogRef);
+        spectator.component.selectedClasses = ['class1'];
+        spectator.component.save();
+
+        expect(dialogRef.close).toHaveBeenCalledWith(['class1']);
+    });
+
+    // More tests can be added as needed...
 });
