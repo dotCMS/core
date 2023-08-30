@@ -1,5 +1,6 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
+import { v4 as uuid } from 'uuid';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -7,7 +8,6 @@ import { Injectable } from '@angular/core';
 import { switchMap } from 'rxjs/operators';
 
 import { DotAddStyleClassesDialogState, StyleClassModel } from '../../../models/models';
-
 export const STYLE_CLASSES_FILE_URL = '/application/templates/classes.json';
 
 const COMMA_SPACES_REGEX = /(,|\s)(.*)/;
@@ -34,9 +34,7 @@ export class DotAddStyleClassesDialogStore extends ComponentStore<DotAddStyleCla
     readonly init = this.updater((state, { selectedClasses }: { selectedClasses: string[] }) => {
         return {
             ...state,
-            selectedClasses: selectedClasses.map((cssClass) => ({
-                cssClass
-            }))
+            selectedClasses: selectedClasses.map((cssClass) => this.buildStyleClass(cssClass))
         };
     });
 
@@ -55,9 +53,9 @@ export class DotAddStyleClassesDialogStore extends ComponentStore<DotAddStyleCla
                         // 200 response
                         ({ classes = [] }: { classes: string[] }) => {
                             this.patchState({
-                                styleClasses: classes.map((cssClass) => ({
-                                    cssClass
-                                }))
+                                styleClasses: classes.map((cssClass) =>
+                                    this.buildStyleClass(cssClass)
+                                )
                             });
                         },
                         // Here is the error, if it fails for any reason I just fill the state with an empty array
@@ -92,7 +90,7 @@ export class DotAddStyleClassesDialogStore extends ComponentStore<DotAddStyleCla
                 filteredClasses: [], // I need to reset the filter, because I'm doing the selection manually
                 selectedClasses: [
                     ...state.selectedClasses,
-                    { cssClass: query.replace(COMMA_SPACES_REGEX, '') }
+                    this.buildStyleClass(query.replace(COMMA_SPACES_REGEX, ''))
                 ]
             };
 
@@ -112,10 +110,10 @@ export class DotAddStyleClassesDialogStore extends ComponentStore<DotAddStyleCla
      *
      * @memberof DotAddStyleClassesDialogStore
      */
-    readonly removeLastClass = this.updater((state) => {
+    readonly removeClass = this.updater((state, { id }: StyleClassModel) => {
         return {
             ...state,
-            selectedClasses: state.selectedClasses.slice(0, -1)
+            selectedClasses: state.selectedClasses.filter((classObj) => classObj.id !== id)
         };
     });
 
@@ -185,7 +183,7 @@ export class DotAddStyleClassesDialogStore extends ComponentStore<DotAddStyleCla
 
         // If no classes were found and query is not empty, create a new class based on the query
         if (queryIsNotEmpty && filtered.length === 0) {
-            filtered.push({ cssClass: query.trim() });
+            filtered.push(this.buildStyleClass(query.trim()));
         }
 
         return filtered;
@@ -216,5 +214,20 @@ export class DotAddStyleClassesDialogStore extends ComponentStore<DotAddStyleCla
         selectedClasses: StyleClassModel[]
     ): boolean {
         return selectedClasses.some(({ cssClass }) => cssClass === classObj.cssClass);
+    }
+
+    /**
+     * @description This method builds a StyleClassModel
+     *
+     * @private
+     * @param {string} cssClass
+     * @return {*}  {StyleClassModel}
+     * @memberof DotAddStyleClassesDialogStore
+     */
+    private buildStyleClass(cssClass: string): StyleClassModel {
+        return {
+            cssClass,
+            id: uuid()
+        };
     }
 }
