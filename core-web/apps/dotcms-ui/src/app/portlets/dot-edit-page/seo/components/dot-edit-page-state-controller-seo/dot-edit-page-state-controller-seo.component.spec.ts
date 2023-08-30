@@ -20,6 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotAlertConfirmService,
+    DotCurrentUserService,
     DotDevicesService,
     DotMessageService,
     DotPersonalizeService
@@ -134,7 +135,8 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 {
                     provide: DotDevicesService,
                     useClass: DotDevicesServiceMock
-                }
+                },
+                DotCurrentUserService
             ],
             imports: [
                 InputSwitchModule,
@@ -489,7 +491,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith('Google');
         });
 
-        it('should call  changeSeoMedia event', async () => {
+        it('should call selected event', async () => {
             spyOn(dotPageStateService, 'setDevice');
             const dotSelector = de.query(By.css('[data-testId="dot-device-selector"]'));
             const event = {
