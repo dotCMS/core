@@ -182,7 +182,7 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         }
     }
 
-    private final static String[] checkPatterns  = {"content-disposition","form-data","filename"};
+    private static final String[] checkPatterns  = {"content-disposition","form-data","filename"};
 
     private void testString(final String lineToTest) {
 
