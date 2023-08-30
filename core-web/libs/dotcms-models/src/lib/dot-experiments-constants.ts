@@ -275,3 +275,9 @@ export const AllowedActionsByExperimentStatus: Record<
 };
 
 export const CONFIGURATION_CONFIRM_DIALOG_KEY = 'confirmDialog';
+
+export enum HealthStatusTypes {
+    OK = 'OK',
+    NOT_CONFIGURED = 'NOT_CONFIGURED',
+    CONFIGURATION_ERROR = 'CONFIGURATION_ERROR'
+}
