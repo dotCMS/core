@@ -1,0 +1,7 @@
+@use "variables" as *;
+
+.binary-field__code-editor {
+    border: 1px solid $input-border-color;
+    display: block;
+    height: 25rem;
+}
