@@ -458,18 +458,6 @@ public class ExportStarterUtil {
      * reference. This will allow dotCMS to add their contents to the final Starter ZIP file without copying them to
      * any backup or temporary location.
      *
-     * @param zip The {@link ZipOutputStream} which will receive all the streamed data.
-     */
-    private void getAssets(final ZipOutputStream zip) {
-        this.getAssets(zip, new AssetFileNameFilter());
-    }
-
-
-    /**
-     * Traverses the complete list of assets in the current dotCMS instance in order to retrieve their respective file
-     * reference. This will allow dotCMS to add their contents to the final Starter ZIP file without copying them to
-     * any backup or temporary location.
-     *
      * @param zip        The {@link ZipOutputStream} which will receive all the streamed data.
      * @param fileFilter The {@link FileFilter} being used to get the appropriate asset data.
      */
