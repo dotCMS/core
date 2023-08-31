@@ -175,21 +175,81 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                 variants: {
                     [DEFAULT_VARIANT_ID]: {
                         details: {
-                            '04/01/2023': { multiBySession: 1, uniqueBySession: 1 },
-                            '04/02/2023': { multiBySession: 2, uniqueBySession: 2 },
-                            '04/03/2023': { multiBySession: 3, uniqueBySession: 3 },
-                            '04/04/2023': { multiBySession: 4, uniqueBySession: 4 },
-                            '04/05/2023': { multiBySession: 5, uniqueBySession: 5 },
-                            '04/06/2023': { multiBySession: 6, uniqueBySession: 6 },
-                            '04/07/2023': { multiBySession: 7, uniqueBySession: 7 },
-                            '04/08/2023': { multiBySession: 8, uniqueBySession: 8 },
-                            '04/09/2023': { multiBySession: 9, uniqueBySession: 9 },
-                            '04/10/2023': { multiBySession: 10, uniqueBySession: 10 },
-                            '04/11/2023': { multiBySession: 11, uniqueBySession: 11 },
-                            '04/12/2023': { multiBySession: 12, uniqueBySession: 12 },
-                            '04/13/2023': { multiBySession: 13, uniqueBySession: 13 },
-                            '04/14/2023': { multiBySession: 14, uniqueBySession: 14 },
-                            '04/15/2023': { multiBySession: 15, uniqueBySession: 15 }
+                            '04/01/2023': {
+                                multiBySession: 1,
+                                uniqueBySession: 1,
+                                convertionRate: 50
+                            },
+                            '04/02/2023': {
+                                multiBySession: 2,
+                                uniqueBySession: 2,
+                                convertionRate: 50
+                            },
+                            '04/03/2023': {
+                                multiBySession: 3,
+                                uniqueBySession: 3,
+                                convertionRate: 100
+                            },
+                            '04/04/2023': {
+                                multiBySession: 4,
+                                uniqueBySession: 4,
+                                convertionRate: 50
+                            },
+                            '04/05/2023': {
+                                multiBySession: 5,
+                                uniqueBySession: 5,
+                                convertionRate: 20
+                            },
+                            '04/06/2023': {
+                                multiBySession: 6,
+                                uniqueBySession: 6,
+                                convertionRate: 50
+                            },
+                            '04/07/2023': {
+                                multiBySession: 7,
+                                uniqueBySession: 7,
+                                convertionRate: 15
+                            },
+                            '04/08/2023': {
+                                multiBySession: 8,
+                                uniqueBySession: 8,
+                                convertionRate: 50
+                            },
+                            '04/09/2023': {
+                                multiBySession: 9,
+                                uniqueBySession: 9,
+                                convertionRate: 50
+                            },
+                            '04/10/2023': {
+                                multiBySession: 10,
+                                uniqueBySession: 10,
+                                convertionRate: 50
+                            },
+                            '04/11/2023': {
+                                multiBySession: 11,
+                                uniqueBySession: 11,
+                                convertionRate: 33.33
+                            },
+                            '04/12/2023': {
+                                multiBySession: 12,
+                                uniqueBySession: 12,
+                                convertionRate: 50
+                            },
+                            '04/13/2023': {
+                                multiBySession: 13,
+                                uniqueBySession: 13,
+                                convertionRate: 44.44
+                            },
+                            '04/14/2023': {
+                                multiBySession: 14,
+                                uniqueBySession: 14,
+                                convertionRate: 50
+                            },
+                            '04/15/2023': {
+                                multiBySession: 15,
+                                uniqueBySession: 15,
+                                convertionRate: 50
+                            }
                         },
                         multiBySession: 2,
                         uniqueBySession: {
@@ -203,21 +263,81 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                     },
                     '111': {
                         details: {
-                            '04/01/2023': { multiBySession: 15, uniqueBySession: 15 },
-                            '04/02/2023': { multiBySession: 14, uniqueBySession: 14 },
-                            '04/03/2023': { multiBySession: 13, uniqueBySession: 13 },
-                            '04/04/2023': { multiBySession: 12, uniqueBySession: 12 },
-                            '04/05/2023': { multiBySession: 11, uniqueBySession: 11 },
-                            '04/06/2023': { multiBySession: 10, uniqueBySession: 10 },
-                            '04/07/2023': { multiBySession: 9, uniqueBySession: 9 },
-                            '04/08/2023': { multiBySession: 8, uniqueBySession: 8 },
-                            '04/09/2023': { multiBySession: 7, uniqueBySession: 7 },
-                            '04/10/2023': { multiBySession: 6, uniqueBySession: 6 },
-                            '04/11/2023': { multiBySession: 5, uniqueBySession: 5 },
-                            '04/12/2023': { multiBySession: 4, uniqueBySession: 4 },
-                            '04/13/2023': { multiBySession: 3, uniqueBySession: 3 },
-                            '04/14/2023': { multiBySession: 2, uniqueBySession: 2 },
-                            '04/15/2023': { multiBySession: 1, uniqueBySession: 1 }
+                            '04/01/2023': {
+                                multiBySession: 15,
+                                uniqueBySession: 15,
+                                convertionRate: 50
+                            },
+                            '04/02/2023': {
+                                multiBySession: 14,
+                                uniqueBySession: 14,
+                                convertionRate: 50
+                            },
+                            '04/03/2023': {
+                                multiBySession: 13,
+                                uniqueBySession: 13,
+                                convertionRate: 10
+                            },
+                            '04/04/2023': {
+                                multiBySession: 12,
+                                uniqueBySession: 12,
+                                convertionRate: 50
+                            },
+                            '04/05/2023': {
+                                multiBySession: 11,
+                                uniqueBySession: 11,
+                                convertionRate: 100
+                            },
+                            '04/06/2023': {
+                                multiBySession: 10,
+                                uniqueBySession: 10,
+                                convertionRate: 50
+                            },
+                            '04/07/2023': {
+                                multiBySession: 9,
+                                uniqueBySession: 9,
+                                convertionRate: 50
+                            },
+                            '04/08/2023': {
+                                multiBySession: 8,
+                                uniqueBySession: 8,
+                                convertionRate: 20
+                            },
+                            '04/09/2023': {
+                                multiBySession: 7,
+                                uniqueBySession: 7,
+                                convertionRate: 50
+                            },
+                            '04/10/2023': {
+                                multiBySession: 6,
+                                uniqueBySession: 6,
+                                convertionRate: 50
+                            },
+                            '04/11/2023': {
+                                multiBySession: 5,
+                                uniqueBySession: 5,
+                                convertionRate: 50
+                            },
+                            '04/12/2023': {
+                                multiBySession: 4,
+                                uniqueBySession: 4,
+                                convertionRate: 33.33
+                            },
+                            '04/13/2023': {
+                                multiBySession: 3,
+                                uniqueBySession: 3,
+                                convertionRate: 50
+                            },
+                            '04/14/2023': {
+                                multiBySession: 2,
+                                uniqueBySession: 2,
+                                convertionRate: 22.22
+                            },
+                            '04/15/2023': {
+                                multiBySession: 1,
+                                uniqueBySession: 1,
+                                convertionRate: 50
+                            }
                         },
                         multiBySession: 0,
                         uniqueBySession: { count: 0, totalPercentage: 0.0, variantPercentage: 0.0 },
@@ -278,21 +398,81 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                 variants: {
                     [DEFAULT_VARIANT_ID]: {
                         details: {
-                            '04/01/2023': { multiBySession: 1, uniqueBySession: 0 },
-                            '04/02/2023': { multiBySession: 2, uniqueBySession: 0 },
-                            '04/03/2023': { multiBySession: 3, uniqueBySession: 0 },
-                            '04/04/2023': { multiBySession: 4, uniqueBySession: 0 },
-                            '04/05/2023': { multiBySession: 5, uniqueBySession: 0 },
-                            '04/06/2023': { multiBySession: 6, uniqueBySession: 0 },
-                            '04/07/2023': { multiBySession: 7, uniqueBySession: 0 },
-                            '04/08/2023': { multiBySession: 8, uniqueBySession: 0 },
-                            '04/09/2023': { multiBySession: 9, uniqueBySession: 0 },
-                            '04/10/2023': { multiBySession: 10, uniqueBySession: 0 },
-                            '04/11/2023': { multiBySession: 11, uniqueBySession: 0 },
-                            '04/12/2023': { multiBySession: 12, uniqueBySession: 0 },
-                            '04/13/2023': { multiBySession: 13, uniqueBySession: 0 },
-                            '04/14/2023': { multiBySession: 14, uniqueBySession: 0 },
-                            '04/15/2023': { multiBySession: 15, uniqueBySession: 0 }
+                            '04/01/2023': {
+                                multiBySession: 1,
+                                uniqueBySession: 1,
+                                convertionRate: 50
+                            },
+                            '04/02/2023': {
+                                multiBySession: 2,
+                                uniqueBySession: 2,
+                                convertionRate: 50
+                            },
+                            '04/03/2023': {
+                                multiBySession: 3,
+                                uniqueBySession: 3,
+                                convertionRate: 100
+                            },
+                            '04/04/2023': {
+                                multiBySession: 4,
+                                uniqueBySession: 4,
+                                convertionRate: 50
+                            },
+                            '04/05/2023': {
+                                multiBySession: 5,
+                                uniqueBySession: 5,
+                                convertionRate: 20
+                            },
+                            '04/06/2023': {
+                                multiBySession: 6,
+                                uniqueBySession: 6,
+                                convertionRate: 50
+                            },
+                            '04/07/2023': {
+                                multiBySession: 7,
+                                uniqueBySession: 7,
+                                convertionRate: 15
+                            },
+                            '04/08/2023': {
+                                multiBySession: 8,
+                                uniqueBySession: 8,
+                                convertionRate: 50
+                            },
+                            '04/09/2023': {
+                                multiBySession: 9,
+                                uniqueBySession: 9,
+                                convertionRate: 50
+                            },
+                            '04/10/2023': {
+                                multiBySession: 10,
+                                uniqueBySession: 10,
+                                convertionRate: 50
+                            },
+                            '04/11/2023': {
+                                multiBySession: 11,
+                                uniqueBySession: 11,
+                                convertionRate: 33.33
+                            },
+                            '04/12/2023': {
+                                multiBySession: 12,
+                                uniqueBySession: 12,
+                                convertionRate: 50
+                            },
+                            '04/13/2023': {
+                                multiBySession: 13,
+                                uniqueBySession: 13,
+                                convertionRate: 44.44
+                            },
+                            '04/14/2023': {
+                                multiBySession: 14,
+                                uniqueBySession: 14,
+                                convertionRate: 50
+                            },
+                            '04/15/2023': {
+                                multiBySession: 15,
+                                uniqueBySession: 15,
+                                convertionRate: 50
+                            }
                         },
                         multiBySession: 2,
                         uniqueBySession: {
@@ -306,21 +486,81 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                     },
                     '111': {
                         details: {
-                            '04/01/2023': { multiBySession: 15, uniqueBySession: 0 },
-                            '04/02/2023': { multiBySession: 14, uniqueBySession: 0 },
-                            '04/03/2023': { multiBySession: 13, uniqueBySession: 0 },
-                            '04/04/2023': { multiBySession: 12, uniqueBySession: 0 },
-                            '04/05/2023': { multiBySession: 11, uniqueBySession: 0 },
-                            '04/06/2023': { multiBySession: 10, uniqueBySession: 0 },
-                            '04/07/2023': { multiBySession: 9, uniqueBySession: 0 },
-                            '04/08/2023': { multiBySession: 8, uniqueBySession: 0 },
-                            '04/09/2023': { multiBySession: 7, uniqueBySession: 0 },
-                            '04/10/2023': { multiBySession: 6, uniqueBySession: 0 },
-                            '04/11/2023': { multiBySession: 5, uniqueBySession: 0 },
-                            '04/12/2023': { multiBySession: 4, uniqueBySession: 0 },
-                            '04/13/2023': { multiBySession: 3, uniqueBySession: 0 },
-                            '04/14/2023': { multiBySession: 2, uniqueBySession: 0 },
-                            '04/15/2023': { multiBySession: 1, uniqueBySession: 0 }
+                            '04/01/2023': {
+                                multiBySession: 15,
+                                uniqueBySession: 15,
+                                convertionRate: 50
+                            },
+                            '04/02/2023': {
+                                multiBySession: 14,
+                                uniqueBySession: 14,
+                                convertionRate: 50
+                            },
+                            '04/03/2023': {
+                                multiBySession: 13,
+                                uniqueBySession: 13,
+                                convertionRate: 10
+                            },
+                            '04/04/2023': {
+                                multiBySession: 12,
+                                uniqueBySession: 12,
+                                convertionRate: 50
+                            },
+                            '04/05/2023': {
+                                multiBySession: 11,
+                                uniqueBySession: 11,
+                                convertionRate: 100
+                            },
+                            '04/06/2023': {
+                                multiBySession: 10,
+                                uniqueBySession: 10,
+                                convertionRate: 50
+                            },
+                            '04/07/2023': {
+                                multiBySession: 9,
+                                uniqueBySession: 9,
+                                convertionRate: 50
+                            },
+                            '04/08/2023': {
+                                multiBySession: 8,
+                                uniqueBySession: 8,
+                                convertionRate: 20
+                            },
+                            '04/09/2023': {
+                                multiBySession: 7,
+                                uniqueBySession: 7,
+                                convertionRate: 50
+                            },
+                            '04/10/2023': {
+                                multiBySession: 6,
+                                uniqueBySession: 6,
+                                convertionRate: 50
+                            },
+                            '04/11/2023': {
+                                multiBySession: 5,
+                                uniqueBySession: 5,
+                                convertionRate: 50
+                            },
+                            '04/12/2023': {
+                                multiBySession: 4,
+                                uniqueBySession: 4,
+                                convertionRate: 33.33
+                            },
+                            '04/13/2023': {
+                                multiBySession: 3,
+                                uniqueBySession: 3,
+                                convertionRate: 50
+                            },
+                            '04/14/2023': {
+                                multiBySession: 2,
+                                uniqueBySession: 2,
+                                convertionRate: 22.22
+                            },
+                            '04/15/2023': {
+                                multiBySession: 1,
+                                uniqueBySession: 1,
+                                convertionRate: 50
+                            }
                         },
                         multiBySession: 0,
                         uniqueBySession: { count: 0, totalPercentage: 0.0, variantPercentage: 0.0 },
