@@ -1,8 +1,16 @@
 import { Subject } from 'rxjs';
 
-import { Component, OnDestroy } from '@angular/core';
+import {
+    Component,
+    ElementRef,
+    OnDestroy,
+    QueryList,
+    ViewChild,
+    ViewChildren
+} from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
+import { Menu } from 'primeng/menu';
 
 import { takeUntil } from 'rxjs/operators';
 
@@ -28,8 +36,15 @@ import { DotContainerListStore } from '@portlets/dot-containers/container-list/s
     providers: [DotContainerListStore]
 })
 export class ContainerListComponent implements OnDestroy {
+    @ViewChild('actionsMenu')
+    actionsMenu: Menu;
+    @ViewChildren('tableRow')
+    tableRows: QueryList<ElementRef<HTMLTableRowElement>>;
+
     vm$ = this.store.vm$;
     notify$ = this.store.notify$;
+
+    selectedContainers: DotContainer[] = [];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -45,6 +60,10 @@ export class ContainerListComponent implements OnDestroy {
         });
 
         this.store.getContainersByHost(this.siteService.switchSite$);
+
+        this.store.containers$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.selectedContainers = []; // Reset the selection if the containers change
+        });
     }
 
     ngOnDestroy(): void {
@@ -111,21 +130,6 @@ export class ContainerListComponent implements OnDestroy {
     }
 
     /**
-     * Keep updated the selected containers in the grid
-     * @param {DotContainer[]} containers
-     *
-     * @memberof ContainerListComponent
-     */
-    updateSelectedContainers(containers: DotContainer[]): void {
-        const filterContainers = containers.filter(
-            (container: DotContainer) =>
-                container.identifier !== 'SYSTEM_CONTAINER' &&
-                container.source !== CONTAINER_SOURCE.FILE
-        );
-        this.store.updateSelectedContainers(filterContainers);
-    }
-
-    /**
      * Reset bundle state to null
      *
      * @memberof ContainerListComponent
@@ -136,6 +140,44 @@ export class ContainerListComponent implements OnDestroy {
 
     setContainerActions(container: DotContainer): DotActionMenuItem[] {
         return this.store.getContainerActions(container);
+    }
+
+    /**
+     * Handle action menu click
+     *
+     * @param {MouseEvent} event
+     * @memberof ContainerListComponent
+     */
+    handleActionMenuOpen(event: MouseEvent): void {
+        this.updateSelectedContainers();
+        this.actionsMenu.toggle(event);
+    }
+
+    /**
+     * Focus first row if key arrow down on input
+     *
+     * @memberof ContainerListComponent
+     */
+    focusFirstRow(): void {
+        const { nativeElement: firstActiveRow } = this.tableRows.find(
+            (row) => row.nativeElement.getAttribute('data-disabled') === 'false'
+        ) || { nativeElement: null }; // To not break on destructuring
+
+        firstActiveRow?.focus();
+    }
+
+    /**
+     * Keep updated the selected containers in the grid
+     *
+     * @memberof ContainerListComponent
+     */
+    private updateSelectedContainers(): void {
+        const filterContainers = this.selectedContainers.filter(
+            (container: DotContainer) =>
+                container.identifier !== 'SYSTEM_CONTAINER' &&
+                container.source !== CONTAINER_SOURCE.FILE
+        );
+        this.store.updateSelectedContainers(filterContainers);
     }
 
     private notifyResult(

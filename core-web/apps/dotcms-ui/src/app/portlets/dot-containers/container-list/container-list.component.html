@@ -1,52 +1,45 @@
-<!-- Selection not working -->
-
 <dot-portlet-base *ngIf="vm$ | async as vm">
     <dot-action-header [options]="vm.actionHeaderOptions">
         <dot-content-type-selector
-            (selected)="changeContentTypeSelector($event)"
-        ></dot-content-type-selector>
+            (selected)="changeContentTypeSelector($event)"></dot-content-type-selector>
         <input
             #gf
             (input)="handleQueryFilter($event.target.value)"
             (keydown.arrowdown)="focusFirstRow()"
             pInputText
             placeholder="{{ 'global-search' | dm }}"
-            type="text"
-        />
+            type="text" />
         <div class="container-listing__header-options">
             <div class="container-listing__filter-controls">
                 <p-checkbox
                     [label]="'Show-Archived' | dm"
                     [binary]="true"
                     (onChange)="handleArchivedFilter($event.checked)"
-                    data-testid="archiveCheckbox"
-                ></p-checkbox>
+                    data-testid="archiveCheckbox"></p-checkbox>
             </div>
 
             <div>
                 <button
                     class="p-button-outlined p-button"
                     [label]="'Actions' | dm"
-                    [disabled]="!vm.selectedContainers.length"
-                    (click)="actionsMenu.toggle($event)"
+                    [disabled]="!selectedContainers.length"
+                    (click)="handleActionMenuOpen($event)"
                     type="button"
                     pButton
                     icon="pi pi-ellipsis-v"
-                    attr.data-testid="bulkActions"
-                ></button>
+                    attr.data-testid="bulkActions"></button>
 
                 <p-menu
                     #actionsMenu
                     [popup]="true"
                     [model]="vm.containerBulkActions"
-                    appendTo="body"
-                ></p-menu>
+                    appendTo="body"></p-menu>
             </div>
         </div>
     </dot-action-header>
     <p-table
-        #dataTable
         *ngIf="vm.tableColumns && vm.actionHeaderOptions"
+        [(selection)]="selectedContainers"
         [columns]="vm.tableColumns"
         [value]="vm.containers"
         [rows]="40"
@@ -54,14 +47,10 @@
         [pageLinks]="vm.maxPageLinks"
         [totalRecords]="vm.totalRecords"
         [responsiveLayout]="'scroll'"
-        (onRowSelect)="updateSelectedContainers($event)"
-        (onHeaderCheckboxToggle)="updateSelectedContainers($event)"
-        (onRowUnselect)="updateSelectedContainers($event)"
         (onPage)="loadDataPaginationEvent($event)"
         selectionMode="multiple"
         loadingIcon="pi pi-spin pi-spinner"
-        dataKey="inode"
-    >
+        dataKey="inode">
         <ng-template let-columns pTemplate="header">
             <tr *ngIf="vm.containers?.length">
                 <th style="width: 5%">
@@ -71,8 +60,7 @@
                     *ngFor="let col of columns"
                     [ngStyle]="{ width: col.width, 'text-align': col.textAlign }"
                     [pSortableColumnDisabled]="!col.sortable"
-                    [pSortableColumn]="col.fieldName"
-                >
+                    [pSortableColumn]="col.fieldName">
                     {{ col.header }}
                     <p-sortIcon *ngIf="col.sortable" [field]="col.fieldName"></p-sortIcon>
                 </th>
@@ -81,24 +69,24 @@
         </ng-template>
         <ng-template let-columns="columns" let-rowData pTemplate="body">
             <tr
-                [ngClass]="{ 'disabled-row': rowData?.owner === 'system' }"
-                [pSelectableRowDisabled]="rowData?.owner === 'system'"
+                #tableRow
+                [ngClass]="{ 'disabled-row': rowData.disableInteraction }"
+                [pSelectableRowDisabled]="rowData.disableInteraction"
                 [pContextMenuRowDisabled]="rowData.disableInteraction"
                 [attr.data-testRowId]="rowData.identifier"
                 [pContextMenuRow]="rowData"
                 [pSelectableRow]="rowData"
                 [attr.data-testId]="rowData?.variable ? 'row-' + rowData.variable : null"
+                [attr.data-disabled]="rowData.disableInteraction"
                 (click)="handleRowClick(rowData)"
                 (keyup.enter)="handleRowClick(rowData)"
-                data-testClass="testTableRow"
-            >
-                <td>
+                data-testClass="testTableRow">
+                <td (click)="$event.stopPropagation()">
                     <p-tableCheckbox
                         *ngIf="!rowData.disableInteraction"
                         [value]="rowData"
                         [attr.test-id]="rowData.friendlyName"
-                        (click)="$event.stopPropagation()"
-                    ></p-tableCheckbox>
+                        (click)="$event.stopPropagation()"></p-tableCheckbox>
                 </td>
                 <td [ngStyle]="{ 'text-align': vm.tableColumns[0].textAlign }">
                     {{ rowData.name }}
@@ -113,8 +101,7 @@
                     <dot-state-icon
                         [labels]="vm.stateLabels"
                         [state]="getContainerState(rowData)"
-                        size="14px"
-                    >
+                        size="14px">
                     </dot-state-icon>
                 </td>
                 <td [ngStyle]="{ 'text-align': vm.tableColumns[2].textAlign }">
@@ -129,8 +116,7 @@
                         *ngIf="!rowData.disableInteraction"
                         [attr.data-testid]="rowData.identifier"
                         [actions]="setContainerActions(rowData)"
-                        [item]="rowData"
-                    >
+                        [item]="rowData">
                     </dot-action-menu-button>
                 </td>
             </tr>
@@ -145,6 +131,5 @@
     <dot-add-to-bundle
         *ngIf="vm.addToBundleIdentifier"
         [assetIdentifier]="vm.addToBundleIdentifier"
-        (cancel)="resetBundleIdentifier()"
-    ></dot-add-to-bundle>
+        (cancel)="resetBundleIdentifier()"></dot-add-to-bundle>
 </dot-portlet-base>

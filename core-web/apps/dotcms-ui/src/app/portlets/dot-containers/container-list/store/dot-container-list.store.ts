@@ -138,6 +138,11 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             };
         }
     );
+    readonly containers$ = this.select(({ containers }: DotContainerListState) => {
+        return {
+            containers
+        };
+    });
 
     readonly notify$ = this.select(({ notifyMessages }: DotContainerListState) => {
         return notifyMessages;
