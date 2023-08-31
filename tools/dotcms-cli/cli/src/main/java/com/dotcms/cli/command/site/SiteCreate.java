@@ -31,8 +31,15 @@ public class SiteCreate extends AbstractSiteCommand implements Callable<Integer>
     @CommandLine.Parameters(index = "0", arity = "1", description = " Site name. ")
     String siteName;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         if ( null != siteName && !siteName.isEmpty()) {
 
             final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);

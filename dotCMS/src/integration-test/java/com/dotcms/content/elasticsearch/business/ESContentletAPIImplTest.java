@@ -81,6 +81,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 
+import io.vavr.API;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -2745,16 +2746,14 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         try {
             final Contentlet contentlet = APILocator.getContentletAPI()
                     .find(htmlPageAsset.getInode(), APILocator.systemUser(), false);
-            try {
-                APILocator.getContentletAPI().unpublish(contentlet, APILocator.systemUser(), false);
-                throw new AssertionError("Should throw an exception");
-            } catch (RunningExperimentUnpublishException e) {
-                final String expectedMessage = String.format(
-                        "Cannot unpublish a Page %s because it has a RUNNING Experiment: %s",
-                        htmlPageAsset.getIdentifier(), experiment.id().get());
 
-                assertEquals(expectedMessage, e.getMessage());
-            }
+            APILocator.getContentletAPI().unpublish(contentlet, APILocator.systemUser(), false);
+
+            final Contentlet contentletByIdentifier = APILocator.getContentletAPI()
+                    .findContentletByIdentifier(htmlPageAsset.getIdentifier(),
+                            true, htmlPageAsset.getLanguageId(), APILocator.systemUser(), false);
+
+            assertNull(contentletByIdentifier);
         } finally {
             APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
         }

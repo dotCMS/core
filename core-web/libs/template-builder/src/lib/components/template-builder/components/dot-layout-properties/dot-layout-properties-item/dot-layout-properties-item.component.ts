@@ -18,10 +18,10 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
     @Input()
     label: string;
 
+    value: boolean;
+
     @Output()
     switch: EventEmitter<boolean> = new EventEmitter();
-
-    value: boolean;
 
     propagateChange = (_: unknown) => {
         /**/
@@ -40,7 +40,7 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
      * @memberof DotLayoutPropertiesItemComponent
      */
     writeValue(value: boolean): void {
-        if (value) {
+        if (typeof value === 'boolean') {
             this.value = value;
         }
     }
