@@ -53,7 +53,10 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           pull: true
           no-cache: true
-
+          build-args: |
+            BUILD_ID=${{ github.head_ref }}
+            BUILD_FROM=COMMIT 
+            
       - id: prepare-license
         name: Prepare license
         working-directory: ./tools/dotcms-cli/
