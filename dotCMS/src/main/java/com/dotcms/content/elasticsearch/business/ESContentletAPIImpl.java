@@ -52,6 +52,7 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
@@ -3038,7 +3039,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } else {
 
             if (contentletToDelete.isHTMLPage()) {
-                checkAndDeleteExperiment(contentletToDelete, user);
                 unlinkRelatedContentType(user, contentletToDelete);
             }
 
@@ -3104,32 +3104,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         deletedIdentifiers.add(contentletToDelete.getIdentifier());
         this.sendDeleteEvent(contentletToDelete);
-    }
-
-    private void checkAndDeleteExperiment(final Contentlet contentlet, final User user) throws DotDataException {
-        final Optional<Experiment> experimentRunningOnPage = APILocator.getExperimentsAPI()
-                .getRunningExperimentPerPage(contentlet.getIdentifier());
-
-        if (experimentRunningOnPage.isPresent()) {
-            final String message = String.format(
-                    "Can't Delete a Page %s because it has a Running Experiment. Experiment ID %s",
-                    contentlet.getIdentifier(), experimentRunningOnPage.get().id().get());
-
-            throw new DotDataException(message);
-        }
-
-        final List<Experiment> pageExperiments = APILocator.getExperimentsAPI().list(
-                ExperimentFilter.builder().pageId(contentlet.getIdentifier()).build(), user);
-
-        for (final Experiment pageExperiment : pageExperiments) {
-            try {
-                APILocator.getExperimentsAPI().forceDelete(pageExperiment.id().orElseThrow(), user);
-            } catch (DotDataException | DotSecurityException e) {
-                final String message = String.format("Unable to delete experiment %s",
-                        pageExperiment.id().orElseThrow());
-                throw new DotRuntimeException(message, e);
-            }
-        }
     }
 
     private List<Contentlet> validateAndFilterContentletsToDelete(
@@ -3560,17 +3534,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final IndexPolicy indexPolicyDependencies,
             final Contentlet workingContentlet, final Contentlet liveContentlet)
             throws DotDataException, DotSecurityException {
-
-        final Optional<Experiment> experimentRunningOnPage = APILocator.getExperimentsAPI().getRunningExperimentPerPage(
-                workingContentlet.getIdentifier());
-
-        if (experimentRunningOnPage.isPresent()) {
-            final String message = String.format(
-                    "Can't Archive a Page %s because it has a Running Experiment. Experiment ID %s",
-                    workingContentlet.getIdentifier(), experimentRunningOnPage.get().id().get());
-
-            throw new DotDataException(message);
-        }
 
         if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
 
@@ -4042,15 +4005,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         this.canLock(contentlet, user);
-
-        if (contentlet.isHTMLPage()) {
-            final Optional<Experiment> runningExperiment = APILocator.getExperimentsAPI()
-                    .getRunningExperimentPerPage(contentlet.getIdentifier());
-
-            if (runningExperiment.isPresent()) {
-                throw new RunningExperimentUnpublishException(contentlet, runningExperiment.get());
-            }
-        }
 
         APILocator.getVersionableAPI().removeLive(contentlet);
 

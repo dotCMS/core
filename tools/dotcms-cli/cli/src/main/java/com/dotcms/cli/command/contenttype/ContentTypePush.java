@@ -56,8 +56,14 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
     @CommandLine.Parameters(index = "0", arity = "1", description = "The json/yml formatted content-type descriptor file to be pushed. ")
     File file;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
         File inputFile = this.file;
         if (null == inputFile) {
