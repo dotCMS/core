@@ -37,12 +37,17 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
 
             value = this.systemCache.getOrUpdate(key, ()-> {
 
-                final List<Map<String, Object>> result = Try.of(()->new DotConnect()
-                        .setSQL(" SELECT * FROM system_table WHERE key = ? ")
-                        .addParam(key)
-                        .loadObjectResults()).getOrElse(Collections.emptyList());
+                List<Map<String, Object>> result = null;
+                try {
+                    result = new DotConnect()
+                            .setSQL(" SELECT * FROM system_table WHERE key = ? ")
+                            .addParam(key)
+                            .loadObjectResults();
+                } catch (DotDataException e) {
+                    throw new RuntimeException(e);
+                }
 
-                final Object v = result.isEmpty()? null : result.get(0).get("value");
+                final Object v = null == result || result.isEmpty()? null : result.get(0).get("value");
                 return Objects.nonNull(v)?v.toString():VALUE_404;
             });
         }
