@@ -5,6 +5,8 @@ import com.dotmarketing.business.APILocator;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Optional;
+
 /**
  * Test for the ConfigTest.
  */
@@ -33,6 +35,9 @@ public class ITConfigTest extends IntegrationTestBase {
         APILocator.getSystemAPI().getSystemTable().set("NEW_PROPERTY", "NEW_VALUE");
         final String value = Config.getStringProperty("NEW_PROPERTY", "DEFAULT_VALUE");
         Assert.assertEquals("Should return the value from the system table", "NEW_VALUE", value);
+        final Object valueFromCache = APILocator.getSystemAPI().getSystemCache().get("NEW_PROPERTY");
+        Assert.assertNotNull("Should be on the cache", valueFromCache);
+        Assert.assertEquals("Should return the value from the system table", "NEW_VALUE", valueFromCache);
     }
 
     /**
@@ -49,6 +54,9 @@ public class ITConfigTest extends IntegrationTestBase {
         APILocator.getSystemAPI().getSystemTable().set("SECOND_PROPERTY", "NEW_VALUE_2");
         value = Config.getStringProperty("SECOND_PROPERTY", "DEFAULT_VALUE");
         Assert.assertEquals("Should return the value from the system table", "NEW_VALUE_2", value);
+        final Object valueFromCache = APILocator.getSystemAPI().getSystemCache().get("SECOND_PROPERTY");
+        Assert.assertNotNull("Should be on the cache", valueFromCache);
+        Assert.assertEquals("Should return the value from the system table", "NEW_VALUE_2", valueFromCache);
     }
 
     /**
