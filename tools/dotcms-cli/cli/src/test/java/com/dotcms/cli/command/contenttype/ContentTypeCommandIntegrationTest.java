@@ -286,7 +286,7 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
-                    "--interactive=false");
+                    "--non-interactive");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("varName:"));
@@ -367,8 +367,7 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
             }
 
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeRemove.NAME,
-                    varName,
-                    "--cli-test", "--workspace", workspace.root().toString());
+                    varName, "--cli-test");
             Assertions.assertEquals(ExitCode.OK, status);
 
             //A simple Thread.sleep() could do it too but Sonar strongly recommends we stay away from doing that.
