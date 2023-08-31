@@ -99,7 +99,12 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.control.Try;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -8590,6 +8595,48 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     private void setAnalyticsHelper(final AnalyticsHelper mockAnalyticsHelper) {
         ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
         CubeJSClientFactoryImpl.setAnalyticsHelper(mockAnalyticsHelper);
+    }
+
+
+    /**
+     * Method to test: {@link Experiment} H22 Serialization
+     * When: Try to Serialize a {@link Experiment}
+     * Should: not throw any exception
+     *
+     * @throws IOException
+     */
+    @Test
+    public void testExperimentSerialization() throws IOException, ClassNotFoundException {
+
+        final Experiment experiment = new ExperimentDataGen()
+                .description("Experiment Description")
+                .scheduling(Scheduling.builder()
+                        .startDate(Instant.now())
+                        .endDate(Instant.now().plus(30, ChronoUnit.DAYS))
+                        .build())
+                .nextPersisted();
+
+        byte[] bytes = null;
+
+        try(
+                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(os, 8192)); ){
+            output.writeObject(experiment);
+            output.flush();
+
+            bytes = os.toByteArray();
+        }
+
+        try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(bytes))){
+            final Experiment experimentFromBytes = (Experiment) input.readObject();
+
+            Assert.assertEquals(experiment.name(), experimentFromBytes.name());
+            Assert.assertEquals(experiment.description(), experimentFromBytes.description());
+            Assert.assertEquals(experiment.id(), experimentFromBytes.id());
+            Assert.assertEquals(experiment.status(), experimentFromBytes.status());
+
+        }
+
     }
 }
 
