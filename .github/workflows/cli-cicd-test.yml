@@ -89,7 +89,7 @@ jobs:
           FAILURES=$(find . -name TEST-*.xml | xargs grep '<failure' | wc -l)
           ERRORS=$(find . -name TEST-*.xml | xargs grep '<error' | wc -l)
           
-          if [[ $FAILURES -gt 0 || $ERRORS -gt 0 ]]; then
+          if [[ $FAILURES -eq 0 && $ERRORS -eq 0 ]]; then
               OUTPUT_STATUS="PASSED"
           else
               OUTPUT_STATUS="FAILED"
