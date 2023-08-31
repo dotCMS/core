@@ -15,7 +15,6 @@ import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
 
-import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotGridStackWidget, SCROLL_DIRECTION } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
@@ -71,7 +70,6 @@ describe('TemplateBuilderComponent', () => {
             DotTemplateBuilderStore,
             DialogService,
             DynamicDialogRef,
-            DotAddStyleClassesDialogStore,
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
@@ -247,6 +245,30 @@ describe('TemplateBuilderComponent', () => {
             footer: true,
             sidebar: { location: '', width: 'medium', containers: [] }
         });
+    });
+
+    it("should trigger deleteSection on header when clicking on 'Delete Section' button", () => {
+        const deleteSectionMock = jest.spyOn(spectator.component, 'deleteSection');
+        const headerComponent = spectator.query(byTestId('template-builder-header'));
+        const deleteSectionButton = headerComponent.querySelector(
+            '[data-testId="delete-section-button"]'
+        );
+
+        spectator.click(deleteSectionButton);
+
+        expect(deleteSectionMock).toHaveBeenCalledWith('header');
+    });
+
+    it("should trigger deleteSection on footer when clicking on 'Delete Section' button", () => {
+        const deleteSectionMock = jest.spyOn(spectator.component, 'deleteSection');
+        const footerComponent = spectator.query(byTestId('template-builder-footer'));
+        const deleteSectionButton = footerComponent.querySelector(
+            '[data-testId="delete-section-button"]'
+        );
+
+        spectator.click(deleteSectionButton);
+
+        expect(deleteSectionMock).toHaveBeenCalledWith('footer');
     });
 
     describe('layoutChange', () => {

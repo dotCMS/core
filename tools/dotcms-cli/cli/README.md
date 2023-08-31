@@ -167,11 +167,11 @@ Content-Type command is how you do CRUD operations on CTs
    dotCMS content-types find 
 ```
 Gets you a complete list of the available Content-types. By Default, they are shown in batches of 10.
-But you can also get an entire list at one by specifying  --interactive=false 
+But you can also get an entire list at one by specifying `--non-interactive`
 
 Find Sites
 ```shell script
-   dotCMS content-types find --interactive=false 
+   dotCMS content-types find --non-interactive 
 ```
 
 For a name like type of search do as follows 

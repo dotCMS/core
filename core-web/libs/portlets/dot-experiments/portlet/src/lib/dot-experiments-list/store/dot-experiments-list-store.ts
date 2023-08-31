@@ -316,6 +316,33 @@ export class DotExperimentsListStore
         );
     });
 
+    readonly abortExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
+        return experiment$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
+            switchMap((experiment) =>
+                this.dotExperimentsService.cancelSchedule(experiment.id).pipe(
+                    tapResponse(
+                        () => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.notification.abort.title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.notification.abort',
+                                    experiment.name
+                                )
+                            });
+                            this.loadExperiments(this.dotExperimentsStore.getPageId$);
+                        },
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                    )
+                )
+            )
+        );
+    });
+
     readonly archiveExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
         return experiment$.pipe(
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
@@ -458,6 +485,24 @@ export class DotExperimentsListStore
                     experimentId: null
                 }
             },
+            // Go to Results Action
+            {
+                id: 'dot-experiments-go-to-results',
+                label: this.dotMessageService.get('experiments.action.view.results'),
+                visible: AllowedActionsByExperimentStatus['results'].includes(experiment.status),
+                routerLink: [
+                    '/edit-page/experiments/',
+                    experiment.pageId,
+                    experiment.id,
+                    'reports'
+                ],
+                queryParamsHandling: 'merge',
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                }
+            },
             // Cancel Scheduling
             {
                 id: 'dot-experiments-cancel-scheduling',
@@ -527,6 +572,28 @@ export class DotExperimentsListStore
                     });
                 }
             },
+            // Abort experiment
+            {
+                label: this.dotMessageService.get('experiments.action.abort.experiment'),
+                visible: AllowedActionsByExperimentStatus['abort'].includes(experiment.status),
+                command: () => {
+                    this.confirmationService.confirm({
+                        key: CONFIGURATION_CONFIRM_DIALOG_KEY,
+                        header: this.dotMessageService.get('experiments.action.abort.experiment'),
+                        message: this.dotMessageService.get(
+                            'experiments.action.abort.confirm.message'
+                        ),
+                        acceptLabel: this.dotMessageService.get(
+                            'experiments.action.abort.experiment'
+                        ),
+                        rejectLabel: this.dotMessageService.get('experiments.action.cancel'),
+                        rejectButtonStyleClass: 'p-button-outlined',
+                        accept: () => {
+                            this.abortExperiment(experiment);
+                        }
+                    });
+                }
+            },
 
             // Push Publish Action
             {
@@ -551,7 +618,7 @@ export class DotExperimentsListStore
 
     private getConfigurationOptionLabel(status: DotExperimentStatus): string {
         return status === DotExperimentStatus.DRAFT
-            ? this.dotMessageService.get('experiments.action.edit')
-            : this.dotMessageService.get('experiments.action.view');
+            ? this.dotMessageService.get('experiments.action.edit.configuration')
+            : this.dotMessageService.get('experiments.action.view.configuration');
     }
 }

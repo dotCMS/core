@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 
+import java.io.Serializable;
 import java.util.Collection;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
@@ -26,7 +27,7 @@ import org.immutables.value.Value.Default;
 @Value.Immutable
 @JsonSerialize(as = Condition.class)
 @JsonDeserialize(as = Condition.class)
-public interface AbstractCondition<T> {
+public interface AbstractCondition<T> extends Serializable {
     String parameter();
     Operator operator();
     T value();

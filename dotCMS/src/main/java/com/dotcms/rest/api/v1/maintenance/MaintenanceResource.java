@@ -266,8 +266,8 @@ public class MaintenanceResource implements Serializable {
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveAssetsFileName();
-        Logger.info(this, String.format("User '%s' is generating compressed Assets file '%s'", user.getUserId(),
-                zipName));
+        Logger.info(this, String.format("User '%s' is generating compressed Assets file '%s' with [ oldAssets = %s]", user.getUserId(),
+                zipName, oldAssets));
         final StreamingOutput stream = output -> {
 
             exportStarterUtil.streamCompressedAssets(output, oldAssets);
@@ -276,6 +276,7 @@ public class MaintenanceResource implements Serializable {
             Logger.info(this, String.format("Compressed Assets file '%s' has been generated successfully!", zipName));
 
         };
+        Logger.debug(this, "Returning StreamingOutput response for compressed asset data");
         return this.buildFileResponse(response, stream, zipName);
     }
 
@@ -330,8 +331,8 @@ public class MaintenanceResource implements Serializable {
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveStarterFileName();
-        Logger.info(this, String.format("User '%s' is generating compressed Starter file '%s'", user.getUserId(),
-                zipName));
+        Logger.info(this, String.format("User '%s' is generating compressed Starter file '%s' with [ includeAssets = %s ]", user.getUserId(),
+                zipName, includeAssets));
 
         final StreamingOutput stream = output -> {
 
@@ -341,7 +342,7 @@ public class MaintenanceResource implements Serializable {
             Logger.info(this, String.format("Compressed Starter file '%s' has been generated successfully!", zipName));
 
         };
-
+        Logger.debug(this, "Returning StreamingOutput response for compressed starter data");
         return this.buildFileResponse(response, stream, zipName);
     }
 

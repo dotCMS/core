@@ -1,6 +1,9 @@
 package com.dotcms.api.client.files;
 
+import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
+
 import com.dotcms.api.AuthenticationContext;
+import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.cli.common.FilesTestHelper;
@@ -20,6 +23,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Integration tests for the PushService class.
+ */
 @QuarkusTest
 class PushServiceIntegrationTest extends FilesTestHelper {
 
@@ -40,6 +46,9 @@ class PushServiceIntegrationTest extends FilesTestHelper {
 
     @Inject
     WorkspaceManager workspaceManager;
+
+    @Inject
+    RestClientFactory clientFactory;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -195,8 +204,13 @@ class PushServiceIntegrationTest extends FilesTestHelper {
                     traversalResult.get(0).getMiddle(), traversalResult.get(0).getRight(), treeNodePushInfo,
                     true, 0);
 
+            // Validate some pushed data, giving some time to the system to index the new data
+            indexCheckAndWait(newSiteName,
+                    "/folder1/subFolder1-1/subFolder1-1-1",
+                    "image1.png");
+
             // ---
-            // Validate the new site was created
+            // Validate we pushed the data properly
             var newSiteResults = remoteTraversalService.traverseRemoteFolder(
                     String.format("//%s", newSiteName),
                     null,
@@ -323,14 +337,13 @@ class PushServiceIntegrationTest extends FilesTestHelper {
                     traversalResult.get(0).getMiddle(), traversalResult.get(0).getRight(), treeNodePushInfo,
                     true, 0);
 
+            // Validate some pushed data, giving some time to the system to index the new data
+            indexCheckAndWait(testSiteName,
+                    "/folder5/subFolder5-1/subFolder5-1-1",
+                    "image2.png");
+
             // ---
             // Validate we pushed the data properly
-            try {
-                // Sleep for 5 seconds to give time to the server to process the push (indices)
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                Assertions.fail(e.getMessage());
-            }
             var updatedResults = remoteTraversalService.traverseRemoteFolder(
                     folderPath,
                     null,
@@ -366,6 +379,34 @@ class PushServiceIntegrationTest extends FilesTestHelper {
         } finally {
             // Clean up the temporal folder
             deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * This method checks and waits for the indexing of a specific asset in a given folder of a
+     * site. It validates the existence of the site, folder, and asset and waits for a specified
+     * time period for the system to index the new data.
+     *
+     * @param siteName   the name of the site
+     * @param folderPath the path of the folder where the asset is located
+     * @param assetName  the name of the asset
+     */
+    private void indexCheckAndWait(final String siteName, final String folderPath,
+            final String assetName) {
+
+        // Validate some pushed data, giving some time to the system to index the new data
+        Assertions.assertTrue(siteExist(siteName),
+                String.format("Site %s was not created", siteName));
+
+        // Building the remote asset path
+        final var remoteAssetPath = buildRemoteAssetURL(siteName, folderPath, assetName);
+        Assertions.assertTrue(assetExist(remoteAssetPath),
+                String.format("Asset %s was not created", remoteAssetPath));
+
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            Assertions.fail(e.getMessage());
         }
     }
 
