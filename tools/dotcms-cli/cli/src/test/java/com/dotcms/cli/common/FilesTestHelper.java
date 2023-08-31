@@ -7,9 +7,11 @@ import com.dotcms.api.FolderAPI;
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FileUploadData;
 import com.dotcms.model.asset.FileUploadDetail;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
+import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.SiteView;
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
@@ -23,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 
 public class FilesTestHelper {
@@ -108,6 +111,8 @@ public class FilesTestHelper {
         Assertions.assertNotNull(createSiteResponse);
         // Publish the new site
         siteAPI.publish(createSiteResponse.entity().identifier());
+        Assertions.assertTrue(siteExist(newSiteName),
+                String.format("Site %s was not created", newSiteName));
 
         // Creating test folders
         final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(
@@ -169,7 +174,74 @@ public class FilesTestHelper {
 
             // Pushing the file
             assetAPI.push(uploadForm);
+
+            // Validate it is there giving some time to the system to index it
+            Assertions.assertTrue(assetExist(remoteAssetPath),
+                    String.format("Asset %s not created", remoteAssetPath));
         }
+    }
+
+    /**
+     * Checks whether an asset exists at the given remote asset path.
+     *
+     * @param remoteAssetPath The path to the remote asset
+     * @return {@code true} if the asset exists, {@code false} otherwise
+     */
+    protected Boolean assetExist(final String remoteAssetPath) {
+
+        long start = System.currentTimeMillis();
+        long end = start + 15 * 1000; // 15 seconds * 1000 ms/sec
+        while (System.currentTimeMillis() < end) {
+            try {
+                var response = clientFactory.getClient(AssetAPI.class).
+                        assetByPath(
+                                ByPathRequest.builder().assetPath(remoteAssetPath).build());
+                Assertions.assertEquals(1, response.entity().versions().size());
+                if (response.entity().versions().get(0).live() &&
+                        response.entity().versions().get(0).working()) {
+                    return true;
+                }
+            } catch (NotFoundException e) {
+                // Do nothing
+            }
+
+            try {
+                Thread.sleep(2000); // Sleep for 2 second
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if a site with the given name exists.
+     *
+     * @param siteName the name of the site to check
+     * @return true if the site exists, false otherwise
+     */
+    protected Boolean siteExist(final String siteName) {
+
+        long start = System.currentTimeMillis();
+        long end = start + 15 * 1000; // 15 seconds * 1000 ms/sec
+        while (System.currentTimeMillis() < end) {
+            try {
+                clientFactory.getClient(SiteAPI.class)
+                        .findByName(GetSiteByNameRequest.builder().siteName(siteName).build());
+                return true;
+            } catch (NotFoundException e) {
+                // Do nothing
+            }
+
+            try {
+                Thread.sleep(2000); // Sleep for 2 second
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        return false;
     }
 
     /**

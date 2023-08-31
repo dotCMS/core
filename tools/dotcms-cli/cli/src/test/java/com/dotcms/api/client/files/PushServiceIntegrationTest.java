@@ -2,18 +2,14 @@ package com.dotcms.api.client.files;
 
 import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
 
-import com.dotcms.api.AssetAPI;
 import com.dotcms.api.AuthenticationContext;
-import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.cli.common.FilesTestHelper;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
-import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.config.ServiceBean;
-import com.dotcms.model.site.GetSiteByNameRequest;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +18,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -402,78 +397,17 @@ class PushServiceIntegrationTest extends FilesTestHelper {
         // Validate some pushed data, giving some time to the system to index the new data
         Assertions.assertTrue(siteExist(siteName),
                 String.format("Site %s was not created", siteName));
-        Assertions.assertTrue(assetExist(siteName, folderPath, assetName),
-                String.format("Asset %s%s/%s was not created", siteName, folderPath, assetName));
+
+        // Building the remote asset path
+        final var remoteAssetPath = buildRemoteAssetURL(siteName, folderPath, assetName);
+        Assertions.assertTrue(assetExist(remoteAssetPath),
+                String.format("Asset %s was not created", remoteAssetPath));
 
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
             Assertions.fail(e.getMessage());
         }
-    }
-
-    /**
-     * Checks if a site with the given name exists.
-     *
-     * @param siteName the name of the site to check
-     * @return true if the site exists, false otherwise
-     */
-    private Boolean siteExist(final String siteName) {
-
-        long start = System.currentTimeMillis();
-        long end = start + 15 * 1000; // 15 seconds * 1000 ms/sec
-        while (System.currentTimeMillis() < end) {
-            try {
-                clientFactory.getClient(SiteAPI.class)
-                        .findByName(GetSiteByNameRequest.builder().siteName(siteName).build());
-                return true;
-            } catch (NotFoundException e) {
-                // Do nothing
-            }
-
-            try {
-                Thread.sleep(2000); // Sleep for 1 second
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Checks if an asset with the given site name, folder path, and asset name exists.
-     *
-     * @param siteName   the name of the site where the asset is located
-     * @param folderPath the path of the folder containing the asset
-     * @param assetName  the name of the asset to check
-     * @return true if the asset exists, false otherwise
-     */
-    private Boolean assetExist(final String siteName, final String folderPath,
-            final String assetName) {
-
-        final var remoteAssetPath = buildRemoteAssetURL(siteName, folderPath, assetName);
-
-        long start = System.currentTimeMillis();
-        long end = start + 15 * 1000; // 15 seconds * 1000 ms/sec
-        while (System.currentTimeMillis() < end) {
-            try {
-                clientFactory.getClient(AssetAPI.class).
-                        assetByPath(
-                                ByPathRequest.builder().assetPath(remoteAssetPath).build());
-                return true;
-            } catch (NotFoundException e) {
-                // Do nothing
-            }
-
-            try {
-                Thread.sleep(2000); // Sleep for 1 second
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
-        }
-
-        return false;
     }
 
 }
