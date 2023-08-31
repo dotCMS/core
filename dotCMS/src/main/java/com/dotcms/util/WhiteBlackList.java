@@ -1,5 +1,7 @@
 package com.dotcms.util;
 
+import com.dotmarketing.util.UtilMethods;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -37,10 +39,15 @@ public class WhiteBlackList {
             return false;
         }
 
-        boolean anyIncludeMatches = includePatterns.stream().map(pattern -> pattern.matcher(input)).anyMatch(Matcher::matches);
+        boolean anyIncludeMatches = isEmptyPattern(includePatterns) ||
+                includePatterns.stream().map(pattern -> pattern.matcher(input)).anyMatch(Matcher::matches);
         boolean anyExcludeMatches = excludePatterns.stream().map(pattern -> pattern.matcher(input)).anyMatch(Matcher::matches);
 
         return anyIncludeMatches && !anyExcludeMatches;
+    }
+
+    private boolean isEmptyPattern (final List<Pattern> collection) {
+        return Objects.isNull(collection) || collection.isEmpty() || (collection.size()==1 && collection.get(0).pattern().isEmpty());
     }
 
     /**
