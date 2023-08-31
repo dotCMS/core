@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 
 import { tap } from 'rxjs/operators';
 
+import { HealthStatusTypes } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 
 /**
@@ -16,11 +17,12 @@ export const AnalyticsAppGuard = () => {
         .healthCheck()
         .pipe(
             tap((value) => {
-                return !value
-                    ? router.navigate(['/edit-page/experiments/analytic-app-misconfiguration'], {
-                          queryParamsHandling: 'merge'
-                      })
-                    : true;
+                return value === HealthStatusTypes.OK
+                    ? true
+                    : router.navigate(['/edit-page/experiments/analytic-app-misconfiguration'], {
+                          queryParamsHandling: 'merge',
+                          state: { healthStatus: value }
+                      });
             })
         );
 };

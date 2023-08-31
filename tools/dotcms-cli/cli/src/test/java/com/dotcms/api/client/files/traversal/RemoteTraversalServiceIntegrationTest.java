@@ -16,7 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class RemoteTraversalServiceTest extends FilesTestHelper {
+class RemoteTraversalServiceIntegrationTest extends FilesTestHelper {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;

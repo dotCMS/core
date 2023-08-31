@@ -51,7 +51,9 @@
 }
 
 // Severity for basic button
-.p-button.p-element:enabled {
+.p-button.p-element:enabled,
+// Used for file upload button
+.p-button.p-element.p-fileupload-choose {
     @extend #main-primary-severity;
 
     &.p-button-secondary {

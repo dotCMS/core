@@ -8,7 +8,8 @@ module.exports = {
                 sourceLoaderOptions: null,
                 transcludeMarkdown: true
             }
-        }
+        },
+        '@storybook/addon-actions'
     ],
     stories: []
     // uncomment the property below if you want to apply some webpack config globally

@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 
 import { AsyncPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
@@ -25,7 +26,7 @@ import {
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
-import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
+import { JsonClassesService } from './components/add-style-classes-dialog/services/json-classes.service';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -54,13 +55,14 @@ export default {
                 ButtonModule,
                 ToolbarModule,
                 DividerModule,
-                DropdownModule
+                DropdownModule,
+                FormsModule
             ],
             providers: [
                 DotTemplateBuilderStore,
                 DialogService,
                 DynamicDialogRef,
-                DotAddStyleClassesDialogStore,
+                JsonClassesService,
                 {
                     provide: DotMessageService,
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK

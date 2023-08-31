@@ -2,11 +2,22 @@
 
 :host {
     display: flex;
-    justify-content: center;
+    position: relative;
     align-items: center;
+    justify-content: center;
     background: $color-palette-primary-200;
     height: 5rem;
     color: $color-palette-primary;
     font-size: $font-size-xl;
     border-radius: $spacing-1;
+    padding: 0 $spacing-0;
+
+    p-button {
+        position: absolute;
+        right: 0;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        padding-right: $spacing-0;
+    }
 }
