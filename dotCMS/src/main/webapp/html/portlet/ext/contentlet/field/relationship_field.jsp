@@ -405,15 +405,13 @@
 		function mapToCheckCurrentLangExists(listRelationships){
 			const idExists = new Map();
 			for (var indexK = 0; indexK < listRelationships.length; indexK++) {
+				idExists.set(listRelationships[indexK]['identifier'], false);
 				for (var indexL = 0; indexL < listRelationships.length; indexL++) {
 					if(listRelationships[indexK]['identifier'] == listRelationships[indexL]['identifier'] &&
 							listRelationships[indexL]['langId'] == <%= contentlet.getLanguageId() %>) {
 						idExists.set(listRelationships[indexK]['identifier'], true);
 						break;
 					}
-				}
-				if(!idExists.has(listRelationships[indexK]['identifier'])) {
-					idExists.set(listRelationships[indexK]['identifier'], false);
 				}
 			}
 			return idExists;
@@ -441,15 +439,15 @@
 			var dataToRelate = new Array();
             var entries = numberOfRows<%= relationJsName%>();
 			// Eliminating existing relations
-			for (var indexJ = 0; indexJ < selectedData.length; indexJ++) {
+			for (var indexJ = 0; indexJ < newList.length; indexJ++) {
 				var relationExists = (<%=thereCanBeOnlyOne%> && (entries > 0 || dataToRelate.length>0)) ? true : false;
 				for (var indexI = 0; indexI < <%= relationJsName %>_Contents.length; indexI++) {
-					if(selectedData[indexJ]['id'] == <%= relationJsName %>_Contents[indexI]['id']){
+					if(newList[indexJ]['id'] == <%= relationJsName %>_Contents[indexI]['id']){
 						relationExists = true;
 					}
 				}
 				if(!relationExists){
-					dataToRelate[dataToRelate.length] = selectedData[indexJ];
+					dataToRelate[dataToRelate.length] = newList[indexJ];
 				}
 			}
 
