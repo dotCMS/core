@@ -153,6 +153,9 @@
                 <configuration>
                     <testFailureIgnore>${test.failure.ignore}</testFailureIgnore>
                     <skipTests>${skip.surefire.tests}</skipTests>
+                    <excludes>
+                        <exclude>**/*IntegrationTest.java</exclude>
+                    </excludes>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
