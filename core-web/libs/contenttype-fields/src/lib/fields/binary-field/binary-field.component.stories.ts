@@ -9,9 +9,10 @@ import { DialogModule } from 'primeng/dialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { BinaryFieldComponent } from './binary-field.component';
+
+import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
 
 export const MESSAGES_MOCK = {
     'contenttypes.content.edit.write.code': 'Write Code'
@@ -27,14 +28,13 @@ export default {
                 CommonModule,
                 ButtonModule,
                 DialogModule,
-                MonacoEditorModule,
-                DotMessagePipe
+                MonacoEditorModule
             ],
             providers: [
                 DotMessagePipe,
                 {
                     provide: DotMessageService,
-                    useValue: new MockDotMessageService(MESSAGES_MOCK)
+                    useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK
                 }
             ]
         })
