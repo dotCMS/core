@@ -1,4 +1,4 @@
-<!-- Selection not working, neither filtering -->
+<!-- Selection not working -->
 
 <dot-portlet-base *ngIf="vm$ | async as vm">
     <dot-action-header [options]="vm.actionHeaderOptions">
@@ -7,7 +7,7 @@
         ></dot-content-type-selector>
         <input
             #gf
-            (input)="dataTable.filterGlobal($event.target.value, 'contains')"
+            (input)="handleQueryFilter($event.target.value)"
             (keydown.arrowdown)="focusFirstRow()"
             pInputText
             placeholder="{{ 'global-search' | dm }}"
@@ -15,12 +15,6 @@
         />
         <div class="container-listing__header-options">
             <div class="container-listing__filter-controls">
-                <button
-                    class="p-button-outlined p-button"
-                    [label]="'Search' | dm"
-                    type="button"
-                    pButton
-                ></button>
                 <p-checkbox
                     [label]="'Show-Archived' | dm"
                     [binary]="true"
@@ -59,9 +53,11 @@
         [paginator]="true"
         [pageLinks]="vm.maxPageLinks"
         [totalRecords]="vm.totalRecords"
+        [responsiveLayout]="'scroll'"
         (onRowSelect)="updateSelectedContainers($event)"
         (onHeaderCheckboxToggle)="updateSelectedContainers($event)"
         (onRowUnselect)="updateSelectedContainers($event)"
+        (onPage)="loadDataPaginationEvent($event)"
         selectionMode="multiple"
         loadingIcon="pi pi-spin pi-spinner"
         dataKey="inode"

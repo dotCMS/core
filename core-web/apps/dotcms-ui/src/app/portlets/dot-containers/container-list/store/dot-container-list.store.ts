@@ -121,7 +121,9 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             tableColumns,
             stateLabels,
             selectedContainers,
-            containers
+            containers,
+            totalRecords,
+            maxPageLinks
         }: DotContainerListState) => {
             return {
                 containerBulkActions,
@@ -130,7 +132,9 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                 tableColumns,
                 stateLabels,
                 selectedContainers,
-                containers
+                containers,
+                totalRecords,
+                maxPageLinks
             };
         }
     );
@@ -225,6 +229,32 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                     : this.paginatorService.deleteExtraParams('archive');
 
                 return this.paginatorService.get();
+            }),
+            tap((containers: DotContainer[]) => {
+                this.patchContainers(containers);
+            })
+        );
+    });
+
+    readonly getContainersByQuery = this.effect<string>((query$) => {
+        return query$.pipe(
+            switchMap((query) => {
+                query.trim().length
+                    ? this.paginatorService.setExtraParams('filter', query)
+                    : this.paginatorService.deleteExtraParams('filter');
+
+                return this.paginatorService.get();
+            }),
+            tap((containers: DotContainer[]) => {
+                this.patchContainers(containers);
+            })
+        );
+    });
+
+    readonly getContainersWithOffset = this.effect<number>((offset$) => {
+        return offset$.pipe(
+            switchMap((offset) => {
+                return this.paginatorService.getWithOffset(offset);
             }),
             tap((containers: DotContainer[]) => {
                 this.patchContainers(containers);

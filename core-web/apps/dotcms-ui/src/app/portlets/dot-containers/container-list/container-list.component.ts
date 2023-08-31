@@ -91,6 +91,26 @@ export class ContainerListComponent implements OnDestroy {
     }
 
     /**
+     * Handle query filter
+     *
+     * @param {string} query
+     * @memberof ContainerListComponent
+     */
+    handleQueryFilter(query: string): void {
+        this.store.getContainersByQuery(query);
+    }
+
+    /**
+     * Call when click on any pagination link
+     * @param {LazyLoadEvent} event
+     *
+     * @memberof DotContainerListComponent
+     */
+    loadDataPaginationEvent({ first }: { first: number }): void {
+        this.store.getContainersWithOffset(first);
+    }
+
+    /**
      * Keep updated the selected containers in the grid
      * @param {DotContainer[]} containers
      *
