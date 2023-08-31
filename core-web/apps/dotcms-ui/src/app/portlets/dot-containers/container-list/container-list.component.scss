@@ -1,17 +1,18 @@
 @use "variables" as *;
 
 :host {
+    height: 100%;
+    overflow-y: auto;
+
     ::ng-deep {
-        dot-portlet-base {
-            overflow: auto;
+        dot-portlet-box {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
         }
 
-        .p-datatable {
-            position: initial;
-
-            &.p-datatable-responsive-scroll > .p-datatable-wrapper {
-                overflow-x: visible;
-            }
+        p-table {
+            flex-grow: 1;
         }
 
         .p-datatable,
@@ -21,31 +22,6 @@
             height: 100%;
             justify-content: space-between;
             background: $white;
-        }
-
-        .p-datatable-tablewrapper,
-        .p-table-wrapper {
-            flex-grow: 1;
-            background: $white;
-
-            table tbody.p-datatable-data tr,
-            table tbody.p-table-tbody tr {
-                td {
-                    cursor: pointer;
-
-                    span {
-                        word-break: break-word;
-                    }
-                }
-            }
-        }
-
-        .p-datatable-data,
-        .p-table-tbody {
-            & > tr > .listing-datatable__action-column {
-                padding-bottom: 0;
-                padding-top: 0;
-            }
         }
     }
 }
