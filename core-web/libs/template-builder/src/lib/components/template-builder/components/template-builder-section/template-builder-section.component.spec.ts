@@ -25,4 +25,11 @@ describe('TemplateBuilderSectionComponent', () => {
     it('should use the given title', () => {
         expect(spectator.debugElement.nativeElement.textContent).toEqual(MOCK_TEXT);
     });
+
+    it('should emit deleteSection event', () => {
+        const deleteSection = jest.fn();
+        spectator.component.deleteSection.subscribe(deleteSection);
+        spectator.click('[data-testId="delete-section-button"]');
+        expect(deleteSection).toHaveBeenCalledTimes(1);
+    });
 });

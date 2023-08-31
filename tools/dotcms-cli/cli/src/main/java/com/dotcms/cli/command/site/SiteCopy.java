@@ -70,8 +70,15 @@ public class SiteCopy extends AbstractSiteCommand implements Callable<Integer>, 
     @CommandLine.ArgGroup(exclusive = false,  heading = "\n@|bold,blue Individual Copy Options. |@\n")
     CopyOptions copyOptions;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         return copy();
     }
 

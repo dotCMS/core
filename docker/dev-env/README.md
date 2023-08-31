@@ -10,7 +10,7 @@ This image takes all the normal dotCMS docker config switches - keep in mind tha
 - `DOTCMS_API_TOKEN` : A valid dotCMS API Token from an admin user in the source environment.
 - `DOTCMS_USERNAME_PASSWORD` :  The username:password for an admin user in the source environment.
 - `DOTCMS_DEBUG` :  Run dotCMS in debug mode and listen for a remote debugger on port 8000, defaults to `false`.
-
+- `ALL_ASSETS` : Controls whether old versions of assets are included in the download, defaults to false, which means only the current live and working versions of assets will be downloaded.
 
 
 

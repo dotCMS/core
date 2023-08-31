@@ -71,18 +71,6 @@ export interface DotTemplateBuilderState {
     resizingRowID: string;
 }
 
-/**
- * @description This is the model for the DotAddStyleClassesDialogStore
- *
- * @export
- * @interface DotAddStyleClassesDialogState
- */
-export interface DotAddStyleClassesDialogState {
-    styleClasses: StyleClassModel[];
-    selectedClasses: StyleClassModel[];
-    filteredClasses: StyleClassModel[];
-}
-
 export type WidgetType = 'col' | 'row';
 
 /**
@@ -107,16 +95,6 @@ export interface DotTemplateLayoutProperties {
     header: boolean;
     footer: boolean;
     sidebar: DotLayoutSideBar;
-}
-
-/**
- * @description This it the model for Autocomplete StyleClasses
- *
- * @export
- * @interface StyleClassModel
- */
-export interface StyleClassModel {
-    cssClass: string;
 }
 
 /**
