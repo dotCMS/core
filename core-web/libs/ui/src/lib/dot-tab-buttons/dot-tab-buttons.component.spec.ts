@@ -60,6 +60,13 @@ describe('DotTabButtonsComponent', () => {
         expect(clickOptionSpy).toHaveBeenCalled();
     });
 
+    it('should not emit clickOption event when onClickOption is called if the user is in the same tab', () => {
+        const clickOptionSpy = spyOn(spectator.component.clickOption, 'emit');
+        spectator.component.mode = DotPageMode.PREVIEW;
+        spectator.component.onClickOption({ target: { value: DotPageMode.PREVIEW } });
+        expect(clickOptionSpy).not.toHaveBeenCalled();
+    });
+
     it('should call showMenu when onClickOption is called with OPEN_MENU value', () => {
         const showMenuSpy = spyOn(spectator.component, 'showMenu');
         spectator.component.onClickOption({ target: { value: spectator.component.OPEN_MENU } });
