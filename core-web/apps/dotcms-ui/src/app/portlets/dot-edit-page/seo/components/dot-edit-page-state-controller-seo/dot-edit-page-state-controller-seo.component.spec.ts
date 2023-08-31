@@ -489,7 +489,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith('Google');
         });
 
-        it('should call  changeSeoMedia event', async () => {
+        it('should call selected event', async () => {
             spyOn(dotPageStateService, 'setDevice');
             const dotSelector = de.query(By.css('[data-testId="dot-device-selector"]'));
             const event = {
