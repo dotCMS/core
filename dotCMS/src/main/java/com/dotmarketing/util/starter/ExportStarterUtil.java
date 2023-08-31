@@ -9,7 +9,6 @@ import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
-import com.dotcms.util.CloseUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Clickstream404;
@@ -23,7 +22,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.cmsmaintenance.util.AssetFileNameFilter;
@@ -193,6 +191,7 @@ public class ExportStarterUtil {
                     new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(POOL_SIZE.get()).maxPoolSize(MAX_POOL_SIZE.get()).queueCapacity(QUEUE_CAPACITY.get()).build());
             final CompletionService<List<FileEntry>> completionService = new ExecutorCompletionService<>(dotSubmitter);
             final List<Future<List<FileEntry>>> futures = new ArrayList<>();
+            Logger.debug(this, String.format("Generating Starter Data JSON files for %d database tables", dotcmsTables.size()));
             for (final List<Class<?>> dotCMSTables : dotcmsTablesSubset) {
                 final Future<List<FileEntry>> future = completionService.submit(() -> this.getStarterDataAsJSON(dotCMSTables));
                 futures.add(future);
@@ -261,12 +260,14 @@ public class ExportStarterUtil {
     }
 
     /**
-     * Splits the Set of database tables into lists of a specific size. For instance, if there are 33 tables in the
-     * system and a split value of 10 is specified, the resulting sub-sets will be 4 lists, such as: 3 lists of 10
-     * items, and 1 list of 3 items.
+     * Splits the Set of database tables into lists of a specific size. For instance, if there are
+     * 35 tables in the system and a split value of 10 is specified, the max partition size will be
+     * 4. That is, there will be 8 lists of 4 items, and 1 list of 3 items to accommodate all 35
+     * tables.
      *
      * @param dbTables The Set of Hibernate or class-mapped database tables in dotCMS.
-     * @param size The max size of every sub-set of the table list.
+     * @param size     The max size of every sub-set of the table list.
+     *
      * @return The list of sub-sets of database tables.
      */
     private List<List<Class<?>>> splitTableList(final Set<Class<?>> dbTables, final int size) {
@@ -287,7 +288,7 @@ public class ExportStarterUtil {
      *     <li>The JSON data is NEVER written to the File System.</li>
      * </ul>
      *
-     * @param dbTablesAsClasses The list of classes that represent a dotCMS database table.
+     * @param dbTablesAsClasses The list of classes that represent dotCMS database tables.
      *
      * @return The list of {@link FileEntry} objects containing the records of the specified dotCMS database tables.
      */
@@ -299,6 +300,7 @@ public class ExportStarterUtil {
         List<?> resultList;
         final ObjectMapper defaultObjectMapper = ContentletJsonHelper.INSTANCE.get().objectMapper();
         try {
+            Logger.debug(this, String.format("Retrieving data from tables: %s", dbTablesAsClasses));
             for (final Class<?> clazz : dbTablesAsClasses) {
                 int i;
                 int step = EXPORTED_RECORDS_PAGE_SIZE;
@@ -379,14 +381,15 @@ public class ExportStarterUtil {
                     if (!UtilMethods.isSet(resultList)) {
                         break;
                     }
-                    final String zippedFileName =
+                    final String jsonFileName =
                             clazz.getName() + StringPool.UNDERLINE + DEFAULT_JSON_FILE_DATA_FORMAT.format(i) + JSON_FILE_EXT;
                     final String contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
-                    final FileEntry jsonFileEntry = new FileEntry(zippedFileName, contentAsJson);
+                    Logger.debug(this, String.format("-> File: %s", jsonFileName));
+                    final FileEntry jsonFileEntry = new FileEntry(jsonFileName, contentAsJson);
                     starterFiles.add(jsonFileEntry);
                     total += resultList.size();
                 }
-                Logger.debug(this, total + " records were generated for " + clazz.getName());
+                Logger.debug(this, String.format("-> %d records were generated for class table '%s'", total, clazz.getName()));
             }
             Logger.debug(this, "Exportable JSON files have been generated successfully!");
         } catch (final Exception e) {
@@ -441,6 +444,7 @@ public class ExportStarterUtil {
             contentAsJson = RulesImportExportUtil.getInstance().exportToJson();
             starterFiles.add(new FileEntry("RuleImportExportObject" + JSON_FILE_EXT, contentAsJson));
 
+            Logger.debug(this, String.format("Additional exportable entries added = %d", starterFiles.size()));
             Logger.debug(this, "Additional exportable JSON files have been generated successfully!");
         } catch (final Exception e) {
             Logger.error(this, e.getMessage(), e);
@@ -472,10 +476,11 @@ public class ExportStarterUtil {
     private void getAssets(final ZipOutputStream zip, final FileFilter fileFilter) {
         final String assetsRootPath = ConfigUtils.getAbsoluteAssetsRootPath();
         final File source = new File(assetsRootPath);
-        Logger.info(this, "Adding all Assets into compressed file...");
+        Logger.info(this, "Adding all Assets into compressed file:");
         FileUtil.listFilesRecursively(source, fileFilter).stream().filter(File::isFile).forEach(file -> {
 
             final String filePath = file.getPath().replace(assetsRootPath, ZIP_FILE_ASSETS_FOLDER.get());
+            Logger.debug(this, String.format("-> File path: %s", filePath));
             final FileEntry entry = new FileEntry(filePath, file);
             this.addFileToZip(entry, zip);
 
@@ -526,13 +531,16 @@ public class ExportStarterUtil {
                                      final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean includeOldAssets) {
         try (final ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(output))) {
             if (includeStarterData) {
+                Logger.debug(this, "Including Starter Data");
                 this.getStarterDataAsJSON(zip);
             }
-            final AssetFileNameFilter fileFilter = includeOldAssets ?  new AssetFileNameFilter() : new AssetFileNameFilter(getLiveWorkingBloomFilter());
+            final AssetFileNameFilter fileFilter = includeOldAssets ? new AssetFileNameFilter() : new AssetFileNameFilter(getLiveWorkingBloomFilter());
             if (includeStarterDataAndAssets) {
+                Logger.debug(this, "Including Starter Data and Assets");
                 this.getAssets(zip, fileFilter);
             }
             if (includeAssetsOnly) {
+                Logger.debug(this, "Including Assets only");
                 this.getAssets(zip, fileFilter);
             }
         } catch (final Exception e) {
