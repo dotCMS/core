@@ -51,19 +51,28 @@ export class SuggestionsService {
     }
 
     /**
-     * Get contentlets filtered by urlMap
+     * Get contentlets filtered by url
      *
-     * @param {*} { filter, currentLanguage = DEFAULT_LANG_ID }
+     * @param {{
+     *         link: string;
+     *         currentLanguage?: number;
+     *     }} {
+     *         link,
+     *         currentLanguage = DEFAULT_LANG_ID
+     *     }
      * @return {*}  {Observable<DotCMSContentlet[]>}
      * @memberof SuggestionsService
      */
-    getContentletsUrlMap({
-        filter,
+    getContentletsByLink({
+        link,
         currentLanguage = DEFAULT_LANG_ID
+    }: {
+        link: string;
+        currentLanguage?: number;
     }): Observable<DotCMSContentlet[]> {
         return this.http
             .post('/api/content/_search', {
-                query: `+languageId:${currentLanguage} +deleted:false +working:true +(urlmap:*${filter}* OR +(basetype:5 AND path:*${filter}*))`,
+                query: `+languageId:${currentLanguage} +deleted:false +working:true +(urlmap:*${link}* OR (contentType:(dotAsset OR htmlpageasset OR fileAsset) AND +path:*${link}*))`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 40

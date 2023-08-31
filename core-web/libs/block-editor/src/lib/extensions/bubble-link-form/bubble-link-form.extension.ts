@@ -23,7 +23,7 @@ declare module '@tiptap/core' {
 
 export const LINK_FORM_PLUGIN_KEY = new PluginKey('addLink');
 
-export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
+export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef, languageId: number) => {
     return Extension.create<BubbleLinkFormOptions>({
         name: 'bubbleLinkForm',
 
@@ -79,7 +79,8 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
                     editor: this.editor,
                     element: component.location.nativeElement,
                     tippyOptions: this.options.tippyOptions,
-                    component: component
+                    component: component,
+                    languageId
                 })
             ];
         }

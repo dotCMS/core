@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { debounceTime, take } from 'rxjs/operators';
+import { DEFAULT_LANG_ID } from '../bubble-menu/models';
 
 // Components
 import { SuggestionsCommandProps } from '@dotcms/block-editor';
@@ -40,6 +41,7 @@ export class BubbleLinkFormComponent implements OnInit {
     @Output() setNodeProps: EventEmitter<NodeProps> = new EventEmitter();
 
     @Input() showSuggestions = false;
+    @Input() languageId = DEFAULT_LANG_ID;
     @Input() initialValues: NodeProps = {
         link: '',
         blank: true
@@ -228,7 +230,7 @@ export class BubbleLinkFormComponent implements OnInit {
     searchContentlets({ link = '' }) {
         this.loading = true;
         this.suggestionsService
-            .getContentletsUrlMap({ filter: link })
+            .getContentletsByLink({ link, currentLanguage: this.languageId })
             .pipe(take(1))
             .subscribe((contentlets: DotCMSContentlet[]) => {
                 this.items = contentlets.map((contentlet) => {
