@@ -59,14 +59,14 @@ public class ITConfigTest extends IntegrationTestBase {
     @Test
     public void test_resolving_config_on_system_table_update_and_update () {
 
-        APILocator.getSystemAPI().getSystemTable().set("SECOND_PROPERTY", "NEW_VALUE_1");
-        String value = Config.getStringProperty("SECOND_PROPERTY", "DEFAULT_VALUE");
+        APILocator.getSystemAPI().getSystemTable().set("THIRD_PROPERTY", "NEW_VALUE_1");
+        String value = Config.getStringProperty("THIRD_PROPERTY", "DEFAULT_VALUE");
         Assert.assertEquals("Should return the value from the system table", "NEW_VALUE_1", value);
-        APILocator.getSystemAPI().getSystemTable().set("SECOND_PROPERTY", "NEW_VALUE_2");
-        value = Config.getStringProperty("SECOND_PROPERTY", "DEFAULT_VALUE");
+        APILocator.getSystemAPI().getSystemTable().set("THIRD_PROPERTY", "NEW_VALUE_2");
+        value = Config.getStringProperty("THIRD_PROPERTY", "DEFAULT_VALUE");
         Assert.assertEquals("Should return the value from the system table", "NEW_VALUE_2", value);
-        APILocator.getSystemAPI().getSystemTable().delete("SECOND_PROPERTY");
-        value = Config.getStringProperty("SECOND_PROPERTY", "DEFAULT_VALUE");
+        APILocator.getSystemAPI().getSystemTable().delete("THIRD_PROPERTY");
+        value = Config.getStringProperty("THIRD_PROPERTY", "DEFAULT_VALUE");
         Assert.assertEquals("Should return default value since the property has been removed", "DEFAULT_VALUE", value);
     }
 }
