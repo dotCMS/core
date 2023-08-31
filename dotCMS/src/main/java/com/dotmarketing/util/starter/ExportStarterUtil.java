@@ -9,7 +9,6 @@ import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
-import com.dotcms.util.CloseUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Clickstream404;
@@ -23,7 +22,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.cmsmaintenance.util.AssetFileNameFilter;
@@ -483,16 +481,23 @@ public class ExportStarterUtil {
     }
 
     /**
-     * Generates all the contents that go into the compressed dotCMS Starter file. It's very important to point out
-     * that <b>no temporary files are created, and no data is written to the file system at any point.</b>
-     * <p>The resulting compressed file is directly streamed to the {@link OutputStream} for users to be able to
-     * download it even before it is 100% ready.</p>
+     * Generates all the contents that go into the compressed dotCMS Starter file. It's very
+     * important to point out that <b>no temporary files are created, and no data is written to the
+     * file system at any point.</b>
+     * <p>The resulting compressed file is directly streamed to the {@link OutputStream} for users
+     * to be able to download it even before it is 100% ready. Users have the option to choose
+     * whether they want all versions of the assets to be part of the starter ot not. This is useful
+     * in cases where the starter's size must be kept as low as possible, or if older asset versions
+     * are not needed at all.</p>
      *
-     * @param output        The {@link OutputStream} instance.
-     * @param includeAssets If the Starter file must contain all dotCMS assets as well, set this to {@code true}.
+     * @param output           The {@link OutputStream} instance.
+     * @param includeAssets    If the Starter file must contain all dotCMS assets as well, set this
+     *                         to {@code true}.
+     * @param includeOldAssets If absolutely all versions of the assets must be included in the
+     *                         compressed file, set this to {@code true}.
      */
-    public void streamCompressedStarter(final OutputStream output, final boolean includeAssets) {
-        this.streamCompressedData(output, true, includeAssets, false, true);
+    public void streamCompressedStarter(final OutputStream output, final boolean includeAssets, final boolean includeOldAssets) {
+        this.streamCompressedData(output, true, includeAssets, false, includeOldAssets);
     }
 
     /**
