@@ -1200,6 +1200,21 @@
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-sse</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-http</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>pl.tkowalcz.tjahzi</groupId>
+            <artifactId>log4j2-appender</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
         <dependency>
             <!-- Immutables is a Java annotation processor to eliminate the burden of writing immutable types.
@@ -1619,4 +1634,3 @@
         </plugins>
     </reporting>
 </project>
-

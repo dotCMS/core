@@ -67,13 +67,14 @@
                 <scope>import</scope>
             </dependency>
 
-
-            <!-- Asynchronous NIO client server framework for the jvm -->
-            <!-- <dependency>
-
-                 <groupId>io.netty</groupId>
-                 <artifactId>netty-all</artifactId>
-             </dependency>-->
+            <!--
+                Needed for log shipping
+            -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>4.1.63.Final</version>
+            </dependency>
 
 
             <!--
@@ -994,7 +995,11 @@
                 <version>2.4.0</version>
             </dependency>
 
-
+            <dependency>
+                <groupId>pl.tkowalcz.tjahzi</groupId>
+                <artifactId>log4j2-appender</artifactId>
+                <version>0.9.31</version>
+            </dependency>
 
 
             <!-- Image Processing -->
