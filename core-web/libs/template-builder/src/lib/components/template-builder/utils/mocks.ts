@@ -261,8 +261,8 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.action.cancel': 'Cancel',
     'dot.template.builder.action.create': 'Create',
     'dot.template.builder.add.container': 'Add Container',
-    'dot.template.builder.add.box': 'Add Box',
-    'dot.template.builder.add.row': 'Add Row',
+    'dot.template.builder.add.box': 'Box',
+    'dot.template.builder.add.row': 'Row',
     'dot.template.builder.edit.classes': 'Edit Classes',
     'dot.template.builder.edit.box': 'Edit Box',
     'dot.template.builder.label.classes': 'Classes',
@@ -288,7 +288,12 @@ export const MESSAGES_MOCK = {
     'editpage.layout.theme.search': 'Search',
     'dot.template.builder.classes.dialog.update.button': 'Update',
     'dot.template.builder.sidebar.header.title': 'Sidebar',
-    'dot.template.builder.row.box.wont.fit': 'Minimum 1 column needed for box drop.'
+    'dot.template.builder.row.box.wont.fit': 'Minimum 1 column needed for box drop.',
+    'dot.template.builder.autocomplete.has.suggestions':
+        'Type and hit enter or select from suggestions to add a class',
+    'dot.template.builder.autocomplete.no.suggestions': 'Type and hit enter to add a class',
+    'dot.template.builder.autocomplete.setup.suggestions':
+        'You can set up predefined class suggestions. <a href="https://www.dotcms.com/docs/latest/designing-a-template-with-a-theme#ClassSuggestions">Get the setup guide</a>'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);

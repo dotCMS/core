@@ -9,13 +9,11 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.WorkspaceMixin;
 import com.dotcms.common.LocationUtils;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
-import java.io.File;
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -42,18 +40,16 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                     + "- Format: //{site}/{folder} or //{site}/{folder}/{file}")
     String path;
 
-    @CommandLine.Parameters(index = "1", arity = "0..1", paramLabel = "workspace",
-            description = "Local directory withing the CLI project workspace. " +
-                    "Defaults to the current directory.")
-    File workspace;
+    @CommandLine.Mixin(name = "workspace")
+    WorkspaceMixin workspaceMixin;
 
-    @CommandLine.Option(names = {"-r", "--recursive"}, defaultValue = "true",
-            description = "Pulls directories and their contents recursively.")
-    boolean recursive;
+    @CommandLine.Option(names = {"-nr", "--non-recursive"}, defaultValue = "false",
+            description = "Pulls only the specified directory and the contents under it.")
+    boolean nonRecursive;
 
-    @CommandLine.Option(names = {"-o", "--override"}, defaultValue = "true",
-            description = "Overrides the local files with the ones from the server.")
-    boolean override;
+    @CommandLine.Option(names = {"-p", "--preserve"}, defaultValue = "false",
+            description = "Preserves existing files and directories, avoiding overwriting if they already exist.")
+    boolean preserve;
 
     @CommandLine.Option(names = {"-ie", "--includeEmptyFolders"}, defaultValue = "false",
             description =
@@ -103,11 +99,17 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     @Inject
     PullService pullAssetsService;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
 
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         // Calculating the workspace path for files
-            var workspaceFilesFolder = getOrCreateWorkspaceFilesDirectory(workspace);
+        var workspaceFilesFolder = getOrCreateWorkspaceFilesDirectory(workspaceMixin.workspace());
 
         if (LocationUtils.isFolderURL(path)) { // Handling folders
 
@@ -121,7 +123,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                             // Service to handle the traversal of the folder
                             return remoteTraversalService.traverseRemoteFolder(
                                     path,
-                                    recursive ? null : 0,
+                                    nonRecursive ? 0 : null,
                                     true,
                                     includeFolderPatterns,
                                     includeAssetPatterns,
@@ -153,7 +155,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
                 // ---
                 // Now we need to pull the contents based on the tree we found
-                pullAssetsService.pullTree(output, result.getRight(), workspaceFilesFolder, override,
+            pullAssetsService.pullTree(output, result.getRight(), workspaceFilesFolder, !preserve,
                         includeEmptyFolders, failFast, retryAttempts);
 
             } else { // Handling single files
@@ -184,7 +186,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 }
 
                 // Handle the pull of a single file
-            pullAssetsService.pullFile(output, result, path, workspaceFilesFolder, override,
+            pullAssetsService.pullFile(output, result, path, workspaceFilesFolder, !preserve,
                         failFast, retryAttempts);
             }
 

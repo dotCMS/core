@@ -14,7 +14,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
-import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
+import { JsonClassesService } from './services/json-classes.service';
 
 import {
     DOT_MESSAGE_SERVICE_TB_MOCK,
@@ -57,7 +57,7 @@ export default {
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK
                 },
                 DynamicDialogRef,
-                DotAddStyleClassesDialogStore
+                JsonClassesService
             ]
         })
     ]
