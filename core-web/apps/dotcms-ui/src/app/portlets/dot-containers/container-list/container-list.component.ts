@@ -167,7 +167,7 @@ export class ContainerListComponent implements OnDestroy {
     }
 
     /**
-     * Keep updated the selected containers in the grid
+     * Keep updated the selected containers in the store
      *
      * @memberof ContainerListComponent
      */
