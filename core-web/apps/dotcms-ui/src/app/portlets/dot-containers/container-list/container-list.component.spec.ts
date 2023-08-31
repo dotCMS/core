@@ -1,32 +1,35 @@
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, CUSTOM_ELEMENTS_SCHEMA, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 
-import { ConfirmationService, SelectItem, SharedModule } from 'primeng/api';
+import { ConfirmationService, SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { DialogService } from 'primeng/dynamicdialog';
+import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
+import { TableModule } from 'primeng/table';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotListingDataTableModule } from '@components/dot-listing-data-table';
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
+import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
+import { ActionHeaderModule } from '@components/dot-listing-data-table/action-header/action-header.module';
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import {
     DotAlertConfirmService,
     DotMessageService,
-    DotSiteBrowserService
+    DotSiteBrowserService,
+    PaginatorService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -36,19 +39,28 @@ import {
     DotEventsSocket,
     DotEventsSocketURL,
     DotPushPublishDialogService,
+    LoggerService,
     LoginService,
+    SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    DotcmsConfigServiceMock,
+    DotFormatDateServiceMock,
+    MockDotMessageService,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
+import { ContainerListRoutingModule } from './container-list-routing.module';
 import { ContainerListComponent } from './container-list.component';
+import { DotContainerListStore } from './store/dot-container-list.store';
 
 const containersMock: DotContainer[] = [
     {
@@ -138,29 +150,6 @@ const containersMock: DotContainer[] = [
     }
 ];
 
-const columnsMock = [
-    {
-        fieldName: 'title',
-        header: 'Name',
-        sortable: true
-    },
-    {
-        fieldName: 'status',
-        header: 'Status',
-        width: '8%'
-    },
-    {
-        fieldName: 'friendlyName',
-        header: 'Description'
-    },
-    {
-        fieldName: 'modDate',
-        format: 'date',
-        header: 'Last Edit',
-        sortable: true
-    }
-];
-
 const messages = {
     'Add-To-Bundle': 'Add To Bundle',
     'Remote-Publish': 'Push Publish',
@@ -223,7 +212,6 @@ class MockDotContentTypeSelectorComponent {
 describe('ContainerListComponent', () => {
     let fixture: ComponentFixture<ContainerListComponent>;
     let comp: ContainerListComponent;
-    let dotListingDataTable: DotListingDataTableComponent;
     let dotPushPublishDialogService: DotPushPublishDialogService;
     let coreWebService: CoreWebService;
     let dotRouterService: DotRouterService;
@@ -234,6 +222,8 @@ describe('ContainerListComponent', () => {
     let contentTypesSelector: MockDotContentTypeSelectorComponent;
     let dotContainersService: DotContainersService;
     let dotSiteBrowserService: DotSiteBrowserService;
+    let siteService: SiteServiceMock;
+    let store: DotContainerListStore;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
@@ -241,13 +231,33 @@ describe('ContainerListComponent', () => {
         await TestBed.configureTestingModule({
             declarations: [ContainerListComponent, MockDotContentTypeSelectorComponent],
             providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
+                ConfirmationService,
+                DialogService,
+                DotAlertConfirmService,
+                DotcmsConfigService,
+                DotcmsEventsService,
+                DotContainerListStore,
+                DotContainersService,
+                DotEventsSocket,
+                DotHttpErrorManagerService,
+                DotSiteBrowserService,
+                HttpClient,
+                LoggerService,
+                LoginService,
+                PaginatorService,
+                StringUtils,
+                {
+                    provide: SiteService,
+                    useClass: SiteServiceMock
+                },
                 {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                {
+                    provide: DotcmsConfigService,
+                    useClass: DotcmsConfigServiceMock
+                },
                 {
                     provide: DotRouterService,
                     useValue: {
@@ -256,38 +266,31 @@ describe('ContainerListComponent', () => {
                         goToSiteBrowser: jasmine.createSpy()
                     }
                 },
-                StringUtils,
-                DotHttpErrorManagerService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                LoginService,
-                DotcmsEventsService,
-                DotEventsSocket,
-                DotcmsConfigService,
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-                DialogService,
-                DotSiteBrowserService,
-                DotContainersService,
-                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock }
             ],
             imports: [
-                DotListingDataTableModule,
-                CommonModule,
-                DotMessagePipe,
-                SharedModule,
-                CheckboxModule,
-                MenuModule,
+                ActionHeaderModule,
                 ButtonModule,
-                DotActionButtonModule,
+                CheckboxModule,
+                CommonModule,
+                ContainerListRoutingModule,
                 DotActionMenuButtonModule,
                 DotAddToBundleModule,
+                DotEmptyStateModule,
+                DotMessagePipe,
+                DotPortletBaseModule,
                 DotRelativeDatePipe,
                 HttpClientTestingModule,
-                DynamicDialogModule,
-                BrowserAnimationsModule
-            ],
-            schemas: [CUSTOM_ELEMENTS_SCHEMA]
+                InputTextModule,
+                MenuModule,
+                TableModule
+            ]
         }).compileComponents();
+
         fixture = TestBed.createComponent(ContainerListComponent);
         comp = fixture.componentInstance;
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
@@ -295,6 +298,8 @@ describe('ContainerListComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
         dotContainersService = TestBed.inject(DotContainersService);
         dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
+        store = TestBed.inject(DotContainerListStore);
+        siteService = TestBed.inject(SiteService) as unknown as SiteServiceMock;
     });
 
     describe('with data', () => {
@@ -305,25 +310,17 @@ describe('ContainerListComponent', () => {
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')
                 })
             );
+            siteService.setFakeCurrentSite();
             fixture.detectChanges();
             tick(2);
             fixture.detectChanges();
-            dotListingDataTable = fixture.debugElement.query(
-                By.css('dot-listing-data-table')
-            ).componentInstance;
+
             spyOn(dotPushPublishDialogService, 'open');
         }));
 
-        it('should set attributes of dotListingDataTable', () => {
-            expect(dotListingDataTable.columns).toEqual(columnsMock);
-            expect(dotListingDataTable.url).toEqual('v1/containers');
-            expect(dotListingDataTable.actions).toEqual([]);
-            expect(dotListingDataTable.checkbox).toEqual(true);
-            expect(dotListingDataTable.dataKey).toEqual('inode');
-        });
-
         it('should clicked on row and emit dotRouterService', () => {
-            comp.listing.dataTable.tableViewChild.nativeElement.rows[1].click();
+            fixture.detectChanges();
+            comp.tableRows.get(0).nativeElement.click();
             expect(dotRouterService.goToEditContainer).toHaveBeenCalledTimes(1);
             expect(dotRouterService.goToEditContainer).toHaveBeenCalledWith(
                 containersMock[0].identifier
@@ -369,7 +366,13 @@ describe('ContainerListComponent', () => {
                 By.css('.container-listing__header-options p-menu')
             ).componentInstance;
             spyOn(dotContainersService, 'publish').and.returnValue(of(mockBulkResponseSuccess));
-            comp.updateSelectedContainers(containersMock);
+
+            comp.selectedContainers = containersMock;
+
+            fixture.detectChanges();
+
+            comp.handleActionMenuOpen({} as MouseEvent);
+
             menu.model[0].command();
             expect(dotContainersService.publish).toHaveBeenCalledWith([
                 '123Published',
@@ -402,22 +405,20 @@ describe('ContainerListComponent', () => {
             expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(path);
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
-    });
 
-    it('should emit changes in content types selector', () => {
-        fixture.detectChanges();
-        contentTypesSelector = fixture.debugElement.query(
-            By.css('dot-content-type-selector')
-        ).componentInstance;
-        spyOn(comp.listing.paginatorService, 'setExtraParams');
-        spyOn(comp.listing, 'loadFirstPage');
-        contentTypesSelector.selected.emit('test');
+        // Spy not working, the original method is still being called
+        it('should fetch containers when content types selector changes', () => {
+            spyOn(store, 'getContainersByContentType');
+            fixture.detectChanges();
 
-        expect(comp.listing.paginatorService.setExtraParams).toHaveBeenCalledWith(
-            'content_type',
-            'test'
-        );
-        expect(comp.listing.loadFirstPage).toHaveBeenCalledWith();
+            contentTypesSelector = fixture.debugElement.query(
+                By.css('dot-content-type-selector')
+            ).componentInstance;
+
+            contentTypesSelector.selected.emit('test');
+
+            expect(store.getContainersByContentType).toHaveBeenCalledWith('test');
+        });
     });
 
     function setBasicOptions() {

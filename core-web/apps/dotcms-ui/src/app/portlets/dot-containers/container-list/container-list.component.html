@@ -50,7 +50,8 @@
         (onPage)="loadDataPaginationEvent($event)"
         selectionMode="multiple"
         loadingIcon="pi pi-spin pi-spinner"
-        dataKey="inode">
+        dataKey="inode"
+        data-testId="container-list-table">
         <ng-template let-columns pTemplate="header">
             <tr *ngIf="vm.containers?.length">
                 <th style="width: 5%">
