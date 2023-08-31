@@ -227,9 +227,12 @@ public class FilesTestHelper {
         long end = start + 15 * 1000; // 15 seconds * 1000 ms/sec
         while (System.currentTimeMillis() < end) {
             try {
-                clientFactory.getClient(SiteAPI.class)
+                var response = clientFactory.getClient(SiteAPI.class)
                         .findByName(GetSiteByNameRequest.builder().siteName(siteName).build());
-                return true;
+                if ((response != null && response.entity() != null) &&
+                        (response.entity().isLive() && response.entity().isWorking())) {
+                    return true;
+                }
             } catch (NotFoundException e) {
                 // Do nothing
             }
