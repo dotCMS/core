@@ -627,10 +627,6 @@ class ContentTypeAPIIntegrationTest {
                 //.addLayout()   <-- Even though We have an addLayOuts method the server side only takes into account the layout fields sent as fields
                 .build();
 
-        //final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
-        //final String asString = objectMapper.writeValueAsString(contentType);
-        //System.out.println(asString);
-
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
         final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
