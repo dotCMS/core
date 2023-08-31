@@ -252,3 +252,11 @@ const arePointsALine = (points: { x: number; y: number }[]): boolean => {
 
     return true;
 };
+
+// const decimalToPercentage = (decimalValue: number, fractionDigits: number = 2): string => {
+//     return (
+//         (Number.isInteger(decimalValue)
+//             ? decimalValue.toString()
+//             : decimalValue.toFixed(fractionDigits)) + '%'
+//     );
+// };

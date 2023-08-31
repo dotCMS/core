@@ -40,7 +40,7 @@ export const generateDotExperimentLineChartJsOptions = ({
                     label: function (context) {
                         const label = context.dataset.label || '';
 
-                        return `${label}: ${context.parsed.y}`;
+                        return `${label}: ${context.parsed.y + '%'}`;
                     },
                     labelColor: function (context) {
                         return {
@@ -101,7 +101,10 @@ export const generateDotExperimentLineChartJsOptions = ({
                 },
                 ticks: {
                     color: ChartColors.ticks.color,
-                    precision: 0
+                    precision: 0,
+                    callback: function (value) {
+                        return value.toFixed(0) + '%';
+                    }
                 },
                 border: {
                     display: true,
@@ -168,7 +171,13 @@ export const generateDotExperimentLineChartJsOptions = ({
                     }
                 }
             },
-            y: { ...defaultOptions.scales.y, type: 'linear', position: 'left', min: 0 }
+            y: {
+                ...defaultOptions.scales.y,
+                type: 'linear',
+                position: 'left',
+                min: 0,
+                ticks: { ...defaultOptions.scales.y.ticks, callback: (value: value) => value }
+            }
         }
     };
 
