@@ -112,3 +112,4 @@ This maintenance release includes the following code fixes:
 91. https://github.com/dotCMS/core/issues/25440 : Unable to Publish (all) of a folder #25440
 92. https://github.com/dotCMS/core/issues/24176 : "(Default)" marker in Site Search interferes with reindexing #24176
 93. https://github.com/dotCMS/core/issues/25510 : Export assets without old versions #25510
+94. https://github.com/dotCMS/core/issues/25666 : Pagination not working on related endpoint #25666
