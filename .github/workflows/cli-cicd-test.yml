@@ -53,9 +53,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           pull: true
           no-cache: true
-          build-args: |
-            BUILD_ID=${{ github.sha }}
-            BUILD_FROM=COMMIT 
 
       - id: prepare-license
         name: Prepare license
