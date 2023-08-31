@@ -2,23 +2,22 @@
 <configuration packages="pl.tkowalcz.tjahzi.log4j2">
     <Loggers>
         <Root level="INFO">
-            <AppenderRef ref="Loki"/>
+            <AppenderRef ref="ROUTER"/>
         </Root>
     </Loggers>
 
     <appenders>
-        <Console name="Console" target="SYSTEM_OUT">
+        <Console name="CONSOLE" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{2}{nolookups} - %msg{nolookups}%n" />
         </Console>
 
-        <Loki name="Loki" bufferSizeMegabytes="${env:LOKI_LOG_BUFFER_MB:-64}">
+        <Loki name="LOKI" bufferSizeMegabytes="${env:LOKI_LOG_BUFFER_MB:-64}">
             <url>${env:LOKI_LOG_URL:-http://localhost:3100/monitoring/loki/api/v1/push}</url>
             <batchWait>${env:LOKI_LOG_BATCH_WAIT:-default5s}</batchWait>
             <batchSize>${env:LOKI_LOG_BATCH_WAIT:-10_2400}</batchSize>
             <connectTimeoutMillis>${env:LOKI_LOG_CONNECT_TIMEOUT:-5s}</connectTimeoutMillis>
             <logShipperWakeupIntervalMillis>${env:LOKI_LOG_SHIPPER_SLEEP:-10}</logShipperWakeupIntervalMillis>
 
-            <ThresholdFilter level="ALL"/>
             <PatternLayout>
                 <Pattern>%X{tid} [%t] %d{MM-dd HH:mm:ss.SSS} %5p %c{1} - %m%n%exception{full}</Pattern>
             </PatternLayout>
@@ -28,9 +27,12 @@
             <Label name="cluster" value="${env:LOKI_LOG_LABEL_CLUSTER:-localhost}"/>
             <LogLevelLabel>log_level</LogLevelLabel>
         </Loki>
-        <Root level="info">
-            <AppenderRef ref="Console" />
-        </Root>
+        <Routing name="ROUTER">
+            <Routes pattern="$${env:LOG_TO:-LOKI}">
+                <Route ref="LOKI" key="LOKI" />
+                <Route ref="CONSOLE" key="CONSOLE" />
+            </Routes>
+        </Routing>
     </appenders>
 
 </configuration>
