@@ -1,4 +1,4 @@
-import { DatePipe, JsonPipe, LowerCasePipe, NgIf } from '@angular/common';
+import { DatePipe, JsonPipe, LowerCasePipe, NgIf, TitleCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -26,7 +26,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         TagModule,
         DotMessagePipe,
         DatePipe,
-        JsonPipe
+        JsonPipe,
+        TitleCasePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

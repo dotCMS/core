@@ -64,19 +64,16 @@ describe('ExperimentsHeaderComponent', () => {
         });
 
         expect(spectator.query(Tag)).toExist();
-        expect(spectator.query(byTestId('status-tag'))).toContainText(
-            DotExperimentStatus.SCHEDULED
-        );
+        expect(spectator.query(byTestId('status-tag'))).toContainText('Scheduled');
     });
 
     it('should rendered the RUNNING status tag', () => {
         const expectedStatus =
-            DotExperimentStatus.RUNNING +
-            ' until ' +
+            'Running until ' +
             new DatePipe('en-US').transform(EXPERIMENT_MOCK.scheduling.endDate, 'EEE, LLL dd, Y');
 
         spectator.setInput({
-            experiment: EXPERIMENT_MOCK
+            experiment: { ...EXPERIMENT_MOCK, status: DotExperimentStatus.RUNNING }
         });
 
         expect(spectator.query(Tag)).toExist();
