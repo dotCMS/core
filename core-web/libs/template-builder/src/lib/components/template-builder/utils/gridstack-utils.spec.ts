@@ -77,7 +77,7 @@ describe('parseFromGridStackToDotObject', () => {
         let sorted = true;
 
         result.rows.forEach(({ columns }) => {
-            if (!columns.length) return;
+            if (columns.length <= 1) return;
 
             columns.reduce((prev, curr) => {
                 if (prev.leftOffset > curr.leftOffset) {
