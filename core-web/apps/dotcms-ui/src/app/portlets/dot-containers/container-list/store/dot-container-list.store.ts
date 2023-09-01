@@ -66,11 +66,11 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         private dotSiteService: SiteService
     ) {
         super(null);
-
         this.paginatorService.url = CONTAINERS_URL;
         this.paginatorService.paginationPerPage = 40;
 
-        this.dotSiteService.switchSite$
+        this.dotSiteService
+            .getCurrentSite()
             .pipe(
                 take(1),
                 switchMap(({ identifier }) => {
