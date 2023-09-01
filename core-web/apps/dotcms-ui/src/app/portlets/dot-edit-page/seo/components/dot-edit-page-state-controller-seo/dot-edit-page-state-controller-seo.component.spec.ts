@@ -9,15 +9,19 @@ import { Component, DebugElement, LOCALE_ID } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotAlertConfirmService,
+    DotCurrentUserService,
+    DotDevicesService,
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
@@ -33,6 +37,7 @@ import {
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
+    DotDevicesServiceMock,
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
     getExperimentMock,
@@ -46,11 +51,14 @@ import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock
 import { DotEditPageStateControllerSeoComponent } from './dot-edit-page-state-controller-seo.component';
 
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
+import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-device-selector-seo.component';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',
+    'editpage.toolbar.edit.page.clipboard': 'Edit Page Content',
     'editpage.toolbar.live.page': 'Live',
     'editpage.toolbar.preview.page': 'Preview',
+    'editpage.toolbar.preview.page.clipboard': 'Preview Page',
     'editpage.content.steal.lock.confirmation.message.header': 'Lock',
     'editpage.content.steal.lock.confirmation.message': 'Steal lock',
     'editpage.personalization.confirm.message': 'Are you sure?',
@@ -83,10 +91,8 @@ const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
 @Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-edit-page-state-controller-seo
-            [pageState]="pageState"
-            [variant]="variant"
-        ></dot-edit-page-state-controller-seo>
+        <dot-edit-page-state-controller-seo [pageState]="pageState" [variant]="variant">
+        </dot-edit-page-state-controller-seo>
     `
 })
 class TestHostComponent {
@@ -127,7 +133,12 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 {
                     provide: CoreWebService,
                     useClass: CoreWebServiceMock
-                }
+                },
+                {
+                    provide: DotDevicesService,
+                    useClass: DotDevicesServiceMock
+                },
+                DotCurrentUserService
             ],
             imports: [
                 InputSwitchModule,
@@ -136,10 +147,13 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 DotPipesModule,
                 DotEditPageStateControllerSeoComponent,
                 DotEditPageLockInfoSeoComponent,
+                DotDeviceSelectorSeoComponent,
                 RouterTestingModule,
                 CommonModule,
                 FormsModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                OverlayPanelModule,
+                BrowserAnimationsModule
             ]
         });
     }));
@@ -170,8 +184,16 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 await fixtureHost.whenRenderingDone();
                 expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options).toEqual([
-                    { label: 'Edit', value: 'EDIT_MODE', disabled: false },
-                    { label: 'Preview', value: 'PREVIEW_MODE', disabled: false }
+                    {
+                        label: 'Edit',
+                        value: 'EDIT_MODE',
+                        disabled: false
+                    },
+                    {
+                        label: 'Preview',
+                        value: 'PREVIEW_MODE',
+                        disabled: false
+                    }
                 ]);
             });
 
@@ -184,14 +206,17 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
                 const lockerDe = de.query(By.css('p-inputSwitch'));
+                const lockerContainerDe = de.query(By.css('[data-testId="lock-container"]'));
                 const locker = lockerDe.componentInstance;
 
                 await fixtureHost.whenRenderingDone();
 
                 expect(lockerDe.classes.warn).toBe(true, 'warn class');
                 expect(lockerDe.attributes.appendTo).toBe('target');
-                expect(lockerDe.attributes['ng-reflect-text']).toBe('Page locked by Some One');
-                expect(lockerDe.attributes['ng-reflect-tooltip-position']).toBe('top');
+                expect(lockerContainerDe.attributes['ng-reflect-text']).toBe(
+                    'Page locked by Some One'
+                );
+                expect(lockerContainerDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
                 expect(locker.modelValue).toBe(false, 'checked');
                 expect(locker.disabled).toBe(false, 'disabled');
             });
@@ -465,6 +490,34 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 { mode: DotPageMode.EDIT },
                 true
             );
+        });
+    });
+
+    describe('Dot Device Selector events', () => {
+        it('should call  changeSeoMedia event', async () => {
+            fixtureHost.detectChanges();
+            spyOn(dotPageStateService, 'setSeoMedia');
+            const dotSelector = de.query(By.css('[data-testId="dot-device-selector"]'));
+
+            dotSelector.triggerEventHandler('changeSeoMedia', 'Google');
+
+            expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith('Google');
+        });
+
+        it('should call selected event', async () => {
+            spyOn(dotPageStateService, 'setDevice');
+            const dotSelector = de.query(By.css('[data-testId="dot-device-selector"]'));
+            const event = {
+                identifier: 'string',
+                cssHeight: 'string',
+                cssWidth: 'string',
+                name: 'string',
+                inode: 'string',
+                stInode: 'string'
+            };
+            dotSelector.triggerEventHandler('selected', event);
+
+            expect(dotPageStateService.setDevice).toHaveBeenCalledWith(event);
         });
     });
 });

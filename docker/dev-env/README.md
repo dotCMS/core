@@ -10,12 +10,12 @@ This image takes all the normal dotCMS docker config switches - keep in mind tha
 - `DOTCMS_API_TOKEN` : A valid dotCMS API Token from an admin user in the source environment.
 - `DOTCMS_USERNAME_PASSWORD` :  The username:password for an admin user in the source environment.
 - `DOTCMS_DEBUG` :  Run dotCMS in debug mode and listen for a remote debugger on port 8000, defaults to `false`.
-
+- `ALL_ASSETS` : Controls whether old versions of assets are included in the download, defaults to false, which means only the current live and working versions of assets will be downloaded.
 
 
 
 ## Cloning a dotCMS Environment
-When running this image, if you specify a source environment and a valid means to authenticate, the image will attempt to pull the **assets** and **db** from the source environment.  To do this, you start the image up and pass it a `DOTCMS_SOURCE_ENVIRONMENT` and either an `DOTCMS_API_TOKEN` or `DOTCMS_USERNAME_PASSWORD` (e.g. `admin@dotcms.com:admin`).  On startup, the image will try to reach out and download the database and assets from the specified dotCMS instance, load the db and assets and start dotCMS in debug mode.
+When running this image, if you specify a source environment and a valid means to authenticate, the image will attempt to pull the **assets** and **db** from the source environment.  To do this, you start the image up and pass it a `DOTCMS_SOURCE_ENVIRONMENT` and either an `DOTCMS_API_TOKEN` or `DOTCMS_USERNAME_PASSWORD` (e.g. `admin@dotcms.com:admin`).  On startup, the image will try to reach out and download the database and assets from the specified dotCMS instance, load the db and assets and start dotCMS in debug mode. Once the server starts, you need to run a full reindex.
 
 
 
@@ -47,6 +47,7 @@ docker run --rm \
 docker run --rm  \
 -p 8443:8443 \
 -p 5432:5432 \
+-p 8000:8000 \
 -v $PWD/data:/data \
 -e DOTCMS_DEBUG=true \
  dotcms/dotcms-dev:latest

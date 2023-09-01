@@ -17,6 +17,8 @@ interface FormValues {
     styleUrls: ['./ai-content-prompt.component.scss']
 })
 export class AIContentPromptComponent {
+    isFormSubmitting = false;
+
     @ViewChild('input') input: ElementRef;
 
     @Output() formValues = new EventEmitter<FormValues>();
@@ -32,17 +34,18 @@ export class AIContentPromptComponent {
     }
 
     onSubmit() {
+        this.isFormSubmitting = true;
         const textPrompt = this.form.value.textPrompt;
 
         if (textPrompt) {
             this.formValues.emit({ textPrompt });
 
-            this.formSubmission.emit(true);
-
             this.aiContentService
                 .getIAContent(textPrompt)
                 .pipe(catchError(() => of(null)))
                 .subscribe((response) => {
+                    this.isFormSubmitting = false;
+                    this.formSubmission.emit(true);
                     this.aiResponse.emit(response);
                 });
         }

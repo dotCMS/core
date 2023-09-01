@@ -3,21 +3,25 @@
     *ngIf="form"
     [formGroup]="form"
     (ngSubmit)="onSubmit()"
-    autocomplete="off"
->
+    autocomplete="off">
     <span class="p-input-icon-right">
         <input
             #input
             formControlName="textPrompt"
             type="text"
             pInputText
-            placeholder="Ask AI to write something"
-        />
-        <button
-            class="p-button-rounded p-button-text"
-            pButton
-            type="submit"
-            icon="pi pi-send"
-        ></button>
+            placeholder="Ask AI to write something" />
+
+        <ng-container *ngIf="isFormSubmitting; else submitButton">
+            <span class="pending-label">Pending</span>
+        </ng-container>
+
+        <ng-template #submitButton>
+            <button
+                class="p-button-rounded p-button-text"
+                pButton
+                type="submit"
+                icon="pi pi-send"></button>
+        </ng-template>
     </span>
 </form>

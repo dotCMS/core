@@ -22,6 +22,7 @@ import com.dotcms.experiments.model.Goal.GoalType;
 import com.dotcms.experiments.model.Goals;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -35,8 +36,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 
 /**
@@ -90,11 +89,12 @@ public enum ExperimentAnalyzerUtil {
         builder.trafficProportion(experiment.trafficProportion());
 
         if (!browserSessions.isEmpty()) {
-            final CubeJSResultSet pageViewsByVariants = getPageViewsByVariants(experiment,
+            final CubeJSResultSet pageViewsByVariants = getPageViewsByVariants(
+                    experiment,
                     variants);
             pageViewsByVariants.forEach(row -> {
                 final String variantId = row.get("Events.variant")
-                        .map(variant -> variant.toString())
+                        .map(Object::toString)
                         .orElse(StringPool.BLANK);
                 final long pageViews = row.get("Events.count")
                         .map(object -> Long.parseLong(object.toString()))
@@ -168,9 +168,7 @@ public enum ExperimentAnalyzerUtil {
 
         final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
         final AnalyticsApp analyticsApp = analyticsHelper.appFromHost(currentHost);
-
-        final CubeJSClient cubeClient = new CubeJSClient(
-                analyticsApp.getAnalyticsProperties().analyticsReadUrl());
+        final CubeJSClient cubeClient = FactoryLocator.getCubeJSClientFactory().create(analyticsApp);
 
         return cubeClient.send(cubeJSQuery);
     }

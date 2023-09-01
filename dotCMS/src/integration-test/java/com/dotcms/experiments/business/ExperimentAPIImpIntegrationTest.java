@@ -3,7 +3,6 @@ package com.dotcms.experiments.business;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.mapAll;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -18,7 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
@@ -29,9 +28,9 @@ import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.metrics.QueryParameter;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.analytics.model.AnalyticsProperties;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.cube.CubeJSClientFactoryImpl;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -44,7 +43,6 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.UserDataGen;
-import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
@@ -52,7 +50,6 @@ import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.GoalResults;
 import com.dotcms.experiments.business.result.VariantResults;
 import com.dotcms.experiments.business.result.VariantResults.ResultResumeItem;
-import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -81,7 +78,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -90,8 +86,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -102,9 +98,13 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.API;
 import io.vavr.control.Try;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -126,8 +126,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import net.bytebuddy.utility.RandomString;
-import org.apache.commons.lang.RandomStringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -141,7 +139,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
     private static final String CUBEJS_SERVER_IP = "127.0.0.1";
     private static final int CUBEJS_SERVER_PORT = 5000;
-    private static final String CUBEJS_SERVER_URL = String.format("http://%s:%s", CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
     private static final DateTimeFormatter SIMPLE_FORMATTER = DateTimeFormatter
             .ofPattern("MM/dd/yyyy")
             .withZone(ZoneId.systemDefault());
@@ -618,7 +615,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         IPUtils.disabledIpPrivateSubnet(true);
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             final List<BrowserSession> browserSessions = experimentsAPIImpl.getEvents(
                     experimentStarted,
@@ -727,8 +724,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
-        final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
-        ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+        final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
+        setAnalyticsHelper(mockAnalyticsHelper);
 
         final Experiment experimentStarted = ExperimentDataGen.start(experiment);
 
@@ -820,9 +817,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
 
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
@@ -955,9 +952,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
 
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
@@ -1089,9 +1086,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
 
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
@@ -1267,9 +1264,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
 
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
@@ -1403,9 +1400,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
 
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
@@ -1496,9 +1493,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -1588,9 +1585,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
 
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
@@ -1686,9 +1683,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -1800,9 +1797,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -1916,9 +1913,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -2021,9 +2018,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -2127,9 +2124,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -2226,9 +2223,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -2319,9 +2316,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -2417,9 +2414,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -2515,9 +2512,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -2610,9 +2607,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -2712,9 +2709,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -2816,9 +2813,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -2920,9 +2917,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -3016,9 +3013,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -3110,9 +3107,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -3485,9 +3482,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -3585,9 +3582,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -3700,9 +3697,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -3805,9 +3802,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -3910,9 +3907,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -4013,9 +4010,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -4120,9 +4117,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -4223,9 +4220,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -4329,9 +4326,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -4429,9 +4426,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -4532,9 +4529,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -4669,9 +4666,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -4777,9 +4774,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
 
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
@@ -4877,9 +4874,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -4975,9 +4972,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -5079,8 +5076,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
+            setAnalyticsHelper(mockAnalyticsHelper);
+            CubeJSClientFactoryImpl.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
@@ -5420,46 +5418,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static AnalyticsHelper mockAnalyticsHelper() throws DotDataException, DotSecurityException {
-        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
-        final AnalyticsProperties analyticsProperties = AnalyticsProperties.builder()
-                .clientId("clientId")
-                .clientSecret("clientSecret")
-                .analyticsKey("analyticsKey")
-                .analyticsConfigUrl("http://localhost:8088/c/customer1/cluster1/keys")
-                .analyticsWriteUrl("http://localhost:8081/api/v1/event")
-                .analyticsReadUrl(CUBEJS_SERVER_URL)
-                .build();
-
-        final AnalyticsApp mockAnalyticsApp = mock(AnalyticsApp.class);
-        when(mockAnalyticsApp.getAnalyticsProperties()).thenReturn(analyticsProperties);
-
-        final AnalyticsHelper mockAnalyticsHelper = mock(AnalyticsHelper.class);
-        when(mockAnalyticsHelper.appFromHost(currentHost)).thenReturn(mockAnalyticsApp);
-
-        return mockAnalyticsHelper;
-    }
-
-    private static AnalyticsHelper mockInvalidAnalyticsHelper() throws DotDataException, DotSecurityException {
-        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
-        final AnalyticsProperties analyticsProperties = AnalyticsProperties.builder()
-                .clientId("clientId")
-                .clientSecret("clientSecret")
-                .analyticsKey("analyticsKey")
-                .analyticsConfigUrl("http://localhost:8088/c/customer1/cluster1/keys")
-                .analyticsWriteUrl("http://localhost:8081/api/v1/event")
-                .analyticsReadUrl(CUBEJS_SERVER_URL)
-                .build();
-
-        final AnalyticsApp mockAnalyticsApp = mock(AnalyticsApp.class);
-        when(mockAnalyticsApp.getAnalyticsProperties()).thenReturn(analyticsProperties);
-
-        final AnalyticsHelper mockAnalyticsHelper = mock(AnalyticsHelper.class);
-        when(mockAnalyticsHelper.appFromHost(currentHost)).thenThrow(new IllegalStateException("Error!"));
-
-        return mockAnalyticsHelper;
     }
 
     private static void addContext(final MockHttpServer mockHttpServer,
@@ -5815,9 +5773,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
 
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
@@ -5915,9 +5873,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -6001,9 +5959,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -6072,9 +6030,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -6145,9 +6103,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
 
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
 
@@ -6228,8 +6186,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
@@ -6263,8 +6221,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
         final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageC, "variantB", "variantC");
-        final AnalyticsHelper mockAnalyticsHelper = mockInvalidAnalyticsHelper();
-        ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+        final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockInvalidAnalyticsHelper();
+        setAnalyticsHelper(mockAnalyticsHelper);
         final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
         experimentsAPIImpl.getResults(experiment, APILocator.systemUser());
     }
@@ -6447,10 +6405,10 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(
                     mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -6567,10 +6525,10 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(
                     mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -6677,10 +6635,10 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(
                     mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -6793,10 +6751,10 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         mockhttpServer.start();
 
         try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(
                     mockAnalyticsHelper);
-            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -7821,9 +7779,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
            mockhttpServer.start();
 
-           final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+           final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
 
-           ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+           setAnalyticsHelper(mockAnalyticsHelper);
 
            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
@@ -7873,7 +7831,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
                    Assert.assertEquals(successPerDayExpected, resultResumeItem.getUniqueBySession());
                    Assert.assertEquals(successPerDayExpected, resultResumeItem.getMultiBySession());
-                   Assert.assertEquals(convertionRatePerDayExpected, resultResumeItem.getConvertionRate(), 0);
+                   Assert.assertEquals(convertionRatePerDayExpected, resultResumeItem.getConversionRate(), 0);
                    Assert.assertEquals(sessionsPerDayExpected, resultResumeItem.getTotalSessions(), 0);
 
                    Assert.assertEquals(2, experimentResults.getSessions().getTotalByDate(day));
@@ -7910,17 +7868,99 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         try {
             APILocator.getContentletAPI()
                     .archive(experimentPage, APILocator.systemUser(), false);
+            final Contentlet experimentPageAfterArchived = APILocator.getContentletAPI()
+                    .find(experimentPage.getInode(), APILocator.systemUser(), false);
+            assertTrue(experimentPageAfterArchived.isArchived());
 
-            throw new AssertionError("Should throw a DotDataException");
-        } catch (DotDataException e) {
-            //expected
-            final String messageExpected = String.format(
-                    "Can't Archive a Page %s because it has a Running Experiment. Experiment ID %s"
-                    , experimentPage.getIdentifier(), experiment.id().orElseThrow());
-            assertEquals(messageExpected, e.getMessage());
+            final Optional<Experiment> experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser());
+
+            assertTrue(experimentFromDB.isPresent());
+
+            assertEquals(Status.RUNNING, experimentFromDB.get().status());
         } finally {
             APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
         }
+    }
+
+    /**
+     * Method to test: Several method, we need to test that all the possible actio to an Experiment work
+     * for an Orphan Experiment
+     */
+    @Test
+    public void orphanExperiment() throws DotDataException, DotSecurityException {
+        final Experiment experiment = new ExperimentDataGen().nextPersisted();
+
+        APILocator.getExperimentsAPI().save(experiment, APILocator.systemUser());
+        Optional<Experiment> experimentFromDB = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        assertTrue(experimentFromDB.isPresent());
+        assertEquals(experiment.description(), experimentFromDB.get().description());
+
+        final Experiment experimentWithDescription = experiment.withDescription("New Description");
+
+        APILocator.getExperimentsAPI().save(experimentWithDescription, APILocator.systemUser());
+
+        experimentFromDB = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        assertTrue(experimentFromDB.isPresent());
+        assertEquals("New Description", experimentFromDB.get().description().get());
+
+        try {
+            APILocator.getExperimentsAPI()
+                    .start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+            experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser());
+
+            assertTrue(experimentFromDB.isPresent());
+            assertEquals(Status.RUNNING, experimentFromDB.get().status());
+
+            APILocator.getExperimentsAPI()
+                    .cancel(experiment.id().orElseThrow(), APILocator.systemUser());
+        } catch (Exception e) {
+            APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
+            throw e;
+        }
+
+        experimentFromDB = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        assertTrue(experimentFromDB.isPresent());
+        assertEquals(Status.DRAFT, experimentFromDB.get().status());
+
+        final Experiment experiment_2 = new ExperimentDataGen().nextPersisted();
+
+        APILocator.getExperimentsAPI()
+                .start(experiment_2.id().orElseThrow(), APILocator.systemUser());
+
+        APILocator.getExperimentsAPI().end(experiment_2.id().get(), APILocator.systemUser());
+
+        Optional<Experiment> experimentFromDB_2 = APILocator.getExperimentsAPI()
+                .find(experiment_2.id().orElseThrow(), APILocator.systemUser());
+
+        assertTrue(experimentFromDB_2.isPresent());
+        assertEquals(Status.ENDED, experimentFromDB_2.get().status());
+
+        APILocator.getExperimentsAPI().archive(experiment_2.id().get(), APILocator.systemUser());
+
+        experimentFromDB = APILocator.getExperimentsAPI()
+                .find(experiment_2.id().orElseThrow(), APILocator.systemUser());
+
+        assertTrue(experimentFromDB_2.isPresent());
+        assertEquals(Status.ENDED, experimentFromDB_2.get().status());
+
+        final Experiment experiment_3 = new ExperimentDataGen().nextPersisted();
+
+
+        APILocator.getExperimentsAPI().delete(experiment_3.id().get(), APILocator.systemUser());
+
+        Optional<Experiment> experimentFromDB_3 = APILocator.getExperimentsAPI()
+                .find(experiment_3.id().orElseThrow(), APILocator.systemUser());
+
+        assertFalse(experimentFromDB_3.isPresent());
     }
 
     /**
@@ -8053,11 +8093,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Experiment draftExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
         final Experiment endedExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+        final Experiment runningExperiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
 
         final String notDefaultVariantDraftExperimentName = getNotDefaultVariantName(draftExperiment);
         final Variant notDefaultVariantDraftExperiment = APILocator.getVariantAPI()
                 .get(notDefaultVariantDraftExperimentName)
                 .orElseThrow();
+
         final Contentlet contentlet_1 = createContentletWithWorkingAndLiveVersion(notDefaultVariantDraftExperiment);
 
         final String notDefaultVariantEndedExperimentName = getNotDefaultVariantName(endedExperiment);
@@ -8068,6 +8110,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         APILocator.getExperimentsAPI().start(endedExperiment.id().orElseThrow(), APILocator.systemUser());
         APILocator.getExperimentsAPI().end(endedExperiment.id().orElseThrow(), APILocator.systemUser());
+
+        APILocator.getExperimentsAPI().start(runningExperiment.id().orElseThrow(), APILocator.systemUser());
 
         APILocator.getContentletAPI()
                 .archive(experimentPage, APILocator.systemUser(), false);
@@ -8102,6 +8146,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         checkNotExistsAnyVersion(contentlet_1);
         checkNotExistsAnyVersion(contentlet_2);
+
+        final Optional<Experiment> runningExperimentFromDatabase = APILocator.getExperimentsAPI()
+                .find(runningExperiment.getIdentifier(), APILocator.systemUser());
+
+        assertFalse(runningExperimentFromDatabase.isPresent());
     }
 
 
@@ -8541,6 +8590,53 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
         }
+    }
+
+    private void setAnalyticsHelper(final AnalyticsHelper mockAnalyticsHelper) {
+        ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+        CubeJSClientFactoryImpl.setAnalyticsHelper(mockAnalyticsHelper);
+    }
+
+
+    /**
+     * Method to test: {@link Experiment} H22 Serialization
+     * When: Try to Serialize a {@link Experiment}
+     * Should: not throw any exception
+     *
+     * @throws IOException
+     */
+    @Test
+    public void testExperimentSerialization() throws IOException, ClassNotFoundException {
+
+        final Experiment experiment = new ExperimentDataGen()
+                .description("Experiment Description")
+                .scheduling(Scheduling.builder()
+                        .startDate(Instant.now())
+                        .endDate(Instant.now().plus(30, ChronoUnit.DAYS))
+                        .build())
+                .nextPersisted();
+
+        byte[] bytes = null;
+
+        try(
+                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(os, 8192)); ){
+            output.writeObject(experiment);
+            output.flush();
+
+            bytes = os.toByteArray();
+        }
+
+        try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(bytes))){
+            final Experiment experimentFromBytes = (Experiment) input.readObject();
+
+            Assert.assertEquals(experiment.name(), experimentFromBytes.name());
+            Assert.assertEquals(experiment.description(), experimentFromBytes.description());
+            Assert.assertEquals(experiment.id(), experimentFromBytes.id());
+            Assert.assertEquals(experiment.status(), experimentFromBytes.status());
+
+        }
+
     }
 }
 

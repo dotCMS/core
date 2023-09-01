@@ -121,7 +121,7 @@ export function parseFromDotObjectToGridStack(
     body: DotLayoutBody | undefined
 ): DotGridStackWidget[] {
     if (!body || !body.rows?.length) {
-        return EMPTY_ROWS_VALUE;
+        return structuredClone(EMPTY_ROWS_VALUE);
     }
 
     return body.rows.map((row, i) => ({

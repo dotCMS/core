@@ -1,147 +1,298 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
-import { of } from 'rxjs';
+import { expect, it } from '@jest/globals';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { of, throwError } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { NgIf, AsyncPipe } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FormsModule } from '@angular/forms';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
-import { AutoCompleteModule } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef, DynamicDialogModule } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
-import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
+import { JsonClassesService } from './services/json-classes.service';
 
-import {
-    CLASS_NAME_MOCK,
-    DOT_MESSAGE_SERVICE_TB_MOCK,
-    MOCK_SELECTED_STYLE_CLASSES,
-    MOCK_STYLE_CLASSES_FILE,
-    mockMatchMedia
-} from '../../utils/mocks';
+const DOT_MESSAGES = {
+    'dot.template.builder.autocomplete.has.suggestions': 'has suggestions',
+    'dot.template.builder.autocomplete.no.suggestions': 'no suggestions',
+    'dot.template.builder.autocomplete.setup.suggestions': 'setup suggestions',
+    'dot.template.builder.classes.dialog.update.button': 'update button'
+};
+
+const providers = [
+    {
+        provide: DotMessageService,
+        useValue: new MockDotMessageService(DOT_MESSAGES)
+    },
+    {
+        provide: DynamicDialogRef,
+        useValue: {
+            close: jest.fn()
+        }
+    }
+];
 
 describe('AddStyleClassesDialogComponent', () => {
-    let spectator: SpectatorHost<AddStyleClassesDialogComponent>;
-    let input: HTMLInputElement;
-    let ref: DynamicDialogRef;
-    let store: DotAddStyleClassesDialogStore;
+    let spectator: Spectator<AddStyleClassesDialogComponent>;
+    let service: JsonClassesService;
+    let dialogRef: DynamicDialogRef;
+    let autocomplete: AutoComplete;
 
-    const createHost = createHostFactory({
-        component: AddStyleClassesDialogComponent,
+    const createComponent = createComponentFactory({
         imports: [
             AutoCompleteModule,
+            HttpClientTestingModule,
+            DynamicDialogModule,
             FormsModule,
             ButtonModule,
             DotMessagePipe,
             NgIf,
-            AsyncPipe,
-            HttpClientModule,
-            NoopAnimationsModule
+            AsyncPipe
         ],
-        providers: [
-            {
-                provide: DynamicDialogConfig,
-                useValue: {
-                    data: {
-                        selectedClasses: MOCK_SELECTED_STYLE_CLASSES
+        component: AddStyleClassesDialogComponent,
+        providers: [JsonClassesService, DynamicDialogRef, DynamicDialogConfig, DotMessageService],
+        detectChanges: false
+    });
+
+    describe('with classes', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    ...providers,
+                    {
+                        provide: DynamicDialogConfig,
+                        useValue: {
+                            data: {
+                                selectedClasses: ['backend-class']
+                            }
+                        }
+                    },
+                    {
+                        provide: JsonClassesService,
+                        useValue: {
+                            getClasses() {
+                                return of({ classes: ['class1', 'class2'] });
+                            }
+                        }
                     }
-                }
-            },
-            {
-                provide: HttpClient,
-                useValue: {
-                    get: () => of(MOCK_STYLE_CLASSES_FILE)
-                }
-            },
-            {
-                provide: DotMessageService,
-                useValue: DOT_MESSAGE_SERVICE_TB_MOCK
-            },
-            DotAddStyleClassesDialogStore,
-            DynamicDialogRef
-        ]
+                ]
+            });
+
+            service = spectator.inject(JsonClassesService);
+            dialogRef = spectator.inject(DynamicDialogRef);
+            autocomplete = spectator.query(AutoComplete);
+        });
+
+        it('should set attributes to autocomplete', () => {
+            spectator.detectChanges();
+            expect(autocomplete.unique).toBe(true);
+            expect(autocomplete.autofocus).toBe(true);
+            expect(autocomplete.multiple).toBe(true);
+            expect(autocomplete.size).toBe(446);
+            expect(autocomplete.inputId).toBe('auto-complete-input');
+            expect(autocomplete.appendTo).toBe('body');
+            expect(autocomplete.dropdown).toBe(true);
+            expect(autocomplete.el.nativeElement.className).toContain('p-fluid');
+            expect(autocomplete.suggestions).toBe(null);
+        });
+
+        it('should call jsonClassesService.getClasses on init', () => {
+            const getClassesMock = jest.spyOn(service, 'getClasses');
+            spectator.detectChanges();
+
+            expect(getClassesMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('should set classes property on init', () => {
+            spectator.detectChanges();
+
+            expect(spectator.component.classes).toEqual(['class1', 'class2']);
+        });
+
+        it('should initialize selectedClasses from DynamicDialogConfig data', () => {
+            spectator.detectChanges();
+
+            expect(spectator.component.selectedClasses).toEqual(['backend-class']);
+        });
+
+        it('should filter suggestions and pass to autocomplete on completeMethod', () => {
+            spectator.detectChanges();
+            spectator.triggerEventHandler(AutoComplete, 'completeMethod', { query: 'class1' });
+
+            expect(autocomplete.suggestions).toEqual(['class1']);
+        });
+
+        it('should add class on keyup.enter', () => {
+            const selectItemSpy = jest.spyOn(autocomplete, 'selectItem');
+            spectator.detectChanges();
+
+            const input = document.createElement('input');
+            input.value = 'class1';
+
+            spectator.triggerEventHandler(AutoComplete, 'onKeyUp', { key: 'Enter', target: input });
+
+            expect(selectItemSpy).toBeCalledWith('class1');
+        });
+
+        it('should save selected classes and close the dialog', () => {
+            spectator.component.selectedClasses = ['class1'];
+            spectator.component.save();
+            spectator.detectChanges();
+
+            expect(dialogRef.close).toHaveBeenCalledWith(['class1']);
+        });
+
+        it('should have help message', () => {
+            spectator.detectChanges();
+            const list = spectator.query(byTestId('list'));
+
+            expect(list.textContent).toContain('has suggestions');
+        });
     });
 
-    beforeEach(() => {
-        spectator = createHost(
-            '<dotcms-add-style-classes-dialog></dotcms-add-style-classes-dialog>'
-        );
+    describe('no classes', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    ...providers,
+                    {
+                        provide: DynamicDialogConfig,
+                        useValue: {
+                            data: {
+                                selectedClasses: []
+                            }
+                        }
+                    },
+                    {
+                        provide: JsonClassesService,
+                        useValue: {
+                            getClasses() {
+                                return of({ classes: [] });
+                            }
+                        }
+                    }
+                ]
+            });
 
-        ref = spectator.inject(DynamicDialogRef);
-        store = spectator.inject(DotAddStyleClassesDialogStore);
+            service = spectator.inject(JsonClassesService);
+            dialogRef = spectator.inject(DynamicDialogRef);
+            autocomplete = spectator.query(AutoComplete);
+        });
 
-        spectator.detectChanges();
+        it('should set dropdown to false in autocomplete', () => {
+            spectator.detectChanges();
+            expect(autocomplete.dropdown).toBe(false);
+        });
 
-        input = spectator.query('#auto-complete-input');
+        it('should set component.classes empty', () => {
+            spectator.detectChanges();
 
-        mockMatchMedia();
+            expect(spectator.component.classes).toEqual([]);
+        });
+
+        it('should have multiples help message', () => {
+            spectator.detectChanges();
+            const list = spectator.query(byTestId('list'));
+
+            expect(list.textContent).toContain('no suggestions setup suggestions');
+        });
     });
 
-    it('should have an update button', () => {
-        expect(spectator.query(byTestId('update-btn'))).toBeTruthy();
+    describe('bad format json', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    ...providers,
+                    {
+                        provide: DynamicDialogConfig,
+                        useValue: {
+                            data: {
+                                selectedClasses: []
+                            }
+                        }
+                    },
+                    {
+                        provide: JsonClassesService,
+                        useValue: {
+                            getClasses() {
+                                return of({ badFormat: ['class1'] });
+                            }
+                        }
+                    }
+                ]
+            });
+
+            service = spectator.inject(JsonClassesService);
+            dialogRef = spectator.inject(DynamicDialogRef);
+            autocomplete = spectator.query(AutoComplete);
+        });
+
+        it('should set dropdown to false in autocomplete', () => {
+            spectator.detectChanges();
+            expect(autocomplete.dropdown).toBe(false);
+        });
+
+        it('should set component.classes empty', () => {
+            spectator.detectChanges();
+
+            expect(spectator.component.classes).toEqual([]);
+        });
+
+        it('should have multiples help message', () => {
+            spectator.detectChanges();
+            const list = spectator.query(byTestId('list'));
+
+            expect(list.textContent).toContain('no suggestions setup suggestions');
+        });
     });
 
-    it('should trigger filterClasses when focusing on the input', () => {
-        const filterMock = jest.spyOn(store, 'filterClasses');
-        const query = CLASS_NAME_MOCK;
+    describe('error', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    ...providers,
+                    {
+                        provide: DynamicDialogConfig,
+                        useValue: {
+                            data: {
+                                selectedClasses: []
+                            }
+                        }
+                    },
+                    {
+                        provide: JsonClassesService,
+                        useValue: {
+                            getClasses() {
+                                return throwError(
+                                    new Error('An error occurred while fetching classes')
+                                );
+                            }
+                        }
+                    }
+                ]
+            });
 
-        input.value = query;
+            service = spectator.inject(JsonClassesService);
+            dialogRef = spectator.inject(DynamicDialogRef);
+            autocomplete = spectator.query(AutoComplete);
+        });
 
-        spectator.click(input);
+        it('should set dropdown to false in autocomplete', () => {
+            spectator.detectChanges();
+            expect(autocomplete.dropdown).toBe(false);
+        });
 
-        spectator.detectChanges();
+        it('should set component.classes empty', () => {
+            spectator.detectChanges();
 
-        expect(filterMock).toHaveBeenCalledWith(query);
+            expect(spectator.component.classes).toEqual([]);
+        });
     });
 
-    it('should trigger addClass when autocomplete emits onSelect', () => {
-        const autoComplete = spectator.query('p-autocomplete');
-
-        const addClassMock = jest.spyOn(store, 'addClass');
-
-        spectator.dispatchFakeEvent(autoComplete, 'onSelect');
-
-        spectator.detectChanges();
-
-        expect(addClassMock).toHaveBeenCalled();
-    });
-
-    it('should trigger removeLastClass when autocomplete emits onUnselect', () => {
-        const autoComplete = spectator.query('p-autocomplete');
-
-        const removeLastClassMock = jest.spyOn(store, 'removeLastClass');
-
-        spectator.dispatchFakeEvent(autoComplete, 'onUnselect');
-
-        spectator.detectChanges();
-
-        expect(removeLastClassMock).toHaveBeenCalled();
-    });
-
-    it('should trigger saveClass when clicking on update-btn', () => {
-        const closeMock = jest.spyOn(ref, 'close');
-
-        const updateBtn = spectator.query(byTestId('update-btn'));
-
-        spectator.dispatchFakeEvent(updateBtn, 'onClick');
-
-        spectator.detectChanges();
-
-        expect(closeMock).toHaveBeenCalled();
-    });
-
-    it('should trigger addClass when enter is pressed', () => {
-        const addClassMock = jest.spyOn(store, 'addClass');
-
-        spectator.typeInElement(CLASS_NAME_MOCK, input);
-        spectator.keyboard.pressEnter(input);
-
-        spectator.detectChanges();
-
-        expect(addClassMock).toHaveBeenCalledWith({ cssClass: CLASS_NAME_MOCK });
-    });
+    // More tests can be added as needed...
 });

@@ -43,10 +43,12 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
 
     private final String analyticsIdpUrl;
     private final AnalyticsCache analyticsCache;
+    private final boolean useDummyToken;
 
     public AnalyticsAPIImpl(final String analyticsIdpUrl, final AnalyticsCache analyticsCache) {
         this.analyticsIdpUrl = analyticsIdpUrl;
         this.analyticsCache = analyticsCache;
+        useDummyToken = Config.getBooleanProperty(ANALYTICS_USE_DUMMY_TOKEN_KEY, false);
     }
 
     public AnalyticsAPIImpl() {
@@ -58,6 +60,10 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      */
     @Override
     public AccessToken getAccessToken(final AnalyticsApp analyticsApp) {
+        if (useDummyToken) {
+            return DUMMY_TOKEN;
+        }
+
         return analyticsCache
             .getAccessToken(
                 analyticsApp.getAnalyticsProperties().clientId(),
@@ -290,19 +296,6 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     }
 
     /**
-     * Prepares access token request headers in a {@link Map} with values found in a {@link AccessToken} instance.
-     *
-     * @param accessToken access token
-     * @return map representation of http headers
-     */
-    private Map<String, String> analyticsKeyHeaders(final AccessToken accessToken) throws AnalyticsException {
-        return ImmutableMap.<String, String>builder()
-            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
-            .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .build();
-    }
-
-    /**
      * Logs analytics key response from a http interaction.
      *
      * @param response http response
@@ -344,6 +337,19 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         logKeyResponse(response, analyticsApp);
 
         return response;
+    }
+
+    /**
+     * Prepares access token request headers in a {@link Map} with values found in a {@link AccessToken} instance.
+     *
+     * @param accessToken access token
+     * @return map representation of http headers
+     */
+    private Map<String, String> analyticsKeyHeaders(final AccessToken accessToken) throws AnalyticsException {
+        return ImmutableMap.<String, String>builder()
+            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
+            .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+            .build();
     }
 
     /**

@@ -1,0 +1,63 @@
+<div class="results-seo-tool__main-card">
+    <p-card>
+        <div class="results-seo-tool__main-card-content">
+            <div *ngFor="let preview of mainPreview">
+                <span class="results-seo-tool__main-card-title">{{ preview.type }} Version</span>
+                <div
+                    class="results-seo-tool__card"
+                    [class.results-seo-tool__version--small]="preview.isMobile"
+                    data-testId="seo-preview">
+                    <div class="results-seo-tool__card-title">
+                        <img
+                            class="results-seo-tool__card-favicon"
+                            [src]="seoOGTags.favicon"
+                            alt="favicon" />
+                        <span>{{ preview.hostName }}</span>
+                    </div>
+                    <a class="results-seo-tool__search-title" data-testId="page-title" href="#">
+                        {{ preview.title }}
+                    </a>
+                    <p class="results-seo-tool__search-description">
+                        {{ preview.description }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </p-card>
+</div>
+
+<p-card class="results-seo-tool__result-card" *ngFor="let result of seoOGTagsResults">
+    <ng-template class="results-seo-tool__result-card-header" pTemplate="header">
+        <div class="results-seo-tool__result-card-title">
+            <i
+                class="results-seo-tool__result-icon pi"
+                [ngClass]="[result.keyColor, result.keyIcon]"></i>
+            <span data-testId="result-key"> {{ result.key | titlecase }}</span>
+        </div>
+    </ng-template>
+    <ul class="results-seo-tool__result-card-list">
+        <li *ngFor="let item of result.items" data-testId="seo-tag">
+            <i class="pi" [ngClass]="[result.keyColor, result.keyIcon]"> </i>
+            <span>{{ item.message }}</span>
+        </li>
+    </ul>
+    <div class="results-seo-tool__result-card-info" *ngIf="result.info">
+        <i class="pi pi-info-circle"> </i>
+        <span>{{ result.info }}</span>
+    </div>
+</p-card>
+
+<p-card class="results-seo-tool__result-card">
+    <ng-template class="results-seo-tool__result-card-header" pTemplate="header">
+        <div class="results-seo-tool__result-card-title">
+            <i class="results-seo-tool__result-icon pi pi-info-circle"></i>
+            <span>Read More</span>
+        </div>
+    </ng-template>
+    <ul class="results-seo-tool__result-card-list">
+        <li *ngFor="let item of readMore">
+            <i class="pi pi-external-link"></i>
+            <a [href]="item.url" target="_blank">{{ item.label }}</a>
+        </li>
+    </ul>
+</p-card>

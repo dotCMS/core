@@ -84,62 +84,68 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
     @Inject
     RemoteTraversalService remoteTraversalService;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
 
-            var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
-            var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);
-            var excludeFolderPatterns = parsePatternOption(excludeFolderPatternsOption);
-            var excludeAssetPatterns = parsePatternOption(excludeAssetPatternsOption);
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
-            CompletableFuture<Pair<List<Exception>, TreeNode>> folderTraversalFuture = CompletableFuture.supplyAsync(
-                    () -> {
-                        // Service to handle the traversal of the folder
-                        return remoteTraversalService.traverseRemoteFolder(
-                                folderPath,
-                                depth,
-                                true,
-                                includeFolderPatterns,
-                                includeAssetPatterns,
-                                excludeFolderPatterns,
-                                excludeAssetPatterns
-                        );
-                    });
+        var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
+        var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);
+        var excludeFolderPatterns = parsePatternOption(excludeFolderPatternsOption);
+        var excludeAssetPatterns = parsePatternOption(excludeAssetPatternsOption);
 
-            // ConsoleLoadingAnimation instance to handle the waiting "animation"
-            ConsoleLoadingAnimation consoleLoadingAnimation = new ConsoleLoadingAnimation(
-                    output,
-                    folderTraversalFuture
-            );
+        CompletableFuture<Pair<List<Exception>, TreeNode>> folderTraversalFuture = CompletableFuture.supplyAsync(
+                () -> {
+                    // Service to handle the traversal of the folder
+                    return remoteTraversalService.traverseRemoteFolder(
+                            folderPath,
+                            depth,
+                            true,
+                            includeFolderPatterns,
+                            includeAssetPatterns,
+                            excludeFolderPatterns,
+                            excludeAssetPatterns
+                    );
+                });
 
-            CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
-                    consoleLoadingAnimation
-            );
+        // ConsoleLoadingAnimation instance to handle the waiting "animation"
+        ConsoleLoadingAnimation consoleLoadingAnimation = new ConsoleLoadingAnimation(
+                output,
+                folderTraversalFuture
+        );
 
-            // Waits for the completion of both the folder traversal and console loading animation tasks.
-            // This line blocks the current thread until both CompletableFuture instances
-            // (folderTraversalFuture and animationFuture) have completed.
-            CompletableFuture.allOf(folderTraversalFuture, animationFuture).join();
-            final var result = folderTraversalFuture.get();
+        CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+                consoleLoadingAnimation
+        );
 
-            if (result == null) {
-                output.error(String.format(
-                        "Error occurred while pulling folder info: [%s].", folderPath));
-                return CommandLine.ExitCode.SOFTWARE;
-            }
+        // Waits for the completion of both the folder traversal and console loading animation tasks.
+        // This line blocks the current thread until both CompletableFuture instances
+        // (folderTraversalFuture and animationFuture) have completed.
+        CompletableFuture.allOf(folderTraversalFuture, animationFuture).join();
+        final var result = folderTraversalFuture.get();
 
-            // We need to retrieve the languages
-            final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
-            final List<Language> languages = languageAPI.list().entity();
+        if (result == null) {
+            output.error(String.format(
+                    "Error occurred while pulling folder info: [%s].", folderPath));
+            return CommandLine.ExitCode.SOFTWARE;
+        }
 
-            // Display the result
-            StringBuilder sb = new StringBuilder();
-            TreePrinter.getInstance().filteredFormat(sb, result.getRight(), !excludeEmptyFolders, languages);
+        // We need to retrieve the languages
+        final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
+        final List<Language> languages = languageAPI.list().entity();
 
-            output.info(sb.toString());
+        // Display the result
+        StringBuilder sb = new StringBuilder();
+        TreePrinter.getInstance()
+                .filteredFormat(sb, result.getRight(), !excludeEmptyFolders, languages);
 
+        output.info(sb.toString());
 
-            return CommandLine.ExitCode.OK;
+        return CommandLine.ExitCode.OK;
     }
 
     @Override

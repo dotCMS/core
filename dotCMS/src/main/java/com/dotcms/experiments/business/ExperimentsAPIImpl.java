@@ -14,7 +14,6 @@ import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VA
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.util.DateUtil.isTimeReach;
 
-import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.model.BayesianInput;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
@@ -28,7 +27,10 @@ import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.cube.CubeJSClient;
+import com.dotcms.cube.CubeJSClientFactory;
+import com.dotcms.cube.CubeJSClientFactoryImpl;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
@@ -54,6 +56,8 @@ import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -70,7 +74,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -82,6 +85,7 @@ import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Condition;
@@ -93,7 +97,6 @@ import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
@@ -110,7 +113,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -132,6 +134,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
     final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
     final BayesianAPI bayesianAPI = APILocator.getBayesianAPI();
+    final CubeJSClientFactory cubeJSClientFactory = FactoryLocator.getCubeJSClientFactory();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -144,6 +147,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @VisibleForTesting
     public ExperimentsAPIImpl(final AnalyticsHelper analyticsHelper) {
         this.analyticsHelper = analyticsHelper;
+
+        APILocator.getLocalSystemEventsAPI().subscribe(ContentletDeletedEvent.class,
+                (EventSubscriber<ContentletDeletedEvent>) event ->
+                        checkAndDeleteExperiment(event.getContentlet(), event.getUser()));
     }
 
     public ExperimentsAPIImpl() {
@@ -157,14 +164,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 invalidLicenseMessageSupplier);
 
-        final Contentlet pageAsContent = contentletAPI
-                .findContentletByIdentifierAnyLanguage(experiment.pageId(), DEFAULT_VARIANT.name());
+        final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(experiment);
 
-        DotPreconditions.isTrue(pageAsContent!=null
-                && UtilMethods.isSet(pageAsContent.getIdentifier()),
-                DotStateException.class, ()->"Invalid Page provided");
+        DotPreconditions.isTrue(htmlPageAsset != null
+                && UtilMethods.isSet(htmlPageAsset.getIdentifier()),
+                DotStateException.class, ()->"htmlPageAsset Page provided");
 
-        validatePermissionToEdit(experiment, user, pageAsContent);
+        validatePermissionToEdit(experiment, user, htmlPageAsset);
 
         Experiment.Builder builder = Experiment.builder().from(experiment);
 
@@ -180,7 +186,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             MetricsUtil.INSTANCE.validateGoals(goals);
 
             addConditionIfIsNeed(goals,
-                    APILocator.getHTMLPageAssetAPI().fromContentlet(pageAsContent), builder);
+                    APILocator.getHTMLPageAssetAPI().fromContentlet(htmlPageAsset), builder);
         }
 
         if(experiment.targetingConditions().isPresent()) {
@@ -1188,66 +1194,43 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public List<BrowserSession> getEvents(final Experiment experiment, final User user) throws DotDataException {
-        try{
-            final AnalyticsApp analyticsApp = resolveAnalyticsApp(user);
+    public List<BrowserSession> getEvents(final Experiment experiment,
+                                          final User user) throws DotDataException, DotSecurityException {
+        final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
+        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
+                .create(experiment);
+        final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
 
-            final CubeJSClient cubeClient = new CubeJSClient(
-                    analyticsApp.getAnalyticsProperties().analyticsReadUrl());
+        String previousLookBackWindow = null;
+        final List<Event> currentEvents = new ArrayList<>();
+        final List<BrowserSession> sessions = new ArrayList<>();
 
-            final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
-                    .create(experiment);
+        for (final ResultSetItem resultSetItem : cubeJSResultSet) {
+            final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
+                    .map(Object::toString)
+                    .orElse(StringPool.BLANK);
 
-            final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
-
-            String previousLookBackWindow = null;
-            final List<Event> currentEvents = new ArrayList<>();
-            final List<BrowserSession> sessions = new ArrayList<>();
-
-            for (final ResultSetItem resultSetItem : cubeJSResultSet) {
-                final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
-                        .map(Object::toString)
-                        .orElse(StringPool.BLANK);
-
-                if (!currentLookBackWindow.equals(previousLookBackWindow)) {
-                    if (!currentEvents.isEmpty()) {
-                        sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-                        currentEvents.clear();
-                    }
+            if (!currentLookBackWindow.equals(previousLookBackWindow)) {
+                if (!currentEvents.isEmpty()) {
+                    sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
+                    currentEvents.clear();
                 }
-
-                currentEvents.add(new Event(resultSetItem.getAll(),
-                            EventType.get(resultSetItem.get("Events.eventType")
-                                    .map(Object::toString)
-                                    .orElseThrow(() -> new IllegalStateException("Type into Event is expected")))
-                ));
-
-                previousLookBackWindow = currentLookBackWindow;
             }
 
-            if (!currentEvents.isEmpty()) {
-                sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-            }
+            currentEvents.add(new Event(resultSetItem.getAll(),
+                        EventType.get(resultSetItem.get("Events.eventType")
+                                .map(Object::toString)
+                                .orElseThrow(() -> new IllegalStateException("Type into Event is expected")))
+            ));
 
-            return sessions;
-        } catch (DotDataException | DotSecurityException e) {
-            throw new RuntimeException(e);
+            previousLookBackWindow = currentLookBackWindow;
         }
-    }
 
-    private AnalyticsApp resolveAnalyticsApp(final User user) throws DotDataException, DotSecurityException {
-        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
-        try {
-            return analyticsHelper.appFromHost(currentHost);
-        } catch (final IllegalStateException e) {
-            throw new DotDataException(
-                Try.of(() ->
-                    LanguageUtil.get(
-                        user,
-                        "analytics.app.not.configured",
-                        AnalyticsHelper.extractMissingAnalyticsProps(e)))
-                    .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())));
+        if (!currentEvents.isEmpty()) {
+            sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
         }
+
+        return sessions;
     }
 
     @Override
@@ -1327,6 +1310,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final PermissionLevel permissionLevel, final String errorMessage) throws DotDataException, DotSecurityException {
 
         final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(experiment);
+
+        if (!UtilMethods.isSet(htmlPageAsset)) {
+             return;
+        }
+
         final Host host = APILocator.getHostAPI().find(htmlPageAsset.getHost(), APILocator.systemUser(),
                 false);
 
@@ -1339,7 +1327,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     private HTMLPageAsset getHtmlPageAsset(Experiment experiment) throws DotDataException {
         final Contentlet pageAsContent = contentletAPI
-                .findContentletByIdentifierAnyLanguage(experiment.pageId(), DEFAULT_VARIANT.name());
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), DEFAULT_VARIANT.name(), true);
 
         final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI()
                 .fromContentlet(pageAsContent);
@@ -1549,4 +1537,31 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return (licenseValiditySupplierSupplier.hasValidLicense());
     }
 
+    private void checkAndDeleteExperiment(final Contentlet contentlet, final User user)  {
+
+        try {
+
+            if (!contentlet.isHTMLPage()) {
+                return;
+            }
+
+            final List<Experiment> pageExperiments = APILocator.getExperimentsAPI().list(
+                    ExperimentFilter.builder().pageId(contentlet.getIdentifier()).build(), user);
+
+            for (final Experiment pageExperiment : pageExperiments) {
+                try {
+                    APILocator.getExperimentsAPI()
+                            .forceDelete(pageExperiment.id().orElseThrow(), user);
+                } catch (DotDataException | DotSecurityException e) {
+                    final String message = String.format("Unable to delete experiment %s",
+                            pageExperiment.id().orElseThrow());
+                    throw new DotRuntimeException(message, e);
+                }
+            }
+        } catch (DotDataException e) {
+            final String message = String.format("Unable to delete experiment %s",
+                    contentlet.getIdentifier());
+            throw new DotRuntimeException(message, e);
+        }
+    }
 }
