@@ -210,8 +210,6 @@ class MockDotContentTypeSelectorComponent {
     @Output() selected = new EventEmitter<string>();
 }
 
-// const mockStore: Pick<DotContainerListStore, keyof DotContainerListStore> = {};
-
 describe('ContainerListComponent', () => {
     let fixture: ComponentFixture<ContainerListComponent>;
     let table: Table;
