@@ -2,13 +2,13 @@ import { expect, it } from '@jest/globals';
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
 
 import { BinaryFieldComponent } from './binary-field.component';
 
@@ -24,10 +24,9 @@ describe('BinaryFieldComponent', () => {
             ButtonModule,
             DialogModule,
             MonacoEditorModule,
-            DotMessagePipe
+            HttpClientTestingModule
         ],
         providers: [
-            DotMessagePipe,
             {
                 provide: DotMessageService,
                 useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK

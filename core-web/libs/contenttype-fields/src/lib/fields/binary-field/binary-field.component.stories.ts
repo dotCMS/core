@@ -2,21 +2,17 @@ import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
 
 import { BinaryFieldComponent } from './binary-field.component';
 
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
-
-export const MESSAGES_MOCK = {
-    'contenttypes.content.edit.write.code': 'Write Code'
-};
 
 export default {
     title: 'Library / Contenttype Fields / Fields / BinaryFieldComponent',
@@ -24,6 +20,7 @@ export default {
     decorators: [
         moduleMetadata({
             imports: [
+                HttpClientModule,
                 BrowserAnimationsModule,
                 CommonModule,
                 ButtonModule,
@@ -31,7 +28,6 @@ export default {
                 MonacoEditorModule
             ],
             providers: [
-                DotMessagePipe,
                 {
                     provide: DotMessageService,
                     useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK
