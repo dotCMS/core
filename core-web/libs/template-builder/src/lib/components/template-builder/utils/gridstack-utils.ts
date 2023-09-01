@@ -168,17 +168,19 @@ export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): D
             };
         }
 
-        const columns = children.map(({ x, w, containers = [], styleClass: styles }) => {
-            const leftOffset = x + colWidth + 1;
-            const styleClass = styles?.join(' ') || '';
+        const columns = children
+            .map(({ x, w, containers = [], styleClass: styles }) => {
+                const leftOffset = x + colWidth + 1;
+                const styleClass = styles?.join(' ') || '';
 
-            return {
-                containers,
-                leftOffset,
-                width: w,
-                styleClass
-            };
-        });
+                return {
+                    containers,
+                    leftOffset,
+                    width: w,
+                    styleClass
+                };
+            })
+            .sort(({ leftOffset: a }, { leftOffset: b }) => a - b); // We need to sort by offset so the CSS Grid on Preview Mode works correctly
 
         return {
             columns,
