@@ -52,12 +52,12 @@ public class ExceptionHandlerImpl implements ExceptionHandler {
      * @return
      */
      private  WebApplicationException handle(WebApplicationException in){
-         String serverError = in.getMessage();
          final Response response = in.getResponse();
-         final int status = response.getStatus();
+         final String serverError = response.getStatusInfo().getReasonPhrase();
+         final int status = response.getStatusInfo().getStatusCode();
          final String errorMessage = config.override() ?
-                 messageOverride(status, ()-> getIfEmpty(serverError,()->config.fallback())) :
-                 in.getMessage() ;
+                 messageOverride(status, () -> getIfEmpty(config.fallback(), () -> serverError)) :
+                 serverError;
          return new WebApplicationException(Response.status(status,errorMessage).build());
      }
 

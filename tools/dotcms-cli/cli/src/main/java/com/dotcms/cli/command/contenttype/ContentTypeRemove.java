@@ -34,12 +34,19 @@ public class ContentTypeRemove extends AbstractContentTypeCommand implements Cal
     @CommandLine.Parameters(index = "0", arity = "1", description = "Name Or Id.")
     String idOrVar;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     /**
      *
      * @return
      */
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         if (output.isCliTest() || isDeleteConfirmed()) {
             final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
             final ResponseEntityView<String> responseEntityView = contentTypeAPI.delete(idOrVar);

@@ -997,7 +997,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             },
             // Add To bundle
             {
-                label: 'Add Bundle',
+                label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
                 visible: hasEnterpriseLicense,
                 command: () => this.showAddToBundle(experiment.id)
             }

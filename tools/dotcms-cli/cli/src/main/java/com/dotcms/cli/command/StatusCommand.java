@@ -53,8 +53,15 @@ public class StatusCommand implements Callable<Integer>, DotCommand {
     @Inject
     DotCmsClientConfig clientConfig;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         final Optional<ServiceBean> optional = serviceManager.services().stream()
                 .filter(ServiceBean::active).findFirst();
 
