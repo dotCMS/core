@@ -40,15 +40,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
-const md = __importStar(__nccwpck_require__(963));
+const m = __importStar(__nccwpck_require__(805));
 /**
  * Main entry point for this action.
  */
 const run = () => __awaiter(void 0, void 0, void 0, function* () {
-    const format = core.getInput('format');
-    if (format === 'md') {
-        md.report();
-    }
+    const confDir = core.getInput("conf_dir");
+    const member = core.getInput("member");
+    const get = core.getInput("get");
+    const metadata = m.getMetadata(confDir, member, get);
+    core.setOutput("metadata", metadata);
+    core.info(`Metadata: ${metadata}`);
 });
 // Run main function
 run();
@@ -56,7 +58,7 @@ run();
 
 /***/ }),
 
-/***/ 963:
+/***/ 805:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -85,149 +87,36 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.report = void 0;
-const core = __importStar(__nccwpck_require__(186));
-const issues = JSON.parse(core.getInput('issues_json') || '[]');
-const tag = core.getInput('tag');
-const colSeparator = '|';
-const lineChar = '-';
-const repoUrl = 'https://github.com/dotCMS/core/issues';
-const showableFields = [
-    {
-        field: 'number',
-        label: 'Issue',
-        width: 5
-    },
-    {
-        field: 'title',
-        label: 'Title',
-        width: 5
-    },
-    {
-        field: 'url',
-        label: 'Link',
-        width: 4
-    },
-    {
-        field: 'logEntries',
-        label: 'Commits',
-        width: 7
+exports.getMetadata = void 0;
+const fs = __importStar(__nccwpck_require__(147));
+const path = __importStar(__nccwpck_require__(17));
+const getMetadata = (confDir, member, get) => {
+    const members = JSON.parse(readFromFile(confDir, "members.json")).members;
+    const teams = JSON.parse(readFromFile(confDir, "teams.json")).teams;
+    let result;
+    switch (get) {
+        case "MEMBERS":
+            result = members.map((m) => m.name);
+            break;
+        case "TEAMS":
+            result = teams.map((t) => t.id);
+            break;
+        case "TEAMS_BY_MEMBER":
+            result = teams
+                .filter((team) => team.members.includes(member))
+                .map((team) => team.id);
+            break;
     }
-];
-const report = () => {
-    const issueNumbers = issues.map((issue) => issue.number);
-    core.info(`Generating markdown report from changelog issues: ${JSON.stringify(issueNumbers)}`);
-    enrichIssues();
-    calculateWidths();
-    showReport();
+    return result ? JSON.stringify(result, null, 0) : "";
 };
-exports.report = report;
-const enrichIssues = () => {
-    return issues.forEach((issue) => {
-        var _a;
-        issue.url = `${repoUrl}/${issue.number}`;
-        issue.commits = (_a = issue.logEntries) === null || _a === void 0 ? void 0 : _a.map(formatEntry).join('\n');
+exports.getMetadata = getMetadata;
+const readFromFile = (configDir, file) => {
+    const confFile = path.join(configDir, file);
+    console.log(`Reading config file from ${confFile}`);
+    return fs.readFileSync(confFile, {
+        encoding: "utf8",
+        flag: "r",
     });
-};
-const formatEntry = (entry) => {
-    return `- ${entry.sha}: ${entry.subject.trim()}`;
-};
-const calculateWidths = () => {
-    var _a;
-    for (const issue of issues) {
-        for (const field of showableFields) {
-            switch (field.field) {
-                case 'number': {
-                    if (issue.number.toString().length > field.width) {
-                        field.width = issue.number;
-                    }
-                    break;
-                }
-                case 'title': {
-                    const value = issue.title.trim();
-                    if (value.length > field.width) {
-                        field.width = value.length;
-                    }
-                    break;
-                }
-                case 'url': {
-                    const value = issue.title.trim();
-                    if (value.length > field.width) {
-                        field.width = value.length;
-                    }
-                    break;
-                }
-                case 'logEntries': {
-                    const value = (_a = issue.commits) === null || _a === void 0 ? void 0 : _a.trim();
-                    const subjects = value === null || value === void 0 ? void 0 : value.split('\n');
-                    for (const subject of subjects || []) {
-                        if (subject.length + 2 > field.width) {
-                            field.width = subject.length + 2;
-                        }
-                    }
-                }
-            }
-        }
-    }
-};
-const showReport = () => {
-    print(`# Changelog for tag ${tag}`);
-    print('\n');
-    showHeaders();
-    showIssues();
-};
-const showHeaders = () => {
-    let headers = ``;
-    for (const field of showableFields) {
-        headers += `${colSeparator} ${buildHeader(field, ' ')} `;
-    }
-    headers += `${colSeparator}`;
-    print(headers);
-    let line = ``;
-    for (const field of showableFields) {
-        line += `${colSeparator}${repeatLine(field)}`;
-    }
-    line += `${colSeparator}`;
-    print(line);
-};
-const showIssues = () => {
-    for (const issue of issues) {
-        let issueLine = ``;
-        for (const field of showableFields) {
-            switch (field.field) {
-                case 'number': {
-                    issueLine += `${colSeparator} ${buildText(issue.number.toString(), ' ', field.width)} `;
-                    break;
-                }
-                case 'title': {
-                    issueLine += `${colSeparator} ${buildText(issue.title.trim(), ' ', field.width)} `;
-                    break;
-                }
-                case 'url': {
-                    issueLine += `${colSeparator} ${buildText(issue.url || '', ' ', field.width)} `;
-                    break;
-                }
-                case 'logEntries': {
-                    issueLine += `${colSeparator} ${buildText(issue.commits || '', ' ', field.width)} `;
-                    break;
-                }
-            }
-        }
-        issueLine += colSeparator;
-        print(issueLine);
-    }
-};
-const print = (text) => {
-    core.info(text || '');
-};
-const buildText = (text, repeat, times) => {
-    return `${text}${repeat.repeat(Math.abs(times - text.length))}`;
-};
-const buildHeader = (field, repeat) => {
-    return `${field.label}${repeat.repeat(Math.abs(field.width - field.label.length))}`;
-};
-const repeatLine = (field) => {
-    return `${lineChar.repeat(field.width + 2)}`;
 };
 
 

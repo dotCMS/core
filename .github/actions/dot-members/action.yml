@@ -1,0 +1,26 @@
+# action.yml
+name: 'Dot Memebers action'
+description: 'Provides functionality to resolve member and team metadata from a dotCMS organization'
+author: 'victoralfaro-dotcms'
+inputs:
+  conf_dir:
+    description: 'Path to the directory containing the configuration files'
+    required: true
+  member:
+    description: 'Github member'
+    required: true
+    default: ${{ github.actor }}
+  get:
+    description: 'What to get from metadata folderr'
+    required: true
+    type: choice
+    options:
+      - 'MEMBERS'
+      - 'TEAMS'
+      - 'TEAMS_BY_MEMBER'
+outputs:
+  metadata:
+    description: 'The result metadata of the action'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

@@ -1,0 +1,28 @@
+# action.yml
+name: 'Milestone issue'
+description: 'Adds/Removes milestone to issue according to event'
+author: 'victoralfaro-dotcms'
+inputs:
+  conf_dir:
+    description: 'Path to the directory containing the configuration files'
+    required: true
+  field:
+    description: 'Field of the issue that triggers the action'
+    required: true
+    type: choice
+    options:
+      - PROJECT_STATUS
+      - LABEL
+    default: 'PROJECT_STATUS'
+  teams:
+    description: 'Github teams names'
+    required: true
+  event:
+    description: 'Event JSON that triggers the action'
+    required: true
+  token:
+    description: 'Github token'
+    required: true
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

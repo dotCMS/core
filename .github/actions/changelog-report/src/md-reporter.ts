@@ -68,7 +68,7 @@ const enrichIssues = () => {
 };
 
 const formatEntry = (entry: GitLogEntry) => {
-    return `- *${entry.sha}*: ${entry.subject.trim()}`;
+    return `- ${entry.sha}: ${entry.subject.trim()}`;
 };
 
 const calculateWidths = () => {
