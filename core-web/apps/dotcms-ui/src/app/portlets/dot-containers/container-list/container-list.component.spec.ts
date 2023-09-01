@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, Component, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -14,7 +14,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
-import { TableModule } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 
 import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
@@ -41,6 +41,7 @@ import {
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
+    mockSites,
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
@@ -209,8 +210,11 @@ class MockDotContentTypeSelectorComponent {
     @Output() selected = new EventEmitter<string>();
 }
 
+// const mockStore: Pick<DotContainerListStore, keyof DotContainerListStore> = {};
+
 describe('ContainerListComponent', () => {
     let fixture: ComponentFixture<ContainerListComponent>;
+    let table: Table;
     let comp: ContainerListComponent;
     let dotPushPublishDialogService: DotPushPublishDialogService;
     let coreWebService: CoreWebService;
@@ -224,6 +228,7 @@ describe('ContainerListComponent', () => {
     let dotSiteBrowserService: DotSiteBrowserService;
     let siteService: SiteServiceMock;
     let store: DotContainerListStore;
+    let paginatorService: PaginatorService;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
@@ -288,18 +293,20 @@ describe('ContainerListComponent', () => {
                 InputTextModule,
                 MenuModule,
                 TableModule
-            ]
+            ],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(ContainerListComponent);
-        comp = fixture.componentInstance;
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         coreWebService = TestBed.inject(CoreWebService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotContainersService = TestBed.inject(DotContainersService);
         dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
-        store = TestBed.inject(DotContainerListStore);
         siteService = TestBed.inject(SiteService) as unknown as SiteServiceMock;
+        fixture = TestBed.createComponent(ContainerListComponent);
+        comp = fixture.componentInstance;
+        store = fixture.debugElement.injector.get(DotContainerListStore); // To get store instance from the isolated provider
+        paginatorService = TestBed.inject(PaginatorService);
     });
 
     describe('with data', () => {
@@ -316,6 +323,9 @@ describe('ContainerListComponent', () => {
             fixture.detectChanges();
 
             spyOn(dotPushPublishDialogService, 'open');
+            table = fixture.debugElement.query(
+                By.css('[data-testId="container-list-table"]')
+            ).componentInstance;
         }));
 
         it('should clicked on row and emit dotRouterService', () => {
@@ -406,7 +416,6 @@ describe('ContainerListComponent', () => {
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
 
-        // Spy not working, the original method is still being called
         it('should fetch containers when content types selector changes', () => {
             spyOn(store, 'getContainersByContentType');
             fixture.detectChanges();
@@ -418,6 +427,83 @@ describe('ContainerListComponent', () => {
             contentTypesSelector.selected.emit('test');
 
             expect(store.getContainersByContentType).toHaveBeenCalledWith('test');
+        });
+
+        it('should fetch containers when archive state change', () => {
+            spyOn(store, 'getContainersByArchiveState');
+
+            const headerCheckbox = fixture.debugElement.query(
+                By.css('[data-testId="archiveCheckbox"]')
+            ).componentInstance;
+
+            headerCheckbox.onChange.emit({ checked: true });
+
+            expect(store.getContainersByArchiveState).toHaveBeenCalledWith(true);
+        });
+
+        it('should fetch containers when query change', () => {
+            spyOn(store, 'getContainersByQuery');
+
+            const queryInput = fixture.debugElement.query(
+                By.css('[data-testId="query-input"]')
+            ).nativeElement;
+
+            queryInput.value = 'test';
+            queryInput.dispatchEvent(new Event('input'));
+
+            fixture.detectChanges();
+
+            expect(store.getContainersByQuery).toHaveBeenCalledWith('test');
+        });
+
+        it('should fetch containers with offset when table emits onPage', () => {
+            spyOn(store, 'getContainersWithOffset');
+
+            table.onPage.emit({ first: 10 });
+
+            expect(store.getContainersWithOffset).toHaveBeenCalledWith(10);
+        });
+
+        it('should update selectedContainers in store when actions button is clicked', () => {
+            spyOn(store, 'updateSelectedContainers');
+            comp.selectedContainers = [containersMock[0]];
+            fixture.detectChanges();
+
+            const bulkButton = fixture.debugElement.query(
+                By.css('[data-testId="bulkActions"]')
+            ).nativeElement;
+
+            bulkButton.click();
+
+            expect(store.updateSelectedContainers).toHaveBeenCalledWith([containersMock[0]]);
+        });
+
+        it('should focus first row when you press arrow down in query input', () => {
+            spyOn(comp, 'focusFirstRow');
+            const queryInput = fixture.debugElement.query(
+                By.css('[data-testId="query-input"]')
+            ).nativeElement;
+
+            queryInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+
+            fixture.detectChanges();
+
+            expect(comp.focusFirstRow).toHaveBeenCalled();
+        });
+
+        it("should fetch containers when site is changed and it's not the first time", () => {
+            spyOn(paginatorService, 'setExtraParams').and.callThrough();
+            spyOn(paginatorService, 'get').and.callThrough();
+
+            siteService.setFakeCurrentSite(mockSites[1]);
+
+            fixture.detectChanges();
+
+            expect(paginatorService.setExtraParams).toHaveBeenCalledWith(
+                'host',
+                mockSites[1].identifier
+            );
+            expect(paginatorService.get).toHaveBeenCalled();
         });
     });
 

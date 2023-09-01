@@ -8,14 +8,15 @@
             (keydown.arrowdown)="focusFirstRow()"
             pInputText
             placeholder="{{ 'global-search' | dm }}"
-            type="text" />
+            type="text"
+            data-testId="query-input" />
         <div class="container-listing__header-options">
             <div class="container-listing__filter-controls">
                 <p-checkbox
                     [label]="'Show-Archived' | dm"
                     [binary]="true"
                     (onChange)="handleArchivedFilter($event.checked)"
-                    data-testid="archiveCheckbox"></p-checkbox>
+                    data-testId="archiveCheckbox"></p-checkbox>
             </div>
 
             <div>
@@ -27,7 +28,7 @@
                     type="button"
                     pButton
                     icon="pi pi-ellipsis-v"
-                    attr.data-testid="bulkActions"></button>
+                    data-testId="bulkActions"></button>
 
                 <p-menu
                     #actionsMenu
