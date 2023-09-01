@@ -48,7 +48,7 @@ export class AIContentPromptView {
 
     public component: ComponentRef<AIContentPromptComponent>;
 
-    private $destroy = new Subject<boolean>();
+    private destroy$ = new Subject<boolean>();
 
     constructor(props: AIContentPromptViewProps) {
         const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
@@ -63,7 +63,7 @@ export class AIContentPromptView {
         this.pluginKey = pluginKey;
         this.component = component;
 
-        this.component.instance.formSubmission.pipe(takeUntil(this.$destroy)).subscribe(() => {
+        this.component.instance.formSubmission.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.editor.commands.closeAIPrompt();
         });
     }
@@ -120,8 +120,8 @@ export class AIContentPromptView {
 
     destroy() {
         this.tippy?.destroy();
-        this.$destroy.next(true);
-        this.$destroy.complete();
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 }
 

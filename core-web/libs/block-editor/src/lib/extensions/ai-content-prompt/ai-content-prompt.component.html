@@ -13,11 +13,18 @@
             pInputText
             placeholder="Ask AI to write something"
         />
-        <button
-            class="p-button-rounded p-button-text"
-            pButton
-            type="submit"
-            icon="pi pi-send"
-        ></button>
+
+        <ng-container *ngIf="isFormSubmitting; else submitButton">
+            <span class="pending-label">Pending</span>
+        </ng-container>
+
+        <ng-template #submitButton>
+            <button
+                class="p-button-rounded p-button-text"
+                pButton
+                type="submit"
+                icon="pi pi-send"
+            ></button>
+        </ng-template>
     </span>
 </form>
