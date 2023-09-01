@@ -1,11 +1,11 @@
-import { LowerCasePipe, NgIf } from '@angular/common';
+import { DatePipe, JsonPipe, LowerCasePipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 
-import { DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -24,20 +24,21 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         // PrimeNG
         SkeletonModule,
         TagModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DatePipe,
+        JsonPipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsUiHeaderComponent {
     @Input()
-    title = '';
+    experiment: DotExperiment;
 
     @Input()
     isLoading: boolean;
 
-    @Input()
-    status: DotExperimentStatus;
-
     @Output()
     goBack = new EventEmitter<boolean>();
+
+    experimentStatus = DotExperimentStatus;
 }

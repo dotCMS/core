@@ -1,10 +1,8 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-experiments-header
+        [experiment]="vm.experiment"
         [isLoading]="vm.isLoading"
-        [status]="vm?.experiment?.status"
-        [title]="vm.experiment?.name"
-        (goBack)="goToExperimentList(vm.experiment.pageId)"
-    >
+        (goBack)="goToExperimentList(vm.experiment.pageId)">
     </dot-experiments-header>
     <div class="flex flex-column dot-experiment-report-content">
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
@@ -12,8 +10,7 @@
                 [goals]="vm.experiment.goals"
                 [scheduling]="vm.experiment.scheduling"
                 [sessionsReached]="vm.results ? vm.results.sessions.total : 0"
-                [suggestedWinner]="vm.winnerLegendSummary"
-            />
+                [suggestedWinner]="vm.winnerLegendSummary" />
 
             <div class="flex align-items-center flex-column w-full container gap-3">
                 <p-tabView>
@@ -24,8 +21,7 @@
                                 [data]="vm.dailyChart.chartData"
                                 [isEmpty]="!vm.dailyChart.hasEnoughData"
                                 [isLoading]="vm.isLoading"
-                                data-testId="daily-chart"
-                            />
+                                data-testId="daily-chart" />
                         </div>
                     </p-tabPanel>
 
@@ -37,8 +33,7 @@
                                 [isEmpty]="!vm.bayesianChart.hasEnoughData"
                                 [isLinearAxis]="true"
                                 [isLoading]="vm.isLoading"
-                                data-testId="bayesian-chart"
-                            />
+                                data-testId="bayesian-chart" />
                         </div>
                     </p-tabPanel>
                 </p-tabView>
@@ -46,8 +41,7 @@
                     [detailData]="vm.detailData"
                     [experimentId]="vm.experiment.id"
                     [hasEnoughSessions]="vm.dailyChart.hasEnoughData"
-                    [promotedVariantId]="vm.promotedVariant"
-                />
+                    [promotedVariantId]="vm.promotedVariant" />
             </div>
         </ng-container>
     </div>

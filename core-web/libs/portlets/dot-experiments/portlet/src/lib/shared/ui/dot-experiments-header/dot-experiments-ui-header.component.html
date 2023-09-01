@@ -3,16 +3,23 @@
         <i class="pi pi-angle-left"></i>
     </a>
     <ng-container *ngIf="!isLoading; else loadingTpl">
-        <span data-testId="title">{{ title }}</span>
+        <span data-testId="title">{{ experiment?.name }}</span>
     </ng-container>
 
-    <ng-container *ngIf="!!status">
+    <ng-container *ngIf="!!experiment?.status">
         <div class="flex flex-grow-1 align-items-center justify-content-between">
             <p-tag
+                [value]="
+                    (experiment?.status | lowercase | dm) +
+                    (experiment?.status === experimentStatus.RUNNING
+                        ? ' ' +
+                          ('dot.common.until' | dm) +
+                          ' ' +
+                          (experiment?.scheduling.endDate | date : 'EEE, LLL dd, Y')
+                        : '')
+                "
                 data-testId="status-tag"
-                styleClass="{{ status | lowercase }}"
-                value="{{ status | lowercase | dm }} "
-            >
+                styleClass="{{ experiment?.status | lowercase }}">
             </p-tag>
         </div>
     </ng-container>
