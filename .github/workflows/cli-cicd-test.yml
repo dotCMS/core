@@ -8,13 +8,33 @@ on:
       docker_build_push:
         description: 'Docker build push'
         default: 'false'
-  pull_request:
-    paths:
-      - 'tools/dotcms-cli/**'
   push:
     branches:
       - master
       - release-*
+    paths-ignore:
+      - '.gitignore'
+      - '.dockerignore'
+      - 'dotCMS/src/main/webapp/html'
+      - '!docker/**'
+      - 'cicd/**'
+      - '.cicd/**'
+      - '*.md'
+      - '*.adoc'
+      - '*.txt'
+      - '.github/ISSUE_TEMPLATE/**'
+  pull_request:
+    paths-ignore:
+      - '.gitignore'
+      - '.dockerignore'
+      - 'dotCMS/src/main/webapp/html'
+      - '!docker/**'
+      - 'cicd/**'
+      - '.cicd/**'
+      - '*.md'
+      - '*.adoc'
+      - '*.txt'
+      - '.github/ISSUE_TEMPLATE/**'
 jobs:
   cli_tests:
     name: CLI tests
