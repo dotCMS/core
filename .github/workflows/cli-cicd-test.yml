@@ -1,5 +1,13 @@
 name: CLI tests
 on:
+  workflow_dispatch:
+    inputs:
+      docker_build_cache:
+        description: 'Docker build cache'
+        default: 'false'
+      docker_build_push:
+        description: 'Docker build push'
+        default: 'false'
   pull_request:
     paths:
       - 'tools/dotcms-cli/**'
@@ -47,12 +55,12 @@ jobs:
         name: Build and push
         uses: docker/build-push-action@v4
         with:
-          push: false
+          push: ${{ github.event.inputs.docker_build_push || 'false' }}
           context: docker/dotcms
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           pull: true
-          no-cache: true
+          no-cache: ${{ github.event.inputs.docker_build_cache || 'false' }}
           build-args: |
             BUILD_ID=${{ github.head_ref }}
             BUILD_FROM=COMMIT 
