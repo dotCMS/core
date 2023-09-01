@@ -3,7 +3,7 @@
         <i class="pi pi-angle-left"></i>
     </a>
     <ng-container *ngIf="!isLoading; else loadingTpl">
-        <span data-testId="title">{{ experiment?.name }}</span>
+        <span data-testId="title">{{ title }}</span>
     </ng-container>
 
     <ng-container *ngIf="!!experiment?.status">

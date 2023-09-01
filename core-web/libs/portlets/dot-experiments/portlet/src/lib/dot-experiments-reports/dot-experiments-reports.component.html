@@ -2,6 +2,7 @@
     <dot-experiments-header
         [experiment]="vm.experiment"
         [isLoading]="vm.isLoading"
+        [title]="vm.experiment?.name"
         (goBack)="goToExperimentList(vm.experiment.pageId)">
     </dot-experiments-header>
     <div class="flex flex-column dot-experiment-report-content">

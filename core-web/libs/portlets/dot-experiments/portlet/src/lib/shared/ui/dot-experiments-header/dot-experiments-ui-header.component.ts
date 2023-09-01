@@ -32,6 +32,9 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 })
 export class DotExperimentsUiHeaderComponent {
     @Input()
+    title = '';
+
+    @Input()
     experiment: DotExperiment;
 
     @Input()

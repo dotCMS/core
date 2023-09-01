@@ -1,17 +1,23 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { DatePipe } from '@angular/common';
+
 import { Skeleton } from 'primeng/skeleton';
 import { Tag, TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsUiHeaderComponent } from './dot-experiments-ui-header.component';
 
 const messageServiceMock = new MockDotMessageService({
-    running: 'RUNNING'
+    running: 'RUNNING',
+    'dot.common.until': 'until'
 });
+
+const EXPERIMENT_MOCK = getExperimentMock(0);
+
 describe('ExperimentsHeaderComponent', () => {
     let spectator: Spectator<DotExperimentsUiHeaderComponent>;
 
@@ -52,10 +58,25 @@ describe('ExperimentsHeaderComponent', () => {
         expect(spectator.query(Skeleton)).toExist();
     });
 
-    it('should rendered the status Input', () => {
-        const expectedStatus: DotExperimentStatus = DotExperimentStatus.RUNNING;
+    it('should rendered the status tag', () => {
         spectator.setInput({
-            status: DotExperimentStatus.RUNNING
+            experiment: { ...EXPERIMENT_MOCK, status: DotExperimentStatus.SCHEDULED }
+        });
+
+        expect(spectator.query(Tag)).toExist();
+        expect(spectator.query(byTestId('status-tag'))).toContainText(
+            DotExperimentStatus.SCHEDULED
+        );
+    });
+
+    it('should rendered the RUNNING status tag', () => {
+        const expectedStatus =
+            DotExperimentStatus.RUNNING +
+            ' until ' +
+            new DatePipe('en-US').transform(EXPERIMENT_MOCK.scheduling.endDate, 'EEE, LLL dd, Y');
+
+        spectator.setInput({
+            experiment: EXPERIMENT_MOCK
         });
 
         expect(spectator.query(Tag)).toExist();

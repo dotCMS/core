@@ -3,10 +3,9 @@ package com.dotcms.contenttype.model.type;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
-import com.dotcms.contenttype.model.field.Workflow;
 import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
+import com.dotcms.contenttype.model.workflow.Workflow;
 import com.dotcms.model.views.CommonViews;
-import com.dotcms.model.views.CommonViews.SaveView;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -17,14 +16,13 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
@@ -43,7 +41,6 @@ import org.immutables.value.Value.Default;
         @Type(value = DotAssetContentType.class)
 })
 @JsonIgnoreProperties(value = {
-    "systemActionMappings",
     "nEntries",
     "sortOrder",
     "versionable",
@@ -144,18 +141,13 @@ public abstract class ContentType {
     @Nullable
     public abstract List<Workflow> workflows();
 
-    /**
-     * This is a calculated field required only when sending the CT for a save or an update
-     * When pulling down the CT this shouldn't be present that's why it is surrounded by a JsonView
-     * @return
-     */
-    @JsonView(SaveView.class)
-    @Value.Derived
-    public Set<String> workflow(){
-        final List<Workflow> workflows = workflows();
-        return  workflows == null ? Set.of() : workflows.stream().map(Workflow::id).collect(
-                Collectors.toSet());
-    }
+    //System action mappings are rendered quite differently depending on what endpoint gets called
+    //if it's coming from an endpoint that returns a list of CT we get a simplified version
+    //if it's coming from an endpoint that returns only one CT then we get a full representation
+    //Again a different form of this attribute is used when sending the request to create or update the CT
+    //Therefore it's best if we keep a Generic high level representation of the field through JsonNode
+    @Nullable
+    public abstract JsonNode systemActionMappings();
 
     /**
      * Class id resolver allows us using smaller ClassNames that eventually get mapped to the fully qualified class name
