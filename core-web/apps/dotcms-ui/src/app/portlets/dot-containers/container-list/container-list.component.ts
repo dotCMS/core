@@ -12,7 +12,7 @@ import {
 import { DialogService } from 'primeng/dynamicdialog';
 import { Menu } from 'primeng/menu';
 
-import { takeUntil } from 'rxjs/operators';
+import { skip, takeUntil } from 'rxjs/operators';
 
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
@@ -57,13 +57,12 @@ export class ContainerListComponent implements OnDestroy {
     ) {
         this.notify$.pipe(takeUntil(this.destroy$)).subscribe(({ payload, message, failsInfo }) => {
             this.notifyResult(payload, failsInfo, message);
+            this.selectedContainers = [];
         });
 
-        this.store.getContainersByHost(this.siteService.switchSite$);
-
-        this.store.containers$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.selectedContainers = []; // Reset the selection if the containers change
-        });
+        this.siteService.switchSite$
+            .pipe(skip(1)) // Skip initialization
+            .subscribe(({ identifier }) => this.store.getContainersByHost(identifier));
     }
 
     ngOnDestroy(): void {

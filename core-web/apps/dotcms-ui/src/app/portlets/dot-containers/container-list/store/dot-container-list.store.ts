@@ -6,7 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 
-import { pluck, skip, switchMap, take, tap } from 'rxjs/operators';
+import { pluck, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import {
@@ -15,7 +15,7 @@ import {
     DotSiteBrowserService,
     PaginatorService
 } from '@dotcms/data-access';
-import { DotPushPublishDialogService, Site, SiteService } from '@dotcms/dotcms-js';
+import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
 import {
     CONTAINER_SOURCE,
     DotActionBulkResult,
@@ -140,11 +140,6 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             };
         }
     );
-    readonly containers$ = this.select(({ containers }: DotContainerListState) => {
-        return {
-            containers
-        };
-    });
 
     readonly notify$ = this.select(({ notifyMessages }: DotContainerListState) => {
         return notifyMessages;
@@ -199,10 +194,9 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         }
     );
 
-    readonly getContainersByHost = this.effect<Site>((switchSite$) => {
-        return switchSite$.pipe(
-            skip(1), // To skip initialization
-            switchMap(({ identifier }) => {
+    readonly getContainersByHost = this.effect<string>((identifier$) => {
+        return identifier$.pipe(
+            switchMap((identifier) => {
                 this.paginatorService.setExtraParams('host', identifier);
 
                 return this.paginatorService.getFirstPage();
