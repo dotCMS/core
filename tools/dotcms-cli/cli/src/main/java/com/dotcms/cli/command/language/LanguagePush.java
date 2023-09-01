@@ -54,8 +54,15 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     @CommandLine.Option(names = {"-f", "--file"}, description = "The json/yml formatted content-type descriptor file to be pushed. ")
     File file;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
 
         File inputFile = this.file;

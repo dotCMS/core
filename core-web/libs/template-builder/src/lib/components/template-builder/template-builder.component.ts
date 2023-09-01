@@ -12,7 +12,6 @@ import { Observable, Subject, combineLatest } from 'rxjs';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     ElementRef,
     EventEmitter,
@@ -178,8 +177,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     constructor(
         private store: DotTemplateBuilderStore,
         private dialogService: DialogService,
-        private dotMessage: DotMessageService,
-        private cd: ChangeDetectorRef
+        private dotMessage: DotMessageService
     ) {
         this.rows$ = this.store.rows$.pipe(map((rows) => parseFromGridStackToDotObject(rows)));
 
@@ -481,8 +479,25 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             .on('dragstop', () => this.onDragStop());
     }
 
+    /**
+     * @description This method resets the state of the drag on Drag Stop
+     *
+     * @memberof TemplateBuilderComponent
+     */
     onDragStop() {
         this.draggingElement = null;
         this.scrollDirection = SCROLL_DIRECTION.NONE;
+    }
+
+    /**
+     * @description This method calls the store delete a section from the layout
+     *
+     * @param {keyof DotTemplateLayoutProperties} section
+     * @memberof TemplateBuilderComponent
+     */
+    deleteSection(section: keyof DotTemplateLayoutProperties) {
+        this.store.updateLayoutProperties({
+            [section]: false
+        } as Partial<DotTemplateLayoutProperties>);
     }
 }

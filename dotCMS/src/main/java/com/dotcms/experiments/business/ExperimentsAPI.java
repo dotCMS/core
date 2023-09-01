@@ -1,5 +1,7 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.business.result.BrowserSession;
@@ -28,6 +30,10 @@ public interface ExperimentsAPI {
     Lazy<Integer> EXPERIMENTS_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MAX_DURATION", 90));
     Lazy<Integer> EXPERIMENTS_MIN_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MIN_DURATION", 14));
     Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 10));
+
+    enum Health {
+        OK, NOT_CONFIGURED, CONFIGURATION_ERROR
+    }
 
 
     /**
@@ -197,7 +203,7 @@ public interface ExperimentsAPI {
      * @param user
      * @return
      */
-    ExperimentResults getResults(final Experiment experiment, User user)
+    ExperimentResults getResults(Experiment experiment, User user)
             throws DotDataException, DotSecurityException;
 
     List<Experiment> cacheRunningExperiments() throws DotDataException;
@@ -209,7 +215,7 @@ public interface ExperimentsAPI {
      * @param user
      * @return
      */
-    List<BrowserSession> getEvents(final Experiment experiment, User user) throws DotDataException;
+    List<BrowserSession> getEvents(Experiment experiment, User user) throws DotDataException, DotSecurityException;
 
     /*
      * Ends finalized {@link com.dotcms.experiments.model.Experiment}s

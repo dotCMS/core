@@ -41,7 +41,7 @@ export const mockDotCMSTempFile = {
 
 const mockFileUploadResponse = {
     files: [{ name: 'fileName.png' }],
-    xhr: { response: `{ "tempFiles": [${JSON.stringify(mockDotCMSTempFile)}]}` }
+    originalEvent: { body: { tempFiles: [mockDotCMSTempFile] } }
 };
 
 describe('DotCreatePersonaFormComponent', () => {

@@ -9,6 +9,8 @@ import com.dotmarketing.business.DotStateException;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Instant;
+
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -44,7 +46,8 @@ public class AnalyticsCacheTest extends UnitTestBase {
             null,
             "some-scope",
             "some-token-type",
-            TokenStatus.OK);
+            TokenStatus.OK,
+            Instant.now());
         analyticsCache.putAccessToken(accessToken);
 
         final String clientId = "some-client-id";

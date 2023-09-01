@@ -3,11 +3,12 @@
     [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
     [apiLink]="apiLink"
     (selected)="changeDeviceHandler($event)"
+    (changeSeoMedia)="changeSeoMedia($event)"
     appendTo="body"
     tooltipPosition="bottom"
     tooltipStyleClass="dot-device-selector__dialog"
+    data-testId="dot-device-selector"
 ></dot-device-selector-seo>
-
 <dot-tab-buttons
     [mode]="mode"
     [options]="options"
@@ -16,21 +17,25 @@
     data-testId="dot-tabs-buttons"
 ></dot-tab-buttons>
 <ng-container *ngIf="!variant">
-    <p-inputSwitch
-        #locker
-        [(ngModel)]="lock"
-        [class.warn]="lockWarn"
-        [disabled]="!pageState.page.canLock"
+    <span
         [pTooltip]="
             pageState.state.lockedByAnotherUser && pageState.page.canEdit
                 ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
-                : null
+                : ('lock.clipboard' | dm)
         "
-        [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"
-        (click)="onLockerClick()"
-        (onChange)="lockPageHandler()"
-        appendTo="target"
-    ></p-inputSwitch>
+        tooltipPosition="bottom"
+        data-testId="lock-container"
+    >
+        <p-inputSwitch
+            #locker
+            [(ngModel)]="lock"
+            [class.warn]="lockWarn"
+            [disabled]="!pageState.page.canLock"
+            (click)="onLockerClick()"
+            (onChange)="lockPageHandler()"
+            appendTo="target"
+        ></p-inputSwitch>
+    </span>
 </ng-container>
 
 <dot-edit-page-lock-info-seo

@@ -10,9 +10,18 @@ import picocli.CommandLine;
 public class WorkspaceMixin {
 
     /**
-     * The workspace option. invisible to the user. only meant to be used other commands or tests.
+     * Command line option for specifying the workspace directory.
+     * If not specified, the current directory will be used as the workspace.
+     * <p>
+     * Usage:
+     * --workspace <directory>
+     * <p>
+     * Example:
+     * --workspace /path/to/workspace
      */
-    @CommandLine.Option(names = { "--workspace" }, hidden = true)
+    @CommandLine.Option(names = {"--workspace"},
+            description = {"The workspace directory.",
+                    "Current directory is used if not specified"})
     File file;
 
     /**

@@ -304,7 +304,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly updateLayoutProperties = this.updater(
-        (state, layoutProperties: DotTemplateLayoutProperties) => {
+        (state, layoutProperties: Partial<DotTemplateLayoutProperties>) => {
             return {
                 ...state,
                 layoutProperties: {
@@ -313,7 +313,9 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     // This is meant to just change the location of the sidebar
                     sidebar: {
                         ...state.layoutProperties.sidebar,
-                        location: layoutProperties.sidebar.location
+                        location:
+                            layoutProperties.sidebar?.location ??
+                            state.layoutProperties.sidebar.location
                     }
                 }
             };

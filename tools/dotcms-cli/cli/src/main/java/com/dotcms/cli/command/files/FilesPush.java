@@ -70,8 +70,14 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     @Inject
     PushService pushService;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
             // Getting the workspace
         var workspace = getWorkspaceDirectory(path);

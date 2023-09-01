@@ -19,10 +19,10 @@ import { DropdownModule } from 'primeng/dropdown';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
 
-import { filter, mergeMap, take, toArray } from 'rxjs/operators';
+import { filter, map, mergeMap, take, toArray } from 'rxjs/operators';
 
-import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
-import { DotDevice, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
+import { DotCurrentUser, DotDevice, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -49,14 +49,17 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
-    @ViewChild('op') overlayPanel: OverlayPanel;
+    @Output() changeSeoMedia = new EventEmitter<string>();
+    @ViewChild('deviceSelector') overlayPanel: OverlayPanel;
     previewUrl: string;
+
     protected linkToAddDevice = '/c/content';
     protected linkToEditDeviceQueryParams = {
         devices: null
     };
 
     options$: Observable<DotDevice[]>;
+    isCMSAdmin$: Observable<boolean>;
     socialMediaTiles = [
         { label: 'Facebook', icon: 'pi pi-facebook' },
         { label: 'Twitter', icon: 'pi pi-twitter' },
@@ -66,16 +69,16 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
             icon: 'pi pi-mobile',
-            cssHeight: '390',
-            cssWidth: '844',
+            cssHeight: '844',
+            cssWidth: '390',
             inode: '0',
             identifier: ''
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.landscape'),
             icon: 'pi pi-mobile',
-            cssHeight: '844',
-            cssWidth: '390',
+            cssHeight: '390',
+            cssWidth: '844',
             inode: '0',
             identifier: ''
         },
@@ -98,16 +101,16 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         {
             name: this.dotMessageService.get('editpage.device.selector.tablet.portrait'),
             icon: 'pi pi-tablet',
-            cssHeight: '820',
-            cssWidth: '1180',
+            cssHeight: '1180',
+            cssWidth: '820',
             inode: '0',
             identifier: ''
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.tablet.landscape'),
             icon: 'pi pi-tablet',
-            cssHeight: '1180',
-            cssWidth: '820',
+            cssHeight: '820',
+            cssWidth: '1180',
             inode: '0',
             identifier: ''
         }
@@ -115,11 +118,13 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     constructor(
         private dotDevicesService: DotDevicesService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private dotCurrentUser: DotCurrentUserService
     ) {}
 
     ngOnInit() {
         this.options$ = this.getOptions();
+        this.isCMSAdmin$ = this.checkIfCMSAdmin();
     }
 
     /**
@@ -129,6 +134,14 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     change(device: DotDevice) {
         this.selected.emit(device);
         this.overlayPanel.hide();
+    }
+
+    /**
+     * Emit selected changes
+     * @param DotDevice device
+     */
+    changeSeoMediaEvent(tile: string) {
+        this.changeSeoMedia.emit(tile);
     }
 
     /**
@@ -144,7 +157,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
      *
      * @returns Observable<DotDevice[]>
      */
-    public getOptions(): Observable<DotDevice[]> {
+    getOptions(): Observable<DotDevice[]> {
         return this.dotDevicesService.get().pipe(
             take(1),
             mergeMap((devices: DotDevice[]) => {
@@ -154,6 +167,14 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             }),
             filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
             toArray()
+        );
+    }
+
+    checkIfCMSAdmin(): Observable<boolean> {
+        return this.dotCurrentUser.getCurrentUser().pipe(
+            map((user: DotCurrentUser) => {
+                return user.admin;
+            })
         );
     }
 
