@@ -458,18 +458,6 @@ public class ExportStarterUtil {
      * reference. This will allow dotCMS to add their contents to the final Starter ZIP file without copying them to
      * any backup or temporary location.
      *
-     * @param zip The {@link ZipOutputStream} which will receive all the streamed data.
-     */
-    private void getAssets(final ZipOutputStream zip) {
-        this.getAssets(zip, new AssetFileNameFilter());
-    }
-
-
-    /**
-     * Traverses the complete list of assets in the current dotCMS instance in order to retrieve their respective file
-     * reference. This will allow dotCMS to add their contents to the final Starter ZIP file without copying them to
-     * any backup or temporary location.
-     *
      * @param zip        The {@link ZipOutputStream} which will receive all the streamed data.
      * @param fileFilter The {@link FileFilter} being used to get the appropriate asset data.
      */
@@ -488,16 +476,23 @@ public class ExportStarterUtil {
     }
 
     /**
-     * Generates all the contents that go into the compressed dotCMS Starter file. It's very important to point out
-     * that <b>no temporary files are created, and no data is written to the file system at any point.</b>
-     * <p>The resulting compressed file is directly streamed to the {@link OutputStream} for users to be able to
-     * download it even before it is 100% ready.</p>
+     * Generates all the contents that go into the compressed dotCMS Starter file. It's very
+     * important to point out that <b>no temporary files are created, and no data is written to the
+     * file system at any point.</b>
+     * <p>The resulting compressed file is directly streamed to the {@link OutputStream} for users
+     * to be able to download it even before it is 100% ready. Users have the option to choose
+     * whether they want all versions of the assets to be part of the starter ot not. This is useful
+     * in cases where the starter's size must be kept as low as possible, or if older asset versions
+     * are not needed at all.</p>
      *
-     * @param output        The {@link OutputStream} instance.
-     * @param includeAssets If the Starter file must contain all dotCMS assets as well, set this to {@code true}.
+     * @param output           The {@link OutputStream} instance.
+     * @param includeAssets    If the Starter file must contain all dotCMS assets as well, set this
+     *                         to {@code true}.
+     * @param includeOldAssets If absolutely all versions of the assets must be included in the
+     *                         compressed file, set this to {@code true}.
      */
-    public void streamCompressedStarter(final OutputStream output, final boolean includeAssets) {
-        this.streamCompressedData(output, true, includeAssets, false, true);
+    public void streamCompressedStarter(final OutputStream output, final boolean includeAssets, final boolean includeOldAssets) {
+        this.streamCompressedData(output, true, includeAssets, false, includeOldAssets);
     }
 
     /**
