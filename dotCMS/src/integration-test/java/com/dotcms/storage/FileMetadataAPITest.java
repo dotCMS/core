@@ -9,7 +9,7 @@ import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
 import static com.dotcms.rest.api.v1.temp.TempFileAPITest.mockHttpServletRequest;
 import static com.dotcms.storage.FileMetadataAPI.BINARY_METADATA_VERSION;
-import static com.dotcms.storage.FileMetadataAPIImpl.BASIC_METADATA_OVERRIDE_KEYS;
+import static com.dotcms.storage.FileMetadataAPIImpl.BASIC_METADATA_EXTENDED_KEYS;
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
 import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
 import static org.junit.Assert.assertEquals;
@@ -1017,21 +1017,39 @@ public class FileMetadataAPITest {
 
     /**
      * <b>Method to test:</b> {@link FileMetadataAPI#generateContentletMetadata(Contentlet)} <br>
-     * <b>Given scenario:</b> The property {@link FileMetadataAPIImpl#BASIC_METADATA_OVERRIDE_KEYS} is set<br>
-     * <b>Expected Result:</b> The basic metadata must get the value set in {@link FileMetadataAPIImpl#BASIC_METADATA_OVERRIDE_KEYS}
+     * <b>Given scenario:</b> The property {@link FileMetadataAPIImpl#BASIC_METADATA_EXTENDED_KEYS} is set<br>
+     * <b>Expected Result:</b> The basic metadata must include the value set in {@link FileMetadataAPIImpl#BASIC_METADATA_EXTENDED_KEYS}
      * @throws Exception
      */
     @Test
-    public void Test_Get_BasicMetadataWhenOverridePropertyIsSet() throws Exception {
+    public void Test_Get_BasicMetadataWhenExtendedPropertyIsSet() throws Exception {
         prepareIfNecessary();
-        final FileMetadataAPI metadataAPI = new FileMetadataAPIImpl(APILocator.getFileStorageAPI(),
-                CacheLocator.getMetadataCache(), () -> CollectionsUtils.set("keywords"));
-        final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
-        Metadata metadata = metadataAPI.generateContentletMetadata(
-                fileAssetContent).getBasicMetadataMap().get("fileAsset");
 
-        assertNotNull(metadata);
-        assertEquals(1, metadata.getMap().size());
-        assertEquals("keyword1,keyword2", metadata.getMap().get("keywords"));
+        final String originalStringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        try {
+            Config.setProperty(BASIC_METADATA_EXTENDED_KEYS, "keywords");
+            final FileMetadataAPI metadataAPI = new FileMetadataAPIImpl();
+            final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
+            Metadata metadata = metadataAPI.generateContentletMetadata(
+                    fileAssetContent).getBasicMetadataMap().get("fileAsset");
+
+            assertNotNull(metadata);
+
+            final Set<String> basicMetadataKeys = BasicMetadataFields.keyMap().keySet();
+            final Set<String> metadataKeySetReturned = metadata.getMap().keySet();
+
+            assertTrue(metadataKeySetReturned.size() > 1);
+
+            //we make sure the BasicMetadataFields and keywords are included
+            assertTrue(metadataKeySetReturned.stream()
+                    .allMatch(key -> (key.equals("keywords") || basicMetadataKeys.contains(key))));
+
+            //we get the keywords from the pdf file. It should have this value: keyword1,keyword2
+            assertEquals("keyword1,keyword2", metadata.getMap().get("keywords"));
+        } finally{
+            Config.setProperty(BASIC_METADATA_EXTENDED_KEYS, originalStringProperty);
+            //We need to force a clean up of the fileMetadataAPI instance to reset the lazy initialization of the basicMetadataKeySet
+            fileMetadataAPI = new FileMetadataAPIImpl();
+        }
     }
 }

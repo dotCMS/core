@@ -51,7 +51,8 @@ import java.util.stream.Stream;
  */
 public class FileMetadataAPIImpl implements FileMetadataAPI {
 
-    public static final String BASIC_METADATA_OVERRIDE_KEYS = "BASIC_METADATA_OVERRIDE_KEYS";
+    //This property is a comma-separated list that contains all the metadata keys that will be stored as basic in addition to the ones defined in {@link BasicMetadataFields}
+    public static final String BASIC_METADATA_EXTENDED_KEYS = "BASIC_METADATA_EXTENDED_KEYS";
     private final FileStorageAPI fileStorageAPI;
     private final MetadataCache metadataCache;
 
@@ -62,14 +63,19 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     }
 
     private FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache) {
-        this(fileStorageAPI, metadataCache, () -> Arrays.stream(
-                        Config.getStringProperty(BASIC_METADATA_OVERRIDE_KEYS,
-                                String.join(",", BasicMetadataFields.keyMap().keySet())).split(","))
-                .map(String::trim).collect(Collectors.toSet()));
+        this(fileStorageAPI, metadataCache, () -> {
+                    //we are including additional keys to the basic metadata if `BASIC_METADATA_EXTENDED_KEYS` exists
+                    String extendedKeys = Config.getStringProperty(BASIC_METADATA_EXTENDED_KEYS, null);
+                    Set<String> basicMetadataKeys = new HashSet<>(BasicMetadataFields.keyMap().keySet());
+                    if (UtilMethods.isSet(extendedKeys)){
+                        basicMetadataKeys.addAll(Arrays.stream(extendedKeys.split(",")).map(String::trim).collect(Collectors.toSet()));
+                    }
+                    return basicMetadataKeys;
+                }
+        );
     }
 
-    @VisibleForTesting
-    FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache,
+    private FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache,
                         Supplier<? extends Set<String>> basicMetadataKeySetSupplier) {
         this.fileStorageAPI = fileStorageAPI;
         this.metadataCache = metadataCache;
