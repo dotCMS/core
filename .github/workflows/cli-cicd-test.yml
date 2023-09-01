@@ -97,7 +97,7 @@ jobs:
           
           echo "status=$OUTPUT_STATUS" >> $GITHUB_OUTPUT
           
-          ./mvnw surefire-report:report-only surefire-report:failsafe-report-only  
+          ./mvnw surefire-report:failsafe-report-only  
                
           DOT_CLI_PATH=${{ github.workspace }}/tools/dotcms-cli
           RESULTS_PATH=${DOT_CLI_PATH}/target/test-results
@@ -115,15 +115,12 @@ jobs:
           for module in $MODULES
           do
             mkdir -p ${XML_REPORTS_PATH}/${module}
-            cp -r ${module}/target/surefire-reports ${XML_REPORTS_PATH}/${module}
             cp -r ${module}/target/failsafe-reports ${XML_REPORTS_PATH}/${module}
             mkdir -p ${HTML_REPORTS_PATH}/${module}
             cp -r ${module}/target/site/* ${HTML_REPORTS_PATH}/${module}
+          
+            echo "<tr><td>${module}</td><td><a href=\"${module}/failsafe-report.html\">failsafe report</a></td></tr>" >> ${INDEX_FILE}
             
-            for report in surefire failsafe
-            do
-              echo "<tr><td>${module}</td><td><a href=\"${module}/${report}-report.html\">${report} report</a></td></tr>" >> ${INDEX_FILE}
-            done
           done
           
           cat ${CICD_RES_PATH}/cli/cli-results-footer.html >> ${INDEX_FILE}
