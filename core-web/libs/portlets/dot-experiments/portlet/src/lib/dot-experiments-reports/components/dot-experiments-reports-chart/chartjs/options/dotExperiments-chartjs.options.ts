@@ -176,7 +176,7 @@ export const generateDotExperimentLineChartJsOptions = ({
                 type: 'linear',
                 position: 'left',
                 min: 0,
-                ticks: { ...defaultOptions.scales.y.ticks, callback: (value: value) => value }
+                ticks: { ...defaultOptions.scales.y.ticks, callback: (value: string) => value }
             }
         }
     };
