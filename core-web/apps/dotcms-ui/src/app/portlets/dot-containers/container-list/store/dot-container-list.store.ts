@@ -74,6 +74,8 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             .pipe(
                 take(1),
                 switchMap(({ identifier }) => {
+                    this.paginatorService.resetExtraParams();
+
                     this.paginatorService.setExtraParams('host', identifier);
 
                     return forkJoin([
