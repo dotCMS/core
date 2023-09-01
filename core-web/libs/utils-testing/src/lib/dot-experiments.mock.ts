@@ -178,77 +178,77 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                             '04/01/2023': {
                                 multiBySession: 1,
                                 uniqueBySession: 1,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/02/2023': {
                                 multiBySession: 2,
                                 uniqueBySession: 2,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/03/2023': {
                                 multiBySession: 3,
                                 uniqueBySession: 3,
-                                convertionRate: 100
+                                conversionRate: 100
                             },
                             '04/04/2023': {
                                 multiBySession: 4,
                                 uniqueBySession: 4,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/05/2023': {
                                 multiBySession: 5,
                                 uniqueBySession: 5,
-                                convertionRate: 20
+                                conversionRate: 20
                             },
                             '04/06/2023': {
                                 multiBySession: 6,
                                 uniqueBySession: 6,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/07/2023': {
                                 multiBySession: 7,
                                 uniqueBySession: 7,
-                                convertionRate: 15
+                                conversionRate: 15
                             },
                             '04/08/2023': {
                                 multiBySession: 8,
                                 uniqueBySession: 8,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/09/2023': {
                                 multiBySession: 9,
                                 uniqueBySession: 9,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/10/2023': {
                                 multiBySession: 10,
                                 uniqueBySession: 10,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/11/2023': {
                                 multiBySession: 11,
                                 uniqueBySession: 11,
-                                convertionRate: 33.33
+                                conversionRate: 33.33
                             },
                             '04/12/2023': {
                                 multiBySession: 12,
                                 uniqueBySession: 12,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/13/2023': {
                                 multiBySession: 13,
                                 uniqueBySession: 13,
-                                convertionRate: 44.44
+                                conversionRate: 44.44
                             },
                             '04/14/2023': {
                                 multiBySession: 14,
                                 uniqueBySession: 14,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/15/2023': {
                                 multiBySession: 15,
                                 uniqueBySession: 15,
-                                convertionRate: 50
+                                conversionRate: 50
                             }
                         },
                         multiBySession: 2,
@@ -266,77 +266,77 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                             '04/01/2023': {
                                 multiBySession: 15,
                                 uniqueBySession: 15,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/02/2023': {
                                 multiBySession: 14,
                                 uniqueBySession: 14,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/03/2023': {
                                 multiBySession: 13,
                                 uniqueBySession: 13,
-                                convertionRate: 10
+                                conversionRate: 10
                             },
                             '04/04/2023': {
                                 multiBySession: 12,
                                 uniqueBySession: 12,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/05/2023': {
                                 multiBySession: 11,
                                 uniqueBySession: 11,
-                                convertionRate: 100
+                                conversionRate: 100
                             },
                             '04/06/2023': {
                                 multiBySession: 10,
                                 uniqueBySession: 10,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/07/2023': {
                                 multiBySession: 9,
                                 uniqueBySession: 9,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/08/2023': {
                                 multiBySession: 8,
                                 uniqueBySession: 8,
-                                convertionRate: 20
+                                conversionRate: 20
                             },
                             '04/09/2023': {
                                 multiBySession: 7,
                                 uniqueBySession: 7,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/10/2023': {
                                 multiBySession: 6,
                                 uniqueBySession: 6,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/11/2023': {
                                 multiBySession: 5,
                                 uniqueBySession: 5,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/12/2023': {
                                 multiBySession: 4,
                                 uniqueBySession: 4,
-                                convertionRate: 33.33
+                                conversionRate: 33.33
                             },
                             '04/13/2023': {
                                 multiBySession: 3,
                                 uniqueBySession: 3,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/14/2023': {
                                 multiBySession: 2,
                                 uniqueBySession: 2,
-                                convertionRate: 22.22
+                                conversionRate: 22.22
                             },
                             '04/15/2023': {
                                 multiBySession: 1,
                                 uniqueBySession: 1,
-                                convertionRate: 50
+                                conversionRate: 50
                             }
                         },
                         multiBySession: 0,
@@ -401,77 +401,77 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                             '04/01/2023': {
                                 multiBySession: 1,
                                 uniqueBySession: 1,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/02/2023': {
                                 multiBySession: 2,
                                 uniqueBySession: 2,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/03/2023': {
                                 multiBySession: 3,
                                 uniqueBySession: 3,
-                                convertionRate: 100
+                                conversionRate: 100
                             },
                             '04/04/2023': {
                                 multiBySession: 4,
                                 uniqueBySession: 4,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/05/2023': {
                                 multiBySession: 5,
                                 uniqueBySession: 5,
-                                convertionRate: 20
+                                conversionRate: 20
                             },
                             '04/06/2023': {
                                 multiBySession: 6,
                                 uniqueBySession: 6,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/07/2023': {
                                 multiBySession: 7,
                                 uniqueBySession: 7,
-                                convertionRate: 15
+                                conversionRate: 15
                             },
                             '04/08/2023': {
                                 multiBySession: 8,
                                 uniqueBySession: 8,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/09/2023': {
                                 multiBySession: 9,
                                 uniqueBySession: 9,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/10/2023': {
                                 multiBySession: 10,
                                 uniqueBySession: 10,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/11/2023': {
                                 multiBySession: 11,
                                 uniqueBySession: 11,
-                                convertionRate: 33.33
+                                conversionRate: 33.33
                             },
                             '04/12/2023': {
                                 multiBySession: 12,
                                 uniqueBySession: 12,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/13/2023': {
                                 multiBySession: 13,
                                 uniqueBySession: 13,
-                                convertionRate: 44.44
+                                conversionRate: 44.44
                             },
                             '04/14/2023': {
                                 multiBySession: 14,
                                 uniqueBySession: 14,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/15/2023': {
                                 multiBySession: 15,
                                 uniqueBySession: 15,
-                                convertionRate: 50
+                                conversionRate: 50
                             }
                         },
                         multiBySession: 2,
@@ -489,77 +489,77 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                             '04/01/2023': {
                                 multiBySession: 15,
                                 uniqueBySession: 15,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/02/2023': {
                                 multiBySession: 14,
                                 uniqueBySession: 14,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/03/2023': {
                                 multiBySession: 13,
                                 uniqueBySession: 13,
-                                convertionRate: 10
+                                conversionRate: 10
                             },
                             '04/04/2023': {
                                 multiBySession: 12,
                                 uniqueBySession: 12,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/05/2023': {
                                 multiBySession: 11,
                                 uniqueBySession: 11,
-                                convertionRate: 100
+                                conversionRate: 100
                             },
                             '04/06/2023': {
                                 multiBySession: 10,
                                 uniqueBySession: 10,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/07/2023': {
                                 multiBySession: 9,
                                 uniqueBySession: 9,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/08/2023': {
                                 multiBySession: 8,
                                 uniqueBySession: 8,
-                                convertionRate: 20
+                                conversionRate: 20
                             },
                             '04/09/2023': {
                                 multiBySession: 7,
                                 uniqueBySession: 7,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/10/2023': {
                                 multiBySession: 6,
                                 uniqueBySession: 6,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/11/2023': {
                                 multiBySession: 5,
                                 uniqueBySession: 5,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/12/2023': {
                                 multiBySession: 4,
                                 uniqueBySession: 4,
-                                convertionRate: 33.33
+                                conversionRate: 33.33
                             },
                             '04/13/2023': {
                                 multiBySession: 3,
                                 uniqueBySession: 3,
-                                convertionRate: 50
+                                conversionRate: 50
                             },
                             '04/14/2023': {
                                 multiBySession: 2,
                                 uniqueBySession: 2,
-                                convertionRate: 22.22
+                                conversionRate: 22.22
                             },
                             '04/15/2023': {
                                 multiBySession: 1,
                                 uniqueBySession: 1,
-                                convertionRate: 50
+                                conversionRate: 50
                             }
                         },
                         multiBySession: 0,
