@@ -1,10 +1,7 @@
-<p-button class="binary-field__code-button" (click)="showCodeEditor()" data-testId="code-button">{{
-    labelCode
-}}</p-button>
+<p-button (click)="showCodeEditor()" data-testId="code-button">{{ labelCode }}</p-button>
 
 <p-dialog [(visible)]="visible" [style]="{ width: '80rem' }" [header]="labelCode">
     <ngx-monaco-editor
         class="binary-field__code-editor"
-        data-testId="code-editor"
-    ></ngx-monaco-editor>
+        data-testId="code-editor"></ngx-monaco-editor>
 </p-dialog>
