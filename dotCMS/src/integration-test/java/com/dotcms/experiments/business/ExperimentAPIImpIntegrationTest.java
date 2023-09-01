@@ -6578,6 +6578,24 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 "testName=TESTVALUE", "testName=TestValue", "testname=testValue"};
     }
 
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment, User)}
+     * When: Create an Experiment with a URL Parameter Goal with the follow configuration:
+     *
+     * - Parameter name: "testName"
+     * - Parameter Value: "testValue"
+     *
+     * And then:
+     * - Visit the Experiment Page
+     * - and after visit another page with The URL of the page contains the query parameter with
+     * different case sensitive.
+     *
+     * Should: REturn o success response with the results of the experiment.
+     *
+     * @param queryParameter
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     @UseDataProvider("caseSensitiveQueryParameters")
     public void urlParameterWithCaseSensitiveQueryParameter(final String queryParameter)
