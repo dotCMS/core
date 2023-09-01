@@ -215,7 +215,7 @@ describe('ContainerListComponent', () => {
     let table: Table;
     let comp: ContainerListComponent;
     let dotPushPublishDialogService: DotPushPublishDialogService;
-    let coreWebService: CoreWebService;
+
     let dotRouterService: DotRouterService;
 
     let unPublishContainer: DotActionMenuButtonComponent;
@@ -296,25 +296,20 @@ describe('ContainerListComponent', () => {
         }).compileComponents();
 
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
-        coreWebService = TestBed.inject(CoreWebService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotContainersService = TestBed.inject(DotContainersService);
         dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
         siteService = TestBed.inject(SiteService) as unknown as SiteServiceMock;
+        paginatorService = TestBed.inject(PaginatorService);
+        spyOn(paginatorService, 'get').and.returnValue(of(containersMock));
+
         fixture = TestBed.createComponent(ContainerListComponent);
         comp = fixture.componentInstance;
         store = fixture.debugElement.injector.get(DotContainerListStore); // To get store instance from the isolated provider
-        paginatorService = TestBed.inject(PaginatorService);
     });
 
     describe('with data', () => {
         beforeEach(fakeAsync(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
-                of({
-                    entity: containersMock,
-                    header: (type) => (type === 'Link' ? 'test;test=test' : '10')
-                })
-            );
             siteService.setFakeCurrentSite();
             fixture.detectChanges();
             tick(2);
@@ -491,7 +486,6 @@ describe('ContainerListComponent', () => {
 
         it("should fetch containers when site is changed and it's not the first time", () => {
             spyOn(paginatorService, 'setExtraParams').and.callThrough();
-            spyOn(paginatorService, 'get').and.callThrough();
 
             siteService.setFakeCurrentSite(mockSites[1]);
 
