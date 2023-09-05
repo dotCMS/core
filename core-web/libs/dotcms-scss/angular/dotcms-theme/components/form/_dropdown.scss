@@ -126,26 +126,19 @@ p-dropdown.p-dropdown-sm {
         }
 
         .p-dropdown-item-group {
+            -webkit-user-select: none;
+            background-color: $color-palette-gray-200;
+            color: $black;
+            cursor: default;
+            font-weight: $font-weight-bold;
             margin: 0;
             padding: $spacing-2;
-            color: $black;
-            background: $white;
-            font-weight: $font-weight-bold;
+            user-select: none;
         }
     }
 
     &.p-error,
     &.p-invalid {
         border-color: $color-alert-red;
-    }
-}
-
-// Outside the .p-dropdown because it can be appended to the body
-.p-dropdown-items-wrapper {
-    .p-dropdown-item-group {
-        // Section item
-        cursor: default;
-        -webkit-user-select: none;
-        user-select: none;
     }
 }
