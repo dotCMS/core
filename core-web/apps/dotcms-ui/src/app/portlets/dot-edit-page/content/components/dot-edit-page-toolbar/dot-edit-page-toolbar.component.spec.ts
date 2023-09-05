@@ -52,7 +52,8 @@ import {
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
-    ESContent
+    ESContent,
+    RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
@@ -407,7 +408,7 @@ describe('DotEditPageToolbarComponent', () => {
             } as DotExperiment;
 
             const expectedStatus =
-                'Running until ' + new DatePipe('en-US').transform(2, 'EEE, LLL dd, Y');
+                'Running until ' + new DatePipe('en-US').transform(2, RUNNING_UNTIL_DATE_FORMAT);
 
             fixtureHost.detectChanges();
 

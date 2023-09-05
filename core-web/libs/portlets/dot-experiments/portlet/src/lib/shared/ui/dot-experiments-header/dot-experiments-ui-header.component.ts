@@ -5,7 +5,11 @@ import { RouterLink } from '@angular/router';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 
-import { DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import {
+    DotExperiment,
+    DotExperimentStatus,
+    RUNNING_UNTIL_DATE_FORMAT
+} from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -45,4 +49,5 @@ export class DotExperimentsUiHeaderComponent {
     goBack = new EventEmitter<boolean>();
 
     experimentStatus = DotExperimentStatus;
+    runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
 }

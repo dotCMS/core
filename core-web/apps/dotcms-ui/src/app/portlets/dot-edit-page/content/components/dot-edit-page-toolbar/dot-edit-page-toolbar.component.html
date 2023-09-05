@@ -84,7 +84,7 @@
             ' ' +
             ('dot.common.until' | dm) +
             ' ' +
-            (runningExperiment.scheduling.endDate | date : 'EEE, LLL dd, Y')
+            (runningExperiment.scheduling.endDate | date : runningUntilDateFormat)
         "
         data-testId="runningExperimentTag"
         queryParamsHandling="preserve"

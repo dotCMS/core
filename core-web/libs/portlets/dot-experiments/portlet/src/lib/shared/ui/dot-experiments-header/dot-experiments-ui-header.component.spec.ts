@@ -6,7 +6,7 @@ import { Skeleton } from 'primeng/skeleton';
 import { Tag, TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotExperimentStatus, RUNNING_UNTIL_DATE_FORMAT } from '@dotcms/dotcms-models';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsUiHeaderComponent } from './dot-experiments-ui-header.component';
@@ -70,7 +70,10 @@ describe('ExperimentsHeaderComponent', () => {
     it('should rendered the RUNNING status tag', () => {
         const expectedStatus =
             'Running until ' +
-            new DatePipe('en-US').transform(EXPERIMENT_MOCK.scheduling.endDate, 'EEE, LLL dd, Y');
+            new DatePipe('en-US').transform(
+                EXPERIMENT_MOCK.scheduling.endDate,
+                RUNNING_UNTIL_DATE_FORMAT
+            );
 
         spectator.setInput({
             experiment: { ...EXPERIMENT_MOCK, status: DotExperimentStatus.RUNNING }

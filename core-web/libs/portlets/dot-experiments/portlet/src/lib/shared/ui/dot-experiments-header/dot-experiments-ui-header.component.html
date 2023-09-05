@@ -15,7 +15,7 @@
                         ? ' ' +
                           ('dot.common.until' | dm) +
                           ' ' +
-                          (experiment?.scheduling.endDate | date : 'EEE, LLL dd, Y')
+                          (experiment?.scheduling.endDate | date : runningUntilDateFormat)
                         : '')
                 "
                 data-testId="status-tag"
