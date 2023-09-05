@@ -20,6 +20,7 @@
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.version>2.9.1.Final</quarkus.platform.version>
     <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+    <jreleaser-plugin.version>1.8.0</jreleaser-plugin.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -48,4 +49,22 @@
       </plugins>
     </pluginManagement>
   </build>
+  <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jreleaser</groupId>
+            <artifactId>jreleaser-maven-plugin</artifactId>
+            <version>${jreleaser-plugin.version}</version>
+            <inherited>false</inherited>
+            <configuration>
+              <configFile>${project.basedir}/jreleaser.yml</configFile>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
