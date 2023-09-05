@@ -1,6 +1,6 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -15,15 +15,10 @@ import { DotMessageService } from '@dotcms/data-access';
     styleUrls: ['./binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BinaryFieldComponent implements OnInit {
-    public labelCode!: string;
+export class BinaryFieldComponent {
+    private readonly dotMessageService = inject(DotMessageService);
+    labelCode = this.dotMessageService.get('contenttypes.content.edit.write.code');
     visible = false;
-
-    constructor(private readonly dotMessageService: DotMessageService) {}
-
-    ngOnInit() {
-        this.labelCode = this.dotMessageService.get('contenttypes.content.edit.write.code');
-    }
 
     showCodeEditor() {
         this.visible = true;

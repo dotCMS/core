@@ -36,10 +36,6 @@ describe('BinaryFieldComponent', () => {
 
     beforeEach(() => (spectator = createComponent()));
 
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
-    });
-
     describe('Write Code', () => {
         it('should show code editor when code button is clicked', () => {
             const button = spectator.query(byTestId('code-button'));
