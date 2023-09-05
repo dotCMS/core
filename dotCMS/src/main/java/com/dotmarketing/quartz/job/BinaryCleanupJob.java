@@ -1,46 +1,60 @@
-/**
- * 
- */
 package com.dotmarketing.quartz.job;
+
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.TrashUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.FileUtil;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
 
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 
-import com.dotmarketing.util.*;
-import jdk.jshell.execution.Util;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.StatefulJob;
-
-import com.dotmarketing.business.APILocator;
-import com.liferay.util.FileUtil;
-
 /**
- * This job will clean up the binary folder created under the binary directory. It will cleanup
- * files older then 12 hours by default. This can be over ridden via the property
- * BINARY_CLEANUP_FILE_LIFE_HOURS The DotScheduler will also look for
- * BINARY_CLEANUP_JOB_CRON_EXPRESSION to see if it should start the job or not.
- * 
+ * This Quartz Job will clean up binary files that are either temporary, or can unnecessarily fill
+ * up the disk space in dotCMS instances and can be safely deleted after a previously configured
+ * amount of time. This Job will be able to purge the following folders:
+ * <ul>
+ *     <li>{@code /assets/tmp_upload/}</li>
+ *     <li>{@code /assets/bundles}</li>
+ *     <li>{@code /dotsecure/backup}</li>
+ *     <li>{@code /dotsecure/trash}</li>
+ *     <li>Java IO temp files located under the folder specified via the {@code "java.io.tmpdir"}
+ *     system property, which is usually {@code ${TOMCAT_HOME}/temp/}.</li>
+ * </ul>
+ * The {@code BINARY_CLEANUP_JOB_CRON_EXPRESSION} allows you to set a CRON Expression to specify how
+ * often this Job will run and, by default, files older than 3 hours compared to the current
+ * execution time will be deleted. This behavior can be overridden through the following
+ * configuration properties:
+ * <ul>
+ *     <li>{@code CLEANUP_TMP_FILES_OLDER_THAN_HOURS}: Files located under the {@code /assets
+ *     /tmp_upload/}, {@code /dotsecure/trash}, and the folder specified via the {@code java.io
+ *     .tmpdir} property will be deleted after the specified number of hours. Defaults to 3 hours
+ *     .</li>
+ *     <li>{@code CLEANUP_BUNDLES_OLDER_THAN_DAYS}: Files located under {@code /assets/bundles} will
+ *     be deleted after the specified number of days. Defaults to 3 days.</li>
+ *     <li>{@code CLEANUP_BACKUP_FILES_OLDER_THAN_DAYS}: Files located under
+ *     {@code /dotsecure/backup} will be deleted after the specified number of days. Defaults to
+ *     3 days.</li>
+ * </ul>
+ *
  * @author BayLogic
- * @since http://jira.dotmarketing.net/browse/DOTCMS-1073
+ * @author Will Ezell
+ * @since Mar 22nd, 2012
  */
 public class BinaryCleanupJob implements StatefulJob {
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see org.quartz.Job#execute(org.quartz.JobExecutionContext)
-   */
 
   public BinaryCleanupJob() {
 
   }
 
-  public void execute(JobExecutionContext ctx) throws JobExecutionException {
-
-
+  @Override
+  public void execute(final JobExecutionContext ctx) throws JobExecutionException {
     Logger.info(this.getClass(), "STARTING TMP/TRASH FILE CLEANUP");
 
     cleanUpTmpUploadedFiles();
@@ -50,16 +64,14 @@ public class BinaryCleanupJob implements StatefulJob {
     cleanUpJavaIoTmpFiles();
 
     Logger.info(this.getClass(), "ENDING TMP/TRASH FILE CLEANUP");
-
   }
 
   /**
    * Deletes from /assets/tmp_upload
    */
-  void cleanUpTmpUploadedFiles(){
-
+  void cleanUpTmpUploadedFiles() {
     final int hours = Config.getIntProperty("CLEANUP_TMP_FILES_OLDER_THAN_HOURS", 3);
-    Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
+    final Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
     Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + ConfigUtils.getAssetTempPath());
     final File folder = new File(ConfigUtils.getAssetTempPath());
@@ -69,12 +81,12 @@ public class BinaryCleanupJob implements StatefulJob {
   /**
    * Deletes from /assets/bundles
    */
-  void cleanUpOldBundles(){
+  void cleanUpOldBundles() {
       final int days = Config.getIntProperty("CLEANUP_BUNDLES_OLDER_THAN_DAYS", 3);
-      if(days<1){
+      if (days < 1) {
         return;
       }
-      Date olderThan =  Date.from(Instant.now().minus(Duration.ofDays(days)));
+      final Date olderThan =  Date.from(Instant.now().minus(Duration.ofDays(days)));
       Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + ConfigUtils.getBundlePath());
       final File bundleFolder = new File(ConfigUtils.getBundlePath());
       FileUtil.cleanTree(bundleFolder, olderThan);
@@ -85,50 +97,43 @@ public class BinaryCleanupJob implements StatefulJob {
    */
   void cleanUpTrashFolder() {
     final int hours = Config.getIntProperty("CLEANUP_TMP_FILES_OLDER_THAN_HOURS", 3);
-    Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
+    final Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
-    TrashUtils trash = new TrashUtils();
+    final TrashUtils trash = new TrashUtils();
     Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + trash.getTrashFolder());
     FileUtil.cleanTree(trash.getTrashFolder(), olderThan);
     new TrashUtils().emptyTrash();
   }
 
-
   /**
    * Deletes from /dotsecure/backup
    */
   void cleanUpLocalBackupDirectory(){
-
     final int days = Config.getIntProperty("CLEANUP_BACKUP_FILES_OLDER_THAN_DAYS", 3);
-    if(days<1){
+    if (days < 1) {
       return;
     }
-    Date olderThan = Date.from(Instant.now().minus(Duration.ofDays(days)));
+    final Date olderThan = Date.from(Instant.now().minus(Duration.ofDays(days)));
 
     Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + ConfigUtils.getBackupPath());
-    final File folder = new File(ConfigUtils.getBackupPath() );
+    final File folder = new File(ConfigUtils.getBackupPath());
     FileUtil.cleanTree(folder, olderThan);
   }
-
-
 
   /**
    * Deletes from java.io.tmpdir
    */
   void cleanUpJavaIoTmpFiles(){
-    String javaTmpDir = System.getProperty("java.io.tmpdir");
-    if(UtilMethods.isEmpty(javaTmpDir)) {
+    final String javaTmpDir = System.getProperty("java.io.tmpdir");
+    if (UtilMethods.isEmpty(javaTmpDir)) {
       return;
     }
     final int hours = Config.getIntProperty("CLEANUP_TMP_FILES_OLDER_THAN_HOURS", 3);
-    Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
+    final Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
     Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + javaTmpDir);
     final File folder = new File(javaTmpDir);
     FileUtil.cleanTree(folder, olderThan);
   }
-
-
-
 
 }
