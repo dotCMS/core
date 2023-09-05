@@ -46,11 +46,4 @@ public class CommonViews {
 
     }
 
-    /**
-     * This View is used to activate the inclusion of certain fields when sending a CT for update  
-     */
-    public interface SaveView {
-
-    }
-
 }

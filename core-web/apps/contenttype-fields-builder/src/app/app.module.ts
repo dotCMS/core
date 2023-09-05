@@ -1,6 +1,11 @@
+import { HttpClientModule } from '@angular/common/http';
 import { DoBootstrap, Injector, NgModule, Type } from '@angular/core';
 import { createCustomElement } from '@angular/elements';
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ContenttypeFieldsModule } from '@dotcms/contenttype-fields';
+import { DotMessageService } from '@dotcms/data-access';
 
 import { AppComponent } from './app.component';
 
@@ -13,7 +18,8 @@ const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [];
 
 @NgModule({
     declarations: [AppComponent],
-    imports: [BrowserModule],
+    imports: [BrowserModule, BrowserAnimationsModule, HttpClientModule, ContenttypeFieldsModule],
+    providers: [DotMessageService],
     bootstrap: [AppComponent]
 })
 export class AppModule implements DoBootstrap {

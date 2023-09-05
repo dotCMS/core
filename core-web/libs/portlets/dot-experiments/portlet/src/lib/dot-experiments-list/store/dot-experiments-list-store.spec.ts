@@ -108,6 +108,17 @@ describe('DotExperimentsListStore', () => {
         });
     });
 
+    it('should  load initial filter status with the correct states', () => {
+        store.state$.subscribe(({ filterStatus }) => {
+            expect(filterStatus).toEqual([
+                DotExperimentStatus.RUNNING,
+                DotExperimentStatus.SCHEDULED,
+                DotExperimentStatus.DRAFT,
+                DotExperimentStatus.ENDED
+            ]);
+        });
+    });
+
     it('should update status to the store', () => {
         store.setComponentStatus(ComponentStatus.LOADED);
         store.state$.subscribe(({ status }) => {

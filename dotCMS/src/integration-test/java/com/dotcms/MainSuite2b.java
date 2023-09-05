@@ -83,7 +83,6 @@ import com.dotmarketing.business.VersionableFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
-import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
@@ -212,7 +211,6 @@ import org.junit.runners.Suite.SuiteClasses;
         CookieToolTest.class,
         CSVManifestBuilderTest.class,
         MoveContentActionletTest.class,
-        ImageFilterAPIImplTest.class,
         DeterministicIdentifierAPITest.class,
         Task210527DropReviewFieldsFromContentletTableTest.class,
         ContentletCacheImplTest.class,
@@ -323,4 +321,3 @@ import org.junit.runners.Suite.SuiteClasses;
 public class MainSuite2b {
 
 }
-

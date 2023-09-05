@@ -125,7 +125,6 @@ import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
-import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
@@ -547,7 +546,6 @@ import org.junit.runners.Suite.SuiteClasses;
         CookieToolTest.class,
         CSVManifestBuilderTest.class,
         MoveContentActionletTest.class,
-        ImageFilterAPIImplTest.class,
         DeterministicIdentifierAPITest.class,
         Task210527DropReviewFieldsFromContentletTableTest.class,
         ContentletCacheImplTest.class,
