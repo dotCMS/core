@@ -49,6 +49,11 @@ import java.util.Date;
  */
 public class BinaryCleanupJob implements StatefulJob {
 
+  public static final String CLEANUP_TMP_FILES_OLDER_THAN_HOURS = "CLEANUP_TMP_FILES_OLDER_THAN_HOURS";
+  public static final String CLEANUP_BUNDLES_OLDER_THAN_DAYS = "CLEANUP_BUNDLES_OLDER_THAN_DAYS";
+  public static final String CLEANUP_BACKUP_FILES_OLDER_THAN_DAYS = "CLEANUP_BACKUP_FILES_OLDER_THAN_DAYS";
+  private static final String FILE_DELETION_STATUS_MSG = "Deleting files older than %d %s from %s";
+
   public BinaryCleanupJob() {
 
   }
@@ -70,10 +75,10 @@ public class BinaryCleanupJob implements StatefulJob {
    * Deletes from /assets/tmp_upload
    */
   void cleanUpTmpUploadedFiles() {
-    final int hours = Config.getIntProperty("CLEANUP_TMP_FILES_OLDER_THAN_HOURS", 3);
+    final int hours = Config.getIntProperty(CLEANUP_TMP_FILES_OLDER_THAN_HOURS, 3);
     final Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
-    Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + ConfigUtils.getAssetTempPath());
+    Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, hours, "hours", ConfigUtils.getAssetTempPath()));
     final File folder = new File(ConfigUtils.getAssetTempPath());
     FileUtil.cleanTree(folder, olderThan);
   }
@@ -82,12 +87,12 @@ public class BinaryCleanupJob implements StatefulJob {
    * Deletes from /assets/bundles
    */
   void cleanUpOldBundles() {
-      final int days = Config.getIntProperty("CLEANUP_BUNDLES_OLDER_THAN_DAYS", 3);
+      final int days = Config.getIntProperty(CLEANUP_BUNDLES_OLDER_THAN_DAYS, 3);
       if (days < 1) {
         return;
       }
       final Date olderThan =  Date.from(Instant.now().minus(Duration.ofDays(days)));
-      Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + ConfigUtils.getBundlePath());
+      Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, days, "days", ConfigUtils.getBundlePath()));
       final File bundleFolder = new File(ConfigUtils.getBundlePath());
       FileUtil.cleanTree(bundleFolder, olderThan);
   }
@@ -96,11 +101,11 @@ public class BinaryCleanupJob implements StatefulJob {
    * Deletes from /dotsecure/trash
    */
   void cleanUpTrashFolder() {
-    final int hours = Config.getIntProperty("CLEANUP_TMP_FILES_OLDER_THAN_HOURS", 3);
+    final int hours = Config.getIntProperty(CLEANUP_TMP_FILES_OLDER_THAN_HOURS, 3);
     final Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
     final TrashUtils trash = new TrashUtils();
-    Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + trash.getTrashFolder());
+    Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, hours, "hours", trash.getTrashFolder()));
     FileUtil.cleanTree(trash.getTrashFolder(), olderThan);
     new TrashUtils().emptyTrash();
   }
@@ -109,13 +114,13 @@ public class BinaryCleanupJob implements StatefulJob {
    * Deletes from /dotsecure/backup
    */
   void cleanUpLocalBackupDirectory(){
-    final int days = Config.getIntProperty("CLEANUP_BACKUP_FILES_OLDER_THAN_DAYS", 3);
+    final int days = Config.getIntProperty(CLEANUP_BACKUP_FILES_OLDER_THAN_DAYS, 3);
     if (days < 1) {
       return;
     }
     final Date olderThan = Date.from(Instant.now().minus(Duration.ofDays(days)));
 
-    Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + ConfigUtils.getBackupPath());
+    Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, days, "days", ConfigUtils.getBackupPath()));
     final File folder = new File(ConfigUtils.getBackupPath());
     FileUtil.cleanTree(folder, olderThan);
   }
@@ -128,10 +133,10 @@ public class BinaryCleanupJob implements StatefulJob {
     if (UtilMethods.isEmpty(javaTmpDir)) {
       return;
     }
-    final int hours = Config.getIntProperty("CLEANUP_TMP_FILES_OLDER_THAN_HOURS", 3);
+    final int hours = Config.getIntProperty(CLEANUP_TMP_FILES_OLDER_THAN_HOURS, 3);
     final Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
-    Logger.info(this.getClass(), "Deleting files older than " + olderThan + " from " + javaTmpDir);
+    Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, hours, "hours", javaTmpDir));
     final File folder = new File(javaTmpDir);
     FileUtil.cleanTree(folder, olderThan);
   }

@@ -544,42 +544,40 @@ public class QuartzUtils {
 	 */
 	@WrapInTransaction
 	public static boolean deleteJobDB(final String jobName, final String jobGroup) throws DotDataException {
-		DotConnect db = new DotConnect();
+		final DotConnect db = new DotConnect();
 
-		List<Map<String, Object>> results = db.setSQL("select trigger_name,trigger_group from qrtz_excl_triggers  where job_name=? and job_group=?")
+		final List<Map<String, Object>> results = db.setSQL("select trigger_name,trigger_group from qrtz_excl_triggers  where job_name=? and job_group=?")
 				.addParam(jobName)
 				.addParam(jobGroup)
 				.loadObjectResults();
 
-		for(Map<String,Object> map : results) {
-
-
-			String trigger_name = map.get("trigger_name").toString();
-			String trigger_group = map.get("trigger_group").toString();
+		for (final Map<String,Object> map : results) {
+			final String triggerName = map.get("trigger_name").toString();
+			final String triggerGroup = map.get("trigger_group").toString();
 
 			db.setSQL("delete from qrtz_excl_cron_triggers where trigger_name=? and trigger_group=?")
-					.addParam(trigger_name)
-					.addParam(trigger_group)
+					.addParam(triggerName)
+					.addParam(triggerGroup)
 					.loadResult();
 
 			db.setSQL("delete from qrtz_excl_triggers where trigger_name=? and trigger_group=?")
-					.addParam(trigger_name)
-					.addParam(trigger_group)
+					.addParam(triggerName)
+					.addParam(triggerGroup)
 					.loadResult();
 
 			db.setSQL("delete from qrtz_excl_paused_trigger_grps where trigger_group=?")
-					.addParam(trigger_group)
+					.addParam(triggerGroup)
 					.loadResult();
 
 
 			db.setSQL("delete from qrtz_excl_trigger_listeners where trigger_name=? and trigger_group=?")
-					.addParam(trigger_name)
-					.addParam(trigger_group)
+					.addParam(triggerName)
+					.addParam(triggerGroup)
 					.loadResult();
 
 			db.setSQL("delete from qrtz_excl_simple_triggers where trigger_name=? and trigger_group=?")
-					.addParam(trigger_name)
-					.addParam(trigger_group)
+					.addParam(triggerName)
+					.addParam(triggerGroup)
 					.loadResult();
 		}
 
@@ -588,20 +586,13 @@ public class QuartzUtils {
 				.addParam(jobGroup)
 				.loadResult();
 
-
 		db.setSQL("delete from qrtz_excl_job_listeners where job_name=? and job_group=?")
 				.addParam(jobName)
 				.addParam(jobGroup)
 				.loadResult();
 
-
-
 		return true;
-
 	}
-
-
-
 
 	/**
 	 * 

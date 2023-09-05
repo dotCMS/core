@@ -394,8 +394,7 @@ public class DotWebdavHelper {
 			Logger.error( this, "Error happened with uri: [" + url + "]", e);
 		}
 		Logger.debug(this, "Getting temp file from path " + url);
-		File f = new File(getTempDir().getPath() + url);
-		return f;
+		return new File(getTempDir().getPath() + url);
 	}
 
 	/**

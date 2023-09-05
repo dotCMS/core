@@ -148,26 +148,25 @@ public class DotInitScheduler {
 				}
 			}
 
-
-
+			final String publishQueueJobName = "PublishQueueJob";
 			//SCHEDULE PUBLISH QUEUE JOB
 			if(Config.getBooleanProperty("ENABLE_PUBLISHER_QUEUE_THREAD", true)) {
 				try {
 					isNew = false;
 
 					try {
-						if ((job = sched.getJobDetail("PublishQueueJob", DOTCMS_JOB_GROUP_NAME)) == null) {
-							job = new JobDetail("PublishQueueJob", DOTCMS_JOB_GROUP_NAME, PublisherQueueJob.class);
+						if ((job = sched.getJobDetail(publishQueueJobName, DOTCMS_JOB_GROUP_NAME)) == null) {
+							job = new JobDetail(publishQueueJobName, DOTCMS_JOB_GROUP_NAME, PublisherQueueJob.class);
 							isNew = true;
 						}
 					} catch (SchedulerException se) {
-						sched.deleteJob("PublishQueueJob", DOTCMS_JOB_GROUP_NAME);
-						job = new JobDetail("PublishQueueJob", DOTCMS_JOB_GROUP_NAME, PublisherQueueJob.class);
+						sched.deleteJob(publishQueueJobName, DOTCMS_JOB_GROUP_NAME);
+						job = new JobDetail(publishQueueJobName, DOTCMS_JOB_GROUP_NAME, PublisherQueueJob.class);
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
 					calendar.add(Calendar.MINUTE, 3);
-				    trigger = new CronTrigger("trigger19", "group19", "PublishQueueJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,Config.getStringProperty("PUBLISHER_QUEUE_THREAD_CRON_EXPRESSION","0 0/1 * * * "));
+				    trigger = new CronTrigger("trigger19", "group19", publishQueueJobName, DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,Config.getStringProperty("PUBLISHER_QUEUE_THREAD_CRON_EXPRESSION","0 0/1 * * * "));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
 					sched.addJob(job, true);
 
@@ -181,8 +180,8 @@ public class DotInitScheduler {
 			} else {
 		        Logger.info(DotInitScheduler.class, "PublishQueueJob Cron Job schedule disabled on this server");
 		        Logger.info(DotInitScheduler.class, "Deleting PublishQueueJob Job");
-				if ((job = sched.getJobDetail("PublishQueueJob", DOTCMS_JOB_GROUP_NAME)) != null) {
-					sched.deleteJob("PublishQueueJob", DOTCMS_JOB_GROUP_NAME);
+				if ((job = sched.getJobDetail(publishQueueJobName, DOTCMS_JOB_GROUP_NAME)) != null) {
+					sched.deleteJob(publishQueueJobName, DOTCMS_JOB_GROUP_NAME);
 				}
 			}
 

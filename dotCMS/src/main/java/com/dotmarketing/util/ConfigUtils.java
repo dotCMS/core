@@ -154,9 +154,10 @@ public class ConfigUtils {
 	}
 
 	/**
-	 * @deprecated use getAssetPath()
+	 * @deprecated Use {@link #getAssetPath()} instead.
 	 * @return
 	 */
+	@Deprecated
     public static String getAbsoluteAssetsRootPath() {
 		return assetPath.get();
     }
