@@ -9,8 +9,7 @@
                 [icon]="rowIcon"
                 [gridstackOptions]="rowOptions"
                 data-widget-type="row"
-                data-testId="add-row"
-            ></dotcms-add-widget>
+                data-testId="add-row"></dotcms-add-widget>
             <dotcms-add-widget
                 id="box-picker"
                 #addBox
@@ -19,13 +18,12 @@
                 [attr.gs-w]="boxWidth"
                 [icon]="colIcon"
                 data-widget-type="col"
-                data-testId="add-box"
-            ></dotcms-add-widget>
+                data-testId="add-box"></dotcms-add-widget>
             <p-divider layout="vertical"></p-divider>
             <dotcms-template-builder-actions
                 [layoutProperties]="vm.layoutProperties"
                 (selectTheme)="openThemeSelectorDynamicDialog()"
-            ></dotcms-template-builder-actions>
+                data-testId="template-builder-actions"></dotcms-template-builder-actions>
             <ng-content select="[toolbar-actions-right]"></ng-content>
         </div>
     </p-toolbar>
@@ -33,8 +31,7 @@
         class="template-builder__main"
         #templateContainerRef
         (mousemove)="fixGridStackNodeOptions()"
-        data-testId="template-builder-main"
-    >
+        data-testId="template-builder-main">
         <dotcms-template-builder-section
             *ngIf="vm.layoutProperties.header"
             (deleteSection)="deleteSection('header')"
@@ -46,8 +43,7 @@
             [ngClass]="{
                 'template-builder__container--right':
                     vm.layoutProperties.sidebar.location == 'right'
-            }"
-        >
+            }">
             <dotcms-template-builder-sidebar
                 *ngIf="vm.layoutProperties.sidebar.location.length"
                 [ngClass]="{
@@ -56,8 +52,7 @@
                     'template-builder__sidebar--large': vm.layoutProperties.sidebar.width == 'large'
                 }"
                 [sidebarProperties]="vm.layoutProperties.sidebar"
-                [containerMap]="vm.containerMap"
-            />
+                [containerMap]="vm.containerMap" />
             <div class="grid-stack">
                 <dotcms-template-builder-row
                     class="grid-stack-item"
@@ -74,8 +69,7 @@
                         'template-builder-row--wont-fit': addBoxIsDragging && !row.willBoxFit
                     }"
                     [attr.data-wont-fit]="'dot.template.builder.row.box.wont.fit' | dm"
-                    data-testId="row"
-                >
+                    data-testId="row">
                     <div class="grid-stack-item-content grid-stack">
                         <div
                             class="grid-stack-item sub"
@@ -91,8 +85,7 @@
                             [attr.gs-y]="box.y"
                             [attr.gs-w]="box.w"
                             [attr.gs-h]="box.h"
-                            [attr.data-testId]="'box-' + i"
-                        >
+                            [attr.data-testId]="'box-' + i">
                             <dotcms-template-builder-box
                                 class="grid-stack-item-content"
                                 [attr.data-testId]="'builder-box-' + i"
@@ -102,8 +95,9 @@
                                 (deleteColumn)="removeColumn(box, boxElement, row.id)"
                                 (addContainer)="addContainer(box, row.id, $event)"
                                 (deleteContainer)="deleteContainer(box, row.id, $event)"
-                                (editClasses)="editBoxStyleClasses(row.id, box)"
-                            ></dotcms-template-builder-box>
+                                (editClasses)="
+                                    editBoxStyleClasses(row.id, box)
+                                "></dotcms-template-builder-box>
                         </div>
                     </div>
                 </dotcms-template-builder-row>
