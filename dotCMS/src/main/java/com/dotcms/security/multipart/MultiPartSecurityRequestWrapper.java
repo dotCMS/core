@@ -183,13 +183,15 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         }
     }
 
+    private static final String[] checkPatterns  = {"content-disposition","form-data","filename"};
+
     private void testString(final String lineToTest) {
 
         final String lineToTestLower = lineToTest.toLowerCase();
-
-        if (!lineToTestLower.contains("content-disposition:") || ! lineToTestLower.contains("filename=")) {
-
-            return;
+        for (String p : checkPatterns) {
+            if (!lineToTestLower.contains(p)) {
+                return;
+            }
         }
 
         final String fileName = ContentDispositionFileNameParser.parse(lineToTestLower);
