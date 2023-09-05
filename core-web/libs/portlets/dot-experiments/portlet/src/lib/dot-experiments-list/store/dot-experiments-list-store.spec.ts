@@ -51,14 +51,16 @@ const EXPERIMENT_MOCK_1 = getExperimentMock(1);
 const EXPERIMENT_MOCK_2 = getExperimentMock(2);
 const EXPERIMENT_MOCK_ALL = getExperimentAllMocks();
 
-const MENU_ITEMS_QTY = 7;
+const MENU_ITEMS_QTY = 9;
 const MENU_ITEMS_CONFIGURATION_INDEX = 0;
-const MENU_ITEMS_CANCEL_SCHEDULE_INDEX = 1;
-const MENU_ITEMS_DELETE_INDEX = 2;
-const MENU_ITEMS_ARCHIVE_INDEX = 3;
-const MENU_ITEMS_END_INDEX = 4;
-const MENU_ITEMS_PUSH_PUBLISH_INDEX = 5;
-const MENU_ITEMS_ADD_T0_BUNDLE_INDEX = 6;
+const MENU_ITEMS_RESULTS_INDEX = 1;
+const MENU_ITEMS_CANCEL_SCHEDULE_INDEX = 2;
+const MENU_ITEMS_DELETE_INDEX = 3;
+const MENU_ITEMS_ARCHIVE_INDEX = 4;
+const MENU_ITEMS_END_INDEX = 5;
+const MENU_ITEMS_ABORT_INDEX = 6;
+const MENU_ITEMS_PUSH_PUBLISH_INDEX = 7;
+const MENU_ITEMS_ADD_T0_BUNDLE_INDEX = 8;
 
 describe('DotExperimentsListStore', () => {
     let spectator: SpectatorService<DotExperimentsListStore>;
@@ -103,6 +105,17 @@ describe('DotExperimentsListStore', () => {
     it('should have getState$ from the store', () => {
         store.state$.subscribe((state) => {
             expect(state.status).toEqual(ComponentStatus.LOADED);
+        });
+    });
+
+    it('should  load initial filter status with the correct states', () => {
+        store.state$.subscribe(({ filterStatus }) => {
+            expect(filterStatus).toEqual([
+                DotExperimentStatus.RUNNING,
+                DotExperimentStatus.SCHEDULED,
+                DotExperimentStatus.DRAFT,
+                DotExperimentStatus.ENDED
+            ]);
         });
     });
 
@@ -226,6 +239,9 @@ describe('DotExperimentsListStore', () => {
                         experiments[0].actionsItemsMenu[MENU_ITEMS_CONFIGURATION_INDEX].visible
                     ).toEqual(AllowedActionsByExperimentStatus['configuration'].includes(status));
                     expect(
+                        experiments[0].actionsItemsMenu[MENU_ITEMS_RESULTS_INDEX].visible
+                    ).toEqual(AllowedActionsByExperimentStatus['results'].includes(status));
+                    expect(
                         experiments[0].actionsItemsMenu[MENU_ITEMS_DELETE_INDEX].visible
                     ).toEqual(AllowedActionsByExperimentStatus['delete'].includes(status));
 
@@ -234,6 +250,9 @@ describe('DotExperimentsListStore', () => {
                     ).toEqual(AllowedActionsByExperimentStatus['archive'].includes(status));
                     expect(experiments[0].actionsItemsMenu[MENU_ITEMS_END_INDEX].visible).toEqual(
                         AllowedActionsByExperimentStatus['end'].includes(status)
+                    );
+                    expect(experiments[0].actionsItemsMenu[MENU_ITEMS_ABORT_INDEX].visible).toEqual(
+                        AllowedActionsByExperimentStatus['abort'].includes(status)
                     );
                     expect(
                         experiments[0].actionsItemsMenu[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible

@@ -485,8 +485,8 @@ describe('DotExperimentsReportsStore', () => {
         it('should has a label and data properly parsed for each dataset', (done) => {
             // First data is added manually when we parse the data
             const expectedDataByDataset = [
-                [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-                [0, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+                [0, 90.555, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15.25],
+                [0, 15.25, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 90.555]
             ];
             const expectedLabel = [
                 EXPERIMENT_MOCK_RESULTS.goals.primary.variants.DEFAULT.variantDescription,

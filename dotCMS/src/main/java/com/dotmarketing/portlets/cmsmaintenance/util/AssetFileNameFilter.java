@@ -10,19 +10,28 @@ import io.vavr.Lazy;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Set;
 
 /**
- * This {@link FileFilter} implementation provides the actual asset files in the current dotCMS repository. By default,
- * all files and folders that are unnecessary, temporary or application-specific will be excluded.
+ * This {@link FileFilter} implementation provides the actual asset files in the current dotCMS
+ * repository. By default, all files and folders that are temporary, symlinks, or
+ * application-specific, will be excluded from the filtered list. For more details, please see
+ * {@link #EXCLUDE_FOLDERS_LIST} and {@link #EXCLUDE_FILE_LIST}.
+ * <p>If additional files or folders need to be excluded in the future, the following configuration
+ * properties can be set, which take a comma-separated list of values:</p>
+ * <ul>
+ *     <li>{@code ASSET_DOWNLOAD_EXCLUDE_FOLDERS}</li>
+ *     <li>{@code ASSET_DOWNLOAD_EXCLUDE_FILES}</li>
+ * </ul>
  *
  * @author Will Ezell
  * @since Dec 4th, 2012
  */
 public class AssetFileNameFilter implements FileFilter {
 
-	public AssetFileNameFilter(final BloomFilter<String> inodeFilter){
+	public AssetFileNameFilter(final BloomFilter<String> inodeFilter) {
 		this.bloomFilter = inodeFilter;
 	}
 
@@ -33,7 +42,7 @@ public class AssetFileNameFilter implements FileFilter {
 	private final BloomFilter<String> bloomFilter;
 
     private static final String[] EXCLUDE_FOLDERS_LIST = { "license", "bundles", "tmp_upload",
-                    "timemachine", "integrity", "server", "dotGenerated", "monitor"};
+                    "timemachine", "integrity", "server", "dotGenerated", "monitor" };
 
 	private static final String[] EXCLUDE_FILE_LIST = {"license.zip", ".DS_Store", "license_pack.zip"};
 
@@ -48,7 +57,7 @@ public class AssetFileNameFilter implements FileFilter {
 
 	@Override
 	public boolean accept(final File dir) {
-		if (dir == null) {
+		if (dir == null || Files.isSymbolicLink(dir.toPath())) {
 			return false;
 		}
 		final String pathName = dir.getAbsolutePath().replace(root, StringPool.BLANK);

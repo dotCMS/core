@@ -14,12 +14,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
 import picocli.CommandLine;
@@ -50,6 +53,7 @@ class SiteCommandIntegrationTest extends CommandTest {
      * successfully
      */
     @Test
+    @Order(1)
     void Test_Command_Current_Site() {
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -63,28 +67,11 @@ class SiteCommandIntegrationTest extends CommandTest {
     }
 
     /**
-     * Given scenario: Simply call list all Expected Result: Verify the command completes
-     * successfully
-     */
-    @Test
-    void Test_Command_Site_List_All() {
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
-                    "--interactive=false");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-            final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("name:"));
-        }
-    }
-
-    /**
      * Given scenario: Simply call find by name command Expected Result: Verify the command
      * completes successfully
      */
     @Test
+    @Order(2)
     void Test_Command_Site_Find_By_Name() {
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -104,6 +91,7 @@ class SiteCommandIntegrationTest extends CommandTest {
      * successfully Then test delete and verify it's gone
      */
     @Test
+    @Order(3)
     void Test_Command_Site_Push_Publish_UnPublish_Then_Archive() throws IOException {
 
         final Workspace workspace = workspaceManager.getOrCreate();
@@ -141,6 +129,7 @@ class SiteCommandIntegrationTest extends CommandTest {
      * the command completes successfully
      */
     @Test
+    @Order(4)
     void Test_Command_Copy() {
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -162,6 +151,7 @@ class SiteCommandIntegrationTest extends CommandTest {
      * @throws IOException
      */
     @Test
+    @Order(5)
     void Test_Command_Create_Then_Pull_Then_Push() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
         final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
@@ -210,6 +200,7 @@ class SiteCommandIntegrationTest extends CommandTest {
      * @throws IOException
      */
     @Test
+    @Order(6)
     void Test_Create_From_File_via_Push() throws IOException {
         final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
         String siteDescriptor = String.format("{\n"
@@ -245,6 +236,7 @@ class SiteCommandIntegrationTest extends CommandTest {
      * @throws IOException
      */
     @Test
+    @Order(7)
     void Test_Pull_Same_Site_Multiple_Times() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate();
         final CommandLine commandLine = createCommand();
@@ -283,6 +275,7 @@ class SiteCommandIntegrationTest extends CommandTest {
      * @throws IOException if there is an error reading the JSON site file
      */
     @Test
+    @Order(8)
     void Test_Command_Site_Pull_Checking_JSON_DotCMS_Type() throws IOException {
 
         // Create a temporal folder for the workspace
@@ -332,6 +325,7 @@ class SiteCommandIntegrationTest extends CommandTest {
      * @throws IOException if there is an error reading the YAML site file
      */
     @Test
+    @Order(9)
     void Test_Command_Site_Pull_Checking_YAML_DotCMS_Type() throws IOException {
 
         // Create a temporal folder for the workspace
@@ -371,6 +365,30 @@ class SiteCommandIntegrationTest extends CommandTest {
 
         } finally {
             deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Simply call list all Expected Result: Verify the command completes
+     * successfully
+     */
+    @Test
+    @Order(10)
+    void Test_Command_Site_List_All() {
+        final Set<String> uniqueSiteTest = new HashSet<>();
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                    "--non-interactive");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final String[] lines = output.split(System.lineSeparator());
+            for (String line : lines) {
+                Assert.assertFalse(uniqueSiteTest.contains(line));
+                uniqueSiteTest.add(line);
+            }
         }
     }
 

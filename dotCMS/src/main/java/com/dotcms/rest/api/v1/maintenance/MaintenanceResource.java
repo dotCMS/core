@@ -18,7 +18,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.starter.ExportStarterUtil;
-import com.google.common.hash.BloomFilter;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
@@ -267,8 +266,8 @@ public class MaintenanceResource implements Serializable {
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveAssetsFileName();
-        Logger.info(this, String.format("User '%s' is generating compressed Assets file '%s'", user.getUserId(),
-                zipName));
+        Logger.info(this, String.format("User '%s' is generating compressed Assets file '%s' with [ oldAssets = %s]", user.getUserId(),
+                zipName, oldAssets));
         final StreamingOutput stream = output -> {
 
             exportStarterUtil.streamCompressedAssets(output, oldAssets);
@@ -277,6 +276,7 @@ public class MaintenanceResource implements Serializable {
             Logger.info(this, String.format("Compressed Assets file '%s' has been generated successfully!", zipName));
 
         };
+        Logger.debug(this, "Returning StreamingOutput response for compressed asset data");
         return this.buildFileResponse(response, stream, zipName);
     }
 
@@ -294,7 +294,7 @@ public class MaintenanceResource implements Serializable {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarter(@Context final HttpServletRequest request,
                                           @Context final HttpServletResponse response) {
-        return downloadStarter(request, response, false);
+        return downloadStarter(request, response, false, true);
     }
 
     /**
@@ -310,8 +310,9 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarterWithAssets(@Context final HttpServletRequest request,
-                                                    @Context final HttpServletResponse response) {
-        return downloadStarter(request, response, true);
+                                                    @Context final HttpServletResponse response,
+                                                    @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets) {
+        return downloadStarter(request, response, true, oldAssets);
     }
 
     /**
@@ -321,26 +322,27 @@ public class MaintenanceResource implements Serializable {
      * @param request       The current instance of the {@link HttpServletRequest}.
      * @param response      The current instance of the {@link HttpServletResponse}.
      * @param includeAssets If the generated Starter must include all assets as well, set this to {@code true}.
+     * @param oldAssets     If the resulting file must have absolutely all versions of all assets, set this to {@code true}.
      *
      * @return The streamed Starter ZIP file.
      */
     private Response downloadStarter(final HttpServletRequest request, final HttpServletResponse response,
-                                     final boolean includeAssets) {
+                                     final boolean includeAssets, final boolean oldAssets) {
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveStarterFileName();
-        Logger.info(this, String.format("User '%s' is generating compressed Starter file '%s'", user.getUserId(),
-                zipName));
+        Logger.info(this, String.format("User '%s' is generating compressed Starter file '%s' with [ includeAssets = %s ]", user.getUserId(),
+                zipName, includeAssets));
 
         final StreamingOutput stream = output -> {
 
-            exportStarterUtil.streamCompressedStarter(output, includeAssets);
+            exportStarterUtil.streamCompressedStarter(output, includeAssets, oldAssets);
             output.flush();
             output.close();
             Logger.info(this, String.format("Compressed Starter file '%s' has been generated successfully!", zipName));
 
         };
-
+        Logger.debug(this, "Returning StreamingOutput response for compressed starter data");
         return this.buildFileResponse(response, stream, zipName);
     }
 

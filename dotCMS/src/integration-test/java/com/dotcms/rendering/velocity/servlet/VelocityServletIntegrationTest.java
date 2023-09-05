@@ -1,23 +1,15 @@
 package com.dotcms.rendering.velocity.servlet;
 
-import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.anyObject;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.MultiTreeDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -32,12 +24,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.filters.TimeMachineFilter;
-
 import com.dotmarketing.portlets.containers.model.Container;
-
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
@@ -51,23 +40,40 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
-import java.io.IOException;
-import java.util.*;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import com.liferay.portal.model.User;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
+import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class VelocityServletIntegrationTest {
 
@@ -316,7 +322,7 @@ public class VelocityServletIntegrationTest {
                     .languageId(1)
                     .host(host)
                     .setProperty("title", "content1")
-                    .setProperty("body", "content1")
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                     .nextPersisted();
 
             ContentletDataGen.publish(contentlet);
@@ -364,7 +370,8 @@ public class VelocityServletIntegrationTest {
             velocityServlet.service(mockRequest, mockResponse);
 
             verify(mockResponse, never()).sendError(anyInt());
-            verify(outputStream).write("<div>content1</div>".getBytes());
+            final String pageContent = "<div>" + TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT + "</div>";
+            verify(outputStream).write(pageContent.getBytes());
         } finally {
             Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
                     defaultContentToDefaultLanguage);

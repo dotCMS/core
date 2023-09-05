@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,7 +19,7 @@ import java.util.Optional;
  * Represents a Set of Experiment's Running Ids, any time a Experiment is started a new Running Id is created
  * in this way we can segment the data of different runs of the same Experiment
  */
-public class RunningIds {
+public class RunningIds implements Serializable {
     @JsonProperty()
     private List<RunningId> ids = new ArrayList<>();
 
