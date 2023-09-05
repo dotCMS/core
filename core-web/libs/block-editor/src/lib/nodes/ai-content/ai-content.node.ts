@@ -64,9 +64,9 @@ export const AIContentNode = Node.create({
             const dom = document.createElement('div');
             const div = document.createElement('div');
 
-            div.contentEditable = 'false';
             div.innerHTML = node.attrs.content || '';
 
+            dom.contentEditable = 'true';
             dom.classList.add('ai-content-container');
             dom.append(div);
 

@@ -1,0 +1,29 @@
+@use "variables" as *;
+
+// list option
+::ng-deep li {
+    background-color: #fff !important;
+    padding: 12px 15px !important;
+
+    &:first-child {
+        background-color: var(--color-palette-primary-200) !important;
+    }
+
+    &:nth-child(2) {
+        padding: 15px 15px !important;
+    }
+
+    &:last-child {
+        border-top: 1px solid #ebecef !important;
+    }
+
+    &:hover {
+        background-color: var(--color-palette-primary-100) !important;
+    }
+}
+
+// list option icon
+::ng-deep i {
+    margin-right: 0.2rem;
+    color: #8d92a5;
+}

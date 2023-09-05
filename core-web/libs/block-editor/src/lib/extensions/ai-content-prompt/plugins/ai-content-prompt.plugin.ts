@@ -67,8 +67,9 @@ export class AIContentPromptView {
             this.editor.commands.closeAIPrompt();
         });
 
-        this.component.instance.aiResponse.pipe(takeUntil(this.$destroy)).subscribe((content) => {
+        this.component.instance.aiResponse.pipe(takeUntil(this.destroy$)).subscribe((content) => {
             this.editor.commands.insertAINode(content);
+            this.editor.commands.openAIContentActions();
         });
     }
 

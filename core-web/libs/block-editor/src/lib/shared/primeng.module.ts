@@ -10,6 +10,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ListboxModule } from 'primeng/listbox';
 import { MenuModule } from 'primeng/menu';
 import { OrderListModule } from 'primeng/orderlist';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { ScrollerModule } from 'primeng/scroller';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TabViewModule } from 'primeng/tabview';
@@ -27,7 +28,8 @@ import { TabViewModule } from 'primeng/tabview';
         SkeletonModule,
         ScrollerModule,
         FileUploadModule,
-        HttpClientModule
+        HttpClientModule,
+        OverlayPanelModule
     ],
     exports: [
         MenuModule,
@@ -41,7 +43,8 @@ import { TabViewModule } from 'primeng/tabview';
         SkeletonModule,
         ScrollerModule,
         FileUploadModule,
-        HttpClientModule
+        HttpClientModule,
+        OverlayPanelModule
     ]
 })
 export class PrimengModule {}
