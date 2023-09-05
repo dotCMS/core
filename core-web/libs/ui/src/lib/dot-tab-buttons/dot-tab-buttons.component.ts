@@ -3,8 +3,10 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotPageMode } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 /**
  * This component is responsible to display the tab buttons for the edit page.
@@ -15,7 +17,7 @@ import { DotPageMode } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-tab-buttons',
     standalone: true,
-    imports: [CommonModule, ButtonModule, NgIf, NgClass],
+    imports: [CommonModule, ButtonModule, NgIf, NgClass, TooltipModule, DotMessagePipe],
     templateUrl: './dot-tab-buttons.component.html',
     styleUrls: ['./dot-tab-buttons.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -39,7 +41,7 @@ export class DotTabButtonsComponent {
     onClickOption(event) {
         if (event.target.value === this.OPEN_MENU) {
             this.showMenu(event);
-        } else {
+        } else if (event.target.value !== this.mode) {
             this.clickOption.emit(event);
         }
     }

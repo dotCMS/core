@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 
@@ -141,13 +142,12 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     }
 
     @Value.Derived
+    @Nullable
     @JsonIgnore
     default Permissionable getParentPermissionable() {
         return Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId(),
                         DEFAULT_VARIANT.name(), true))
-                .getOrElseThrow((e)->{
-                    throw new DotStateException(e.getMessage() + ". Page ID:" + pageId(), e);
-                });
+                .getOrElse(() -> null);
     }
 
     @Value.Derived

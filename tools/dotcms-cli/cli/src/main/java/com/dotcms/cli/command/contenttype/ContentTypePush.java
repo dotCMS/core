@@ -9,6 +9,9 @@ import com.dotcms.common.WorkspaceManager;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.Workspace;
+import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest;
+import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest.Builder;
+import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Path;
 import java.io.File;
@@ -56,8 +59,14 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
     @CommandLine.Parameters(index = "0", arity = "1", description = "The json/yml formatted content-type descriptor file to be pushed. ")
     File file;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
         File inputFile = this.file;
         if (null == inputFile) {
@@ -99,8 +108,10 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
             output.info(String.format(
                     "ContentType identified by @|bold,green [%s]|@ already exists. An @|bold update |@ will be attempted.",
                     contentType.variable()));
-            final ResponseEntityView<ContentType> responseEntityView = contentTypeAPI.updateContentTypes(
-                    contentType.variable(), contentType);
+
+            final SaveContentTypeRequest saveRequest = new Builder().of(contentType).build();
+            final ResponseEntityView<ContentType> responseEntityView =
+                    contentTypeAPI.updateContentTypes(contentType.variable(), saveRequest);
 
             output.info(String.format("Content-Type @|bold,green [%s]|@ successfully updated.",
                     varNameOrId));
@@ -114,8 +125,9 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
             output.info(String.format(
                     "ContentType identified by @|bold,green [%s]|@ does not exist. Attempting to create it. ",
                     contentType.variable()));
-            final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.createContentTypes(
-                    List.of(contentType));
+
+            final SaveContentTypeRequest saveRequest = new Builder().of(contentType).build();
+            final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.createContentTypes(List.of(saveRequest));
 
             output.info(String.format("Content-Type @|bold,green [%s]|@ successfully created.",
                     varNameOrId));

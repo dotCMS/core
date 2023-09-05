@@ -1,23 +1,19 @@
 package com.dotcms.cli.command.files;
 
 import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
-import org.jboss.logging.Logger;
-import picocli.CommandLine;
-
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CompletionException;
+import javax.inject.Inject;
+import org.jboss.logging.Logger;
+import picocli.CommandLine;
 
 public abstract class AbstractFilesCommand {
 
@@ -61,22 +57,12 @@ public abstract class AbstractFilesCommand {
      * Returns the directory where workspace files are stored. If the directory does not exist,
      * it will be created.
      *
-     * @param fromFile the file object representing a directory within the workspace, or null if not specified
+     * @param workspacePath the file object representing a directory within the workspace
      * @return the workspace files directory
      * @throws IOException if an I/O error occurs while creating the directory
      */
-    protected File getOrCreateWorkspaceFilesDirectory(final File fromFile) throws IOException {
-
-        String fromPath;
-        if (fromFile == null) {
-            // If the workspace is not specified, we use the current directory
-            fromPath = Paths.get("").toAbsolutePath().normalize().toString();
-        } else {
-            fromPath = fromFile.getAbsolutePath();
-        }
-
-        final Path path = Paths.get(fromPath);
-        final Workspace workspace = workspaceManager.getOrCreate(path);
+    protected File getOrCreateWorkspaceFilesDirectory(final Path workspacePath) throws IOException {
+        final Workspace workspace = workspaceManager.getOrCreate(workspacePath);
         return workspace.files().toFile();
     }
 

@@ -26,7 +26,7 @@ import {
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
-import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
+import { JsonClassesService } from './components/add-style-classes-dialog/services/json-classes.service';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -62,7 +62,7 @@ export default {
                 DotTemplateBuilderStore,
                 DialogService,
                 DynamicDialogRef,
-                DotAddStyleClassesDialogStore,
+                JsonClassesService,
                 {
                     provide: DotMessageService,
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK

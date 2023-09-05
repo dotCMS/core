@@ -257,6 +257,162 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
     ]
 };
 
+export const FULL_DATA_MOCK_UNSORTED: DotLayoutBody = {
+    rows: [
+        {
+            columns: [
+                {
+                    containers: [
+                        {
+                            identifier: BANNER_CONTAINER_IDENTIFIER,
+                            uuid: '1'
+                        }
+                    ],
+                    leftOffset: 1,
+                    width: 12,
+                    styleClass: 'banner-tall'
+                }
+            ],
+            styleClass: 'p-0 banner-tall'
+        },
+        {
+            columns: [
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '1'
+                        }
+                    ],
+                    leftOffset: 1,
+                    width: 12,
+                    styleClass: 'mt-70 booking-form'
+                }
+            ],
+            styleClass: null
+        },
+        {
+            columns: [
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '3'
+                        }
+                    ],
+                    leftOffset: 4,
+                    width: 3,
+                    styleClass: ''
+                },
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '2'
+                        }
+                    ],
+                    leftOffset: 1,
+                    width: 3,
+                    styleClass: ''
+                },
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '5'
+                        }
+                    ],
+                    leftOffset: 10,
+                    width: 3,
+                    styleClass: ''
+                },
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '4'
+                        }
+                    ],
+                    leftOffset: 7,
+                    width: 3,
+                    styleClass: ''
+                }
+            ],
+            styleClass: null
+        },
+        {
+            columns: [
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '7'
+                        }
+                    ],
+                    leftOffset: 7,
+                    width: 3,
+                    styleClass: ''
+                },
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '8'
+                        }
+                    ],
+                    leftOffset: 10,
+                    width: 3,
+                    styleClass: ''
+                },
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '6'
+                        }
+                    ],
+                    leftOffset: 1,
+                    width: 6,
+                    styleClass: ''
+                }
+            ],
+            styleClass: null
+        },
+        {
+            columns: [
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '9'
+                        }
+                    ],
+                    leftOffset: 1,
+                    width: 12,
+                    styleClass: ''
+                }
+            ],
+            styleClass: 'bg-white py-5'
+        },
+        {
+            columns: [
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '10'
+                        }
+                    ],
+                    leftOffset: 1,
+                    width: 12,
+                    styleClass: ''
+                }
+            ],
+            styleClass: null
+        }
+    ]
+};
+
 export const MESSAGES_MOCK = {
     'dot.template.builder.action.cancel': 'Cancel',
     'dot.template.builder.action.create': 'Create',
@@ -288,7 +444,12 @@ export const MESSAGES_MOCK = {
     'editpage.layout.theme.search': 'Search',
     'dot.template.builder.classes.dialog.update.button': 'Update',
     'dot.template.builder.sidebar.header.title': 'Sidebar',
-    'dot.template.builder.row.box.wont.fit': 'Minimum 1 column needed for box drop.'
+    'dot.template.builder.row.box.wont.fit': 'Minimum 1 column needed for box drop.',
+    'dot.template.builder.autocomplete.has.suggestions':
+        'Type and hit enter or select from suggestions to add a class',
+    'dot.template.builder.autocomplete.no.suggestions': 'Type and hit enter to add a class',
+    'dot.template.builder.autocomplete.setup.suggestions':
+        'You can set up predefined class suggestions. <a href="https://www.dotcms.com/docs/latest/designing-a-template-with-a-theme#ClassSuggestions">Get the setup guide</a>'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
