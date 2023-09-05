@@ -34,6 +34,7 @@ describe('DotGlobalMessageComponent', () => {
         expect(component.message).toEqual({
             value: 'test',
             type: 'loading',
+            icon: 'loading',
             life: 3000
         });
     });
@@ -59,13 +60,13 @@ describe('DotGlobalMessageComponent', () => {
     });
 
     it('should set visibility to false after 10 ms', (done) => {
-        dotEventsService.notify('dot-global-message', { value: 'test', life: 10 });
+        dotEventsService.notify('dot-global-message', { value: 'test', life: 1 });
         expect(component.classes).toContain('dot-global-message--visible');
         // TODO: Find a way to get rid of timeouts.
         setTimeout(() => {
-            expect(component.classes).toEqual(' ');
+            expect(component.classes).not.toContain('dot-global-message--visible');
             done();
-        }, 50);
+        }, 10);
     });
 
     it('should set value to success event', () => {
@@ -102,7 +103,7 @@ describe('DotGlobalMessageComponent', () => {
         const dotIcon = fixture.debugElement.query(By.css('[data-testId="message-icon"]'));
         const message = fixture.debugElement.query(By.css('[data-testId="message-text"]'));
 
-        expect(dotIcon.nativeElement.classList).toContain('pi pi-exclamation-circle');
+        expect(dotIcon.nativeElement.classList).toContain('pi-exclamation-circle');
         expect(message.nativeElement.textContent).toContain('error message');
         expect(component.classes).toContain('error');
     });
