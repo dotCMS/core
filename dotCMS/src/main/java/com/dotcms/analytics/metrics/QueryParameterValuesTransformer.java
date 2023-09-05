@@ -38,11 +38,12 @@ public class QueryParameterValuesTransformer implements ParameterValuesTransform
             final AbstractCondition<QueryParameter> condition) {
 
         final QueryParameter configuration = condition.value();
-        final String name = configuration.getName().toLowerCase();
-        final String conditionValue = UtilMethods.isSetOrGet(configuration.getValue(), StringPool.BLANK).toString();
+        final String name = configuration.getName();
+        final String conditionValue = UtilMethods.isSetOrGet(configuration.getValue(), StringPool.BLANK)
+                .toString();
 
         final Set<String> realValues = valuesFromEvent.stream()
-                .filter(queryParameter -> queryParameter.getName().toLowerCase().equals(name))
+                .filter(queryParameter -> queryParameter.getName().equals(name))
                 .map(queryParameter -> queryParameter.getValue())
                 .collect(Collectors.toSet());
         return new Values(conditionValue, realValues);

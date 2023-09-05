@@ -8,6 +8,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.ThemeDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -190,7 +191,7 @@ public final class PageRenderTestUtil {
         private Contentlet createGenericContent() throws DotSecurityException, DotDataException {
             final ContentType contentGenericType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
             return new ContentletDataGen(contentGenericType.id()).setProperty("title", "title")
-                    .setProperty("body", "body").languageId(1).nextPersisted();
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).languageId(1).nextPersisted();
         }
 
         public void setPage(final HTMLPageAsset page) {
