@@ -310,7 +310,6 @@ describe('TemplateBuilderComponent', () => {
 
         templateBuilderThemeSelector.apply();
 
-        // expect(layoutChangeMock).toHaveBeenCalled();
         expect(layoutChangeMock).toHaveBeenCalledWith({
             layout: {
                 body: FULL_DATA_MOCK,
