@@ -46,6 +46,10 @@ export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
         value: DotExperimentStatus.DRAFT
     },
     {
+        label: 'scheduled',
+        value: DotExperimentStatus.SCHEDULED
+    },
+    {
         label: 'running',
         value: DotExperimentStatus.RUNNING
     },
@@ -56,10 +60,6 @@ export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
         label: 'archived',
         value: DotExperimentStatus.ARCHIVED
-    },
-    {
-        label: 'scheduled',
-        value: DotExperimentStatus.SCHEDULED
     }
 ];
 
