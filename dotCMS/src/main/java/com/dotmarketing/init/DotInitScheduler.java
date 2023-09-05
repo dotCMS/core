@@ -180,13 +180,10 @@ public class DotInitScheduler {
 			} else {
 		        Logger.info(DotInitScheduler.class, "PublishQueueJob Cron Job schedule disabled on this server");
 		        Logger.info(DotInitScheduler.class, "Deleting PublishQueueJob Job");
-				if ((job = sched.getJobDetail(publishQueueJobName, DOTCMS_JOB_GROUP_NAME)) != null) {
+				if (null != sched.getJobDetail(publishQueueJobName, DOTCMS_JOB_GROUP_NAME)) {
 					sched.deleteJob(publishQueueJobName, DOTCMS_JOB_GROUP_NAME);
 				}
 			}
-
-
-
 
 			//SCHEDULE ESCALATION THREAD JOB
 			String ETjobName = "EscalationThreadJob";
