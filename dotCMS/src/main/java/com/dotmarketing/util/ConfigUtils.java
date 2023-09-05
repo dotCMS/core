@@ -157,7 +157,7 @@ public class ConfigUtils {
 	 * @deprecated Use {@link #getAssetPath()} instead.
 	 * @return
 	 */
-	@Deprecated
+	@Deprecated(forRemoval = true)
     public static String getAbsoluteAssetsRootPath() {
 		return assetPath.get();
     }
