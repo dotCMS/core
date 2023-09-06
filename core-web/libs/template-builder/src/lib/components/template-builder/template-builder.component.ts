@@ -7,7 +7,7 @@ import {
     numberOrString
 } from 'gridstack';
 import { DDElementHost } from 'gridstack/dist/dd-element';
-import { Observable, Subject, combineLatest } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, combineLatest } from 'rxjs';
 
 import {
     AfterViewInit,
@@ -108,6 +108,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public rows$: Observable<DotLayoutBody>;
     public vm$: Observable<DotTemplateBuilderState> = this.store.vm$;
 
+    private themeId$ = new BehaviorSubject<string | undefined>(undefined); // at this point this.themeId is undefined
+
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
     public readonly boxWidth = BOX_WIDTH;
@@ -181,13 +183,15 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     ) {
         this.rows$ = this.store.rows$.pipe(map((rows) => parseFromGridStackToDotObject(rows)));
 
-        combineLatest([this.rows$, this.store.layoutProperties$])
+        combineLatest([this.rows$, this.store.layoutProperties$, this.themeId$])
             .pipe(
                 filter(([items, layoutProperties]) => !!items && !!layoutProperties),
                 skip(1),
                 takeUntil(this.destroy$)
             )
-            .subscribe(([rows, layoutProperties]) => {
+            .subscribe(([rows, layoutProperties, themeId]) => {
+                const cleanThemeId = themeId ?? this.themeId; // Is undefined at the start if you don't change it
+
                 this.dotLayout = {
                     ...this.layout,
                     ...layoutProperties,
@@ -200,7 +204,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 };
 
                 this.templateChange.emit({
-                    themeId: this.themeId,
+                    themeId: cleanThemeId,
                     layout: { ...this.dotLayout }
                 });
             });
@@ -213,10 +217,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             resizingRowID: '',
             containerMap: this.containerMap
         });
-
-        this.dotLayout = {
-            ...this.layout
-        };
     }
 
     ngAfterViewInit() {
@@ -407,7 +407,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 width: '80%',
                 closeOnEscape: true,
                 data: {
-                    themeId: this.themeId
+                    themeId: this.themeId // See the comment below
                 }
             }
         );
@@ -419,12 +419,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             )
             .subscribe(
                 (theme: DotTheme) => {
-                    this.themeId = theme.identifier;
+                    this.themeId = theme.identifier; // We need this value to pass it in the data of the dynamicDialog
 
-                    this.templateChange.emit({
-                        themeId: this.themeId,
-                        layout: { ...this.dotLayout }
-                    });
+                    // To execute a save
+                    this.themeId$.next(this.themeId);
                 },
                 () => {
                     /* */
