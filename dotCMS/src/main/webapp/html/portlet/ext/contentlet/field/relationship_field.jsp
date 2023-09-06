@@ -402,24 +402,57 @@
                   dijit.byId("<%= relationJsName %>Dialog")._doSearchPage1();
 		}
 
+		//Map to determine if a content is multiligual and if there is a version in the selected language
+		function mapToCheckCurrentLangExists(listRelationships){
+			const idExists = new Map();
+			for (var indexK = 0; indexK < listRelationships.length; indexK++) {
+				idExists.set(listRelationships[indexK]['identifier'], false);
+				for (var indexL = 0; indexL < listRelationships.length; indexL++) {
+					if(listRelationships[indexK]['identifier'] == listRelationships[indexL]['identifier'] &&
+							listRelationships[indexL]['langId'] == <%= contentlet.getLanguageId() %>) {
+						idExists.set(listRelationships[indexK]['identifier'], true);
+						break;
+					}
+				}
+			}
+			return idExists;
+		}
+
 
 		//Invoked when a contentlet is selected to fill the contentlet data in the table
 		function <%= relationJsName %>_addRelationshipCallback(selectedData){
-			selectedData = selectedData.filter(sibling => sibling.langId == <%= contentlet.getLanguageId() %>);
+			console.log("selectedData");
+			console.log(selectedData);
+
+			//A new list will be created with all the relationships but will remove multilingual ones, and in that
+			//case will add the one of the selected language.
+			const mapIdCurrentLangExist = mapToCheckCurrentLangExists(selectedData);
+			const newList = [];
+			for (var indexL = 0; indexL < selectedData.length; indexL++) {
+				var currentContent = selectedData[indexL];
+				var currentContentId = currentContent['identifier'];
+				var mapValue = mapIdCurrentLangExist.get(currentContentId);
+				if(mapValue && currentContent['langId'] == <%= contentlet.getLanguageId() %>){
+					newList.push(currentContent);
+				}
+				if(!mapValue){
+					newList.push(currentContent);
+				}
+			}
 
 			var data = new Array();
 			var dataToRelate = new Array();
             var entries = numberOfRows<%= relationJsName%>();
 			// Eliminating existing relations
-			for (var indexJ = 0; indexJ < selectedData.length; indexJ++) {
+			for (var indexJ = 0; indexJ < newList.length; indexJ++) {
 				var relationExists = (<%=thereCanBeOnlyOne%> && (entries > 0 || dataToRelate.length>0)) ? true : false;
 				for (var indexI = 0; indexI < <%= relationJsName %>_Contents.length; indexI++) {
-					if(selectedData[indexJ]['id'] == <%= relationJsName %>_Contents[indexI]['id']){
+					if(newList[indexJ]['id'] == <%= relationJsName %>_Contents[indexI]['id']){
 						relationExists = true;
 					}
 				}
 				if(!relationExists){
-					dataToRelate[dataToRelate.length] = selectedData[indexJ];
+					dataToRelate[dataToRelate.length] = newList[indexJ];
 				}
 			}
 
