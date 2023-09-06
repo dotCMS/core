@@ -1,4 +1,4 @@
-import { DatePipe, JsonPipe, LowerCasePipe, NgIf, TitleCasePipe } from '@angular/common';
+import { DatePipe, LowerCasePipe, NgIf, TitleCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -12,6 +12,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
     standalone: true,
@@ -22,16 +23,14 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         RouterLink,
         NgIf,
         LowerCasePipe,
-        // DotCMS
+        DatePipe,
+        TitleCasePipe,
         DotIconModule,
         DotPipesModule,
-        // PrimeNG
+        DotMessagePipe,
         SkeletonModule,
         TagModule,
-        DotMessagePipe,
-        DatePipe,
-        JsonPipe,
-        TitleCasePipe
+        ButtonModule
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
