@@ -649,7 +649,7 @@
                         var fieldCell = row.insertCell(row.cells.length);
                         fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
                             item,
-                            <%= relationJsName %>_specialFields[fieldName] || item[fieldName] || "");
+                            item[fieldName] || "");
                     }
                 });
             }
