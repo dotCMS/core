@@ -58,7 +58,7 @@
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-core</artifactId>
             <version>${project.version}</version>
-            <scope>runtime</scope>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -269,7 +269,6 @@
                             <goal>up</goal>
                         </goals>
                         <configuration>
-                            <skip>${skipITs}</skip>
                             <removeVolumes>${clean.docker.volumes}</removeVolumes>
                             <ignorePullFailures>true</ignorePullFailures>
                             <detachedMode>true</detachedMode>
@@ -286,7 +285,7 @@
                             <goal>down</goal>
                         </goals>
                         <configuration>
-                            <skip>${skipITs}</skip>
+
                             <composeFile>${project.basedir}/../docker-compose.yml</composeFile>
                             <!--We clean docker volumes before but not after as we may need to debug -->
                             <!--<removeVolumes>${clean.docker.volumes}</removeVolumes>-->

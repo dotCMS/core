@@ -1,38 +1,34 @@
 package com.dotcms.config;
 
-import com.dotcms.business.SystemAPI;
 import com.dotcms.business.SystemTable;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 
-import java.util.Optional;
-import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-
-import org.eclipse.microprofile.config.spi.ConfigSource;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Encapsulates the configuration based on the system table
  * This is a dynamic configuration and can be changed at runtime
  * @author jsanca
  */
-// todo: we have to handle the recursive call here
 @ApplicationScoped
-public class SystemTableConfigSource implements ConfigSource {
+public class SystemTableConfigSourceOld implements ConfigSource {
 
+    // todo: use CDI here instead of APILocator
     @Inject
-    private SystemAPI systemAPI;
-    private final SystemTable systemTable;
+    private final SystemTable systemTable = APILocator.getSystemAPI().getSystemTable();
 
-    public SystemTableConfigSource() {
+    public SystemTableConfigSourceOld() {
         Logger.info(this.getClass(), "Creating SystemTableConfigSource");
-        systemTable = systemAPI.getSystemTable();
     }
 
     @Override
     public int getOrdinal() {
-        return 900;
+            return 900;
     }
 
     @Override
@@ -67,5 +63,4 @@ public class SystemTableConfigSource implements ConfigSource {
     public String getName() {
         return SystemTableConfigSourceOld.class.getSimpleName();
     }
-
 }

@@ -1,6 +1,6 @@
 package com.dotmarketing.util;
 
-import com.dotcms.config.SystemTableConfigSource;
+import com.dotcms.config.SystemTableConfigSourceOld;
 import com.dotcms.repackage.com.google.common.base.Supplier;
 import com.dotcms.util.ConfigurationInterpolator;
 import com.dotcms.util.FileWatcherAPI;
@@ -12,7 +12,6 @@ import com.dotmarketing.business.APILocator;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +25,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.configuration.Configuration;
@@ -52,10 +50,10 @@ public class Config {
 
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
 
-    private static SystemTableConfigSource SYSTEM_TABLE_CONFIG_SOURCE = null;
+    private static SystemTableConfigSourceOld SYSTEM_TABLE_CONFIG_SOURCE = null;
 
     public static void initSystemTableConfigSource() {
-        SYSTEM_TABLE_CONFIG_SOURCE = new SystemTableConfigSource();
+        SYSTEM_TABLE_CONFIG_SOURCE = new SystemTableConfigSourceOld();
     }
 
 
