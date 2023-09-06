@@ -7,7 +7,7 @@ import {
     numberOrString
 } from 'gridstack';
 import { DDElementHost } from 'gridstack/dist/dd-element';
-import { BehaviorSubject, Observable, Subject, combineLatest } from 'rxjs';
+import { Observable, Subject, combineLatest } from 'rxjs';
 
 import {
     AfterViewInit,
@@ -78,7 +78,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     layout!: DotLayout;
 
     @Input()
-    themeId!: string;
+    themeId!: string; // In the layout we have the themeId we can consider removing this.
 
     @Input()
     containerMap!: DotContainerMap;
@@ -108,7 +108,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public rows$: Observable<DotLayoutBody>;
     public vm$: Observable<DotTemplateBuilderState> = this.store.vm$;
 
-    private themeId$ = new BehaviorSubject<string>(null); // at this point this.themeId is undefined
+    private themeId$ = this.store.themeId$;
 
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
@@ -190,8 +190,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 takeUntil(this.destroy$)
             )
             .subscribe(([rows, layoutProperties, themeId]) => {
-                const cleanThemeId = themeId ?? this.themeId; // Is undefined at the start if you don't change it
-
                 this.dotLayout = {
                     ...this.layout,
                     ...layoutProperties,
@@ -204,7 +202,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 };
 
                 this.templateChange.emit({
-                    themeId: cleanThemeId,
+                    themeId,
                     layout: { ...this.dotLayout }
                 });
             });
@@ -215,7 +213,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             rows: parseFromDotObjectToGridStack(this.layout.body),
             layoutProperties: this.layoutProperties,
             resizingRowID: '',
-            containerMap: this.containerMap
+            containerMap: this.containerMap,
+            themeId: this.themeId
         });
     }
 
@@ -399,18 +398,19 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      * @memberof TemplateBuilderComponent
      */
     openThemeSelectorDynamicDialog(): void {
-        const ref: DynamicDialogRef = this.dialogService.open(
-            TemplateBuilderThemeSelectorComponent,
-            {
+        let ref: DynamicDialogRef;
+
+        this.themeId$.pipe(take(1)).subscribe((themeId) => {
+            ref = this.dialogService.open(TemplateBuilderThemeSelectorComponent, {
                 header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
                 resizable: false,
                 width: '80%',
                 closeOnEscape: true,
                 data: {
-                    themeId: this.themeId // See the comment below
+                    themeId
                 }
-            }
-        );
+            });
+        });
 
         ref.onClose
             .pipe(
@@ -419,10 +419,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             )
             .subscribe(
                 (theme: DotTheme) => {
-                    this.themeId = theme.identifier; // We need this value to pass it in the data of the dynamicDialog
-
-                    // To execute a save
-                    this.themeId$.next(this.themeId);
+                    this.store.updateThemeId(theme.identifier);
                 },
                 () => {
                     /* */
