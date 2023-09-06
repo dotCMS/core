@@ -108,7 +108,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public rows$: Observable<DotLayoutBody>;
     public vm$: Observable<DotTemplateBuilderState> = this.store.vm$;
 
-    private themeId$ = new BehaviorSubject<string | undefined>(undefined); // at this point this.themeId is undefined
+    private themeId$ = new BehaviorSubject<string>(null); // at this point this.themeId is undefined
 
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
