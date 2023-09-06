@@ -1,0 +1,55 @@
+# Generated with JReleaser 1.8.0 at 2023-09-05T09:49:01.355976+02:00
+project:
+  name: dotcms-cli
+  description: app -- DotCMS CLI
+  longDescription: app -- DotCMS Quarkus CLI application
+  java:
+    multiProject: true
+
+
+
+release:
+  github:
+    overwrite: true
+    changelog:
+      formatted: ALWAYS
+      format: '- {{commitShortHash}} {{commitTitle}}'
+      preset: conventional-commits
+      contributors:
+        format: '- {{contributorName}}'
+      hide:
+        categories:
+          - merge
+        contributors:
+          - GitHub
+          - dependabot
+
+#deploy:
+#  maven:
+#    artifactory:
+#      jreleaser-cli:
+#        active: ALWAYS
+#        url: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/jreleaser/jreleaser-cli
+#        stagingRepositories:
+#          - target/distributions/{{distributionName}}-{{projectVersion}}.jar
+
+distributions:
+  jreleaser-cli:
+    type: SINGLE_JAR
+    active: ALWAYS
+    stereotype: CLI
+    artifacts:
+      - path: target/distributions/{{distributionName}}-{{projectVersion}}-runner.jar
+        transform: target/distributions/{{distributionName}}-{{projectVersion}}.jar
+
+packagers:
+  brew:
+    active: ALWAYS
+    continueOnError: false
+    multiPlatform: true
+
+#announce:
+#  slack:
+#    active: ALWAYS
+#    channel: '#jreleaser'
+#    message: '🚀 {{projectNameCapitalized}} {{projectVersion}} has been released!'

@@ -60,6 +60,7 @@
             <version>${jreleaser-plugin.version}</version>
             <inherited>false</inherited>
             <configuration>
+              <gitRootSearch>true</gitRootSearch>
               <configFile>${project.basedir}/jreleaser.yml</configFile>
             </configuration>
           </plugin>
