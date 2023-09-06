@@ -1,6 +1,11 @@
+import { Observable, from } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { tap } from 'rxjs/operators';
+
+import { DotMessageService, DotUploadService } from '@dotcms/data-access';
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import {
     SeoMetaTags,
@@ -10,12 +15,17 @@ import {
     SEO_RULES_ICONS,
     SeoKeyResult,
     SeoRulesResult,
-    SeoMetaTagsResult
+    SeoMetaTagsResult,
+    SeoMediaKeys,
+    ImageMetaData
 } from '../dot-edit-content-html/models/meta-tags-model';
 
 @Injectable()
 export class DotSeoMetaTagsService {
-    constructor(private dotMessageService: DotMessageService) {}
+    constructor(
+        private dotMessageService: DotMessageService,
+        private dotUploadService: DotUploadService
+    ) {}
 
     /**
      * Get meta tags from the document
@@ -35,11 +45,15 @@ export class DotSeoMetaTagsService {
 
         const favicon = pageDocument.querySelectorAll('link[rel="icon"]');
         const title = pageDocument.querySelectorAll('title');
+        const titleOgElements = pageDocument.querySelectorAll('meta[property="og:title"]');
+        const imagesOgElements = pageDocument.querySelectorAll('meta[property="og:image"]');
 
         metaTagsObject['faviconElements'] = favicon;
         metaTagsObject['titleElements'] = title;
         metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement)?.href;
         metaTagsObject['title'] = title[0]?.innerText;
+        metaTagsObject['titleOgElements'] = titleOgElements;
+        metaTagsObject['imageOgElements'] = imagesOgElements;
 
         return metaTagsObject;
     }
@@ -90,9 +104,52 @@ export class DotSeoMetaTagsService {
                     info: this.dotMessageService.get('seo.rules.title.info')
                 });
             }
+
+            if (key === SEO_OPTIONS.OG_TITLE) {
+                const items = this.getOgTitleItems(metaTagsObject);
+                const keyValues = this.getKeyValues(items);
+                result.push({
+                    key,
+                    keyIcon: keyValues.keyIcon,
+                    keyColor: keyValues.keyColor,
+                    items: items,
+                    sort: 4,
+                    info: this.dotMessageService.get('seo.rules.title.info')
+                });
+            }
+
+            if (key === SEO_OPTIONS.OG_IMAGE) {
+                const items = this.getOgImagesItems(metaTagsObject);
+                const keyValues = this.getKeyValues(items);
+                result.push({
+                    key,
+                    keyIcon: keyValues.keyIcon,
+                    keyColor: keyValues.keyColor,
+                    items: items,
+                    sort: 5,
+                    info: ''
+                });
+            }
         });
 
-        return result.sort((a, b) => a.sort - b.sort);
+        return result;
+    }
+
+    /**
+     * Filter and sorted the meta tags by media
+     * @param results
+     * @param seoMedia
+     * @returns
+     */
+    getFilteredMetaTagsByMedia(
+        results: SeoMetaTagsResult[],
+        seoMedia: string
+    ): SeoMetaTagsResult[] {
+        return results
+            .filter((result) =>
+                SeoMediaKeys[seoMedia.toLowerCase()].includes(result.key.toLowerCase())
+            )
+            .sort((a, b) => a.sort - b.sort);
     }
 
     private getFaviconItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
@@ -218,8 +275,8 @@ export class DotSeoMetaTagsService {
 
         if (
             titleElements?.length === SEO_LIMITS.MAX_TITLES &&
-            title?.length > SEO_LIMITS.MAX_TITLE_LENGTH &&
-            title?.length < SEO_LIMITS.MIN_TITLE_LENGTH
+            title?.length < SEO_LIMITS.MAX_TITLE_LENGTH &&
+            title?.length > SEO_LIMITS.MIN_TITLE_LENGTH
         ) {
             result.push({
                 message: this.dotMessageService.get('seo.rules.title.found'),
@@ -229,5 +286,121 @@ export class DotSeoMetaTagsService {
         }
 
         return result;
+    }
+
+    private getOgTitleItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
+        const result: SeoRulesResult[] = [];
+        const titleOgElements = metaTagsObject['titleOgElements'];
+        const titleOg = metaTagsObject['og:title'];
+
+        if (!titleOgElements) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.image.not.found'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (titleOgElements?.length > 1) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.og-title.more.one.found'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (titleOg?.length < SEO_LIMITS.MIN_OG_TITLE_LENGTH) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.og-title.less'),
+                color: SEO_RULES_COLORS.WARNING,
+                itemIcon: SEO_RULES_ICONS.EXCLAMATION_CIRCLE
+            });
+        }
+
+        if (titleOg?.length > SEO_LIMITS.MAX_OG_TITLE_LENGTH) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.og-title.greater'),
+                color: SEO_RULES_COLORS.WARNING,
+                itemIcon: SEO_RULES_ICONS.EXCLAMATION_CIRCLE
+            });
+        }
+
+        if (
+            titleOg &&
+            titleOg?.length < SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
+            titleOg?.length > SEO_LIMITS.MIN_OG_TITLE_LENGTH
+        ) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.og-image.found'),
+                color: SEO_RULES_COLORS.DONE,
+                itemIcon: SEO_RULES_ICONS.CHECK
+            });
+        }
+
+        return result;
+    }
+
+    private getOgImagesItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
+        const result: SeoRulesResult[] = [];
+        const imageOgElements = metaTagsObject['imageOgElements'];
+        const imageOg = metaTagsObject['og:image'];
+
+        if (!imageOgElements) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.og-image.not.found'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (imageOgElements?.length > 1) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.og-image.more.one.found'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        this.getImageFileSize(imageOg)
+            .pipe(
+                tap((imageMetaData) => {
+                    if (imageOg && imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES) {
+                        result.push({
+                            message: this.dotMessageService.get('seo.rules.og-image.found'),
+                            color: SEO_RULES_COLORS.DONE,
+                            itemIcon: SEO_RULES_ICONS.CHECK
+                        });
+                    }
+                })
+            )
+            .subscribe();
+
+        return result;
+    }
+
+    /**
+     * This uploads the image temporaly to get the file size, only if it is external
+     * @param imageUrl string
+     * @returns
+     */
+    private getImageFileSize(imageUrl: string): Observable<DotCMSTempFile | ImageMetaData> {
+        return from(
+            fetch(imageUrl)
+                .then((response) => response.blob())
+                .then((blob) => {
+                    return {
+                        length: blob.size,
+                        url: imageUrl
+                    };
+                })
+                .catch((error) => {
+                    console.warn(
+                        'Getting the file size from an external URL failed, so we upload it to the server:',
+                        error
+                    );
+
+                    return this.dotUploadService.uploadFile({ file: imageUrl });
+                })
+        );
     }
 }

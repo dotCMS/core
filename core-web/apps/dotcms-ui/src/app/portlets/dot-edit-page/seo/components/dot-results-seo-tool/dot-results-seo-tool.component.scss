@@ -128,6 +128,23 @@
     color: $color-alert-green;
 }
 
+.results-seo-tool__facebook {
+    margin-top: $spacing-1;
+
+    h5 {
+        padding: 0;
+        margin: $spacing-1 0;
+        font-size: $font-size-md;
+        font-weight: $font-weight-bold;
+        color: $black;
+    }
+
+    p {
+        padding: 0;
+        margin: 0;
+    }
+}
+
 :host ::ng-deep {
     .results-seo-tool__result-card .p-card {
         border: 1px solid $color-palette-gray-400;
@@ -153,5 +170,9 @@
 
     .results-seo-tool__result-card-list .pi-external-link {
         color: $color-palette-primary-500;
+    }
+
+    .results-seo-tool__main-card .p-card .p-card-body {
+        padding: 1rem;
     }
 }
