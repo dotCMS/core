@@ -386,22 +386,22 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(reachPageOptionContent).toHaveClass('expanded');
     });
 
-    it('should emit closedSidebar when the sidebar its closed', async () => {
+    it('should emit closedSidebar when the sidebar its closed', () => {
         sidebar = spectator.query(Sidebar);
         jest.spyOn(spectator.component, 'closeSidebar');
+
+        sidebar.onHide.subscribe(() => {
+            expect(spectator.component.closeSidebar).toHaveBeenCalled();
+        });
+
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.GOAL,
             isOpen: false
         });
 
         spectator.detectComponentChanges();
-        await spectator.fixture.whenStable();
 
         expect(sidebar.visible).toEqual(false);
-
-        sidebar.onHide.subscribe(() => {
-            expect(spectator.component.closeSidebar).toHaveBeenCalled();
-        });
     });
 
     it('should render coming soon placeholder', () => {
