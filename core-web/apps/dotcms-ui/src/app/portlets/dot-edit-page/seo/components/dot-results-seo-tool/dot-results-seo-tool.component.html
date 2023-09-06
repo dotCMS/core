@@ -3,7 +3,7 @@
         <div class="results-seo-tool__main-card-content">
             <div [ngSwitch]="seoMedia">
                 <div *ngSwitchCase="'Facebook'">
-                    <img src="{{ mainPreview[0].image }}" width="100%" alt="preview image" />
+                    <img [src]="mainPreview[0].image" width="100%" alt="preview image" />
                     <div class="results-seo-tool__facebook">
                         <span>{{ mainPreview[0].hostName }}</span>
                         <h5>{{ mainPreview[0].title }}</h5>
