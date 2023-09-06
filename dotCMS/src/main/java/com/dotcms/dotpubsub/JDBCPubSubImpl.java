@@ -205,14 +205,15 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
                     // Notifications come in bunches
                     // Only sleep between runs if there are no notifications.
                     // Otherwise, keep listening
-                    if (notify == 0) {
-                        Try.run(() -> Thread.sleep(SLEEP_BETWEEN_RUNS));
+                    if (notify > 0) {
+                        Try.run(() -> Thread.sleep(20));
+                        continue;
                     }
 
                 } catch (Throwable e) { //NOSONAR
                     logFailure(e);
-                    Try.run(() -> Thread.sleep(SLEEP_BETWEEN_RUNS));
                 }
+                Try.run(() -> Thread.sleep(SLEEP_BETWEEN_RUNS));
             }
         }
 
