@@ -11,9 +11,16 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { DotContainersService, DotMessageService } from '@dotcms/data-access';
+import { DotContainersService, DotEventsService, DotMessageService } from '@dotcms/data-access';
+import {
+    CoreWebService,
+    CoreWebServiceMock,
+    LoginService,
+    SiteService,
+    SiteServiceMock
+} from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
-import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
+import { containersMock, DotContainersServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotGridStackWidget, SCROLL_DIRECTION } from './models/models';
@@ -77,7 +84,20 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: DotContainersService,
                 useValue: new DotContainersServiceMock()
-            }
+            },
+            {
+                provide: CoreWebService,
+                useClass: CoreWebServiceMock
+            },
+            {
+                provide: SiteService,
+                useClass: SiteServiceMock
+            },
+            {
+                provide: LoginService,
+                useClass: LoginServiceMock
+            },
+            DotEventsService
         ]
     });
 
@@ -125,7 +145,7 @@ describe('TemplateBuilderComponent', () => {
         const totalBoxes = FULL_DATA_MOCK.rows.reduce((acc, row) => {
             return acc + row.columns.length;
         }, 0);
-        expect(spectator.queryAll(byTestId(/builder-box-\d+/g)).length).toBe(totalBoxes);
+        expect(spectator.queryAll(byTestId(/builder-box-\d+/)).length).toBe(totalBoxes);
     });
 
     it('should trigger removeColumn on store when triggering removeColumn', (done) => {
@@ -317,6 +337,36 @@ describe('TemplateBuilderComponent', () => {
                 themeId: '123'
             });
             done();
+        });
+    });
+
+    it("should emit changes with a not null layout when the theme is changed and layoutProperties or rows weren't touched", () => {
+        const templateBuilderActions = spectator.query(byTestId('template-builder-actions'));
+        const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+
+        spectator.dispatchFakeEvent(templateBuilderActions, 'selectTheme');
+
+        // This queries from the body
+        const templateBuilderThemeSelector = spectator.fixture.debugElement.parent.query(
+            By.css('dotcms-template-builder-theme-selector')
+        ).componentInstance;
+
+        templateBuilderThemeSelector.currentTheme = {
+            identifier: 'test-123'
+        };
+
+        templateBuilderThemeSelector.apply();
+
+        expect(layoutChangeMock).toHaveBeenCalledWith({
+            layout: {
+                body: FULL_DATA_MOCK,
+                header: true,
+                footer: true,
+                sidebar: null,
+                width: 'Mobile',
+                title: 'Test Title'
+            },
+            themeId: 'test-123'
         });
     });
 

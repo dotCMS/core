@@ -215,6 +215,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             resizingRowID: '',
             containerMap: this.containerMap
         });
+
+        this.dotLayout = {
+            ...this.layout
+        };
     }
 
     ngAfterViewInit() {
@@ -392,7 +396,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     /**
-     * @description This method opens the dialog to edit the row styleclasses
+     * @description This method opens the dialog to edit the themeID of the template
      *
      * @memberof TemplateBuilderComponent
      */
