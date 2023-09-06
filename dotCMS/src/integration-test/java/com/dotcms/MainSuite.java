@@ -60,6 +60,7 @@ import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
+import com.dotcms.publisher.bundle.business.BundleFactoryImplTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
@@ -125,7 +126,6 @@ import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
-import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
@@ -547,7 +547,6 @@ import org.junit.runners.Suite.SuiteClasses;
         CookieToolTest.class,
         CSVManifestBuilderTest.class,
         MoveContentActionletTest.class,
-        ImageFilterAPIImplTest.class,
         DeterministicIdentifierAPITest.class,
         Task210527DropReviewFieldsFromContentletTableTest.class,
         ContentletCacheImplTest.class,
@@ -655,7 +654,9 @@ import org.junit.runners.Suite.SuiteClasses;
         WebAssetHelperIntegrationTest.class,
         Task230701AddHashIndicesToWorkflowTablesTest.class,
         Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
+        BundleFactoryImplTest.class,
         ITConfigTest.class
+
 })
 
 public class MainSuite {

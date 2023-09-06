@@ -56,8 +56,15 @@ describe('DotTabButtonsComponent', () => {
 
     it('should emit clickOption event when onClickOption is called with a PREVIEW value', () => {
         const clickOptionSpy = spyOn(spectator.component.clickOption, 'emit');
+        spectator.component.mode = DotPageMode.EDIT;
         spectator.component.onClickOption({ target: { value: DotPageMode.PREVIEW } });
         expect(clickOptionSpy).toHaveBeenCalled();
+    });
+
+    it('should not emit clickOption event when onClickOption is called if the user is in the same tab', () => {
+        const clickOptionSpy = spyOn(spectator.component.clickOption, 'emit');
+        spectator.component.onClickOption({ target: { value: DotPageMode.PREVIEW } });
+        expect(clickOptionSpy).not.toHaveBeenCalled();
     });
 
     it('should call showMenu when onClickOption is called with OPEN_MENU value', () => {

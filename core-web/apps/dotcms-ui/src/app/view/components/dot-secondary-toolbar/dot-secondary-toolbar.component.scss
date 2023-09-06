@@ -55,11 +55,12 @@
     .dot-secondary-toolbar__main.edit-page-variant-mode {
         background-color: $color-palette-primary;
         color: $white;
-
         .main-toolbar-left {
-            i {
+            color: $white;
+            i,
+            dot-copy-button button,
+            button .pi {
                 color: $white;
-                font-size: $font-size-xl;
             }
 
             h2 {
@@ -69,13 +70,15 @@
             }
 
             dot-copy-button button {
-                color: $white;
                 i.pi {
                     color: $white;
                 }
                 &:hover {
                     background-color: $color-palette-white-op-10;
                 }
+            }
+            button:hover {
+                background-color: $color-palette-white-op-10;
             }
         }
 

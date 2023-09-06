@@ -41,7 +41,7 @@ export class DotTabButtonsComponent {
     onClickOption(event) {
         if (event.target.value === this.OPEN_MENU) {
             this.showMenu(event);
-        } else {
+        } else if (event.target.value !== this.mode) {
             this.clickOption.emit(event);
         }
     }

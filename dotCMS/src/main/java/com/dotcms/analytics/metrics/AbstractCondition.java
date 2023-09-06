@@ -112,6 +112,7 @@ public interface AbstractCondition<T> extends Serializable {
          */
         enum Type {
             SIMPLE(new DefaultParameterValuesTransformer()),
+            CASE_INSENSITIVE(new LowerCaseParameterValuesTransformer()),
             QUERY_PARAMETER(new QueryParameterValuesTransformer());
 
             final ParameterValuesTransformer parameterValuesTransformer;
