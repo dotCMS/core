@@ -19,6 +19,7 @@ import {
 } from '../models/models';
 import {
     GRIDSTACK_DATA_MOCK,
+    INITIAL_STATE_MOCK,
     mockTemplateBuilderContainer,
     SIDEBAR_MOCK,
     STYLE_CLASS_MOCK
@@ -63,14 +64,13 @@ describe('DotTemplateBuilderStore', () => {
 
         // Reset the state because is manipulated by reference
         service.setState({
+            ...INITIAL_STATE_MOCK,
             rows: GRIDSTACK_DATA_MOCK,
             layoutProperties: {
                 header: true,
                 footer: true,
                 sidebar: SIDEBAR_MOCK
-            },
-            resizingRowID: '',
-            containerMap: {}
+            }
         });
 
         // Get the initial state
@@ -292,14 +292,13 @@ describe('DotTemplateBuilderStore', () => {
         ];
 
         service.setState({
+            ...INITIAL_STATE_MOCK,
             rows: GRIDSTACK_DATA_MOCK,
             layoutProperties: {
                 footer: false,
                 header: false,
                 sidebar: {}
-            },
-            resizingRowID: '',
-            containerMap: {}
+            }
         });
 
         const newWidth = 2;
@@ -344,14 +343,13 @@ describe('DotTemplateBuilderStore', () => {
         ];
 
         service.setState({
+            ...INITIAL_STATE_MOCK,
             rows: GRIDSTACK_DATA_MOCK,
             layoutProperties: {
                 footer: false,
                 header: false,
                 sidebar: {}
-            },
-            resizingRowID: '',
-            containerMap: {}
+            }
         });
 
         const affectedColumn: DotGridStackNode = {
