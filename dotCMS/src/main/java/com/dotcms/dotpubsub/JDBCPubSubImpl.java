@@ -31,7 +31,7 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
 
     static final String PG_NOTIFY_SQL = "SELECT pg_notify(?,?)";
     private final String serverId;
-    private long restartDelay = 0;
+
     private static final int KILL_ON_FAILURES = Config.getIntProperty("PGLISTENER_KILL_ON_FAILURES", 100);
     private static final int SLEEP_BETWEEN_RUNS = Config.getIntProperty("PGLISTENER_SLEEP_BETWEEN_RUNS", 500);
 
@@ -65,7 +65,7 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
     /**
      * This is the list of topics that are subscribed to by the postgres pub/sub connection
      */
-    private Map<Comparable<String>, DotPubSubTopic> topicMap = new ConcurrentHashMap<>();
+    private final Map<Comparable<String>, DotPubSubTopic> topicMap = new ConcurrentHashMap<>();
 
     @VisibleForTesting
     private static DotPubSubEvent lastEventIn;
@@ -76,6 +76,7 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
     public DotPubSubProvider start() {
 
         if (DbConnectionFactory.isPostgres()) {
+            listener();
             int numberOfServers = Try.of(() -> APILocator.getServerAPI().getAliveServers().size()).getOrElse(1);
             Logger.info(JDBCPubSubImpl.class, () -> "Starting JDBCPubSubImpl. Have servers:" + numberOfServers);
 
@@ -92,6 +93,11 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
         }
 
         return this;
+    }
+
+    @Override
+    public void stop() {
+        listener().stopListening();
     }
 
     public JDBCPubSubImpl() {
@@ -113,7 +119,7 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
 
         private final Lazy<Connection> connection = Lazy.of(() -> Try.of(() -> DbConnectionFactory.getDataSource().getConnection()).getOrElseThrow(DotRuntimeException::new));
 
-        private Lazy<PGConnection> pgConnection = Lazy.of(() -> Try.of(() -> connection.get().unwrap(PGConnection.class)).getOrElseThrow(DotRuntimeException::new));
+        private final Lazy<PGConnection> pgConnection = Lazy.of(() -> Try.of(() -> connection.get().unwrap(PGConnection.class)).getOrElseThrow(DotRuntimeException::new));
 
 
         PGListener() {
@@ -121,7 +127,7 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
             pgConnection.get();
         }
 
-        final Pattern validTopics = Pattern.compile("[a-z0-9_]");
+        final Pattern validTopicRegEx = Pattern.compile("[a-z0-9_]");
 
         private long failures = 0;
 
@@ -132,8 +138,8 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
 
             // topic is checked against an alphanumeric regex to prevent
             // SQL Injection
-            if (!validTopics.matcher(topic).find()) {
-                throw new DotRuntimeException("Invalid Topic Name:" + topic + ". Must match pattern" + validTopics);
+            if (!validTopicRegEx.matcher(topic).find()) {
+                throw new DotRuntimeException("Invalid Topic Name:" + topic + ". Must match pattern" + validTopicRegEx);
             }
             if (this.topics.contains(topic)) {
                 return true;
@@ -186,12 +192,12 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
                     return;
                 }
                 try {
-                    pgConnection.get();
+
                     try (Statement stmt = connection.get().createStatement()) {
                         stmt.executeQuery("SELECT 1");
                     }
-                    PGNotification[] notifications = pgConnection.get().getNotifications();
-                    int notify = notify(notifications);
+
+                    int notify = notify(pgConnection.get().getNotifications());
 
                     failures = 0;
 
@@ -222,16 +228,16 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
             if (notifications == null) {
                 return 0;
             }
-            Logger.debug(JDBCPubSubImpl.class, "Got Notifications:" + notifications);
+            Logger.debug(JDBCPubSubImpl.class, "Got Notifications:" + notifications.length);
 
-            for (int i = 0; i < notifications.length; i++) {
+            for (PGNotification notification : notifications) {
 
-                String channelName = notifications[i].getName();
-                String payload = notifications[i].getParameter();
-                int processId = notifications[i].getPID();
+                String channelName = notification.getName();
+                String payload = notification.getParameter();
+                int processId = notification.getPID();
                 Logger.debug(this.getClass(), () -> "received event: " + processId + ", " + channelName + ", " + payload);
 
-                final DotPubSubEvent event = Try.of(() -> new DotPubSubEvent(payload)).onFailure(e -> Logger.warn(JDBCPubSubImpl.class, e.getMessage(), e)).getOrNull();
+                final DotPubSubEvent event = Try.of(() -> new DotPubSubEvent(payload)).onFailure(e -> Logger.warn(JDBCPubSubImpl.class, "event failed: " + processId + ", " + channelName + ", " + payload, e)).getOrNull();
                 if (event == null) {
                     continue;
                 }
@@ -256,31 +262,14 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
     }
 
 
-    /**
-     * This will automatically restart the connection
-     */
-    public void restart() {
 
-        Logger.warn(getClass(), "Restarting PGNotificationListener in " + restartDelay
-                + " ms to retry postgres pub/sub connection");
-        stop();
-        restartDelay = Math.min(restartDelay + 1000, 10000);
-        Try.run(() -> Thread.sleep(restartDelay));
-        start();
-    }
 
-    /**
-     * Stops the listener and connection
-     */
-    public void stop() {
-        listener().stopListening();
-    }
 
 
     @Override
     public DotPubSubProvider subscribe(DotPubSubTopic topic) {
         this.topicMap.put(topic.getKey().toString().toLowerCase(), topic);
-        listener().subscribeTopic(topic.getKey().toString().toLowerCase());
+        subscribeToTopicSQL(topic.getKey().toString().toLowerCase());
 
         return this;
     }
@@ -288,7 +277,9 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
     @Override
     public DotPubSubProvider unsubscribe(DotPubSubTopic topic) {
         this.topicMap.remove(topic.getKey().toString().toLowerCase());
+        // will restart the listener without the unsubbed topic
         listener().stopListening();
+        listener();
         return this;
     }
 
@@ -312,7 +303,7 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
 
             return false;
         } catch (Exception e) {
-            Logger.warn(this.getClass(), "Unable to send pubsub : " + eventIn.toString());
+            Logger.warn(this.getClass(), "Unable to send pubsub : " + eventIn);
 
             Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
             return false;
