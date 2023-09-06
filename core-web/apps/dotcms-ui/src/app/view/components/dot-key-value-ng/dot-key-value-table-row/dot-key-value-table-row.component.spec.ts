@@ -26,6 +26,8 @@ import { DotKeyValueTableRowComponent } from './dot-key-value-table-row.componen
 
 import { mockKeyValue } from '../dot-key-value-ng.component.spec';
 
+const PASSWORD_PLACEHOLDER = '********';
+
 @Component({
     selector: 'dot-test-host-component',
     template: `
@@ -34,8 +36,7 @@ import { mockKeyValue } from '../dot-key-value-ng.component.spec';
             [isHiddenField]="isHiddenField"
             [variable]="variable"
             [variableIndex]="variableIndex"
-            [variablesList]="variablesList"
-        >
+            [variablesList]="variablesList">
         </dot-key-value-table-row>
     `
 })
@@ -259,6 +260,14 @@ xdescribe('DotKeyValueTableRowComponent', () => {
 
             expect(comp.showEditMenu).toBe(true);
             expect(valueInput.nativeElement.type).toBe('password');
+        });
+
+        it('should show the password placeholder instead of the key value', () => {
+            hostComponent.isHiddenField = true;
+            hostComponent.variable = { key: 'TestKey', hidden: true, value: 'TestValue' };
+            hostComponentfixture.detectChanges();
+            const tableRow = de.query(By.css("[data-testId='dot-key-value-label']"));
+            expect(tableRow.nativeElement.innerHTML.trim()).toBe(PASSWORD_PLACEHOLDER);
         });
     });
 });

@@ -35,6 +35,7 @@ export class DotKeyValueTableRowComponent implements OnInit, OnChanges {
     @Output() cancel: EventEmitter<number> = new EventEmitter(false);
     @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
+    passwordPlaceholder = '********';
     variableCopy: DotKeyValue;
     showEditMenu = false;
     saveDisabled = false;

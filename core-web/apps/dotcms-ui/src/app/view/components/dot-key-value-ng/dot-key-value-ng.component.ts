@@ -4,8 +4,6 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from
 
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
-import { DotKeyValueUtil } from './util/dot-key-value-util';
-
 @Component({
     selector: 'dot-key-value-ng',
     styleUrls: ['./dot-key-value-ng.component.scss'],
@@ -46,15 +44,6 @@ export class DotKeyValueComponent implements OnChanges {
      */
     saveVariable(variable: DotKeyValue): void {
         this.save.emit(variable);
-
-        variable = this.setHiddenValue(variable);
-        const indexChanged = DotKeyValueUtil.getVariableIndexChanged(variable, this.variables);
-        if (indexChanged !== null) {
-            this.variables[indexChanged] = _.cloneDeep(variable);
-        } else {
-            this.variables = [variable, ...this.variables];
-        }
-
         this.variablesBackup = [...this.variables];
     }
 
@@ -65,11 +54,5 @@ export class DotKeyValueComponent implements OnChanges {
      */
     onCancel(fieldIndex: number): void {
         this.variablesBackup[fieldIndex] = _.cloneDeep(this.variables[fieldIndex]);
-    }
-
-    private setHiddenValue(variable: DotKeyValue): DotKeyValue {
-        variable.value = variable.hidden ? '********' : variable.value;
-
-        return variable;
     }
 }

@@ -3,8 +3,8 @@
         {{ variableCopy.key }}
     </td>
     <ng-template [ngIf]="isHiddenField" [ngIfElse]="editableValue">
-        <td>
-            {{ variableCopy.value }}
+        <td data-testId="dot-key-value-label">
+            {{ variableCopy.hidden ? passwordPlaceholder : variableCopy.value }}
         </td>
     </ng-template>
     <ng-template #editableValue>
@@ -21,17 +21,15 @@
                         (keydown.escape)="onCancel($event)"
                         (keydown.enter)="onPressEnter()"
                         pInputText
-                        autocomplete="false"
-                    />
+                        autocomplete="false" />
                 </ng-template>
                 <ng-template pTemplate="output">
                     <span
                         class="dot-key-value-table-row__value-label"
-                        *ngIf="variableCopy.value && !variableCopy.hidden"
-                    >
+                        *ngIf="variableCopy.value && !variableCopy.hidden">
                         {{ variableCopy.value }}
                     </span>
-                    <span *ngIf="variableCopy.hidden"> ******** </span>
+                    <span *ngIf="variableCopy.hidden"> {{ passwordPlaceholder }} </span>
                     <span class="empty-placeholder" *ngIf="!variableCopy.value">
                         {{ 'keyValue.value_input.placeholder' | dm }}
                     </span>
@@ -43,8 +41,7 @@
         <p-inputSwitch
             [(ngModel)]="variableCopy.hidden"
             [disabled]="isHiddenField"
-            (onChange)="showEditMenu = true"
-        ></p-inputSwitch>
+            (onChange)="showEditMenu = true"></p-inputSwitch>
     </td>
     <td class="dot-key-value-table-row__variables-actions">
         <ng-template [ngIf]="showEditMenu" [ngIfElse]="formButtons">
@@ -52,29 +49,25 @@
                 class="dot-key-value-table-row__variables-actions-edit-cancel p-button-outlined"
                 [label]="'Cancel' | dm"
                 (click)="onCancel($event)"
-                pButton
-            ></button>
+                pButton></button>
             <button
                 class="dot-key-value-table-row__variables-actions-edit-save"
                 #saveButton
                 [label]="'Save' | dm"
                 [disabled]="saveDisabled"
                 (click)="saveVariable()"
-                pButton
-            ></button>
+                pButton></button>
         </ng-template>
         <ng-template #formButtons>
             <p-button
                 (click)="delete.emit(variableCopy)"
                 icon="pi pi-trash"
-                styleClass="p-button-text p-button-danger p-button-rounded"
-            ></p-button>
+                styleClass="p-button-text p-button-danger p-button-rounded"></p-button>
             <p-button
                 [disabled]="isHiddenField || null"
                 (click)="focusKeyInput($event)"
                 icon="pi pi-pencil"
-                styleClass="p-button-text p-button-rounded"
-            ></p-button>
+                styleClass="p-button-text p-button-rounded"></p-button>
         </ng-template>
     </td>
 </tr>
