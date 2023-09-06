@@ -172,12 +172,12 @@ Easily start your Reactive RESTful Web Services
 
 ## Logging
 
-When running the CLI, a **_dotcms-cli.log_** file will be created at the directory where the CLI
-executable is run from.
+When running the CLI, a **_dotcms-cli.log_** file will be created in the directory where the CLI
+executable is run.
 
 #### File log level
 
-To increase the file log level to _DEBUG_ when running in dev mode use the following command
+To increase the file log level to _DEBUG_ when running in dev mode, use the following command:
 
 ```shell
 ./mvnw quarkus:dev -Dquarkus.log.file.level=DEBUG
@@ -185,8 +185,29 @@ To increase the file log level to _DEBUG_ when running in dev mode use the follo
 
 #### Console log level
 
-To increase the console log level to _DEBUG_ when running in dev mode use the following command
+To increase the console log level to _DEBUG_ when running in dev mode, use the following command:
 
 ```shell
 ./mvnw quarkus:dev -Dquarkus.log.handler.console.\"DOTCMS_CONSOLE\".level=DEBUG
+```
+
+#### File log location
+
+To override the default location of the log file, you have two options:
+
+##### 1. Set the environment variable
+
+Example:
+
+```shell
+export QUARKUS_LOG_FILE_PATH=/Users/my-user/CLI/dotcms-cli.log
+java -jar cli-1.0.0-SNAPSHOT-runner.jar login -u admin@dotcms.com -p admin
+```
+
+##### 2. Set the system property
+
+Example:
+
+```shell
+./mvnw quarkus:dev -Dquarkus.log.file.path=/Users/my-user/CLI/dotcms-cli.log
 ```
