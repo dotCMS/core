@@ -1,35 +1,21 @@
 package com.dotmarketing.util;
 
-import com.dotcms.config.SystemTableConfigSourceOld;
+import com.dotcms.cdi.CDIUtils;
+import com.dotcms.config.Configuration;
+import com.dotcms.config.PathConfiguration;
 import com.dotcms.repackage.com.google.common.base.Supplier;
-import com.dotcms.util.ConfigurationInterpolator;
 import com.dotcms.util.FileWatcherAPI;
-import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
-import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.util.transform.StringToEntityTransformer;
-import com.dotmarketing.business.APILocator;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableSet;
-import com.liferay.util.StringPool;
-import io.vavr.control.Try;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import org.apache.commons.configuration.PropertiesConfiguration;
+
 import java.lang.reflect.Array;
 import java.net.URL;
-import java.nio.file.Files;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.io.IOUtils;
 
 /**
  * This class provides access to the system configuration parameters that are set through the
@@ -45,33 +31,7 @@ public class Config {
     //Generated File Indicator
     public static final String GENERATED_FILE = "dotGenerated_";
     public static final String RENDITION_FILE = "dotRendition_";
-    public static final AtomicBoolean useWatcherMode = new AtomicBoolean(true);
-    public static final AtomicBoolean isWatching = new AtomicBoolean(false);
 
-    public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
-
-    private static SystemTableConfigSourceOld SYSTEM_TABLE_CONFIG_SOURCE = null;
-
-    public static void initSystemTableConfigSource() {
-        SYSTEM_TABLE_CONFIG_SOURCE = new SystemTableConfigSourceOld();
-    }
-
-
-    /**
-     * If this property is set in the dotmarketing-config, will try to use the interpolator for the
-     * properties Otherwise will use {@link SystemEnvironmentConfigurationInterpolator}
-     */
-    public static final String DOTCMS_CUSTOM_INTERPOLATOR = "dotcms.custom.interpolator";
-
-    /**
-     * If this property is set, defines the way you want to use to monitoring the changes over the
-     * dotmarketing-config.properties file. By default is true and means that the
-     * {@link FileWatcherAPI} will be used to monitoring any change over the file and refresh the
-     * property based on it. If you set it to false, will use the legacy mode previously used on
-     * dotCMS.
-     */
-    public static final String DOTCMS_USEWATCHERMODE = "dotcms.usewatchermode";
-    public static final String USE_CONFIG_TEST_OVERRIDE_TRACKER = "USE_CONFIG_TEST_OVERRIDE_TRACKER";
     public static int DB_VERSION = 0;
     public static int DATA_VERSION = 0;
 
@@ -79,338 +39,16 @@ public class Config {
     public static javax.servlet.ServletContext CONTEXT = null;
     public static String CONTEXT_PATH = null;
 
-
-    //Config internal properties
-    private static int refreshInterval = 5; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
-    private static Date lastRefreshTime = new Date();
-    protected static PropertiesConfiguration props = null;
-    private static ClassLoader classLoader = null;
-    protected static URL dotmarketingPropertiesUrl = null;
-    protected static URL clusterPropertiesUrl = null;
-    private static int prevInterval = Integer.MIN_VALUE;
-    private static FileWatcherAPI fileWatcherAPI = null;
-
+    private static Configuration configuration = null;
+    private static PathConfiguration pathConfiguration = null;
 
     /**
      * Config internal methods
      */
     public static void initializeConfig() {
-        classLoader = Thread.currentThread().getContextClassLoader();
-        _loadProperties();
-    }
 
-    private static void registerWatcher(final File fileToRead) {
-
-        initWatcherAPI();
-        if (null != fileWatcherAPI) {
-
-            // if we are not already watching, so register the waticher
-            if (!isWatching.get()) {
-                try {
-
-                    Logger.debug(APILocator.class, "Start watching: " + fileToRead);
-                    fileWatcherAPI.watchFile(fileToRead, () -> _loadProperties());
-                    isWatching.set(true);
-                } catch (IOException e) {
-                    Logger.error(Config.class, e.getMessage(), e);
-                }
-            }
-        } else {
-            // if not fileWatcherAPI could not monitoring, so use the fallback
-            useWatcherMode.set(false);
-            isWatching.set(false);
-        }
-    } // registerWatcher.
-
-    private static void initWatcherAPI() {
-
-        // checki if the watcher is already instantiated.
-        if (null == fileWatcherAPI) {
-            synchronized (Config.class) {
-
-                if (null == fileWatcherAPI) {
-
-                    fileWatcherAPI = APILocator.getFileWatcherAPI();
-                }
-            }
-        }
-    }
-
-    private static void unregisterWatcher(final File fileToRead) {
-
-        initWatcherAPI();
-        if (null != fileWatcherAPI) {
-
-            Logger.debug(APILocator.class, "Stop watching: " + fileToRead);
-            fileWatcherAPI.stopWatchingFile(fileToRead);
-        }
-    }
-
-    /**
-     *
-     */
-    private static void _loadProperties() {
-
-        if (classLoader == null) {
-            classLoader = Thread.currentThread().getContextClassLoader();
-            Logger.info(Config.class, "Initializing properties reader.");
-        }
-
-        //dotmarketing config file
-        String propertyFile = "dotmarketing-config.properties";
-        if (dotmarketingPropertiesUrl == null) {
-            dotmarketingPropertiesUrl = classLoader.getResource(propertyFile);
-        }
-
-        //cluster config file
-        propertyFile = "dotcms-config-cluster.properties";
-        if (clusterPropertiesUrl == null) {
-            clusterPropertiesUrl = classLoader.getResource(propertyFile);
-        }
-
-        //Reading both property files
-        readProperties(dotmarketingPropertiesUrl, clusterPropertiesUrl);
-
-        // Include ENV variables that start with DOT_
-
-        readEnvironmentVariables();
-
-        reapplyTestOverrides();
-    }
-
-    private static void reapplyTestOverrides() {
-
-        if (props.getBoolean(USE_CONFIG_TEST_OVERRIDE_TRACKER, false)) {
-            testOverrideTracker.forEach((key, value) -> {
-                String currentValue = props.getString(key);
-                if (value.equals("[remove]"))
-                {
-                    if (currentValue != null)
-                        props.clearProperty(key);
-                    else {
-                        testOverrideTracker.remove(key);
-                    }
-                } else if (currentValue == null || !currentValue.equals(value)) {
-                    props.setProperty(key, value);
-                } else {
-                    testOverrideTracker.remove(key);
-                }
-            });
-        }
-    }
-
-    /**
-     * Reads the properties on the dotmarketing-config.properties and the
-     * dotcms-config-cluster.properties properties files.
-     *
-     * @param dotmarketingURL
-     * @param clusterURL
-     */
-    private static void readProperties(URL dotmarketingURL, URL clusterURL) {
-        File dotmarketingFile = new File(dotmarketingURL.getPath());
-        Date lastDotmarketingModified = new Date(
-                dotmarketingFile.lastModified());
-        File clusterFile = new File(clusterURL.getPath());
-        Date lastClusterModified = new Date(clusterFile.lastModified());
-
-        if (props == null) {
-            synchronized (Config.class) {
-                if (props == null) {
-                    readProperties(dotmarketingFile,
-                            "dotmarketing-config.properties");
-                    readProperties(clusterFile,
-                            "dotcms-config-cluster.properties");
-                }
-            }
-        } else {
-            // Refresh the properties if changes detected in any of these
-            // properties files
-            if (lastDotmarketingModified.after(lastRefreshTime)
-                    || lastClusterModified.after(lastRefreshTime)) {
-                synchronized (Config.class) {
-                    if (lastDotmarketingModified.after(lastRefreshTime)
-                            || lastClusterModified.after(lastRefreshTime)) {
-                        try {
-                            props = new PropertiesConfiguration();
-                            // Cleanup and read the properties for both files
-                            readProperties(dotmarketingFile,
-                                    "dotmarketing-config.properties");
-                            readProperties(clusterFile,
-                                    "dotcms-config-cluster.properties");
-                        } catch (Exception e) {
-                            Logger.fatal(
-                                    Config.class,
-                                    "Exception loading property files [dotmarketing-config.properties, dotcms-config-cluster.properties]",
-                                    e);
-                            props = null;
-                        }
-                    }
-                }
-            }
-        }
-        String type = "";
-        try {
-            refreshInterval = props.getInt("config.refreshinterval");
-            type = "custom";
-        } catch (NoSuchElementException e) {
-            // Property not present, use default interval value
-            type = "default";
-        } finally {
-            // Display log message the first time, and then only if interval changes
-            if (prevInterval != refreshInterval) {
-                Logger.info(Config.class, "Assigned " + type + " refresh: "
-                        + refreshInterval + " minutes.");
-                prevInterval = refreshInterval;
-            }
-        }
-        // Set the last time we refresh/read the properties files
-        Config.lastRefreshTime = new Date();
-    }
-
-    /**
-     * Reads a given property file and appends its content to the current read properties
-     *
-     * @param fileToRead
-     * @param fileName
-     */
-    private static void readProperties(File fileToRead, String fileName) {
-
-        InputStream propsInputStream = null;
-
-        try {
-
-            Logger.info(Config.class, "Loading dotCMS [" + fileName + "] Properties...");
-
-            if (props == null) {
-                props = new PropertiesConfiguration();
-            }
-
-            propsInputStream = Files.newInputStream(fileToRead.toPath());
-            props.load(new InputStreamReader(propsInputStream));
-            Logger.info(Config.class, "dotCMS Properties [" + fileName + "] Loaded");
-            postProperties();
-            // check if the configuration for the watcher has changed.
-            useWatcherMode.set(getBooleanProperty(DOTCMS_USEWATCHERMODE, true));
-            if (useWatcherMode.get()) {
-
-                registerWatcher(fileToRead);
-            } else if (isWatching.get()) {
-                unregisterWatcher(fileToRead);
-                isWatching.set(false);
-            }
-        } catch (Exception e) {
-            Logger.fatal(Config.class, "Exception loading properties for file [" + fileName + "]",
-                    e);
-            props = null;
-        } finally {
-
-            IOUtils.closeQuietly(propsInputStream);
-        }
-    }
-
-
-    /**
-     * Does the post process properties based on the interpolator
-     */
-    protected static void postProperties() {
-
-        final String customConfigurationInterpolator = getStringProperty(DOTCMS_CUSTOM_INTERPOLATOR,
-                null);
-        final ConfigurationInterpolator customInterpolator =
-                UtilMethods.isSet(customConfigurationInterpolator) ?
-                        (ConfigurationInterpolator) ReflectionUtils.newInstance(
-                                customConfigurationInterpolator) : null;
-        final ConfigurationInterpolator interpolator = (null != customInterpolator) ?
-                customInterpolator : SystemEnvironmentConfigurationInterpolator.INSTANCE;
-        final Configuration configuration = interpolator.interpolate(props);
-
-        props = (configuration instanceof PropertiesConfiguration)
-                ? (PropertiesConfiguration) configuration : props;
-    }
-
-    /**
-     *
-     */
-    private static void _refreshProperties() {
-
-        if ((props == null) || // if props is null go ahead.
-                (
-                        (!useWatcherMode.get()) &&
-                                // if we are using watcher mode, do not need to check this
-                                (System.currentTimeMillis() > lastRefreshTime.getTime() + (
-                                        refreshInterval * 60 * 1000))
-                )) {
-            _loadProperties();
-        }
-    }
-
-
-    private final static String ENV_PREFIX = "DOT_";
-
-    private static void readEnvironmentVariables() {
-        synchronized (Config.class) {
-            EnvironmentVariablesService.getInstance().getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
-                    .forEach(e -> props.setProperty(e.getKey(), e.getValue()));
-        }
-    }
-
-
-    private static String envKey(final String theKey) {
-
-        String envKey = ENV_PREFIX + theKey.toUpperCase().replace(".", "_");
-        while (envKey.contains("__")) {
-            envKey = envKey.replace("__", "_");
-        }
-        return envKey.endsWith("_") ? envKey.substring(0, envKey.length() - 1) : envKey;
-
-    }
-
-    private static String getSystemTableValue(final String ...names) {
-
-        if (null != names && null != SYSTEM_TABLE_CONFIG_SOURCE) {
-
-            final String tag = ThreadContextUtil.getOrCreateContext().getTag();
-            if (UtilMethods.isSet(tag) && "ConfigSystemTable".equals(tag)) {
-                // we are already in the system table, so do not need to check inner system table calls (avoid recursion)
-                return null;
-            }
-
-            try {
-
-                ThreadContextUtil.getOrCreateContext().setTag("ConfigSystemTable");
-
-                for (final String name : names) {
-                    final String value = SYSTEM_TABLE_CONFIG_SOURCE.getValue(name);
-                    if (null != value) {
-                        return value;
-                    }
-                }
-
-            } finally {
-                // the result is done, do not need more the barrier tag
-                ThreadContextUtil.getOrCreateContext().setTag(null);
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Given a property name, evaluates if it belongs to the environment variables.
-     *
-     * @param key property name
-     * @return true if key is found when looked by its environment variable name equivalent and if
-     * it has properties associated to, otherwise false.
-     */
-    public static boolean isKeyEnvBased(final String key) {
-        final String envKey = envKey(key);
-
-        if (!props.containsKey(envKey)) {
-            return false;
-        }
-
-        final String[] properties = props.getStringArray(envKey);
-        return properties != null && properties.length > 0;
+        configuration     = CDIUtils.getBean(Configuration.class);
+        pathConfiguration = CDIUtils.getBean(PathConfiguration.class);
     }
 
     /**
@@ -423,15 +61,7 @@ public class Config {
      */
     public static String getStringProperty(final String name, final String defValue) {
 
-        final String[] propsArr = getStringArrayProperty(name,
-                defValue == null ? null : new String[]{defValue});
-
-        if (propsArr == null || propsArr.length == 0) {
-            return defValue;
-        }
-
-        return String.join(",", propsArr);
-
+        return configuration.getStringProperty(name, defValue);
     }
 
     /**
@@ -448,7 +78,6 @@ public class Config {
             boolean thing) {
 
         return getStringProperty(name, defValue);
-
     }
 
 
@@ -456,7 +85,7 @@ public class Config {
      * @deprecated Use getStringProperty(String name, String default) and set an intelligent default
      */
     @Deprecated
-    public static String getStringProperty(String name) {
+    public static String getStringProperty(final String name) {
         return getStringProperty(name, null);
     }
 
@@ -464,7 +93,8 @@ public class Config {
      * @param name
      * @return
      */
-    public static String[] getStringArrayProperty(String name) {
+    public static String[] getStringArrayProperty(final String name) {
+
         return getStringArrayProperty(name, null);
     }
 
@@ -486,9 +116,8 @@ public class Config {
             final Class<T> clazz,
             final Supplier<T[]> defaultSupplier) {
 
-        final String[] values = getStringArrayProperty(name);
-        return props.containsKey(name) ? convert(values, clazz, stringToEntityTransformer)
-                : defaultSupplier.get();
+        return configuration.getCustomArrayProperty(name, stringToEntityTransformer, clazz,
+                defaultSupplier);
     }
 
     private static <T> T[] convert(final String[] values, final Class<T> clazz,
@@ -513,19 +142,7 @@ public class Config {
      */
     public static String[] getStringArrayProperty(final String name, final String[] defaultValue) {
 
-        final String envKey = envKey(name);
-        final String valueString = getSystemTableValue(envKey, name);
-        if (null != valueString) {
-            return valueString.split(StringPool.COMMA);
-        }
-
-        _refreshProperties();
-
-        return props.containsKey(envKey)
-                ? props.getStringArray(envKey)
-                : props.containsKey(name)
-                        ? props.getStringArray(name)
-                        : defaultValue;
+        return configuration.getStringArrayProperty(name, defaultValue);
     }
 
     /**
@@ -534,36 +151,12 @@ public class Config {
     @Deprecated
     public static int getIntProperty(final String name) {
 
-        final String envKey = envKey(name);
-        final String valueString = getSystemTableValue(envKey, name);
-        if (null != valueString) {
-            return Integer.parseInt(valueString);
-        }
-
-        _refreshProperties();
-
-        Integer value = Try.of(() -> props.getInt(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-
-        return props.getInt(name);
+        return configuration.getIntProperty(name);
     }
 
     public static long getLongProperty(final String name, final long defaultVal) {
 
-        final String envKey = envKey(name);
-        final String valueString = getSystemTableValue(envKey, name);
-        if (null != valueString) {
-            return Long.parseLong(valueString);
-        }
-
-        _refreshProperties();
-        Long value = Try.of(() -> props.getLong(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-        return props.getLong(name, defaultVal);
+        return configuration.getLongProperty(name, defaultVal);
     }
 
     /**
@@ -573,19 +166,7 @@ public class Config {
      */
     public static int getIntProperty(final String name, final int defaultVal) {
 
-        final String envKey = envKey(name);
-        final String valueString = getSystemTableValue(envKey, name);
-        if (null != valueString) {
-            return Integer.parseInt(valueString);
-        }
-
-        _refreshProperties();
-        Integer value = Try.of(() -> props.getInt(envKey(name))).getOrNull();
-        if (value != null) {
-            return value;
-        }
-
-        return props.getInt(name, defaultVal);
+        return configuration.getIntProperty(name, defaultVal);
     }
 
     /**
@@ -594,20 +175,7 @@ public class Config {
     @Deprecated
     public static float getFloatProperty(final String name) {
 
-        final String envKey = envKey(name);
-        final String valueString = getSystemTableValue(envKey, name);
-        if (null != valueString) {
-            return Float.parseFloat(valueString);
-        }
-
-        _refreshProperties();
-
-        Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-
-        return props.getFloat(name);
+        return configuration.getFloatProperty(name);
     }
 
     /**
@@ -617,18 +185,7 @@ public class Config {
      */
     public static float getFloatProperty(final String name, final float defaultVal) {
 
-        final String envKey = envKey(name);
-        final String valueString = getSystemTableValue(envKey, name);
-        if (null != valueString) {
-            return Float.parseFloat(valueString);
-        }
-
-        _refreshProperties();
-        Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-        return props.getFloat(name, defaultVal);
+        return configuration.getFloatProperty(name, defaultVal);
     }
 
 
@@ -640,18 +197,7 @@ public class Config {
     @Deprecated
     public static boolean getBooleanProperty(final String name) {
 
-        final String envKey = envKey(name);
-        final String valueString = getSystemTableValue(envKey, name);
-        if (null != valueString) {
-            return Boolean.parseBoolean(valueString);
-        }
-
-        _refreshProperties();
-        Boolean value = Try.of(() -> props.getBoolean(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-        return props.getBoolean(name);
+        return configuration.getBooleanProperty(name);
     }
 
     /**
@@ -659,72 +205,26 @@ public class Config {
      * @param defaultVal
      * @return
      */
-    public static boolean getBooleanProperty(String name, boolean defaultVal) {
+    public static boolean getBooleanProperty(final String name, final boolean defaultVal) {
 
-        final String envKey = envKey(name);
-        final String valueString = getSystemTableValue(envKey, name);
-        if (null != valueString) {
-            return Boolean.parseBoolean(valueString);
-        }
-
-        final Boolean value =
-                props.containsKey(envKey) ? Try.of(() -> props.getBoolean(envKey))
-                        .getOrNull() : null;
-        if (null != value) {
-            return value;
-        }
-        return props.getBoolean(name, defaultVal);
+        return configuration.getBooleanProperty(name, defaultVal);
     }
 
     /**
      * @param key
      * @param value
      */
-    public static void setProperty(String key, Object value) {
-        if (props != null) {
-            if(props.containsKey(envKey(key))) {
-                key = envKey(key);
-            }
-            trackOverrides(key, value);
-            Logger.info(Config.class, "Setting property: " + key + " to " + value);
-            props.setProperty(key, value);
-        }
-    }
+    public static void setProperty(final String key, final Object value) {
 
-    private static void trackOverrides(String key, Object value) {
-        if (props.getBoolean(USE_CONFIG_TEST_OVERRIDE_TRACKER, false)) {
-            if (value == null) {
-                testOverrideTracker.put(key,"[remove]");
-            } else {
-                testOverrideTracker.put(key, value.toString());
-            }
-        }
+        configuration.setProperty(key, value);
     }
-
-    public static Map<String, String> getOverrides() {
-        return Map.copyOf(testOverrideTracker);
-    }
-
-    public static Map<String, String> compareOverrides(Map<String, String> before) {
-        Map<String, String> after = getOverrides();
-        Map<String, String> diff = new HashMap<>();
-        for (String key : after.keySet()) {
-            if (!before.containsKey(key) || !before.get(key).equals(after.get(key))) {
-                diff.put(key, after.get(key));
-            }
-        }
-        return diff;
-    }
-
 
     /**
      * @return
      */
     @SuppressWarnings("unchecked")
     public static Iterator<String> getKeys() {
-        _refreshProperties();
-        // note: I do not think we need the system table keys here by now
-        return ImmutableSet.copyOf(props.getKeys()).iterator();
+        return configuration.getKeys();
     }
 
     /**
@@ -733,9 +233,7 @@ public class Config {
      */
     @SuppressWarnings("unchecked")
     public static Iterator<String> subset(String prefix) {
-        _refreshProperties();
-        // note: I do not think we need the system table keys here by now
-        return ImmutableSet.copyOf(props.subset(prefix).getKeys()).iterator();
+        return configuration.subset(prefix);
     }
 
 
@@ -744,17 +242,9 @@ public class Config {
      *
      * @param myApp
      */
-    public static void setMyApp(javax.servlet.ServletContext myApp) {
+    public static void setMyApp(final javax.servlet.ServletContext myApp) {
         CONTEXT = myApp;
         CONTEXT_PATH = myApp.getRealPath("/");
-    }
-
-
-    /**
-     *
-     */
-    public static void forceRefresh() {
-        lastRefreshTime = new Date(0);
     }
 
 }

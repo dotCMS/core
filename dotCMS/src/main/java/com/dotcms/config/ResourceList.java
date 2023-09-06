@@ -59,31 +59,23 @@ public class ResourceList{
             final File file,
             final Pattern pattern) {
 
-        // todo: shouldn't we use try-with-resources?
         final ArrayList<String> retval = new ArrayList<>();
-        ZipFile zipFile;
-        try{
-            zipFile = new ZipFile(file);
-        } catch(final ZipException e){
-            throw new Error(e);
+        try (ZipFile zipFile = new ZipFile(file)) {
+
+            final Enumeration enumeration = zipFile.entries();
+            while(enumeration.hasMoreElements()) {
+
+                final ZipEntry zipEntry = (ZipEntry) enumeration.nextElement();
+                final String fileName = zipEntry.getName();
+                final boolean accept = pattern.matcher(fileName).matches();
+                if(accept){
+                    retval.add(fileName);
+                }
+            }
         } catch(final IOException e){
             throw new Error(e);
         }
-        final Enumeration enumeration = zipFile.entries();
-        while(enumeration.hasMoreElements()) {
 
-            final ZipEntry zipEntry = (ZipEntry) enumeration.nextElement();
-            final String fileName = zipEntry.getName();
-            final boolean accept = pattern.matcher(fileName).matches();
-            if(accept){
-                retval.add(fileName);
-            }
-        }
-        try{
-            zipFile.close();
-        } catch(final IOException e1){
-            throw new Error(e1);
-        }
         return retval;
     }
 

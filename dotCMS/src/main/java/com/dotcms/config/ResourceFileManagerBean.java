@@ -21,6 +21,8 @@ import java.util.zip.ZipFile;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+
+import com.dotcms.util.CloseUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
@@ -236,27 +238,22 @@ public class ResourceFileManagerBean {
             final Pattern pattern, final boolean webApp){
 
         final ArrayList<String> retval = new ArrayList<>();
-        ZipFile zipFile;
-        // todo: shouldn't we use try-with-resources?
-        try{
-            zipFile = new ZipFile(file);
-        } catch(final IOException e){
+        try (ZipFile zipFile = new ZipFile(file)) {
+
+            final Enumeration entries = zipFile.entries();
+            while(entries.hasMoreElements()) {
+
+                final ZipEntry ze = (ZipEntry) entries.nextElement();
+                final String fileName = ze.getName();
+                final boolean accept  = pattern.matcher(fileName).matches();
+                if(accept) {
+                    retval.add(fileName);
+                }
+            }
+        } catch (IOException e) {
             throw new Error(e);
         }
-        final Enumeration entries = zipFile.entries();
-        while(entries.hasMoreElements()){
-            final ZipEntry ze = (ZipEntry) entries.nextElement();
-            final String fileName = ze.getName();
-            final boolean accept = pattern.matcher(fileName).matches();
-            if(accept){
-                retval.add(fileName);
-            }
-        }
-        try{
-            zipFile.close();
-        } catch(final IOException e1){
-            throw new Error(e1);
-        }
+
         return retval;
     }
 

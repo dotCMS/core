@@ -154,6 +154,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 
+import javax.enterprise.inject.Produces;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Queue;
@@ -196,8 +197,6 @@ public class APILocator extends Locator<APIIndex> {
 		if (instance == null) {
 			instance = new APILocator();
 		}
-
-		Config.initSystemTableConfigSource();
 	}
 
 	/**
@@ -1136,6 +1135,7 @@ public class APILocator extends Locator<APIIndex> {
 	 * Returns the System Facade API
 	 * @return SystemAPI
 	 */
+	@Produces
 	public static SystemAPI getSystemAPI() {
 		return (SystemAPI) getInstance(APIIndex.SYSTEM_API);
 	}

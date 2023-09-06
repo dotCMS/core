@@ -18,6 +18,8 @@ import javax.annotation.Priority;
 @Priority(io.smallrye.config.Priorities.APPLICATION)
 public class DotEnvConfigSourceInterceptor implements ConfigSourceInterceptor {
 
+    private static final String ENV_PREFIX = "DOT_";
+
     @Override
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
 
@@ -28,7 +30,7 @@ public class DotEnvConfigSourceInterceptor implements ConfigSourceInterceptor {
             ConfigLogging.log.notFound(name);
         }
         if (configValue==null) {
-            configValue = context.proceed("DOT_" + name.toUpperCase().replace(StringPool.PERIOD, StringPool.UNDERLINE));
+            configValue = context.proceed(ENV_PREFIX + name.toUpperCase().replace(StringPool.PERIOD, StringPool.UNDERLINE));
         }
         return configValue;
     }
