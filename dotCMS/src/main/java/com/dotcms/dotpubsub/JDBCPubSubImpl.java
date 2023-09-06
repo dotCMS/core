@@ -286,7 +286,7 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
 
     @Override
     public boolean publish(final DotPubSubEvent eventIn) {
-
+        listener();
         final DotPubSubEvent eventOut = new DotPubSubEvent.Builder(eventIn).withOrigin(serverId).build();
 
         Logger.debug(getClass(), () -> "sending  event:" + eventOut);
