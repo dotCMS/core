@@ -79,7 +79,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     layout!: DotLayout;
 
     @Input()
-    themeId!: string;
+    themeId!: string; // In the layout we have the themeId we can consider removing this.
 
     @Input()
     containerMap!: DotContainerMap;
@@ -108,6 +108,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     private destroy$: Subject<boolean> = new Subject<boolean>();
     public rows$: Observable<DotLayoutBody>;
     public vm$: Observable<DotTemplateBuilderState> = this.store.vm$;
+
+    private themeId$ = this.store.themeId$;
 
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
@@ -183,13 +185,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     ) {
         this.rows$ = this.store.rows$.pipe(map((rows) => parseFromGridStackToDotObject(rows)));
 
-        combineLatest([this.rows$, this.store.layoutProperties$])
+        combineLatest([this.rows$, this.store.layoutProperties$, this.themeId$])
             .pipe(
                 filter(([items, layoutProperties]) => !!items && !!layoutProperties),
                 skip(1),
                 takeUntil(this.destroy$)
             )
-            .subscribe(([rows, layoutProperties]) => {
+            .subscribe(([rows, layoutProperties, themeId]) => {
                 this.dotLayout = {
                     ...this.layout,
                     ...layoutProperties,
@@ -202,7 +204,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 };
 
                 this.templateChange.emit({
-                    themeId: this.themeId,
+                    themeId,
                     layout: { ...this.dotLayout }
                 });
             });
@@ -213,7 +215,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             rows: parseFromDotObjectToGridStack(this.layout.body),
             layoutProperties: this.layoutProperties,
             resizingRowID: '',
-            containerMap: this.containerMap
+            containerMap: this.containerMap,
+            themeId: this.themeId
         });
     }
 
@@ -397,19 +400,19 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      * @memberof TemplateBuilderComponent
      */
     openThemeSelectorDynamicDialog(): void {
-        const ref: DynamicDialogRef = this.dialogService.open(
-            TemplateBuilderThemeSelectorComponent,
-            {
+        let ref: DynamicDialogRef;
+
+        this.themeId$.pipe(take(1)).subscribe((themeId) => {
+            ref = this.dialogService.open(TemplateBuilderThemeSelectorComponent, {
                 header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
                 resizable: false,
                 width: '80%',
                 closeOnEscape: true,
                 data: {
-                    themeId: this.themeId
+                    themeId
                 }
-            }
-        );
-
+            });
+        });
         ref.onClose
             .pipe(
                 take(1),
@@ -417,11 +420,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             )
             .subscribe(
                 (theme: DotTheme) => {
-                    this.themeId = theme.identifier;
-                    this.templateChange.emit({
-                        themeId: this.themeId,
-                        layout: { ...this.dotLayout }
-                    });
+                    this.store.updateThemeId(theme.identifier);
                 },
                 () => {
                     /* */

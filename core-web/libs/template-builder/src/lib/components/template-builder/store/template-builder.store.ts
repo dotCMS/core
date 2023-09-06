@@ -36,6 +36,7 @@ import {
 export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderState> {
     public rows$ = this.select((state) => state.rows);
     public layoutProperties$ = this.select((state) => state.layoutProperties);
+    public themeId$ = this.select((state) => state.themeId);
 
     public vm$ = this.select((state) => ({
         ...state,
@@ -466,6 +467,16 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             return { ...state, rows: updatedItems };
         }
     );
+
+    /**
+     * @description This method updates the themeId
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly updateThemeId = this.updater((state, themeId: string) => ({
+        ...state,
+        themeId
+    }));
 
     // Utils methods
 

@@ -24,6 +24,7 @@ import {
     CONTAINER_MAP_MOCK,
     DOT_MESSAGE_SERVICE_TB_MOCK,
     FULL_DATA_MOCK,
+    INITIAL_STATE_MOCK,
     ROWS_MOCK
 } from './utils/mocks';
 
@@ -254,6 +255,7 @@ describe('TemplateBuilderComponent', () => {
             spectator.detectChanges();
 
             store.setState({
+                ...INITIAL_STATE_MOCK,
                 rows: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
                 layoutProperties: {
                     header: true,
@@ -263,9 +265,7 @@ describe('TemplateBuilderComponent', () => {
                         location: 'left',
                         width: 'small'
                     }
-                },
-                resizingRowID: '',
-                containerMap: {}
+                }
             });
 
             store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {
