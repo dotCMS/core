@@ -23,8 +23,8 @@ form {
 
         .pending-label {
             height: fit-content;
-            font-size: 12px;
-            margin-right: 0.5rem;
+            font-size: $font-size-xs;
+            margin-right: $spacing-1;
         }
     }
 }

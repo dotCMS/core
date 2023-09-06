@@ -73,7 +73,13 @@
     <p-tag
         class="sm p-tag-success dot-edit__experiments-results-tag"
         *ngIf="runningExperiment"
-        [value]="'running' | dm | titlecase"
+        [value]="
+            ('running' | dm | titlecase) +
+            ' ' +
+            ('dot.common.until' | dm) +
+            ' ' +
+            (runningExperiment.scheduling.endDate | date : runningUntilDateFormat)
+        "
         [routerLink]="[
             '/edit-page/experiments/',
             runningExperiment.pageId,

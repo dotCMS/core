@@ -1,7 +1,7 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-experiments-header
         [isLoading]="vm.isLoading"
-        [status]="vm.experiment?.status"
+        [experiment]="vm.experiment"
         [title]="vm.experiment?.name"
         (goBack)="goToExperimentList(vm.experiment.pageId)">
         <div class="flex flex-grow-0 align-items-center justify-content-between">
