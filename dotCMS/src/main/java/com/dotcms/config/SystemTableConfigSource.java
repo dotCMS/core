@@ -65,7 +65,7 @@ public class SystemTableConfigSource implements ConfigSource {
 
     @Override
     public String getName() {
-        return SystemTableConfigSourceOld.class.getSimpleName();
+        return this.getClass().getSimpleName();
     }
 
 }
