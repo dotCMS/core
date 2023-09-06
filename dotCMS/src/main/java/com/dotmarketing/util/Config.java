@@ -2,6 +2,7 @@ package com.dotmarketing.util;
 
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.config.Configuration;
+import com.dotcms.config.DotEnvConfigSourceInterceptor;
 import com.dotcms.config.PathConfiguration;
 import com.dotcms.repackage.com.google.common.base.Supplier;
 import com.dotcms.util.FileWatcherAPI;
@@ -49,6 +50,30 @@ public class Config {
 
         configuration     = CDIUtils.getBean(Configuration.class);
         pathConfiguration = CDIUtils.getBean(PathConfiguration.class);
+    }
+
+    private static String envKey(final String theKey) {
+
+        String envKey = DotEnvConfigSourceInterceptor.ENV_PREFIX + theKey.toUpperCase().replace(".", "_");
+        while (envKey.contains("__")) {
+            envKey = envKey.replace("__", "_");
+        }
+        return envKey.endsWith("_") ? envKey.substring(0, envKey.length() - 1) : envKey;
+
+    }
+
+    /**
+     * Given a property name, evaluates if it belongs to the environment variables.
+     *
+     * @param key property name
+     * @return true if key is found when looked by its environment variable name equivalent and if
+     * it has properties associated to, otherwise false.
+     */
+    public static boolean isKeyEnvBased(final String key) {
+        // todo: review this with falcon
+        final String envKey = envKey(key);
+
+        return UtilMethods.isSet(configuration.getProperty(envKey));
     }
 
     /**

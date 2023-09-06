@@ -18,7 +18,7 @@ import javax.annotation.Priority;
 @Priority(io.smallrye.config.Priorities.APPLICATION)
 public class DotEnvConfigSourceInterceptor implements ConfigSourceInterceptor {
 
-    private static final String ENV_PREFIX = "DOT_";
+    public static final String ENV_PREFIX = "DOT_";
 
     @Override
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
