@@ -20,7 +20,7 @@ import { DotKeyValueTableRowComponent } from './dot-key-value-table-row.componen
 
 import { mockKeyValue } from '../dot-key-value-ng.component.spec';
 
-const PASSWORD_PLACEHOLDER = '********';
+const PASSWORD_PLACEHOLDER = '*****';
 const VARIABLE_INDEX = 1;
 const MESSAGE_MOCK_SERVICE = new MockDotMessageService({
     'keyValue.key_input.placeholder': 'Enter Key',
