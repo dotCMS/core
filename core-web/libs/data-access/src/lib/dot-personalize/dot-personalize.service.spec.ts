@@ -40,7 +40,7 @@ describe('DotPersonalizeService', () => {
         dotPersonalizeService.despersonalized(pageId, personaTag).subscribe();
 
         const req = httpMock.expectOne(
-            `/api/v1/personalization/pagepersonas/page/${pageId}/personalization/${personaTag}`
+            `/api/v1/personalization/pagepersonas/page/${pageId}/personalization/${personaTag}?variantName=DEFAULT`
         );
         expect(req.request.method).toBe('DELETE');
     });

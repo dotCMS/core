@@ -51,10 +51,15 @@ export class DotPersonalizeService {
      * @memberof DotPersonalizeService
      */
     despersonalized(pageId: string, personaTag: string): Observable<string> {
+        const currentVariantName = this.dotSessionStorageService.getVariationId();
+
         return this.coreWebService
             .requestView({
                 method: 'DELETE',
-                url: `/api/v1/personalization/pagepersonas/page/${pageId}/personalization/${personaTag}`
+                url: `/api/v1/personalization/pagepersonas/page/${pageId}/personalization/${personaTag}`,
+                params: {
+                    variantName: currentVariantName
+                }
             })
             .pipe(pluck('entity'));
     }
