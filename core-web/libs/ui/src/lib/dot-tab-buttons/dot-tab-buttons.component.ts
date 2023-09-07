@@ -1,12 +1,30 @@
 import { CommonModule, NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    HostListener,
+    Input,
+    OnInit,
+    Output
+} from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotPageMode } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+
+interface TabButtonOptions {
+    id: string;
+    toggle?: boolean;
+    icon?: string;
+    showDropdownButton: boolean;
+}
+
+type CustomEventTarget = EventTarget & {
+    value: string;
+};
 
 /**
  * This component is responsible to display the tab buttons for the edit page.
@@ -22,26 +40,43 @@ import { DotMessagePipe } from '@dotcms/ui';
     styleUrls: ['./dot-tab-buttons.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotTabButtonsComponent {
-    @Output() openMenu = new EventEmitter();
+export class DotTabButtonsComponent implements OnInit {
+    @Output() openMenu = new EventEmitter<{ event: PointerEvent; id: string }>();
     @Output() clickOption = new EventEmitter();
-    @Input() mode: DotPageMode;
-    @Input() options: SelectItem[];
-    protected readonly pageMode = DotPageMode;
+    @Input() activeId: string;
+    @Input() options: SelectItem<TabButtonOptions>[];
+
+    _options: SelectItem<TabButtonOptions>[] = [];
+
     protected readonly dropDownOpenIcon = 'pi pi-angle-up';
     protected readonly dropDownCloseIcon = 'pi pi-angle-down';
-    readonly OPEN_MENU = 'openMenu';
-    toggle = false;
-    icon = this.dropDownCloseIcon;
+    readonly OPEN_MENU = '-openMenu';
+
+    ngOnInit() {
+        // We don't want reference issues with the options, so we clone them.
+        this._options = structuredClone(this.options).map((option) => {
+            if (option.value.showDropdownButton) {
+                option.value.toggle = false;
+                option.value.icon = this.dropDownCloseIcon;
+            }
+
+            return option;
+        });
+    }
 
     /**
      * Handles the click event on the tab buttons.
      * @param event
      */
-    onClickOption(event) {
-        if (event.target.value === this.OPEN_MENU) {
+    onClickOption(event: PointerEvent) {
+        const { value } = event.target as CustomEventTarget;
+
+        if (
+            this._options.find(({ value: { id } }) => value.includes(id + this.OPEN_MENU))?.value
+                .showDropdownButton
+        ) {
             this.showMenu(event);
-        } else if (event.target.value !== this.mode) {
+        } else {
             this.clickOption.emit(event);
         }
     }
@@ -50,13 +85,37 @@ export class DotTabButtonsComponent {
      * Handles the click event on the menu button.
      * @param event
      */
-    showMenu(event) {
-        this.toggle = !this.toggle;
-        this.toggleIcon();
-        this.openMenu.emit(event);
+    showMenu(event: PointerEvent) {
+        event.stopPropagation();
+
+        const { value } = event.target as CustomEventTarget;
+
+        this._options = this._options.map((option) => {
+            if (value.includes(option.value.id)) {
+                option.value.toggle = !option.value.toggle;
+                option.value.icon = option.value.toggle
+                    ? this.dropDownOpenIcon
+                    : this.dropDownCloseIcon;
+            }
+
+            return option;
+        });
+
+        this.openMenu.emit({ event, id: value.replace(this.OPEN_MENU, '') });
     }
 
-    toggleIcon() {
-        this.icon = this.toggle ? this.dropDownOpenIcon : this.dropDownCloseIcon;
+    /**
+     * Handles the click event on the document to reset the dropdowns state.
+     *
+     * @memberof DotTabButtonsComponent
+     */
+    @HostListener('document:click', ['$event'])
+    resetDropdowns() {
+        this._options = this._options.map((option) => {
+            option.value.toggle = false;
+            option.value.icon = this.dropDownCloseIcon;
+
+            return option;
+        });
     }
 }
