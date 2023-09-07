@@ -5,7 +5,7 @@
 
     <ng-template [ngIf]="isHiddenField" [ngIfElse]="editableValue">
         <td data-testId="dot-key-value-label">
-            {{ variableCopy.hidden ? passwordPlaceholder : variableCopy.value }}
+            {{ passwordPlaceholder }}
         </td>
     </ng-template>
     <ng-template #editableValue>
