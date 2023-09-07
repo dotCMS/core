@@ -55,6 +55,9 @@ public class PushCommand implements Callable<Integer>, DotCommand {
             var cmdLine = new CommandLine(subCommand);
             CustomConfigurationUtil.getInstance().customize(cmdLine);
 
+            // Make sure unmatched arguments pass silently
+            cmdLine.setUnmatchedArgumentsAllowed(true);
+
             // Use execute to parse the parameters with the subcommand
             int exitCode = cmdLine.execute(args);
             if (exitCode != CommandLine.ExitCode.OK) {
