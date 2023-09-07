@@ -62,16 +62,23 @@ public class SiteCopy extends AbstractSiteCommand implements Callable<Integer>, 
                 "--template"}, paramLabel = "Templates", description = "if specified templates will be copied.", defaultValue = "false")
         boolean copyTemplateContainers;
 
-        @CommandLine.Option(names = {"-v",
-                "--var"}, paramLabel = "Variables", description = "if specified site variables will be copied.", defaultValue = "false")
+        @CommandLine.Option(names = {"-var",
+                "--variable"}, paramLabel = "Variables", description = "if specified site variables will be copied.", defaultValue = "false")
         boolean copySiteVariables;
     }
 
     @CommandLine.ArgGroup(exclusive = false,  heading = "\n@|bold,blue Individual Copy Options. |@\n")
     CopyOptions copyOptions;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         return copy();
     }
 

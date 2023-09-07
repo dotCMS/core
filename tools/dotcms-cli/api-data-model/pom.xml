@@ -21,11 +21,10 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>2.9.1.Final</quarkus.platform.version>
-        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <testcontainers.version>1.17.6</testcontainers.version>
-        <skip.surefire.tests>false</skip.surefire.tests>
-        <skip.failsafe.tests>false</skip.failsafe.tests>
-        <test.failure.ignore>true</test.failure.ignore>
+        <failsafe-plugin.version>3.0.0-M5</failsafe-plugin.version>
+        <test.failure.ignore>false</test.failure.ignore>
+        <maven.plugin.jar.version>3.3.0</maven.plugin.jar.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -105,12 +104,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${testcontainers.version}</version>
@@ -123,21 +116,6 @@
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>${testcontainers.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>elasticsearch</artifactId>
-            <version>${testcontainers.version}</version>
-            <scope>test</scope>
-        </dependency>
-
 
     </dependencies>
     <build>
@@ -168,26 +146,13 @@
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${surefire-plugin.version}</version>
-                <configuration>
-                    <testFailureIgnore>${test.failure.ignore}</testFailureIgnore>
-                    <skipTests>${skip.surefire.tests}</skipTests>
-                    <systemPropertyVariables>
-                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                        <maven.home>${maven.home}</maven.home>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${surefire-plugin.version}</version>
+                <version>${failsafe-plugin.version}</version>
                 <configuration>
                     <testFailureIgnore>${test.failure.ignore}</testFailureIgnore>
-                    <skipTests>${skip.failsafe.tests}</skipTests>
                     <includes>
-                        <include>**/*IntegrationTest.java</include>
+                        <include>**/*Test.java</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -206,6 +171,18 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.plugin.jar.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
 
     </build>
@@ -221,7 +198,7 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${surefire-plugin.version}</version>
+                        <version>${failsafe-plugin.version}</version>
                         <executions>
                             <execution>
                                 <goals>

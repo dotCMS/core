@@ -37,9 +37,11 @@
         width: $calendar-item-size;
     }
 
-    &Decrease {
+    &DecrementArrow {
+        position: absolute;
         &:before {
             // TODO: add option for image icon
+            position: relative;
             @include create-arrow(
                 $calendar-dropdown-arrow-size,
                 $calendar-dropdown-arrow-color,
@@ -48,8 +50,11 @@
         }
     }
 
-    &Increase {
+    &IncrementArrow {
+        position: absolute;
+        right: $spacing-1;
         &:before {
+            position: relative;
             @include create-arrow(
                 $calendar-dropdown-arrow-size,
                 $calendar-dropdown-arrow-color,
@@ -70,6 +75,7 @@
         }
 
         .dijitDropDownButton {
+            margin-top: $spacing-0;
             border-radius: 0;
             background-color: transparent;
             height: calc(calc($field-height-md - 0.625rem) + ($field-border-size * 2));

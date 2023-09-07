@@ -1,12 +1,40 @@
 name: CLI tests
 on:
-  pull_request:
-    paths:
-      - 'tools/dotcms-cli/**'
+  workflow_dispatch:
+    inputs:
+      docker_build_cache:
+        description: 'Docker build cache'
+        default: 'false'
+      docker_build_push:
+        description: 'Docker build push'
+        default: 'false'
   push:
     branches:
       - master
       - release-*
+    paths-ignore:
+      - '.gitignore'
+      - '.dockerignore'
+      - 'dotCMS/src/main/webapp/html'
+      - '!docker/**'
+      - 'cicd/**'
+      - '.cicd/**'
+      - '*.md'
+      - '*.adoc'
+      - '*.txt'
+      - '.github/ISSUE_TEMPLATE/**'
+  pull_request:
+    paths-ignore:
+      - '.gitignore'
+      - '.dockerignore'
+      - 'dotCMS/src/main/webapp/html'
+      - '!docker/**'
+      - 'cicd/**'
+      - '.cicd/**'
+      - '*.md'
+      - '*.adoc'
+      - '*.txt'
+      - '.github/ISSUE_TEMPLATE/**'
 jobs:
   cli_tests:
     name: CLI tests
@@ -19,6 +47,44 @@ jobs:
       - id: checkout-core
         name: Checkout core
         uses: actions/checkout@v3
+
+      -
+        id: meta
+        name: Docker meta
+        uses: docker/metadata-action@v4
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            dotcms/dotcms
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=sha,enable=true,priority=100,prefix=master_,suffix=_SNAPSHOT,format=short
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          push: ${{ github.event.inputs.docker_build_push || 'false' }}
+          context: docker/dotcms
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          pull: true
+          no-cache: ${{ github.event.inputs.docker_build_cache || 'false' }}
+          build-args: |
+            BUILD_ID=${{ github.head_ref }}
+            BUILD_FROM=COMMIT 
+            
       - id: prepare-license
         name: Prepare license
         working-directory: ./tools/dotcms-cli/
@@ -40,11 +106,18 @@ jobs:
             BUILD_ID=$(basename "${{ github.ref }}")
           fi
           
-          ./mvnw clean verify
+          if [[ -z "${GITHUB_SHA}" ]]; then
+            BUILD_HASH=$(git log -1 --pretty=%h)
+          else
+            BUILD_HASH=${GITHUB_SHA::7}
+          fi
           
-          FAILURES=$(find target -name TEST-*.xml | xargs grep '<failure' | wc -l)
+          ./mvnw clean verify -Dtest.failure.ignore=true
           
-          if [ $FAILURES -eq 0 ]; then
+          FAILURES=$(find . -name TEST-*.xml | xargs grep '<failure' | wc -l)
+          ERRORS=$(find . -name TEST-*.xml | xargs grep '<error' | wc -l)
+          
+          if [[ $FAILURES -eq 0 && $ERRORS -eq 0 ]]; then
               OUTPUT_STATUS="PASSED"
           else
               OUTPUT_STATUS="FAILED"
@@ -52,7 +125,7 @@ jobs:
           
           echo "status=$OUTPUT_STATUS" >> $GITHUB_OUTPUT
           
-          ./mvnw surefire-report:report-only surefire-report:failsafe-report-only  
+          ./mvnw surefire-report:failsafe-report-only  
                
           DOT_CLI_PATH=${{ github.workspace }}/tools/dotcms-cli
           RESULTS_PATH=${DOT_CLI_PATH}/target/test-results
@@ -70,20 +143,18 @@ jobs:
           for module in $MODULES
           do
             mkdir -p ${XML_REPORTS_PATH}/${module}
-            cp -r ${module}/target/surefire-reports ${XML_REPORTS_PATH}/${module}
             cp -r ${module}/target/failsafe-reports ${XML_REPORTS_PATH}/${module}
             mkdir -p ${HTML_REPORTS_PATH}/${module}
             cp -r ${module}/target/site/* ${HTML_REPORTS_PATH}/${module}
+          
+            echo "<tr><td>${module}</td><td><a href=\"${module}/failsafe-report.html\">failsafe report</a></td></tr>" >> ${INDEX_FILE}
             
-            for report in surefire failsafe
-            do
-              echo "<tr><td>${module}</td><td><a href=\"${module}/site/${report}-report.html\">${report} report</a></td></tr>" >> ${INDEX_FILE}
-            done
           done
           
           cat ${CICD_RES_PATH}/cli/cli-results-footer.html >> ${INDEX_FILE}
 
           echo "BUILD_ID=${BUILD_ID}" >> "$GITHUB_ENV"
+          echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
           echo "results_location=${XML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
           echo "results_report_location=${HTML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
           

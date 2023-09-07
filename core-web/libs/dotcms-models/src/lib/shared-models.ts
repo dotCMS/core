@@ -23,6 +23,11 @@ export const enum FeaturedFlags {
     FEATURE_FLAG_SEO_PAGE_TOOLS = 'FEATURE_FLAG_SEO_PAGE_TOOLS'
 }
 
+export type DotDropdownGroupSelectOption<T> = {
+    label: string;
+    items: DotDropdownSelectOption<T>[];
+};
+
 export type DotDropdownSelectOption<T> = {
     label: string;
     value: T;

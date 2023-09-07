@@ -37,6 +37,9 @@ import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+
+import com.dotcms.experiments.business.ExperimentFilter;
+
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -49,6 +52,7 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
@@ -748,12 +752,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     @Override
     public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final String variant) throws DotDataException {
+        return findContentletByIdentifierAnyLanguage(identifier, variant, false);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final String variant,
+            final boolean includeDeleted) throws DotDataException{
         try {
-            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, variant);
+            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, variant, includeDeleted);
         } catch (Exception e) {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
         }
     }
+
 
     @CloseDBIfOpened
     @Override
@@ -2422,7 +2434,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentlets.add(contentlet);
 
         try {
-
             deleted = delete(contentlets, user, respectFrontendRoles);
             HibernateUtil.addCommitListener
                     (() -> this.localSystemEventsAPI.notify(
@@ -3028,7 +3039,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } else {
 
             if (contentletToDelete.isHTMLPage()) {
-
                 unlinkRelatedContentType(user, contentletToDelete);
             }
 
@@ -3535,6 +3545,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
+
         // sets deleted to true
         APILocator.getVersionableAPI().setDeleted(workingContentlet, true);
 
@@ -3994,15 +4005,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         this.canLock(contentlet, user);
-
-        if (contentlet.isHTMLPage()) {
-            final Optional<Experiment> runningExperiment = APILocator.getExperimentsAPI()
-                    .getRunningExperimentPerPage(contentlet.getIdentifier());
-
-            if (runningExperiment.isPresent()) {
-                throw new RunningExperimentUnpublishException(contentlet, runningExperiment.get());
-            }
-        }
 
         APILocator.getVersionableAPI().removeLive(contentlet);
 
@@ -7107,6 +7109,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     || property.getValue() instanceof BigDecimal
                                     || property.getValue() instanceof Short
                                     || property.getValue() instanceof Double
+                                    || property.getValue() instanceof ContentletRelationships
                     )
             ) {
                 throw new DotContentletStateException(

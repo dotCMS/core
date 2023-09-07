@@ -27,11 +27,8 @@ public interface AbstractVariant extends Serializable, ManifestItem {
     @JsonProperty("name")
     String name();
 
-    @Value.Default
     @JsonProperty("description")
-    default Optional<String> description() {
-        return Optional.of("");
-    }
+    Optional<String> description();
 
     @Value.Default
     @JsonProperty("archived")

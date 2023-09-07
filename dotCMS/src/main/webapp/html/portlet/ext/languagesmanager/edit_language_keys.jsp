@@ -5,10 +5,10 @@
 
 <%@ include file="/html/portlet/ext/languagesmanager/init.jsp" %>
 <%@ include file="/html/common/messages_inc.jsp"%>
-<%	
+<%
 	List<Language> languages = (java.util.List) request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_MANAGER_LIST);
 	Language language = (Language) request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_MANAGER_LANGUAGE);
-	
+
 	StringBuilder buff = new StringBuilder();
 	buff.append("{identifier:'id', label:'label',imageurl:'imageurl',items:[");
 
@@ -43,10 +43,10 @@
 	var dirty = false;
 	var separator = "<%= com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR %>";
 	var keysToAdd = new Array();
-	var keysToUpdate = new Array();	
+	var keysToUpdate = new Array();
 	var keysToDelete = new Array();
 	var currentPage = 1;
-	
+
 	function changeLanguage(selected) {
 		if(selected != <%= language.getId() %>) {
 			var form = $('fm');
@@ -64,9 +64,9 @@
 			if(Ext.get('noprops') != null)
 				Ext.get('noprops').remove();
 			}
-			
-		alternate = (alternate == 'alternate_1'?'alternate_2':'alternate_1');		
-		
+
+		alternate = (alternate == 'alternate_1'?'alternate_2':'alternate_1');
+
 		var buffer = '<tr class="' + alternate + '" id="row-' + currentIndex + '">';
 
 		buffer += '<td width="6%" align="center"><input type="hidden" id="' + currentLanguage + '-' + currentIndex + '-new" name="' + currentLanguage + '-' + currentIndex + '-new" value="true"/>' +
@@ -78,7 +78,7 @@
 
 		buffer += '<td width="40%"><input id="' + currentLanguage + '-general-' + currentIndex + '-value"  onchange="generalValueChanged(' + currentIndex + ');refreshAddKeys(' + currentIndex + ');"  ' +
 			'type="text" dojoType="dijit.form.TextBox" style="width: 98%" name="' + currentLanguage + '-general-' + currentIndex + '-value" value=""/></td>';
-			
+
 		buffer += '<td width="40%"><input id="' + currentLanguage + '-' + currentCountry + '-' + currentIndex + '-value"  onchange="languageValueChanged(' + currentIndex + ');refreshAddKeys(' + currentIndex + ');"  ' +
 			'type="text" dojoType="dijit.form.TextBox" style="width: 98%" name="' + currentLanguage + '-' + currentCountry + '-' + currentIndex + '-value" value=""/></td>';
 
@@ -147,18 +147,18 @@
 				return;
 			}
 		}
-		
+
 		for(var i=0; i<keysToAdd.length; i++){
 			var langKey = dojo.attr(currentLanguage + '-' + keysToAdd[i] + '-key','value');
 			var generalValue = dojo.attr(currentLanguage + '-general-' + keysToAdd[i] + '-value','value');
-			var specificValue = dojo.attr(currentLanguage + '-' + currentCountry + '-' + keysToAdd[i] + '-value','value');						
+			var specificValue = dojo.attr(currentLanguage + '-' + currentCountry + '-' + keysToAdd[i] + '-value','value');
 			keysToAdd[i] = langKey+separator+generalValue+separator+specificValue;
 		}
 
 		for(var j=0; j<keysToUpdate.length; j++){
 			var langKey = dojo.attr(currentLanguage + '-' + keysToUpdate[j] + '-key','value');
 			var generalValue = dojo.attr(currentLanguage + '-general-' + keysToUpdate[j] + '-value','value');
-			var specificValue = dojo.attr(currentLanguage + '-' + currentCountry + '-' + keysToUpdate[j] + '-value','value');						
+			var specificValue = dojo.attr(currentLanguage + '-' + currentCountry + '-' + keysToUpdate[j] + '-value','value');
 			keysToUpdate[j] = langKey+separator+generalValue+separator+specificValue;
 		}
 
@@ -181,10 +181,10 @@
 	}
 
 	function cancelEdit(form) {
-		
+
 		if(dirty && !confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.languagemanager.abandon.applied.changes")) %>'))
 			return;
-		
+
 		self.location = '<portlet:renderURL><portlet:param name="struts_action" value="/ext/languages_manager/view_languages_manager" /></portlet:renderURL>';
 	}
 
@@ -203,7 +203,7 @@
 		if(Ext.get('altText') != null)
 			Ext.get('altText').hide();
 	}
-	
+
 	//Layout Initialization
 	function  resizeBrowser(){
 		var viewport = dijit.getViewport();
@@ -215,14 +215,14 @@
 
 	var cellFuncs = [
 		function(data) {
-			var returnStr = "";			
+			var returnStr = "";
 			returnStr += "<input type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" "
 				+ " id=\"<%= language.getLanguageCode() %>-" + data['idx'] + "-remove\" "
 				+ " name=\"<%= language.getLanguageCode() %>-" + data['idx'] + "-remove\" "
-				+ " value=\"\"/>";				
-			return returnStr; 
+				+ " value=\"\"/>";
+			return returnStr;
 		},
-		
+
 		function(data) {
 			var returnStr = "";
 			returnStr += "<input type=\"hidden\" "
@@ -233,9 +233,9 @@
 				+ " onmouseover=\"displayKeyAltText(this, '" + data['key'] + "')\" "
 				+ " readonly=\"readonly\" "
 				+ " value=\"" + data['key'] + "\"/>";
-			return returnStr; 
+			return returnStr;
 		},
-								
+
 		function(data) {
 			var returnString = "";
 			returnString += "<input type=\"text\" dojoType=\"dijit.form.TextBox\" style=\"width:300px;\" "
@@ -245,42 +245,42 @@
 				+ " value=\"" + data['generalValue'] + "\"/>";
 			return returnString;
 		},
-		
+
 		function(data) {
-			count++;			 
+			count++;
 			var returnStr1 = "";
 			returnStr1 += "<input type=\"text\" dojoType=\"dijit.form.TextBox\" style=\"width:300px;\" "
 				+ " id=\"<%= language.getLanguageCode() %>-<%= language.getCountryCode() %>-" + data['idx'] + "-value\" "
 				+ " onchange=\"languageValueChanged(" + data['idx'] + ");refreshKeysToUpdate(" + data['idx'] + ");\""
 				+ " name=\"<%= language.getLanguageCode() %>-<%= language.getCountryCode() %>-" + data['idx'] + "-value\" "
 				+ " value=\"" + data['specificValue'] + "\"/>";
-						
+
 			alternate = data['alternate'];
 			currentIndex = data['idx'];
-			currentIndex++;			
+			currentIndex++;
 			return returnStr1;
 		}
 ];
 
 	var loadProgressToggle;
 	function viewLanguageKeys(page){
-		
+
 		if (page == null)
 			currentPage = 1;
-		else 
+		else
 			currentPage = page;
-		
+
 		var filter = Ext.get('filter').dom.value;
-		
-		
+
+
 		loadProgressToggle.show();
 		LanguageAjax.getPaginatedLanguageKeys('<%=language.getLanguageCode()%>',
 				                              '<%=language.getCountryCode()%>',
 				                              currentPage,filter,viewLanguageKeysCallback);
-		
+
 	}
 
-	
+
 	function viewLanguageKeysCallback(data){
 		if(data.length > 0){
 
@@ -297,7 +297,7 @@
 			var total = counters["total"];
 			var begin = counters["begin"];
 			var end = counters["end"];
-	        var totalPages = counters["totalPages"];		
+	        var totalPages = counters["totalPages"];
 
 			showMatchingResults (total,begin,end,totalPages);
 
@@ -306,22 +306,22 @@
 	 		} else {
 	 			document.getElementById("nextDiv").style.display = "none";
 	 		}
-			
+
 			if (hasPrevious) {
 	 			document.getElementById("previousDiv").style.display = "";
 	 		} else {
 	 			document.getElementById("previousDiv").style.display = "none";
 	 		}
-				
+
 			for (var i = 1; i < data.length; i++) {
 				data[i - 1] = data[i];
 			}
 
 			data.length = data.length - 1;
-								
+
 			dwr.util.removeAllRows('propertiesTable');
 			if(data.length > 0){
-				dwr.util.addRows( "propertiesTable",data, cellFuncs, { 
+				dwr.util.addRows( "propertiesTable",data, cellFuncs, {
 					rowCreator:function(options) {
 				    var row = document.createElement("tr");
 				    row.id = "row-"+data[options.rowIndex]['idx'];
@@ -339,7 +339,7 @@
 					currentIndex = 0;
 				}
 			keysToAdd.length = 0;
-			keysToUpdate.length = 0; 
+			keysToUpdate.length = 0;
 			keysToDelete.length = 0;
 		}
 		loadProgressToggle.hide();
@@ -348,9 +348,9 @@
 	}
 
 	function showMatchingResults (num,begin,end,totalPages) {
-	    
+
 	    eval("totalContents=" + num + ";");
-	    
+
 		//Bottom Matching Results
 		var div = document.getElementById("matchingResultsBottomDiv")
 			var strbuff = "<table border='0' width=\"100%\"><tr><td align='center'><b><%= LanguageUtil.get(pageContext, "showing") %> " + begin + " - " + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num;
@@ -363,7 +363,7 @@
 				if(auxPage >= 1)
 				{
 					strbuff += "<a href='javascript:viewLanguageKeys (" + auxPage + ");'> " + auxPage + " </a>";
-				}				
+				}
 			}
 			strbuff += " " + currentPage + " ";
 			for(i = 1;i <= 4;i++)
@@ -372,7 +372,7 @@
 				if(auxPage <= totalPages)
 				{
 					strbuff += "<a href='javascript:viewLanguageKeys(" + auxPage + ");'> " + auxPage + " </a>";
-				}				
+				}
 			}
 		}
 		strbuff += "</b></td></tr></table>";
@@ -386,12 +386,12 @@
 	function previousPage () {
 		viewLanguageKeys(currentPage - 1);
 	}
-	
+
 	function refreshAddKeys(idx){
 		var exists = false;
 		for(var index = 0; index < keysToAdd.length; index++){
 			if(keysToAdd[index] == idx)
-				exists = true;			
+				exists = true;
 		}
 		if(!exists)
 			keysToAdd[keysToAdd.length] = idx;
@@ -415,7 +415,7 @@
 		}
 		if(!exists)
 			keysToUpdate[keysToUpdate.length] = idx;
-	}	
+	}
 
 // need the timeout for back buttons
 
@@ -426,26 +426,26 @@
 		loadProgressToggle.hide();
 		viewLanguageKeys(1);
 	});
-	
+
 </script>
 
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Editing-Language-Variables")) %>' />
-<html:form action="/ext/languages_manager/edit_language_keys" styleId="fm">
+<html:form action="/ext/languages_manager/edit_language_keys" styleId="fm" style="height: 0;">
 	<input type="hidden" name="id" value="<%= language.getId() %>">
 	<input type="hidden" name="cmd" value="save">
 	<input type="hidden" name="referer" value="<%= request.getParameter("referer") %>">
-    
+
 <div class="portlet-main">
 	<!-- START Toolbar -->
-	<div class="portlet-toolbar">
+	<div class="portlet-toolbar" style="margin-top: 1rem;">
 		<div class="portlet-toolbar__actions-primary">
-			
+
 			<div id="languagesCombo" style="width:200px; ">
 	            <input type="text" id='languagesComboSelect'>
 	        </div>
-        
+
 			<script type="text/javascript">
 				function updateSelectBoxImage(myselect) {
 	                var imagestyle = "url('" + myselect.item.imageurl + "')";
@@ -456,7 +456,7 @@
 	                dojo.style(selField, "backgroundColor", "transparent");
 	                dojo.style(selField, "backgroundPosition", "0px 8px");
 	            }
-	
+
 	            dojo.addOnLoad(
 	              function() {
 	                var storeData=<%=buff.toString()%>;
@@ -474,7 +474,7 @@
 	                         labelFunc: function(item, store) { return store.getValue(item, "label"); }
 	                    },
 	                    dojo.byId("languagesComboSelect"));
-	
+
 	                myselect.setValue('<%=language.getId()%>');
 	                updateSelectBoxImage(myselect);
 	                });
@@ -484,7 +484,7 @@
 			<div class="inline-form">
 	    		<!-- <label><%= LanguageUtil.get(pageContext, "Filter") %>:</label> -->
 				<input type="text" dojoType="dijit.form.TextBox" name="filter" id="filter" value="" onkeyup="filterResults()" />
-			
+
 				<button dojoType="dijit.form.Button" onClick="clearFilter();" class="dijitButtonFlat">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
 				</button>
@@ -502,7 +502,7 @@
 					}
 					t.start();
 				});
-			</script> 
+			</script>
 			<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="loadProgress" id="loadProgress"></div>
 		</div>
     	<div class="portlet-toolbar__actions-secondary">
@@ -541,7 +541,7 @@
 
 		</tbody>
 	</table>
-	
+
 	<!-- Start Pagination -->
 	<div class="yui-gb buttonRow">
 		<div class="yui-u first" style="text-align:left;">
@@ -579,8 +579,8 @@
 <script type="text/javascript">
 	dojo.addOnLoad(function () {
 		dojo.style(dijit.byId('savingKeysDialog').closeButtonNode, 'visibility', 'hidden');
-		
+
 	});
-	
+
 </script>
 </liferay:box>

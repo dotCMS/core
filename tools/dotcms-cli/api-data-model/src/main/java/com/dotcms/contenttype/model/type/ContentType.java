@@ -3,8 +3,8 @@ package com.dotcms.contenttype.model.type;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
-import com.dotcms.contenttype.model.field.Workflow;
 import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
+import com.dotcms.contenttype.model.workflow.Workflow;
 import com.dotcms.model.views.CommonViews;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
 import com.fasterxml.jackson.databind.type.TypeFactory;
@@ -40,7 +41,6 @@ import org.immutables.value.Value.Default;
         @Type(value = DotAssetContentType.class)
 })
 @JsonIgnoreProperties(value = {
-    "systemActionMappings",
     "nEntries",
     "sortOrder",
     "versionable",
@@ -52,7 +52,7 @@ public abstract class ContentType {
     public static final String SYSTEM_HOST = "SYSTEM_HOST";
     public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
 
-    final String TYPE = "ContentType";
+    static final String TYPE = "ContentType";
 
     @JsonView(CommonViews.InternalView.class)
     @JsonProperty("dotCMSObjectType")
@@ -140,6 +140,14 @@ public abstract class ContentType {
 
     @Nullable
     public abstract List<Workflow> workflows();
+
+    //System action mappings are rendered quite differently depending on what endpoint gets called
+    //if it's coming from an endpoint that returns a list of CT we get a simplified version
+    //if it's coming from an endpoint that returns only one CT then we get a full representation
+    //Again a different form of this attribute is used when sending the request to create or update the CT
+    //Therefore it's best if we keep a Generic high level representation of the field through JsonNode
+    @Nullable
+    public abstract JsonNode systemActionMappings();
 
     /**
      * Class id resolver allows us using smaller ClassNames that eventually get mapped to the fully qualified class name

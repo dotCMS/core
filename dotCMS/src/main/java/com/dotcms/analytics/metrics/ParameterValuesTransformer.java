@@ -11,7 +11,9 @@ import java.util.Collection;
  */
 public interface ParameterValuesTransformer<T> {
 
-    Values transform(final Collection<T> valuesFromEvent, final AbstractCondition condition);
+    Values transform(final Collection<T> valuesFromEvent, final AbstractCondition<T> condition);
+
+    T deserialize(final String value);
 
     /**
      * Represents the values to use on an Operator:

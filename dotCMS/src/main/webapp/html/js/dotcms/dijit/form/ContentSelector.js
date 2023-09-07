@@ -1062,6 +1062,8 @@ dojo.declare(
                     });
             }
 
+            const variantName = window.sessionStorage.getItem('variantName') || 'DEFAULT';
+
             ContentletAjax.searchContentlets(
                 searchFor,
                 fieldsValues,
@@ -1075,6 +1077,7 @@ dojo.declare(
                 this.currentSortBy,
                 null,
                 null,
+                variantName,
                 dojo.hitch(this, this._fillResults)
             );
 

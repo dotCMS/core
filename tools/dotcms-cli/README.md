@@ -11,7 +11,14 @@ making sure that dependencies have been installed first
 ./mvnw clean install
 ```
 
-To run cli.
+Skipping tests
+
+```shell script
+# from top level to build all
+./mvnw clean install -Dmaven.test.skip=true
+```
+
+### To run cli.
 
 You might use [quarkus cli](https://es.quarkus.io/guides/cli-tooling) and [maven](https://maven.apache.org/install.html) 
 
@@ -21,9 +28,7 @@ To run example API in dev mode
 ```shell script
 # from top level to build all
 cd cli
-# command is same as the following to run the quarkus build plugin
-# ../mvnw quarkus:dev 
-quarkus dev
+./mvnw quarkus:dev
 ```
 NOTE:  To reduce duplication in the multi-module project mvnw is not included in each submodule. 
 The quarkus command finds the executable
@@ -74,12 +79,12 @@ https://picocli.info/
 
 The creation of individual subcommands becomes easy with picocli,  the current app demonstrates
 some examples of what we can do.
- 
-####LoginCommand
-Shows example of getting a token from demo.cms.com and storing it in users personal secure storage
-####StatusCommand
-Checks the token status against the server and returns current user object.
 
+#### LoginCommand
+Shows example of getting a token from demo.cms.com and storing it in users personal secure storage
+
+#### StatusCommand
+Checks the token status against the server and returns current user object.
 
 ## Docker
 Checkout this link with a good description of the containerization and docker build options
@@ -96,11 +101,7 @@ https://quarkus.io/guides/config-reference
 
 https://quarkus.io/get-started/
 
-
-
 ---
-
-
 
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
@@ -110,7 +111,7 @@ If you want to learn more about Quarkus, please visit its website: https://quark
 
 You can run your application in dev mode that enables live coding using:
 ```shell script
-./mvnw compile quarkus:dev
+./mvnw quarkus:dev
 ```
 
 > **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
@@ -131,6 +132,12 @@ If you want to build an _über-jar_, execute the following command:
 ./mvnw package -Dquarkus.package.type=uber-jar
 ```
 
+Skipping tests
+
+```shell script
+./mvnw package -Dquarkus.package.type=uber-jar -Dmaven.test.skip=true
+```
+
 The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
 
 ## Creating a native executable
@@ -145,6 +152,12 @@ Or, if you don't have GraalVM installed, you can run the native executable build
 ./mvnw package -Pnative -Dquarkus.native.container-build=true
 ```
 
+Skipping tests
+
+```shell script
+./mvnw package -Pnative -Dquarkus.native.container-build=true -Dmaven.test.skip=true
+```
+
 You can then execute your native executable with: `./target/code-with-quarkus-1.0.0-SNAPSHOT-runner`
 
 If you want to learn more about building native executables, please consult https://quarkus.io/guides/maven-tooling.
@@ -156,3 +169,45 @@ If you want to learn more about building native executables, please consult http
 Easily start your Reactive RESTful Web Services
 
 [Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+
+## Logging
+
+When running the CLI, a **_dotcms-cli.log_** file will be created in the directory where the CLI
+executable is run.
+
+#### File log level
+
+To increase the file log level to _DEBUG_ when running in dev mode, use the following command:
+
+```shell
+./mvnw quarkus:dev -Dquarkus.log.file.level=DEBUG
+```
+
+#### Console log level
+
+To increase the console log level to _DEBUG_ when running in dev mode, use the following command:
+
+```shell
+./mvnw quarkus:dev -Dquarkus.log.handler.console.\"DOTCMS_CONSOLE\".level=DEBUG
+```
+
+#### File log location
+
+To override the default location of the log file, you have two options:
+
+##### 1. Set the environment variable
+
+Example:
+
+```shell
+export QUARKUS_LOG_FILE_PATH=/Users/my-user/CLI/dotcms-cli.log
+java -jar cli-1.0.0-SNAPSHOT-runner.jar login -u admin@dotcms.com -p admin
+```
+
+##### 2. Set the system property
+
+Example:
+
+```shell
+./mvnw quarkus:dev -Dquarkus.log.file.path=/Users/my-user/CLI/dotcms-cli.log
+```

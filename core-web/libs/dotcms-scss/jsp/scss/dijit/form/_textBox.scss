@@ -15,7 +15,8 @@
         }
     }
 
-    &Hover {
+    &Hover,
+    &:hover {
         background-color: $textbox-hover-bgcolor;
         border: $textbox-hover-border;
 
@@ -42,7 +43,8 @@
         }
     }
 
-    &Focused {
+    &Focused,
+    &:focus {
         border: $textbox-focused-border;
         background-color: $textbox-focused-bgcolor;
         @include field-focus;
@@ -70,7 +72,8 @@
         }
     }
 
-    &Disabled {
+    &Disabled,
+    &:disabled {
         border: $textbox-disabled-border;
         background-color: $textbox-disabled-bgcolor;
 

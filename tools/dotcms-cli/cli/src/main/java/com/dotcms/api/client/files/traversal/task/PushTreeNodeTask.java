@@ -97,6 +97,8 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                 processAsset(rootNode.folder(), asset);
             } catch (Exception e) {
                 if (failFast) {
+                    //This adds a line so when the exception gets written to the console it looks consistent
+                    this.progressBar.done();
                     throw e;
                 } else {
                     errors.add(e);
@@ -154,7 +156,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                     if (!this.isRetry || !(e instanceof NotFoundException)) {
 
                         var message = String.format("Error deleting folder [%s]", folder.path());
-                        logger.debug(message, e);
+                        logger.error(message, e);
                         throw new TraversalTaskException(message, e);
                     }
 
@@ -191,6 +193,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
 
                         // If we are trying to create a site that already exist we could ignore the error on retries
                         if (!this.isRetry || !alreadyExist) {
+                            logger.error(message, e);
                             throw new SiteCreationException(message, e);
                         }
                     } else {
@@ -200,6 +203,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
 
                         // If we are trying to create a folder that already exist we could ignore the error on retries
                         if (!this.isRetry || !alreadyExist) {
+                            logger.error(message, e);
                             throw new TraversalTaskException(message, e);
                         }
                     }
@@ -242,7 +246,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                     if (!this.isRetry || !(e instanceof NotFoundException)) {
 
                         var message = String.format("Error deleting asset [%s%s]", folder.path(), asset.name());
-                        logger.debug(message, e);
+                        logger.error(message, e);
                         throw new TraversalTaskException(message, e);
                     }
 
@@ -266,7 +270,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                     // If we are trying to push an asset that already exist we could ignore the error on retries
                     if (!this.isRetry || !alreadyExist) {
                         var message = String.format("Error pushing asset [%s%s]", folder.path(), asset.name());
-                        logger.debug(message, e);
+                        logger.error(message, e);
                         throw new TraversalTaskException(message, e);
                     }
 

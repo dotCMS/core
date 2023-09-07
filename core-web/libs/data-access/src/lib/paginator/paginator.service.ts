@@ -113,6 +113,15 @@ export class PaginatorService {
         this.extraParams.delete(name);
     }
 
+    /**
+     * Reset extra parameters of the eventual request.
+     *
+     * @memberof PaginatorService
+     */
+    public resetExtraParams(): void {
+        this.extraParams.clear();
+    }
+
     get extraParams(): Map<string, string> {
         return this._extraParams;
     }

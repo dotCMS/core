@@ -64,8 +64,15 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
    @CommandLine.ArgGroup(exclusive = false,  heading = "\n@|bold,blue Filter/Search Options. |@\n")
    FilterOptions filter;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         if(null != filter){
             return list(filter);
         }
@@ -76,7 +83,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
     private int list() {
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
         final int pageSize = 10;
-        int page = 0;
+        int page = 1;
         while (true) {
             final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.getContentTypes(
                     null, page, null, "variable", null, null, null);
