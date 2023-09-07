@@ -45,8 +45,9 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         output.throwIfUnmatchedArguments(spec.commandLine());
 
         // Preparing the list of arguments to be passed to the subcommands
-        var args = new ArrayList<>(spec.commandLine().getParseResult().expandedArgs());
-        args.add("--noValidateUnmatchedArguments");
+        var expandedArgs = new ArrayList<>(spec.commandLine().getParseResult().expandedArgs());
+        expandedArgs.add("--noValidateUnmatchedArguments");
+        var args = expandedArgs.toArray(new String[0]);
 
         // Process each subcommand
         for (var subCommand : pushCommands) {
@@ -55,7 +56,7 @@ public class PushCommand implements Callable<Integer>, DotCommand {
             CustomConfigurationUtil.getInstance().customize(cmdLine);
 
             // Use execute to parse the parameters with the subcommand
-            int exitCode = cmdLine.execute(args.toArray(new String[0]));
+            int exitCode = cmdLine.execute(args);
             if (exitCode != CommandLine.ExitCode.OK) {
                 return exitCode;
             }
