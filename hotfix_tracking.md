@@ -115,3 +115,5 @@ This maintenance release includes the following code fixes:
 94. https://github.com/dotCMS/core/issues/25666 : Pagination not working on related endpoint #25666
 95. https://github.com/dotCMS/core/issues/25567 : Unable to Search for Non-English Pages with the Block Editor Hyperlink Feature #25567
 96. https://github.com/dotCMS/core/issues/24683 : Copy button on Page Edit portlet should copy the entire URL, not just the path #24683
+
+**Release-23.01.7**
