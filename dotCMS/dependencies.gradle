@@ -8,7 +8,7 @@ dependencies {
     implementation (group: 'com.carrotsearch', name: 'hppc', version: '0.8.1') {
         transitive=false
     }
-    implementation (group: 'com.dotcms.core.plugins', name: 'com.dotcms.tika-api', version: '1.0.0-SNAPSHOT'){}
+    implementation (group: 'com.dotcms.core.plugins', name: 'com.dotcms.tika-api', version: '23.09'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.Tidy', version: 'ukv_2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.aopalliance-repackaged', version: '2.4.0-b10_2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.asm', version: '3.1_2'){}
@@ -152,7 +152,7 @@ dependencies {
     implementation (group: 'com.squareup.okio', name: 'okio', version: '1.6.0'){}
     implementation (group: 'com.sun.activation', name: 'jakarta.activation', version: '1.2.1'){}
     implementation (group: 'com.sun.activation', name: 'javax.activation', version: '1.2.0'){}
-    compileOnly (group: 'com.sun.istack', name: 'istack-commons-runtime', version: '3.0.12'){}
+    implementation (group: 'com.sun.istack', name: 'istack-commons-runtime', version: '3.0.12'){}
     implementation (group: 'com.sun.mail', name: 'jakarta.mail', version: '1.6.7'){}
     implementation (group: 'com.tdunning', name: 't-digest', version: '3.2') {
         transitive=false
@@ -395,8 +395,8 @@ dependencies {
     implementation (group: 'org.glassfish.hk2', name: 'hk2-locator', version: '2.4.0-b31'){}
     implementation (group: 'org.glassfish.hk2', name: 'hk2-utils', version: '2.4.0-b31'){}
     implementation (group: 'org.glassfish.hk2', name: 'osgi-resource-locator', version: '1.0.1'){}
-    compileOnly (group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '2.3.8'){}
-    compileOnly (group: 'org.glassfish.jaxb', name: 'txw2', version: '2.3.8'){}
+    implementation (group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '2.3.8'){}
+    implementation (group: 'org.glassfish.jaxb', name: 'txw2', version: '2.3.8'){}
     implementation (group: 'org.glassfish.jersey.bundles.repackaged', name: 'jersey-guava', version: '2.22.1'){}
     implementation (group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.22.1'){}
     implementation (group: 'org.glassfish.jersey.containers', name: 'jersey-container-servlet-core', version: '2.22.1'){}
