@@ -8,7 +8,7 @@ import {
     SearchableDropdownComponent
 } from '@components/_common/searchable-dropdown/component';
 import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
-import { PaginatorService } from '@dotcms/data-access';
+import { DotSessionStorageService, PaginatorService } from '@dotcms/data-access';
 import { DotPageMode, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
 
 /**
@@ -46,7 +46,8 @@ export class DotPersonaSelectorComponent implements OnInit {
 
     constructor(
         public paginationService: PaginatorService,
-        public iframeOverlayService: IframeOverlayService
+        public iframeOverlayService: IframeOverlayService,
+        private dotSessionStorageService: DotSessionStorageService
     ) {}
 
     private _pageState: DotPageRenderState;
@@ -59,9 +60,13 @@ export class DotPersonaSelectorComponent implements OnInit {
     set pageState(value: DotPageRenderState) {
         this._pageState = value;
         this.paginationService.paginationPerPage = this.paginationPerPage;
+
+        const currentVariantName = this.dotSessionStorageService.getVariationId();
+
         this.paginationService.url = `v1/page/${this.pageState.page.identifier}/personas`;
         this.isEditMode = this.pageState.state.mode === DotPageMode.EDIT;
         this.paginationService.setExtraParams('respectFrontEndRoles', !this.isEditMode);
+        this.paginationService.setExtraParams('variantName', currentVariantName);
         this.value = this.pageState.viewAs && this.pageState.viewAs.persona;
         this.canDespersonalize = this.pageState.page.canEdit || this.pageState.page.canLock;
         this.reloadPersonasListCurrentPage();

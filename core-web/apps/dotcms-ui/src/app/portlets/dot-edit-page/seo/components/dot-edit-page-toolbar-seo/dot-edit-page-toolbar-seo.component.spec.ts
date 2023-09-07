@@ -32,7 +32,8 @@ import {
     DotEventsService,
     DotLicenseService,
     DotMessageService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -84,8 +85,7 @@ import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-
     template: `
         <dot-edit-page-toolbar-seo
             [pageState]="pageState"
-            [runningExperiment]="runningExperiment"
-        ></dot-edit-page-toolbar-seo>
+            [runningExperiment]="runningExperiment"></dot-edit-page-toolbar-seo>
     `
 })
 class TestHostComponent {
@@ -171,6 +171,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 ])
             ],
             providers: [
+                DotSessionStorageService,
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
                 {
                     provide: DotMessageService,

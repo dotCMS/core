@@ -19,7 +19,7 @@ import { DotMessageDisplayService } from '@components/dot-message-display/servic
 import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotMessageService, PaginatorService } from '@dotcms/data-access';
+import { DotMessageService, DotSessionStorageService, PaginatorService } from '@dotcms/data-access';
 import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPersona } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -40,8 +40,7 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
         <dot-persona-selector
             [disabled]="disabled"
             (selected)="selectedPersonaHandler($event)"
-            (delete)="deletePersonaHandler($event)"
-        ></dot-persona-selector>
+            (delete)="deletePersonaHandler($event)"></dot-persona-selector>
     `
 })
 class HostTestComponent {
@@ -103,6 +102,7 @@ describe('DotPersonaSelectorComponent', () => {
                 DotMessagePipe
             ],
             providers: [
+                DotSessionStorageService,
                 IframeOverlayService,
                 {
                     provide: DotMessageService,

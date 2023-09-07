@@ -32,7 +32,8 @@ import {
     DotEventsService,
     DotLicenseService,
     DotMessageService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -84,8 +85,7 @@ import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-ac
     template: `
         <dot-edit-page-toolbar
             [pageState]="pageState"
-            [runningExperiment]="runningExperiment"
-        ></dot-edit-page-toolbar>
+            [runningExperiment]="runningExperiment"></dot-edit-page-toolbar>
     `
 })
 class TestHostComponent {
@@ -175,6 +175,7 @@ describe('DotEditPageToolbarComponent', () => {
                 ])
             ],
             providers: [
+                DotSessionStorageService,
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
                 {
                     provide: DotMessageService,

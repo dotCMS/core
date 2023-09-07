@@ -802,7 +802,8 @@ public class PageResourceTest {
 
         APILocator.getMultiTreeAPI().copyPersonalizationForPage(
                 page.getIdentifier(),
-                Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getIdentifier()
+                Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getIdentifier(),
+                VariantAPI.DEFAULT_VARIANT.name()
         );
 
         when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
