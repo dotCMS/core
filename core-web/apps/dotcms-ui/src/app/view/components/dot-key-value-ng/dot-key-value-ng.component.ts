@@ -56,6 +56,7 @@ export class DotKeyValueComponent implements OnChanges {
 
         this.variablesBackup = [...this.variables];
     }
+
     /**
      * Handle Cancel event, restoring the original value of the variable
      * @param {number} fieldIndex
