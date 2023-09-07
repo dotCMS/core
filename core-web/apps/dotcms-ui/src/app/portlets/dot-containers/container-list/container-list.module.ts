@@ -4,13 +4,15 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService } from 'primeng/dynamicdialog';
+import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
+import { TableModule } from 'primeng/table';
 
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { DotContentTypeSelectorModule } from '@components/dot-content-type-selector';
-import { DotListingDataTableModule } from '@components/dot-listing-data-table';
+import { ActionHeaderModule } from '@components/dot-listing-data-table/action-header/action-header.module';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotSiteBrowserService } from '@dotcms/data-access';
@@ -27,7 +29,7 @@ import { ContainerListComponent } from './container-list.component';
         CommonModule,
         ContainerListRoutingModule,
         DotPortletBaseModule,
-        DotListingDataTableModule,
+        TableModule,
         DotContentTypeSelectorModule,
         DotMessagePipe,
         ButtonModule,
@@ -36,7 +38,9 @@ import { ContainerListComponent } from './container-list.component';
         DotEmptyStateModule,
         DotAddToBundleModule,
         DotActionMenuButtonModule,
-        DotRelativeDatePipe
+        DotRelativeDatePipe,
+        ActionHeaderModule,
+        InputTextModule
     ],
     providers: [
         DotContainerListResolver,
