@@ -28,5 +28,8 @@ public interface DotPush {
      *
      * @return the name of the custom mixin associated with this push command
      */
-    Optional<String> getCustomMixinName();
+    default Optional<String> getCustomMixinName() {
+        return Optional.empty();
+    }
+
 }

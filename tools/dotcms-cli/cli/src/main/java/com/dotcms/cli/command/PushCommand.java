@@ -3,13 +3,22 @@ package com.dotcms.cli.command;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
+import com.dotcms.common.WorkspaceManager;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
+import javax.inject.Inject;
 import picocli.CommandLine;
 
+/**
+ * Represents a push command that is used to push Sites, Content Types, Languages, and Files to the
+ * server.
+ */
 @ActivateRequestContext
 @CommandLine.Command(
         name = PushCommand.NAME,
@@ -35,6 +44,9 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
+    @Inject
+    protected WorkspaceManager workspaceManager;
+
     // Find the instances of all push subcommands
     Instance<DotPush> pushCommands = CDI.current().select(DotPush.class);
 
@@ -43,6 +55,9 @@ public class PushCommand implements Callable<Integer>, DotCommand {
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());
+
+        // Validate we have a workspace at the specified path
+        checkValidWorkspace(pushMixin.path);
 
         // Preparing the list of arguments to be passed to the subcommands
         var expandedArgs = new ArrayList<>(spec.commandLine().getParseResult().expandedArgs());
@@ -66,6 +81,33 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         }
 
         return CommandLine.ExitCode.OK;
+    }
+
+
+    /**
+     * Checks if the provided file is a valid workspace.
+     *
+     * @param fromFile the file representing the workspace directory. If null, the current directory
+     *                 is used.
+     * @throws IllegalArgumentException if no valid workspace is found at the specified path.
+     */
+    void checkValidWorkspace(final File fromFile) {
+
+        String fromPath;
+        if (fromFile == null) {
+            // If the workspace is not specified, we use the current directory
+            fromPath = Paths.get("").toAbsolutePath().normalize().toString();
+        } else {
+            fromPath = fromFile.getAbsolutePath();
+        }
+
+        final Path path = Paths.get(fromPath);
+        final var workspace = workspaceManager.findWorkspace(path);
+
+        if (workspace.isEmpty()) {
+            throw new IllegalArgumentException(
+                    String.format("No valid workspace found at path: [%s]", fromPath));
+        }
     }
 
     @Override
