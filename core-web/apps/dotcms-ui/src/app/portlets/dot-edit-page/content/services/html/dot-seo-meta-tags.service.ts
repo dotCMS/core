@@ -1,8 +1,8 @@
-import { Observable, from } from 'rxjs';
+import { Observable, from, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { tap } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
@@ -119,15 +119,16 @@ export class DotSeoMetaTagsService {
             }
 
             if (key === SEO_OPTIONS.OG_IMAGE) {
-                const items = this.getOgImagesItems(metaTagsObject);
-                const keyValues = this.getKeyValues(items);
-                result.push({
-                    key,
-                    keyIcon: keyValues.keyIcon,
-                    keyColor: keyValues.keyColor,
-                    items: items,
-                    sort: 5,
-                    info: ''
+                this.getOgImagesItems(metaTagsObject).subscribe((items: SeoRulesResult[]) => {
+                    const keyValues = this.getKeyValues(items);
+                    result.push({
+                        key,
+                        keyIcon: keyValues.keyIcon,
+                        keyColor: keyValues.keyColor,
+                        items: items,
+                        sort: 5,
+                        info: ''
+                    });
                 });
             }
         });
@@ -340,42 +341,41 @@ export class DotSeoMetaTagsService {
         return result;
     }
 
-    private getOgImagesItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
-        const result: SeoRulesResult[] = [];
+    private getOgImagesItems(metaTagsObject: SeoMetaTags): Observable<SeoRulesResult[]> {
         const imageOgElements = metaTagsObject['imageOgElements'];
         const imageOg = metaTagsObject['og:image'];
 
-        if (!imageOgElements) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.og-image.not.found'),
-                color: SEO_RULES_COLORS.ERROR,
-                itemIcon: SEO_RULES_ICONS.TIMES
-            });
-        }
+        return this.getImageFileSize(imageOg).pipe(
+            switchMap((imageMetaData) => {
+                const result: SeoRulesResult[] = [];
 
-        if (imageOgElements?.length > 1) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.og-image.more.one.found'),
-                color: SEO_RULES_COLORS.ERROR,
-                itemIcon: SEO_RULES_ICONS.TIMES
-            });
-        }
+                if (imageOg && imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES) {
+                    result.push({
+                        message: this.dotMessageService.get('seo.rules.og-image.found'),
+                        color: SEO_RULES_COLORS.DONE,
+                        itemIcon: SEO_RULES_ICONS.CHECK
+                    });
+                }
 
-        this.getImageFileSize(imageOg)
-            .pipe(
-                tap((imageMetaData) => {
-                    if (imageOg && imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES) {
-                        result.push({
-                            message: this.dotMessageService.get('seo.rules.og-image.found'),
-                            color: SEO_RULES_COLORS.DONE,
-                            itemIcon: SEO_RULES_ICONS.CHECK
-                        });
-                    }
-                })
-            )
-            .subscribe();
+                if (!imageOgElements) {
+                    result.push({
+                        message: this.dotMessageService.get('seo.rules.og-image.not.found'),
+                        color: SEO_RULES_COLORS.ERROR,
+                        itemIcon: SEO_RULES_ICONS.TIMES
+                    });
+                }
 
-        return result;
+                if (imageOgElements?.length > 1) {
+                    result.push({
+                        message: this.dotMessageService.get('seo.rules.og-image.more.one.found'),
+                        color: SEO_RULES_COLORS.ERROR,
+                        itemIcon: SEO_RULES_ICONS.TIMES
+                    });
+                }
+
+                return of(result);
+            })
+        );
     }
 
     /**
@@ -383,7 +383,7 @@ export class DotSeoMetaTagsService {
      * @param imageUrl string
      * @returns
      */
-    private getImageFileSize(imageUrl: string): Observable<DotCMSTempFile | ImageMetaData> {
+    getImageFileSize(imageUrl: string): Observable<DotCMSTempFile | ImageMetaData> {
         return from(
             fetch(imageUrl)
                 .then((response) => response.blob())

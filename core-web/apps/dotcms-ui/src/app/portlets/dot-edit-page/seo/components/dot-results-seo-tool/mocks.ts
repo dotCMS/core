@@ -102,7 +102,13 @@ const seoOGTagsResultOgMock = [
         key: 'og:image',
         keyIcon: 'pi-check-circle',
         keyColor: 'results-seo-tool__result-icon--alert-green',
-        items: [],
+        items: [
+            {
+                message: 'og:image metatag found, with an appropriate sized image!',
+                color: 'results-seo-tool__result-icon--alert-green',
+                itemIcon: 'pi-check'
+            }
+        ],
         sort: 5,
         info: ''
     },

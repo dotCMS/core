@@ -1,3 +1,5 @@
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
@@ -89,7 +91,10 @@ describe('DotSetMetaTagsService', () => {
 
         const ogMetaImage = document.createElement('meta');
         ogMetaImage.setAttribute('property', 'og:image');
-        ogMetaImage.setAttribute('content', 'image');
+        ogMetaImage.setAttribute(
+            'content',
+            'https://www.dotcms.com/dA/4e870b9fe0/1200w/jpeg/70/dotcms-defualt-og.jpg'
+        );
 
         const linkCanonical = document.createElement('link');
         linkCanonical.rel = 'icon';
@@ -120,11 +125,18 @@ describe('DotSetMetaTagsService', () => {
             titleOgElements: titleOgElements,
             imageOgElements: imagesOgElements,
             'og:title': 'Costa Rica Special Offer',
-            'og:image': 'image'
+            'og:image': 'https://www.dotcms.com/dA/4e870b9fe0/1200w/jpeg/70/dotcms-defualt-og.jpg'
         });
     });
 
-    it('should get the result found for ogTags', () => {
+    it('should get the result found for ogTags with the async call', () => {
+        spyOn(service, 'getImageFileSize').and.returnValue(
+            of({
+                length: 8000000,
+                url: 'https://www.dotcms.com/dA/4e870b9fe0/1200w/jpeg/70/dotcms-defualt-og.jpg'
+            })
+        );
+
         const result = service.getMetaTagsResults(testDoc);
 
         expect(result).toEqual(seoOGTagsResultOgMock);
