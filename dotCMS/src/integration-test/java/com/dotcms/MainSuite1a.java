@@ -15,6 +15,7 @@ import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.FolderIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.publisher.bundle.business.BundleFactoryImplTest;
 import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
@@ -96,6 +97,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         FolderIntegrityCheckerTest.class,
         HostFactoryImplTest.class,
+        BundleFactoryImplTest.class,
 })
 
 public class MainSuite1a {

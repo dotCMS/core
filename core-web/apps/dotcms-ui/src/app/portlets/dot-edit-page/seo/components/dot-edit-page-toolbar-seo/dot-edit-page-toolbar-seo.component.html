@@ -20,6 +20,7 @@
 
     <div class="main-toolbar-right flex align-items-center gap-3">
         <ng-container *ngIf="variant; else defaultHeaderRightTpl">
+            <dot-global-message data-testId="globalMessage" right></dot-global-message>
             <dot-icon name="science" size="22"></dot-icon>
             <h2>{{ variant.experimentName }}</h2>
         </ng-container>
