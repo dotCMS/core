@@ -49,9 +49,8 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit {
             this.emitValues();
         });
 
-        this.emitValues();
-
         setTimeout(() => {
+            this.emitValues();
             this.formContainer.nativeElement.querySelector(`#${this.formFields[0].name}`).focus();
         }, 0);
     }
