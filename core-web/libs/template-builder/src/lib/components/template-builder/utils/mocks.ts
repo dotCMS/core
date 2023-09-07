@@ -8,6 +8,7 @@ import { containersMapMock, MockDotMessageService } from '@dotcms/utils-testing'
 import {
     DotGridStackWidget,
     DotTemplateBuilderContainer,
+    DotTemplateBuilderState,
     SYSTEM_CONTAINER_IDENTIFIER
 } from '../models/models';
 
@@ -817,3 +818,20 @@ export class MockGridStackElementComponent {
         };
     }
 }
+
+// Mock used to maintain the state of the template builder
+export const INITIAL_STATE_MOCK: DotTemplateBuilderState = {
+    rows: [],
+    layoutProperties: {
+        header: true,
+        footer: true,
+        sidebar: {
+            containers: [],
+            location: 'left',
+            width: 'small'
+        }
+    },
+    resizingRowID: '',
+    containerMap: {},
+    themeId: '123'
+};

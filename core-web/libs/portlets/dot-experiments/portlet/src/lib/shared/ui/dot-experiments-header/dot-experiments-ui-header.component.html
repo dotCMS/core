@@ -1,7 +1,11 @@
 <div class="wrapper flex flex-row align-items-center gap-2">
-    <a class="flex cursor-pointer" (click)="goBack.emit(true)" data-testId="goback-link">
-        <i class="pi pi-angle-left"></i>
-    </a>
+    <button
+        class="p-button-rounded p-button-text"
+        (click)="goBack.emit(true)"
+        data-testId="goback-link"
+        icon="pi pi-arrow-left"
+        pButton></button>
+
     <ng-container *ngIf="!isLoading; else loadingTpl">
         <span data-testId="title">{{ title }}</span>
     </ng-container>

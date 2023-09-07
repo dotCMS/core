@@ -53,6 +53,15 @@ describe('PaginatorService', () => {
         expect(paginatorService.extraParams.get('name')).toBeUndefined();
     });
 
+    it('should remove all extra parameters', () => {
+        paginatorService.setExtraParams('name', 'John');
+        paginatorService.setExtraParams('fullnam', 'John Doe');
+        paginatorService.setExtraParams('age', '21');
+        paginatorService.resetExtraParams();
+
+        expect(paginatorService.extraParams.size).toBe(0);
+    });
+
     afterEach(() => {
         httpMock.verify();
     });
