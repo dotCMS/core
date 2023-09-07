@@ -68,6 +68,7 @@ enum DotConfirmationType {
 })
 export class DotEditPageStateControllerSeoComponent implements OnChanges {
     @ViewChild('pageLockInfo', { static: true }) pageLockInfo: DotEditPageLockInfoSeoComponent;
+    @ViewChild('deviceSelector') deviceSelector: DotDeviceSelectorSeoComponent;
 
     @Input() pageState: DotPageRenderState;
     @Output() modeChange = new EventEmitter<DotPageMode>();
@@ -195,11 +196,30 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
         this.dotPageStateService.setSeoMedia(seoMedia);
     }
 
+    handleMenuOpen({ event, id }: { event: PointerEvent; id: string }): void {
+        const openMenuAction = this.getMenuOpenAction(id as DotPageMode);
+
+        openMenuAction(event);
+    }
+
+    private getMenuOpenAction(mode: DotPageMode) {
+        const menuOpenAction = {
+            [DotPageMode.EDIT]: () => {
+                //...
+            },
+            [DotPageMode.PREVIEW]: (event: PointerEvent) => this.deviceSelector.openMenu(event)
+        };
+
+        return menuOpenAction[mode];
+    }
+
     private canTakeLock(pageState: DotPageRenderState): boolean {
         return pageState.page.canLock && pageState.state.lockedByAnotherUser;
     }
 
     private getModeOption(mode: string, pageState: DotPageRenderState): SelectItem {
+        const modesWithDropdown = ['edit', 'preview'];
+
         const disabled = {
             edit: !pageState.page.canEdit || !pageState.page.canLock,
             preview: !pageState.page.canRead,
@@ -208,7 +228,10 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
 
         return {
             label: this.dotMessageService.get(`editpage.toolbar.${mode}.page`),
-            value: DotPageMode[mode.toLocaleUpperCase()],
+            value: {
+                id: DotPageMode[mode.toLocaleUpperCase()],
+                showDropdownButton: modesWithDropdown.includes(mode)
+            },
             disabled: disabled[mode]
         };
     }
