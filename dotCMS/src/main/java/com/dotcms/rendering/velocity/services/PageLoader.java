@@ -213,55 +213,8 @@ public class PageLoader implements DotLoader {
     private HTMLPageAsset getPage(VelocityResourceKey key)
             throws DotDataException, DotSecurityException {
 
+        return (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findByIdLanguageVariantFallback(key.id1, ConversionUtils.toLong(key.language), key.variant, key.mode.showLive, sysUser(), true);
 
-        long languageId  = ConversionUtils.toLong(key.language);
-        long defaultLang  = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        boolean fallback = languageId != defaultLang && Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
-
-
-        // given lang and variant
-        HTMLPageAsset asset = Try.of(()->APILocator.getHTMLPageAssetAPI()
-                .fromContentlet(APILocator.getContentletAPI()
-                        .findContentletByIdentifier(key.id1, key.mode.showLive,
-                                languageId,
-                                key.variant, sysUser(), true))).getOrNull();
-
-        if(asset==null) {
-
-            // given lang and DEFAULT variant
-            asset = Try.of(() -> APILocator.getHTMLPageAssetAPI()
-                    .fromContentlet(APILocator.getContentletAPI()
-                            .findContentletByIdentifier(key.id1, key.mode.showLive,
-                                    languageId,
-                                    VariantAPI.DEFAULT_VARIANT.name(), sysUser(), true))).getOrNull();
-
-        }
-
-        if(asset==null && fallback) {
-            // DEFAULT lang and given variant
-            asset = Try.of(() -> APILocator.getHTMLPageAssetAPI()
-                    .fromContentlet(APILocator.getContentletAPI()
-                            .findContentletByIdentifier(key.id1, key.mode.showLive,
-                                    languageId,
-                                    key.variant, sysUser(), true))).getOrNull();
-
-            if (asset == null) {
-                // DEFAULT lang and DEFAULT variant
-                asset = Try.of(() -> APILocator.getHTMLPageAssetAPI()
-                        .fromContentlet(APILocator.getContentletAPI()
-                                .findContentletByIdentifier(key.id1, key.mode.showLive,
-                                        defaultLang,
-                                        VariantAPI.DEFAULT_VARIANT.name(), sysUser(), true))).getOrNull();
-
-
-            }
-        }
-        if(asset==null){
-            throw new DotDataException("Unable to find page that matches. id:" + key.id1 + " lang:" + languageId +  " variant:" +key.variant);
-        }
-
-
-        return asset;
 
     }
 

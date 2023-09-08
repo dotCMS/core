@@ -326,4 +326,26 @@ public interface HTMLPageAssetAPI {
     IHTMLPage findByIdLanguageFallback(String identifier, long tryLang, boolean live, User user, boolean respectFrontEndPermissions)
             throws DotDataException, DotSecurityException;
 
+
+
+	/**
+	 * Returns page based on identifier and respects the language fallback settings
+	 * If a non-standard variant is passed in and it is not found, this will also fall back to the
+	 * DEFAULT variant as well.
+	 * @param id identifier of page
+	 * @param tryLang requested language
+	 * @param tryVariant requested variant
+	 * @param live live or working version of page
+	 * @param user user to perform operation with
+	 * @param respectFrontEndPermissions respect front end permissions
+	 *
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	IHTMLPage findByIdLanguageVariantFallback(String identifier, long tryLang, String tryVariant, boolean live, User user, boolean respectFrontEndPermissions)
+			throws DotDataException, DotSecurityException;
+
+
+
 }

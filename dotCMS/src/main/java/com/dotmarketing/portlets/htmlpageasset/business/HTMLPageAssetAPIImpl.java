@@ -13,16 +13,12 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
+import com.dotcms.util.ConversionUtils;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -63,6 +59,8 @@ import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.vavr.control.Try;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 
@@ -911,5 +909,60 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         return htmlPage;
     }
 
+    @Override
+    public IHTMLPage findByIdLanguageVariantFallback(String identifier, long tryLang, String tryVariant, boolean live, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
+
+        long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        boolean fallback = tryLang != defaultLang && Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
+
+
+        // given lang and variant
+        HTMLPageAsset asset = Try.of(() -> APILocator.getHTMLPageAssetAPI()
+                .fromContentlet(APILocator.getContentletAPI()
+                        .findContentletByIdentifier(identifier, live,
+                                tryLang,
+                                tryVariant, APILocator.systemUser(), true))).getOrNull();
+
+        if (asset == null) {
+
+            // given lang and DEFAULT variant
+            asset = Try.of(() -> APILocator.getHTMLPageAssetAPI()
+                    .fromContentlet(APILocator.getContentletAPI()
+                            .findContentletByIdentifier(identifier, live,
+                                    tryLang,
+                                    VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), true))).getOrNull();
+
+        }
+
+        if (asset == null && fallback) {
+            // DEFAULT lang and given variant
+            asset = Try.of(() -> APILocator.getHTMLPageAssetAPI()
+                    .fromContentlet(APILocator.getContentletAPI()
+                            .findContentletByIdentifier(identifier, live,
+                                    tryLang,
+                                    tryVariant, APILocator.systemUser(), true))).getOrNull();
+
+            if (asset == null) {
+                // DEFAULT lang and DEFAULT variant
+                asset = Try.of(() -> APILocator.getHTMLPageAssetAPI()
+                        .fromContentlet(APILocator.getContentletAPI()
+                                .findContentletByIdentifier(identifier, live,
+                                        defaultLang,
+                                        VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), true))).getOrNull();
+
+
+            }
+        }
+        if (asset == null) {
+            throw new DotStateException("Unable to find page that matches. id:" + identifier + " lang:" + tryLang + " variant:" + tryVariant);
+        }
+
+        permissionAPI.checkPermission(asset, PermissionLevel.READ, user);
+
+
+        return asset;
+
+
+    }
 }
