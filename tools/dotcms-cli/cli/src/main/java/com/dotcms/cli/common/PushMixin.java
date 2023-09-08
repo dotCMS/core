@@ -41,4 +41,13 @@ public class PushMixin {
             defaultValue = "false")
     public boolean noValidateUnmatchedArguments;
 
+    /**
+     * Returns the path of the file. (Useful for mocking)
+     *
+     * @return The path of the file.
+     */
+    public File path() {
+        return path;
+    }
+
 }

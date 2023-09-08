@@ -57,7 +57,7 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         output.throwIfUnmatchedArguments(spec.commandLine());
 
         // Validate we have a workspace at the specified path
-        checkValidWorkspace(pushMixin.path);
+        checkValidWorkspace(pushMixin.path());
 
         // Preparing the list of arguments to be passed to the subcommands
         var expandedArgs = new ArrayList<>(spec.commandLine().getParseResult().expandedArgs());
@@ -67,11 +67,7 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         // Process each subcommand
         for (var subCommand : pushCommands) {
 
-            var cmdLine = new CommandLine(subCommand);
-            CustomConfigurationUtil.getInstance().customize(cmdLine);
-
-            // Make sure unmatched arguments pass silently
-            cmdLine.setUnmatchedArgumentsAllowed(true);
+            var cmdLine = createCommandLine(subCommand);
 
             // Use execute to parse the parameters with the subcommand
             int exitCode = cmdLine.execute(args);
@@ -83,6 +79,23 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         return CommandLine.ExitCode.OK;
     }
 
+    /**
+     * Creates a command line object for the given DotPush command and applies to the command a
+     * custom configuration.
+     *
+     * @param command the DotPush command
+     * @return the created CommandLine object
+     */
+    CommandLine createCommandLine(DotPush command) {
+
+        var cmdLine = new CommandLine(command);
+        CustomConfigurationUtil.getInstance().customize(cmdLine);
+
+        // Make sure unmatched arguments pass silently
+        cmdLine.setUnmatchedArgumentsAllowed(true);
+
+        return cmdLine;
+    }
 
     /**
      * Checks if the provided file is a valid workspace.
