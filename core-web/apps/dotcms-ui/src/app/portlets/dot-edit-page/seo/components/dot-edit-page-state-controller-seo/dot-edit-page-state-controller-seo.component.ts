@@ -115,11 +115,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
                 {
                     label: this.dotMessageService.get('modes.Page'),
                     command: () => {
-                        this.dotContentletEditor.edit({
-                            data: {
-                                inode: this.pageState.page.inode
-                            }
-                        });
+                        this.stateSelectorHandler(DotPageMode.EDIT);
                     }
                 },
                 {
@@ -127,7 +123,11 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
                         this.pageState.params.urlContentMap.contentType
                     } ${this.dotMessageService.get('Content')}`,
                     command: () => {
-                        this.stateSelectorHandler(DotPageMode.EDIT);
+                        this.dotContentletEditor.edit({
+                            data: {
+                                inode: this.pageState.params.urlContentMap.inode
+                            }
+                        });
                     }
                 }
             ];
