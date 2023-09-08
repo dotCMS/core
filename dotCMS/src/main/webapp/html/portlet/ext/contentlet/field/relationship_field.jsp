@@ -421,8 +421,6 @@
 
 		//Invoked when a contentlet is selected to fill the contentlet data in the table
 		function <%= relationJsName %>_addRelationshipCallback(selectedData){
-			console.log("selectedData");
-			console.log(selectedData);
 
 			//A new list will be created with all the relationships but will remove multilingual ones, and in that
 			//case will add the one of the selected language.
@@ -676,7 +674,7 @@
                     var fieldValue = '';
                     if (fieldName === 'languageId') {
                         createLangTd(row, item, '<%= relationJsName %>');
-                    } else if (fieldName === 'titleImage') {
+                    } else if (fieldName === 'titleImage' || item[fieldName].includes("assets") ) {
                         createImageCell(row, item);
                     } else {
                         var fieldCell = row.insertCell(row.cells.length);
