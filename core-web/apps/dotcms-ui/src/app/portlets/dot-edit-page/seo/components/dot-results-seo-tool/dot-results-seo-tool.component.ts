@@ -1,4 +1,7 @@
+import { Observable } from 'rxjs';
+
 import {
+    AsyncPipe,
     JsonPipe,
     NgClass,
     NgFor,
@@ -8,7 +11,7 @@ import {
     NgSwitchDefault,
     TitleCasePipe
 } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
 
@@ -30,18 +33,19 @@ import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-me
         JsonPipe,
         NgSwitch,
         NgSwitchCase,
-        NgSwitchDefault
+        NgSwitchDefault,
+        AsyncPipe
     ],
     providers: [DotSeoMetaTagsService],
     templateUrl: './dot-results-seo-tool.component.html',
     styleUrls: ['./dot-results-seo-tool.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotResultsSeoToolComponent implements OnInit, OnChanges {
+export class DotResultsSeoToolComponent implements OnInit {
     @Input() hostName: string;
     @Input() seoMedia: string;
     @Input() seoOGTags: SeoMetaTags;
-    @Input() seoOGTagsResults: SeoMetaTagsResult[];
+    @Input() seoOGTagsResults: Observable<SeoMetaTagsResult[]>;
 
     currentResults: SeoMetaTagsResult[];
 
@@ -79,10 +83,10 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
         ];
     }
 
-    ngOnChanges() {
-        this.currentResults = this.dotSeoMetaTagsService.getFilteredMetaTagsByMedia(
+    /* ngOnChanges() {
+       this.currentResults = this.dotSeoMetaTagsService.getFilteredMetaTagsByMedia(
             this.seoOGTagsResults,
             this.seoMedia
-        );
-    }
+        ); 
+    }*/
 }

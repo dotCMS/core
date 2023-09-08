@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 export enum SEO_OPTIONS {
     FAVICON = 'favicon',
     TITLE = 'title',
@@ -68,10 +70,26 @@ export const SeoMediaKeys = {
     facebook: [SEO_OPTIONS.DESCRIPTION, SEO_OPTIONS.OG_IMAGE, SEO_OPTIONS.OG_TITLE],
     google: [SEO_OPTIONS.DESCRIPTION, SEO_OPTIONS.FAVICON, SEO_OPTIONS.TITLE],
     linkedin: [],
-    twitter: []
+    twitter: [],
+    all: [
+        SEO_OPTIONS.DESCRIPTION,
+        SEO_OPTIONS.OG_IMAGE,
+        SEO_OPTIONS.OG_TITLE,
+        SEO_OPTIONS.FAVICON,
+        SEO_OPTIONS.TITLE,
+        SEO_OPTIONS.OG_DESCRIPTION
+    ]
 };
 
 export interface ImageMetaData {
     length: number;
     url: string;
+}
+
+export interface OpenGraphOptions {
+    [key: string]: {
+        getItems: (object: SeoMetaTags) => Observable<SeoRulesResult[]>;
+        sort: number;
+        info: string;
+    };
 }

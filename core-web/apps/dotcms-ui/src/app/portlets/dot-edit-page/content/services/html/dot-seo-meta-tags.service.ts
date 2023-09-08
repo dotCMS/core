@@ -2,7 +2,7 @@ import { Observable, from, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { switchMap } from 'rxjs/operators';
+import { map, switchMap, toArray } from 'rxjs/operators';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
@@ -17,7 +17,8 @@ import {
     SeoRulesResult,
     SeoMetaTagsResult,
     SeoMediaKeys,
-    ImageMetaData
+    ImageMetaData,
+    OpenGraphOptions
 } from '../dot-edit-content-html/models/meta-tags-model';
 
 @Injectable()
@@ -40,7 +41,12 @@ export class DotSeoMetaTagsService {
             const name = metaTag.getAttribute('name');
             const property = metaTag.getAttribute('property');
             const content = metaTag.getAttribute('content');
-            metaTagsObject[name || property] = content;
+
+            const key = name ?? property;
+
+            if (key) {
+                metaTagsObject[key] = content;
+            }
         }
 
         const favicon = pageDocument.querySelectorAll('link[rel="icon"]');
@@ -63,77 +69,31 @@ export class DotSeoMetaTagsService {
      * @param pageDocument
      * @returns
      */
-    getMetaTagsResults(pageDocument: Document): SeoMetaTagsResult[] {
-        const result: SeoMetaTagsResult[] = [];
+    getMetaTagsResults(pageDocument: Document): Observable<SeoMetaTagsResult[]> {
         const metaTagsObject = this.getMetaTags(pageDocument);
-        Object.keys(metaTagsObject).forEach((key) => {
-            if (key === SEO_OPTIONS.FAVICON) {
-                const items = this.getFaviconItems(metaTagsObject);
-                const keyValues = this.getKeyValues(items);
-                result.push({
-                    key,
-                    keyIcon: keyValues.keyIcon,
-                    keyColor: keyValues.keyColor,
-                    items: items,
-                    sort: 1
-                });
-            }
+        const ogMap = this.openGraphMap();
 
-            if (key === SEO_OPTIONS.OG_DESCRIPTION || key === SEO_OPTIONS.DESCRIPTION) {
-                const items = this.getDescriptionItems(metaTagsObject);
-                const keyValues = this.getKeyValues(items);
-                result.push({
-                    key,
-                    keyIcon: keyValues.keyIcon,
-                    keyColor: keyValues.keyColor,
-                    items: items,
-                    sort: 2,
-                    info: this.dotMessageService.get('seo.rules.description.info')
-                });
-            }
+        return from(SeoMediaKeys.all).pipe(
+            switchMap((key) => {
+                const itemsObservable = ogMap[key]?.getItems(metaTagsObject);
 
-            if (key === SEO_OPTIONS.TITLE) {
-                const items = this.getTitleItems(metaTagsObject);
-                const keyValues = this.getKeyValues(items);
-                result.push({
-                    key,
-                    keyIcon: keyValues.keyIcon,
-                    keyColor: keyValues.keyColor,
-                    items: items,
-                    sort: 3,
-                    info: this.dotMessageService.get('seo.rules.title.info')
-                });
-            }
+                return itemsObservable?.pipe(
+                    map((items) => {
+                        const keysValues = this.getKeyValues(items);
 
-            if (key === SEO_OPTIONS.OG_TITLE) {
-                const items = this.getOgTitleItems(metaTagsObject);
-                const keyValues = this.getKeyValues(items);
-                result.push({
-                    key,
-                    keyIcon: keyValues.keyIcon,
-                    keyColor: keyValues.keyColor,
-                    items: items,
-                    sort: 4,
-                    info: this.dotMessageService.get('seo.rules.title.info')
-                });
-            }
-
-            if (key === SEO_OPTIONS.OG_IMAGE) {
-                this.getOgImagesItems(metaTagsObject).subscribe((items: SeoRulesResult[]) => {
-                    const keyValues = this.getKeyValues(items);
-                    result.push({
-                        key,
-                        keyIcon: keyValues.keyIcon,
-                        keyColor: keyValues.keyColor,
-                        items: items,
-                        sort: 5,
-                        info: ''
-                    });
-                });
-            }
-        });
-
-        return result;
+                        return {
+                            key,
+                            keyIcon: keysValues.keyIcon,
+                            keyColor: keysValues.keyColor,
+                            items: items,
+                            sort: ogMap[key]?.sort,
+                            info: ogMap[key]?.info
+                        };
+                    })
+                );
+            }),
+            toArray()
+        );
     }
 
     /**
@@ -151,6 +111,46 @@ export class DotSeoMetaTagsService {
                 SeoMediaKeys[seoMedia.toLowerCase()].includes(result.key.toLowerCase())
             )
             .sort((a, b) => a.sort - b.sort);
+    }
+
+    /**
+     * This returns the map of the open graph elements and their properties.
+     */
+    private openGraphMap(): OpenGraphOptions {
+        return {
+            [SEO_OPTIONS.FAVICON]: {
+                getItems: (metaTagsObject: SeoMetaTags) => of(this.getFaviconItems(metaTagsObject)),
+                sort: 1,
+                info: ''
+            },
+            [SEO_OPTIONS.DESCRIPTION]: {
+                getItems: (metaTagsObject: SeoMetaTags) =>
+                    of(this.getDescriptionItems(metaTagsObject)),
+                sort: 2,
+                info: this.dotMessageService.get('seo.rules.description.info')
+            },
+            [SEO_OPTIONS.OG_DESCRIPTION]: {
+                getItems: (metaTagsObject: SeoMetaTags) =>
+                    of(this.getDescriptionItems(metaTagsObject)),
+                sort: 3,
+                info: this.dotMessageService.get('seo.rules.description.info')
+            },
+            [SEO_OPTIONS.TITLE]: {
+                getItems: (metaTagsObject: SeoMetaTags) => of(this.getTitleItems(metaTagsObject)),
+                sort: 4,
+                info: this.dotMessageService.get('seo.rules.title.info')
+            },
+            [SEO_OPTIONS.OG_TITLE]: {
+                getItems: (metaTagsObject: SeoMetaTags) => of(this.getOgTitleItems(metaTagsObject)),
+                sort: 5,
+                info: this.dotMessageService.get('seo.rules.title.info')
+            },
+            [SEO_OPTIONS.OG_IMAGE]: {
+                getItems: (metaTagsObject: SeoMetaTags) => this.getOgImagesItems(metaTagsObject),
+                sort: 6,
+                info: ''
+            }
+        };
     }
 
     private getFaviconItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
