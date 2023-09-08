@@ -117,3 +117,5 @@ This maintenance release includes the following code fixes:
 96. https://github.com/dotCMS/core/issues/24683 : Copy button on Page Edit portlet should copy the entire URL, not just the path #24683
 
 **Release-23.01.7**
+
+97. https://github.com/dotCMS/core/issues/24294 : Implement Redisson Session sharing #24294
