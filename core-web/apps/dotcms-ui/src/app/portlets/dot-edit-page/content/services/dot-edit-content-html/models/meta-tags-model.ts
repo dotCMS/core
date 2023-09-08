@@ -87,9 +87,7 @@ export interface ImageMetaData {
 }
 
 export interface OpenGraphOptions {
-    [key: string]: {
-        getItems: (object: SeoMetaTags) => Observable<SeoRulesResult[]>;
-        sort: number;
-        info: string;
-    };
+    getItems: (object: SeoMetaTags) => Observable<SeoRulesResult[]>;
+    sort: number;
+    info: string;
 }

@@ -109,7 +109,7 @@ const seoOGTagsResultOgMock = [
                 itemIcon: 'pi-check'
             }
         ],
-        sort: 5,
+        sort: 6,
         info: ''
     },
     {
@@ -123,7 +123,7 @@ const seoOGTagsResultOgMock = [
                 itemIcon: 'pi-exclamation-circle'
             }
         ],
-        sort: 4,
+        sort: 5,
         info: 'HTML Title content should be between 30 and 60 characters.'
     },
     {
@@ -137,7 +137,8 @@ const seoOGTagsResultOgMock = [
                 itemIcon: 'pi-check'
             }
         ],
-        sort: 1
+        sort: 1,
+        info: ''
     },
     {
         key: 'title',
@@ -150,8 +151,22 @@ const seoOGTagsResultOgMock = [
                 itemIcon: 'pi-exclamation-circle'
             }
         ],
-        sort: 3,
+        sort: 4,
         info: 'HTML Title content should be between 30 and 60 characters.'
+    },
+    {
+        key: 'og:description',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message: 'Meta Description not found! Showing Description instead.',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 3,
+        info: 'The length of the description allowed will depend on the readers device size; on the smallest size only about 110 characters are allowed.'
     }
 ];
 

@@ -1,8 +1,8 @@
-import { Observable, from, of } from 'rxjs';
+import { Observable, forkJoin, from, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { map, switchMap, toArray } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
@@ -65,7 +65,7 @@ export class DotSeoMetaTagsService {
     }
 
     /**
-     * Get the object with the SEO Result
+     * Get the object with the SEO Result,
      * @param pageDocument
      * @returns
      */
@@ -73,50 +73,30 @@ export class DotSeoMetaTagsService {
         const metaTagsObject = this.getMetaTags(pageDocument);
         const ogMap = this.openGraphMap();
 
-        return from(SeoMediaKeys.all).pipe(
-            switchMap((key) => {
-                const itemsObservable = ogMap[key]?.getItems(metaTagsObject);
+        const resolves = SeoMediaKeys.all.map((key) => ogMap[key]?.getItems(metaTagsObject));
 
-                return itemsObservable?.pipe(
-                    map((items) => {
-                        const keysValues = this.getKeyValues(items);
+        return forkJoin(resolves).pipe(
+            map((resolve) => {
+                return resolve.map((items, index) => {
+                    const keysValues = this.getKeyValues(items);
+                    const key = SeoMediaKeys.all[index];
 
-                        return {
-                            key,
-                            keyIcon: keysValues.keyIcon,
-                            keyColor: keysValues.keyColor,
-                            items: items,
-                            sort: ogMap[key]?.sort,
-                            info: ogMap[key]?.info
-                        };
-                    })
-                );
-            }),
-            toArray()
+                    return {
+                        key,
+                        keyIcon: keysValues.keyIcon,
+                        keyColor: keysValues.keyColor,
+                        items: items,
+                        sort: ogMap[key]?.sort,
+                        info: ogMap[key]?.info
+                    };
+                });
+            })
         );
     }
-
-    /**
-     * Filter and sorted the meta tags by media
-     * @param results
-     * @param seoMedia
-     * @returns
-     */
-    getFilteredMetaTagsByMedia(
-        results: SeoMetaTagsResult[],
-        seoMedia: string
-    ): SeoMetaTagsResult[] {
-        return results
-            .filter((result) =>
-                SeoMediaKeys[seoMedia.toLowerCase()].includes(result.key.toLowerCase())
-            )
-            .sort((a, b) => a.sort - b.sort);
-    }
-
     /**
      * This returns the map of the open graph elements and their properties.
      */
-    private openGraphMap(): OpenGraphOptions {
+    private openGraphMap(): Record<SEO_OPTIONS, OpenGraphOptions> {
         return {
             [SEO_OPTIONS.FAVICON]: {
                 getItems: (metaTagsObject: SeoMetaTags) => of(this.getFaviconItems(metaTagsObject)),
@@ -151,6 +131,29 @@ export class DotSeoMetaTagsService {
                 info: ''
             }
         };
+    }
+
+    /**
+     * Filter
+     * @param results
+     * @param seoMedia
+     * @returns
+     */
+
+    getFilteredMetaTagsByMedia(
+        results: Observable<SeoMetaTagsResult[]>,
+        seoMedia: string
+    ): Observable<SeoMetaTagsResult[]> {
+        return results.pipe(
+            map((resultsArray) => {
+                return resultsArray
+                    .map((result) => result)
+                    .filter((result) =>
+                        SeoMediaKeys[seoMedia.toLowerCase()].includes(result.key.toLowerCase())
+                    )
+                    .sort((a, b) => a.sort - b.sort);
+            })
+        );
     }
 
     private getFaviconItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {

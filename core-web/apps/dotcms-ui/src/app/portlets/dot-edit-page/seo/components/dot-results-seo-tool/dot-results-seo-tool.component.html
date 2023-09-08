@@ -40,7 +40,7 @@
     </p-card>
 </div>
 
-<p-card class="results-seo-tool__result-card" *ngFor="let result of seoOGTagsResults | async">
+<p-card class="results-seo-tool__result-card" *ngFor="let result of currentResults | async">
     <ng-template class="results-seo-tool__result-card-header" pTemplate="header">
         <div class="results-seo-tool__result-card-title">
             <i

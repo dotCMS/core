@@ -137,8 +137,9 @@ describe('DotSetMetaTagsService', () => {
             })
         );
 
-        const result = service.getMetaTagsResults(testDoc);
-
-        expect(result).toEqual(seoOGTagsResultOgMock);
+        service.getMetaTagsResults(testDoc).subscribe((value) => {
+            expect(value.length).toEqual(6);
+            expect(value).toEqual(seoOGTagsResultOgMock);
+        });
     });
 });

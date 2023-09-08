@@ -11,7 +11,7 @@ import {
     NgSwitchDefault,
     TitleCasePipe
 } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
 
@@ -41,13 +41,12 @@ import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-me
     styleUrls: ['./dot-results-seo-tool.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotResultsSeoToolComponent implements OnInit {
+export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     @Input() hostName: string;
     @Input() seoMedia: string;
     @Input() seoOGTags: SeoMetaTags;
     @Input() seoOGTagsResults: Observable<SeoMetaTagsResult[]>;
-
-    currentResults: SeoMetaTagsResult[];
+    currentResults: Observable<SeoMetaTagsResult[]>;
 
     constructor(private dotSeoMetaTagsService: DotSeoMetaTagsService) {}
 
@@ -81,12 +80,13 @@ export class DotResultsSeoToolComponent implements OnInit {
                 isMobile: true
             }
         ];
+        this.currentResults = this.seoOGTagsResults;
     }
 
-    /* ngOnChanges() {
-       this.currentResults = this.dotSeoMetaTagsService.getFilteredMetaTagsByMedia(
+    ngOnChanges() {
+        this.currentResults = this.dotSeoMetaTagsService.getFilteredMetaTagsByMedia(
             this.seoOGTagsResults,
             this.seoMedia
-        ); 
-    }*/
+        );
+    }
 }

@@ -1,4 +1,5 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { of } from 'rxjs';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -66,7 +67,7 @@ describe('DotResultsSeoToolComponent', () => {
             props: {
                 hostName: 'A title',
                 seoOGTags: seoOGTagsMock,
-                seoOGTagsResults: seoOGTagsResultMock,
+                seoOGTagsResults: of(seoOGTagsResultMock),
                 seoMedia: 'google'
             }
         });
@@ -108,10 +109,11 @@ describe('DotResultsSeoToolComponent', () => {
     it('should filter seo results by seoMedia on changes', () => {
         spectator.fixture.componentInstance.seoMedia = 'facebook';
         spectator.component.ngOnChanges();
-
-        expect(spectator.component.currentResults.length).toEqual(3);
-        expect(spectator.component.currentResults[0].key).toEqual(seoOGTagsResultMock[1].key);
-        expect(spectator.component.currentResults[1].key).toEqual(seoOGTagsResultMock[3].key);
-        expect(spectator.component.currentResults[2].key).toEqual(seoOGTagsResultMock[4].key);
+        spectator.component.currentResults.subscribe((items) => {
+            expect(items.length).toEqual(3);
+            expect(items[0].key).toEqual(seoOGTagsResultMock[1].key);
+            expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
+            expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
+        });
     });
 });
