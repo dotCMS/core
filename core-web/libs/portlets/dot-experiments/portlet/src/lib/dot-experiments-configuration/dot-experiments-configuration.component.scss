@@ -1,4 +1,5 @@
 @use "variables" as *;
+@import "../styles/experiment";
 
 :host {
     width: 100%;
@@ -8,7 +9,7 @@
     padding-bottom: $spacing-7;
 
     .dot-experiment-config-content {
-        padding: $spacing-3 $spacing-5 $spacing-5 $spacing-5;
+        padding: $spacing-3 calc($spacing-5 + $nav-size) $spacing-5 $spacing-5;
         row-gap: $spacing-3;
         display: flex;
         flex-direction: column;

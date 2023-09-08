@@ -5,6 +5,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -21,6 +22,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for {@link StoryBlockAPI}
@@ -256,34 +261,33 @@ public class StoryBlockAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_refresh_references() throws DotDataException, DotSecurityException, JsonProcessingException {
-
         //1) create a rich text contentlet with some initial values
         final ContentType contentTypeRichText = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
-        final Contentlet richTextContentlet   = new ContentletDataGen(contentTypeRichText).setProperty("title","Title1").setProperty("body","Body1").nextPersisted();
+        final Contentlet richTextContentlet   = new ContentletDataGen(contentTypeRichText).setProperty("title","Title1").setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).nextPersisted();
 
         // 2) add the contentlet to the static story block created previously
         final Object newStoryBlockJson        = APILocator.getStoryBlockAPI().addContentlet(JSON, richTextContentlet);
 
         // 3) convert the json to map, to start the test
         final Map    newStoryBlockMap         = ContentletJsonHelper.INSTANCE.get().objectMapper()
-                                                        .readValue(Try.of(() -> newStoryBlockJson.toString())
+                                                        .readValue(Try.of(newStoryBlockJson::toString)
                                                                            .getOrElse(StringPool.BLANK), LinkedHashMap.class);
 
-        Assert.assertNotNull(newStoryBlockMap);
+        assertNotNull(newStoryBlockMap);
         final List contentList = (List) newStoryBlockMap.get("content");
         final Optional<Object> firstContentletMap = contentList.stream()
                 .filter(content -> "dotContent".equals(Map.class.cast(content).get("type"))).findFirst();
 
-        Assert.assertTrue(firstContentletMap.isPresent());
+        assertTrue(firstContentletMap.isPresent());
         final Map contentletMap = (Map) Map.class.cast(Map.class.cast(firstContentletMap.get()).get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
-        Assert.assertEquals(contentletMap.get("identifier"), richTextContentlet.getIdentifier());
-        Assert.assertEquals(contentletMap.get("title"), richTextContentlet.getStringProperty("title"));
-        Assert.assertEquals(contentletMap.get("body"),  richTextContentlet.getStringProperty("body"));
+        assertEquals(contentletMap.get("identifier"), richTextContentlet.getIdentifier());
+        assertEquals(contentletMap.get("title"), richTextContentlet.getStringProperty("title"));
+        assertEquals(contentletMap.get("body"),  richTextContentlet.getStringProperty("body"));
 
         // 4) checkout/publish the contentlet in order to do new changes
         final Contentlet newRichTextContentlet = APILocator.getContentletAPI().checkout(richTextContentlet.getInode(), APILocator.systemUser(), false);
         newRichTextContentlet.setProperty("title","Title2");
-        newRichTextContentlet.setProperty("body","Body2");
+        newRichTextContentlet.setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT);
         APILocator.getContentletAPI().publish(
                 APILocator.getContentletAPI().checkin(newRichTextContentlet, APILocator.systemUser(), false), APILocator.systemUser(), false);
 
@@ -291,8 +295,8 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         final StoryBlockReferenceResult refreshResult = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson, "1234");
 
         // 6) check if the results are ok.
-        Assert.assertTrue(refreshResult.isRefreshed());
-        Assert.assertNotNull(refreshResult.getValue());
+        assertTrue(refreshResult.isRefreshed());
+        assertNotNull(refreshResult.getValue());
         final Map    refreshedStoryBlockMap         = ContentletJsonHelper.INSTANCE.get().objectMapper()
                                                               .readValue(Try.of(() -> refreshResult.getValue().toString())
                                                                                  .getOrElse(StringPool.BLANK), LinkedHashMap.class);
@@ -300,11 +304,11 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         final Optional<Object> refreshedfirstContentletMap = refreshedContentList.stream()
                                                                      .filter(content -> "dotContent".equals(Map.class.cast(content).get("type"))).findFirst();
 
-        Assert.assertTrue(refreshedfirstContentletMap.isPresent());
+        assertTrue(refreshedfirstContentletMap.isPresent());
         final Map refreshedContentletMap = (Map) Map.class.cast(Map.class.cast(refreshedfirstContentletMap.get()).get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
-        Assert.assertEquals(refreshedContentletMap.get("identifier"), newRichTextContentlet.getIdentifier());
-        Assert.assertEquals("Title2", newRichTextContentlet.getStringProperty("title"));
-        Assert.assertEquals("Body2",  newRichTextContentlet.getStringProperty("body"));
+        assertEquals(refreshedContentletMap.get("identifier"), newRichTextContentlet.getIdentifier());
+        assertEquals("Expected Generic Content title doesn't match the one in the Contentlet", "Title2", newRichTextContentlet.getStringProperty("title"));
+        assertEquals("Expected Generic Content body doesn't match the one in the Contentlet", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT,  newRichTextContentlet.getStringProperty("body"));
     }
 
     /**
@@ -318,9 +322,9 @@ public class StoryBlockAPITest extends IntegrationTestBase {
 
         //1) create a rich text contentlets with some initial values
         final ContentType contentTypeRichText = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
-        final Contentlet richTextContentlet1   = new ContentletDataGen(contentTypeRichText).setProperty("title","Title1").setProperty("body","Body1").nextPersisted();
-        final Contentlet richTextContentlet2   = new ContentletDataGen(contentTypeRichText).setProperty("title","Title1").setProperty("body","Body1").nextPersisted();
-        final Contentlet richTextContentlet3   = new ContentletDataGen(contentTypeRichText).setProperty("title","Title1").setProperty("body","Body1").nextPersisted();
+        final Contentlet richTextContentlet1   = new ContentletDataGen(contentTypeRichText).setProperty("title","Title1").setProperty("body", JSON).nextPersisted();
+        final Contentlet richTextContentlet2   = new ContentletDataGen(contentTypeRichText).setProperty("title","Title1").setProperty("body", JSON).nextPersisted();
+        final Contentlet richTextContentlet3   = new ContentletDataGen(contentTypeRichText).setProperty("title","Title1").setProperty("body", JSON).nextPersisted();
 
         // 2) adds the contentlets to the static story block created previously
         final Object newStoryBlockJson1        = APILocator.getStoryBlockAPI().addContentlet(JSON, richTextContentlet1);
@@ -333,13 +337,13 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                                                                            .getOrElse(StringPool.BLANK), LinkedHashMap.class);
 
 
-        Assert.assertNotNull(newStoryBlockMap);
+        assertNotNull(newStoryBlockMap);
         final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson3);
-        Assert.assertNotNull(contentletIdList);
-        Assert.assertEquals(3, contentletIdList.size());
-        Assert.assertTrue(contentletIdList.contains(richTextContentlet1.getIdentifier()));
-        Assert.assertTrue(contentletIdList.contains(richTextContentlet2.getIdentifier()));
-        Assert.assertTrue(contentletIdList.contains(richTextContentlet3.getIdentifier()));
+        assertNotNull(contentletIdList);
+        assertEquals(3, contentletIdList.size());
+        assertTrue(contentletIdList.contains(richTextContentlet1.getIdentifier()));
+        assertTrue(contentletIdList.contains(richTextContentlet2.getIdentifier()));
+        assertTrue(contentletIdList.contains(richTextContentlet3.getIdentifier()));
     }
 
     /**
@@ -353,8 +357,8 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         final Object newStoryBlockJson1        = "<html>pufff</html>";
 
         final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
-        Assert.assertNotNull(contentletIdList);
-        Assert.assertTrue(contentletIdList.isEmpty());
+        assertNotNull(contentletIdList);
+        assertTrue(contentletIdList.isEmpty());
     }
     
     /**
@@ -368,8 +372,8 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         final Object newStoryBlockJson1        = "{\"test\":\"test\"}";
 
         final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
-        Assert.assertNotNull(contentletIdList);
-        Assert.assertTrue(contentletIdList.isEmpty());
+        assertNotNull(contentletIdList);
+        assertTrue(contentletIdList.isEmpty());
     }
     
     /**
@@ -383,8 +387,8 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         final Object newStoryBlockJson1        = "{\"content\":\"test\"}";
 
         final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
-        Assert.assertNotNull(contentletIdList);
-        Assert.assertTrue(contentletIdList.isEmpty());
+        assertNotNull(contentletIdList);
+        assertTrue(contentletIdList.isEmpty());
     }
     
     @Test
@@ -393,13 +397,13 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         final Object newStoryBlockJson1        = "{\"test\":\"test\"}";
         
         StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson1, "xxx");
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isRefreshed());
+        assertNotNull(result);
+        assertTrue(result.isRefreshed());
         
         final Object newStoryBlockJson2        = "{\"content\":\"test\"}";
         result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson2, "xxx");
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isRefreshed());
+        assertNotNull(result);
+        assertTrue(result.isRefreshed());
     
         
     }

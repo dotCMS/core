@@ -8,6 +8,7 @@ import { containersMapMock, MockDotMessageService } from '@dotcms/utils-testing'
 import {
     DotGridStackWidget,
     DotTemplateBuilderContainer,
+    DotTemplateBuilderState,
     SYSTEM_CONTAINER_IDENTIFIER
 } from '../models/models';
 
@@ -217,6 +218,162 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     ],
                     leftOffset: 10,
                     width: 3,
+                    styleClass: ''
+                }
+            ],
+            styleClass: null
+        },
+        {
+            columns: [
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '9'
+                        }
+                    ],
+                    leftOffset: 1,
+                    width: 12,
+                    styleClass: ''
+                }
+            ],
+            styleClass: 'bg-white py-5'
+        },
+        {
+            columns: [
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '10'
+                        }
+                    ],
+                    leftOffset: 1,
+                    width: 12,
+                    styleClass: ''
+                }
+            ],
+            styleClass: null
+        }
+    ]
+};
+
+export const FULL_DATA_MOCK_UNSORTED: DotLayoutBody = {
+    rows: [
+        {
+            columns: [
+                {
+                    containers: [
+                        {
+                            identifier: BANNER_CONTAINER_IDENTIFIER,
+                            uuid: '1'
+                        }
+                    ],
+                    leftOffset: 1,
+                    width: 12,
+                    styleClass: 'banner-tall'
+                }
+            ],
+            styleClass: 'p-0 banner-tall'
+        },
+        {
+            columns: [
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '1'
+                        }
+                    ],
+                    leftOffset: 1,
+                    width: 12,
+                    styleClass: 'mt-70 booking-form'
+                }
+            ],
+            styleClass: null
+        },
+        {
+            columns: [
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '3'
+                        }
+                    ],
+                    leftOffset: 4,
+                    width: 3,
+                    styleClass: ''
+                },
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '2'
+                        }
+                    ],
+                    leftOffset: 1,
+                    width: 3,
+                    styleClass: ''
+                },
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '5'
+                        }
+                    ],
+                    leftOffset: 10,
+                    width: 3,
+                    styleClass: ''
+                },
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '4'
+                        }
+                    ],
+                    leftOffset: 7,
+                    width: 3,
+                    styleClass: ''
+                }
+            ],
+            styleClass: null
+        },
+        {
+            columns: [
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '7'
+                        }
+                    ],
+                    leftOffset: 7,
+                    width: 3,
+                    styleClass: ''
+                },
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '8'
+                        }
+                    ],
+                    leftOffset: 10,
+                    width: 3,
+                    styleClass: ''
+                },
+                {
+                    containers: [
+                        {
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
+                            uuid: '6'
+                        }
+                    ],
+                    leftOffset: 1,
+                    width: 6,
                     styleClass: ''
                 }
             ],
@@ -661,3 +818,20 @@ export class MockGridStackElementComponent {
         };
     }
 }
+
+// Mock used to maintain the state of the template builder
+export const INITIAL_STATE_MOCK: DotTemplateBuilderState = {
+    rows: [],
+    layoutProperties: {
+        header: true,
+        footer: true,
+        sidebar: {
+            containers: [],
+            location: 'left',
+            width: 'small'
+        }
+    },
+    resizingRowID: '',
+    containerMap: {},
+    themeId: '123'
+};

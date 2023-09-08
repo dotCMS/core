@@ -22,7 +22,8 @@
             <p-divider layout="vertical"></p-divider>
             <dotcms-template-builder-actions
                 [layoutProperties]="vm.layoutProperties"
-                (selectTheme)="openThemeSelectorDynamicDialog()"></dotcms-template-builder-actions>
+                (selectTheme)="openThemeSelectorDynamicDialog()"
+                data-testId="template-builder-actions"></dotcms-template-builder-actions>
             <ng-content select="[toolbar-actions-right]"></ng-content>
         </div>
     </p-toolbar>

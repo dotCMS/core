@@ -1,8 +1,5 @@
 package com.dotcms.publishing.job;
 
-import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
-import static com.dotmarketing.util.Constants.USER_AGENT_DOTCMS_SITESEARCH;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
@@ -50,12 +47,6 @@ import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -66,6 +57,15 @@ import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
 
 @RunWith(DataProviderRunner.class)
 public class SiteSearchJobImplTest extends IntegrationTestBase {
@@ -125,7 +125,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content1")
-                .setProperty("body", "content1")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
@@ -369,7 +369,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content1")
-                .setProperty("body", "content1")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);

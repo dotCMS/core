@@ -20,7 +20,8 @@
 
     <div class="main-toolbar-right flex align-items-center gap-3">
         <ng-container *ngIf="variant; else defaultHeaderRightTpl">
-            <dot-icon name="science" size="22"></dot-icon>
+            <dot-global-message data-testId="globalMessage" right></dot-global-message>
+            <i class="pi pi-filter-fill -rotate-180"></i>
             <h2>{{ variant.experimentName }}</h2>
         </ng-container>
     </div>
@@ -73,7 +74,13 @@
     <p-tag
         class="sm p-tag-success dot-edit__experiments-results-tag"
         *ngIf="runningExperiment"
-        [value]="'running' | dm | titlecase"
+        [value]="
+            ('running' | dm | titlecase) +
+            ' ' +
+            ('dot.common.until' | dm) +
+            ' ' +
+            (runningExperiment.scheduling.endDate | date : runningUntilDateFormat)
+        "
         [routerLink]="[
             '/edit-page/experiments/',
             runningExperiment.pageId,
