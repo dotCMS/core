@@ -6,20 +6,23 @@ import {
     EventEmitter,
     Input,
     OnChanges,
+    OnInit,
     Output,
     SimpleChanges,
     ViewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { SelectItem } from 'primeng/api';
+import { MenuItem, SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { Menu, MenuModule } from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { switchMap, take } from 'rxjs/operators';
 
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -63,12 +66,14 @@ enum DotConfirmationType {
         ButtonModule,
         DotDeviceSelectorSeoComponent,
         DotEditPageLockInfoSeoComponent,
-        DotTabButtonsComponent
+        DotTabButtonsComponent,
+        MenuModule
     ]
 })
-export class DotEditPageStateControllerSeoComponent implements OnChanges {
+export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges {
     @ViewChild('pageLockInfo', { static: true }) pageLockInfo: DotEditPageLockInfoSeoComponent;
     @ViewChild('deviceSelector') deviceSelector: DotDeviceSelectorSeoComponent;
+    @ViewChild('menu') menu: Menu;
 
     @Input() pageState: DotPageRenderState;
     @Output() modeChange = new EventEmitter<DotPageMode>();
@@ -80,11 +85,14 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
     mode: DotPageMode;
     options: SelectItem[] = [];
 
+    menuItems: MenuItem[];
+
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
         private dotPageStateService: DotPageStateService,
-        private dotPersonalizeService: DotPersonalizeService
+        private dotPersonalizeService: DotPersonalizeService,
+        private dotContentletEditor: DotContentletEditorService
     ) {}
 
     ngOnChanges(changes: SimpleChanges) {
@@ -98,6 +106,31 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
             this.lock = this.isLocked(pageState);
             this.lockWarn = this.shouldWarnLock(pageState);
             this.mode = pageState.state.mode;
+        }
+    }
+
+    ngOnInit(): void {
+        if (this.pageState.params.urlContentMap) {
+            this.menuItems = [
+                {
+                    label: this.dotMessageService.get('modes.Page'),
+                    command: () => {
+                        this.dotContentletEditor.edit({
+                            data: {
+                                inode: this.pageState.page.inode
+                            }
+                        });
+                    }
+                },
+                {
+                    label: `${
+                        this.pageState.params.urlContentMap.contentType
+                    } ${this.dotMessageService.get('Content')}`,
+                    command: () => {
+                        this.stateSelectorHandler(DotPageMode.EDIT);
+                    }
+                }
+            ];
         }
     }
 
@@ -204,9 +237,7 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
 
     private getMenuOpenAction(mode: DotPageMode) {
         const menuOpenActions = {
-            [DotPageMode.EDIT]: (_: PointerEvent) => {
-                //...
-            },
+            [DotPageMode.EDIT]: (event: PointerEvent) => this.menu.toggle(event),
             [DotPageMode.PREVIEW]: (event: PointerEvent) => this.deviceSelector.openMenu(event)
         };
 
