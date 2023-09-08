@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.model;
 
+import java.io.Serializable;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +11,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-public class WorkflowSearcher {
+
+public class WorkflowSearcher implements Serializable {
 
 	String schemeId;
 	String assignedTo;

@@ -119,3 +119,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.7**
 
 97. https://github.com/dotCMS/core/issues/24294 : Implement Redisson Session sharing #24294
+98. https://github.com/dotCMS/core/issues/24990 : Punch List : Redis Session Manager #24990
