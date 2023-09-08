@@ -3,7 +3,6 @@ package com.dotmarketing.quartz.job;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
-import com.google.common.collect.ImmutableList;
 import com.liferay.util.FileUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,14 +34,14 @@ public class BinaryCleanupJobTest {
   }
 
   @Test
-  public void test_job_deletes_tmp_assets() throws Exception {
+  public void deleteTmpAssets() throws Exception {
     final Calendar cal = Calendar.getInstance();
     cal.set(Calendar.MILLISECOND, 0);
     cal.set(Calendar.SECOND, 0);
 
     Config.setProperty(BinaryCleanupJob.CLEANUP_TMP_FILES_OLDER_THAN_HOURS, 3);
 
-    final List<Date> hours = ImmutableList.of(cal.getTime(), // now
+    final List<Date> hours = List.of(cal.getTime(), // now
         new Date(cal.getTimeInMillis() - (60 * 60 * 1000)), // 1 hour ago
         new Date(cal.getTimeInMillis() - (2 * 60 * 60 * 1000)), // 2 hours ago
         new Date(cal.getTimeInMillis() - (5 * 60 * 60 * 1000)), // 5 hours ago
@@ -85,14 +84,14 @@ public class BinaryCleanupJobTest {
    * @throws Exception An error occurred when creating the test files.
    */
   @Test
-  public void test_job_deletes_bundles() throws Exception {
+  public void deleteBundles() throws Exception {
     final Calendar cal = Calendar.getInstance();
     cal.set(Calendar.MILLISECOND, 0);
     cal.set(Calendar.SECOND, 0);
 
     Config.setProperty(BinaryCleanupJob.CLEANUP_BUNDLES_OLDER_THAN_DAYS, 2);
 
-    final List<Date> hours = ImmutableList.of(cal.getTime(), // now
+    final List<Date> hours = List.of(cal.getTime(), // now
             Date.from(Instant.now().minus(Duration.ofHours(12))), // 12 hours ago
             Date.from(Instant.now().minus(Duration.ofDays(1))), // 1 day ago
             Date.from(Instant.now().minus(Duration.ofDays(2))), // 2 days ago
