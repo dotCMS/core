@@ -204,7 +204,7 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
 
     private getMenuOpenAction(mode: DotPageMode) {
         const menuOpenActions = {
-            [DotPageMode.EDIT]: () => {
+            [DotPageMode.EDIT]: (_: PointerEvent) => {
                 //...
             },
             [DotPageMode.PREVIEW]: (event: PointerEvent) => this.deviceSelector.openMenu(event)
@@ -218,22 +218,42 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
     }
 
     private getModeOption(mode: string, pageState: DotPageRenderState): SelectItem {
-        const modesWithDropdown = ['edit', 'preview'];
-
         const disabled = {
             edit: !pageState.page.canEdit || !pageState.page.canLock,
             preview: !pageState.page.canRead,
             live: !pageState.page.liveInode
         };
 
+        const enumMode = DotPageMode[mode.toLocaleUpperCase()] as DotPageMode;
+
         return {
             label: this.dotMessageService.get(`editpage.toolbar.${mode}.page`),
             value: {
-                id: DotPageMode[mode.toLocaleUpperCase()],
-                showDropdownButton: modesWithDropdown.includes(mode)
+                id: enumMode,
+                showDropdownButton: this.shouldShowDropdownButton(enumMode, pageState)
             },
             disabled: disabled[mode]
         };
+    }
+
+    /**
+     * Check if the dropdown button should be shown
+     *
+     * @private
+     * @param {string} mode
+     * @param {DotPageRenderState} pageState
+     * @return {*}  {boolean}
+     * @memberof DotEditPageStateControllerSeoComponent
+     */
+    private shouldShowDropdownButton(mode: DotPageMode, pageState: DotPageRenderState): boolean {
+        const modesWithDropdown: Record<DotPageMode, boolean> = {
+            // Change true for the feature flag
+            [DotPageMode.EDIT]: true && Boolean(pageState.params.urlContentMap),
+            [DotPageMode.PREVIEW]: true, // No logic involved, always show,
+            [DotPageMode.LIVE]: false // Don't show for live
+        };
+
+        return modesWithDropdown[mode];
     }
 
     private getStateModeOptions(pageState: DotPageRenderState): SelectItem[] {
