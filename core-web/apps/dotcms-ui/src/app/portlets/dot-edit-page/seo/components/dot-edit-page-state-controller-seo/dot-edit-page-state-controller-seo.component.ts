@@ -26,7 +26,8 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import {
     DotAlertConfirmService,
     DotMessageService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import {
     DotDevice,
@@ -34,7 +35,8 @@ import {
     DotPageMode,
     DotPageRenderOptions,
     DotPageRenderState,
-    DotVariantData
+    DotVariantData,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotTabButtonsComponent, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -82,9 +84,9 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
 
     lock: boolean;
     lockWarn = false;
+    featureFlagEditURLContentMapIsOn = false;
     mode: DotPageMode;
     options: SelectItem[] = [];
-
     menuItems: MenuItem[];
 
     private readonly menuOpenActions: Record<DotPageMode, (event: PointerEvent) => void> = {
@@ -99,12 +101,15 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
         }
     };
 
+    private readonly featureFlagEditURLContentMap = FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP;
+
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
         private dotPageStateService: DotPageStateService,
         private dotPersonalizeService: DotPersonalizeService,
-        private dotContentletEditor: DotContentletEditorService
+        private dotContentletEditor: DotContentletEditorService,
+        private dotPropertiesService: DotPropertiesService
     ) {}
 
     ngOnChanges(changes: SimpleChanges) {
@@ -122,30 +127,35 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
     }
 
     ngOnInit(): void {
-        //Change true for the feature flag
+        this.dotPropertiesService
+            .getKey(this.featureFlagEditURLContentMap)
+            .pipe(take(1))
+            .subscribe((result) => {
+                this.featureFlagEditURLContentMapIsOn = result && result === 'true';
 
-        if (true && this.pageState.params.urlContentMap) {
-            this.menuItems = [
-                {
-                    label: this.dotMessageService.get('modes.Page'),
-                    command: () => {
-                        this.stateSelectorHandler(DotPageMode.EDIT);
-                    }
-                },
-                {
-                    label: `${
-                        this.pageState.params.urlContentMap.contentType
-                    } ${this.dotMessageService.get('Content')}`,
-                    command: () => {
-                        this.dotContentletEditor.edit({
-                            data: {
-                                inode: this.pageState.params.urlContentMap.inode
+                if (this.featureFlagEditURLContentMapIsOn && this.pageState.params.urlContentMap) {
+                    this.menuItems = [
+                        {
+                            label: this.dotMessageService.get('modes.Page'),
+                            command: () => {
+                                this.stateSelectorHandler(DotPageMode.EDIT);
                             }
-                        });
-                    }
+                        },
+                        {
+                            label: `${
+                                this.pageState.params.urlContentMap.contentType
+                            } ${this.dotMessageService.get('Content')}`,
+                            command: () => {
+                                this.dotContentletEditor.edit({
+                                    data: {
+                                        inode: this.pageState.params.urlContentMap.inode
+                                    }
+                                });
+                            }
+                        }
+                    ];
                 }
-            ];
-        }
+            });
     }
 
     /**
@@ -287,8 +297,8 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
      */
     private shouldShowDropdownButton(mode: DotPageMode, pageState: DotPageRenderState): boolean {
         const shouldModeShowDropdown: Record<DotPageMode, boolean> = {
-            // Change true for the feature flag
-            [DotPageMode.EDIT]: true && Boolean(pageState.params.urlContentMap),
+            [DotPageMode.EDIT]:
+                this.featureFlagEditURLContentMapIsOn && Boolean(pageState.params.urlContentMap),
             [DotPageMode.PREVIEW]: true, // No logic involved, always show,
             [DotPageMode.LIVE]: false // Don't show for live
         };

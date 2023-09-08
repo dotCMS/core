@@ -9,7 +9,13 @@
     tooltipStyleClass="dot-device-selector__dialog"
     data-testId="dot-device-selector"></dot-device-selector-seo>
 
-<p-menu #menu *ngIf="true" [model]="menuItems" [popup]="true" appendTo="body"> </p-menu>
+<p-menu
+    #menu
+    *ngIf="this.featureFlagEditURLContentMapIsOn"
+    [model]="menuItems"
+    [popup]="true"
+    appendTo="body">
+</p-menu>
 <dot-tab-buttons
     [activeId]="mode"
     [options]="options"
