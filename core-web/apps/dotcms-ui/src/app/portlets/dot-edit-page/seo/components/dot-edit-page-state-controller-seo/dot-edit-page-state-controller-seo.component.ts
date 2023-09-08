@@ -196,21 +196,21 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
         this.dotPageStateService.setSeoMedia(seoMedia);
     }
 
-    handleMenuOpen({ event, id }: { event: PointerEvent; id: string }): void {
-        const openMenuAction = this.getMenuOpenAction(id as DotPageMode);
+    handleMenuOpen({ event, menuId }: { event: PointerEvent; menuId: string }): void {
+        const openMenuAction = this.getMenuOpenAction(menuId as DotPageMode);
 
         openMenuAction(event);
     }
 
     private getMenuOpenAction(mode: DotPageMode) {
-        const menuOpenAction = {
+        const menuOpenActions = {
             [DotPageMode.EDIT]: () => {
                 //...
             },
             [DotPageMode.PREVIEW]: (event: PointerEvent) => this.deviceSelector.openMenu(event)
         };
 
-        return menuOpenAction[mode];
+        return menuOpenActions[mode];
     }
 
     private canTakeLock(pageState: DotPageRenderState): boolean {

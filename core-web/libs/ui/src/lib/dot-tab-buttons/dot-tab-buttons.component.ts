@@ -41,7 +41,7 @@ type CustomEventTarget = EventTarget & {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotTabButtonsComponent implements OnInit {
-    @Output() openMenu = new EventEmitter<{ event: PointerEvent; id: string }>();
+    @Output() openMenu = new EventEmitter<{ event: PointerEvent; menuId: string }>();
     @Output() clickOption = new EventEmitter();
     @Input() activeId: string;
     @Input() options: SelectItem<TabButtonOptions>[];
@@ -101,7 +101,7 @@ export class DotTabButtonsComponent implements OnInit {
             return option;
         });
 
-        this.openMenu.emit({ event, id: value.replace(this.OPEN_MENU, '') });
+        this.openMenu.emit({ event, menuId: value.replace(this.OPEN_MENU, '') });
     }
 
     /**
