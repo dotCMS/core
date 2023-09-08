@@ -2,6 +2,7 @@ package com.dotcms.api.client;
 
 import com.starxg.keytar.Keytar;
 import com.starxg.keytar.KeytarException;
+import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 
 /**
@@ -17,10 +18,28 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class KeyTarPasswordStoreImpl implements SecurePasswordStore {
 
-    Keytar keytar = Keytar.getInstance();
+    private Keytar instance;
+
+    private boolean unsupported = false;
+
+    Optional<Keytar> getInstance(){
+       if(null == instance && !unsupported){
+          try {
+              instance = Keytar.getInstance();
+          } catch (UnsatisfiedLinkError e) {
+               unsupported = true;
+          }
+       }
+       return Optional.ofNullable(instance);
+    }
+
+    Keytar getInstanceOrThrow() throws StoreSecureException{
+       return getInstance().orElseThrow(() -> new StoreSecureException("Keytar is not supported on this platform"));
+    }
 
     @Override
     public void setPassword(String service, String account, String password) throws StoreSecureException {
+        final Keytar keytar = getInstanceOrThrow();
         try {
             keytar.setPassword(service, account, password);
         } catch (KeytarException e) {
@@ -30,6 +49,7 @@ public class KeyTarPasswordStoreImpl implements SecurePasswordStore {
 
     @Override
     public String getPassword(String service, String account) throws StoreSecureException {
+        final Keytar keytar = getInstanceOrThrow();
         try {
             return keytar.getPassword(service, account);
         } catch (KeytarException e) {
@@ -39,6 +59,7 @@ public class KeyTarPasswordStoreImpl implements SecurePasswordStore {
 
     @Override
     public void deletePassword(String service, String account) throws StoreSecureException {
+        final Keytar keytar = getInstanceOrThrow();
         try {
             keytar.deletePassword(service, account);
         } catch (KeytarException e) {
