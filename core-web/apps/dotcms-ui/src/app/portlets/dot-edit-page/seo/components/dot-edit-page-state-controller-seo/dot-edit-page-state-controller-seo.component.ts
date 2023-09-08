@@ -87,6 +87,18 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
 
     menuItems: MenuItem[];
 
+    private readonly menuOpenActions: Record<DotPageMode, (event: PointerEvent) => void> = {
+        [DotPageMode.EDIT]: (event: PointerEvent) => {
+            this.menu.toggle(event);
+        },
+        [DotPageMode.PREVIEW]: (event: PointerEvent) => {
+            this.deviceSelector.openMenu(event);
+        },
+        [DotPageMode.LIVE]: (_: PointerEvent) => {
+            // No logic
+        }
+    };
+
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
@@ -110,7 +122,9 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
     }
 
     ngOnInit(): void {
-        if (this.pageState.params.urlContentMap) {
+        //Change true for the feature flag
+
+        if (true && this.pageState.params.urlContentMap) {
             this.menuItems = [
                 {
                     label: this.dotMessageService.get('modes.Page'),
@@ -229,19 +243,14 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
         this.dotPageStateService.setSeoMedia(seoMedia);
     }
 
+    /**
+     * Handle the click event on the dropdowns
+     *
+     * @param {{ event: PointerEvent; menuId: string }} { event, menuId }
+     * @memberof DotEditPageStateControllerSeoComponent
+     */
     handleMenuOpen({ event, menuId }: { event: PointerEvent; menuId: string }): void {
-        const openMenuAction = this.getMenuOpenAction(menuId as DotPageMode);
-
-        openMenuAction(event);
-    }
-
-    private getMenuOpenAction(mode: DotPageMode) {
-        const menuOpenActions = {
-            [DotPageMode.EDIT]: (event: PointerEvent) => this.menu.toggle(event),
-            [DotPageMode.PREVIEW]: (event: PointerEvent) => this.deviceSelector.openMenu(event)
-        };
-
-        return menuOpenActions[mode];
+        this.menuOpenActions[menuId as DotPageMode](event);
     }
 
     private canTakeLock(pageState: DotPageRenderState): boolean {
@@ -277,14 +286,14 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
      * @memberof DotEditPageStateControllerSeoComponent
      */
     private shouldShowDropdownButton(mode: DotPageMode, pageState: DotPageRenderState): boolean {
-        const modesWithDropdown: Record<DotPageMode, boolean> = {
+        const shouldModeShowDropdown: Record<DotPageMode, boolean> = {
             // Change true for the feature flag
             [DotPageMode.EDIT]: true && Boolean(pageState.params.urlContentMap),
             [DotPageMode.PREVIEW]: true, // No logic involved, always show,
             [DotPageMode.LIVE]: false // Don't show for live
         };
 
-        return modesWithDropdown[mode];
+        return shouldModeShowDropdown[mode];
     }
 
     private getStateModeOptions(pageState: DotPageRenderState): SelectItem[] {
