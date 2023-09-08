@@ -49,7 +49,8 @@ import {
     FreezeScroll,
     FREEZE_SCROLL_KEY,
     AssetUploader,
-    DotComands
+    DotComands,
+    AIContentPromptExtension
 } from '../../extensions';
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
@@ -60,7 +61,6 @@ import {
     DotMarketingConfigService,
     RestoreDefaultDOMAttrs
 } from '../../shared';
-
 @Component({
     selector: 'dot-block-editor',
     templateUrl: './dot-block-editor.component.html',
@@ -379,6 +379,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             BubbleLinkFormExtension(this.viewContainerRef, this.lang),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
+            AIContentPromptExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
