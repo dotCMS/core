@@ -9,7 +9,9 @@ import org.junit.Test;
 import org.quartz.JobExecutionContext;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Calendar;
@@ -129,9 +131,10 @@ public class BinaryCleanupJobTest {
    * @param fileName   The name of the child file.
    * @param date       The modification date for both items.
    *
-   * @throws Exception An error occurred when adding the file to the folder.
+   * @throws IOException An error occurred when adding the file to the folder.
    */
-  private void createTestFolderWithFile(final String parentPath, final String folderName, final String fileName, final Date date) throws Exception {
+  private void createTestFolderWithFile(final String parentPath, final String folderName,
+                                        final String fileName, final Date date) throws IOException {
     final File parent = new File(parentPath, folderName);
     if (!parent.mkdirs()) {
       fail("Could not create directory: " + parent.getAbsolutePath() + "/" + folderName);
