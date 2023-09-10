@@ -3,14 +3,27 @@ project:
   name: dotcms-cli
   description: app -- DotCMS CLI
   longDescription: app -- DotCMS Quarkus CLI application
+  versionPattern: 'CUSTOM:0Y.0M.MICRO'
   java:
     multiProject: true
-
+  copyright: |
+    <p>© 2021 dotCMS Inc. All rights reserved.</p>
+    <p>dotCMS is a registered trademark of dotCMS Inc.</p>
+    <p>dotCMS is licensed under Apache License 2.0.</p>
+    <p>For details, see https://dotcms.com/legal</p>
+  license: Apache-2.0
+  authors:
+    - dotCMS
+  links:
+    homepage: https://dotcms.com
+    documentation: https://dotcms.com/docs/latest
 
 
 release:
   github:
-    overwrite: true
+    tagName: '{{projectVersion}}'
+    releaseName: 'CLI - {{projectVersion}}'
+    overwrite: false
     changelog:
       formatted: ALWAYS
       format: '- {{commitShortHash}} {{commitTitle}}'
@@ -27,20 +40,20 @@ release:
 #deploy:
 #  maven:
 #    artifactory:
-#      jreleaser-cli:
+#      dotcms-cli:
 #        active: ALWAYS
-#        url: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/jreleaser/jreleaser-cli
+#        url: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/tools/dotcms-cli
 #        stagingRepositories:
 #          - target/distributions/{{distributionName}}-{{projectVersion}}.jar
 
 distributions:
-  jreleaser-cli:
+  dotcms-cli:
     type: SINGLE_JAR
     active: ALWAYS
     stereotype: CLI
     artifacts:
-      - path: target/distributions/{{distributionName}}-{{projectVersion}}-runner.jar
-        transform: target/distributions/{{distributionName}}-{{projectVersion}}.jar
+      - path: tools/dotcms-cli/cli/target/cli-{{projectVersion}}-runner.jar
+        transform: tools/dotcms-cli/cli/target/cli-{{projectVersion}}.jar
 
 packagers:
   brew:
