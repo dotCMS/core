@@ -17,34 +17,25 @@
                 type="submit"></button>
         </div>
         <div class="dot-container-properties__title-container">
-            <p-inplace #editText [active]="!form?.value?.identifier" data-testId="inplace">
-                <ng-template pTemplate="content">
-                    <span class="p-input-icon-right">
-                        <i class="pi pi-times" (click)="editText.deactivate()"></i>
-                        <input
-                            class="dot-container-properties__title-input"
-                            [required]="true"
-                            data-testId="title"
-                            dotAutofocus
-                            type="text"
-                            pInputText
-                            formControlName="title" />
-                    </span>
-                </ng-template>
-                <ng-template pTemplate="display">
-                    <span
-                        class="dot-container-properties__title-text"
-                        *ngIf="!form?.value?.title"
-                        data-testId="editTitle"
-                        >{{ 'message.containers.create.click_to_edit' | dm }}</span
-                    >
-                    <span class="dot-container-properties__title-text" *ngIf="form?.value?.title">{{
-                        form?.value?.title
-                    }}</span>
-                    <i class="pi pi-pencil"></i>
-                </ng-template>
-            </p-inplace>
-            <dot-api-link *ngIf="form?.value?.identifier" [href]="vm.apiLink"></dot-api-link>
+            <div class="field">
+                <label class="block" for="title">{{
+                    'message.containers.create.title' | dm
+                }}</label>
+                <div class="dot-container-properties__title-container-content">
+                    <input
+                        class="dot-container-properties__title-input w-25rem"
+                        id="title"
+                        [required]="true"
+                        data-testId="title"
+                        dotAutofocus
+                        type="text"
+                        pInputText
+                        formControlName="title" />
+                    <dot-api-link
+                        *ngIf="form?.value?.identifier"
+                        [href]="vm.apiLink"></dot-api-link>
+                </div>
+            </div>
         </div>
         <div class="field">
             <label class="block" for="description">{{
