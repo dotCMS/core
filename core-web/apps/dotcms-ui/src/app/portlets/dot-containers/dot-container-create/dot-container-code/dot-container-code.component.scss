@@ -28,6 +28,7 @@
     .p-tabview {
         height: 100%;
     }
+
     .p-tabview-panels {
         height: 100%;
         flex-grow: 1;
@@ -38,6 +39,7 @@
     .p-tabview-nav-content {
         border: 1px solid $input-border-color;
     }
+
     .p-tabview-nav {
         padding: 0;
     }
@@ -64,10 +66,6 @@
         background: $color-palette-gray-200;
     }
 
-    .p-tabview .p-tabview-nav {
-        border: none;
-    }
-
     .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
         border-bottom: 2px solid $color-palette-secondary-500;
     }
@@ -76,9 +74,14 @@
         border-bottom: 2px solid $color-palette-secondary-500;
     }
 
+    .p-tabview .p-tabview-nav li:first-child .p-tabview-nav-link {
+        border: none !important;
+    }
+
     .p-tabview .p-tabview-nav li .p-tabview-nav-link {
         padding-left: $spacing-4;
         padding-right: $spacing-4;
+        text-wrap: nowrap;
     }
 
     .p-tabview .tab-panel-btn a.p-tabview-nav-link {

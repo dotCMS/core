@@ -2,7 +2,7 @@
 
 .dot-container-properties__button-container {
     position: absolute;
-    top: 5.1rem;
+    top: 4.4rem;
     right: $spacing-4;
 
     button {
@@ -35,7 +35,8 @@
 }
 
 .dot-container-properties__max-contents-input {
-    width: 7rem;
+    //TODO-K: Remove
+    width: 50px !important;
     margin-right: $spacing-2;
 }
 
@@ -52,11 +53,13 @@
 }
 
 :host ::ng-deep {
-    .tab-panel-btn {
-        background: $brand-background;
+    .tab-panel-btn,
+    .tab-panel-btn:hover {
+        background: $color-palette-primary-500;
 
         a.p-tabview-nav-link {
             padding: 0;
+            background: $color-palette-primary-500 !important;
         }
 
         i {
