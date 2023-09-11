@@ -916,7 +916,7 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 				.host(host)
 				.setProperty("title", "genericContent")
 				.setProperty("author", "systemUser")
-				.setProperty("body", "{\"type\":\"doc\",\"attrs\":{\"chartCount\":20,\"wordCount\":3,\"readingTime\":1},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Generic Content Body\"}]}]}").nextPersisted();
+				.setProperty("body", "{\"type\":\"doc\",\"attrs\":{\"charCount\":20,\"wordCount\":3,\"readingTime\":1},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Generic Content Body\"}]}]}").nextPersisted();
 
 		/*Relate content to page*/
 		final MultiTree multiTree =  new MultiTree(htmlPageAsset.getIdentifier(),
