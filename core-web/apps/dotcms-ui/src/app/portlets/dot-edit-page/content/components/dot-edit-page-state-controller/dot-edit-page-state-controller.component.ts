@@ -5,26 +5,31 @@ import {
     EventEmitter,
     Input,
     OnChanges,
+    OnInit,
     Output,
     SimpleChanges,
     ViewChild
 } from '@angular/core';
 
-import { SelectItem } from 'primeng/api';
+import { MenuItem, SelectItem } from 'primeng/api';
+import { Menu } from 'primeng/menu';
 
 import { switchMap, take } from 'rxjs/operators';
 
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotMessageService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import {
     DotExperimentStatus,
     DotPageMode,
     DotPageRenderOptions,
     DotPageRenderState,
-    DotVariantData
+    DotVariantData,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotEditPageLockInfoComponent } from '@portlets/dot-edit-page/content/components/dot-edit-page-state-controller/components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
@@ -40,8 +45,9 @@ enum DotConfirmationType {
     templateUrl: './dot-edit-page-state-controller.component.html',
     styleUrls: ['./dot-edit-page-state-controller.component.scss']
 })
-export class DotEditPageStateControllerComponent implements OnChanges {
+export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
     @ViewChild('pageLockInfo', { static: true }) pageLockInfo: DotEditPageLockInfoComponent;
+    @ViewChild('menu') menu: Menu;
 
     @Input() pageState: DotPageRenderState;
     @Output() modeChange = new EventEmitter<DotPageMode>();
@@ -51,12 +57,31 @@ export class DotEditPageStateControllerComponent implements OnChanges {
     lockWarn = false;
     mode: DotPageMode;
     options: SelectItem[] = [];
+    featureFlagEditURLContentMapIsOn = false;
+    menuItems: MenuItem[];
+
+    readonly featureFlagEditURLContentMap = FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP;
+
+    private readonly menuOpenActions: Record<DotPageMode, (event: PointerEvent) => void> = {
+        [DotPageMode.EDIT]: (event: PointerEvent) => {
+            this.menu.toggle(event);
+        },
+        [DotPageMode.PREVIEW]: (_: PointerEvent) => {
+            // No logic
+        },
+        [DotPageMode.LIVE]: (_: PointerEvent) => {
+            // No logic
+        }
+    };
 
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
         private dotPageStateService: DotPageStateService,
-        private dotPersonalizeService: DotPersonalizeService
+        private dotPersonalizeService: DotPersonalizeService,
+        private dotContentletEditor: DotContentletEditorService,
+
+        private dotPropertiesService: DotPropertiesService
     ) {}
 
     ngOnChanges(changes: SimpleChanges) {
@@ -71,6 +96,40 @@ export class DotEditPageStateControllerComponent implements OnChanges {
             this.lockWarn = this.shouldWarnLock(pageState);
             this.mode = pageState.state.mode;
         }
+    }
+
+    ngOnInit(): void {
+        this.dotPropertiesService
+            .getKey(this.featureFlagEditURLContentMap)
+            .pipe(take(1))
+            .subscribe((result) => {
+                this.featureFlagEditURLContentMapIsOn = result && result === 'true';
+
+                if (this.featureFlagEditURLContentMapIsOn && this.pageState.params.urlContentMap) {
+                    this.menuItems = [
+                        {
+                            label: this.dotMessageService.get('modes.Page'),
+                            command: () => {
+                                this.stateSelectorHandler(DotPageMode.EDIT);
+                            }
+                        },
+                        {
+                            label: `${
+                                this.pageState.params.urlContentMap.contentType
+                            } ${this.dotMessageService.get('Content')}`,
+                            command: () => {
+                                this.dotContentletEditor.edit({
+                                    data: {
+                                        inode: this.pageState.params.urlContentMap.inode
+                                    }
+                                });
+                            }
+                        }
+                    ];
+                }
+
+                this.options = this.getStateModeOptions(this.pageState);
+            });
     }
 
     /**
@@ -150,6 +209,36 @@ export class DotEditPageStateControllerComponent implements OnChanges {
         }
     }
 
+    /**
+     * Handle the click event on the dropdowns
+     *
+     * @param {{ event: PointerEvent; menuId: string }} { event, menuId }
+     * @memberof DotEditPageStateControllerSeoComponent
+     */
+    handleMenuOpen({ event, menuId }: { event: PointerEvent; menuId: string }): void {
+        this.menuOpenActions[menuId as DotPageMode](event);
+    }
+
+    /**
+     * Check if the dropdown button should be shown
+     *
+     * @private
+     * @param {string} mode
+     * @param {DotPageRenderState} pageState
+     * @return {*}  {boolean}
+     * @memberof DotEditPageStateControllerSeoComponent
+     */
+    private shouldShowDropdownButton(mode: DotPageMode, pageState: DotPageRenderState): boolean {
+        const shouldModeShowDropdown: Record<DotPageMode, boolean> = {
+            [DotPageMode.EDIT]:
+                this.featureFlagEditURLContentMapIsOn && Boolean(pageState.params.urlContentMap),
+            [DotPageMode.PREVIEW]: false, // Don't show for preview
+            [DotPageMode.LIVE]: false // Don't show for live
+        };
+
+        return shouldModeShowDropdown[mode];
+    }
+
     private canTakeLock(pageState: DotPageRenderState): boolean {
         return pageState.page.canLock && pageState.state.lockedByAnotherUser;
     }
@@ -161,9 +250,14 @@ export class DotEditPageStateControllerComponent implements OnChanges {
             live: !pageState.page.liveInode
         };
 
+        const enumMode = DotPageMode[mode.toUpperCase()];
+
         return {
             label: this.dotMessageService.get(`editpage.toolbar.${mode}.page`),
-            value: DotPageMode[mode.toLocaleUpperCase()],
+            value: {
+                id: enumMode,
+                showDropdownButton: this.shouldShowDropdownButton(enumMode, pageState)
+            },
             disabled: disabled[mode]
         };
     }

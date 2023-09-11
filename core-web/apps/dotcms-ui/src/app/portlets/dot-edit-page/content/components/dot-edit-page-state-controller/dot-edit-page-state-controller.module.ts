@@ -3,10 +3,13 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { MenuModule } from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
+import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
@@ -22,7 +25,11 @@ import { DotEditPageStateControllerComponent } from './dot-edit-page-state-contr
         SelectButtonModule,
         DotPipesModule,
         TooltipModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotTabButtonsComponent,
+        MenuModule,
+        DotShowHideFeatureDirective,
+        DotContentletEditorModule
     ]
 })
 export class DotEditPageStateControllerModule {}

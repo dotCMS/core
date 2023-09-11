@@ -1,31 +1,44 @@
-<p-selectButton
-    class="p-button-tabbed"
-    [(ngModel)]="mode"
-    [options]="options"
-    (onChange)="stateSelectorHandler($event.value)"
-    data-testId="selectButton"
-></p-selectButton>
-
+<ng-template #disabledComponent>
+    <p-selectButton
+        class="p-button-tabbed"
+        [(ngModel)]="mode"
+        [options]="options"
+        (onChange)="stateSelectorHandler($event.value)"
+        optionValue="value.id"
+        data-testId="selectButton"></p-selectButton>
+</ng-template>
+<ng-template #enabledComponent>
+    <p-menu #menu [model]="menuItems" [popup]="true" appendTo="body"> </p-menu>
+    <dot-tab-buttons
+        [activeId]="mode"
+        [options]="options"
+        (openMenu)="handleMenuOpen($event)"
+        (clickOption)="stateSelectorHandler($event.target.value)"
+        data-testId="dot-tabs-buttons"></dot-tab-buttons>
+</ng-template>
+<ng-container
+    *dotShowHideFeature="featureFlagEditURLContentMap; alternate: disabledComponent"
+    [ngTemplateOutlet]="enabledComponent"></ng-container>
 <ng-container *ngIf="!variant">
-    <p-inputSwitch
-        #locker
-        [(ngModel)]="lock"
-        [class.warn]="lockWarn"
-        [disabled]="!pageState.page.canLock"
-        [pTooltip]="
-            pageState.state.lockedByAnotherUser && pageState.page.canEdit
-                ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
-                : null
-        "
-        [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"
-        (click)="onLockerClick()"
-        (onChange)="lockPageHandler()"
-        appendTo="target"
-    ></p-inputSwitch>
-</ng-container>
+    <ng-container *ngIf="!variant">
+        <p-inputSwitch
+            #locker
+            [(ngModel)]="lock"
+            [class.warn]="lockWarn"
+            [disabled]="!pageState.page.canLock"
+            [pTooltip]="
+                pageState.state.lockedByAnotherUser && pageState.page.canEdit
+                    ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
+                    : null
+            "
+            [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"
+            (click)="onLockerClick()"
+            (onChange)="lockPageHandler()"
+            appendTo="target"></p-inputSwitch>
+    </ng-container>
 
-<dot-edit-page-lock-info
-    #pageLockInfo
-    [pageState]="pageState"
-    data-testId="lockInfo"
-></dot-edit-page-lock-info>
+    <dot-edit-page-lock-info
+        #pageLockInfo
+        [pageState]="pageState"
+        data-testId="lockInfo"></dot-edit-page-lock-info>
+</ng-container>
