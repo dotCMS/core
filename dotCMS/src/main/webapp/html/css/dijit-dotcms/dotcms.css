@@ -3142,8 +3142,8 @@
 .dijitSelect,
 .dijitTextBox,
 .dijitToggleButton {
-  border-radius: 0.4285rem;
-  height: 2.8571428571rem;
+  border-radius: 0.375rem;
+  height: 2.5rem;
 }
 
 .dijitButton,
@@ -3209,8 +3209,8 @@
   border: solid 1.5px #d1d4db;
 }
 .dijitTextBox .dijitArrowButton {
-  height: 2.8571428571rem;
-  width: 2.8571428571rem;
+  height: 2.5rem;
+  width: 2.5rem;
   background-color: #ffffff;
   border-left: solid 1.5px #d1d4db;
 }
@@ -3368,7 +3368,7 @@
 }
 .dijitSpinner .dijitSpinnerButtonContainer {
   border-left: solid 1.5px #d1d4db;
-  width: 2.8571428571rem;
+  width: 2.5rem;
 }
 .dijitSpinner .dijitSpinnerButtonContainer .dijitDownArrowButton {
   border-top: solid 1.5px #d1d4db !important;
@@ -3491,8 +3491,8 @@
 
 .dijitButton,
 .dijitToggleButton {
-  height: 2.8571428571rem;
-  border-radius: 0.4285rem;
+  height: 2.5rem;
+  border-radius: 0.375rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3566,7 +3566,7 @@
   padding-left: 1.1428rem;
 }
 .dijitDropDownButton .dijitArrowButtonInner {
-  width: 2.8571428571rem;
+  width: 2.5rem;
   background-color: transparent;
 }
 .dijitDropDownButton .dijitArrowButtonInner:before {
@@ -3662,7 +3662,7 @@
   box-shadow: 0;
 }
 .dijitComboButton .dijitArrowButtonInner {
-  width: 2.8571428571rem;
+  width: 2.5rem;
   background-color: transparent;
 }
 .dijitComboButton .dijitArrowButtonInner:before {
@@ -3806,19 +3806,19 @@
   background-color: var(--color-palette-primary-500);
   border: none;
   border-radius: 50%;
-  height: 2.8571428571rem;
-  width: 2.8571428571rem;
+  height: 2.5rem;
+  width: 2.5rem;
 }
 .dijitDropDownActionButton .actionIcon,
 .dijitDropDownActionButton .fa-plus {
   color: #ffffff;
-  line-height: 2.8571428571rem;
+  line-height: 2.5rem;
   margin: 0;
   font-size: 1.25rem;
 }
 .dijitDropDownActionButton .dijitButtonNode {
-  height: 2.8571428571rem;
-  width: 2.8571428571rem;
+  height: 2.5rem;
+  width: 2.5rem;
   padding: 0;
 }
 .dijitDropDownActionButton .dijitArrowButtonInner {
@@ -3883,10 +3883,10 @@
   color: var(--color-palette-primary-500);
   box-shadow: 0;
   transition: all 0.1s;
-  border-radius: 0.4285rem;
+  border-radius: 0.375rem;
   display: inline-block;
-  height: 2.8571428571rem;
-  line-height: 2.8571428571rem;
+  height: 2.5rem;
+  line-height: 2.5rem;
   padding: 0 1.1428rem;
   text-decoration: none;
   text-transform: uppercase;
@@ -3984,7 +3984,7 @@
 }
 .dijitSelect .dijitArrowButton {
   border-left: solid 1.5px #d1d4db;
-  width: 2.8571428571rem;
+  width: 2.5rem;
   background-color: transparent;
 }
 .dijitSelect .dijitArrowButton > .dijitArrowButtonInner {
@@ -4001,7 +4001,7 @@
   width: 0;
 }
 .dijitSelect .dijitArrowButtonInner {
-  width: 2.8571428571rem;
+  width: 2.5rem;
 }
 .dijitSelectHover {
   background-color: #ffffff;
@@ -4078,7 +4078,7 @@
 }
 .dijitComboBox .dijitArrowButton {
   height: 100%;
-  width: 2.8571428571rem;
+  width: 2.5rem;
   background-color: #f3f3f4;
   border-left: solid 1.5px #d1d4db;
 }
@@ -4184,7 +4184,7 @@
   border-top-width: 1px;
 }
 .dijitSliderDecrementIconH, .dijitSliderIncrementIconH, .dijitSliderDecrementIconV, .dijitSliderIncrementIconV {
-  border-radius: 0.4285rem;
+  border-radius: 0.375rem;
   width: 20px;
   height: 16px;
   border: solid 1.5px var(--color-palette-primary-500);
@@ -4333,8 +4333,8 @@
   background-color: #f3f3f4;
   border-top: solid 1px #d1d4db;
   border-bottom: none;
-  height: 2.8571428571rem;
-  line-height: 2.8571428571rem;
+  height: 2.5rem;
+  line-height: 2.5rem;
   padding: 0 0.5714rem;
 }
 .dijitAccordionTitle:last-child {
@@ -4380,9 +4380,9 @@
   transform: rotate(-90deg);
 }
 .dijitTitlePaneTitle .dijitArrowNode {
-  height: 2.8571428571rem;
+  height: 2.5rem;
   position: relative;
-  width: 2.8571428571rem;
+  width: 2.5rem;
 }
 .dijitTitlePaneTitle .dijitArrowNode:before {
   left: 50%;
@@ -4460,7 +4460,7 @@
   background: #ffffff;
   color: #14151a;
   border: 0 none;
-  border-radius: 0.4285rem;
+  border-radius: 0.375rem;
   box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
   padding: 0.5714rem;
   margin-top: 0.5714rem;
@@ -4712,7 +4712,7 @@
   font-size: inherit;
   padding: 0.5714rem;
   margin-left: 7px;
-  border-radius: 0.4285rem;
+  border-radius: 0.375rem;
 }
 .dijitTooltipContainer:before {
   width: 8px;
@@ -4834,9 +4834,9 @@
   transition: background-color 0.1s;
   background-color: #ffffff;
   color: #515667;
-  height: 2.8571428571rem;
+  height: 2.5rem;
   text-align: center;
-  width: 2.8571428571rem;
+  width: 2.5rem;
 }
 .dijitCalendarDayLabelTemplate {
   background-color: #ffffff;
@@ -4849,7 +4849,7 @@
 }
 .dijitCalendarIncrementControl {
   position: relative;
-  width: 2.8571428571rem;
+  width: 2.5rem;
 }
 .dijitCalendarDecrementArrow {
   position: absolute;
@@ -4889,18 +4889,18 @@
 .dijitCalendarMonthContainer {
   background-color: #515667;
   color: #ffffff;
-  height: 2.8571428571rem;
+  height: 2.5rem;
 }
 .dijitCalendarMonthContainer .dijitCalendarMonthLabel,
 .dijitCalendarMonthContainer .dijitDropDownButton .dijitArrowButtonInner {
-  height: 2.2321428571rem;
-  line-height: 2.2321428571rem;
+  height: 1.875rem;
+  line-height: 1.875rem;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton {
   margin-top: 0.2857rem;
   border-radius: 0;
   background-color: transparent;
-  height: calc(2.2321428571rem + 3px);
+  height: calc(1.875rem + 3px);
   border: solid 1px #ffffff;
   color: #ffffff;
 }
@@ -4908,21 +4908,21 @@
   height: 0;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton .dijitArrowButtonInner {
-  width: 2.2321428571rem;
+  width: 1.875rem;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton .dijitArrowButtonInner:before {
   border-top-color: #ffffff;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton .dijitArrowButtonInner .dijitButtonText {
-  height: 2.8571428571rem;
-  line-height: 2.8571428571rem;
+  height: 2.5rem;
+  line-height: 2.5rem;
 }
 .dijitCalendarMonthMenu.dijitMenu {
   margin: 0;
 }
 .dijitCalendarMonthLabel {
-  height: 2.8571428571rem;
-  line-height: 2.8571428571rem;
+  height: 2.5rem;
+  line-height: 2.5rem;
 }
 .dijitCalendarMonthLabelHover {
   background-color: #f3f3f4;
@@ -4942,13 +4942,13 @@
   color: var(--color-palette-white-op-10);
 }
 .dijitCalendarSelectedDate .dijitCalendarDateLabel {
-  border-radius: 0.4285rem;
+  border-radius: 0.375rem;
   background-color: var(--color-palette-primary-500);
   color: #ffffff;
   display: block;
-  height: 2.8571428571rem;
-  line-height: 2.8571428571rem;
-  width: 2.8571428571rem;
+  height: 2.5rem;
+  line-height: 2.5rem;
+  width: 2.5rem;
 }
 .dijitCalendarSelectedYear {
   color: #ffffff;
@@ -4961,7 +4961,7 @@
 .dijitCalendarYearLabel {
   background-color: #515667;
   display: table;
-  height: 2.8571428571rem;
+  height: 2.5rem;
   width: 100%;
 }
 .dijitCalendarYearLabel span {
@@ -4974,11 +4974,19 @@
   padding: 0;
   border: 0 none;
 }
+.dijitMenu#templateSel_popup .dijitMenuItem {
+  height: auto;
+  padding: 0.5714rem 0.8571rem;
+  gap: 0.2857rem;
+}
+.dijitMenu#templateSel_popup .dijitMenuItem small {
+  color: #6c7389;
+}
 .dijitMenu .dijitMenuItem {
   display: flex;
   padding: 0 0.8571rem;
   color: #14151a;
-  height: 2.8571428571rem;
+  height: 2.5rem;
   align-items: center;
 }
 .dijitMenu .dijitMenuItem:last-child {
@@ -5009,15 +5017,18 @@
   border-bottom: 1px solid #d1d4db;
 }
 
+.dijitComboBoxMenuPopup#widget_cache_list_dropdown {
+  max-height: 17.5rem !important;
+}
+
 .dijitComboBoxMenuPopup {
   background: #ffffff;
   color: #14151a;
   border: 0 none;
-  border-radius: 0.4285rem;
+  border-radius: 0.375rem;
   box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
   padding: 0.5714rem;
   margin-top: 0.5714rem;
-  max-height: 17.5rem !important;
 }
 .dijitComboBoxMenuPopup .dijitMenuItem {
   display: flex;
@@ -5026,7 +5037,7 @@
   justify-content: center;
   padding: 0 0.8571rem;
   color: #14151a;
-  height: 2.8571428571rem;
+  height: 2.5rem;
 }
 .dijitComboBoxMenuPopup .dijitComboBoxMenu {
   min-width: 200px;
@@ -5043,8 +5054,8 @@
   margin-top: 1px;
 }
 .dijitTimePickerItem {
-  line-height: 2.8571428571rem;
-  height: 2.8571428571rem;
+  line-height: 2.5rem;
+  height: 2.5rem;
   color: #14151a;
   border-bottom: none;
 }
@@ -6208,7 +6219,7 @@ select[multiple]:hover {
   height: 60px;
   width: 80px;
   position: relative;
-  border-radius: 0.2857rem;
+  border-radius: 0.25rem;
   overflow: hidden;
   cursor: pointer;
 }
@@ -8664,7 +8675,7 @@ Styles for commons fields along the backend
 
 */
 .glossaryTermPopup {
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
   background-color: #f3f3f4;
   padding: 0.2857rem 0.5714rem;
   border: solid 1px #d1d4db;
@@ -8678,7 +8689,7 @@ Styles for commons fields along the backend
 .fileAjaxUploader {
   display: flex;
   align-items: center;
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
   position: relative;
   height: 36px;
 }
@@ -8721,7 +8732,7 @@ Styles for commons fields along the backend
 
 .catPreview {
   background-color: #ffffff;
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
   border: solid 1px #afb3c0;
   margin-top: 0.5714rem;
   max-width: 1100px;
@@ -8730,7 +8741,7 @@ Styles for commons fields along the backend
 }
 .catPreview li {
   background: #f3f3f4;
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
   border: solid 1.5px #d1d4db;
   display: inline-block;
   font-size: 12px;
@@ -8865,7 +8876,7 @@ Styles for commons fields along the backend
   height: 1.5rem;
   padding: 0.5714rem;
   background: var(--color-palette-primary-200);
-  border-radius: 0.2857rem;
+  border-radius: 0.25rem;
   color: var(--color-palette-primary-500);
   font-size: 0.8571428571rem;
   display: flex;
@@ -8892,7 +8903,7 @@ Styles for commons fields along the backend
   position: relative;
 }
 .tagsWrapper .dijitTextBox {
-  min-height: 2.8571428571rem;
+  min-height: 2.5rem;
   height: auto;
   padding: 0.5714rem;
   display: flex;
@@ -8951,7 +8962,7 @@ Styles for commons fields along the backend
   white-space: nowrap;
 }
 #inline-form > label, .inline-form > label, .fileSelectorControls > label {
-  line-height: 2.8571428571rem;
+  line-height: 2.5rem;
   align-self: baseline;
 }
 #inline-form > .checkbox, .inline-form > .checkbox, .fileSelectorControls > .checkbox, #inline-form > .radio, .inline-form > .radio, .fileSelectorControls > .radio {
@@ -9046,7 +9057,7 @@ dt {
 
 dd {
   margin: 0 0 1.1428rem 30%;
-  min-height: 2.8571428571rem;
+  min-height: 2.5rem;
   padding-left: 0.5714rem;
 }
 dd .inputCaption,
@@ -9057,7 +9068,7 @@ dd .buttonCaption {
 #form-horizontal-flexbox dl, .form-horizontal dl {
   display: flex;
   margin-bottom: 0.5714rem;
-  min-height: 2.8571428571rem;
+  min-height: 2.5rem;
 }
 #form-horizontal-flexbox dd, .form-horizontal dd,
 #form-horizontal-flexbox dt,
@@ -9234,7 +9245,7 @@ dd .buttonCaption {
 
 .hintBox {
   background-color: #f3f3f4;
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
   border: solid 1px #afb3c0;
   padding: 1.1428rem;
   position: absolute;
@@ -9245,7 +9256,7 @@ dd .buttonCaption {
 
 .callOutBox {
   background-color: var(--color-palette-black-op-10);
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
   border: 1px solid var(--color-palette-black-op-30);
   margin: 1.1428rem 0;
   padding: 0.5714rem;
@@ -9254,7 +9265,7 @@ dd .buttonCaption {
 
 .callOutBox2 {
   background-color: #d1d4db;
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
   border: 1px solid #afb3c0;
   padding: 0.5714rem;
   text-align: center;
@@ -9301,7 +9312,7 @@ dd .buttonCaption {
 .calendar-events__recurence-box {
   background-color: #f3f3f4;
   border: solid 1px #d1d4db;
-  border-radius: 0.4285rem;
+  border-radius: 0.375rem;
   display: inline-block;
   margin-top: 0.5714rem;
   padding: 0.5714rem;
@@ -9706,7 +9717,7 @@ a.category_higlighted, a.tag_higlighted {
 .content-edit-actions {
   border: solid 1px #afb3c0;
   background-color: #ffffff;
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
 }
 .content-edit-actions .content-edit-actions {
   border: none;
@@ -9858,7 +9869,7 @@ a.category_higlighted, a.tag_higlighted {
   margin: 50px auto;
   border: solid 1px var(--color-palette-secondary-500);
   border-color: #d1d4db;
-  border-radius: 0.2856rem;
+  border-radius: 0.25rem;
 }
 .import-preview .import-preview__heading {
   background-color: #d1d4db;
@@ -10013,7 +10024,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .view-roles__heading {
   background-color: #f3f3f4;
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
   border: solid 1px #d1d4db;
   display: flex;
   justify-content: space-between;
@@ -10042,7 +10053,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .view-roles__portlets-list {
   border: solid 1px #d1d4db;
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
   margin: 0 0 0.5714rem;
   height: 175px;
   overflow: auto;
@@ -10160,7 +10171,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-users__roles-container-item {
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
   border: solid 1px #afb3c0;
   height: 300px;
   overflow: auto;
@@ -10340,8 +10351,8 @@ a.category_higlighted, a.tag_higlighted {
   cursor: pointer;
   display: block;
   font-size: 1rem;
-  height: 2.8571428571rem;
-  line-height: 2.8571428571rem;
+  height: 2.5rem;
+  line-height: 2.5rem;
   padding: 0px 1.7142rem;
   position: relative;
   text-decoration: none;
@@ -10584,7 +10595,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .permissions__bar-user-role {
   background-color: #f3f3f4;
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
   border: solid 1px #d1d4db;
   display: flex;
   justify-content: space-between;
@@ -10973,14 +10984,14 @@ a.category_higlighted, a.tag_higlighted {
 
 .editImageText {
   background: white;
-  border-radius: 0.1428rem;
+  border-radius: 0.125rem;
   border: 1.5px solid #6c7389;
   bottom: 0.5714rem;
   cursor: pointer;
   opacity: 0.5;
   padding: 0 0.5714rem;
-  height: 2.8571428571rem;
-  line-height: calc(2.8571428571rem - 3px);
+  height: 2.5rem;
+  line-height: calc(2.5rem - 3px);
   position: absolute;
   right: 0.5714rem;
 }
@@ -11086,15 +11097,36 @@ Resize Handle
 .input-text-naked {
   background-color: #fafafb;
   border: solid 1px #f3f3f4;
-  border-radius: 0.4285rem;
+  border-radius: 0.375rem;
   color: #6c7389;
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 1rem;
-  line-height: 2.8571428571rem;
+  line-height: 2.5rem;
   padding-left: 0.5714rem;
   padding-right: 0.5714rem;
 }
 
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local(""), url("/dotAdmin/assets/Assistant-Regular.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-Regular.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: local(""), url("/dotAdmin/assets/Assistant-SemiBold.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-SemiBold.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local(""), url("/dotAdmin/assets/Assistant-Bold.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-Bold.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
 @font-face {
   font-family: "Material Icons";
   font-style: normal;
@@ -11112,33 +11144,9 @@ Resize Handle
   border-top: 1px solid #d1d4db;
 }
 
-/* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-  font-family: "Assistant";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: local(""), url("/dotAdmin/assets/Assistant-Regular.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-Regular.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
-/* roboto-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-  font-family: "Assistant";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: local(""), url("/dotAdmin/assets/Assistant-SemiBold.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-SemiBold.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
-/* roboto-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-  font-family: "Assistant";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: local(""), url("/dotAdmin/assets/Assistant-Bold.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-Bold.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
 html {
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: #14151a;
 }
 
