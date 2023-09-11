@@ -1,8 +1,12 @@
+import { Observable } from 'rxjs';
+
 export enum SEO_OPTIONS {
     FAVICON = 'favicon',
     TITLE = 'title',
     DESCRIPTION = 'description',
-    OG_DESCRIPTION = 'og:description'
+    OG_DESCRIPTION = 'og:description',
+    OG_TITLE = 'og:title',
+    OG_IMAGE = 'og:image'
 }
 
 export enum SEO_RULES_ICONS {
@@ -16,8 +20,11 @@ export enum SEO_RULES_ICONS {
 export enum SEO_LIMITS {
     MIN_TITLE_LENGTH = 30,
     MAX_TITLE_LENGTH = 60,
+    MIN_OG_TITLE_LENGTH = 30,
+    MAX_OG_TITLE_LENGTH = 160,
     MAX_FAVICONS = 1,
-    MAX_TITLES = 1
+    MAX_TITLES = 1,
+    MAX_IMAGE_BYTES = 8000000
 }
 
 export enum SEO_RULES_COLORS {
@@ -51,6 +58,36 @@ export interface SeoMetaTags {
     title?: string;
     faviconElements?: NodeListOf<Element>;
     titleElements?: NodeListOf<Element>;
+    titleOgElements?: NodeListOf<Element>;
+    imageOgElements?: NodeListOf<Element>;
     description?: string;
     'og:description'?: string;
+    'og:image'?: string;
+    'og:title'?: string;
+}
+
+export const SeoMediaKeys = {
+    facebook: [SEO_OPTIONS.DESCRIPTION, SEO_OPTIONS.OG_IMAGE, SEO_OPTIONS.OG_TITLE],
+    google: [SEO_OPTIONS.DESCRIPTION, SEO_OPTIONS.FAVICON, SEO_OPTIONS.TITLE],
+    linkedin: [],
+    twitter: [],
+    all: [
+        SEO_OPTIONS.DESCRIPTION,
+        SEO_OPTIONS.OG_IMAGE,
+        SEO_OPTIONS.OG_TITLE,
+        SEO_OPTIONS.FAVICON,
+        SEO_OPTIONS.TITLE,
+        SEO_OPTIONS.OG_DESCRIPTION
+    ]
+};
+
+export interface ImageMetaData {
+    length: number;
+    url: string;
+}
+
+export interface OpenGraphOptions {
+    getItems: (object: SeoMetaTags) => Observable<SeoRulesResult[]>;
+    sort: number;
+    info: string;
 }
