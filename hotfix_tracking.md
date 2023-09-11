@@ -176,3 +176,6 @@ This maintenance release includes the following code fixes:
 147. https://github.com/dotCMS/core/issues/25797 : When uploading multiple files, the files are always in English #25797
 148. https://github.com/dotCMS/core/issues/25229 : PP - Integrity Checker, fixing conflicts is not populating the contentlet_as_json field #25229
 149. https://github.com/dotCMS/core/issues/25896 : Creating a contentlet in a 2nd language removes related content #25896
+
+**Release-22.03.10**
+
