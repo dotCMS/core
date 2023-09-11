@@ -69,7 +69,7 @@ const mockDotMessageService = new MockDotMessageService({
 
 const EXPERIMENT_MOCK = getExperimentMock(1);
 
-const dotVariantDataMock: DotVariantData = {
+export const dotVariantDataMock: DotVariantData = {
     variant: {
         id: EXPERIMENT_MOCK.trafficProportion.variants[1].id,
         url: EXPERIMENT_MOCK.trafficProportion.variants[1].url,

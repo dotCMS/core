@@ -71,6 +71,7 @@ import {
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
+import { dotVariantDataMock } from '@portlets/dot-edit-page/seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component.spec';
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
@@ -421,6 +422,12 @@ describe('DotEditPageToolbarComponent', () => {
                 expect(location.path()).toEqual('/edit-page/experiments/pageId/id/reports');
                 done();
             });
+        });
+        it('should have the global message', () => {
+            component.variant = dotVariantDataMock;
+            fixtureHost.detectChanges();
+            const dotGlobalMessage = de.query(By.css('[data-testId="globalMessage"]'));
+            expect(dotGlobalMessage).not.toBeNull();
         });
     });
 
