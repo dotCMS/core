@@ -25,7 +25,6 @@
         <failsafe-plugin.version>3.0.0-M5</failsafe-plugin.version>
         <test.failure.ignore>false</test.failure.ignore>
         <maven.plugin.jar.version>3.3.0</maven.plugin.jar.version>
-<!--        <jreleaser-plugin.version>1.8.0</jreleaser-plugin.version>-->
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -222,21 +221,5 @@
                 <quarkus.package.type>native</quarkus.package.type>
             </properties>
         </profile>
-<!--        <profile>-->
-<!--            <id>release</id>-->
-<!--            <build>-->
-<!--                <plugins>-->
-<!--                    <plugin>-->
-<!--                        <groupId>org.jreleaser</groupId>-->
-<!--                        <artifactId>jreleaser-maven-plugin</artifactId>-->
-<!--                        <version>${jreleaser-plugin.version}</version>-->
-<!--                        <inherited>false</inherited>-->
-<!--                        <configuration>-->
-<!--                            <configFile>${project.basedir}/jreleaser.yml</configFile>-->
-<!--                        </configuration>-->
-<!--                    </plugin>-->
-<!--                </plugins>-->
-<!--            </build>-->
-<!--        </profile>-->
     </profiles>
 </project>

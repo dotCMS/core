@@ -18,7 +18,6 @@ project:
     homepage: https://dotcms.com
     documentation: https://dotcms.com/docs/latest
 
-
 release:
   github:
     tagName: '{{projectVersion}}'
@@ -37,15 +36,6 @@ release:
           - GitHub
           - dependabot
 
-#deploy:
-#  maven:
-#    artifactory:
-#      dotcms-cli:
-#        active: ALWAYS
-#        url: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/tools/dotcms-cli
-#        stagingRepositories:
-#          - target/distributions/{{distributionName}}-{{projectVersion}}.jar
-
 distributions:
   dotcms-cli:
     type: SINGLE_JAR
@@ -61,8 +51,3 @@ packagers:
     continueOnError: false
     multiPlatform: true
 
-#announce:
-#  slack:
-#    active: ALWAYS
-#    channel: '#jreleaser'
-#    message: '🚀 {{projectNameCapitalized}} {{projectVersion}} has been released!'

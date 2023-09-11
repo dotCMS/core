@@ -5,7 +5,7 @@
   <groupId>com.dotcms</groupId>
   <artifactId>dotCMS-cli</artifactId>
   <packaging>pom</packaging>
-  <version>23.09</version>
+  <version>23.09.1</version>
   <modules>
     <module>api-data-model</module>
     <module>cli</module>
