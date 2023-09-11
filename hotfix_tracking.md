@@ -179,3 +179,4 @@ This maintenance release includes the following code fixes:
 
 **Release-22.03.10**
 
+150. https://github.com/dotCMS/core/issues/26046 : Radio Button no longer accept 1/0 as valid when searching in ES #26046
