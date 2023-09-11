@@ -301,7 +301,7 @@ public interface HTMLPageAssetAPI {
 
     /**
      * Returns page based on identifier and respects the language fallback settings
-     * @param id
+     * @param identifier
      * @param tryLang
      * @param live
      * @param user
@@ -314,7 +314,7 @@ public interface HTMLPageAssetAPI {
 
     /**
      * Returns page based on identifier and respects the language fallback settings
-     * @param id identifier of page
+     * @param identifier identifier of page
      * @param tryLang requested language
      * @param live live or working version of page
      * @param user user to perform operation with
@@ -332,7 +332,7 @@ public interface HTMLPageAssetAPI {
 	 * Returns page based on identifier and respects the language fallback settings
 	 * If a non-standard variant is passed in and it is not found, this will also fall back to the
 	 * DEFAULT variant as well.
-	 * @param id identifier of page
+	 * @param identifier identifier of page
 	 * @param tryLang requested language
 	 * @param tryVariant requested variant
 	 * @param live live or working version of page
