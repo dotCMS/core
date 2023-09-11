@@ -20,8 +20,8 @@ project:
 
 release:
   github:
-    tagName: '{{projectVersion}}'
-    releaseName: 'CLI - {{projectVersion}}'
+    tagName: 'dotcli{{projectVersion}}'
+    releaseName: 'CLI - dotcli{{projectVersion}}'
     overwrite: false
     changelog:
       formatted: ALWAYS
