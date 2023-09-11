@@ -1,4 +1,4 @@
-import { CommonModule, NgClass, NgIf } from '@angular/common';
+import { NgClass, NgFor, NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -23,10 +23,13 @@ interface TabButtonOptions {
     showDropdownButton: boolean;
 }
 
-type CustomEventTarget = EventTarget & {
+interface CustomEventTarget extends EventTarget {
     value: string;
-};
+}
 
+interface CustomEvent extends PointerEvent {
+    target: CustomEventTarget;
+}
 /**
  * This component is responsible to display the tab buttons for the edit page.
  *
@@ -36,7 +39,7 @@ type CustomEventTarget = EventTarget & {
 @Component({
     selector: 'dot-tab-buttons',
     standalone: true,
-    imports: [CommonModule, ButtonModule, NgIf, NgClass, TooltipModule, DotMessagePipe],
+    imports: [NgFor, ButtonModule, NgIf, NgClass, TooltipModule, DotMessagePipe],
     templateUrl: './dot-tab-buttons.component.html',
     styleUrls: ['./dot-tab-buttons.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -71,7 +74,7 @@ export class DotTabButtonsComponent implements OnChanges {
      * Handles the click event on the tab buttons.
      * @param event
      */
-    onClickOption(event: PointerEvent) {
+    onClickOption(event: CustomEvent) {
         const { value } = event.target as CustomEventTarget;
 
         if (
@@ -79,7 +82,7 @@ export class DotTabButtonsComponent implements OnChanges {
                 .showDropdownButton
         ) {
             this.showMenu(event);
-        } else {
+        } else if (value !== this.activeId) {
             this.clickOption.emit(event);
         }
     }
@@ -88,7 +91,7 @@ export class DotTabButtonsComponent implements OnChanges {
      * Handles the click event on the menu button.
      * @param event
      */
-    showMenu(event: PointerEvent) {
+    showMenu(event: CustomEvent) {
         event.stopPropagation();
 
         const { value } = event.target as CustomEventTarget;

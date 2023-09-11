@@ -19,7 +19,8 @@
                 class="dot-tab__dropdown"
                 *ngIf="item.value.showDropdownButton"
                 [ngClass]="{ 'dot-tab-dropdown--active': activeId === item.value.id }"
-                [value]="item.value.id + OPEN_MENU">
+                [value]="item.value.id + OPEN_MENU"
+                data-testId="tab-dropdown">
                 <i
                     class="dot-tab-dropdown__icon"
                     [value]="item.value.id + OPEN_MENU"

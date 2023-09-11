@@ -13,6 +13,12 @@ import { DotTabButtonsComponent } from './dot-tab-buttons.component';
 
 describe('DotTabButtonsComponent', () => {
     let spectator: Spectator<DotTabButtonsComponent>;
+    const pointerEvent = {
+        ...new PointerEvent('click'),
+        stopPropagation: () => {
+            /** */
+        }
+    };
     const messageServiceMock = new MockDotMessageService({
         'editpage.toolbar.edit.page.clipboard': 'Edit Page',
         'editpage.toolbar.preview.page.clipboard': 'Preview Page'
@@ -26,15 +32,15 @@ describe('DotTabButtonsComponent', () => {
         ]
     });
     const optionsMock: SelectItem[] = [
-        { label: 'Edit', value: DotPageMode.EDIT },
-        { label: 'Preview', value: DotPageMode.PREVIEW }
+        { label: 'Edit', value: { id: DotPageMode.EDIT, showDropdownButton: false } },
+        { label: 'Preview', value: { id: DotPageMode.PREVIEW, showDropdownButton: true } }
     ];
 
     beforeEach(() => {
         spectator = createComponent({
             props: {
                 options: optionsMock,
-                mode: DotPageMode.PREVIEW
+                activeId: DotPageMode.PREVIEW
             }
         });
     });
@@ -50,31 +56,57 @@ describe('DotTabButtonsComponent', () => {
 
     it('should emit openMenu event when showMenu is called', () => {
         const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
-        spectator.component.showMenu(null);
+
+        spectator.component.showMenu({
+            ...pointerEvent,
+            target: {
+                ...pointerEvent.target,
+                value: DotPageMode.PREVIEW + spectator.component.OPEN_MENU
+            }
+        });
         expect(openMenuSpy).toHaveBeenCalled();
     });
 
     it('should emit clickOption event when onClickOption is called with a PREVIEW value', () => {
         const clickOptionSpy = spyOn(spectator.component.clickOption, 'emit');
-        spectator.component.mode = DotPageMode.EDIT;
-        spectator.component.onClickOption({ target: { value: DotPageMode.PREVIEW } });
+        spectator.component.activeId = DotPageMode.EDIT;
+
+        spectator.component.onClickOption({
+            ...pointerEvent,
+            target: {
+                ...pointerEvent.target,
+                value: DotPageMode.PREVIEW
+            }
+        });
         expect(clickOptionSpy).toHaveBeenCalled();
     });
 
     it('should not emit clickOption event when onClickOption is called if the user is in the same tab', () => {
         const clickOptionSpy = spyOn(spectator.component.clickOption, 'emit');
-        spectator.component.onClickOption({ target: { value: DotPageMode.PREVIEW } });
+        spectator.component.onClickOption({
+            ...pointerEvent,
+            target: {
+                ...pointerEvent.target,
+                value: DotPageMode.PREVIEW
+            }
+        });
         expect(clickOptionSpy).not.toHaveBeenCalled();
     });
 
     it('should call showMenu when onClickOption is called with OPEN_MENU value', () => {
         const showMenuSpy = spyOn(spectator.component, 'showMenu');
-        spectator.component.onClickOption({ target: { value: spectator.component.OPEN_MENU } });
+        spectator.component.onClickOption({
+            ...pointerEvent,
+            target: {
+                ...pointerEvent.target,
+                value: DotPageMode.PREVIEW + spectator.component.OPEN_MENU
+            }
+        });
         expect(showMenuSpy).toHaveBeenCalled();
     });
 
     it('should show dot-tab-indicator when a tab is active', () => {
-        spectator.component.mode = DotPageMode.EDIT;
+        spectator.component.activeId = DotPageMode.EDIT;
 
         const indicatorEl = spectator.queryAll(byTestId('dot-tab-indicator'));
 
@@ -82,22 +114,49 @@ describe('DotTabButtonsComponent', () => {
     });
 
     it('should show dot-tab-indicator when a tab is active', () => {
-        spectator.component.mode = DotPageMode.PREVIEW;
+        spectator.component.activeId = DotPageMode.PREVIEW;
 
         const indicatorEl = spectator.queryAll(byTestId('dot-tab-indicator'));
 
         expect(indicatorEl).toBeDefined();
     });
 
-    it('should toggle icon', () => {
-        expect(spectator.component.icon).toEqual('pi pi-angle-down');
+    it('should toggle and change all dropdowns icon to original state on document click', () => {
+        spectator.component.onClickOption({
+            ...pointerEvent,
+            target: {
+                ...pointerEvent.target,
+                value: DotPageMode.PREVIEW + spectator.component.OPEN_MENU
+            }
+        });
 
-        spectator.component.toggle = true;
-        spectator.component.toggleIcon();
-        expect(spectator.component.icon).toEqual('pi pi-angle-up');
+        expect(spectator.component._options[1].value.toggle).toBe(true);
+        expect(spectator.component._options[1].value.icon).toBe('pi pi-angle-up');
 
-        spectator.component.toggle = false;
-        spectator.component.toggleIcon();
-        expect(spectator.component.icon).toEqual('pi pi-angle-down');
+        document.dispatchEvent(new Event('click'));
+
+        expect(spectator.component._options[1].value.toggle).toBe(false);
+        expect(spectator.component._options[1].value.icon).toBe('pi pi-angle-down');
+    });
+
+    describe('N tab buttons with and without dropdowns', () => {
+        beforeEach(() => {
+            spectator.setInput({
+                options: [
+                    { label: 'test-1', value: { id: 'test-1', showDropdownButton: false } },
+                    { label: 'test-2', value: { id: 'test-2', showDropdownButton: false } },
+                    { label: 'test-3', value: { id: 'test-3', showDropdownButton: true } },
+                    { label: 'test-4', value: { id: 'test-4', showDropdownButton: true } }
+                ]
+            });
+        });
+
+        it('should have 2 tab dropdowns', () => {
+            expect(spectator.queryAll(byTestId('tab-dropdown')).length).toBe(2);
+        });
+
+        it('should have 4 tabs', () => {
+            expect(spectator.queryAll(byTestId('dot-tab-button-text')).length).toBe(4);
+        });
     });
 });
