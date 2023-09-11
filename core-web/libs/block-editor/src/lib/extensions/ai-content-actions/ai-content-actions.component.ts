@@ -60,10 +60,6 @@ export class AIContentActionsComponent implements OnInit {
         this.deleteEmitter.emit(true);
     }
 
-    handleClick(event): void {
-        event.value.callback();
-    }
-
     getLatestContent() {
         const latestContent: string = this.aiContentService.getLastContentResponse();
 

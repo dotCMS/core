@@ -47,7 +47,7 @@ export class AIContentActionsView {
 
     public component: ComponentRef<AIContentActionsComponent>;
 
-    private $destroy = new Subject<boolean>();
+    private destroy$ = new Subject<boolean>();
 
     constructor(props: AIContentActionsViewProps) {
         const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
@@ -62,15 +62,15 @@ export class AIContentActionsView {
         this.pluginKey = pluginKey;
         this.component = component;
 
-        this.component.instance.acceptEmitter.pipe(takeUntil(this.$destroy)).subscribe(() => {
+        this.component.instance.acceptEmitter.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.acceptContent();
         });
 
-        this.component.instance.regenerateEmitter.pipe(takeUntil(this.$destroy)).subscribe(() => {
+        this.component.instance.regenerateEmitter.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.generateContent();
         });
 
-        this.component.instance.deleteEmitter.pipe(takeUntil(this.$destroy)).subscribe(() => {
+        this.component.instance.deleteEmitter.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.deleteContent();
         });
 
@@ -147,8 +147,8 @@ export class AIContentActionsView {
 
     destroy() {
         this.tippy?.destroy();
-        this.$destroy.next(true);
-        this.$destroy.complete();
+        this.destroy$.next(true);
+        this.destroy$.complete();
         this.view.dom.removeEventListener('keydown', this.handleKeyDown);
     }
 }
