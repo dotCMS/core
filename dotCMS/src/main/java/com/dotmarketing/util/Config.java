@@ -4,6 +4,7 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.config.Configuration;
 import com.dotcms.config.DotEnvConfigSourceInterceptor;
 import com.dotcms.config.PathConfiguration;
+import com.dotcms.config.SystemTableConfigSource;
 import com.dotcms.repackage.com.google.common.base.Supplier;
 import com.dotcms.util.FileWatcherAPI;
 import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
@@ -21,12 +22,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * This class provides access to the system configuration parameters that are set through the
  * {@code dotmarketing-config.properties}, and the {@code dotcms-config-cluster.properties} files.
- *
+ * @deprecated
+ * @see Configuration
  * @author root
  * @version 1.0
  * @since Mar 22, 2012
  */
-
+@Deprecated
 public class Config {
 
     //Generated File Indicator
@@ -43,6 +45,10 @@ public class Config {
     private static Configuration configuration = null;
     private static PathConfiguration pathConfiguration = null;
 
+    private static RuntimeConfigWriter runtimeConfigWriter = null;
+
+    public static final String USE_CONFIG_TEST_OVERRIDE_TRACKER = "USE_CONFIG_TEST_OVERRIDE_TRACKER";
+
     /**
      * Config internal methods
      */
@@ -50,6 +56,7 @@ public class Config {
 
         configuration     = CDIUtils.getBean(Configuration.class);
         pathConfiguration = CDIUtils.getBean(PathConfiguration.class);
+        runtimeConfigWriter = CDIUtils.getBean(RuntimeConfigWriter.class);
     }
 
     private static String envKey(final String theKey) {
@@ -272,4 +279,8 @@ public class Config {
         CONTEXT_PATH = myApp.getRealPath("/");
     }
 
+    public static void clearOverrides() {
+
+        runtimeConfigWriter.clearOverrides();
+    }
 }

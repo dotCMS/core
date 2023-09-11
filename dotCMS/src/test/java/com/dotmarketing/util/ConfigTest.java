@@ -58,7 +58,6 @@ public class ConfigTest {
         .put(UNABLE_TO_READ_VAR, "NOPE");
 
         //This forces a re-load.
-        Config.props = null;
         Config.initializeConfig();
 
     }
@@ -82,19 +81,19 @@ public class ConfigTest {
     @Test
     public void Test_Multiple_Calls_To_AddProperty_On_The_Same_Key() {
 
-        Config.props.addProperty("anyKey","anyValue");
-        assertEquals ("anyValue",Config.props.getProperty("anyKey"));
+        Config.setProperty("anyKey","anyValue");
+        assertEquals ("anyValue",Config.getStringProperty("anyKey"));
 
-        Config.props.addProperty("anyKey","anyValue");
+        Config.setProperty("anyKey","anyValue");
         final List<String> values1 = Arrays.asList("anyValue", "anyValue");
 
-        final Object property1 = Config.props.getProperty("anyKey");
+        final Object property1 = Config.getStringProperty("anyKey");
         final boolean equals1 = values1.equals(property1);
         assertTrue(equals1);
 
-        Config.props.addProperty("anyKey","anyValue");
+        Config.setProperty("anyKey","anyValue");
         final List<String> values2 = Arrays.asList("anyValue", "anyValue", "anyValue");
-        final Object property2 = Config.props.getProperty("anyKey");
+        final Object property2 = Config.getStringProperty("anyKey");
         final boolean equals2 = values2.equals(property2);
         assertTrue(equals2);
     }
@@ -111,11 +110,11 @@ public class ConfigTest {
         // as we are testing overriding it with the "DOT_" env variable
         // Otherwise our setProperty will update as a configOverride and we
         // will not see the change of the env variable
-        Config.props.setProperty(propertyName,"var");
+        Config.setProperty(propertyName,"var");
         final String fictionalProperty = Config.getStringProperty(propertyName);
         assertEquals("var",fictionalProperty);
         EnvironmentVariablesService.getInstance().put("DOT_FICTIONAL_PROPERTY", "foo");
-        Config.getConfigWriter().clearOverrides();
+        Config.clearOverrides();
 
         final String fictionalPropertyOverride = Config.getStringProperty(propertyName);
         assertEquals("foo",fictionalPropertyOverride);
