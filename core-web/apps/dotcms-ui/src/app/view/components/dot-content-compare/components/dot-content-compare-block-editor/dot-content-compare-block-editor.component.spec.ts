@@ -27,7 +27,7 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
         hostName: 'demo.dotcms.com',
         html: {
             attrs: {
-                chartCount: 16,
+                charCount: 16,
                 readingTime: 1,
                 wordCount: 5
             },
@@ -89,7 +89,7 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
         hostName: 'demo.dotcms.com',
         html: {
             attrs: {
-                chartCount: 16,
+                charCount: 16,
                 readingTime: 1,
                 wordCount: 5
             },

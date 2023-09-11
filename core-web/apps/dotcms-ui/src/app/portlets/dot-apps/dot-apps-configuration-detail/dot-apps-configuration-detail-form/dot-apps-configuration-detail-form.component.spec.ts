@@ -140,12 +140,16 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(de.query(By.css('dot-icon'))).toBeFalsy();
         });
 
-        it('should focus on first input when loaded', async () => {
-            const focusField = component.formContainer.nativeElement.querySelector('#name');
-            spyOn(focusField, 'focus');
+        it('should focus the first form field after view init', async () => {
             fixture.detectChanges();
             await fixture.whenStable();
-            expect(focusField.focus).toHaveBeenCalledTimes(1);
+            const firstFormField = fixture.nativeElement.querySelector(
+                `#${component.formFields[0].name}`
+            );
+            spyOn(firstFormField, 'focus');
+            component.ngAfterViewInit();
+            expect(firstFormField.focus).toHaveBeenCalled();
+            expect(document.activeElement).toEqual(firstFormField);
         });
 
         it('should load Label, Textarea & Hint with right attributes', () => {
@@ -225,7 +229,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(openMock).toHaveBeenCalledWith(secrets[4].value, '_blank');
         });
 
-        it('should emit form state when loaded', () => {
+        it('should emit form state when loaded', async () => {
+            fixture.detectChanges();
+            await fixture.whenStable();
             expect(component.data.emit).toHaveBeenCalledWith(formState);
             expect(component.valid.emit).toHaveBeenCalledWith(true);
         });
@@ -234,8 +240,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             component.myFormGroup.get('name').setValue('Test2');
             component.myFormGroup.get('password').setValue('Password2');
             component.myFormGroup.get('enabled').setValue('false');
-            expect(component.data.emit).toHaveBeenCalledTimes(4);
-            expect(component.valid.emit).toHaveBeenCalledTimes(4);
+            expect(component.data.emit).toHaveBeenCalledTimes(3);
+            expect(component.valid.emit).toHaveBeenCalledTimes(3);
         });
 
         it('should emit form state disabled when required field empty', () => {

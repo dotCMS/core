@@ -25,7 +25,7 @@ export const mockKeyValue = [
     {
         key: 'password',
         hidden: true,
-        value: '*****'
+        value: '123456'
     }
 ];
 
@@ -34,8 +34,7 @@ export const mockKeyValue = [
     template: `
         <dot-key-value-ng
             [showHiddenField]="showHiddenField"
-            [variables]="value"
-        ></dot-key-value-ng>
+            [variables]="value"></dot-key-value-ng>
     `
 })
 class TestHostComponent {
@@ -176,6 +175,6 @@ describe('DotKeyValueComponent', () => {
         tableRow = de.query(By.css('dot-key-value-table-input-row')).componentInstance;
         tableRow.save.emit(mockKeyValue[1]);
         expect(component.save.emit).toHaveBeenCalledWith(mockKeyValue[1]);
-        expect(component.variables[1]).toEqual({ ...mockKeyValue[1], value: '********' });
+        expect(component.variables[1]).toEqual({ ...mockKeyValue[1], value: '123456' });
     });
 });
