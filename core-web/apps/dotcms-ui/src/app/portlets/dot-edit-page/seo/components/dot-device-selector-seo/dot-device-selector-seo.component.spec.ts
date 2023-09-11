@@ -180,7 +180,6 @@ describe('DotDeviceSelectorSeoComponent', () => {
 
     it('should not have a link to add device', async () => {
         spyOn(dotCurrentUserService, 'getCurrentUser').and.returnValue(of(CurrentUserDataMock));
-        component.ngOnInit();
 
         const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
         expect(link).toBeNull();
