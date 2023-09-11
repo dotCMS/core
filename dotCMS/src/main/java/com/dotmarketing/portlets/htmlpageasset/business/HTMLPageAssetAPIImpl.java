@@ -59,6 +59,7 @@ import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
 
 import io.vavr.control.Try;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -910,48 +911,33 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     @Override
-    public IHTMLPage findByIdLanguageVariantFallback(String identifier, long tryLang, String tryVariant, boolean live, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+    public IHTMLPage findByIdLanguageVariantFallback(@NotNull String identifier, long tryLang,
+                                                     @NotNull String tryVariant, boolean live,
+                                                     @NotNull User user,
+                                                     boolean respectFrontEndPermissions) throws DotSecurityException {
 
 
         long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        boolean fallback = tryLang != defaultLang && Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
-
+        boolean fallbackLang = tryLang != defaultLang && Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
 
         // given lang and variant
-        HTMLPageAsset asset = Try.of(() -> APILocator.getHTMLPageAssetAPI()
-                .fromContentlet(APILocator.getContentletAPI()
-                        .findContentletByIdentifier(identifier, live,
-                                tryLang,
-                                tryVariant, APILocator.systemUser(), true))).getOrNull();
+        HTMLPageAsset asset = Try.of(() -> fromContentlet(contentletAPI
+                .findContentletByIdentifier(identifier, live, tryLang, tryVariant, APILocator.systemUser(), true))).getOrNull();
 
         if (asset == null) {
 
             // given lang and DEFAULT variant
-            asset = Try.of(() -> APILocator.getHTMLPageAssetAPI()
-                    .fromContentlet(APILocator.getContentletAPI()
-                            .findContentletByIdentifier(identifier, live,
-                                    tryLang,
-                                    VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), true))).getOrNull();
+            asset = Try.of(() -> fromContentlet(contentletAPI.findContentletByIdentifier(identifier, live, tryLang, VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), true))).getOrNull();
 
         }
 
-        if (asset == null && fallback) {
+        if (asset == null && fallbackLang) {
             // DEFAULT lang and given variant
-            asset = Try.of(() -> APILocator.getHTMLPageAssetAPI()
-                    .fromContentlet(APILocator.getContentletAPI()
-                            .findContentletByIdentifier(identifier, live,
-                                    tryLang,
-                                    tryVariant, APILocator.systemUser(), true))).getOrNull();
+            asset = Try.of(() -> fromContentlet(contentletAPI.findContentletByIdentifier(identifier, live, defaultLang, tryVariant, APILocator.systemUser(), true))).getOrNull();
 
             if (asset == null) {
                 // DEFAULT lang and DEFAULT variant
-                asset = Try.of(() -> APILocator.getHTMLPageAssetAPI()
-                        .fromContentlet(APILocator.getContentletAPI()
-                                .findContentletByIdentifier(identifier, live,
-                                        defaultLang,
-                                        VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), true))).getOrNull();
-
-
+                asset = Try.of(() -> fromContentlet(contentletAPI.findContentletByIdentifier(identifier, live, defaultLang, VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), true))).getOrNull();
             }
         }
         if (asset == null) {
