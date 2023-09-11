@@ -231,7 +231,8 @@ public class SamlWebUtils {
                                 final IdentityProviderConfiguration identityProviderConfiguration,
                                 final String siteIdentifier) {
 
-        final String relayState = identityProviderConfiguration.containsOptionalProperty(AUTH_RELAYSTATE_KEY)?
+        final String relayState = null != identityProviderConfiguration &&
+                identityProviderConfiguration.containsOptionalProperty(AUTH_RELAYSTATE_KEY)?
                 identityProviderConfiguration.getOptionalProperty(AUTH_RELAYSTATE_KEY).toString(): null;
         return getRelayState(request, response, identityProviderConfiguration, relayState, siteIdentifier);
     }
@@ -260,7 +261,7 @@ public class SamlWebUtils {
 
         final String relayStateValue =  relayStateStrategy.apply(request, response, identityProviderConfiguration);
 
-        Optional.ofNullable(request.getSession(false)).ifPresent(session -> session.setAttribute(AUTH_RELAYSTATE_KEY, relayStateValue));
+        Optional.ofNullable(request.getSession()).ifPresent(session -> session.setAttribute(AUTH_RELAYSTATE_KEY, relayStateValue));
 
         return relayStateValue;
     }
