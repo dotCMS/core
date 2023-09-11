@@ -344,7 +344,7 @@ public interface HTMLPageAssetAPI {
 	 * @throws DotSecurityException
 	 */
 	IHTMLPage findByIdLanguageVariantFallback(String identifier, long tryLang, String tryVariant, boolean live, User user, boolean respectFrontEndPermissions)
-			throws DotDataException, DotSecurityException;
+			throws DotSecurityException;
 
 
 
