@@ -3,7 +3,7 @@ project:
   name: dotcms-cli
   description: app -- DotCMS CLI
   longDescription: app -- DotCMS Quarkus CLI application
-  versionPattern: 'CUSTOM:0Y.0M.MICRO'
+  versionPattern: 'CUSTOM'
   java:
     multiProject: true
   copyright: |
@@ -21,7 +21,7 @@ project:
 release:
   github:
     tagName: 'dotcli{{projectVersion}}'
-    releaseName: 'CLI - dotcli{{projectVersion}}'
+    releaseName: 'DOTCLI - {{projectVersion}}'
     overwrite: false
     changelog:
       formatted: ALWAYS
@@ -43,7 +43,7 @@ distributions:
     stereotype: CLI
     artifacts:
       - path: tools/dotcms-cli/cli/target/cli-{{projectVersion}}-runner.jar
-        transform: tools/dotcms-cli/cli/target/cli-{{projectVersion}}.jar
+        transform: tools/dotcms-cli/cli/target/dotcli-{{projectVersion}}.jar
 
 packagers:
   brew:
