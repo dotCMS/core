@@ -19,6 +19,12 @@ div {
     animation: load8 1.1s infinite linear;
     overflow: hidden;
 }
+
+.edit-page-variant-mode :host div {
+    border: $border-size solid $color-palette-white-op-20;
+    border-left-color: $color-palette-white-op-90;
+}
+
 @-webkit-keyframes load8 {
     0% {
         -webkit-transform: rotate(0deg);

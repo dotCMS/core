@@ -37,7 +37,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
             "{\n" +
                     "   \"type\":\"doc\",\n" +
                     "   \"attrs\":{\n" +
-                    "      \"chartCount\":2,\n" +
+                    "      \"charCount\":2,\n" +
                     "      \"wordCount\":1,\n" +
                     "      \"readingTime\":1\n" +
                     "   },\n" +
@@ -89,7 +89,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                     "               \"body\":{\n" +
                     "                  \"type\":\"doc\",\n" +
                     "                  \"attrs\":{\n" +
-                    "                     \"chartCount\":1,\n" +
+                    "                     \"charCount\":1,\n" +
                     "                     \"wordCount\":1,\n" +
                     "                     \"readingTime\":1\n" +
                     "                  },\n" +
