@@ -5,8 +5,9 @@ import {
     EventEmitter,
     HostListener,
     Input,
-    OnInit,
-    Output
+    OnChanges,
+    Output,
+    SimpleChanges
 } from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
@@ -40,7 +41,7 @@ type CustomEventTarget = EventTarget & {
     styleUrls: ['./dot-tab-buttons.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotTabButtonsComponent implements OnInit {
+export class DotTabButtonsComponent implements OnChanges {
     @Output() openMenu = new EventEmitter<{ event: PointerEvent; menuId: string }>();
     @Output() clickOption = new EventEmitter();
     @Input() activeId: string;
@@ -52,16 +53,18 @@ export class DotTabButtonsComponent implements OnInit {
     protected readonly dropDownCloseIcon = 'pi pi-angle-down';
     readonly OPEN_MENU = '-openMenu';
 
-    ngOnInit() {
-        // We don't want reference issues with the options, so we clone them.
-        this._options = structuredClone(this.options).map((option) => {
-            if (option.value.showDropdownButton) {
-                option.value.toggle = false;
-                option.value.icon = this.dropDownCloseIcon;
-            }
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes.options) {
+            // We don't want reference issues with the options, so we clone them.
+            this._options = structuredClone(this.options).map((option) => {
+                if (option.value.showDropdownButton) {
+                    option.value.toggle = false;
+                    option.value.icon = this.dropDownCloseIcon;
+                }
 
-            return option;
-        });
+                return option;
+            });
+        }
     }
 
     /**

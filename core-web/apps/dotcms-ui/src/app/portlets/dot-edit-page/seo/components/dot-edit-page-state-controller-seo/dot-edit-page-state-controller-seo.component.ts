@@ -155,6 +155,8 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
                         }
                     ];
                 }
+
+                this.options = this.getStateModeOptions(this.pageState);
             });
     }
 
