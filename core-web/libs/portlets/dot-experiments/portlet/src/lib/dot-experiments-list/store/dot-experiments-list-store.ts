@@ -43,8 +43,7 @@ const initialState: DotExperimentsState = {
         DotExperimentStatus.RUNNING,
         DotExperimentStatus.SCHEDULED,
         DotExperimentStatus.DRAFT,
-        DotExperimentStatus.ENDED,
-        DotExperimentStatus.ARCHIVED
+        DotExperimentStatus.ENDED
     ],
     status: ComponentStatus.INIT,
     sidebar: {

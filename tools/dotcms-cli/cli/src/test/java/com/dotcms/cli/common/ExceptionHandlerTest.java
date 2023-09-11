@@ -25,7 +25,7 @@ class ExceptionHandlerTest {
     void Test_UnWrap_RuntimeException(){
         final TraversalTaskException traversalTaskException = new TraversalTaskException("LOL",
                 new CompletionException(new IllegalArgumentException("LOL")));
-        Exception ex = exceptionHandler.handle(traversalTaskException);
+        Exception ex = exceptionHandler.unwrap(traversalTaskException);
         Assertions.assertTrue(ex instanceof IllegalArgumentException);
     }
 

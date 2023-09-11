@@ -47,6 +47,13 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -1434,6 +1441,40 @@ public class VariantAPITest {
         assertEquals(1, loadObjectResultsBeforeDeleted.size());
         final int count = Integer.parseInt(loadObjectResultsBeforeDeleted.get(0).get("count").toString());
         assertEquals(expected, count);
+    }
+
+    /**
+     * Method to test: {@link Variant} H22 Serialization
+     * When: Try to Serialize a {@link Variant}
+     * Should: not throw any exception
+     *
+     * @throws IOException
+     */
+    @Test
+    public void testVariantSerialization() throws IOException, ClassNotFoundException {
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        byte[] bytes = null;
+
+        try(ByteArrayOutputStream os = new ByteArrayOutputStream();
+                ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(os, 8192)) ){
+
+                output.writeObject(variant);
+                output.flush();
+
+             bytes = os.toByteArray();
+        }
+
+        try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(bytes))){
+            final Variant variantFromBytes = (Variant) input.readObject();
+
+            assertEquals(variant.name(), variantFromBytes.name());
+            assertEquals(variant.description(), variantFromBytes.description());
+            assertEquals(variant.archived(), variantFromBytes.archived());
+        }
+
+
     }
 }
 

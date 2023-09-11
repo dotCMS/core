@@ -2,8 +2,8 @@
 @use "mixins" as *;
 
 .wrapper {
-    padding: 0 $spacing-5 0 $spacing-5;
-    min-height: $experiment-header-height;
+    padding: 0 $spacing-4 0 $spacing-4;
+    min-height: $dot-secondary-toolbar-main-height;
     background-color: $white;
     color: $black;
     font-size: $font-size-xl;

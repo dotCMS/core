@@ -11,6 +11,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -36,6 +37,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -268,7 +270,8 @@ public class DeterministicIdentifierAPITest {
                 final String fieldIdentifier2 = defaultGenerator.generateDeterministicIdBestEffort(field, field::variable);
                 //Test it is idempotent
                 assertEquals(fieldIdentifier1, fieldIdentifier2);
-                assertEquals(field.variable(), defaultGenerator.resolveName(field, field::variable));
+                final String expected = String.format("%s:%s", field.variable(), field.typeName());
+                assertEquals(expected, defaultGenerator.resolveName(field, field::variable));
             }
 
         } finally {
@@ -485,6 +488,46 @@ public class DeterministicIdentifierAPITest {
 
             out = defaultGenerator.deterministicIdSeed(child2, child1);
             assertEquals(String.format("Category:{%s > %s > %s}", parentName, child1Name, child2Name), out);
+
+        }finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+    }
+
+    /**
+     * Method to test: {@link DeterministicIdentifierAPIImpl#resolveName(Field, Supplier)}
+     * Given Scenario: We should take into consideration the field type when generating the deterministic Id.
+     * ExpectedResult: The seed should contain the field type
+     *
+     */
+    @Test
+    public void test_resolveName_seedShouldContainFieldType(){
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+
+            final Field relationshipField = new FieldDataGen().name("test").velocityVarName("test").type(RelationshipField.class).defaultValue(null)
+                    .type(RelationshipField.class)
+                    .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                    .relationType("Comments")
+                    .next();
+
+            final ContentType contentType = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .field(relationshipField)
+                    .nextPersisted();
+
+            //verify is deterministic
+            assertTrue(defaultGenerator.isDeterministicId(contentType.id()));
+
+
+            //verify the seed contains the field type
+            for(final Field field : contentType.fields()){
+                 final String expected = String.format("%s:%s", field.variable(), field.typeName());
+                assertEquals(expected, defaultGenerator.resolveName(field, field::variable));
+            }
 
         }finally {
             Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);

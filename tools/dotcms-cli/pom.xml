@@ -19,8 +19,8 @@
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.version>2.9.1.Final</quarkus.platform.version>
-    <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
     <jreleaser-plugin.version>1.8.0</jreleaser-plugin.version>
+    <failsafe-plugin.version>3.0.0-M5</failsafe-plugin.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -44,7 +44,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-failsafe-plugin</artifactId>
-          <version>${surefire-plugin.version}</version>
+          <version>${failsafe-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>

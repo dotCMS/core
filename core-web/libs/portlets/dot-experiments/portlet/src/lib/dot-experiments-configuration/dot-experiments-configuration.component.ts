@@ -19,6 +19,7 @@ import {
     DotExperiment,
     DotExperimentStatus
 } from '@dotcms/dotcms-models';
+import { DotRemoveConfirmPopupWithEscapeDirective } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from './components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -48,6 +49,7 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
         DotExperimentsConfigurationSkeletonComponent,
         DotExperimentsInlineEditTextComponent,
         DotAddToBundleModule,
+        DotRemoveConfirmPopupWithEscapeDirective,
         CardModule,
         ButtonModule,
         InplaceModule,

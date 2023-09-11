@@ -8,7 +8,6 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LinkDataGen;
-import com.dotcms.datagen.RelationshipDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -31,12 +30,12 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -104,10 +103,10 @@ public class LegacyShortyIdApiTest {
                 .find("webPageContent");
         new ContentletDataGen(contentGenericType.id())
                 .setProperty("title", "TestContent")
-                .setProperty("body", "TestBody").nextPersisted();
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).nextPersisted();
         new ContentletDataGen(contentGenericType.id())
                 .setProperty("title", "TestContent")
-                .setProperty("body", "TestBody").nextPersisted();
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).nextPersisted();
 		dc.setSQL(GET_ID_CONTENTLETS, 2);
 		res = dc.loadObjectResults();
         builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "contentlet" });

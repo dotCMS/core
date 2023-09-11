@@ -31,7 +31,8 @@ import {
     DotPageMode,
     DotPageRenderState,
     DotVariantData,
-    FeaturedFlags
+    FeaturedFlags,
+    RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -88,6 +89,7 @@ export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDest
     pageRenderedHtml: string;
     // TODO: Remove next line when total functionality of Favorite page is done for release
     showFavoritePageStar = false;
+    runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 

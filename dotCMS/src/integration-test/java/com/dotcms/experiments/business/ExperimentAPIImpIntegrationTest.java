@@ -99,7 +99,12 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.control.Try;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -3953,7 +3958,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * Should:  count 0 because any page_view had the Query Parameter
      */
     @Test
-    public void urlParameterWithContainerOperatorSuccess()
+    public void urlParameterWithContainsOperatorSuccess()
             throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -5538,7 +5543,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    // @Test
+    @Test
     public void addUrlConditionToBounceRateCondition() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -5571,7 +5576,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         assertEquals(1,  conditions.size());
 
         assertEquals("url", conditions.get(0).parameter());
-        assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\" + experimentPage.getURI() + "(\\/?\\?.*)?$",
+        assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\" + experimentPage.getURI() + "(\\/?\\?.*)?$",
                 conditions.get(0).value());
         assertEquals(Operator.REGEX, conditions.get(0).operator());
     }
@@ -6442,6 +6447,248 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
                 Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
                 Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    @DataProvider
+    public static Object[] pageUrlToReachPageCondition() {
+        return new String[]{"qa","QA", "Qa", "qA", "/qa", "/QA", "/Qa", "/qA"};
+    }
+    
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have two pages: QA/index and QA/123
+     * - You create an {@link Experiment} using the QA/Index page with a PAGE_REACH Goal: url Contains qa .
+     * - You have the follow page_view to the pages order by timestamp: /QA, /QA/123
+     *
+     * Should:  get a Success PAGE_REACH
+     */
+    @Test
+    @UseDataProvider("pageUrlToReachPageCondition")
+    public void reachPageGoalSuccessWhenConditionsUrlIsCaseInsensitive(final String conditionUrl) throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final Folder qaFolder = new FolderDataGen().name("QA").site(host).nextPersisted();
+
+        final HTMLPageAsset qaIndex = new HTMLPageDataGen(qaFolder, template).pageURL("index").nextPersisted();
+        final HTMLPageAsset qa123 = new HTMLPageDataGen(qaFolder, template).pageURL("123").nextPersisted();
+
+        final Condition<Object> urlCondition = Condition.builder()
+                .parameter("url")
+                .value(conditionUrl)
+                .operator(Operator.CONTAINS)
+                .build();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(urlCondition)
+                .build();
+
+        final Experiment experiment = createExperiment(qaIndex, metric,
+                new String[]{RandomString.make(15)});
+
+        final String variantName = getNotDefaultVariantName(experiment);
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final String[] pageIUrls = new String[]{"/QA", "/QA/123"};
+        final Instant firstEventStartDate = Instant.now();
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pageIUrls);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "2")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 2, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
+
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResults.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(2, variantResult.getTotalPageViews());
+                } else {
+
+                    assertEquals("DEFAULT", variantResult.getVariantName());
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
+
+                final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
+                final int multiBySessionExpected = variantResult.getVariantName().equals(variantName) ? 2 : 0;
+
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(multiBySessionExpected, variantResult.getMultiBySession());
+                Assert.assertEquals(sessionExpected, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                final Map<String, ResultResumeItem> details = variantResult.getDetails();
+                final ResultResumeItem resultResumeItem = details.get(
+                        SIMPLE_FORMATTER.format(firstEventStartDate));
+
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(multiBySessionExpected, resultResumeItem.getMultiBySession());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    @DataProvider
+    public static Object[] caseSensitiveQueryParameters() {
+        return new String[]{"TESTNAME=testValue", "TESTNAME=TESTVALUE", "TESTNAME=TestValue",
+                "testName=TESTVALUE", "testName=TestValue", "testname=testValue"};
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment, User)}
+     * When: Create an Experiment with a URL Parameter Goal with the follow configuration:
+     *
+     * - Parameter name: "testName"
+     * - Parameter Value: "testValue"
+     *
+     * And then:
+     * - Visit the Experiment Page
+     * - and after visit another page with The URL of the page contains the query parameter with
+     * different case sensitive.
+     *
+     * Should: REturn o success response with the results of the experiment.
+     *
+     * @param queryParameter
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    @UseDataProvider("caseSensitiveQueryParameters")
+    public void urlParameterWithCaseSensitiveQueryParameter(final String queryParameter)
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithUrlParameterGoal(experimentPage);
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+
+        final String[] pagesUrl = new String[]{
+                experimentPage.getURI(),
+                pageA.getURI() + "?" + queryParameter
+        };
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pagesUrl);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpecteExitANdBounceRateQuery(experiment);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "3")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 3, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResult.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(3, variantResult.getTotalPageViews());
+
+                    Assert.assertEquals(1,
+                            (long) experimentResult.getSessions().getVariants()
+                                    .get(variantResult.getVariantName()));
+                } else {
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+
+                    Assert.assertEquals(0,
+                            (long) experimentResult.getSessions().getVariants()
+                                    .get(variantResult.getVariantName()));
+                }
+
+                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(0, variantResult.getMultiBySession());
+
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+
+                assertNull(resultResumeItem);
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -8590,6 +8837,48 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     private void setAnalyticsHelper(final AnalyticsHelper mockAnalyticsHelper) {
         ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
         CubeJSClientFactoryImpl.setAnalyticsHelper(mockAnalyticsHelper);
+    }
+
+
+    /**
+     * Method to test: {@link Experiment} H22 Serialization
+     * When: Try to Serialize a {@link Experiment}
+     * Should: not throw any exception
+     *
+     * @throws IOException
+     */
+    @Test
+    public void testExperimentSerialization() throws IOException, ClassNotFoundException {
+
+        final Experiment experiment = new ExperimentDataGen()
+                .description("Experiment Description")
+                .scheduling(Scheduling.builder()
+                        .startDate(Instant.now())
+                        .endDate(Instant.now().plus(30, ChronoUnit.DAYS))
+                        .build())
+                .nextPersisted();
+
+        byte[] bytes = null;
+
+        try(
+                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(os, 8192)); ){
+            output.writeObject(experiment);
+            output.flush();
+
+            bytes = os.toByteArray();
+        }
+
+        try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(bytes))){
+            final Experiment experimentFromBytes = (Experiment) input.readObject();
+
+            Assert.assertEquals(experiment.name(), experimentFromBytes.name());
+            Assert.assertEquals(experiment.description(), experimentFromBytes.description());
+            Assert.assertEquals(experiment.id(), experimentFromBytes.id());
+            Assert.assertEquals(experiment.status(), experimentFromBytes.status());
+
+        }
+
     }
 }
 
