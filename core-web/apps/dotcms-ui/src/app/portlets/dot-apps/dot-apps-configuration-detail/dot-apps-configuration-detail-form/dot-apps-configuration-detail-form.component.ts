@@ -1,4 +1,5 @@
 import {
+    AfterViewInit,
     Component,
     ElementRef,
     EventEmitter,
@@ -25,7 +26,7 @@ const getFieldValueFn = {
     templateUrl: './dot-apps-configuration-detail-form.component.html',
     styleUrls: ['./dot-apps-configuration-detail-form.component.scss']
 })
-export class DotAppsConfigurationDetailFormComponent implements OnInit {
+export class DotAppsConfigurationDetailFormComponent implements OnInit, AfterViewInit {
     @ViewChild('form', { static: true }) public form: NgForm;
     @ViewChild('formContainer', { static: true }) public formContainer: ElementRef;
 
@@ -49,11 +50,12 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit {
             this.emitValues();
         });
 
-        this.emitValues();
+        setTimeout(() => this.emitValues());
+    }
 
-        setTimeout(() => {
-            this.formContainer.nativeElement.querySelector(`#${this.formFields[0].name}`).focus();
-        }, 0);
+    ngAfterViewInit() {
+        // Do it this way because the form is rendered dynamically
+        this.formContainer.nativeElement.querySelector(`#${this.formFields[0].name}`).focus();
     }
 
     /**

@@ -47,7 +47,6 @@ export class DotKeyValueComponent implements OnChanges {
     saveVariable(variable: DotKeyValue): void {
         this.save.emit(variable);
 
-        variable = this.setHiddenValue(variable);
         const indexChanged = DotKeyValueUtil.getVariableIndexChanged(variable, this.variables);
         if (indexChanged !== null) {
             this.variables[indexChanged] = _.cloneDeep(variable);
@@ -65,11 +64,5 @@ export class DotKeyValueComponent implements OnChanges {
      */
     onCancel(fieldIndex: number): void {
         this.variablesBackup[fieldIndex] = _.cloneDeep(this.variables[fieldIndex]);
-    }
-
-    private setHiddenValue(variable: DotKeyValue): DotKeyValue {
-        variable.value = variable.hidden ? '********' : variable.value;
-
-        return variable;
     }
 }
