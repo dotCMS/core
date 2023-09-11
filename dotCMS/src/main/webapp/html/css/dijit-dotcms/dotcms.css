@@ -2830,6 +2830,12 @@
   content: "\f2e0";
 }
 
+/*
+  ========================== WARNING ==========================
+  Don't use this in your components, use $font-size-md instead,
+  this is only for the root element
+  =============================================================
+*/
 *,
 *:before,
 *:after {
@@ -3050,6 +3056,12 @@
   --empty-message: "";
 }
 
+/*
+  ========================== WARNING ==========================
+  Don't use this in your components, use $font-size-md instead,
+  this is only for the root element
+  =============================================================
+*/
 .dojoDndItem {
   padding: 0;
 }
@@ -3095,7 +3107,7 @@
 }
 
 .dijitIcon {
-  margin-right: 0.2857rem;
+  margin-right: 0.25rem;
 }
 .dijitIconTask:before {
   content: "\f0ae";
@@ -3205,7 +3217,7 @@
 
 .dijitTextBox {
   background-color: #ffffff;
-  padding: 0 0.5714rem;
+  padding: 0 0.5rem;
   border: solid 1.5px #d1d4db;
 }
 .dijitTextBox .dijitArrowButton {
@@ -3321,7 +3333,7 @@
   border: solid 1.5px #f65446;
 }
 .dijitTextBoxError .dijitValidationContainer {
-  margin-right: -0.5714rem;
+  margin-right: -0.5rem;
 }
 .dijitTextBoxError .dijitArrowButton {
   border-left: solid 1.5px #f65446;
@@ -3342,7 +3354,7 @@
   border: solid 1.5px #d1d4db;
   color: #14151a;
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  padding: 0.5714rem;
+  padding: 0.5rem;
   font-size: 1rem;
 }
 .dijitTextAreaHover {
@@ -3364,7 +3376,7 @@
 .dijitSpinner {
   background-color: #ffffff;
   border: solid 1.5px #d1d4db;
-  padding: 0 0 0 0.5714rem;
+  padding: 0 0 0 0.5rem;
 }
 .dijitSpinner .dijitSpinnerButtonContainer {
   border-left: solid 1.5px #d1d4db;
@@ -3499,12 +3511,12 @@
 }
 .dijitButton .dijitButtonNode,
 .dijitToggleButton .dijitButtonNode {
-  padding: 0 1.1428rem;
+  padding: 0 1rem;
   margin: none;
 }
 .dijitButton .dijitButtonNode .dijitIcon,
 .dijitToggleButton .dijitButtonNode .dijitIcon {
-  margin-right: 0.5714rem;
+  margin-right: 0.5rem;
 }
 .dijitButton .dijitInline .dijitButtonNode,
 .dijitToggleButton .dijitInline .dijitButtonNode {
@@ -3563,7 +3575,7 @@
   height: 100%;
 }
 .dijitDropDownButton .dijitButtonNode {
-  padding-left: 1.1428rem;
+  padding-left: 1rem;
 }
 .dijitDropDownButton .dijitArrowButtonInner {
   width: 2.5rem;
@@ -3679,7 +3691,7 @@
   width: 0;
 }
 .dijitComboButton .dijitButtonNode {
-  padding-left: 1.1428rem;
+  padding-left: 1rem;
 }
 .dijitComboButton .dijitButtonNode.dijitDownArrowButton {
   padding-left: 0;
@@ -3887,7 +3899,7 @@
   display: inline-block;
   height: 2.5rem;
   line-height: 2.5rem;
-  padding: 0 1.1428rem;
+  padding: 0 1rem;
   text-decoration: none;
   text-transform: uppercase;
 }
@@ -3976,7 +3988,7 @@
   color: #14151a;
 }
 .dijitSelect .dijitButtonContents {
-  padding: 0 1.1428rem;
+  padding: 0 1rem;
   border: none;
 }
 .dijitSelect .dijitButtonContents.dijitSelectFixedWidth .dijitSelect .dijitButtonContents {
@@ -4069,7 +4081,7 @@
 .dijitComboBox {
   background-color: #ffffff;
   border: solid 1.5px #d1d4db;
-  padding: 0 0 0 0.5714rem;
+  padding: 0 0 0 0.5rem;
   overflow: hidden;
 }
 .dijitComboBox input {
@@ -4312,7 +4324,7 @@
 .dijitTimePicker .dijitDownArrowButton,
 .dijitTimePicker .dijitUpArrowButton {
   background-color: #f3f3f4;
-  padding: 0.2857rem;
+  padding: 0.25rem;
 }
 .dijitTimePicker .dijitDownArrowHover,
 .dijitTimePicker .dijitUpArrowHover {
@@ -4323,7 +4335,7 @@
   border: solid 1px #d1d4db;
 }
 .dijitAccordionContainer .dijitAccordionContainer-child {
-  padding: 0.5714rem;
+  padding: 0.5rem;
 }
 .dijitAccordionInnerContainerSelected .dijitAccordionTitleHover {
   background-color: #d1d4db;
@@ -4335,7 +4347,7 @@
   border-bottom: none;
   height: 2.5rem;
   line-height: 2.5rem;
-  padding: 0 0.5714rem;
+  padding: 0 0.5rem;
 }
 .dijitAccordionTitle:last-child {
   border-bottom: solid 1px #d1d4db;
@@ -4368,7 +4380,7 @@
   transition: border 0.1s;
   border: none;
   border-top: none;
-  padding: 1px 0.5714rem 0;
+  padding: 1px 0.5rem 0;
 }
 .dijitTitlePaneTitle {
   transition: all 0.1s;
@@ -4402,7 +4414,7 @@
   color: #14151a;
 }
 .dijitTitlePaneTitleFocus {
-  padding: 0 0.5714rem 0 0;
+  padding: 0 0.5rem 0 0;
 }
 
 .dijitDialog {
@@ -4438,7 +4450,7 @@
   transform: rotate(-45deg);
 }
 .dijitDialogPaneActionBar, .dijitDialogPaneContent {
-  padding: 1.1428rem;
+  padding: 1rem;
 }
 .dijitDialogPaneActionBar {
   padding-top: 0;
@@ -4452,7 +4464,7 @@
   font-weight: bold;
   height: 50px;
   line-height: 50px;
-  padding: 0 1.1428rem;
+  padding: 0 1rem;
   position: relative;
 }
 
@@ -4462,8 +4474,8 @@
   border: 0 none;
   border-radius: 0.375rem;
   box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
-  padding: 0.5714rem;
-  margin-top: 0.5714rem;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
 }
 .dijitTimePickerPopup {
   border: none;
@@ -4514,7 +4526,7 @@
   height: 58px;
   background-color: #ffffff;
   color: #14151a;
-  padding: 0 1.7142rem;
+  padding: 0 1.5rem;
   position: relative;
   border-width: 0 0 4px 0;
   border-style: solid;
@@ -4528,10 +4540,10 @@
   top: -1px;
 }
 .dijitTab.dijitClosable {
-  padding-right: 2.2856rem;
+  padding-right: 2rem;
 }
 .dijitTabPaneWrapper .dijitContentPane {
-  padding: 1.7142rem;
+  padding: 1.5rem;
   overflow: visible;
 }
 .dijitTabChecked, .dijitTabChecked.dijitTabCheckedHover {
@@ -4699,7 +4711,7 @@
 }
 .dijitTabContainerNested .dijitTabContainerTop-container {
   border: none;
-  padding: 0 1.7142rem;
+  padding: 0 1.5rem;
 }
 
 .dijitTooltip {
@@ -4710,7 +4722,7 @@
   border: solid 1px #6c7389;
   color: inherit;
   font-size: inherit;
-  padding: 0.5714rem;
+  padding: 0.5rem;
   margin-left: 7px;
   border-radius: 0.375rem;
 }
@@ -4727,7 +4739,7 @@
   border-top: 1px solid #6c7389;
 }
 .dijitTooltipFocusNode {
-  padding: 0.5714rem;
+  padding: 0.5rem;
 }
 
 .dijitTreeContainer {
@@ -4870,7 +4882,7 @@
 }
 .dijitCalendarIncrementArrow {
   position: absolute;
-  right: 0.5714rem;
+  right: 0.5rem;
 }
 .dijitCalendarIncrementArrow:before {
   position: relative;
@@ -4897,7 +4909,7 @@
   line-height: 1.875rem;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton {
-  margin-top: 0.2857rem;
+  margin-top: 0.25rem;
   border-radius: 0;
   background-color: transparent;
   height: calc(1.875rem + 3px);
@@ -4976,15 +4988,15 @@
 }
 .dijitMenu#templateSel_popup .dijitMenuItem {
   height: auto;
-  padding: 0.5714rem 0.8571rem;
-  gap: 0.2857rem;
+  padding: 0.5rem 0.75rem;
+  gap: 0.25rem;
 }
 .dijitMenu#templateSel_popup .dijitMenuItem small {
   color: #6c7389;
 }
 .dijitMenu .dijitMenuItem {
   display: flex;
-  padding: 0 0.8571rem;
+  padding: 0 0.75rem;
   color: #14151a;
   height: 2.5rem;
   align-items: center;
@@ -4999,11 +5011,11 @@
   background: var(--color-palette-primary-200);
 }
 .dijitMenu .dijitMenuItem .dijitMenuItemIconCell {
-  padding-left: 0.5714rem;
+  padding-left: 0.5rem;
   width: 3;
 }
 .dijitMenuArrowCell .dijitIcon {
-  margin-right: 0.5714rem;
+  margin-right: 0.5rem;
   text-align: right;
   vertical-align: baseline;
 }
@@ -5027,15 +5039,15 @@
   border: 0 none;
   border-radius: 0.375rem;
   box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
-  padding: 0.5714rem;
-  margin-top: 0.5714rem;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
 }
 .dijitComboBoxMenuPopup .dijitMenuItem {
   display: flex;
   align-items: start;
   flex-direction: column;
   justify-content: center;
-  padding: 0 0.8571rem;
+  padding: 0 0.75rem;
   color: #14151a;
   height: 2.5rem;
 }
@@ -5157,14 +5169,14 @@
 .dojoxGrid .dojoxGridRow .dojoxGridRowTable .dojoxGridCell,
 .dojoxGrid .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  padding: 10px 0.5714rem;
+  padding: 10px 0.5rem;
 }
 .dojoxGrid .dojoxGridPaginator {
   background-color: #d1d4db;
   border: 0px;
 }
 .dojoxGrid .dojoxGridPaginator td {
-  padding: 0.5714rem 0.5714rem;
+  padding: 0.5rem 0.5rem;
 }
 
 .dojoxUploaderFileList {
@@ -5879,7 +5891,7 @@ hr {
   height: 1px;
   color: #d1d4db;
   border: 0;
-  margin: 1.7142rem 0;
+  margin: 1.5rem 0;
 }
 
 .formRow {
@@ -6192,7 +6204,7 @@ select[multiple]:hover {
 #listing-table, .listingTable, .dojoxUploaderFileListTable {
   border-bottom: 1px solid #f3f3f4;
   border-collapse: collapse;
-  margin: 0 auto 3.4285rem auto;
+  margin: 0 auto 3rem auto;
   width: 100%;
 }
 #listing-table p:last-child, .listingTable p:last-child, .dojoxUploaderFileListTable p:last-child {
@@ -6208,7 +6220,7 @@ select[multiple]:hover {
 #listing-table td,
 .listingTable td,
 .dojoxUploaderFileListTable td {
-  padding: 10px 0.5714rem;
+  padding: 10px 0.5rem;
   border-bottom: 1px solid #f3f3f4;
   vertical-align: middle;
 }
@@ -6227,13 +6239,13 @@ select[multiple]:hover {
 #listing-table td:first-child,
 .listingTable td:first-child,
 .dojoxUploaderFileListTable td:first-child {
-  padding-left: 3.4285rem;
+  padding-left: 3rem;
 }
 #listing-table th:last-child, .listingTable th:last-child, .dojoxUploaderFileListTable th:last-child,
 #listing-table td:last-child,
 .listingTable td:last-child,
 .dojoxUploaderFileListTable td:last-child {
-  padding-right: 3.4285rem;
+  padding-right: 3rem;
 }
 #listing-table th, .listingTable th, .dojoxUploaderFileListTable th {
   background-color: #f3f3f4;
@@ -6289,7 +6301,7 @@ select[multiple]:hover {
 
 .sTypeItem a {
   display: block;
-  padding: 0.2857rem 10px;
+  padding: 0.25rem 10px;
   text-decoration: none;
 }
 
@@ -7681,7 +7693,7 @@ div#_dotHelpMenu {
   margin: 0;
   list-style: none;
   position: relative;
-  padding-right: 1.1428rem;
+  padding-right: 1rem;
 }
 .subNavCrumbTrail li:after {
   display: inline-block;
@@ -8666,7 +8678,7 @@ div#_dotHelpMenu {
   margin: 56px 20px 0 0;
 }
 .filter-tasks-frm .who-user label {
-  margin-right: 0.2857rem;
+  margin-right: 0.25rem;
 }
 
 /*
@@ -8677,13 +8689,13 @@ Styles for commons fields along the backend
 .glossaryTermPopup {
   border-radius: 0.125rem;
   background-color: #f3f3f4;
-  padding: 0.2857rem 0.5714rem;
+  padding: 0.25rem 0.5rem;
   border: solid 1px #d1d4db;
   position: absolute;
 }
 
 #fileAssetThumbnailSliderWrapper {
-  margin-bottom: 0.5714rem;
+  margin-bottom: 0.5rem;
 }
 
 .fileAjaxUploader {
@@ -8712,19 +8724,19 @@ Styles for commons fields along the backend
   display: inline-block;
 }
 .fileAjaxUploaderActions div:first-child {
-  margin-right: 0.5714rem;
+  margin-right: 0.5rem;
 }
 .fileAjaxUploaderFileName {
-  margin-right: 0.5714rem;
+  margin-right: 0.5rem;
 }
 .fileAjaxUploaderStatus {
   align-items: center;
   display: flex;
   position: absolute;
-  right: 1.1428rem;
+  right: 1rem;
 }
 .fileAjaxUploaderStatusMsg {
-  margin-left: 0.5714rem;
+  margin-left: 0.5rem;
 }
 .fileAjaxUploader .dijitProgressBar {
   width: 150px;
@@ -8734,10 +8746,10 @@ Styles for commons fields along the backend
   background-color: #ffffff;
   border-radius: 0.125rem;
   border: solid 1px #afb3c0;
-  margin-top: 0.5714rem;
+  margin-top: 0.5rem;
   max-width: 1100px;
   min-height: 38px;
-  padding: 0.2857rem;
+  padding: 0.25rem;
 }
 .catPreview li {
   background: #f3f3f4;
@@ -8746,7 +8758,7 @@ Styles for commons fields along the backend
   display: inline-block;
   font-size: 12px;
   margin: 2px 5px 2px 0px;
-  padding: 0.2857rem 0.5714rem 0.2857rem 0.2857rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.25rem;
   position: relative;
   text-decoration: none;
 }
@@ -8766,14 +8778,14 @@ Styles for commons fields along the backend
   color: #6c7389;
   font-size: 1.5rem;
   border-bottom: 1px solid #d1d4db;
-  padding-bottom: 1.1428rem;
-  margin: 3.4284rem 0 1.7142rem;
+  padding-bottom: 1rem;
+  margin: 3rem 0 1.5rem;
 }
 
 #editor-toolbar, .wysiwyg-tools, .editor-toolbar {
   display: flex;
   justify-content: space-between;
-  margin-top: 0.5714rem;
+  margin-top: 0.5rem;
 }
 #editor-toolbar .checkbox, .wysiwyg-tools .checkbox, .editor-toolbar .checkbox,
 #editor-toolbar .radio,
@@ -8803,11 +8815,11 @@ Styles for commons fields along the backend
 
 .key-value-form {
   display: flex;
-  margin-bottom: 1.1428rem;
+  margin-bottom: 1rem;
   width: 500px;
 }
 .key-value-form .dijit {
-  margin-right: 0.5714rem;
+  margin-right: 0.5rem;
 }
 .key-value-form .dijit:last-child {
   margin-right: 0;
@@ -8818,7 +8830,7 @@ Styles for commons fields along the backend
 }
 .key-value-items .listingTable th:first-child,
 .key-value-items .listingTable td:first-child {
-  padding-left: 0.5714rem;
+  padding-left: 0.5rem;
 }
 
 .tagsOptions {
@@ -8874,15 +8886,15 @@ Styles for commons fields along the backend
 
 .tagLink {
   height: 1.5rem;
-  padding: 0.5714rem;
+  padding: 0.5rem;
   background: var(--color-palette-primary-200);
   border-radius: 0.25rem;
   color: var(--color-palette-primary-500);
-  font-size: 0.8571428571rem;
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.2857rem;
+  gap: 0.25rem;
   text-decoration: none;
 }
 .tagLink.persona:before {
@@ -8892,7 +8904,7 @@ Styles for commons fields along the backend
 .tagLink:after {
   color: var(--color-palette-primary-500);
   content: "✕";
-  font-size: 0.8571428571rem;
+  font-size: 0.75rem;
   text-align: center;
 }
 .tagLink:hover {
@@ -8905,10 +8917,10 @@ Styles for commons fields along the backend
 .tagsWrapper .dijitTextBox {
   min-height: 2.5rem;
   height: auto;
-  padding: 0.5714rem;
+  padding: 0.5rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5714rem;
+  gap: 0.5rem;
 }
 .tagsWrapper .dijitInputContainer {
   display: inline-block;
@@ -8920,7 +8932,7 @@ Styles for commons fields along the backend
   align-items: center;
 }
 .field__editable-content a {
-  margin-right: 1.1428rem;
+  margin-right: 1rem;
 }
 
 /*
@@ -8931,20 +8943,20 @@ Styles for commons fields along the backend
 #label, .fieldName, dl.vertical dt label {
   color: #14151a;
   display: block;
-  font-size: 0.8571428571rem;
-  margin-bottom: 0.2857rem;
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
 }
 
 #checkbox-radio, .radio,
 .checkbox {
   align-items: center;
   display: flex;
-  margin: 0.5714rem 0;
+  margin: 0.5rem 0;
   white-space: nowrap;
 }
 #checkbox-radio > .dijit, .radio > .dijit,
 .checkbox > .dijit {
-  margin-right: 0.2857rem;
+  margin-right: 0.25rem;
 }
 
 .required::after {
@@ -8958,7 +8970,7 @@ Styles for commons fields along the backend
   align-items: center;
 }
 #inline-form > label, .inline-form > label, .fileSelectorControls > label, #inline-form > div, .inline-form > div, .fileSelectorControls > div {
-  margin-right: 0.5714rem;
+  margin-right: 0.5rem;
   white-space: nowrap;
 }
 #inline-form > label, .inline-form > label, .fileSelectorControls > label {
@@ -8966,7 +8978,7 @@ Styles for commons fields along the backend
   align-self: baseline;
 }
 #inline-form > .checkbox, .inline-form > .checkbox, .fileSelectorControls > .checkbox, #inline-form > .radio, .inline-form > .radio, .fileSelectorControls > .radio {
-  margin-right: 1.1428rem;
+  margin-right: 1rem;
 }
 #inline-form > .checkbox label, .inline-form > .checkbox label, .fileSelectorControls > .checkbox label, #inline-form > .radio label, .inline-form > .radio label, .fileSelectorControls > .radio label {
   line-height: 1;
@@ -8975,7 +8987,7 @@ Styles for commons fields along the backend
   flex: none;
 }
 #inline-form .dijit, .inline-form .dijit, .fileSelectorControls .dijit {
-  margin-right: 0.5714rem;
+  margin-right: 0.5rem;
 }
 #inline-form .dijit:last-child, .inline-form .dijit:last-child, .fileSelectorControls .dijit:last-child {
   margin-right: 0;
@@ -8984,7 +8996,7 @@ Styles for commons fields along the backend
 #inline-form .dijitCheckBox,
 .inline-form .dijitCheckBox,
 .fileSelectorControls .dijitCheckBox {
-  margin-right: 0.2857rem;
+  margin-right: 0.25rem;
 }
 
 .listingTable .radio,
@@ -9017,14 +9029,14 @@ dl.vertical dt {
   width: auto;
 }
 dl.vertical dd {
-  margin-bottom: 1.1428rem;
+  margin-bottom: 1rem;
 }
 dl.radio-check-one-line {
   align-items: center;
   display: flex;
   flex-direction: row-reverse;
   justify-content: flex-end;
-  margin-bottom: 1.1428rem;
+  margin-bottom: 1rem;
 }
 dl.radio-check-one-line dt,
 dl.radio-check-one-line dd {
@@ -9056,18 +9068,18 @@ dt {
 }
 
 dd {
-  margin: 0 0 1.1428rem 30%;
+  margin: 0 0 1rem 30%;
   min-height: 2.5rem;
-  padding-left: 0.5714rem;
+  padding-left: 0.5rem;
 }
 dd .inputCaption,
 dd .buttonCaption {
-  padding-left: 0.5714rem !important;
+  padding-left: 0.5rem !important;
 }
 
 #form-horizontal-flexbox dl, .form-horizontal dl {
   display: flex;
-  margin-bottom: 0.5714rem;
+  margin-bottom: 0.5rem;
   min-height: 2.5rem;
 }
 #form-horizontal-flexbox dd, .form-horizontal dd,
@@ -9086,7 +9098,7 @@ dd .buttonCaption {
 }
 #form-horizontal-flexbox dt, .form-horizontal dt {
   line-height: 1;
-  padding: 9px 1.1428rem 0;
+  padding: 9px 1rem 0;
   text-align: right;
   width: 200px;
 }
@@ -9117,7 +9129,7 @@ dd .buttonCaption {
 }
 
 .fieldWrapper {
-  margin-bottom: 1.7142rem;
+  margin-bottom: 1.5rem;
   position: relative;
 }
 .fieldName .hintIcon {
@@ -9142,28 +9154,28 @@ dd .buttonCaption {
 
 .buttonRow {
   text-align: center;
-  margin: 0.5714rem 0;
+  margin: 0.5rem 0;
 }
 .buttonRow-right {
   text-align: right;
-  margin: 0.5714rem 0;
+  margin: 0.5rem 0;
 }
 .buttonRow .dijitButton,
 .buttonRow .fakeDojoButton {
-  margin: 0 0.2857rem;
+  margin: 0 0.25rem;
 }
 
 .who-can-use {
   border: solid 1px #afb3c0;
   height: 90px;
-  margin-top: 0.5714rem;
-  padding: 0.5714rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
 .who-can-use__list td {
-  padding: 0.2857rem;
+  padding: 0.25rem;
 }
 
 /* PORTLET STYLES 2.0 */
@@ -9174,7 +9186,7 @@ dd .buttonCaption {
   padding: 0;
 }
 .portlet-sidebar {
-  padding: 1.7142rem 1.1428rem 0 1.1428rem;
+  padding: 1.5rem 1rem 0 1rem;
 }
 .portlet-sidebar-wrapper {
   background-color: #fafafb;
@@ -9191,15 +9203,15 @@ dd .buttonCaption {
 .portlet-toolbar__actions-primary {
   display: flex;
   align-items: center;
-  gap: 1.1428rem;
+  gap: 1rem;
 }
 .portlet-toolbar__actions-archive {
   display: flex;
   align-items: center;
-  gap: 0.5714rem;
+  gap: 0.5rem;
 }
 .portlet-pagination {
-  margin: 1.1428rem;
+  margin: 1rem;
 }
 .portlet-pagination__results {
   flex: 1;
@@ -9207,10 +9219,10 @@ dd .buttonCaption {
   text-align: center;
 }
 .portlet-toolbar {
-  margin: 0 1.1428rem 1.1428rem;
+  margin: 0 1rem 1rem;
 }
 .dijitTabPaneWrapper .dijitContentPane .portlet-toolbar {
-  margin: 0 0 1.1428rem;
+  margin: 0 0 1rem;
 }
 .portlet-toolbar > * {
   align-self: center;
@@ -9247,10 +9259,10 @@ dd .buttonCaption {
   background-color: #f3f3f4;
   border-radius: 0.125rem;
   border: solid 1px #afb3c0;
-  padding: 1.1428rem;
+  padding: 1rem;
   position: absolute;
-  right: 1.1428rem;
-  top: 1.1428rem;
+  right: 1rem;
+  top: 1rem;
   width: 300px;
 }
 
@@ -9258,8 +9270,8 @@ dd .buttonCaption {
   background-color: var(--color-palette-black-op-10);
   border-radius: 0.125rem;
   border: 1px solid var(--color-palette-black-op-30);
-  margin: 1.1428rem 0;
-  padding: 0.5714rem;
+  margin: 1rem 0;
+  padding: 0.5rem;
   text-align: center;
 }
 
@@ -9267,11 +9279,11 @@ dd .buttonCaption {
   background-color: #d1d4db;
   border-radius: 0.125rem;
   border: 1px solid #afb3c0;
-  padding: 0.5714rem;
+  padding: 0.5rem;
   text-align: center;
 }
 .callOutBox2 h3 {
-  margin-bottom: 1.1428rem;
+  margin-bottom: 1rem;
 }
 .callOutBox2 p:last-child {
   margin-bottom: 0;
@@ -9301,12 +9313,12 @@ dd .buttonCaption {
 
 .calendar-events__list-items {
   flex: 3;
-  margin: 0 1.1428rem;
+  margin: 0 1rem;
 }
 
 .calendar-events__list-ongoing {
   flex: 1;
-  margin-right: 1.1428rem;
+  margin-right: 1rem;
 }
 
 .calendar-events__recurence-box {
@@ -9314,8 +9326,8 @@ dd .buttonCaption {
   border: solid 1px #d1d4db;
   border-radius: 0.375rem;
   display: inline-block;
-  margin-top: 0.5714rem;
-  padding: 0.5714rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
 }
 
 /* WEEK VIEW STYLES */
@@ -9336,7 +9348,7 @@ dd .buttonCaption {
 #dailyEvents h3,
 #ongoingEvents h3 {
   background: #f3f3f4;
-  padding: 0.5714rem;
+  padding: 0.5rem;
   border-bottom: 1px solid #d1d4db;
   margin: 0;
 }
@@ -9351,7 +9363,7 @@ dd .buttonCaption {
 }
 #dailyEvents li,
 #ongoingEvents li {
-  padding: 0.5714rem;
+  padding: 0.5rem;
   margin: 0;
   border-bottom: 1px solid #d1d4db;
 }
@@ -9359,7 +9371,7 @@ dd .buttonCaption {
 #dailyEvents li [class*=Icon],
 #ongoingEvents li [class$=Icon],
 #ongoingEvents li [class*=Icon] {
-  margin-right: 0.2857rem;
+  margin-right: 0.25rem;
 }
 
 /* MONTH VIEW STYLES */
@@ -9464,7 +9476,7 @@ dd .buttonCaption {
   margin-bottom: -10px;
 }
 .eventDetail .fakeDojoButton {
-  margin: 0 0.2857rem;
+  margin: 0 0.25rem;
 }
 .eventDetail img {
   border: 0;
@@ -9610,26 +9622,26 @@ a.category_higlighted, a.tag_higlighted {
 .network-action__title {
   background-color: var(--color-palette-primary-500);
   color: #ffffff;
-  margin: -1.1428rem -1.1428rem 1.1428rem;
+  margin: -1rem -1rem 1rem;
   height: 39px;
   line-height: 39px;
-  padding: 0 1.1428rem;
+  padding: 0 1rem;
 }
 
 .network-action__content {
-  margin: 1.1428rem;
+  margin: 1rem;
 }
 
 .network-action__list {
-  margin-bottom: 2.2856rem;
+  margin-bottom: 2rem;
   width: 100%;
 }
 .network-action__list th,
 .network-action__list td {
-  padding: 0.2857rem;
+  padding: 0.25rem;
 }
 .network-action__list tr:first-child td:first-child {
-  width: 1.1428rem;
+  width: 1rem;
 }
 
 .network-action__btn-refresh {
@@ -9674,7 +9686,7 @@ a.category_higlighted, a.tag_higlighted {
   height: 100%;
   margin: 0px 300px 0 0;
   position: relative;
-  padding-top: 1.1428rem;
+  padding-top: 1rem;
   width: auto;
   z-index: 1;
 }
@@ -9696,7 +9708,7 @@ a.category_higlighted, a.tag_higlighted {
   background-color: #fafafb;
   border-left: solid 1px #d1d4db;
   height: 100%;
-  padding: 1.1428rem;
+  padding: 1rem;
   position: fixed;
   right: 0;
   top: 0;
@@ -9706,12 +9718,12 @@ a.category_higlighted, a.tag_higlighted {
 .content-edit-actions,
 .content-edit-language,
 .content-edit-workflow {
-  margin-bottom: 1.7142rem;
+  margin-bottom: 1.5rem;
 }
 .content-edit-actions h3,
 .content-edit-language h3,
 .content-edit-workflow h3 {
-  margin-bottom: 0.5714rem;
+  margin-bottom: 0.5rem;
 }
 
 .content-edit-actions {
@@ -9729,7 +9741,7 @@ a.category_higlighted, a.tag_higlighted {
   border-bottom: solid 1px #c5c5c5;
   cursor: pointer;
   display: block;
-  padding: 0.5714rem;
+  padding: 0.5rem;
   text-decoration: none;
   transition: background-color 0.1s;
 }
@@ -9751,11 +9763,11 @@ a.category_higlighted, a.tag_higlighted {
 }
 .content-edit-workflow table td,
 .content-edit-workflow table th {
-  padding-bottom: 0.2857rem;
-  padding-top: 0.2857rem;
+  padding-bottom: 0.25rem;
+  padding-top: 0.25rem;
 }
 .content-edit-workflow table th {
-  padding-right: 0.5714rem;
+  padding-right: 0.5rem;
 }
 .content-edit-workflow table tr {
   border-bottom: solid 1px #d1d4db;
@@ -9771,12 +9783,12 @@ a.category_higlighted, a.tag_higlighted {
   text-align: center;
 }
 .content-edit__dialog-error ul {
-  margin: 0 0 1.1428rem;
+  margin: 0 0 1rem;
 }
 .content-edit__dialog-error ul li {
   list-style-position: outside;
   list-style-type: disc;
-  margin: 0 0 0.5714rem 1.1428rem;
+  margin: 0 0 0.5rem 1rem;
 }
 
 .content-edit__dialog-error-actions {
@@ -9800,10 +9812,10 @@ a.category_higlighted, a.tag_higlighted {
 .advanced-search-button {
   display: block;
   background: #d1d4db;
-  padding: 0.5714rem;
+  padding: 0.5rem;
   text-align: center;
   text-decoration: none;
-  margin: 1.1428rem -1.1428rem 0;
+  margin: 1rem -1rem 0;
 }
 
 .contentlet-results {
@@ -9831,11 +9843,11 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .content-search__key-fields {
-  margin-top: 0.2857rem;
+  margin-top: 0.25rem;
 }
 
 .content-search__import-content-form {
-  margin-top: 1.7142rem;
+  margin-top: 1.5rem;
 }
 
 .content-search__assign-workflow-form .dijitTextArea {
@@ -9874,11 +9886,11 @@ a.category_higlighted, a.tag_higlighted {
 .import-preview .import-preview__heading {
   background-color: #d1d4db;
   border-color: #d1d4db;
-  padding: 10px 1.1428rem;
+  padding: 10px 1rem;
   border-bottom: 1px solid #d1d4db;
 }
 .import-preview .import-preview__body {
-  padding: 1.1428rem;
+  padding: 1rem;
 }
 
 .content-type__edit-field-form {
@@ -9889,7 +9901,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 .content-type__fields-list-cell {
   flex: 1;
-  padding: 0.5714rem;
+  padding: 0.5rem;
   white-space: nowrap;
 }
 .content-type__fields-list-header, .content-type__fields-list-row {
@@ -9910,7 +9922,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .content-type__url-pattern-help {
-  margin-left: 1.1428rem;
+  margin-left: 1rem;
   vertical-align: -1px;
   cursor: pointer;
 }
@@ -9931,11 +9943,11 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .job-scheduler__host-list {
-  margin-top: 1.1428rem;
+  margin-top: 1rem;
 }
 
 .contentIdentifier {
-  margin: 0 0 0.5714rem;
+  margin: 0 0 0.5rem;
 }
 
 .formRow {
@@ -10019,7 +10031,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-roles__filter {
-  margin-bottom: 1.1428rem;
+  margin-bottom: 1rem;
 }
 
 .view-roles__heading {
@@ -10028,9 +10040,9 @@ a.category_higlighted, a.tag_higlighted {
   border: solid 1px #d1d4db;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 2.2856rem;
+  margin-bottom: 2rem;
   min-height: 50px;
-  padding: 0.5714rem;
+  padding: 0.5rem;
 }
 
 .view-roles__tree {
@@ -10043,18 +10055,18 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-roles__user-filter {
-  margin-bottom: 1.1428rem;
+  margin-bottom: 1rem;
   width: 300px;
 }
 
 .view-roles__user-grid {
-  margin-bottom: 0.5714rem;
+  margin-bottom: 0.5rem;
 }
 
 .view-roles__portlets-list {
   border: solid 1px #d1d4db;
   border-radius: 0.125rem;
-  margin: 0 0 0.5714rem;
+  margin: 0 0 0.5rem;
   height: 175px;
   overflow: auto;
 }
@@ -10065,7 +10077,7 @@ a.category_higlighted, a.tag_higlighted {
 .view-roles__portlets-list-item {
   display: flex;
   justify-content: space-between;
-  padding: 0.5714rem;
+  padding: 0.5rem;
   border-bottom: solid 1px #d1d4db;
   align-items: center;
 }
@@ -10100,7 +10112,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 .view-users .view-users__users-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell,
 .view-users .view-users__users-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
-  padding: 0.5714rem;
+  padding: 0.5rem;
 }
 
 .view-users__profile-tabs-container#userTabsContainer .dijitTabPaneWrapper {
@@ -10108,7 +10120,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-users__filter-form {
-  margin-bottom: 1.1428rem;
+  margin-bottom: 1rem;
 }
 
 .view-users__loading {
@@ -10126,43 +10138,43 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-user__add-contact {
-  margin-bottom: 1.1428rem;
+  margin-bottom: 1rem;
   text-align: right;
 }
 
 .view-user__buttonRow {
   padding-left: 146px;
-  margin-top: 1.1428rem;
+  margin-top: 1rem;
   text-align: left !important;
 }
 
 .view-users__additional-info .dojoxGrid {
-  margin-bottom: 1.1428rem;
+  margin-bottom: 1rem;
 }
 .view-users__additional-info .dojoxGridRowTable td:last-child {
   text-align: center;
 }
 .view-users__additional-info .view-user__form {
   border-bottom: solid 1px #d1d4db;
-  margin-bottom: 1.7142rem;
-  padding-bottom: 1.7142rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
 }
 
 .view-users__roles-container {
   display: flex;
-  gap: 0.5714rem;
+  gap: 0.5rem;
   align-items: center;
-  margin-bottom: 1.1428rem;
+  margin-bottom: 1rem;
 }
 .view-users__roles-container h4 {
   text-align: center;
-  margin-bottom: 0.5714rem;
+  margin-bottom: 0.5rem;
 }
 
 .view-users__roles-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.5714rem;
+  gap: 0.5rem;
 }
 
 .view-users__roles-to-grant,
@@ -10192,7 +10204,7 @@ a.category_higlighted, a.tag_higlighted {
 .fullUserName {
   font-size: 1.25rem;
   font-weight: bold;
-  margin-bottom: 0.5714rem;
+  margin-bottom: 0.5rem;
   padding-bottom: 0;
 }
 
@@ -10222,11 +10234,11 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-actions .container-fluid {
-  margin: 1.1428rem;
+  margin: 1rem;
 }
 .view-actions .container-fluid main.row {
   display: grid;
-  gap: 2.2857rem;
+  gap: 2rem;
   grid-template-columns: 1fr 1fr 15rem;
 }
 
@@ -10237,7 +10249,7 @@ a.category_higlighted, a.tag_higlighted {
   top: 10px;
 }
 .view-actions__back-btn .dijitButtonNode {
-  padding: 0 0.5714rem;
+  padding: 0 0.5rem;
 }
 .view-actions__back-btn .fa-level-up {
   transform: rotate(-90deg);
@@ -10246,7 +10258,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .view-actions__sub-actions .listingTable {
   width: 100%;
-  margin: 2.2856rem 0;
+  margin: 2rem 0;
 }
 .view-actions__sub-actions tr:first-child td {
   border-top: 1px solid #d1d4db;
@@ -10257,19 +10269,19 @@ a.category_higlighted, a.tag_higlighted {
 .view-actions__workflow-actions {
   position: relative;
   border-left: 1px solid #d1d4db;
-  padding-left: 1.7142rem;
+  padding-left: 1.5rem;
 }
 
 .view-actions__permissions h3,
 .view-actions__sub-actions h3 {
   background-color: #d1d4db;
   line-height: 40px;
-  padding-left: 1.1428rem;
-  margin-bottom: 2.2856rem;
+  padding-left: 1rem;
+  margin-bottom: 2rem;
 }
 .view-actions__permissions .row,
 .view-actions__sub-actions .row {
-  margin-bottom: 0.5714rem;
+  margin-bottom: 0.5rem;
 }
 
 .view-actions__workflow-actions {
@@ -10279,7 +10291,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .view-actions__arrow-right {
   position: absolute;
-  font-size: 1.1428rem;
+  font-size: 1rem;
   left: -7px;
   top: 10px;
   background: #ffffff;
@@ -10289,13 +10301,13 @@ a.category_higlighted, a.tag_higlighted {
 @media only screen and (max-width: 40em) {
   .view-actions__sub-actions .dijitComboBox {
     width: 80%;
-    margin-bottom: 1.1428rem;
+    margin-bottom: 1rem;
   }
 }
 .tag-manager__tags-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell:first-child,
 .tag-manager__tags-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell:first-child {
   width: 48px !important;
-  padding-left: 1.7142rem;
+  padding-left: 1.5rem;
 }
 
 .add-relationship dt {
@@ -10314,7 +10326,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .categories-selector__breadcrumbs,
 .categories-selector__toolbar {
-  margin-bottom: 1.1428rem;
+  margin-bottom: 1rem;
 }
 
 .categories-selector__breadcrumbs a {
@@ -10353,7 +10365,7 @@ a.category_higlighted, a.tag_higlighted {
   font-size: 1rem;
   height: 2.5rem;
   line-height: 2.5rem;
-  padding: 0px 1.7142rem;
+  padding: 0px 1.5rem;
   position: relative;
   text-decoration: none;
 }
@@ -10365,15 +10377,15 @@ a.category_higlighted, a.tag_higlighted {
   display: none;
 }
 .context-menu__item .arrowRightIcon {
-  font-size: 0.8571428571rem;
-  margin-top: -0.4285714286rem;
+  font-size: 0.75rem;
+  margin-top: -0.375rem;
   position: absolute;
-  right: 0.5714rem;
+  right: 0.5rem;
   top: 50%;
 }
 
 .edit-mode__side-nav .dijitTab {
-  padding: 0 1.1428rem;
+  padding: 0 1rem;
 }
 
 .file-selector-tree .selectableFile .thumbnail {
@@ -10410,7 +10422,7 @@ a.category_higlighted, a.tag_higlighted {
   cursor: pointer;
 }
 .file-selector-tree .selectableFile img {
-  margin-right: 0.2857rem;
+  margin-right: 0.25rem;
 }
 .file-selector-tree .portlet-main {
   display: block;
@@ -10428,7 +10440,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .file-selector-tree__pagination.portlet-pagination {
   background: #ffffff;
-  padding: 1.1428rem;
+  padding: 1rem;
   position: absolute;
   width: 100%;
   bottom: 0px;
@@ -10447,19 +10459,19 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .file-selector-tree__sidebar {
-  padding: 1.1428rem 0 1.1428rem 1.1428rem;
+  padding: 1rem 0 1rem 1rem;
 }
 .file-selector-tree__sidebar .dijitTreeContainer {
   float: none;
 }
 .file-selector-tree__sidebar .dijitTreeNode {
-  padding: 0.2857rem 0;
+  padding: 0.25rem 0;
 }
 
 .file-selector-tree__toolbar {
   background-color: #d1d4db;
   margin: 0;
-  padding: 1.1428rem;
+  padding: 1rem;
 }
 
 .file-selector-tree__views-menu {
@@ -10467,12 +10479,12 @@ a.category_higlighted, a.tag_higlighted {
   align-items: center;
 }
 .file-selector-tree__views-menu span {
-  margin-right: 0.2857rem;
+  margin-right: 0.25rem;
   font-weight: bold;
 }
 .file-selector-tree__views-menu img {
   cursor: pointer;
-  margin: 0 0.2857rem;
+  margin: 0 0.25rem;
 }
 
 .file-selector-tree__card-view {
@@ -10599,15 +10611,15 @@ a.category_higlighted, a.tag_higlighted {
   border: solid 1px #d1d4db;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1.1428rem;
-  padding: 0.5714rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
 }
 .permissions__bar-user-role [class$=Icon],
 .permissions__bar-user-role [class*=Icon] {
-  margin-right: 0.5714rem;
+  margin-right: 0.5rem;
 }
 .permissions__bar-user-role .inline-form {
-  margin-right: 2.2856rem;
+  margin-right: 2rem;
 }
 
 .permissions__bar-user-role-actions,
@@ -10619,17 +10631,17 @@ a.category_higlighted, a.tag_higlighted {
 .permissions__button-row {
   display: flex;
   justify-content: center;
-  margin-top: 1.1428rem;
+  margin-top: 1rem;
 }
 .permissions__button-row .applyChangesButton {
-  margin-right: 1.7142rem;
+  margin-right: 1.5rem;
 }
 .permissions__button-row .reset-permissions {
   vertical-align: middle;
-  line-height: 2.2856rem;
+  line-height: 2rem;
 }
 .permissions__button-row .checkbox {
-  margin-left: 1.1428rem;
+  margin-left: 1rem;
 }
 
 .permissionWrapper {
@@ -10642,7 +10654,7 @@ a.category_higlighted, a.tag_higlighted {
   padding: 0;
 }
 .permissionWrapper .dijitContentPane {
-  padding: 1.7142rem 0;
+  padding: 1.5rem 0;
   box-sizing: content-box;
 }
 
@@ -10652,14 +10664,14 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .permissionTableTitle .folderName {
-  padding-left: 0.5714rem;
+  padding-left: 0.5rem;
   text-align: left;
   vertical-align: middle;
   width: 20%;
 }
 .permissionTableTitle .folderName img {
   display: inline-block;
-  margin-right: 0.2857rem;
+  margin-right: 0.25rem;
   vertical-align: sub;
 }
 
@@ -10680,7 +10692,7 @@ a.category_higlighted, a.tag_higlighted {
 .permissionTableTitle td,
 .permissionTable td,
 .accordionEntry td {
-  padding: 0.2857rem;
+  padding: 0.25rem;
 }
 .permissionTableTitle th,
 .permissionTable th,
@@ -10692,7 +10704,7 @@ a.category_higlighted, a.tag_higlighted {
 .accordionEntry th.permissionType {
   width: 40%;
   font-weight: normal;
-  padding-left: 0.5714rem;
+  padding-left: 0.5rem;
   text-align: left;
 }
 .permissionTableTitle th.permissionTitle,
@@ -10728,7 +10740,7 @@ a.category_higlighted, a.tag_higlighted {
   background-color: white;
   border-bottom: 1px solid #d1d4db;
   margin: 0;
-  padding: 1.7142rem 1.1428rem 1.1428rem;
+  padding: 1.5rem 1rem 1rem;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -10747,7 +10759,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 .history .history__divider {
   background-color: #d1d4db;
-  margin: 1.7142rem 0;
+  margin: 1.5rem 0;
 }
 .history .history__status {
   overflow: hidden;
@@ -10969,13 +10981,13 @@ a.category_higlighted, a.tag_higlighted {
   cursor: pointer;
   min-height: 120px;
   min-width: 120px;
-  padding: 1.1428rem;
+  padding: 1rem;
   position: relative;
 }
 .thumbnailDivHover {
   border: solid 2px #afb3c0;
   box-sizing: content-box;
-  padding: 1.1428rem;
+  padding: 1rem;
   position: relative;
 }
 .thumbnailDivHover .editImageText {
@@ -10986,14 +10998,14 @@ a.category_higlighted, a.tag_higlighted {
   background: white;
   border-radius: 0.125rem;
   border: 1.5px solid #6c7389;
-  bottom: 0.5714rem;
+  bottom: 0.5rem;
   cursor: pointer;
   opacity: 0.5;
-  padding: 0 0.5714rem;
+  padding: 0 0.5rem;
   height: 2.5rem;
   line-height: calc(2.5rem - 3px);
   position: absolute;
-  right: 0.5714rem;
+  right: 0.5rem;
 }
 
 /*********
@@ -11038,7 +11050,7 @@ Resize Handle
 }
 
 #addFileAssetDialog .dijitComboBox {
-  margin-right: 0.5714rem;
+  margin-right: 0.5rem;
 }
 
 #search_form,
@@ -11048,8 +11060,8 @@ Resize Handle
 
 .dijitMenuItemSeparator {
   border-bottom: solid 1px #ebecef;
-  margin: 0 -0.5714rem;
-  padding: 0 0.5714rem;
+  margin: 0 -0.5rem;
+  padding: 0 0.5rem;
 }
 
 .api-link {
@@ -11076,7 +11088,7 @@ Resize Handle
 }
 #cell-actions a, .listingTable .listingTable__actions a, .content-type__cell-actions a, .job-scheduler__host-list-actions a, .license-manager__listing-action a {
   display: inline-block;
-  margin: 0 0.2857rem;
+  margin: 0 0.25rem;
   text-decoration: none;
 }
 
@@ -11102,8 +11114,8 @@ Resize Handle
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 1rem;
   line-height: 2.5rem;
-  padding-left: 0.5714rem;
-  padding-right: 0.5714rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 @font-face {
