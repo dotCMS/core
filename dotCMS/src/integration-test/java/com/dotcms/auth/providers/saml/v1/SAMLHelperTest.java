@@ -75,7 +75,7 @@ public class SAMLHelperTest extends IntegrationTestBase {
         }
 
         @Override
-        public void authentication(HttpServletRequest request, HttpServletResponse response, IdentityProviderConfiguration identityProviderConfiguration) {
+        public void authentication(HttpServletRequest request, HttpServletResponse response, IdentityProviderConfiguration identityProviderConfiguration, String relayState) {
 
         }
 
