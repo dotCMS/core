@@ -37,7 +37,7 @@
     </ng-template>
 
     <ng-container
-        *dotShowHideFeature="featureFlagSeo; alternate: disabledComponent"
+        *dotShowHideFeature="false; alternate: disabledComponent"
         [ngTemplateOutlet]="enabledComponent"></ng-container>
 
     <div class="dot-edit-content__wrapper">

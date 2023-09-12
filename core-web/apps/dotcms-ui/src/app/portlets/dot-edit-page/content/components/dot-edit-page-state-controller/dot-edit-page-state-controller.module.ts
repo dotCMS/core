@@ -8,7 +8,6 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
-import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -28,7 +27,7 @@ import { DotEditPageStateControllerComponent } from './dot-edit-page-state-contr
         DotMessagePipe,
         DotTabButtonsComponent,
         MenuModule,
-        DotShowHideFeatureDirective,
+
         DotContentletEditorModule
     ]
 })

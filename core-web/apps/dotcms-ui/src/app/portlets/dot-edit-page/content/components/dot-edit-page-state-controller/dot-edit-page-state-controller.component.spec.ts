@@ -17,7 +17,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
     DotAlertConfirmService,
@@ -152,8 +151,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 DotMessagePipe,
                 CommonModule,
                 FormsModule,
-                HttpClientTestingModule,
-                DotShowHideFeatureDirective
+                HttpClientTestingModule
             ]
         });
     }));

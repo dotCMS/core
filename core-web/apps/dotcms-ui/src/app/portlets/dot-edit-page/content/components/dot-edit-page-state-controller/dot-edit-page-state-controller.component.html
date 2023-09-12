@@ -1,4 +1,13 @@
-<ng-template #disabledComponent>
+<ng-container *ngIf="featureFlagEditURLContentMapIsOn; else defaultTabs">
+    <p-menu #menu [model]="menuItems" [popup]="true" appendTo="body"> </p-menu>
+    <dot-tab-buttons
+        [activeId]="mode"
+        [options]="options"
+        (openMenu)="handleMenuOpen($event)"
+        (clickOption)="stateSelectorHandler($event.target.value)"
+        data-testId="dot-tabs-buttons"></dot-tab-buttons>
+</ng-container>
+<ng-template #defaultTabs>
     <p-selectButton
         class="p-button-tabbed"
         [(ngModel)]="mode"
@@ -7,18 +16,6 @@
         optionValue="value.id"
         data-testId="selectButton"></p-selectButton>
 </ng-template>
-<ng-template #enabledComponent>
-    <p-menu #menu [model]="menuItems" [popup]="true" appendTo="body"> </p-menu>
-    <dot-tab-buttons
-        [activeId]="mode"
-        [options]="options"
-        (openMenu)="handleMenuOpen($event)"
-        (clickOption)="stateSelectorHandler($event.target.value)"
-        data-testId="dot-tabs-buttons"></dot-tab-buttons>
-</ng-template>
-<ng-container
-    *dotShowHideFeature="featureFlagEditURLContentMap; alternate: disabledComponent"
-    [ngTemplateOutlet]="enabledComponent"></ng-container>
 <ng-container *ngIf="!variant">
     <ng-container *ngIf="!variant">
         <p-inputSwitch
