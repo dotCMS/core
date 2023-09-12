@@ -65,7 +65,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
             cacheProviderAPI.init();
             try {
                 cacheTransport.init(APILocator.getServerAPI().getCurrentServer());
-            }catch (DotDataException e){
+            }catch (Exception e){
                 //do nothing since it fails due DB still doesn't exists
             }
         } catch (Exception e) {
@@ -79,7 +79,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
         Logger.info(this, "***\t Starting Cluster Setup");
         try {
             cacheTransport.init(APILocator.getServerAPI().getCurrentServer());
-        }catch (DotDataException e){
+        }catch (Exception e){
             //do nothing since it fails due DB still doesn't exists
         }
 
