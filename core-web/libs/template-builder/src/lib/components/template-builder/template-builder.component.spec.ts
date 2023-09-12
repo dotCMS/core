@@ -11,9 +11,16 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { DotContainersService, DotMessageService } from '@dotcms/data-access';
+import { DotContainersService, DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
-import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
+import {
+    containersMock,
+    CoreWebServiceMock,
+    DotContainersServiceMock,
+    LoginServiceMock,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
 
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotGridStackWidget, SCROLL_DIRECTION } from './models/models';
@@ -24,6 +31,7 @@ import {
     CONTAINER_MAP_MOCK,
     DOT_MESSAGE_SERVICE_TB_MOCK,
     FULL_DATA_MOCK,
+    INITIAL_STATE_MOCK,
     ROWS_MOCK
 } from './utils/mocks';
 
@@ -48,6 +56,7 @@ describe('TemplateBuilderComponent', () => {
     let store: DotTemplateBuilderStore;
     const mockContainer = containersMock[0];
     let dialog: DialogService;
+
     let openDialogMock: jest.SpyInstance;
 
     const createComponent = createComponentFactory({
@@ -77,7 +86,20 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: DotContainersService,
                 useValue: new DotContainersServiceMock()
-            }
+            },
+            {
+                provide: CoreWebService,
+                useClass: CoreWebServiceMock
+            },
+            {
+                provide: SiteService,
+                useClass: SiteServiceMock
+            },
+            {
+                provide: LoginService,
+                useClass: LoginServiceMock
+            },
+            DotEventsService
         ]
     });
 
@@ -99,6 +121,7 @@ describe('TemplateBuilderComponent', () => {
 
         store = spectator.inject(DotTemplateBuilderStore, true);
         dialog = spectator.inject(DialogService);
+
         openDialogMock = jest.spyOn(dialog, 'open');
         spectator.detectChanges();
     });
@@ -125,7 +148,7 @@ describe('TemplateBuilderComponent', () => {
         const totalBoxes = FULL_DATA_MOCK.rows.reduce((acc, row) => {
             return acc + row.columns.length;
         }, 0);
-        expect(spectator.queryAll(byTestId(/builder-box-\d+/g)).length).toBe(totalBoxes);
+        expect(spectator.queryAll(byTestId(/builder-box-\d+/)).length).toBe(totalBoxes);
     });
 
     it('should trigger removeColumn on store when triggering removeColumn', (done) => {
@@ -271,6 +294,36 @@ describe('TemplateBuilderComponent', () => {
         expect(deleteSectionMock).toHaveBeenCalledWith('footer');
     });
 
+    it("should emit changes with a not null layout when the theme is changed and layoutProperties or rows weren't touched", () => {
+        const templateBuilderActions = spectator.query(byTestId('template-builder-actions'));
+        const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+
+        spectator.dispatchFakeEvent(templateBuilderActions, 'selectTheme');
+
+        // This queries from the body
+        const templateBuilderThemeSelector = spectator.fixture.debugElement.parent.query(
+            By.css('dotcms-template-builder-theme-selector')
+        ).componentInstance;
+
+        templateBuilderThemeSelector.currentTheme = {
+            identifier: 'test-123'
+        };
+
+        templateBuilderThemeSelector.apply();
+
+        expect(layoutChangeMock).toHaveBeenCalledWith({
+            layout: {
+                body: FULL_DATA_MOCK,
+                header: true,
+                footer: true,
+                sidebar: null,
+                width: 'Mobile',
+                title: 'Test Title'
+            },
+            themeId: 'test-123'
+        });
+    });
+
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
@@ -278,6 +331,7 @@ describe('TemplateBuilderComponent', () => {
             spectator.detectChanges();
 
             store.setState({
+                ...INITIAL_STATE_MOCK,
                 rows: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
                 layoutProperties: {
                     header: true,
@@ -287,9 +341,7 @@ describe('TemplateBuilderComponent', () => {
                         location: 'left',
                         width: 'small'
                     }
-                },
-                resizingRowID: '',
-                containerMap: {}
+                }
             });
 
             store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {

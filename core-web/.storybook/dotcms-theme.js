@@ -13,7 +13,7 @@ export default create({
     appBorderRadius: 4,
 
     // Typography
-    fontBase: 'Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif',
+    fontBase: 'Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif',
     fontCode: 'Menlo, Monaco, Consolas',
 
     // Text colors
