@@ -75,7 +75,7 @@ export class DotTabButtonsComponent implements OnChanges {
      * @param event
      */
     onClickOption(event: CustomEvent) {
-        const { value } = event.target as CustomEventTarget;
+        const { value } = event.target;
 
         if (
             this._options.find(({ value: { id } }) => value.includes(id + this.OPEN_MENU))?.value
@@ -94,7 +94,7 @@ export class DotTabButtonsComponent implements OnChanges {
     showMenu(event: CustomEvent) {
         event.stopPropagation();
 
-        const { value } = event.target as CustomEventTarget;
+        const { value } = event.target;
 
         this._options = this._options.map((option) => {
             if (value.includes(option.value.id)) {
