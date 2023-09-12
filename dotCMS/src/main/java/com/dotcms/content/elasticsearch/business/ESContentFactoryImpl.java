@@ -58,14 +58,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -2641,12 +2634,60 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 
 
-	        if (UtilMethods.isSet(sortBy)) {
-	            result.setSortBy(translateQuerySortBy(sortBy, query));
-	        }
+            //Pad Numbers
+            final List<RegExMatch> numberMatches = RegEX.find(query, "(\\w+)\\.(\\w+):([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+$|\\.?[0-9]+$)");
+            if(numberMatches != null && numberMatches.size() > 0){
+                for (final RegExMatch numberMatch : numberMatches) {
+                    final List<Field> fields = FieldsCache.getFieldsByStructureVariableName(numberMatch.getGroups().get(0).getMatch());
+                    for (final Field field : fields) {
+                        if(field.getVelocityVarName().equalsIgnoreCase(numberMatch.getGroups().get(1).getMatch())){
+                            if (field.getFieldContentlet().startsWith("float")) {
+                                query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch(),
+                                        numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + NumberUtil.pad(Float.parseFloat(numberMatch.getGroups().get(2).getMatch())) + " ");
+                            }else if(field.getFieldContentlet().startsWith("integer")) {
+                                query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch(),
+                                        numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + NumberUtil.pad(Long.parseLong(numberMatch.getGroups().get(2).getMatch())) + " ");
+                            }else if(field.getFieldContentlet().startsWith("bool")) {
+                                final String oldSubQuery = numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch();
+                                final String oldFieldBooleanValue = oldSubQuery.substring(oldSubQuery.indexOf(":")+1,oldSubQuery.indexOf(":") + 2);
+                                String newFieldBooleanValue="";
+                                if(oldFieldBooleanValue.equals("1") || oldFieldBooleanValue.equals("true"))
+                                    newFieldBooleanValue = "true";
+                                else if(oldFieldBooleanValue.equals("0") || oldFieldBooleanValue.equals("false"))
+                                    newFieldBooleanValue = "false";
+                                query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch(),
+                                        numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + newFieldBooleanValue + " ");
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (UtilMethods.isSet(sortBy)) {
+                result.setSortBy(translateQuerySortBy(sortBy, query));
+            }
 	        
 	        // DOTCMS-6247
 	        query = lowercaseStringExceptMatchingTokens(query, LUCENE_RESERVED_KEYWORDS_REGEX);
+
+            //Pad NumericalRange Numbers
+            final List<RegExMatch> numberRangeMatches = RegEX.find(query, "(\\w+)\\.(\\w+):\\[(([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+) to ([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+))\\]");
+            if(numberRangeMatches != null && numberRangeMatches.size() > 0){
+                for (final RegExMatch numberMatch : numberRangeMatches) {
+                    final List<Field> fields = FieldsCache.getFieldsByStructureVariableName(numberMatch.getGroups().get(0).getMatch());
+                    for (final Field field : fields) {
+                        if(field.getVelocityVarName().equalsIgnoreCase(numberMatch.getGroups().get(1).getMatch())){
+                            if (field.getFieldContentlet().startsWith("float")) {
+                                query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + numberMatch.getGroups().get(3).getMatch() + " to " + numberMatch.getGroups().get(4).getMatch() +"]",
+                                        numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + NumberUtil.pad(Float.parseFloat(numberMatch.getGroups().get(3).getMatch())) + " TO " + NumberUtil.pad(Float.parseFloat(numberMatch.getGroups().get(4).getMatch())) + "]");
+                            }else if(field.getFieldContentlet().startsWith("integer")) {
+                                query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + numberMatch.getGroups().get(3).getMatch() + " to " + numberMatch.getGroups().get(4).getMatch() +"]",
+                                        numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + NumberUtil.pad(Long.parseLong(numberMatch.getGroups().get(3).getMatch())) + " TO " + NumberUtil.pad(Long.parseLong(numberMatch.getGroups().get(4).getMatch())) + "]");
+                            }
+                        }
+                    }
+                }
+            }
 
 
 	        result.setQuery(query.trim());
