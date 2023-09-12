@@ -1,7 +1,97 @@
 @use "variables" as *;
 
-.binary-field__code-editor {
-    border: 1px solid $input-border-color;
-    display: block;
-    height: 25rem;
+.binary-field {
+    &__container {
+        display: flex;
+        width: 100%;
+        gap: 1rem;
+        border-radius: $border-radius-md;
+        border: 1px solid $color-palette-gray-300;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    &__helper {
+        &-icon {
+            color: $color-palette-gray-600;
+        }
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 0.5rem;
+        color: $color-palette-gray-700;
+        font-weight: 14px;
+    }
+
+    &__actions {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        justify-content: center;
+        align-items: flex-start;
+
+        ::ng-deep .binary-field__button {
+            .p-button-label {
+                color: $black;
+            }
+
+            .p-button-icon {
+                color: $color-palette-secondary-500;
+            }
+        }
+    }
+
+    &__drop-zone {
+        border: 1px dashed $input-border-color;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 10rem;
+        border-radius: $border-radius-md;
+        user-select: none;
+        cursor: default;
+        flex-grow: 1;
+
+        &-link {
+            text-decoration: underline;
+            cursor: pointer;
+            color: $color-palette-primary-500;
+        }
+
+        &-icon {
+            color: $color-palette-secondary-500;
+            border-radius: 50%;
+            padding: 1rem;
+            background: $color-palette-secondary-200;
+        }
+
+        &--active {
+            border-radius: $border-radius-md;
+            border: 1.5px dashed $color-palette-secondary-500;
+            background: var(--White, #fff);
+            box-shadow: 0px 10px 18px 0px rgba(20, 21, 26, 0.1),
+                0px 0px 4px 0px rgba(20, 21, 26, 0.06);
+        }
+
+        dot-drop-zone {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+        }
+    }
+
+    &__input {
+        display: none;
+    }
+
+    &__code-editor {
+        border: 1px solid $input-border-color;
+        display: block;
+        height: 25rem;
+    }
 }

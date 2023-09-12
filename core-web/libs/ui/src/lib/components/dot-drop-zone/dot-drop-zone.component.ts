@@ -31,6 +31,7 @@ export interface DropZoneFileValidity {
 export class DotDropZoneComponent {
     @Output() fileDropped = new EventEmitter<DropZoneFileEvent>();
     @Output() fileDragEnter = new EventEmitter<boolean>();
+    @Output() fileDragOver = new EventEmitter<boolean>();
     @Output() fileDragLeave = new EventEmitter<boolean>();
 
     @Input() maxFileSize: number;
@@ -87,6 +88,7 @@ export class DotDropZoneComponent {
         // Prevent the default behavior to allow drop
         event.stopPropagation();
         event.preventDefault();
+        this.fileDragOver.emit(true);
     }
 
     @HostListener('dragleave', ['$event'])

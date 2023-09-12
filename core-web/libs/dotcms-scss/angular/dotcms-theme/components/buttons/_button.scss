@@ -59,6 +59,13 @@
     &.p-button-secondary {
         @extend #main-secondary-severity;
     }
+
+    // Button Links
+    &.p-button-link {
+        color: $color-palette-primary;
+        background: transparent;
+        border: transparent;
+    }
 }
 
 // Severity for outlined button

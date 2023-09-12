@@ -1,7 +1,37 @@
-<p-button (click)="showCodeEditor()" data-testId="code-button">{{ labelCode }}</p-button>
+<div class="binary-field__container">
+    <div class="binary-field__drop-zone" [ngClass]="{ 'binary-field__drop-zone--active': active }">
+        <dot-drop-zone
+            (fileDragOver)="setActiveState(true)"
+            (fileDragLeave)="setActiveState(false)"
+            (fileDropped)="setActiveState(false)">
+            <div class="binary-field__drop-zone-icon">
+                <i class="pi pi-upload" style="font-size: 2rem"></i>
+            </div>
 
-<p-dialog [(visible)]="visible" [style]="{ width: '80rem' }" [header]="labelCode">
-    <ngx-monaco-editor
-        class="binary-field__code-editor"
-        data-testId="code-editor"></ngx-monaco-editor>
-</p-dialog>
+            <span class="binary-field__text"
+                >Drag and Drop or
+                <span class="binary-field__drop-zone-link" (click)="openFileSelector()"
+                    >Choose File</span
+                >
+                to upload</span
+            >
+        </dot-drop-zone>
+        <input class="binary-field__input" #inputFile type="file" />
+    </div>
+
+    <div class="binary-field__actions">
+        <p-button
+            label="Import from URL"
+            styleClass="p-button-link binary-field__button"
+            icon="pi pi-link"></p-button>
+        <p-button
+            label="Create New File"
+            styleClass="p-button-link binary-field__button"
+            icon="pi pi-code"></p-button>
+    </div>
+</div>
+
+<div class="binary-field__helper">
+    <i class="pi pi-info-circle binary-field__helper-icon"></i>
+    <span>This is an example of a helper</span>
+</div>

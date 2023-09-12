@@ -198,6 +198,16 @@ describe('DotDropZoneComponent', () => {
     });
 
     describe('onDragOver', () => {
+        it('should emit fileDragOver event', () => {
+            const spy = spyOn(spectator.component.fileDragOver, 'emit');
+            const event = new DragEvent('dragover');
+
+            spectator.component.onDragEnter(event);
+            spectator.detectChanges();
+
+            expect(spy).toHaveBeenCalledWith(true);
+        });
+
         it('should prevent default', () => {
             const event = new DragEvent('dragover');
             const spyEventPrevent = spyOn(event, 'preventDefault');
