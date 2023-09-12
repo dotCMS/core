@@ -335,10 +335,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         final Set<String> personalizationsForPagVariant = getPersonalizationsForPageInner(page, variantName);
         Set<String> personalizationsForPagDefault = Collections.emptySet();
 
-        if (!VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
-            personalizationsForPagDefault = getPersonalizationsForPageInner(page, VariantAPI.DEFAULT_VARIANT.name());
-        }
-
         return Stream.concat(personalizationsForPagVariant.stream(),
                         personalizationsForPagDefault.stream())
                 .collect(Collectors.toSet());
