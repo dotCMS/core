@@ -39,8 +39,7 @@ import { DotDropZoneComponent } from '../../dot-drop-zone.component';
                 [accept]="accept"
                 [maxFileSize]="maxFileSize"
                 formControlName="file"
-                dotDropZoneValueAccessor
-            >
+                dotDropZoneValueAccessor>
                 <div class="dot-drop-zone__content" id="dot-drop-zone__content">
                     Drop files here.
 

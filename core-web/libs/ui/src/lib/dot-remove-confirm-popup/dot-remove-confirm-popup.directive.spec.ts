@@ -32,7 +32,7 @@ describe('DotRemoveConfirmPopupWithEscape', () => {
     });
 
     it('should close the confirmPopup with escape', () => {
-        jest.spyOn(confirmationService, 'close');
+        spyOn(confirmationService, 'close');
         spectator.dispatchKeyboardEvent(document, 'keydown', 'Escape');
         expect(confirmationService.close).toHaveBeenCalledTimes(1);
     });
