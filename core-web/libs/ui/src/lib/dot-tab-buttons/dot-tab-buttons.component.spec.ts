@@ -34,7 +34,8 @@ describe('DotTabButtonsComponent', () => {
         spectator = createComponent({
             props: {
                 options: optionsMock,
-                mode: DotPageMode.PREVIEW
+                mode: DotPageMode.PREVIEW,
+                dotTabsIcon: 'pi-angle-down'
             }
         });
     });
@@ -90,14 +91,20 @@ describe('DotTabButtonsComponent', () => {
     });
 
     it('should toggle icon', () => {
-        expect(spectator.component.icon).toEqual('pi pi-angle-down');
+        const dotTabsIcon = spectator.queryAll(byTestId('dot-tab-icon'));
 
-        spectator.component.toggle = true;
-        spectator.component.toggleIcon();
-        expect(spectator.component.icon).toEqual('pi pi-angle-up');
+        spectator.setInput({
+            dotTabsIcon: 'pi-angle-up'
+        });
+        spectator.detectChanges();
+        expect(dotTabsIcon).toHaveClass('dot-tab-dropdown__icon pi pi-angle-up');
 
-        spectator.component.toggle = false;
-        spectator.component.toggleIcon();
-        expect(spectator.component.icon).toEqual('pi pi-angle-down');
+        spectator.setInput({
+            dotTabsIcon: 'pi-angle-down'
+        });
+
+        spectator.fixture.detectChanges();
+
+        expect(dotTabsIcon).toHaveClass('pi-angle-down');
     });
 });
