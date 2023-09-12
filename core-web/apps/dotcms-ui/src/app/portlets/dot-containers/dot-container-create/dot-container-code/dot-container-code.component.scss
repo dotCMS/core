@@ -74,8 +74,12 @@
         border-bottom: 2px solid $color-palette-secondary-500;
     }
 
-    .p-tabview .p-tabview-nav li:first-child .p-tabview-nav-link {
-        border: none !important;
+    .p-tabview
+        .p-tabview-nav
+        li:not(.p-highlight):not(.p-disabled):hover:first-child
+        .p-tabview-nav-link {
+        border-bottom: none;
+        background: $color-palette-primary-500;
     }
 
     .p-tabview .p-tabview-nav li .p-tabview-nav-link {
