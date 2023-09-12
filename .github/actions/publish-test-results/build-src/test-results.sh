@@ -206,7 +206,7 @@ function persistBranchResults {
 
   # Resolve test results fully
   local test_results_repo_url=$(resolveRepoUrl ${INPUT_TESTS_RESULTS_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
-  local test_results_path=$(resolveTestResultsBase ${BUILD_ID})
+  local test_results_path=$(resolveTestResultsBase ${build_id})
 
   # Query for remote branch
   gitRemoteLs ${test_results_repo_url} ${build_id}

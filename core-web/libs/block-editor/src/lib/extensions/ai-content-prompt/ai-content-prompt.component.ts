@@ -1,7 +1,7 @@
 import { of } from 'rxjs';
 
 import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { catchError } from 'rxjs/operators';
 
@@ -27,7 +27,7 @@ export class AIContentPromptComponent {
         textPrompt: new FormControl('', Validators.required)
     });
 
-    constructor(private fb: FormBuilder, private aiContentService: AiContentService) {}
+    constructor(private aiContentService: AiContentService) {}
 
     onSubmit() {
         this.isFormSubmitting = true;

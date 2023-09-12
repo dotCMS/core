@@ -46,7 +46,8 @@
             *ngIf="pageState.seoMedia; else dotEditIframe"
             [seoOGTagsResults]="seoOGTagsResults"
             [seoOGTags]="seoOGTags"
-            [hostName]="pageState.page.title"></dot-results-seo-tool>
+            [hostName]="pageState.page.hostName"
+            [seoMedia]="pageState.seoMedia"></dot-results-seo-tool>
         <ng-template #dotEditIframe>
             <div
                 class="dot-edit__page-wrapper"

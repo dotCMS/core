@@ -6,16 +6,32 @@ You can build at the top level to build all projects
 To run individual services or quarkus dev mode cd to the module you want to run
 making sure that dependencies have been installed first 
 
-```shell script
-# from top level to build all
-./mvnw clean install
+For running DotCMS CLI tests you need a whole backend environment compose by PostgreSQL database, Elasticsearch service and DotCMS instance. By default, tests are running using Testcontainers, although you can also disable containers and provide your own environment backend.
+
+Before running tests, you need to set up the following environment variable:
+
+```shell
+# License file path is required to run tests (mandatory).
+export DOTCMS_LICENSE_FILE=license_file_path.dat
 ```
+And then you can run the build command, it will run all the tests, and it will install all the dependencies:
+```shell script
+# From top level to build all.
+./mvnw -U clean install
+```
+In case we need to debug locally against a specific branch or revise the information stored in a local database, we can disable the Testcontainers as follow:
+
+```shell script
+# NOTE: If you disable the Testcontainers, you must provide the backend environment.
+./mvnw -U clean install -Dtestcontainers.enabled=false
+```
+
 
 Skipping tests
 
 ```shell script
-# from top level to build all
-./mvnw clean install -Dmaven.test.skip=true
+# From top level to build all.
+./mvnw clean install -DskipTests=true
 ```
 
 ### To run cli.
@@ -26,11 +42,11 @@ First Start a dotCMS instance locally
 
 To run example API in dev mode
 ```shell script
-# from top level to build all
+# From top level to build all.
 cd cli
-./mvnw quarkus:dev
+../mvnw quarkus:dev
 ```
-NOTE:  To reduce duplication in the multi-module project mvnw is not included in each submodule. 
+**NOTE:**  To reduce duplication in the multi-module project mvnw is not included in each submodule. 
 The quarkus command finds the executable
 
 To run mvnw from a submodule just use a relative path to the parent mvn
@@ -40,17 +56,17 @@ Alternatively you can specify the sub project from the parent folder
 ```shell script
 # from top level to build all
 cd cli
-# command is same as the following to run the quarkus build plugin
+# The command is same as the following to run the quarkus build plugin
 # ../mvnw quarkus:dev 
-./mvnw -pl cli quarkus:dev
+../mvnw -pl cli quarkus:dev
 ```
 
 quarkus:dev can only run a single project, but for other maven options you can choose to work out the dependencies to build and skip unrelated submodules
 this uses the --am (also make) option.  In this way with the cli module will build the api-data-model but not build the rest-api module
 
 ```shell script
-# from top level to build all
-# command is same as the following to run the quarkus build plugin
+# From top level to build all
+# The command is same as the following to run the quarkus build plugin
 # ../mvnw quarkus:dev 
 ./mvnw -pl cli --am install
 ```
@@ -101,6 +117,9 @@ https://quarkus.io/guides/config-reference
 
 https://quarkus.io/get-started/
 
+## Testing
+[Testcontainers](http://testcontainers.com/getting-started/) is a library that provides easy and lightweight APIs for bootstrapping local development and test dependencies with real services wrapped in Docker containers. Using Testcontainers, you can write tests that depend on the same services you use in production without mocks or in-memory services.
+
 ---
 
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
@@ -120,6 +139,11 @@ You can run your application in dev mode that enables live coding using:
 
 The application can be packaged using:
 ```shell script
+# Before packaging, make sure to provide the license file path. 
+# Which one is mandatory to run the tests application.
+
+export DOTCMS_LICENSE_FILE=license_file_path.dat
+
 ./mvnw package
 ```
 It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
@@ -129,13 +153,18 @@ The application is now runnable using `java -jar target/quarkus-app/quarkus-run.
 
 If you want to build an _über-jar_, execute the following command:
 ```shell script
+# Before packaging, make sure to provide the license file path. 
+# Which one is mandatory to run the tests application.
+
+export DOTCMS_LICENSE_FILE=license_file_path.dat
+
 ./mvnw package -Dquarkus.package.type=uber-jar
 ```
 
 Skipping tests
 
 ```shell script
-./mvnw package -Dquarkus.package.type=uber-jar -Dmaven.test.skip=true
+./mvnw package -Dquarkus.package.type=uber-jar -DskipTests=true
 ```
 
 The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
@@ -144,18 +173,28 @@ The application, packaged as an _über-jar_, is now runnable using `java -jar ta
 
 You can create a native executable using: 
 ```shell script
+# Before packaging, make sure to provide the license file path. 
+# Which one is mandatory to run the tests application.
+
+export DOTCMS_LICENSE_FILE=license_file_path.dat
+
 ./mvnw package -Pnative
 ```
 
 Or, if you don't have GraalVM installed, you can run the native executable build in a container using: 
 ```shell script
+# Before packaging, make sure to provide the license file path. 
+# Which one is mandatory to run the tests application.
+
+export DOTCMS_LICENSE_FILE=license_file_path.dat
+
 ./mvnw package -Pnative -Dquarkus.native.container-build=true
 ```
 
 Skipping tests
 
 ```shell script
-./mvnw package -Pnative -Dquarkus.native.container-build=true -Dmaven.test.skip=true
+./mvnw package -Pnative -Dquarkus.native.container-build=true -DskipTests=true
 ```
 
 You can then execute your native executable with: `./target/code-with-quarkus-1.0.0-SNAPSHOT-runner`
@@ -172,12 +211,12 @@ Easily start your Reactive RESTful Web Services
 
 ## Logging
 
-When running the CLI, a **_dotcms-cli.log_** file will be created at the directory where the CLI
-executable is run from.
+When running the CLI, a **_dotcms-cli.log_** file will be created in the directory where the CLI
+executable is run.
 
 #### File log level
 
-To increase the file log level to _DEBUG_ when running in dev mode use the following command
+To increase the file log level to _DEBUG_ when running in dev mode, use the following command:
 
 ```shell
 ./mvnw quarkus:dev -Dquarkus.log.file.level=DEBUG
@@ -185,8 +224,29 @@ To increase the file log level to _DEBUG_ when running in dev mode use the follo
 
 #### Console log level
 
-To increase the console log level to _DEBUG_ when running in dev mode use the following command
+To increase the console log level to _DEBUG_ when running in dev mode, use the following command:
 
 ```shell
 ./mvnw quarkus:dev -Dquarkus.log.handler.console.\"DOTCMS_CONSOLE\".level=DEBUG
+```
+
+#### File log location
+
+To override the default location of the log file, you have two options:
+
+##### 1. Set the environment variable
+
+Example:
+
+```shell
+export QUARKUS_LOG_FILE_PATH=/Users/my-user/CLI/dotcms-cli.log
+java -jar cli-1.0.0-SNAPSHOT-runner.jar login -u admin@dotcms.com -p admin
+```
+
+##### 2. Set the system property
+
+Example:
+
+```shell
+./mvnw quarkus:dev -Dquarkus.log.file.path=/Users/my-user/CLI/dotcms-cli.log
 ```
