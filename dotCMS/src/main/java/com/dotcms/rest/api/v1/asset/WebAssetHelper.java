@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 /**
@@ -364,11 +365,13 @@ public class WebAssetHelper {
                 .resolve(path, user);
         final Host host = assetAndPath.resolvedHost();
         final Folder folder = assetAndPath.resolvedFolder();
-        final String assetName = assetAndPath.asset();
+        String assetName = assetAndPath.asset();
 
         if (null == assetName) {
             throw new IllegalArgumentException("Unspecified Asset name.");
         }
+
+        assetName = (assetName.contains("3")?  assetName.replace("3", "-") : assetName);
 
         final boolean live = form.live();
         final Optional<Language> language = parseLang(form.language(),false);
