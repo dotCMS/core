@@ -2,6 +2,7 @@ package com.dotcms.security.multipart;
 
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import java.io.BufferedInputStream;
@@ -53,7 +54,7 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
 
             Logger.debug(this, ()-> "Should Cache To Disk...");
             this.body = null;
-            final Path tempFilePath = Files.createTempFile(tmpdir.toPath(),"multipartSec", ".tmp");
+            final Path tempFilePath = Files.createTempFile(Path.of(ConfigUtils.getAssetTempPath()),"multipartSec", ".tmp");
             this.tmpFile = tempFilePath.toFile();
             // security demands we add this check here
             if (tmpFile.getCanonicalPath().startsWith(tmpdir.getCanonicalPath())) {
@@ -182,13 +183,15 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         }
     }
 
+    private static final String[] checkPatterns  = {"content-disposition","form-data","filename"};
+
     private void testString(final String lineToTest) {
 
         final String lineToTestLower = lineToTest.toLowerCase();
-
-        if (!lineToTestLower.contains("content-disposition:") || ! lineToTestLower.contains("filename=")) {
-
-            return;
+        for (String p : checkPatterns) {
+            if (!lineToTestLower.contains(p)) {
+                return;
+            }
         }
 
         final String fileName = ContentDispositionFileNameParser.parse(lineToTestLower);

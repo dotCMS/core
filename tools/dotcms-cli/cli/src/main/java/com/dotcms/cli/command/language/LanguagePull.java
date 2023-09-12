@@ -56,8 +56,15 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
     @Parameters(index = "0", arity = "1", paramLabel = "idOrIso", description = "Language Id or ISO Code.")
     String languageIdOrIso;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
             final Language language = findExistingLanguage(languageIdOrIso);
             final ObjectMapper objectMapper = formatOption.objectMapper();
 

@@ -13,6 +13,7 @@ import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.LogTime;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -458,10 +459,18 @@ public class ContentletAjax {
 	    return searchContentlets(structureInode,fields,categories,showDeleted,filterSystemHost,filterUnpublish,filterLocked,page,0,orderBy,modDateFrom,modDateTo);
 	}
 
-	@SuppressWarnings("rawtypes")
+	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
+			boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
+			String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+		return searchContentlets(structureInode, fields, categories, showDeleted, filterSystemHost,
+				filterUnpublish, filterLocked, page, perPage, orderBy, modDateFrom, modDateTo,
+				VariantAPI.DEFAULT_VARIANT.name());
+	}
+
+		@SuppressWarnings("rawtypes")
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
 	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
-	        String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	        String modDateTo, final String variantName) throws DotStateException, DotDataException, DotSecurityException {
 
 		HttpSession sess = WebContextFactory.get().getSession();
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -475,16 +484,25 @@ public class ContentletAjax {
 		}
 
 		return searchContentletsByUser(ImmutableList.of(BaseContentType.ANY), structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
-		        page, orderBy, perPage,currentUser, sess, modDateFrom, modDateTo);
+		        page, orderBy, perPage,currentUser, sess, modDateFrom, modDateTo, variantName);
+	}
+
+	public List searchContentlets(String[] structureInodes, List<String> fields, List<String> categories, boolean showDeleted,
+			boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
+			String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+		String structureInodesJoined = String.join(CONTENT_TYPES_INODE_SEPARATOR, structureInodes);
+
+		return searchContentlets(structureInodesJoined, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
+				page, perPage, orderBy, modDateFrom, modDateTo, VariantAPI.DEFAULT_VARIANT.name());
 	}
 
 	public List searchContentlets(String[] structureInodes, List<String> fields, List<String> categories, boolean showDeleted,
 								  boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
-								  String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+								  String modDateTo, final String variantName) throws DotStateException, DotDataException, DotSecurityException {
 		String structureInodesJoined = String.join(CONTENT_TYPES_INODE_SEPARATOR, structureInodes);
 
 		return searchContentlets(structureInodesJoined, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
-				page, perPage, orderBy, modDateFrom, modDateTo);
+				page, perPage, orderBy, modDateFrom, modDateTo, variantName);
 	}
 
 	/**
@@ -518,6 +536,17 @@ public class ContentletAjax {
 
 		return new ArrayList<>(collectionIndexMap.values());
 	 }
+
+	public List searchContentletsByUser(List<BaseContentType> types, String structureInode,
+			List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost,
+			boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage,
+			final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo)
+			throws DotStateException, DotDataException, DotSecurityException {
+		return searchContentletsByUser(types, structureInode, fields, categories, showDeleted, filterSystemHost,
+				filterUnpublish, filterLocked, page, orderBy, perPage, currentUser, sess, modDateFrom, modDateTo,
+				VariantAPI.DEFAULT_VARIANT.name());
+	}
+
 	/**
 	 * This method is used by the back-end to pull the content from the Lucene
 	 * index and also checks the user permissions to see the content.
@@ -559,7 +588,12 @@ public class ContentletAjax {
 	 */
 	@SuppressWarnings("rawtypes")
 	@LogTime
-	public List searchContentletsByUser(List<BaseContentType> types, String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	public List searchContentletsByUser(List<BaseContentType> types, String structureInode,
+			List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost,
+			boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage,
+			final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo, final String variantName)
+				throws DotStateException, DotDataException, DotSecurityException {
+
         if (perPage < 1) {
           perPage = Config.getIntProperty("PER_PAGE", 40);
         }
@@ -976,7 +1010,7 @@ public class ContentletAjax {
 		lastSearchMap.put("orderBy", orderBy);
 
 		luceneQuery.append(" +working:true");
-		luceneQuery.append(" +variant:default");
+		luceneQuery.append(" +" + ESMappingConstants.VARIANT + ":" + variantName);
         final String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
 
 		//Executing the query

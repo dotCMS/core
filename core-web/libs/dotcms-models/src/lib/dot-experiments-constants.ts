@@ -46,6 +46,10 @@ export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
         value: DotExperimentStatus.DRAFT
     },
     {
+        label: 'scheduled',
+        value: DotExperimentStatus.SCHEDULED
+    },
+    {
         label: 'running',
         value: DotExperimentStatus.RUNNING
     },
@@ -56,10 +60,6 @@ export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
         label: 'archived',
         value: DotExperimentStatus.ARCHIVED
-    },
-    {
-        label: 'scheduled',
-        value: DotExperimentStatus.SCHEDULED
     }
 ];
 
@@ -285,3 +285,5 @@ export enum HealthStatusTypes {
     NOT_CONFIGURED = 'NOT_CONFIGURED',
     CONFIGURATION_ERROR = 'CONFIGURATION_ERROR'
 }
+
+export const RUNNING_UNTIL_DATE_FORMAT = 'EEE, LLL dd, Y';

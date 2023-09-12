@@ -54,8 +54,15 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>, 
     @CommandLine.Parameters(index = "0", arity = "1", description = " The json/yaml formatted Site descriptor file to be pushed. ")
     File siteFile;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         return push();
     }
 

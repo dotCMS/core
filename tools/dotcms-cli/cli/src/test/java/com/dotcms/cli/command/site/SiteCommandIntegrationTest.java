@@ -381,7 +381,7 @@ class SiteCommandIntegrationTest extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
-                    "--interactive=false");
+                    "--non-interactive");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final String[] lines = output.split(System.lineSeparator());

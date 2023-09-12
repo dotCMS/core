@@ -30,9 +30,9 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
     private visibility = false;
     private icons = {
         loading: 'loading',
-        success: 'check_circle',
-        error: 'error',
-        warning: 'warning'
+        success: 'pi pi-check-circle',
+        error: 'pi pi-exclamation-circle',
+        warning: 'pi pi-exclamation-triangle'
     };
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -53,7 +53,7 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
             .subscribe((event: DotEvent<DotGlobalMessage>) => {
                 this.message = event.data;
                 this.visibility = true;
-                this.message.type = this.icons[this.message.type] || '';
+                this.message.icon = this.icons[this.message.type] || '';
 
                 if (this.message.life) {
                     setTimeout(() => {

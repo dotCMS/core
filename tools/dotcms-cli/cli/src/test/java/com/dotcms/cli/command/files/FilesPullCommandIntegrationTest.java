@@ -88,7 +88,8 @@ class FilesPullCommandIntegrationTest extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
-            final int status = commandLine.execute(FilesCommand.NAME, FilesPull.NAME, path, tempFolder.toString());
+            final int status = commandLine.execute(FilesCommand.NAME, FilesPull.NAME, path,
+                    "--workspace", tempFolder.toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
@@ -106,7 +107,8 @@ class FilesPullCommandIntegrationTest extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String path = String.format("//%s/", "default");
-            final int status = commandLine.execute(FilesCommand.NAME, FilesPull.NAME, path, tempFolder.toString());
+            final int status = commandLine.execute(FilesCommand.NAME, FilesPull.NAME, path,
+                    "--workspace", tempFolder.toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
@@ -114,7 +116,7 @@ class FilesPullCommandIntegrationTest extends CommandTest {
     }
 
     @Test
-    void Test_Command_Files_Pull_Option_Recursive() throws IOException {
+    void Test_Command_Files_Pull_Option_Preserve() throws IOException {
 
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
@@ -125,7 +127,7 @@ class FilesPullCommandIntegrationTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "-r");
+                    FilesPull.NAME, path, "--workspace", tempFolder.toString(), "-p");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
@@ -133,7 +135,7 @@ class FilesPullCommandIntegrationTest extends CommandTest {
     }
 
     @Test
-    void Test_Command_Files_Pull_Option_Recursive2() throws IOException {
+    void Test_Command_Files_Pull_Option_Preserve2() throws IOException {
 
         // Create a temporal folder for the pull
         var tempFolder = createTempFolder();
@@ -144,121 +146,7 @@ class FilesPullCommandIntegrationTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "--recursive");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-        } finally {
-            deleteTempDirectory(tempFolder);
-        }
-    }
-
-    @Test
-    void Test_Command_Files_Pull_Option_Recursive3() throws IOException {
-
-        // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
-
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final String path = String.format("//%s", "default");
-            final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "-r", "false");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-        } finally {
-            deleteTempDirectory(tempFolder);
-        }
-    }
-
-    @Test
-    void Test_Command_Files_Pull_Option_Recursive4() throws IOException {
-
-        // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
-
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final String path = String.format("//%s", "default");
-            final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "--recursive", "false");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-        } finally {
-            deleteTempDirectory(tempFolder);
-        }
-    }
-
-    @Test
-    void Test_Command_Files_Pull_Option_Override() throws IOException {
-
-        // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
-
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final String path = String.format("//%s", "default");
-            final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "-o");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-        } finally {
-            deleteTempDirectory(tempFolder);
-        }
-    }
-
-    @Test
-    void Test_Command_Files_Pull_Option_Override2() throws IOException {
-
-        // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
-
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final String path = String.format("//%s", "default");
-            final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "--override");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-        } finally {
-            deleteTempDirectory(tempFolder);
-        }
-    }
-
-    @Test
-    void Test_Command_Files_Pull_Option_Override3() throws IOException {
-
-        // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
-
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final String path = String.format("//%s", "default");
-            final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "-o", "false");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-        } finally {
-            deleteTempDirectory(tempFolder);
-        }
-    }
-
-    @Test
-    void Test_Command_Files_Pull_Option_Override4() throws IOException {
-
-        // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
-
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final String path = String.format("//%s", "default");
-            final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "--override", "true");
+                    FilesPull.NAME, path, "--workspace", tempFolder.toString(), "--preserve");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
@@ -277,7 +165,7 @@ class FilesPullCommandIntegrationTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "-ie");
+                    FilesPull.NAME, path, "--workspace", tempFolder.toString(), "-ie");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
@@ -296,45 +184,8 @@ class FilesPullCommandIntegrationTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "--includeEmptyFolders");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-        } finally {
-            deleteTempDirectory(tempFolder);
-        }
-    }
-
-    @Test
-    void Test_Command_Files_Pull_Option_Include_Empty3() throws IOException {
-
-        // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
-
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final String path = String.format("//%s", "default");
-            final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "-ie", "false");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-        } finally {
-            deleteTempDirectory(tempFolder);
-        }
-    }
-
-    @Test
-    void Test_Command_Files_Pull_Option_Include_Empty4() throws IOException {
-
-        // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
-
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final String path = String.format("//%s", "default");
-            final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "--includeEmptyFolders", "true");
+                    FilesPull.NAME, path, "--workspace", tempFolder.toString(),
+                    "--includeEmptyFolders");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);

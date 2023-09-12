@@ -102,39 +102,56 @@ describe('DotExperimentsListStore', () => {
         store.ngrxOnStateInit();
     });
 
-    it('should have getState$ from the store', () => {
+    it('should have getState$ from the store', (done) => {
         store.state$.subscribe((state) => {
             expect(state.status).toEqual(ComponentStatus.LOADED);
+            done();
         });
     });
 
-    it('should update status to the store', () => {
+    it('should  load initial filter status with the correct states', (done) => {
+        store.state$.subscribe(({ filterStatus }) => {
+            expect(filterStatus).toEqual([
+                DotExperimentStatus.RUNNING,
+                DotExperimentStatus.SCHEDULED,
+                DotExperimentStatus.DRAFT,
+                DotExperimentStatus.ENDED
+            ]);
+            done();
+        });
+    });
+
+    it('should update status to the store', (done) => {
         store.setComponentStatus(ComponentStatus.LOADED);
         store.state$.subscribe(({ status }) => {
             expect(status).toEqual(ComponentStatus.LOADED);
+            done();
         });
     });
-    it('should update experiments to the store', () => {
+    it('should update experiments to the store', (done) => {
         store.setExperiments([...EXPERIMENT_MOCK_ALL]);
         store.state$.subscribe(({ experiments }) => {
             expect(experiments).toEqual(EXPERIMENT_MOCK_ALL);
+            done();
         });
     });
-    it('should update status filtered to the store', () => {
+    it('should update status filtered to the store', (done) => {
         const statusSelectedMock = [DotExperimentStatus.DRAFT, DotExperimentStatus.ENDED];
         store.setFilterStatus(statusSelectedMock);
         store.state$.subscribe(({ filterStatus }) => {
             expect(filterStatus).toEqual(statusSelectedMock);
+            done();
         });
     });
 
-    it('should delete experiment by id of the store', () => {
+    it('should delete experiment by id of the store', (done) => {
         const expected: string[] = [EXPERIMENT_MOCK.id, EXPERIMENT_MOCK_2.id];
 
         store.setExperiments([...EXPERIMENT_MOCK_ALL]);
         store.deleteExperimentById(EXPERIMENT_MOCK_1.id);
         store.state$.subscribe(({ experiments }) => {
             expect(experiments.map((experiment) => experiment.id)).toEqual(expected);
+            done();
         });
     });
 
@@ -162,7 +179,7 @@ describe('DotExperimentsListStore', () => {
         });
     });
 
-    it('should get ordered experiment by status', () => {
+    it('should get ordered experiment by status', (done) => {
         const endedExperiments: DotExperimentsWithActions[] = [
             { id: '111', status: DotExperimentStatus.ENDED }
         ] as DotExperimentsWithActions[];
@@ -198,8 +215,14 @@ describe('DotExperimentsListStore', () => {
             ...runningExperiments
         ]);
 
-        store.getExperimentsFilteredAndGroupedByStatus$.subscribe((exp) => {
-            expect(exp).toEqual(expected);
+        store.getExperimentsFilteredAndGroupedByStatus$.subscribe((groupedExperiments) => {
+            groupedExperiments.map((groupedExperiment) => {
+                const expectedExperimentId = expected.find(
+                    (group) => group.status === groupedExperiment.status
+                ).experiments[0].id;
+                expect(groupedExperiment.experiments[0].id).toEqual(expectedExperimentId);
+            });
+            done();
         });
     });
 
@@ -339,19 +362,21 @@ describe('DotExperimentsListStore', () => {
             });
         });
 
-        it('should update sidebar isSaving to the store', () => {
+        it('should update sidebar isSaving to the store', (done) => {
             store.setSidebarStatus({ status: ComponentStatus.SAVING, isOpen: true });
             store.isSidebarSaving$.subscribe((isSaving) => {
                 expect(isSaving).toBe(true);
+                done();
             });
         });
 
-        it('should update isOpen and isSaving to the store', () => {
+        it('should update isOpen and isSaving to the store', (done) => {
             store.setSidebarStatus({ status: ComponentStatus.IDLE, isOpen: false });
             store.createVm$.subscribe(({ sidebar, isSaving }) => {
                 expect(sidebar.isOpen).toBe(false);
                 expect(sidebar.status).toBe(ComponentStatus.IDLE);
                 expect(isSaving).toBe(false);
+                done();
             });
         });
 
