@@ -26,6 +26,8 @@
 <%@page import="java.util.Objects" %>
 <%@page import="com.google.common.collect.ImmutableMap" %>
 <%@page import="io.vavr.Tuple2" %>
+<%@ page import="com.dotmarketing.exception.DotDataException" %>
+<%@ page import="com.dotmarketing.exception.DotSecurityException" %>
 <%
 	LanguageAPI langAPI = APILocator.getLanguageAPI();
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
@@ -674,13 +676,16 @@
                     var fieldValue = '';
                     if (fieldName === 'languageId') {
                         createLangTd(row, item, '<%= relationJsName %>');
-                    } else if (fieldName === 'titleImage' || item[fieldName].includes("assets") ) {
+
+                    } else if ((item[fieldName] && (fieldName === 'titleImage' || item[fieldName].includes("assets")))
+							|| (!item[fieldName] && item['hasImageFields'] === 'true') ) {
                         createImageCell(row, item);
-                    } else {
-                        var fieldCell = row.insertCell(row.cells.length);
-                        fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
-                            item,
-                            item[fieldName] || "");
+                    } else{
+							var fieldCell = row.insertCell(row.cells.length);
+							fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
+									item,
+									item[fieldName] || "");
+
                     }
                 });
             }
