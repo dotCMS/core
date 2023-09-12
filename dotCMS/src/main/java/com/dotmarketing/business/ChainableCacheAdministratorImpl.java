@@ -13,6 +13,7 @@ import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 
@@ -62,7 +63,11 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
             // Initializing all the Cache providers
             cacheProviderAPI = APILocator.getCacheProviderAPI();
             cacheProviderAPI.init();
-            cacheTransport.init(APILocator.getServerAPI().getCurrentServer());
+            try {
+                cacheTransport.init(APILocator.getServerAPI().getCurrentServer());
+            }catch (DotDataException e){
+                //do nothing since it fails due DB still doesn't exists
+            }
         } catch (Exception e) {
             throw new DotRuntimeException("Error initializing Cache providers", e);
         }
@@ -72,7 +77,11 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
     @WrapInTransaction
     public void setCluster(Server localServer) throws Exception {
         Logger.info(this, "***\t Starting Cluster Setup");
-        cacheTransport.init(APILocator.getServerAPI().getCurrentServer());
+        try {
+            cacheTransport.init(APILocator.getServerAPI().getCurrentServer());
+        }catch (DotDataException e){
+            //do nothing since it fails due DB still doesn't exists
+        }
 
     }
 
