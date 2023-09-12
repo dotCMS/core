@@ -1,0 +1,89 @@
+name: CLI Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+      branch:
+        description: 'Branch to cut from'
+        required: true
+        default: 25951-implement-gha-generate-cli-release
+#        default: master
+      dry_run:
+        description: 'Dry run'
+        required: false
+        default: false
+env:
+  JAVA_VERSION: 11
+  JAVA_DISTRO: corretto
+
+jobs:
+  precheck:
+    name: Pre-check
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.vars.outputs.version }}
+      BRANCH: ${{ steps.vars.outputs.branch }}
+      DRY_RUN: ${{ github.event.inputs.dry_run }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Version
+        id: vars
+        shell: bash
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          BRANCH=${{ github.event.inputs.branch }}     
+          ./mvnw -B versions:set versions:commit -DnewVersion=$VERSION
+          git config --global user.name "GitHub Action"
+          git commit -a -m "Releasing version $VERSION"
+          git push origin "$BRANCH"
+
+  release:
+    needs: [ precheck ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRO }}
+
+      - name: Cache Maven
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Prepare dotCMS license
+        env:
+          DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+        run: |
+          DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/license
+          mkdir -p ${DOTCMS_LICENSE_PATH}
+          echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
+          echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
+
+      - name: Build
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli
+        run: |
+          ./mvnw -U clean install -DskipTests
+          ./mvnw package -Dquarkus.package.type=uber-jar -DskipTests
+
+      - name: Releaser
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
+        working-directory: ${{ github.workspace }}
+        run: |
+          tools/dotcms-cli/mvnw -Prelease jreleaser:release -Djreleaser.git.root.search=true -pl :dotCMS-cli -Djreleaser.dry.run=${{ needs.precheck.outputs.DRY_RUN }}   
