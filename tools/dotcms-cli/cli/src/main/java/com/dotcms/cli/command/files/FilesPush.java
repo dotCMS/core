@@ -113,9 +113,9 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
             var localPathStructure = treeNodeData.getMiddle();
             var treeNode = treeNodeData.getRight();
 
-            StringBuilder sb = new StringBuilder();
+            var outputBuilder = new StringBuilder();
 
-            sb.append(count++ == 0 ? "\r\n" : "\n\n").
+            outputBuilder.append(count++ == 0 ? "\r\n" : "\n\n").
                     append(" ──────\n").
                     append(String.format(
                             " @|bold Folder [%s]|@ --- Site: [%s] - Status [%s] - Language [%s] \n",
@@ -130,7 +130,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
                 var assetsToPushCount = treeNodePushInfo.assetsToPushCount();
                 if (assetsToPushCount > 0) {
-                    sb.append(String.format(" Push Data: " +
+                    outputBuilder.append(String.format(" Push Data: " +
                                     "@|bold [%s]|@ Assets to push: " +
                                     "(@|bold," + COLOR_NEW + " %s|@ New " +
                                     "- @|bold," + COLOR_MODIFIED + " %s|@ Modified) " +
@@ -144,7 +144,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                             treeNodePushInfo.foldersToPushCount(),
                             treeNodePushInfo.foldersToDeleteCount()));
                 } else {
-                    sb.append(String.format(" Push Data: " +
+                    outputBuilder.append(String.format(" Push Data: " +
                                     "@|bold," + COLOR_NEW + " [%s]|@ Assets to push " +
                                     "- @|bold," + COLOR_DELETED + " [%s]|@ Assets to delete " +
                                     "- @|bold," + COLOR_NEW + " [%s]|@ Folders to push " +
@@ -157,7 +157,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
                 if (pushMixin.dryRun) {
                     TreePrinter.getInstance().formatByStatus(
-                            sb,
+                            outputBuilder,
                             AssetsUtils.statusToBoolean(localPathStructure.status()),
                             List.of(localPathStructure.language()),
                             treeNode,
@@ -166,7 +166,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                             localPathStructure.languageExists());
                 }
 
-                output.info(sb.toString());
+                output.info(outputBuilder.toString());
 
                 // ---
                 // Pushing the tree
@@ -177,14 +177,13 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                 }
 
             } else {
-                sb.append(" No changes to push\n\n");
-                output.info(sb.toString());
+                outputBuilder.append(" No changes to push\n\n");
+                output.info(outputBuilder.toString());
             }
         }
 
         return CommandLine.ExitCode.OK;
     }
-
 
     @Override
     public String getName() {
