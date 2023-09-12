@@ -921,7 +921,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 
 		final Contentlet updatedLivePage = newLiveContentPage;
 
-		Try.run(()->updateRelatedExperiments(updatedLivePage))
+		Try.run(()->updateRelatedExperiments(oldHtmlPageIdentifier, newHtmlPageIdentifier))
 				.onFailure((e)-> Logger.error(ContentPageIntegrityChecker.class,
 						"Unable to update related experiments "
 								+ "for page with id ["+updatedLivePage.getIdentifier()+"]. "
@@ -932,8 +932,14 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 				localLiveInode, languageId, fixAllVersions);
     }
 
-	private void updateRelatedExperiments(final Contentlet updatedPage) {
-			// TODO fix the orphan experiments
+	private void updateRelatedExperiments(final String oldHtmlPageIdentifier,
+			String newHtmlPageIdentifier)
+			throws DotDataException {
+		final DotConnect dc = new DotConnect();
+		dc.setSQL("UPDATE experiment SET page_id = ? WHERE page_id = ?");
+		dc.addParam(newHtmlPageIdentifier);
+		dc.addParam(oldHtmlPageIdentifier);
+		dc.loadResult();
 	}
 
 	/**
