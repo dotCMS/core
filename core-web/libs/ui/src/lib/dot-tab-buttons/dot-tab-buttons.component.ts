@@ -77,10 +77,7 @@ export class DotTabButtonsComponent implements OnChanges {
     onClickOption(event: CustomEvent) {
         const { value } = event.target;
 
-        if (
-            this._options.find(({ value: { id } }) => value.includes(id + this.OPEN_MENU))?.value
-                .showDropdownButton
-        ) {
+        if (this.shouldShowMenu(value)) {
             this.showMenu(event);
         } else if (value !== this.activeId) {
             this.clickOption.emit(event);
@@ -123,5 +120,18 @@ export class DotTabButtonsComponent implements OnChanges {
 
             return option;
         });
+    }
+
+    /**
+     * Check if the dropdown menu should be shown.
+     *
+     * @private
+     * @param {string} value
+     * @return {*}  {boolean}
+     * @memberof DotTabButtonsComponent
+     */
+    private shouldShowMenu(value: string): boolean {
+        return this._options.find(({ value: { id } }) => value.includes(id + this.OPEN_MENU))?.value
+            .showDropdownButton;
     }
 }
