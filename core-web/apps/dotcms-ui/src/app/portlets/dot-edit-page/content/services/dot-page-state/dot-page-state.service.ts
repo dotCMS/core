@@ -359,10 +359,7 @@ export class DotPageStateService {
 
     private setCurrentState(newState: DotPageRenderState): void {
         this.currentState = newState;
-
-        if (!this.selectedIsDefaultPersona()) {
-            this.haveContent$.next(this.currentState.numberContents > 0);
-        }
+        this.haveContent$.next(this.currentState?.numberContents > 0);
     }
 
     private selectedIsDefaultPersona(): boolean {
