@@ -253,10 +253,8 @@ public class FilesTestHelper {
      * @return The path to the newly created temporary folder
      * @throws IOException If an I/O error occurs while creating the temporary folder
      */
-    protected Path createTempFolder() throws IOException {
-
-        String randomFolderName = "folder-" + UUID.randomUUID();
-        return Files.createTempDirectory(randomFolderName);
+    protected synchronized Path createTempFolder() throws IOException {
+        return Files.createTempDirectory(String.format("folder-%s", System.nanoTime()));
     }
 
     /**
