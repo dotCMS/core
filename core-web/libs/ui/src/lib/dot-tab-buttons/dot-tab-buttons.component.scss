@@ -26,6 +26,8 @@ $dot-tab-height: 2.5rem;
     padding: $spacing-1 $spacing-3;
     border-radius: $border-radius-md;
     height: $dot-tab-height;
+    font-family: $font-default;
+
     &:hover {
         background: $color-palette-primary-100;
     }
