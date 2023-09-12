@@ -251,6 +251,9 @@ class PushServiceIntegrationTest extends FilesTestHelper {
         var tempFolder = createTempFolder();
         var workspace = workspaceManager.getOrCreate(tempFolder);
 
+        Assertions.assertNotNull(workspace);
+        Assertions.assertTrue(workspace.files().toAbsolutePath().toFile().exists());
+
         try {
 
             // Preparing the data for the test
@@ -278,6 +281,8 @@ class PushServiceIntegrationTest extends FilesTestHelper {
             // Removing a folder
             var folderToRemove = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName + "/folder3";
             FileUtils.deleteDirectory(new File(folderToRemove));
+
+            Assertions.assertTrue(workspace.files().toAbsolutePath().toFile().exists());
 
             // Removing an asset
             var assetToRemove = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName +
