@@ -430,6 +430,11 @@ public class ContentletAjaxTest {
 	}
 
 
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#getContentletData(String)}<p>
+	 * <b>When:</b> getting the data of the contentlet <p>
+	 * <b>Should:</b> Return if the field contains an image field
+	 */
 	@Test
 	public void test_getContentletData_addingHasImageField(){
 		setUpContext();
