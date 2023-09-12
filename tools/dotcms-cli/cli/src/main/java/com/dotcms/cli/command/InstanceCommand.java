@@ -57,8 +57,14 @@ public class InstanceCommand implements Callable<Integer>, DotCommand {
     @CommandLine.Option(names = {"-act", "--activate"}, arity = "1", description = "Activate an instance by entering it's name.")
     String activate;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws IOException {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
         final Map<String, URI> servers = clientConfig.servers();
         if (servers.isEmpty()) {

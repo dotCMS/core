@@ -53,6 +53,7 @@ dot-whats-changed,
     display: flex;
     flex-direction: column;
     border: solid 1px $color-palette-gray-300;
+    height: 100%;
 
     .dot-edit__page-wrapper--deviced & {
         flex-grow: 0;
@@ -64,7 +65,8 @@ dot-whats-changed,
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
         margin: 0 auto;
         padding: 0 10px;
-
+        width: fit-content;
+        height: fit-content;
         &:before {
             content: "";
             display: block;

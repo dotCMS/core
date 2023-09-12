@@ -42,8 +42,8 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
      * @memberof DotCreatePersonaFormComponent
      */
     onFileUpload(event: DotFileUpload) {
-        const response = JSON.parse(event.xhr.response);
-        this.tempUploadedFile = response.tempFiles[0];
+        const body = event.originalEvent.body;
+        this.tempUploadedFile = body.tempFiles[0] as DotCMSTempFile;
         this.form.get('photo').setValue(this.tempUploadedFile.id);
     }
 

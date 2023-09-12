@@ -12,6 +12,7 @@ import {
     DotExperimentStatus,
     Goals,
     GoalsLevels,
+    HealthStatusTypes,
     RangeOfDateAndTime,
     TrafficProportion
 } from '@dotcms/dotcms-models';
@@ -27,14 +28,16 @@ export class DotExperimentsService {
     constructor(private readonly http: HttpClient) {}
 
     /**
-     * Check if all necessary to run and track events in Experiments are working
-     * @returns Observable<boolean>
+     * returns the connection status with the infrastructure of experiments
+     * @returns Observable<HealthStatusTypes>
      * @memberof DotExperimentsService
      */
-    healthCheck(): Observable<boolean> {
+    healthCheck(): Observable<HealthStatusTypes> {
         return this.http
-            .get<DotCMSResponseExperiment<{ healthy: boolean }>>('/api/v1/experiments/health')
-            .pipe(pluck('entity', 'healthy'));
+            .get<DotCMSResponseExperiment<{ healthy: HealthStatusTypes }>>(
+                '/api/v1/experiments/health'
+            )
+            .pipe(pluck('entity', 'health'));
     }
     /**
      * Add a new experiment

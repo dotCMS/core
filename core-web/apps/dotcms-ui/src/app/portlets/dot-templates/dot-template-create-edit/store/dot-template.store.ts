@@ -1,4 +1,4 @@
-import { ComponentStore } from '@ngrx/component-store';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import * as _ from 'lodash';
 import { Observable, of, zip } from 'rxjs';
 
@@ -142,22 +142,25 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
             switchMap((template: DotTemplateItem) => {
                 this.dotGlobalMessageService.loading(this.dotMessageService.get('publishing'));
 
-                return this.dotTemplateService.saveAndPublish(this.cleanTemplateItem(template));
-            }),
-            tap((template: DotTemplate) => {
-                this.dotGlobalMessageService.success(
-                    this.dotMessageService.get('message.template.published')
-                );
-                this.dotRouterService.allowRouteDeactivation();
-                this.updateTemplateState(template);
-            }),
-            catchError((err: HttpErrorResponse) => {
-                this.dotGlobalMessageService.error(err.statusText);
-                this.dotHttpErrorManagerService.handle(err).subscribe(() => {
-                    this.dotRouterService.allowRouteDeactivation();
-                });
-
-                return of(null);
+                return this.dotTemplateService
+                    .saveAndPublish(this.cleanTemplateItem(template))
+                    .pipe(
+                        tapResponse(
+                            (template: DotTemplate) => {
+                                this.dotGlobalMessageService.success(
+                                    this.dotMessageService.get('message.template.published')
+                                );
+                                this.dotRouterService.allowRouteDeactivation();
+                                this.updateTemplateState(template);
+                            },
+                            (err: HttpErrorResponse) => {
+                                this.dotGlobalMessageService.error(err.statusText);
+                                this.dotHttpErrorManagerService.handle(err).subscribe(() => {
+                                    this.dotRouterService.allowRouteDeactivation();
+                                });
+                            }
+                        )
+                    );
             })
         );
     });

@@ -237,6 +237,8 @@ export const ReportSummaryLegendByBayesianStatus: Record<BayesianLegendStatus, S
 
 type DotExperimentListAction =
     | 'delete'
+    | 'abort'
+    | 'results'
     | 'configuration'
     | 'archive'
     | 'end'
@@ -248,6 +250,7 @@ export const AllowedActionsByExperimentStatus: Record<
     Array<DotExperimentStatus>
 > = {
     ['delete']: [DotExperimentStatus.DRAFT, DotExperimentStatus.SCHEDULED],
+    ['abort']: [DotExperimentStatus.RUNNING],
     ['configuration']: [
         DotExperimentStatus.RUNNING,
         DotExperimentStatus.ENDED,
@@ -271,7 +274,14 @@ export const AllowedActionsByExperimentStatus: Record<
         DotExperimentStatus.ARCHIVED,
         DotExperimentStatus.SCHEDULED
     ],
-    ['cancelSchedule']: [DotExperimentStatus.SCHEDULED]
+    ['cancelSchedule']: [DotExperimentStatus.SCHEDULED],
+    ['results']: [DotExperimentStatus.RUNNING, DotExperimentStatus.ENDED]
 };
 
 export const CONFIGURATION_CONFIRM_DIALOG_KEY = 'confirmDialog';
+
+export enum HealthStatusTypes {
+    OK = 'OK',
+    NOT_CONFIGURED = 'NOT_CONFIGURED',
+    CONFIGURATION_ERROR = 'CONFIGURATION_ERROR'
+}

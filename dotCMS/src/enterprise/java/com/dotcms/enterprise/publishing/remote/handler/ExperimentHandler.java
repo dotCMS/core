@@ -154,6 +154,13 @@ public class ExperimentHandler implements IHandler {
 	        	if(experimentWrapper.getOperation().equals(Operation.UNPUBLISH)) {
 	        		// delete operation
 	        	    if(localExperiment.isPresent()) {
+
+						if(localExperiment.get().status()==Status.RUNNING ||
+							localExperiment.get().status()==Status.SCHEDULED) {
+							experimentsAPI.cancel(localExperiment.get().id().orElseThrow()
+									, APILocator.systemUser());
+						}
+
 						experimentsAPI.delete(localExperiment.orElseThrow().id().orElseThrow(),
 								APILocator.systemUser());
 					}

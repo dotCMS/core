@@ -38,8 +38,14 @@ public class LanguageRemove extends AbstractLanguageCommand implements Callable<
     @Parameters(index = "0", arity = "1", description = "Language Id or Iso.")
     String languageIdOrIso;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
         final Language language = findExistingLanguage(languageIdOrIso);
 
