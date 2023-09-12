@@ -20,7 +20,11 @@
                 *ngIf="item.value === pageMode.PREVIEW"
                 [ngClass]="{ 'dot-tab-dropdown--active': mode === pageMode.PREVIEW }"
                 value="openMenu">
-                <i class="dot-tab-dropdown__icon" [value]="'openMenu'" [class]="icon"></i>
+                <i
+                    class="dot-tab-dropdown__icon pi"
+                    [value]="'openMenu'"
+                    [class]="dotTabsIcon"
+                    data-testId="dot-tab-icon"></i>
             </button>
         </div>
         <div
