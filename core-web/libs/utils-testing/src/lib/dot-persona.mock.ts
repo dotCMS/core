@@ -1,4 +1,3 @@
-import { DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND } from '@components/dot-persona-selector/dot-persona-selector.component';
 import { DotPersona } from '@dotcms/dotcms-models';
 
 export const mockDotPersona: DotPersona = {
@@ -10,7 +9,7 @@ export const mockDotPersona: DotPersona = {
     host: 'SYSTEM_HOST',
     hostFolder: 'SYSTEM_HOST',
     hostName: 'System Host',
-    identifier: DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND,
+    identifier: '1c56ba62-1f41-4b81-bd62-b6eacff3ad23',
     inode: '',
     keyTag: 'dot:persona',
     languageId: 1,

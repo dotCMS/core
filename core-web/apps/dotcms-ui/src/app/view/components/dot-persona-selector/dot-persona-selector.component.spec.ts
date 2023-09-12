@@ -3,16 +3,11 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { ConfirmationService } from 'primeng/api';
-import { AvatarModule } from 'primeng/avatar';
-import { BadgeModule } from 'primeng/badge';
-import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
@@ -23,27 +18,19 @@ import { DotMessageDisplayServiceMock } from '@components/dot-message-display/do
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
-import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
-import {
-    DotAlertConfirmService,
-    DotEventsService,
-    DotMessageService,
-    PaginatorService
-} from '@dotcms/data-access';
-import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService, PaginatorService } from '@dotcms/data-access';
+import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPersona } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     cleanUpDialog,
-    CoreWebServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     mockDotPersona,
-    MockDotRouterService,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 
@@ -53,7 +40,8 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
         <dot-persona-selector
             [disabled]="disabled"
             (selected)="selectedPersonaHandler($event)"
-            (delete)="deletePersonaHandler($event)"></dot-persona-selector>
+            (delete)="deletePersonaHandler($event)"
+        ></dot-persona-selector>
     `
 })
 class HostTestComponent {
@@ -102,7 +90,7 @@ describe('DotPersonaSelectorComponent', () => {
     const siteServiceMock = new SiteServiceMock();
 
     beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
+        DOTTestBed.configureTestingModule({
             declarations: [DotPersonaSelectorComponent, HostTestComponent],
             imports: [
                 BrowserAnimationsModule,
@@ -110,13 +98,9 @@ describe('DotPersonaSelectorComponent', () => {
                 DotPersonaSelectedItemModule,
                 DotPersonaSelectorOptionModule,
                 DotAddPersonaDialogModule,
-                DotMessagePipe,
-                HttpClientTestingModule,
-                DotAvatarDirective,
-                AvatarModule,
-                BadgeModule,
-                ButtonModule,
-                TooltipModule
+                TooltipModule,
+                DotPipesModule,
+                DotMessagePipe
             ],
             providers: [
                 IframeOverlayService,
@@ -127,19 +111,13 @@ describe('DotPersonaSelectorComponent', () => {
                 { provide: PaginatorService, useClass: TestPaginatorService },
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
-                { provide: SiteService, useValue: siteServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                DotHttpErrorManagerService,
-                ConfirmationService,
-                DotAlertConfirmService,
-                DotEventsService
+                { provide: SiteService, useValue: siteServiceMock }
             ]
         });
     }));
 
     beforeEach(() => {
-        hostFixture = TestBed.createComponent(HostTestComponent);
+        hostFixture = DOTTestBed.createComponent(HostTestComponent);
         de = hostFixture.debugElement.query(By.css('dot-persona-selector'));
         component = de.componentInstance;
         paginatorService = hostFixture.debugElement.injector.get(PaginatorService);

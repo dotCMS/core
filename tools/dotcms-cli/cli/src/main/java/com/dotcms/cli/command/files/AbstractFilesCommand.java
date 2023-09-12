@@ -90,8 +90,7 @@ public abstract class AbstractFilesCommand {
             return workspace.get().root().toFile();
         }
 
-        throw new IllegalArgumentException(
-                String.format("No valid workspace found at path: [%s]", fromPath));
+        throw new IllegalArgumentException(String.format("Not valid workspace found from path: [%s]", fromPath));
     }
 
 

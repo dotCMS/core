@@ -14,7 +14,8 @@
         (pageChange)="handlePageChange($event)"
         (switch)="personaChange($event)"
         labelPropertyName="name"
-        width="448px">
+        width="448px"
+    >
         <ng-template let-persona="item" pTemplate="select">
             <dot-persona-selected-item
                 [class.readonly]="readonly"
@@ -25,26 +26,29 @@
                 [readonly]="readonly"
                 (click)="!disabled && !readonly && searchableDropdown.toggleOverlayPanel($event)"
                 appendTo="target"
-                tooltipPosition="bottom"></dot-persona-selected-item>
+                tooltipPosition="bottom"
+            ></dot-persona-selected-item>
         </ng-template>
-        <ng-template let-personaData="item" pTemplate="listItem">
+        <ng-template
+            let-personaData="item"
+            let-selectedOptionValue="selectedOptionValue"
+            pTemplate="listItem"
+        >
             <dot-persona-selector-option
                 [canDespersonalize]="canDespersonalize"
-                [class.highlight]="
-                    value?.identifier === personaData.identifier ||
-                    (!value && personaData.identifier === defaultPersonaIdentifier)
+                [class.highlight]="personaData.name === selectedOptionValue"
+                [persona]="
+                    value && value.identifier === personaData.identifier ? value : personaData
                 "
-                [persona]="value?.identifier === personaData.identifier ? value : personaData"
-                [selected]="
-                    value?.identifier === personaData.identifier ||
-                    (!value && personaData.identifier === defaultPersonaIdentifier)
-                "
+                [selected]="value && value.identifier === personaData.identifier"
                 (delete)="delete.emit(personaData)"
-                (switch)="personaChange($event)"></dot-persona-selector-option>
+                (switch)="personaChange($event)"
+            ></dot-persona-selector-option>
         </ng-template>
     </dot-searchable-dropdown>
 </div>
 
 <dot-add-persona-dialog
     #personaDialog
-    (createdPersona)="handleNewPersona($event)"></dot-add-persona-dialog>
+    (createdPersona)="handleNewPersona($event)"
+></dot-add-persona-dialog>
