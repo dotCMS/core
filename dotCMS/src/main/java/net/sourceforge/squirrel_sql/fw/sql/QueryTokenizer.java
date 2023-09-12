@@ -31,7 +31,7 @@ import com.dotmarketing.util.Logger;
 
 public class QueryTokenizer implements IQueryTokenizer
 {
-	protected ArrayList<String> _queries = new ArrayList<String>();
+	protected ArrayList<String> _queries = new ArrayList<>();
     
 	protected Iterator<String> _queryIterator;
 
@@ -350,7 +350,7 @@ public class QueryTokenizer implements IQueryTokenizer
             Logger.error(this,"scriptIncludePrefix cannot be null ");
             return;
         }
-        ArrayList<String> tmp = new ArrayList<String>();
+        ArrayList<String> tmp = new ArrayList<>();
         for (Iterator<String> iter = _queries.iterator(); iter.hasNext();) {
             String sql = iter.next();
             if (sql.startsWith(scriptIncludePrefix)) {
@@ -384,7 +384,7 @@ public class QueryTokenizer implements IQueryTokenizer
         if (filename.endsWith("\n")) {
       	  filename = StringUtilities.chop(filename);
         }
-        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<String> result = new ArrayList<>();
 //        if (s_log.isDebugEnabled()) {
 //            s_log.debug("Attemping to open file '"+filename+"'");
 //        }

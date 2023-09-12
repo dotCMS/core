@@ -46,7 +46,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.ArrayList;
+import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
+import java.util.Date;
 import java.util.stream.Collectors;
 
 /**
@@ -250,14 +250,14 @@ public class ContentMap {
 				}
 				Identifier i = APILocator.getIdentifierAPI().find(fid);
 				Optional<ContentletVersionInfo> cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
-				if(!cvi.isPresent()) {
+				if(cvi.isEmpty()) {
 				    final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 				    if(content.getLanguageId() != defaultLanguageId && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",true)){
 				        cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), defaultLanguageId);
 				    }
 				}
 
-				if(!cvi.isPresent()) {
+				if(cvi.isEmpty()) {
 					return null;
 				}
 
@@ -275,7 +275,8 @@ public class ContentMap {
                     return fam;
                 }
                 if (asset.isDotAsset()) {
-                    BinaryMap binmap = new BinaryMap(asset, asset.getContentType().fieldMap().get("asset"));
+                    BinaryMap binmap = new BinaryMap(asset,
+							asset.getContentType().fieldMap().get("asset"), context);
                     // Store file asset map into fieldValueMap
                     addFieldValue(f, binmap);
                     return binmap;
@@ -297,7 +298,7 @@ public class ContentMap {
                     addFieldValue(f, fam);
                     return fam;
                 } else {
-                    BinaryMap bm = new BinaryMap(content, f);
+                    BinaryMap bm = new BinaryMap(content, f, context);
 
                     // Store file asset into fieldValueMap
                     addFieldValue(f, bm);
@@ -399,6 +400,11 @@ public class ContentMap {
 			//ret could have been set by title
 			if(ret == null){
 				ret = conAPI.getFieldValue(content, f);
+			}
+
+			// if return value is date, convert to timestamp to be used in velocity
+			if (ret instanceof Date && !(ret instanceof Timestamp)) {
+				ret = new Timestamp(((Date) ret).getTime());
 			}
 
 			//handle Velocity Code
@@ -577,7 +583,7 @@ public class ContentMap {
     private Object retriveFieldValue(Field field) {
         if (fieldValueMap == null) {
             // Lazy init
-            fieldValueMap = new HashMap<String, Object>();
+            fieldValueMap = new HashMap<>();
         }
         return fieldValueMap.get(field.getVelocityVarName());
     }
@@ -590,7 +596,7 @@ public class ContentMap {
     private void addFieldValue(Field field, Object value) {
         if (fieldValueMap == null) {
             // Lazy init
-            fieldValueMap = new HashMap<String, Object>();
+            fieldValueMap = new HashMap<>();
         }
         fieldValueMap.put(field.getVelocityVarName(), value);
     }

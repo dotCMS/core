@@ -209,7 +209,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
             final Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
             if(clazz.equals(Inode.class)) {
 
-                return new ArrayList<Versionable>(1);
+                return new ArrayList<>(1);
             }
             if(clazz.equals(Template.class)){
                 final List<Versionable> templateAllVersions = new ArrayList<>();
@@ -245,7 +245,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 						getContentletVersionInfo(identifier,
 								APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-				if(!info.isPresent()) {
+				if(info.isEmpty()) {
 					throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
 							+ identifier + ". Lang: " + APILocator.getLanguageAPI()
 							.getDefaultLanguage().getId());
@@ -286,7 +286,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
             }
             if(vi ==null || !UtilMethods.isSet(vi.getIdentifier())) {
             	try {
-                    vi = (VersionInfo) clazz.newInstance();
+                    vi = (VersionInfo) clazz.getDeclaredConstructor().newInstance();
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -582,7 +582,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         Class<?> clazz=UtilMethods.getVersionInfoType(identifier.getAssetType());
         VersionInfo ver;
         try {
-            ver = (VersionInfo)clazz.newInstance();
+            ver = (VersionInfo)clazz.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             throw new DotStateException("this shouln't happend");
         }
@@ -612,6 +612,13 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		new DotConnect().setSQL("DELETE FROM contentlet_version_info WHERE identifier=? AND lang=?")
 				.addParam(id).addParam(lang).loadResult();
 		this.icache.removeContentletVersionInfoToCache(id, lang);
+	}
+
+	@Override
+	protected void deleteContentletVersionInfo(String id, final String variantId) throws DotDataException {
+		new DotConnect().setSQL("DELETE FROM contentlet_version_info WHERE identifier=? AND variant_id=?")
+				.addParam(id).addParam(variantId).loadResult();
+		//this.icache.removeContentletVersionInfoToCache(id, lang);
 	}
 
 	/**

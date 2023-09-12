@@ -149,7 +149,7 @@ public class InodeUtils {
 
 		try{
 			DotConnect dotConnect = new DotConnect();
-			List<Map<String, Object>> results = new ArrayList<Map<String,Object>>();
+			List<Map<String, Object>> results = new ArrayList<>();
 
 			dotConnect.setSQL("SELECT type FROM inode WHERE inode = ?");
 			dotConnect.addParam(inode);

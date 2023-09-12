@@ -88,7 +88,7 @@ public class ViewToolInfo implements ToolInfo
         {
             this.clazz = getApplicationClass(classname);
             /* create an instance and see if it is a ViewTool or Configurable */
-            Object instance = clazz.newInstance();
+            Object instance = clazz.getDeclaredConstructor().newInstance();
             if (instance instanceof ViewTool)
             {
                 this.initializable = true;

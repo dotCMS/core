@@ -252,6 +252,19 @@ public interface ContentletAPI {
 	Contentlet findContentletByIdentifierAnyLanguage(String identifier, String variant) throws DotDataException;
 
 	/**
+	 * Retrieves a contentlet from the database by its identifier, working version and variant.
+	 * You can use the  includeDeleted parameter to ignore archived content or not
+	 *
+	 * @param identifier The contentlet's identifier
+	 * @param variant The variant's identifier
+	 * @param includeDeleted If it is tru ignore archived Contentlets
+	 * @return
+	 * @throws DotDataException
+	 */
+	Contentlet findContentletByIdentifierAnyLanguage(String identifier, String variant, boolean includeDeleted) throws DotDataException;
+
+
+	/**
 	 * Retrieves a contentlet list from the database based on a identifiers array
 	 * @param identifiers	Array of identifiers
 	 * @param live	Retrieves the live version if false retrieves the working version
@@ -1658,6 +1671,17 @@ public interface ContentletAPI {
 	 */
 
 	public List<Contentlet> findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException;
+
+	/**
+	 * Retrieves all versions for a contentlet identifier
+	 * @param identifiers
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<Contentlet> findLiveOrWorkingVersions(final Set<String> identifiers, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves all versions even the old ones for a {@link Contentlet} identifier and {@link Variant

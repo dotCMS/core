@@ -152,7 +152,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         workflowActionClass.setClazz(actionClass.getName());
         try {
             workflowActionClass
-                    .setName(WorkFlowActionlet.class.cast(actionClass.newInstance()).getName());
+                    .setName(WorkFlowActionlet.class.cast(actionClass.getDeclaredConstructor().newInstance()).getName());
             workflowActionClass.setOrder(0);
             workflowAPI.saveActionClass(workflowActionClass, APILocator.systemUser());
         } catch (Exception e) {

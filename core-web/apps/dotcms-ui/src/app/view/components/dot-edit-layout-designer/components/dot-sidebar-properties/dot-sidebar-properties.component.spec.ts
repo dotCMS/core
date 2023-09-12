@@ -7,6 +7,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotSidebarPropertiesComponent } from './dot-sidebar-properties.component';
@@ -28,7 +29,7 @@ describe('DotSidebarPropertiesComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [DotSidebarPropertiesComponent],
-            imports: [OverlayPanelModule, BrowserAnimationsModule],
+            imports: [OverlayPanelModule, BrowserAnimationsModule, DotMessagePipe],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 

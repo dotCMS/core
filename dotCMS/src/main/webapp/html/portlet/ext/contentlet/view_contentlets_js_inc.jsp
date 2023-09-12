@@ -130,7 +130,10 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 		        properties: {
 		            height: {start: start, end: end, unit: "px"},
 		        },
-		        duration: 500
+		        duration: 500,
+                        onEnd: function() {
+                                        dojo.byId("advancedSearchOptions").style.overflow = "visible";
+                                }
 		    }).play();
 			dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "hide") %>";
 			dojo.cookie("ShAdDi", end, { });
@@ -143,19 +146,21 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 			var showing = dojo.getStyle(dojo.byId('advancedSearchOptions'),'height');
 
 			// resize
-			if("0px" == showing || 0 ==showing){
+			if("0px" == showing || 0 == showing) {
 				dojo.cookie("ShAdDi", "0", { });
 				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "hide") %>";
 				resizeAdvancedSearch();
+                                dojo.byId("advancedSearchOptions").style.overflow = "hidden";
 			// hide
-			}else{
+			} else {
+                                dojo.byId("advancedSearchOptions").style.overflow = "hidden";
 
-				dojo.animateProperty({
+			        dojo.animateProperty({
 			        node: dojo.byId("advancedSearchOptions"),
 			        properties: {
 			            height: {start: showing, end: 0, unit: "px"},
 			        },
-			        duration: 500
+			        duration: 500,
 			    }).play();
 				dojo.cookie("ShAdDi", 0, { });
 				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "advanced") %>";
@@ -204,9 +209,9 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
         function printData(data, headers) {
             const list = getListEl();
-            
+
             if (state.view === 'list') {
-                fillResultsTable(headers, data);   
+                fillResultsTable(headers, data);
                 const card = getViewCardEl();
                 card ? card.style.display = 'none' : false;
                 list.style.display = ''
@@ -233,7 +238,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 data[i - 3] = data[i];
             }
             data.length = data.length - 3;
-                
+
             if (cardEl) {
                 cardEl.items = [];
             }
@@ -696,7 +701,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                   const folderHostSelectorField = dijit.byId('FolderHostSelector');
                   const folderHostSelectorCurrentValue = folderHostSelectorField ? folderHostSelectorField.value : null;
                   const oldTree = dijit.byId('FolderHostSelector-tree');
-                  
+
                   if(dojo.byId('FolderHostSelector-hostFoldersTreeWrapper')){
                           dojo.byId('FolderHostSelector-hostFoldersTreeWrapper').remove();
                   }
@@ -725,13 +730,11 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                  hasHostFolderField = true;
 
-                 // Set the previous selected value of the tree. 
+                 // Set the previous selected value of the tree or the conHostValue after the tree is loaded.
                  setTimeout(()=> {
                         const newTree = dijit.byId('FolderHostSelector-tree');
-                        if (oldTree) {
-                                newTree.set('path', oldTree.path);
-                                newTree.set('selectedItem', oldTree.selectedItem );
-                        } 
+                        newTree.set('path', oldTree?.path ||  "<%= conHostValue %>");
+                        newTree.set('selectedItem', oldTree?.selectedItem ||   "<%= conHostValue %>");
                  },1000);
 
                 return result;
@@ -1271,46 +1274,27 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
             currentStructureFields = data;
             let htmlstr = "";
             let siteFolderFieldHtml = "";
-            let hasSiteFolderField = false;
             for (const element of data) {
-                const { fieldFieldType } = element;
-                if (fieldFieldType === 'category' || fieldFieldType === 'hidden') {
-                        continue;
-                }
-                if (fieldFieldType == '<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>') {
-                   hasSiteFolderField = true;
-                }
-                htmlstr += `<dl class='vertical'>
-                        <dt>
-                         <label>${fieldName(element)}</label>
-                        </dt>
-                        <dd style='min-height:0px'>${renderSearchField(element)}</dd>
-                        </dl>
+                    const { fieldFieldType } = element;
+                    if (fieldFieldType === 'category' || fieldFieldType === 'hidden' || fieldFieldType == '<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>') {
+                            continue;
+                        }
+                        htmlstr += `<dl class='vertical'>
+                                <dt>
+                                        <label>${fieldName(element)}</label>
+                                        </dt>
+                                        <dd style='min-height:0px'>${renderSearchField(element)}</dd>
+                                        </dl>
                         <div class='clear'></div>`;
-            }  
-            if (!hasSiteFolderField) {
-                let defaultSiteFolderField = {
-                    "fieldName": "<%= LanguageUtil.get(pageContext, "Host-Folder") %>",
-                    "fieldFieldType": "<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>",
-                    "fieldVelocityVarName": "siteOrFolder",
-                    "fieldValues": "",
-                    "fieldContentlet": "system_field",
-                    "fieldStructureInode": structureInode
-                };
-                siteFolderFieldHtml = `<dl class='vertical'>
-                        <dt>
-                         <label>${fieldName(defaultSiteFolderField)}</label>
-                        </dt>
-                        <dd style='min-height:0px'> ${renderSearchField(defaultSiteFolderField) }</dd>
-                        </dl>
-                 <div class='clear'></div>`;
-            }  
+            }
+            siteFolderFieldHtml = getSiteFolderFieldDefaultHTML();
 
             $('search_fields_table').update(htmlstr);
             $('site_folder_field').update(siteFolderFieldHtml);
             <% if (APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ, user, true)) { %>
                     dojo.byId("filterSystemHostTable").style.display = "";
             <% } %>
+
             dojo.parser.parse(dojo.byId("search_fields_table"));
             dojo.parser.parse(dojo.byId("site_folder_field"));
             eval(setDotFieldTypeStr);
@@ -1398,6 +1382,26 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
            if(!obj)
               obj = dojo.byId("step_id");
            return obj.value;
+        }
+        function getSiteFolderFieldDefaultHTML() {
+
+                const defaultSiteFolderField = {
+                    "fieldName": "<%= LanguageUtil.get(pageContext, "Host-Folder") %>",
+                    "fieldFieldType": "<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>",
+                    "fieldVelocityVarName": "siteOrFolder",
+                    "fieldValues": "",
+                    "fieldContentlet": "system_field",
+                    "fieldStructureInode": structureInode
+                };
+
+                return `<dl class='vertical'>
+                        <dt>
+                                <label>${fieldName(defaultSiteFolderField)}</label>
+                        </dt>
+                        <dd style='min-height:0px'> ${renderSearchField(defaultSiteFolderField)}</dd>
+                        </dl>
+                        <div class='clear'>
+                </div>`;
         }
 
 
@@ -1777,7 +1781,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
         }
 
         function clearAllContentsMessage()      {
-                $('tablemessage').innerHTML = " &nbsp ";
+                $('tablemessage').innerHTML = "";
                 unCheckedInodes = "";
                 document.getElementById('allUncheckedContentsInodes').value = "";
                 document.getElementById("fullCommand").value = "false";
@@ -2063,9 +2067,49 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     var hasTitleImage = (cellData.hasTitleImage ==='true');
 
                     var modDate = cellData.modDateMilis;
-                    cell.innerHTML = (hasTitleImage)
-                        ? '<img draggable="false" style="width:64px;height: 64px;object-fit: contain;" class="listingTitleImg" onError="replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w/20q?r=' + modDate +'" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >'
-                        : '<dot-contentlet-icon icon="' + iconName +'" size="48px" />';
+
+
+
+                    let holderDiv = document.createElement("div");
+                    holderDiv.className="listingThumbDiv";
+
+
+                    let cardThumbnail = document.createElement("dot-contentlet-thumbnail");
+
+                    cardThumbnail.iconSize="48px";
+                    cardThumbnail.cover="true";
+                    cardThumbnail.contentlet=cellData;
+
+                    holderDiv.appendChild(cardThumbnail);
+                    cell.appendChild(holderDiv);
+                    live = cellData["live"] == "true"?true:false;
+                    working = cellData["working"] == "true"?true:false;
+                    deleted = cellData["deleted"] == "true"?true:false;
+                    locked = cellData["locked"] == "true"?true:false;
+                    liveSt = live?"1":"0";
+                    workingSt = working?"1":"0";
+                    permissions = cellData["permissions"];
+                    read = userHasReadPermission (cellData, userId)?"1":"0";
+                    write = userHasWritePermission (cellData, userId)?"1":"0";
+                    publish = userHasPublishPermission (cellData, userId)?"1":"0";
+                    contentStructureType = cellData["contentStructureType"];
+                    structure_id = cellData["structureInode"];
+                    hasLiveVersion = cellData["hasLiveVersion"];
+                    holderDiv.setAttribute('data-inode', cellData["inode"]);
+                    holderDiv.setAttribute('data-live', liveSt);
+                    holderDiv.setAttribute('data-working', workingSt);
+                    holderDiv.setAttribute('data-write', write);
+                    holderDiv.addEventListener('click', function(e){
+                        let dataSet =  e.currentTarget.dataset;
+                        editContentlet(dataSet["inode"],'<%= user.getUserId() %>','<%= referer %>', dataSet["live"] , dataSet["working"] , dataSet["write"] );
+                    }, false);
+
+
+
+
+
+
+
 
                     cell.setAttribute("style","height: 85px; text-align: center;");
 
@@ -2126,20 +2170,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                     var cell = row.insertCell (row.cells.length);
                     cell.innerHTML = '<span class=\"dijitIcon actionIcon content-search__action-item\" id=\"touchAction' + i + '\"></span>';
-
-                    live = cellData["live"] == "true"?true:false;
-                    working = cellData["working"] == "true"?true:false;
-                    deleted = cellData["deleted"] == "true"?true:false;
-                    locked = cellData["locked"] == "true"?true:false;
-                    liveSt = live?"1":"0";
-                    workingSt = working?"1":"0";
-                    permissions = cellData["permissions"];
-                    read = userHasReadPermission (cellData, userId)?"1":"0";
-                    write = userHasWritePermission (cellData, userId)?"1":"0";
-                    publish = userHasPublishPermission (cellData, userId)?"1":"0";
-                    contentStructureType = cellData["contentStructureType"];
-                    structure_id = cellData["structureInode"];
-                    hasLiveVersion = cellData["hasLiveVersion"];
 
                     contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(cellData.identifier,cellData.inode,cellData.languageId);
 
@@ -2237,8 +2267,12 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                 document.getElementById('currentSortBy').value=DOTCMS_DEFAULT_CONTENT_SORT_BY;
                 dijit.byId("scheme_id").set("value",'catchall');
-     			dijit.byId("showingSelect").set("value", "all");
-     			dijit.byId("allFieldTB").set("value", "");
+                dijit.byId("showingSelect").set("value", "all");
+                dijit.byId("allFieldTB").set("value", "");
+                dijit.byId('FolderHostSelector').set('value', "<%= conHostValue %>");
+                const tree = dijit.byId('FolderHostSelector-tree');
+                tree.set('selectedItem', "<%= conHostValue %>" );
+                tree.collapseAll();
 
                 var div = document.getElementById("matchingResultsBottomDiv");
                 div.innerHTML = "";
@@ -2479,7 +2513,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = dataViewButton + "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var strbuff = dataViewButton + "<div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
                         var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
                         var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
                         if (num > 0 && structureInode != "catchall") {

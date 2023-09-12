@@ -65,7 +65,7 @@ public class JSPPortlet extends GenericPortlet {
     _editJSP = getInitParameter("edit-jsp");
     _helpJSP = getInitParameter("help-jsp");
     _viewJSP = getInitParameter("view-jsp");
-    useWEBINFDIR = new Boolean(getInitParameter("useWEBINFDIR"));
+    useWEBINFDIR = Boolean.valueOf(getInitParameter("useWEBINFDIR"));
 
     _copyRequestParameters = GetterUtil.get(getInitParameter("copy-request-parameters"), true);
   }

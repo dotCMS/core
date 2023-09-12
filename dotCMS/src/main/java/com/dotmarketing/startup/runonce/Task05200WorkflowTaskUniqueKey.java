@@ -60,7 +60,7 @@ public class Task05200WorkflowTaskUniqueKey implements StartupTask {
                     .addParam(Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"))
                     .loadObjectResults(connection).stream().map(r -> (Number)r.get("id")).findFirst();
 
-            if(!optionalLang.isPresent()){
+            if(optionalLang.isEmpty()){
                throw new DotDataException("I wasn't able to find a Language marked as default int the db.");
             }
 

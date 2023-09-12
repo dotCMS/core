@@ -3,77 +3,77 @@
 // Common
 $field-animation-speed: 0.1s;
 $field-border-color: $color-palette-gray-400;
-$field-border-size: 1px;
+$field-border-size: 1.5px;
 $field-padding: $spacing-1;
 $field-placeholder-color: $color-palette-gray-500;
 
-$field-normal-bgcolor: $color-palette-gray-400;
+$field-normal-bgcolor: $white;
 $field-normal-textcolor: $font-color-base;
-$field-normal-border: solid $field-border-size $color-palette-gray-500;
-$field-normal-arrow-color: $color-palette-gray-700;
+$field-normal-border: solid $field-border-size $color-palette-gray-400;
+$field-normal-arrow-color: $color-palette-primary;
 
-$field-hover-bgcolor: $color-palette-gray-200;
+$field-hover-bgcolor: $white;
 $field-hover-textcolor: $font-color-base;
-$field-hover-border: solid $field-border-size $color-palette-primary;
+$field-hover-border: solid $field-border-size $color-palette-primary-400;
 $field-hover-arrow-color: $color-palette-primary;
 $field-hoverarrow-arrow-color: $color-palette-primary;
-$field-hoverarrow-arrow-border: solid $field-border-size $color-palette-gray-800;
-$field-hoverarrow-arrow-bgcolor: rgba(var(--color-sec_rgb), 0.2);
+$field-hoverarrow-arrow-border: solid $field-border-size $color-palette-primary-400;
+$field-hoverarrow-arrow-bgcolor: $white;
 
 $field-active-bgcolor: $white;
 $field-active-textcolor: $font-color-base;
 $field-active-border: $field-hover-border;
 $field-active-arrow-color: $color-palette-primary;
 $field-activearrow-arrow-color: $white;
-$field-activearrow-arrow-border: solid $field-border-size $color-palette-primary;
-$field-activearrow-arrow-bgcolor: $color-palette-primary;
+$field-activearrow-arrow-border: solid $field-border-size $color-palette-primary-400;
+$field-activearrow-arrow-bgcolor: $white;
 
-$field-disabled-bgcolor: $white;
-$field-disabled-textcolor: $color-palette-gray-500;
-$field-disabled-border: solid $field-border-size #e3e4e6;
-$field-disabled-arrow-color: $color-palette-gray-500;
+$field-disabled-bgcolor: $color-palette-gray-100;
+$field-disabled-textcolor: $color-palette-gray-700;
+$field-disabled-border: solid $field-border-size $color-palette-gray-200;
+$field-disabled-arrow-color: $color-palette-gray-700;
 
-$field-focused-bgcolor: $color-palette-gray-400;
+$field-focused-bgcolor: $white;
 $field-focused-textcolor: $font-color-base;
-$field-focused-border: solid 2px $color-palette-primary;
+$field-focused-border: solid $field-border-size $color-palette-primary-400;
 $field-focused-arrow-color: $color-palette-primary;
 $field-focusedarrow-arrow-color: $color-palette-primary;
-$field-focusedarrow-arrow-border: solid $field-border-size $color-palette-primary;
-$field-focusedarrow-arrow-bgcolor: $field-hoverarrow-arrow-bgcolor;
+$field-focusedarrow-arrow-border: solid $field-border-size $color-palette-primary-400;
+$field-focusedarrow-arrow-bgcolor: $white;
 
-$field-error-border: solid 1px $error;
+$field-error-border: solid $field-border-size $color-alert-red;
 
 // Button
 
 $button-padding: $field-padding * 2;
 $button-normal-bgcolor: $white;
 $button-normal-textcolor: $color-palette-primary;
-$button-normal-border: solid 1px $color-palette-primary;
+$button-normal-border: solid $field-border-size $color-palette-primary;
 $button-normal-shadow: 0;
 
 $button-hover-bgcolor: $color-palette-primary-100;
 $button-hover-textcolor: $color-palette-primary;
-$button-hover-border: solid 1px $color-palette-primary;
+$button-hover-border: solid $field-border-size $color-palette-primary;
 $button-hover-shadow: 0;
 
-$button-active-bgcolor: $color-palette-primary-200;
+$button-active-bgcolor: $white;
 $button-active-textcolor: $color-palette-primary;
-$button-active-border: solid 1px $color-palette-primary;
+$button-active-border: solid $field-border-size $color-palette-primary;
 $button-active-shadow: 0;
 
 $button-disabled-bgcolor: $color-palette-gray-200;
 $button-disabled-textcolor: $color-palette-gray-500;
-$button-disabled-border: solid 1px $color-palette-gray-200;
+$button-disabled-border: solid $field-border-size $color-palette-gray-300;
 $button-disabled-shadow: $button-normal-shadow;
 
 // Only for Drodown and ComboButton
 $button-focused-bgcolor: $color-palette-primary-200;
 $button-focused-textcolor: $color-palette-primary;
-$button-focused-border: solid 1px $color-palette-primary;
+$button-focused-border: solid $field-border-size $color-palette-primary;
 
 // DropDownButton
 $dropdownbutton-arrow-size: 5px;
-$dropdownbutton-arrow-container-size: $field-height;
+$dropdownbutton-arrow-container-size: $field-height-md;
 
 $dropdownbutton-normal-bgcolor: $button-normal-bgcolor;
 $dropdownbutton-normal-textcolor: $button-normal-textcolor;
@@ -118,7 +118,7 @@ $dropdownbutton-disabled-arrow-color: $field-disabled-arrow-color;
 // ComboButton
 // TODO: add margin when there is border in the arrow.
 $combobutton-arrow-size: 5px;
-$combobutton-arrow-container-size: $field-height;
+$combobutton-arrow-container-size: $field-height-md;
 
 $combobutton-normal-bgcolor: $button-normal-bgcolor;
 $combobutton-normal-textcolor: $button-normal-textcolor;
@@ -287,7 +287,7 @@ $spinner-disabled-arrow-bgcolor: $spinner-disabled-bgcolor;
 
 // Select
 $select-arrow-size: 5px;
-$select-arrow-container-size: $field-height;
+$select-arrow-container-size: $field-height-md;
 $select-padding: $field-padding * 2;
 
 $select-normal-border: $field-normal-border;
@@ -323,34 +323,34 @@ $combobox-arrow-size: 5px;
 
 $combobox-normal-border: $field-normal-border;
 $combobox-normal-bgcolor: $white;
-$combobox-normal-arrow-color: $white;
+$combobox-normal-arrow-color: $color-palette-primary;
 $combobox-normal-arrow-border: $combobox-normal-border;
-$combobox-normal-arrow-bgcolor: $white;
+$combobox-normal-arrow-bgcolor: $color-palette-gray-200;
 
 $combobox-hover-border: $field-hover-border;
 $combobox-hover-bgcolor: $white;
-$combobox-hover-arrow-color: $field-hover-arrow-color;
+$combobox-hover-arrow-color: $color-palette-primary;
 $combobox-hover-arrow-border: $combobox-hover-border;
-$combobox-hover-arrow-bgcolor: $white;
+$combobox-hover-arrow-bgcolor: $color-palette-gray-200;
 // Hover the field and hover the arrow
-$combobox-hoverarrow-arrow-color: $field-hoverarrow-arrow-color;
+$combobox-hoverarrow-arrow-color: $color-palette-primary;
 $combobox-hoverarrow-arrow-border: $field-hoverarrow-arrow-border;
-$combobox-hoverarrow-arrow-bgcolor: $field-hoverarrow-arrow-bgcolor;
+$combobox-hoverarrow-arrow-bgcolor: $color-palette-gray-200;
 
 $combobox-focused-border: $combobox-hover-border;
 $combobox-focused-bgcolor: $white;
-$combobox-focused-arrow-color: $combobox-hoverarrow-arrow-color;
+$combobox-focused-arrow-color: $color-palette-primary;
 $combobox-focused-arrow-border: $combobox-focused-border;
-$combobox-focused-arrow-bgcolor: $white;
+$combobox-focused-arrow-bgcolor: $color-palette-gray-200;
 // Hover the field and hover the arrow
-$combobox-focusedarrow-arrow-color: $field-focusedarrow-arrow-color;
+$combobox-focusedarrow-arrow-color: $color-palette-primary;
 $combobox-focusedarrow-arrow-border: $field-focusedarrow-arrow-border;
-$combobox-focusedarrow-arrow-bgcolor: $field-focusedarrow-arrow-bgcolor;
+$combobox-focusedarrow-arrow-bgcolor: $color-palette-gray-200;
 
 // Click the arrow
-$combobox-activearrow-arrow-color: $field-activearrow-arrow-color;
+$combobox-activearrow-arrow-color: $color-palette-primary;
 $combobox-activearrow-arrow-border: $field-activearrow-arrow-border;
-$combobox-activearrow-arrow-bgcolor: $field-activearrow-arrow-bgcolor;
+$combobox-activearrow-arrow-bgcolor: $color-palette-gray-200;
 
 $combobox-disabled-border: $field-disabled-border;
 $combobox-disabled-bgcolor: $color-palette-gray-200;
@@ -429,7 +429,7 @@ $menu-item-hover-bgcolor: $color-palette-gray-200;
 $menu-item-hover-textcolor: $color-palette-gray-800;
 $menu-item-selected-bgcolor: $menu-item-hover-bgcolor;
 $menu-item-selected-textcolor: $menu-item-hover-textcolor;
-$menu-item-height: $field-height;
+$menu-item-height: $field-height-md;
 $menu-item-color: $color-palette-gray-800;
 
 //TimePicker menu
@@ -444,7 +444,7 @@ $timepicker-item-selected-bgcolor: $red;
 $timepicker-item-selected-textcolor: $white;
 
 // Calendar
-$calendar-item-size: $field-height;
+$calendar-item-size: $field-height-md;
 $calendar-month-bgcolor: $color-palette-gray-800;
 $calendar-month-textcolor: $white;
 $calendar-weekday-label-bgcolor: $white;
@@ -461,7 +461,6 @@ $calendar-prev-next-month-date-textcolor: $color-palette-gray-400;
 $calendar-prev-next-month-date-hover-bgcolor: $color-palette-gray-200;
 $calendar-prev-next-month-date-hover-textcolor: $color-palette-gray-700;
 $calendar-year-label-bgcolor: $color-palette-gray-800;
-$calendar-year-label-textcolor: $white;
 $calendar-dropdown-color: $white;
 $calendar-dropdown-arrow-color: $calendar-dropdown-color;
 $calendar-dropdown-arrow-border: solid 1px $white;
@@ -469,7 +468,7 @@ $calendar-dropdown-arrow-size: 5px;
 
 // Content Panel
 $panel-border-radius: 1px;
-$panel-title-height: $field-height;
+$panel-title-height: $field-height-md;
 
 $panel-normal-border: none;
 $panel-normal-shadow: $md-shadow-1;
@@ -541,7 +540,7 @@ $tab-closeicon-bgcolor: $color-palette-gray-400;
 $tab-closeicon-color: $black;
 
 // Accordion
-$accordion-title-heigth: $field-height;
+$accordion-title-heigth: $field-height-md;
 $accordion-title-border: solid 1px $color-palette-gray-400;
 $accordion-title-normal-bgcolor: $color-palette-gray-200;
 $accordion-title-hover-bgcolor: $color-palette-gray-400;

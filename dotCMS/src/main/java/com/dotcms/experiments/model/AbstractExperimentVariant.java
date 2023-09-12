@@ -32,6 +32,11 @@ public interface AbstractExperimentVariant extends Serializable, Comparable<Expe
     float weight();
     @JsonProperty("url")
     Optional<String> url();
+    @JsonProperty("promoted")
+    @Value.Default
+    default boolean promoted() {
+        return false;
+    }
 
     default int compareTo(final ExperimentVariant o) {
         if(id().equals(VariantAPI.DEFAULT_VARIANT.name())) {

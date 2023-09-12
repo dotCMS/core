@@ -203,7 +203,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 			                                    DotStateException, DotSecurityException {
 
 		List<Versionable> versions = versionableFactory.findAllVersions(id);
-		List<Permissionable> pass  = new ArrayList<Permissionable>();
+		List<Permissionable> pass  = new ArrayList<>();
 
 		for (Versionable v : versions) {
 			if (v instanceof Permissionable) {
@@ -212,7 +212,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 		}
 
 		pass = permissionAPI.filterCollection(pass, PermissionAPI.PERMISSION_READ, respectAnonPermissions, user);
-		versions = new ArrayList<Versionable>();
+		versions = new ArrayList<>();
 
 		for (Permissionable p : pass) {
 			if (p instanceof Versionable) {
@@ -287,7 +287,8 @@ public class VersionableAPIImpl implements VersionableAPI {
                     getContentletVersionInfo(identifier, contentlet) :
                     getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId(),
                             contentlet.getVariantId());
-
+            if (info.isEmpty())
+                return false;
             liveInode=info.get().getLiveInode();
         } else {
             final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());
@@ -312,7 +313,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                     contentlet.getVariantId());
         }
 
-        if(!info.isPresent())
+        if(info.isEmpty())
             throw new DotStateException("No version info. Call setWorking first "+identifier.getId());
         return info;
     }
@@ -403,9 +404,9 @@ public class VersionableAPIImpl implements VersionableAPI {
 
         final Identifier identifier = APILocator.getIdentifierAPI().find( identifierId );
         final Optional<ContentletVersionInfo> contentletVersionInfo =
-                this.versionableFactory.getContentletVersionInfo( identifierId, lang );
+                this.versionableFactory.getContentletVersionInfo( identifierId, lang, contentlet.getVariantId() );
 
-        if ( !contentletVersionInfo.isPresent() ) {
+        if ( contentletVersionInfo.isEmpty() ) {
             throw new DotStateException( "No version info. Call setLive first" );
         }
 
@@ -581,7 +582,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                     .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId(),
                             contentlet.getVariantId());
 
-            if(!info.isPresent()) {
+            if(info.isEmpty()) {
                 // Not yet created
                 info = Optional.of(versionableFactory.createContentletVersionInfo(identifier,
                         contentlet.getLanguageId(), versionable.getInode(), contentlet.getVariantId()));
@@ -731,7 +732,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                 .findContentletVersionInfoInDB(contentletVersionInfo.getIdentifier(),
                         contentletVersionInfo.getLang(), contentletVersionInfo.getVariant());
 
-		if(!contentletVersionInfoInDB.isPresent()) {
+		if(contentletVersionInfoInDB.isEmpty()) {
 			versionableFactory.saveContentletVersionInfo(contentletVersionInfo, true);
 		} else {
 		    final ContentletVersionInfo info = contentletVersionInfoInDB.get();
@@ -756,6 +757,12 @@ public class VersionableAPIImpl implements VersionableAPI {
 	    versionableFactory.deleteContentletVersionInfo(identifier, lang);
 	}
 
+    @WrapInTransaction
+    @Override
+    public void deleteContentletVersionInfo(final String identifier, final String variantId) throws DotDataException {
+        versionableFactory.deleteContentletVersionInfo(identifier, variantId);
+    }
+
 	@CloseDBIfOpened
     @Override
 	public boolean hasLiveVersion(final Versionable versionable) throws DotDataException, DotStateException {
@@ -763,7 +770,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 		if(versionable instanceof Contentlet) {
 
 			final Optional<ContentletVersionInfo> contentletVersionInfo = this.getContentletVersionInfo
-                    (versionable.getVersionId(), ((Contentlet) versionable).getLanguageId());
+                    (versionable.getVersionId(), ((Contentlet) versionable).getLanguageId(), ((Contentlet) versionable).getVariantId());
 
 			return contentletVersionInfo.isPresent()
                     && UtilMethods.isSet(contentletVersionInfo.get().getLiveInode());

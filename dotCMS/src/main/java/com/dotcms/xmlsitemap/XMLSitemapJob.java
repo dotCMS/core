@@ -87,7 +87,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 		try {
 			systemUser = userAPI.getSystemUser();
 
-			hostFilesCounter = new HashMap<String, Integer>();
+			hostFilesCounter = new HashMap<>();
 
 			XML_SITEMAPS_FOLDER = Config.getStringProperty( "org.dotcms.XMLSitemap.XML_SITEMAPS_FOLDER", "/XMLSitemaps/" );
 			String usePermalinksString = Config.getStringProperty( "org.dotcms.XMLSitemap.USE_PERMALINKS=false", "false" );
@@ -119,7 +119,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 	}
 
 	private List<String> getIgnorableStrcutureIdsForHost(Host currentHost) {
-		List<String> ignorableStructureIds = new ArrayList<String>();
+		List<String> ignorableStructureIds = new ArrayList<>();
 		if (UtilMethods.isSet(structuresToIgnoreConfig)) {
 			String[] ignorableStructureNames = structuresToIgnoreConfig
 					.split(",");
@@ -174,7 +174,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 				 * mark all the existing sitemaps generated in the XMLSitemap
 				 * folder for the host specified to be removed upon creating new ones
 				 */
-				List<Object> oldSiteMapsToDel = new ArrayList<Object>();
+				List<Object> oldSiteMapsToDel = new ArrayList<>();
 
 				Folder folder = folderAPI.findFolderByPath(XML_SITEMAPS_FOLDER, host, systemUser, false);
 

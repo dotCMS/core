@@ -1,6 +1,11 @@
 package com.dotcms.variant.model;
 
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.Serializable;
 import java.util.Optional;
 import org.immutables.value.Value;
@@ -15,21 +20,31 @@ import org.immutables.value.Value;
  * a language and in a variation.
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
+@JsonDeserialize(as = Variant.class)
+@JsonSerialize(as = Variant.class)
 @Value.Immutable
-public interface AbstractVariant extends Serializable {
+public interface AbstractVariant extends Serializable, ManifestItem {
     @JsonProperty("name")
     String name();
 
-    @Value.Default
     @JsonProperty("description")
-    default Optional<String> description() {
-        return Optional.of("");
-    }
+    Optional<String> description();
 
     @Value.Default
     @JsonProperty("archived")
     default boolean archived() {
         return false;
+    }
+
+    @Value.Derived
+    @Override
+    @JsonIgnore
+    default ManifestInfo getManifestInfo() {
+        return new ManifestInfoBuilder()
+                .objectType(PusheableAsset.VARIANT.getType())
+                .id(this.name())
+                .title(this.name())
+                .build();
     }
 
 }

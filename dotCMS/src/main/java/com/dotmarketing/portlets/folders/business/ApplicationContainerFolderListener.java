@@ -221,7 +221,7 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
         try {
 
-            if (!this.isSpecialAsset (childName) && !getContentType(folderEvent, childName).isPresent()) {
+            if (!this.isSpecialAsset (childName) && getContentType(folderEvent, childName).isEmpty()) {
 
                 return false; // is not a content type. do not do anything
             }

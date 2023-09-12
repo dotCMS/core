@@ -1,23 +1,5 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
-import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.MIMETYPE_FIELD;
-import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.TITLE_FIELD;
-import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.UNDERLYING_FILENAME;
-import static com.google.common.collect.ImmutableMap.of;
-import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.api.APIProvider;
 import com.dotcms.api.APIProvider.Builder;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -36,8 +18,6 @@ import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
-import com.dotcms.security.apps.AppsAPIImpl;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -55,8 +35,6 @@ import com.dotmarketing.portlets.contentlet.transform.strategy.DefaultTransformS
 import com.dotmarketing.portlets.contentlet.transform.strategy.FileAssetViewStrategy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolverImpl;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
-import com.dotcms.api.APIProvider;
-import com.dotcms.api.APIProvider.Builder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -67,21 +45,27 @@ import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
-import com.liferay.util.EncryptorException;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.API;
+import io.vavr.control.Try;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.file.Path;
-import java.security.Key;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
@@ -95,13 +79,23 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.vavr.control.Try;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
+import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.MIMETYPE_FIELD;
+import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.TITLE_FIELD;
+import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.UNDERLYING_FILENAME;
+import static com.google.common.collect.ImmutableMap.of;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
@@ -495,7 +489,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                     .filter(key -> !copyMap.containsKey(key)).collect(Collectors.joining(","));
 
             assertTrue(String.format(" baseType `%s` should have same (or more) number of properties. Missing properties %s" ,baseTypeName, missingKeys),copyMap.size() >= sourceMap.size());
-            final String assertMessage =  " contentType:`%s` , id: `%s` ,  key: `%s` ";
+            final String assertMessage =  "Base contentType: `%s` , content: `%s` ,  key: `%s` ";
 
             for (final String propertyName : sourceMap.keySet()) {
 
@@ -511,7 +505,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                     //Binaries are now formatted to their /dA/ path form.
                     final String dAPath = "/dA/%s/%s/";
                     final String binaryPath = String.format(dAPath, sourceMap.get("identifier"),propertyName);
-                    assertTrue(String.format(assertMessage, baseTypeName, original.getIdentifier(), propertyName), object2.toString().contains(binaryPath));
+                    assertTrue(String.format(assertMessage, baseTypeName, original, propertyName), object2.toString().contains(binaryPath));
                     continue;
                 }
 
@@ -521,7 +515,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 if (isStoryBlockField) {
                     final LinkedHashMap<String, Object> jsonMap =
                             Try.of(() -> APILocator.getStoryBlockAPI().toMap(object1)).getOrElse(new LinkedHashMap<>());
-                    assertEquals(String.format(assertMessage, baseTypeName, original.getIdentifier(), propertyName), jsonMap, object2);
+                    assertEquals(String.format(assertMessage, baseTypeName, original, propertyName), jsonMap, object2);
                 } else {
                     assertEquals(String.format(assertMessage, baseTypeName, original.getIdentifier(), propertyName), object1, object2);
                 }
@@ -554,7 +548,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                     //Binaries are now formatted to their /dA/ path form.
                     final String dAPath = "/dA/%s/%s/";
                     final String binaryPath = String.format(dAPath, contentlet1.getMap().get("identifier"),propertyName);
-                    assertTrue(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ", baseTypeName, contentlet1.getIdentifier(), propertyName), object2.toString().contains(binaryPath));
+                    assertTrue(String.format("Base contentType: `%s` , content: `%s` ,  key: `%s` ", baseTypeName, contentlet1, propertyName), object2.toString().contains(binaryPath));
                     continue;
                 }
 
@@ -564,9 +558,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 if (isStoryBlockField) {
                     final LinkedHashMap<String, Object> jsonMap =
                             Try.of(() -> APILocator.getStoryBlockAPI().toMap(object1)).getOrElse(new LinkedHashMap<>());
-                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ", baseTypeName, contentlet1.getIdentifier(), propertyName), jsonMap, object2);
+                    assertEquals(String.format("Base contentType: `%s` , content: `%s` ,  key: `%s` ", baseTypeName, contentlet1, propertyName), jsonMap, object2);
                 } else {
-                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ", baseTypeName, contentlet1.getIdentifier(), propertyName), object1, object2);
+                    assertEquals(String.format("Base contentType: `%s` , content: `%s` ,  key: `%s` ", baseTypeName, contentlet1, propertyName), object1, object2);
                 }
             }
         }
@@ -862,6 +856,71 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 return (Contentlet) inputStream.readObject();
             }
         }
+    }
+
+    /**
+     * Given Scenario: This tests that the transformer used to handle serialization for the legacy content-resource is configured properly
+     * to handle the date formats returned from the regular database columns and also the fields loaded from the contentlet-as-json column
+     * Expected Result: The transformer instantiated through contentResourceOptions method should be able to convert from Date to Timestamp which the expected datatype used to feed JSONObject
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Transformer_content_Resource_Date_Formats_Test()
+            throws Exception {
+
+        final ContentType contentType = TestDataUtils.newContentTypeFieldTypesGalore();
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.inode())
+                .setProperty("title", "Bicycle")
+                .setProperty("timeField", new Date())
+                .setProperty("dateField", new Date())
+                .setProperty("dateTimeField", new Date());
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
+
+        Assert.assertTrue(contentlet.getMap().get("timeField") instanceof Date);
+        Assert.assertTrue(contentlet.getMap().get("dateField") instanceof Date);
+        Assert.assertTrue(contentlet.getMap().get("dateTimeField") instanceof Date);
+
+        final DotContentletTransformer transformer = new DotTransformerBuilder()
+                .contentResourceOptions(true)
+                .content(contentlet).build();
+
+        final Map<String, Object> map = transformer.toMaps().get(0);
+
+        Assert.assertTrue(map.get("timeField") instanceof Timestamp);
+        Assert.assertTrue(map.get("dateField") instanceof Timestamp);
+        Assert.assertTrue(map.get("dateTimeField") instanceof Timestamp);
+
+        final Map<String, Object> printableMap = ContentletUtil.getContentPrintableMap(
+                APILocator.systemUser(), contentlet);
+
+        Assert.assertTrue(printableMap.get("timeField") instanceof Timestamp);
+        Assert.assertTrue(printableMap.get("dateField") instanceof Timestamp);
+        Assert.assertTrue(printableMap.get("dateTimeField") instanceof Timestamp);
+
+        //This part simulates the JSON rendering that takes place in the ContentResource
+
+        final JSONObject object = new JSONObject()
+                .put("timeField", map.get("timeField"))
+                .put("dateField", map.get("dateField"))
+                .put("dateTimeField", map.get("dateTimeField")
+        );
+
+        Assert.assertTrue(isValidStringDateISO8601(object.get("timeField").toString()));
+        Assert.assertTrue(isValidStringDateISO8601(object.get("dateField").toString()));
+        Assert.assertTrue(isValidStringDateISO8601(object.get("dateTimeField").toString()));
+
+    }
+
+    /**
+     * Utitlity method to validate a string date against the ISO8601 format
+     * @param dateString
+     * @return
+     */
+    public static boolean isValidStringDateISO8601(final String dateString) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        dateFormat.setLenient(false); // Strict date parsing
+        return null != Try.of(()-> dateFormat.parse(dateString)).getOrElse((Date)null);
     }
 
 }

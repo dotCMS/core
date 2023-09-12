@@ -75,7 +75,7 @@ public class EnvironmentResource {
 			boolean isAdmin = APILocator.getUserAPI().isCMSAdmin(user);
 
 			List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), true);
-			Set<Environment> environments = new HashSet<Environment>();
+			Set<Environment> environments = new HashSet<>();
 			if (isAdmin) {
 				List<Environment> app = APILocator.getEnvironmentAPI()
 						.findEnvironmentsWithServers();

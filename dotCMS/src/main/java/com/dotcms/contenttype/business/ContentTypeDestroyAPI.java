@@ -14,14 +14,16 @@ import com.liferay.portal.model.User;
 public interface ContentTypeDestroyAPI {
 
     /**
-     * Massive update on Content-Type and all contents changing the structure-inode to copy-structure meant for disposal
-     * This way we can free-up the original structure for re-use quickly
+     * Massive update on Content-Type and all contents changing the structure-inode to
+     * copy-structure meant for disposal This way we can free-up the original structure for re-use
+     * quickly
      *
      * @param source
      * @param target
+     * @return
      * @throws DotDataException
      */
-    void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException;
+    int relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException;
 
     /**
      * Deletes all the contentlets associated to a content type

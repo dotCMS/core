@@ -9,6 +9,21 @@
                 @include truncate-text;
             }
         }
+
+        .toolbar__button-wrapper {
+            .p-button-icon-only.p-button {
+                .p-button-icon.pi {
+                    color: $white;
+                }
+                &:hover {
+                    background-color: $color-palette-white-op-30;
+                }
+
+                &:focus {
+                    outline: none;
+                }
+            }
+        }
     }
 }
 
@@ -29,18 +44,24 @@ p-toolbar::ng-deep {
     }
 }
 
-dot-toolbar-user,
-dot-toolbar-notifications {
+dot-toolbar-user {
     width: 32px;
 }
 
 .toolbar__button-wrapper {
+    $toolbar-button-width: 4.375rem;
     align-items: center;
     background-color: $brand-background;
     display: flex;
     height: $toolbar-height;
     justify-content: center;
-    width: 70px;
+    width: $toolbar-button-width;
+    min-width: $toolbar-button-width;
+}
+
+.toolbar__dot-wrapper {
+    display: flex;
+    width: $navigation-width;
 }
 
 .toolbar__crumbtrail {
@@ -93,7 +114,7 @@ dot-toolbar-notifications {
     left: 0;
     position: absolute;
     top: 0;
-    width: 130px;
+    width: 100%;
     transition: width $basic-speed ease;
 
     .toolbar__logo-wrapper--collapsed & {
@@ -107,7 +128,7 @@ dot-toolbar-notifications {
     height: 60px;
     justify-content: center;
     position: relative;
-    width: 130px;
+    flex: 1;
 }
 
 .toolbar__logo-wrapper--whitelabel {

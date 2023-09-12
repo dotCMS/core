@@ -1,0 +1,37 @@
+@use "variables" as *;
+
+:host {
+    width: 33.875rem;
+    display: block;
+}
+
+.dialog__actions-container {
+    display: flex;
+    justify-content: end;
+}
+
+p-autoComplete {
+    margin-bottom: $spacing-3;
+    display: block;
+}
+
+ul {
+    color: $color-palette-gray-700;
+    display: flex;
+    flex-direction: column;
+    font-size: $font-size-sm;
+    gap: $spacing-1;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+li {
+    display: flex;
+    align-items: center;
+    gap: $spacing-0;
+}
+
+.pi {
+    color: $color-palette-gray;
+}

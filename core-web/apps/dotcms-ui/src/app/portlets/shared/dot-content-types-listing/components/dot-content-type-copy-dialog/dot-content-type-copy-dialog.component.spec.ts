@@ -13,6 +13,7 @@ import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-f
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService, SiteServiceMock } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotFormSelectorModule } from '@portlets/dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
@@ -60,6 +61,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
                 DotDialogModule,
                 ReactiveFormsModule,
                 DotPipesModule,
+                DotMessagePipe,
                 HttpClientTestingModule
             ],
             providers: [

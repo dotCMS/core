@@ -5,6 +5,7 @@ import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -27,7 +28,7 @@ describe('DotEmptyStateComponent', () => {
         await TestBed.configureTestingModule({
             declarations: [DotEmptyStateComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
-            imports: [DotPipesModule, ButtonModule]
+            imports: [DotPipesModule, DotMessagePipe, ButtonModule]
         }).compileComponents();
     });
 
@@ -77,6 +78,6 @@ describe('DotEmptyStateComponent', () => {
         expect(content.nativeElement.innerText).toEqual(
             "You haven't added anything yet, start by clicking the button below"
         );
-        expect(button.nativeElement.innerText).toEqual('ADD NEW TEMPLATE');
+        expect(button.nativeElement.innerText).toEqual('Add New Template');
     });
 });

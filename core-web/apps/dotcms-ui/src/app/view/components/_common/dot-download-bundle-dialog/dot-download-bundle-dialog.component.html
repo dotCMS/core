@@ -5,29 +5,31 @@
     (hide)="close()"
 >
     <form
-        [formGroup]="form"
+        class="p-fluid"
         *ngIf="showDialog"
+        [formGroup]="form"
         (ngSubmit)="handleSubmit()"
         (keyup.enter)="handleSubmit()"
-        class="p-fluid"
     >
         <div class="field">
-            <label class="form__label">{{ 'download.bundle.i.want' | dm }}: </label>
+            <label dotFieldRequired for="download-btn">{{ 'download.bundle.i.want' | dm }}</label>
             <p-selectButton
                 class="p-button-tabbed"
+                id="download-btn"
                 [options]="downloadOptions"
                 formControlName="downloadOptionSelected"
             >
             </p-selectButton>
         </div>
         <div class="field">
-            <label class="form__label">{{ 'download.bundle.filter' | dm }}: </label>
+            <label for="filterKey">{{ 'download.bundle.filter' | dm }}</label>
             <p-dropdown
+                id="filterKey"
                 [options]="filterOptions"
                 formControlName="filterKey"
                 appendTo="body"
             ></p-dropdown>
         </div>
     </form>
-    <span *ngIf="errorMessage" class="download-bundle__error">{{ errorMessage }}</span>
+    <span class="download-bundle__error" *ngIf="errorMessage">{{ errorMessage }}</span>
 </dot-dialog>

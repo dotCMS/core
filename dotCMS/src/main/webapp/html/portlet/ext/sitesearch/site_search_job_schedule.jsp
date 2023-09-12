@@ -201,7 +201,7 @@ final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSear
 
 		<dl>
             <dt>
-              <label id="op_<%=lang.getId()%>" class="required">
+              <label>
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language")) %>
 			  </label>
             </dt>

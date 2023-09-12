@@ -22,7 +22,7 @@ public class PublishStatus extends TaskRuntimeValues {
 		outputs = new ArrayList<>();
 
 	}
-	List<BundlerStatus> bundlerStatuses = new ArrayList<BundlerStatus>();
+	List<BundlerStatus> bundlerStatuses = new ArrayList<>();
 	Date lastRun;
 
 

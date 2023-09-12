@@ -2,7 +2,6 @@ package com.dotmarketing.quartz.job;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.cache.FieldsCache;
@@ -340,8 +339,8 @@ public class ContentImportThread implements Job{
 		keyContentUpdated = new HashSet ();
 		choosenKeyField = new StringBuffer();
 
-		headers = new HashMap<Integer, Field> ();
-		keyFields = new HashMap<Integer, Field> ();
+		headers = new HashMap<> ();
+		keyFields = new HashMap<> ();
 
 
 		//Parsing the file line per line
@@ -525,8 +524,8 @@ public class ContentImportThread implements Job{
 
 		try {
 			//Building a values HashMap based on the headers/columns position
-			HashMap<Integer, Object> values = new HashMap<Integer, Object>();
-			Set<Category> categories = new HashSet<Category> ();
+			HashMap<Integer, Object> values = new HashMap<>();
+			Set<Category> categories = new HashSet<> ();
 			for (Integer column : headers.keySet()) {
 				Field field = headers.get(column);
 				if (line.length < column) {
@@ -628,7 +627,7 @@ public class ContentImportThread implements Job{
 			}
 
 			//Searching contentlets to be updated by key fields
-			List<Contentlet> contentlets = new ArrayList<Contentlet>();
+			List<Contentlet> contentlets = new ArrayList<>();
 			String conditionValues = "";
 			StringBuffer buffy = new StringBuffer();
 			buffy.append("+structureInode:" + structure.getInode() + " +working:true +deleted:false");
@@ -721,7 +720,7 @@ public class ContentImportThread implements Job{
 				//Check the new contentlet with the validator
 				try
 				{
-					conAPI.validateContentlet(cont,new ArrayList<Category>(categories));
+					conAPI.validateContentlet(cont,new ArrayList<>(categories));
 				}
 				catch(DotContentletValidationException ex)
 				{
@@ -744,7 +743,7 @@ public class ContentImportThread implements Job{
 				//If not preview save the contentlet
 				if (!preview)
 				{
-					conAPI.checkin(cont, new ArrayList<Category>(categories), new ArrayList<Permission>(), user, false);
+					conAPI.checkin(cont, new ArrayList<>(categories), new ArrayList<>(), user, false);
 					APILocator.getVersionableAPI().setWorking(cont);
 					APILocator.getVersionableAPI().setLive(cont);
 				}

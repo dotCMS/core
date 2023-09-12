@@ -1,20 +1,18 @@
-:host {
-    --bg-color: var(--color-sec);
-    --color: var(--color-white);
-    --font-size: 12px;
-}
+@use "../../../../dotcms-scss/shared/common" as *;
+@use "../../../../dotcms-scss/shared/colors" as *;
+@use "../../../../dotcms-scss/shared/fonts" as *;
 
 div {
-    background-color: var(--bg-color);
-    border-radius: var(--border-radius);
-    color: var(--color);
-    font-size: var(--font-size);
+    background-color: $color-palette-secondary-800;
+    border-radius: $border-radius-xs;
+    color: $white;
+    font-size: $font-size-sm;
     padding: 0.1em 0.25em 0.15em;
     display: inline-block;
 
     &.bordered {
         background-color: transparent;
-        border: solid 1px var(--bg-color);
-        color: var(--bg-color);
+        border: solid 1px $color-palette-secondary-800;
+        color: $color-palette-secondary-800;
     }
 }

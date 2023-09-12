@@ -24,6 +24,7 @@ dot-whats-changed,
     max-width: 100%;
     padding: $spacing-5;
     width: 100%;
+    overflow: auto;
 
     &.dot-edit__page-wrapper--deviced {
         padding: $spacing-9;
@@ -52,18 +53,20 @@ dot-whats-changed,
     display: flex;
     flex-direction: column;
     border: solid 1px $color-palette-gray-300;
+    height: 100%;
 
     .dot-edit__page-wrapper--deviced & {
         flex-grow: 0;
         border-radius: 10px;
         border: 2px solid #ddd;
-        box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 4px 4px 15px $color-palette-black-op-10;
         background: $white;
         background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
         margin: 0 auto;
         padding: 0 10px;
-
+        width: fit-content;
+        height: fit-content;
         &:before {
             content: "";
             display: block;

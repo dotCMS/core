@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.exception.DotDataException;
@@ -182,6 +183,36 @@ public interface PermissionAPI {
 	 * @since 1.0
 	 */
 	boolean doesUserHavePermission(Permissionable permissionable, int permissionType, User user) throws DotDataException;
+
+	/**
+	 * Return true if the user have over the content type specified
+	 * permission. This method is meant to be used by frontend call because
+	 * assumes that frontend roles should be respected.
+	 *
+	 * @param permissionable permissionable
+	 * @param permissionType
+	 * @param user
+	 * @return boolean
+	 * @version 1.8
+	 * @throws DotDataException
+	 * @since 1.0
+	 */
+	boolean doesUserHavePermission(ContentType permissionable, int permissionType, User user) throws DotDataException;
+
+	/**
+	 * Return true if the user have over the content type specified
+	 * permission.
+	 *
+	 * @param permissionable permissionable
+	 * @param permissionType
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return boolean
+	 * @version 1.8
+	 * @throws DotDataException
+	 * @since 1.0
+	 */
+	boolean doesUserHavePermission(ContentType permissionable, int permissionType, User user, boolean respectFrontendRoles) throws DotDataException;
 
 	/**
 	 * Return true if the user have over the permissionable the specified

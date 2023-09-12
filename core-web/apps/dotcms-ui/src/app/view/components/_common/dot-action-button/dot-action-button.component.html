@@ -1,10 +1,13 @@
-<p-menu *ngIf="isHaveOptions()" appendTo="body" #menu popup="popup" [model]="model"></p-menu>
-<dot-icon-button
-    (click)="buttonOnClick($event)"
-    [attr.disabled]="disabled"
-    [icon]="icon"
-></dot-icon-button>
+<p-menu #menu *ngIf="isHaveOptions()" [model]="model" appendTo="body" popup="popup"></p-menu>
 
-<p *ngIf="label" class="action-button__label" [class.action-button__label--disabled]="disabled">
+<p-button
+    [disabled]="disabled"
+    [icon]="icon"
+    (click)="buttonOnClick($event)"
+    styleClass="p-button-rounded"
+>
+</p-button>
+
+<p class="action-button__label" *ngIf="label" [class.action-button__label--disabled]="disabled">
     {{ label }}
 </p>

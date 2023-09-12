@@ -1,6 +1,9 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -8,7 +11,11 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.rest.ContentResource;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
@@ -35,6 +42,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -44,22 +52,31 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
@@ -92,6 +109,8 @@ public class PageRenderUtil implements Serializable {
     final long languageId;
     final Host site;
     final TemplateLayout templateLayout;
+
+
 
     /**
      * Creates an instance of this class for a given HTML Page.
@@ -310,6 +329,7 @@ public class PageRenderUtil implements Serializable {
 
                     this.widgetPreExecute(contentlet);
                     this.addAccrueTags(contentlet);
+                    this.addRelationships(contentlet);
 
                     if (personalizedContentlet.getPersonalization().equals(includeContentFor)) {
 
@@ -331,6 +351,11 @@ public class PageRenderUtil implements Serializable {
         }
 
         return raws;
+    }
+
+    private void addRelationships(final Contentlet contentlet) {
+
+        ContentUtils.addRelationships(contentlet, user, mode, languageId);
     }
 
     private Contentlet getContentletByVariantFallback(final String currentVariantId,

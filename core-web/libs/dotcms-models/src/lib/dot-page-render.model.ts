@@ -19,4 +19,5 @@ export interface DotPageRenderRequestParams {
     language_id?: string;
     device_inode?: string;
     mode?: DotPageMode;
+    variantName?: string;
 }

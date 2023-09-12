@@ -1,14 +1,18 @@
 package com.dotmarketing.portlets.structure.factories;
 
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper;
 import com.dotmarketing.business.query.GenericQueryFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
+import java.io.IOException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -142,9 +146,14 @@ public class StructureFactoryTest extends ContentletBaseTest {
      * @see StructureFactory
      */
     @Test
-    public void findStructureURLMapPatterns () throws DotDataException {
+    public void findStructureURLMapPatterns ()
+            throws DotDataException, WebAssetException, IOException, DotSecurityException {
+        // This test is requiring a structure with a URL Map Pattern and is
+        // only passing when the structure is created in the same test
+        // Will use the helper to create the structure
 
-        //Getting the structures map patterns
+        StaticPublisherIntegrationTestHelper.getURLMapPageWithImage();
+
         Collection<SimpleStructureURLMap> simpleStructureURLMaps = StructureFactory.findStructureURLMapPatterns();
 
         //Validations
@@ -619,10 +628,10 @@ public class StructureFactoryTest extends ContentletBaseTest {
         Long identifier = uniqueIdentifier.get(structure.getName());
 
         //Preparing the parameters for the search
-        List<String> varNames = new ArrayList<String>();
+        List<String> varNames = new ArrayList<>();
         varNames.add( UtilMethods.toCamelCase( "JUnit Test Image-" + identifier) );
 
-        List<String[]> fieldValues = new ArrayList<String[]>();//Not sure about this parameter, not sure what is for, the method getImagesFieldsList just ask if it is a null value.....
+        List<String[]> fieldValues = new ArrayList<>();//Not sure about this parameter, not sure what is for, the method getImagesFieldsList just ask if it is a null value.....
         fieldValues.add( new String[]{ "JUnit Test Image-" + identifier } );
 
         //Getting the fields list
@@ -645,10 +654,10 @@ public class StructureFactoryTest extends ContentletBaseTest {
         Long identifier = uniqueIdentifier.get(structure.getName());
 
         //Preparing the parameters for the search
-        List<String> varNames = new ArrayList<String>();
+        List<String> varNames = new ArrayList<>();
         varNames.add( UtilMethods.toCamelCase( "JUnit Test File-" + identifier) );
 
-        List<String[]> fieldValues = new ArrayList<String[]>();//Not sure about this parameter, not sure what is for, the method getImagesFieldsList just ask if it is a null value.....
+        List<String[]> fieldValues = new ArrayList<>();//Not sure about this parameter, not sure what is for, the method getImagesFieldsList just ask if it is a null value.....
         fieldValues.add( new String[]{ "JUnit Test File-" + identifier } );
 
         //Getting the fields list

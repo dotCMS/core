@@ -11,10 +11,13 @@ import { FileUploadModule } from 'primeng/fileupload';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { DotCreatePersonaFormModule } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { LoginService, SiteService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -54,11 +57,13 @@ describe('DotAddPersonaDialogComponent', () => {
                 DotDialogModule,
                 FileUploadModule,
                 SiteSelectorFieldModule,
-                DotCreatePersonaFormModule
+                DotCreatePersonaFormModule,
+                DotMessagePipe
             ],
             providers: [
                 DotWorkflowActionsFireService,
                 DotHttpErrorManagerService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: SiteService, useValue: siteServiceMock }

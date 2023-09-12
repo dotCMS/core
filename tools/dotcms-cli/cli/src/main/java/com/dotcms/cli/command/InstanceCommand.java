@@ -2,6 +2,7 @@ package com.dotcms.cli.command;
 
 import com.dotcms.api.client.DotCmsClientConfig;
 import com.dotcms.api.client.ServiceManager;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.ServiceBean;
@@ -25,15 +26,26 @@ import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
 @ActivateRequestContext
 @CommandLine.Command(
         name = InstanceCommand.NAME,
-        description = "@|bold,green Prints a list of available dotCMS instances.|@ "
-                + "Use to activate/switch dotCMS instance. @|bold,cyan -a  --activate|@ followed by the profile name."
+        header = "@|bold,blue Prints a list of available dotCMS instances.|@",
+        description = {
+                " A List with all the available dotCMS instances is printed.",
+                " The info includes API URL, active user and the current profile.",
+                " This list of available servers comes from the file [dot-service.yml]",
+                " Located in a folder named dotCMS under the user's home directory.",
+                " Use to activate/switch dotCMS instance. @|yellow -a  --activate|@",
+                " followed by the instance name.",
+                "" // empty line left here on purpose to make room at the end
+        }
 )
-public class InstanceCommand implements Callable<Integer> {
+public class InstanceCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "instance";
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    HelpOptionMixin helpOption;
 
     @Inject
     DotCmsClientConfig clientConfig;
@@ -42,11 +54,17 @@ public class InstanceCommand implements Callable<Integer> {
     @Inject
     ServiceManager serviceManager;
 
-    @CommandLine.Option(names = {"-act", "--activate"}, arity = "1", description = "Activate a profile by entering it's name.")
+    @CommandLine.Option(names = {"-act", "--activate"}, arity = "1", description = "Activate an instance by entering it's name.")
     String activate;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
-    public Integer call() {
+    public Integer call() throws IOException {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
         final Map<String, URI> servers = clientConfig.servers();
         if (servers.isEmpty()) {
@@ -86,13 +104,8 @@ public class InstanceCommand implements Callable<Integer> {
                 } else {
                     ServiceBean serviceBean = optional.get();
                     serviceBean = serviceBean.withActive(true);
-                    try {
-                        serviceManager.persist(serviceBean);
-                        output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active profile.", activate));
-                    } catch (IOException e) {
-                        output.error("Unable to persist the new selected service ",e);
-                        return ExitCode.SOFTWARE;
-                    }
+                    serviceManager.persist(serviceBean);
+                    output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active one.", activate));
                 }
             }
         }
@@ -119,4 +132,13 @@ public class InstanceCommand implements Callable<Integer> {
         return beans;
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

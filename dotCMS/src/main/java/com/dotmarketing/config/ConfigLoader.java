@@ -104,7 +104,7 @@ public class ConfigLoader {
         InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName);
 
         if (is == null) {
-            ConfigLoader.class.getClassLoader().getResourceAsStream(resourceName);
+            Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName);
         }
 
         return is;

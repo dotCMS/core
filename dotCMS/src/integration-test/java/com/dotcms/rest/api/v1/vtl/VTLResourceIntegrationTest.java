@@ -40,8 +40,8 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -101,7 +101,7 @@ public class VTLResourceIntegrationTest {
                 .replace("{IDENTIFIER_TO_REPLACE}", employee.getIdentifier());
 
         final MultivaluedMap<String, String> queryParameters = new MultivaluedHashMap<>();
-        queryParameters.put("key1", Collections.singletonList("value1"));
+        queryParameters.put("key1", List.of("value1"));
         queryParameters.put("key2", Arrays.asList("value2", "value3"));
 
         final String folderName = System.currentTimeMillis() + "employees";

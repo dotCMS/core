@@ -115,7 +115,7 @@ DEFAULT_GITHUB_USER_EMAIL='victor.alfaro@dotcms.com'
 
 [[ -z "${BUILD_ID}" ]] && BUILD_ID=${CURRENT_BRANCH}
 [[ -z "${BUILD_ID}" ]] && BUILD_ID=${BRANCH}
-: ${BUILD_HASH:="${GITHUB_SHA::8}"} && export BUILD_HASH
+: ${BUILD_HASH:="${GITHUB_SHA::7}"} && export BUILD_HASH
 : ${GITHUB_USER:="${DEFAULT_GITHUB_USER}"} && export GITHUB_USER
 : ${GITHUB_USER_EMAIL:="${DEFAULT_GITHUB_USER_EMAIL}"} && export GITHUB_USER_EMAIL
 export DOTCMS_GITHUB_ORG=dotCMS
@@ -125,7 +125,7 @@ export ENTERPRISE_GITHUB_REPO=enterprise
 export CORE_WEB_GITHUB_REPO=core-web
 export DOCKER_GITHUB_REPO=docker
 export PLUGIN_SEEDS_GITHUB_REPO=plugin-seeds
-export TEST_RESULTS_GITHUB_REPO=test-results
+export TEST_RESULTS_GITHUB_REPO=core-test-results
 : ${DEBUG:=true} && export DEBUG
 
 echo "###########

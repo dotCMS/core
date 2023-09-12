@@ -13,8 +13,6 @@ import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggesti
 
 import { RemoteCustomExtensions } from '@dotcms/dotcms-models';
 
-import { ActionButtonComponent } from './action-button.component';
-
 import {
     SuggestionPopperModifiers,
     SuggestionsCommandProps,
@@ -172,7 +170,10 @@ function execCommand({
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
         },
         image: () => editor.commands.openAssetForm({ type: 'image' }),
-        video: () => editor.commands.openAssetForm({ type: 'video' })
+        subscript: () => editor.chain().setSubscript().focus().run(),
+        superscript: () => editor.chain().setSuperscript().focus().run(),
+        video: () => editor.commands.openAssetForm({ type: 'video' }),
+        aiContentPrompt: () => editor.commands.openAIPrompt()
     };
 
     getCustomActions(customBlocks).forEach((option) => {
@@ -185,8 +186,8 @@ function execCommand({
         };
     });
 
-    whatToDo[props.type.name]
-        ? whatToDo[props.type.name]()
+    whatToDo[type.name]
+        ? whatToDo[type.name]()
         : editor.chain().setTextSelection(range).focus().run();
 }
 
@@ -228,6 +229,13 @@ export const ActionsMenu = (
                 content: suggestionsComponent.location.nativeElement,
                 rect: clientRect,
                 onHide: () => {
+                    editor.commands.focus();
+                    const queryRange = updateQueryRange({ editor, range });
+                    const text = editor.state.doc.textBetween(queryRange.from, queryRange.to, ' ');
+                    if (text === '/') {
+                        editor.commands.deleteRange(queryRange);
+                    }
+
                     const transaction = editor.state.tr.setMeta(FLOATING_ACTIONS_MENU_KEYBOARD, {
                         open: false
                     });
@@ -252,7 +260,8 @@ export const ActionsMenu = (
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
-        const { allowedBlocks, allowedContentTypes, lang } = editor.storage.dotConfig;
+        const { allowedBlocks, allowedContentTypes, lang, contentletIdentifier } =
+            editor.storage.dotConfig;
         const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
         const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
 
@@ -262,6 +271,8 @@ export const ActionsMenu = (
         suggestionsComponent.instance.items = items;
         suggestionsComponent.instance.currentLanguage = lang;
         suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
+        suggestionsComponent.instance.contentletIdentifier = contentletIdentifier;
+
         suggestionsComponent.instance.onSelectContentlet = (props) => {
             clearFilter({ type: ItemsType.CONTENT, editor, range, suggestionKey, ItemsType });
             onSelection({ editor, range, props });
@@ -299,9 +310,23 @@ export const ActionsMenu = (
     }
 
     function onSelection({ editor, range, props }) {
+        const newRange = updateQueryRange({ editor, range });
+        execCommand({ editor: editor, range: newRange, props, customBlocks });
+    }
+
+    /**
+     * Returns a new range based on a query start and length
+     *
+     * @param editor {Editor}
+     * @param range {Range}
+     *
+     * @return range {Range}
+     */
+    function updateQueryRange({ editor, range }) {
         const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
         range.to = range.to + suggestionQuery;
-        execCommand({ editor: editor, range: range, props, customBlocks });
+
+        return range;
     }
 
     /* End new Functions */
@@ -426,13 +451,10 @@ export const ActionsMenu = (
         },
 
         addProseMirrorPlugins() {
-            const button = viewContainerRef.createComponent(ActionButtonComponent);
-
             return [
                 FloatingActionsPlugin({
                     command: execCommand,
                     editor: this.editor,
-                    element: button.location.nativeElement,
                     render: () => {
                         return {
                             onStart,

@@ -1,7 +1,9 @@
 import { User } from '@dotcms/dotcms-js';
+
 import { DotPageContainerStructure } from './dot-container.model';
 import { DotCMSContentlet } from './dot-contentlet.model';
 import { DotEditPageViewAs } from './dot-edit-page-view-as.model';
+import { DotExperiment } from './dot-experiments.model';
 import { DotLayout } from './dot-layout.model';
 import { DotPageMode } from './dot-page-mode.enum';
 import { DotPage } from './dot-page.model';
@@ -13,13 +15,16 @@ export interface DotPageState {
     locked?: boolean;
     lockedByAnotherUser?: boolean;
     mode: DotPageMode;
+    runningExperiment: DotExperiment;
+    seoMedia: string;
 }
 
 export class DotPageRenderState extends DotPageRender {
     constructor(
         private _user: User,
         private dotRenderedPage: DotPageRenderParameters,
-        _favoritePage?: DotCMSContentlet
+        _favoritePage?: DotCMSContentlet,
+        runningExperiment?: DotExperiment
     ) {
         super(dotRenderedPage);
         const locked = !!dotRenderedPage.page.lockedBy;
@@ -29,7 +34,9 @@ export class DotPageRenderState extends DotPageRender {
             favoritePage: _favoritePage,
             locked: locked,
             lockedByAnotherUser: lockedByAnotherUser,
-            mode: dotRenderedPage.viewAs.mode
+            mode: dotRenderedPage.viewAs.mode,
+            runningExperiment: runningExperiment,
+            seoMedia: null
         };
     }
 
@@ -39,11 +46,11 @@ export class DotPageRenderState extends DotPageRender {
         return this._state;
     }
 
-    get canCreateTemplate(): boolean {
+    override get canCreateTemplate(): boolean {
         return this.dotRenderedPage.canCreateTemplate;
     }
 
-    get containers(): DotPageContainerStructure {
+    override get containers(): DotPageContainerStructure {
         return this.dotRenderedPage.containers;
     }
 
@@ -51,19 +58,19 @@ export class DotPageRenderState extends DotPageRender {
         return this.dotRenderedPage.page.rendered;
     }
 
-    get layout(): DotLayout {
+    override get layout(): DotLayout {
         return this.dotRenderedPage.layout;
     }
 
-    get page(): DotPage {
+    override get page(): DotPage {
         return this.dotRenderedPage.page;
     }
 
-    get template(): DotTemplate {
+    override get template(): DotTemplate {
         return this.dotRenderedPage.template;
     }
 
-    get viewAs(): DotEditPageViewAs {
+    override get viewAs(): DotEditPageViewAs {
         return this.dotRenderedPage.viewAs;
     }
 
@@ -81,5 +88,17 @@ export class DotPageRenderState extends DotPageRender {
 
     set dotRenderedPageState(dotRenderedPageState: DotPageRender) {
         this.dotRenderedPage = dotRenderedPageState;
+    }
+
+    set runningExperiment(runningExperiment: DotExperiment) {
+        this._state.runningExperiment = runningExperiment;
+    }
+
+    get seoMedia(): string {
+        return this._state.seoMedia;
+    }
+
+    set seoMedia(seoMedia: string) {
+        this._state.seoMedia = seoMedia;
     }
 }

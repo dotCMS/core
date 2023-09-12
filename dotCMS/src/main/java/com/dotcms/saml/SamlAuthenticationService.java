@@ -41,9 +41,10 @@ public interface SamlAuthenticationService {
      * @param request {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
      * @param identityProviderConfiguration {@link IdentityProviderConfiguration}
+     * @param relayState {@link String}
      */
     void authentication(final HttpServletRequest request, final HttpServletResponse response,
-                        final IdentityProviderConfiguration identityProviderConfiguration);
+                        final IdentityProviderConfiguration identityProviderConfiguration, final String relayState);
 
     /**
      * Do the logout call for SAML
@@ -70,10 +71,22 @@ public interface SamlAuthenticationService {
                                  final IdentityProviderConfiguration identityProviderConfiguration);
 
     /**
-     * Render the metadata as a XML
-     * @param writer
+     * Retrieve all attributes from the assertion and return them as a key/value map
+     * @param request
+     * @param response
      * @param identityProviderConfiguration
+     * @return
      */
+    public Map<String, String> resolveAllAttributes(final HttpServletRequest request,
+                                                    final HttpServletResponse response,
+                                                    final IdentityProviderConfiguration identityProviderConfiguration);
+
+
+        /**
+         * Render the metadata as a XML
+         * @param writer
+         * @param identityProviderConfiguration
+         */
     void renderMetadataXML(final Writer writer,
                            final IdentityProviderConfiguration identityProviderConfiguration);
 

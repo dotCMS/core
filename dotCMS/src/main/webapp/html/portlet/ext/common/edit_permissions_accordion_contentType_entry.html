@@ -1,0 +1,14 @@
+<table class="accordionEntry" style="margin-top:-10px;">
+
+    <tr>
+        <th style="padding-left:20px;" class="permissionType">${contentWillInherit} (Children)</th>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="content-view-permission-${id}" onclick="viewPermissionChanged('content', '${id}')" ${contentViewPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="content-edit-permission-${id}" onclick="editPermissionChanged('content', '${id}')" ${contentEditPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="content-publish-permission-${id}" onclick="publishPermissionChanged('content', '${id}')" ${contentPublishPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="content-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('content', '${id}')" ${contentEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
+    </tr>
+    <tr>
+        <td colspan="6" style="padding-top:18px;font-style:italic;font-size:93%">${permissionsOnContentTypeChildren}</td>
+    </tr>
+</table>

@@ -10,7 +10,7 @@ public class RemoteAPIClient implements java.util.Map<String, Object> {
 
 	
 	private String remoteURL = null;
-	private Map<String, Object> underMap= new HashMap<String, Object>();
+	private Map<String, Object> underMap= new HashMap<>();
 	
 	
 	@Override

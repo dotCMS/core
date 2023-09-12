@@ -12,8 +12,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotLoopEditorComponent } from './dot-loop-editor.component';
 
@@ -30,6 +30,7 @@ class DotTestHostComponent {
     isEditorVisible = true;
     label = 'pre_loop';
     editor = new FormControl('');
+
     showLoopInput() {
         this.isEditorVisible = true;
     }
@@ -53,12 +54,15 @@ export class DotTextareaContentMockComponent implements ControlValueAccessor {
     propagateChange = (_: unknown) => {
         //
     };
+
     registerOnChange(fn): void {
         this.propagateChange = fn;
     }
+
     registerOnTouched(): void {
         //
     }
+
     writeValue(): void {
         // no-op
     }
@@ -83,12 +87,7 @@ describe('DotLoopEditorComponent', () => {
                 DotTextareaContentMockComponent,
                 DotTestHostComponent
             ],
-            imports: [
-                DotMessagePipeModule,
-                ButtonModule,
-                ReactiveFormsModule,
-                BrowserAnimationsModule
-            ],
+            imports: [DotMessagePipe, ButtonModule, ReactiveFormsModule, BrowserAnimationsModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();

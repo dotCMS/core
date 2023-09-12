@@ -15,8 +15,8 @@ import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotLayout } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { mockDotLayout } from '@dotcms/utils-testing';
-import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 
 import { DotLayoutDesignerComponent } from './dot-layout-designer.component';
 
@@ -33,10 +33,13 @@ import { DotLayoutDesignerComponent } from './dot-layout-designer.component';
 })
 export class MockDotEditLayoutGridComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {};
+
     registerOnChange(fn: any): void {
         this.propagateChange = fn;
     }
+
     registerOnTouched(): void {}
+
     writeValue(): void {}
 }
 
@@ -53,10 +56,13 @@ export class MockDotEditLayoutGridComponent implements ControlValueAccessor {
 })
 export class MockDotEditLayoutSidebarComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {};
+
     registerOnChange(fn: any): void {
         this.propagateChange = fn;
     }
+
     registerOnTouched(): void {}
+
     writeValue(): void {}
 }
 
@@ -92,13 +98,12 @@ describe('DotLayoutDesignerComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [
-                DotMessagePipe,
                 TestHostComponent,
                 DotLayoutDesignerComponent,
                 MockDotEditLayoutGridComponent,
                 MockDotEditLayoutSidebarComponent
             ],
-            imports: [FormsModule, ReactiveFormsModule],
+            imports: [DotMessagePipe, FormsModule, ReactiveFormsModule],
             providers: [
                 {
                     provide: DotMessageService,

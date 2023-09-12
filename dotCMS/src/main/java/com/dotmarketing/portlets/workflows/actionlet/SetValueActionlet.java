@@ -27,7 +27,7 @@ public class SetValueActionlet extends WorkFlowActionlet {
 
     @Override
     public List<WorkflowActionletParameter> getParameters() {
-        List<WorkflowActionletParameter> params = new ArrayList<WorkflowActionletParameter>();
+        List<WorkflowActionletParameter> params = new ArrayList<>();
 
         params.add(new WorkflowActionletParameter("field", "velocityVar Name of the field to set", "", true));
         params.add(new WorkflowActionletParameter("value", "The value you want to set it to - can be velocity", "", true));

@@ -118,6 +118,17 @@ public interface ContentletAPIPreHook {
 	 * @param variant
 	 * @return
 	 */
+	default boolean findContentletByIdentifierAnyLanguage(final String identifier, final String variant,
+			final boolean includeDeleted) throws DotDataException{
+		return true;
+	}
+
+	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
+	 * @param variant
+	 * @return
+	 */
 	default boolean findContentletByIdentifierAnyLanguage (String identifier, String variant) {
 		return true;
 	}
@@ -1051,6 +1062,17 @@ public interface ContentletAPIPreHook {
 	public default boolean findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles){
       return true;
     }
+
+	/**
+	 * Retrieves all versions for a contentlet identifier
+	 * @param identifiers
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public default boolean findLiveOrWorkingVersions(Set<String> identifiers, User user, boolean respectFrontendRoles){
+		return true;
+	}
 
 	/**
 	 * Retrieves all versions for a contentlet identifier.

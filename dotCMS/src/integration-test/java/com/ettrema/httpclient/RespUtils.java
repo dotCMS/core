@@ -71,7 +71,7 @@ public class RespUtils {
     
 
     public static  List<Element> getElements(Element root, String name) {
-        List<Element> list = new ArrayList<Element>();
+        List<Element> list = new ArrayList<>();
         Iterator it = root.getDescendants(new ElementFilter(name));
         while(it.hasNext()) {
             Object o = it.next();

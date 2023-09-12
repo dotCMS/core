@@ -1,9 +1,21 @@
 package com.dotcms.junit;
 
+import com.dotcms.aspects.DotAspectException;
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.internal.DataConverter;
+import com.tngtech.java.junit.dataprovider.internal.TestGenerator;
+import com.tngtech.java.junit.dataprovider.internal.TestValidator;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+import org.apache.commons.logging.Log;
 import org.junit.Ignore;
 import org.junit.rules.RunRules;
 import org.junit.runner.Description;
@@ -13,18 +25,9 @@ import org.junit.runners.model.InitializationError;
 
 public class CustomDataProviderRunner extends DataProviderRunner {
 
+
     public CustomDataProviderRunner(Class<?> clazz) throws InitializationError {
         super(clazz);
-        ByteBuddyFactory.init();
-        // Make sure integration test init service is initialized for Data Providers
-        // these run when the tests to run are determined, not when the tests are run
-        // so @BeforeClass methods are not run before this.
-        // It is better to have DataProviders not do any database work, but if they do
-        try {
-            IntegrationTestInitService.getInstance().init();
-        } catch (Exception e) {
-            throw new InitializationError(e);
-        }
     }
 
     @Override
@@ -38,5 +41,34 @@ public class CustomDataProviderRunner extends DataProviderRunner {
             runLeaf(runRules, description, notifier);
         }
     }
+    @Override
+    protected void initializeHelpers() {
+        dataConverter = new DataConverter();
+        testGenerator = new TestGenerator(dataConverter) {
 
+
+                @Override
+            public List<FrameworkMethod> generateExplodedTestMethodsFor(FrameworkMethod testMethod,
+                    FrameworkMethod dataProviderMethod) {
+
+                if (dataProviderMethod!=null) {
+                    FrameworkMethod loggedDataProviderMethod = new FrameworkMethod(dataProviderMethod.getMethod()) {
+                        @Override
+                        public Object invokeExplosively(Object target, Object... params) throws Throwable {
+                            Logger.info(this, "START Data Provider Explode for " + this.getMethod() );
+                            Object result = super.invokeExplosively(target, params);
+                            Logger.info(this, "END Data Provider Explode for " + this.getMethod() );
+                            return result;
+                        }
+                    };
+
+                    return  super.generateExplodedTestMethodsFor(testMethod, loggedDataProviderMethod);
+
+                }
+                return super.generateExplodedTestMethodsFor(testMethod, null);
+
+            }
+        };
+        testValidator = new TestValidator(dataConverter);
+    }
 }

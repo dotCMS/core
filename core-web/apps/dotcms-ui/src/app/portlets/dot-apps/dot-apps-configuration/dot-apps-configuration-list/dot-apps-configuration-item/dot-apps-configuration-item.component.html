@@ -5,39 +5,48 @@
 <div class="dot-apps-configuration-list__host-key">
     {{ 'apps.key' | dm }}
     <dot-copy-link
-        (click)="$event.stopPropagation()"
         [copy]="site.id"
         [label]="site.id"
+        (click)="$event.stopPropagation()"
     ></dot-copy-link>
 </div>
 
 <ng-container *ngIf="site.configured; else noConfigurations">
     <div class="dot-apps-configuration-list__host-configured">
-        <dot-icon
-            data-testId="warning"
+        <i
+            class="pi pi-exclamation-triangle host-configured__warning-icon"
             *ngIf="site.secretsWithWarnings"
-            name="warning"
             pTooltip="{{ site.secretsWithWarnings + ' ' + ('apps.invalid.secrets' | dm) }}"
-            size="18"
-        ></dot-icon>
-        <dot-icon-button
-            icon="vertical_align_bottom"
+            data-testId="warning"
+        ></i>
+
+        <p-button
             (click)="exportConfiguration($event, site)"
-        ></dot-icon-button>
-        <dot-icon-button
-            icon="delete_outline"
-            (click)="confirmDelete($event, site)"
-        ></dot-icon-button>
-        <dot-icon-button
-            icon="edit"
+            styleClass="p-button-text p-button-rounded p-button-sm"
+            icon="pi pi-download"
+            data-testId="export"
+        ></p-button>
+        <p-button
             (click)="editConfigurationSite($event, site)"
-        ></dot-icon-button>
+            styleClass="p-button-text p-button-rounded p-button-sm"
+            icon="pi pi-pencil"
+            data-testId="edit"
+        ></p-button>
+        <p-button
+            (click)="confirmDelete($event, site)"
+            styleClass="p-button-text p-button-rounded p-button-danger p-button-sm"
+            icon="pi pi-trash"
+            data-testId="delete"
+        ></p-button>
     </div>
 </ng-container>
 
 <ng-template #noConfigurations>
-    <dot-icon-button
-        icon="add_circle"
+    <p-button
         (click)="editConfigurationSite($event, site)"
-    ></dot-icon-button>
+        styleClass="p-button-text p-button-rounded p-button-sm"
+        icon="pi pi-plus"
+        data-testId="add"
+    >
+    </p-button>
 </ng-template>

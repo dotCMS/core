@@ -38,11 +38,12 @@
             object-fit: contain;
             object-position: top;
             height: 348px;
+            max-width: 100%;
         }
     }
 
     ::ng-deep dot-html-to-image {
-        min-height: 353px;
+        height: 353px;
 
         img {
             background-color: $white;

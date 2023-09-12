@@ -95,13 +95,12 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
         Object.entries(errors).forEach(([key, value]) => {
             if (key in NG_DEFAULT_VALIDATORS_ERRORS_MSG) {
                 let errorTranslated = '';
-                const { requiredLength, actualLength } = value;
+                const { requiredLength } = value;
                 switch (key) {
                     case 'maxlength':
                         errorTranslated = this.dotMessageService.get(
                             NG_DEFAULT_VALIDATORS_ERRORS_MSG[key],
-                            requiredLength,
-                            actualLength
+                            requiredLength
                         );
                         break;
 

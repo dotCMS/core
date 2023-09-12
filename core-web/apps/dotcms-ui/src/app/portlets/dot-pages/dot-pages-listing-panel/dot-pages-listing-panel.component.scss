@@ -1,11 +1,16 @@
 @use "variables" as *;
 
+:host {
+    margin-bottom: $spacing-4;
+}
+
 ::ng-deep {
     .p-datatable .p-datatable-tbody tr td {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 0;
+        padding: 0 $spacing-2;
 
         &:last-child {
             padding-right: $spacing-2;
@@ -19,16 +24,16 @@
         padding: $spacing-3;
     }
 
-    .p-datatable .p-datatable-tbody tr.dot-pages-listing-content__row {
-        height: 47px;
-    }
-
     .dot-pages-listing-header__language-input .p-dropdown-label.p-inputtext {
-        min-width: 100px;
+        min-width: 115px;
     }
 
     .p-datatable .p-datatable-tbody tr td.dot-pages-listing__empty-content {
         text-align: center;
+    }
+
+    .p-autocomplete-loader {
+        margin-right: $spacing-5;
     }
 }
 
@@ -48,9 +53,15 @@
 }
 
 .dot-pages-table__status-field {
+    align-items: center;
+    display: flex;
+
     dot-badge,
     dot-contentlet-lock-icon {
         margin-left: $spacing-1;
     }
-    display: flex;
+}
+
+.pi.pi-times {
+    cursor: pointer;
 }

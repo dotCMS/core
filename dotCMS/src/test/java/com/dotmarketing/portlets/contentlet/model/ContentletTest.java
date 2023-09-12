@@ -12,7 +12,6 @@ import com.liferay.portal.model.User;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -29,7 +28,7 @@ public class ContentletTest {
         contentlet.setContentletAPI(contentletAPI);
         final ContentType mockContentType = Mockito.mock(ContentType.class);
         final Field fieldWithTitle = createFieldWithVarname("title");
-        final List<Field> mockFieldWithTitle = Collections.singletonList(fieldWithTitle);
+        final List<Field> mockFieldWithTitle = List.of(fieldWithTitle);
         Mockito.doReturn(mockContentType).when(contentlet).getContentType();
         Mockito.when(mockContentType.fields()).thenReturn(mockFieldWithTitle);
 

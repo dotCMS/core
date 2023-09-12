@@ -34,7 +34,7 @@
         transition: background-color $field-animation-speed;
 
         &:hover {
-            background-color: rgba($color-palette-primary, 0.1);
+            background-color: $color-palette-primary-op-10;
         }
     }
 }

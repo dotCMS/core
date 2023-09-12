@@ -31,12 +31,12 @@ public class ESIndexHelperTest extends UnitTestBase {
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
 		final LicenseService LicenseService = mock(LicenseService.class);
 
-		Map<String,String> indexInfo = new HashMap<String,String>();
+		Map<String,String> indexInfo = new HashMap<>();
 		indexInfo.put("index", searchIndex);
-		List<String> aliasList = new ArrayList<String>();
+		List<String> aliasList = new ArrayList<>();
 
 		when(siteSearchAPI.listIndices()).thenReturn(aliasList);
-		when(esIndexAPI.getAliasToIndexMap(aliasList)).thenReturn(new HashMap<String,String>());
+		when(esIndexAPI.getAliasToIndexMap(aliasList)).thenReturn(new HashMap<>());
 
 		ESIndexHelper esIndexHelper = new ESIndexHelper(siteSearchAPI,LicenseService);
 
@@ -55,9 +55,9 @@ public class ESIndexHelperTest extends UnitTestBase {
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
 		final LicenseService LicenseService = mock(LicenseService.class);
 
-		Map<String,String> indexInfo = new HashMap<String,String>();
+		Map<String,String> indexInfo = new HashMap<>();
 		indexInfo.put("alias", searchIndex);
-		List<String> aliasList = new ArrayList<String>();
+		List<String> aliasList = new ArrayList<>();
 		// add name to alias list
 		aliasList.add(searchIndex);
 
@@ -79,13 +79,13 @@ public class ESIndexHelperTest extends UnitTestBase {
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
 		final LicenseService LicenseService = mock(LicenseService.class);
 
-		Map<String,String> indexInfo = new HashMap<String,String>();
+		Map<String,String> indexInfo = new HashMap<>();
 		indexInfo.put("index", searchIndex);
-		List<String> aliasList = new ArrayList<String>();
+		List<String> aliasList = new ArrayList<>();
 		aliasList.add("live_index");
 
 		when(siteSearchAPI.listIndices()).thenReturn(aliasList);
-		when(esIndexAPI.getAliasToIndexMap(aliasList)).thenReturn(new HashMap<String,String>());
+		when(esIndexAPI.getAliasToIndexMap(aliasList)).thenReturn(new HashMap<>());
 
 		ESIndexHelper esIndexHelper = new ESIndexHelper(siteSearchAPI,LicenseService);
 
@@ -104,13 +104,13 @@ public class ESIndexHelperTest extends UnitTestBase {
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
 		final LicenseService LicenseService = mock(LicenseService.class);
 
-		Map<String,String> indexInfo = new HashMap<String,String>();
+		Map<String,String> indexInfo = new HashMap<>();
 		indexInfo.put("index", searchIndex);
-		List<String> indexes = new ArrayList<String>();
+		List<String> indexes = new ArrayList<>();
 		indexes.add("live_index");
 
 		when(siteSearchAPI.listIndices()).thenReturn(indexes);
-		when(esIndexAPI.getAliasToIndexMap(indexes)).thenReturn(new HashMap<String,String>());
+		when(esIndexAPI.getAliasToIndexMap(indexes)).thenReturn(new HashMap<>());
 
 		ESIndexHelper esIndexHelper = new ESIndexHelper(siteSearchAPI,LicenseService);
 
@@ -128,13 +128,13 @@ public class ESIndexHelperTest extends UnitTestBase {
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
 		final LicenseService LicenseService = mock(LicenseService.class);
 
-		Map<String,String> indexInfo = new HashMap<String,String>();
+		Map<String,String> indexInfo = new HashMap<>();
 		indexInfo.put("something", searchIndex);
-		List<String> indexes = new ArrayList<String>();
+		List<String> indexes = new ArrayList<>();
 		indexes.add("live_index");
 
 		when(siteSearchAPI.listIndices()).thenReturn(indexes);
-		when(esIndexAPI.getAliasToIndexMap(indexes)).thenReturn(new HashMap<String,String>());
+		when(esIndexAPI.getAliasToIndexMap(indexes)).thenReturn(new HashMap<>());
 
 		ESIndexHelper esIndexHelper = new ESIndexHelper(siteSearchAPI,LicenseService);
 
@@ -152,13 +152,13 @@ public class ESIndexHelperTest extends UnitTestBase {
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
 		final LicenseService LicenseService = mock(LicenseService.class);
 
-		Map<String,String> indexInfo = new HashMap<String,String>();
+		Map<String,String> indexInfo = new HashMap<>();
 		indexInfo.put(null, searchIndex);
-		List<String> indexes = new ArrayList<String>();
+		List<String> indexes = new ArrayList<>();
 		indexes.add("live_index");
 
 		when(siteSearchAPI.listIndices()).thenReturn(indexes);
-		when(esIndexAPI.getAliasToIndexMap(indexes)).thenReturn(new HashMap<String,String>());
+		when(esIndexAPI.getAliasToIndexMap(indexes)).thenReturn(new HashMap<>());
 
 		ESIndexHelper esIndexHelper = new ESIndexHelper(siteSearchAPI,LicenseService);
 

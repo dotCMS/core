@@ -61,7 +61,7 @@ public class ESContentTool implements ViewTool {
 	public ESSearchResults search(String esQuery) throws DotSecurityException, DotDataException{
 
 		ESSearchResults cons =  esapi.esSearch(esQuery, mode.showLive, user, true);
-		List<ContentMap> maps = new ArrayList<ContentMap>();
+		List<ContentMap> maps = new ArrayList<>();
 		
 		
 		for(Object x : cons){

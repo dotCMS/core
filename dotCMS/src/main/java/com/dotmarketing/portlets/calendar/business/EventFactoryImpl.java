@@ -207,8 +207,8 @@ public class EventFactoryImpl extends EventFactory {
 			int internalOffset = 0;
 			int size = 0;
             List<Contentlet> hits = null;
-            List<Event> events = new ArrayList<Event>();
-            PaginatedArrayList<Event> toReturn = new PaginatedArrayList<Event>();
+            List<Event> events = new ArrayList<>();
+            PaginatedArrayList<Event> toReturn = new PaginatedArrayList<>();
 			GregorianCalendar dateFromCal = new GregorianCalendar();
 			dateFromCal.setTime(dateFrom);
 			dateFromCal.set(Calendar.HOUR_OF_DAY, 0);
@@ -224,7 +224,7 @@ public class EventFactoryImpl extends EventFactory {
 		
 			while(!done) { 
 				hits = conAPI.search(query, internalLimit, internalOffset, eventStructure.getVelocityVarName() + "." + startDate.getVelocityVarName(), user, respectFrontendRoles);
-				List<String> recurrentInodes = new ArrayList<String> (); 
+				List<String> recurrentInodes = new ArrayList<> (); 
 				for(Contentlet con: hits) {	
 					recurrentInodes.add(con.getInode());
 				}
@@ -358,11 +358,11 @@ public class EventFactoryImpl extends EventFactory {
 				end = dateToCal;
 			}
 			String[] datestoIgnoreArr = null;
-			List<String> datesToIgnore = new ArrayList<String>();
+			List<String> datesToIgnore = new ArrayList<>();
 			
 			if(UtilMethods.isSet(baseEvent.getRecurrenceDatesToIgnore())){
 				datestoIgnoreArr = baseEvent.getRecurrenceDatesToIgnore().split(" ");
-				datesToIgnore = new ArrayList<String>(Arrays.asList(datestoIgnoreArr));
+				datesToIgnore = new ArrayList<>(Arrays.asList(datestoIgnoreArr));
 			}
 						
 			int count = 0;

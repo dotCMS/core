@@ -2,30 +2,34 @@ package com.dotcms.rendering.velocity.viewtools.navigation;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.WebAssetFactory;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.links.factories.LinkFactory;
+import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -47,7 +51,6 @@ import org.mockito.Mockito;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -71,6 +74,12 @@ public class NavToolTest extends IntegrationTestBase{
     private static User user;
     private static Host site;
     private static Language spanishLanguage;
+    private static IdentifierAPI identifierAPI;
+    private static VersionableAPI versionableAPI;
+    private static FolderAPI folderAPI;
+
+    private static ContentletAPI contentletAPI;
+
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -80,6 +89,10 @@ public class NavToolTest extends IntegrationTestBase{
         user = APILocator.getUserAPI().getSystemUser();
         site = new SiteDataGen().nextPersisted();
         spanishLanguage = TestDataUtils.getSpanishLanguage();
+        identifierAPI    = APILocator.getIdentifierAPI();
+        versionableAPI   = APILocator.getVersionableAPI();
+        folderAPI     = APILocator.getFolderAPI();
+        contentletAPI = APILocator.getContentletAPI();
     }
 
     @AfterClass
@@ -288,13 +301,13 @@ public class NavToolTest extends IntegrationTestBase{
         fileAssetInSpanish.setLanguageId(spanishLanguage.getId());
 
         final NavToolTestCase case1 = new NavToolTestCase();
-        case1.menuItems = Collections.singletonList(fileAssetInSpanish);
+        case1.menuItems = List.of(fileAssetInSpanish);
         case1.itemFile = fileAssetInSpanish;
         case1.selectedLang = 1L;
         case1.expectedResult = false;
 
         final NavToolTestCase case2 = new NavToolTestCase();
-        case2.menuItems = Collections.singletonList(fileAssetInSpanish);
+        case2.menuItems = List.of(fileAssetInSpanish);
         case2.itemFile = fileAssetInSpanish;
         case2.selectedLang = spanishLanguage.getId();
         case2.expectedResult = false;
@@ -306,13 +319,13 @@ public class NavToolTest extends IntegrationTestBase{
         fileAssetInEnglish.setLanguageId(1);
 
         final NavToolTestCase case3 = new NavToolTestCase();
-        case3.menuItems = Collections.singletonList(fileAssetInEnglish);
+        case3.menuItems = List.of(fileAssetInEnglish);
         case3.itemFile = fileAssetInSpanish;
         case3.selectedLang = 1L;
         case3.expectedResult = false;
 
         final NavToolTestCase case4 = new NavToolTestCase();
-        case4.menuItems = Collections.singletonList(fileAssetInSpanish);
+        case4.menuItems = List.of(fileAssetInSpanish);
         case4.itemFile = fileAssetInEnglish;
         case4.selectedLang = spanishLanguage.getId();
         case4.expectedResult = false;
@@ -646,5 +659,73 @@ public class NavToolTest extends IntegrationTestBase{
         assertNotNull(navResult);
         assertEquals(1,navResult.getChildren().size());
         assertEquals("SPA Version", navResult.getChildren().get(0).getTitle());
+    }
+
+    /**
+     * Method to test: NavTool.getNav
+     * Given scenario: get navigation of a folder, where it contains published and unpublished links
+     * Expected result: getting the navigation must return only the published links
+     * @throws Exception exception
+     */
+    @Test
+    public void test_getNav_GivenLinkItems_ShouldOnlyShowLiveLinksLiveMode() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final NavTool navTool = new NavTool();
+        final User mockedUSer = mock(User.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE.toString());
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(request);
+        navTool.init(viewContext);
+        //Create Folder
+        folder = new FolderDataGen().site(site).title("test").showOnMenu(true).nextPersisted();
+
+        //Add create two links with different states
+        final Link publishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testPublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+        APILocator.getVersionableAPI().setLive(publishLink);
+
+        final Link unpublishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testUnpublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+
+        final NavResult navResult1 = navTool.getNav(site, folder.getPath());
+        assertNotNull("There must be a valid NavResult object", navResult1);
+        assertEquals("Only only one item should appear in the nav result. ",1,navResult1.getChildren().size());
+    }
+
+    /**
+     * Method to test: NavTool.getNav
+     * Given scenario: get navigation of a folder, where it contains published and unpublished links
+     * Expected result: getting the navigation must return published and unpublished links
+     * @throws Exception exception
+     */
+    @Test
+    public void test_getNav_GivenLinkItems_ShouldOnlyShowLinksEditMode() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final NavTool navTool = new NavTool();
+        final User mockedUSer = mock(User.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.EDIT_MODE.toString());
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(request);
+        navTool.init(viewContext);
+
+        //Create Folder
+        folder = new FolderDataGen().site(site).title("test").showOnMenu(true).nextPersisted();
+
+        //Add create two links with different states
+        final Link publishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testPublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+        APILocator.getVersionableAPI().setLive(publishLink);
+
+        Link unpublishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testUnpublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+
+        final NavResult navResult1 = navTool.getNav(site, folder.getPath());
+        assertNotNull("There must be a valid NavResult object", navResult1);
+        assertEquals("Both items should appear in the nav result. ",2,navResult1.getChildren().size());
     }
 }

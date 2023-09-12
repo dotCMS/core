@@ -9,6 +9,7 @@ import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
 import static com.dotcms.rest.api.v1.temp.TempFileAPITest.mockHttpServletRequest;
 import static com.dotcms.storage.FileMetadataAPI.BINARY_METADATA_VERSION;
+import static com.dotcms.storage.FileMetadataAPIImpl.BASIC_METADATA_EXTENDED_KEYS;
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
 import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
 import static org.junit.Assert.assertEquals;
@@ -26,6 +27,7 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.model.Metadata;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -45,10 +47,12 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.function.Supplier;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
@@ -90,6 +94,65 @@ public class FileMetadataAPITest {
 
             final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
             assertTrue(fileAssetContent.get(FileAssetAPI.META_DATA_FIELD) instanceof Map);
+    }
+
+    /**
+     * <b>Method to test:</b> {@link FileMetadataAPI#generateContentletMetadata(Contentlet)} <br>
+     * <b>Given scenario:</b> The property {@link FileMetadataAPIImpl#BASIC_METADATA_EXTENDED_KEYS} is set<br>
+     * <b>Expected Result:</b> The basic metadata must include the value set in {@link FileMetadataAPIImpl#BASIC_METADATA_EXTENDED_KEYS}
+     * @throws Exception
+     */
+    @Test
+    public void Test_Get_BasicMetadataWhenExtendedPropertyIsSet() throws Exception {
+        prepareIfNecessary();
+
+        final String originalStringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        try {
+            Config.setProperty(BASIC_METADATA_EXTENDED_KEYS, "keywords");
+            final FileMetadataAPI metadataAPI = new FileMetadataAPIImpl();
+            final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
+            Metadata metadata = metadataAPI.generateContentletMetadata(
+                    fileAssetContent).getBasicMetadataMap().get("fileAsset");
+
+            assertNotNull(metadata);
+
+            final Set<String> basicMetadataKeys = BasicMetadataFields.keyMap().keySet();
+            final Set<String> metadataKeySetReturned = metadata.getMap().keySet();
+
+            assertTrue(metadataKeySetReturned.size() > 1);
+
+            //we make sure the BasicMetadataFields and keywords are included
+            assertTrue(metadataKeySetReturned.stream()
+                    .allMatch(key -> (key.equals("keywords") || basicMetadataKeys.contains(key))));
+
+            //we get the keywords from the pdf file. It should have this value: keyword1,keyword2
+            assertEquals("keyword1,keyword2", metadata.getMap().get("keywords"));
+        } finally{
+            Config.setProperty(BASIC_METADATA_EXTENDED_KEYS, originalStringProperty);
+            //We need to force a clean up of the fileMetadataAPI instance to reset the lazy initialization of the basicMetadataKeySet
+            fileMetadataAPI = new FileMetadataAPIImpl();
+        }
+    }
+
+    /**
+     * <b>Method to test:</b> {@link FileMetadataAPI#getFullMetadataNoCache(File, Supplier)}<br>
+     * <b>Given scenario:</b> Getting metadata from a urlMap<br>
+     * <b>Expected Result:</b> Some keywords must be present in the metadata
+     * @throws Exception
+     */
+    @Test
+    public void Test_Generate_Metadata_From_HtmlPage_Should_Resolve_ExtendedMetadata() throws Exception {
+        prepareIfNecessary();
+        final List<String> extendedMetadata = CollectionsUtils.list("metaKeyword", "keywords", "dcSubject",
+                "title", "dcTitle", "description", "copyright", "ogTitle", "language", "ogUrl", "ogImage");
+        Metadata metadata = fileMetadataAPI.getFullMetadataNoCache(new
+                        File(FileMetadataAPITest.class.getResource("5-snow-sports-to-try-this-winter").getFile()),
+                null);
+        assertNotNull(metadata);
+        assertTrue(metadata.getMap().keySet().containsAll(extendedMetadata));
+        assertEquals("5 Snow Sports to Try This Winter", metadata.getMap().get("dcTitle"));
+        assertEquals("5 Snow Sports to Try This Winter", metadata.getMap().get("title"));
+
     }
 
 

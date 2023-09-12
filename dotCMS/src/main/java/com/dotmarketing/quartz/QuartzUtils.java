@@ -8,6 +8,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.dotcms.business.WrapInTransaction;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -35,7 +39,7 @@ public class QuartzUtils {
 	
 
 	
-	private static final Map<String, TaskRuntimeValues> runtimeTaskValues = new HashMap<String, TaskRuntimeValues>();
+	private static final Map<String, TaskRuntimeValues> runtimeTaskValues = new HashMap<>();
 	
 
 
@@ -93,7 +97,7 @@ public class QuartzUtils {
 	@SuppressWarnings("unchecked")
 	private static List<ScheduledTask> getScheduledTasks(final Scheduler scheduler, final boolean sequential, final String group) throws SchedulerException {
 		
-		final List<ScheduledTask> result = new ArrayList<ScheduledTask>(100);
+		final List<ScheduledTask> result = new ArrayList<>(100);
 
 		final String[] groupNames = scheduler.getJobGroupNames();
 		String[] jobNames;
@@ -185,7 +189,7 @@ public class QuartzUtils {
 	 */
 	@SuppressWarnings("unchecked")
 	private static List<ScheduledTask> getScheduledTask(final String jobName, final String jobGroup, final Scheduler scheduler, final boolean sequential) throws SchedulerException {
-		List<ScheduledTask> result = new ArrayList<ScheduledTask>(1);
+		List<ScheduledTask> result = new ArrayList<>(1);
 
 		final JobDetail jobDetail = scheduler.getJobDetail(jobName, jobGroup);
 
@@ -509,6 +513,9 @@ public class QuartzUtils {
 	public static boolean removeJob(final String jobName, final String jobGroup) throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
 
+
+
+
 		return removeJob(jobName, jobGroup, scheduler);
 	}
 
@@ -525,6 +532,66 @@ public class QuartzUtils {
 	public static boolean removeStandardJob(final String jobName, final String jobGroup) throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
 		return removeJob(jobName, jobGroup, scheduler);
+	}
+
+
+	/**
+	 * This method avoids all the Quartz madness and just delete the job from the db
+	 * @param jobName
+	 * @param jobGroup
+	 * @return
+	 * @throws DotDataException
+	 */
+	@WrapInTransaction
+	public static boolean deleteJobDB(final String jobName, final String jobGroup) throws DotDataException {
+		final DotConnect db = new DotConnect();
+
+		final List<Map<String, Object>> results = db.setSQL("select trigger_name,trigger_group from qrtz_excl_triggers  where job_name=? and job_group=?")
+				.addParam(jobName)
+				.addParam(jobGroup)
+				.loadObjectResults();
+
+		for (final Map<String,Object> map : results) {
+			final String triggerName = map.get("trigger_name").toString();
+			final String triggerGroup = map.get("trigger_group").toString();
+
+			db.setSQL("delete from qrtz_excl_cron_triggers where trigger_name=? and trigger_group=?")
+					.addParam(triggerName)
+					.addParam(triggerGroup)
+					.loadResult();
+
+			db.setSQL("delete from qrtz_excl_triggers where trigger_name=? and trigger_group=?")
+					.addParam(triggerName)
+					.addParam(triggerGroup)
+					.loadResult();
+
+			db.setSQL("delete from qrtz_excl_paused_trigger_grps where trigger_group=?")
+					.addParam(triggerGroup)
+					.loadResult();
+
+
+			db.setSQL("delete from qrtz_excl_trigger_listeners where trigger_name=? and trigger_group=?")
+					.addParam(triggerName)
+					.addParam(triggerGroup)
+					.loadResult();
+
+			db.setSQL("delete from qrtz_excl_simple_triggers where trigger_name=? and trigger_group=?")
+					.addParam(triggerName)
+					.addParam(triggerGroup)
+					.loadResult();
+		}
+
+		db.setSQL("delete from qrtz_excl_job_details where job_name=? and job_group=?")
+				.addParam(jobName)
+				.addParam(jobGroup)
+				.loadResult();
+
+		db.setSQL("delete from qrtz_excl_job_listeners where job_name=? and job_group=?")
+				.addParam(jobName)
+				.addParam(jobGroup)
+				.loadResult();
+
+		return true;
 	}
 
 	/**
@@ -730,9 +797,7 @@ public class QuartzUtils {
 
 	/**
 	 * A more cluster aware method to find out if a job is running since {@link #isJobRunning(String, String) evaluates
-	 * for the current scheduler.
-	 *
-	 * @param scheduler scheduler to use
+	 * for the current scheduler. @param scheduler scheduler to use
 	 * @param jobName job name
 	 * @param jobGroup job group
 	 * @param triggerName trigger name

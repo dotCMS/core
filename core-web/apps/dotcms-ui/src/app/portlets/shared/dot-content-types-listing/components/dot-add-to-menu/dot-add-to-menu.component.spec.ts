@@ -22,6 +22,7 @@ import {
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
@@ -98,6 +99,7 @@ describe('DotAddToMenuComponent', () => {
                 RadioButtonModule,
                 ReactiveFormsModule,
                 DotPipesModule,
+                DotMessagePipe,
                 HttpClientTestingModule,
                 DotFieldValidationMessageModule
             ],
@@ -157,10 +159,10 @@ describe('DotAddToMenuComponent', () => {
         ).toBe(2);
         expect(
             dotdialog.query(By.css('[data-testId="dotDialogAcceptAction"]')).nativeElement.innerText
-        ).toBe(messageServiceMock.get('ADD'));
+        ).toBe(messageServiceMock.get('Add'));
         expect(
             dotdialog.query(By.css('[data-testId="dotDialogCancelAction"]')).nativeElement.innerText
-        ).toBe(messageServiceMock.get('CANCEL'));
+        ).toBe(messageServiceMock.get('Cancel'));
     });
 
     it('should load form values when init', () => {

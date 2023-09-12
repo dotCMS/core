@@ -1,25 +1,28 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
+import com.dotcms.cli.command.DotCommand;
+import com.dotcms.cli.common.InteractiveOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.Site;
-import org.apache.commons.lang3.BooleanUtils;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
 import java.util.List;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import com.dotcms.cli.common.Prompt;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteFind.NAME,
-     description = "@|bold,green Retrieves Sites info.|@  @|bold,cyan --all|@ Brings them all.  Use in conjunction params @|bold,cyan -n|@ to filter by name. @|bold,cyan -a|@ Shows archived sites. @|bold,cyan -l|@ Shows live Sites. @|bold,cyan -p|@ (Page) @|bold,cyan -ps|@ (PageSize) Can be used combined for pagination."
+     header = "@|bold,blue Use this command to Search / Find Sites.|@",
+     description = {
+            "Search or Get a List with all available Sites.",
+            "Use @|yellow --name|@ in conjunction with @|bold,blue Filter/Search|@ Options.",
+             "" // This is needed to add a new line after the description.
+    }
 )
-public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
+public class SiteFind extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
     static final String NAME = "find";
-
-    @CommandLine.Mixin(name = "output")
-     OutputOptionMixin output;
 
     static class FilterOptions {
         @CommandLine.Option(names = {"-n", "--name"}, arity = "1" ,description = "Filter by site name.")
@@ -39,11 +42,20 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
 
     }
 
-    @CommandLine.ArgGroup(exclusive = false, order = 1, heading = "\nSearch Sites\n")
+    @CommandLine.ArgGroup(exclusive = false, order = 1, heading = "\n@|bold,blue Filter/Search Options. |@\n")
     FilterOptions filter;
+
+    @CommandLine.Mixin
+    InteractiveOptionMixin interactiveOption;
+
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
 
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
         if(null != filter){
            return filter(filter);
@@ -57,38 +69,28 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
 
         final int pageSize = 10;
-        int page = 0;
-
-        boolean live = true;
+        int page = 1;
 
         while (true) {
 
-            final ResponseEntityView<List<Site>> response = siteAPI.getSites(null, null, live, false, page, pageSize);
+            final ResponseEntityView<List<Site>> response = siteAPI.getSites(null, null, false, false, page, pageSize);
 
             final List<Site> sites = response.entity();
+            if (sites.isEmpty()) {
+                output.info("@|yellow No sites were returned, Check you have access permissions.|@");
+                break;
+            }
 
             for (final Site site : sites) {
                 output.info(shortFormat(site));
             }
 
             //First we show live sites
-            if(live) {
-                //When we're showing live sites, and we run out of `live` sites
-                if (sites.size() < pageSize) {
-                    live = false; //We need to switch to `working` sites
-                    page = 0;  //Page needs to be reset
-                } else {
-                    // otherwise business as usual get me next page
-                    page++;
-                }
-              //At some point we run out of live sites time to show 'working' sites
-            } else {
-                if (sites.size() < pageSize) {
-                    break;
-                }
-                page++;
+            if(sites.size() < pageSize){
+                break;
             }
-            if(output.isInteractive() && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:" ))){
+            page++;
+            if(interactiveOption.isInteractive() && !Prompt.yesOrNo(true,"Load next page? y/n: ")){
                 break;
             }
         }
@@ -105,4 +107,16 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
 
         return CommandLine.ExitCode.OK;
     }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
+
+
 }

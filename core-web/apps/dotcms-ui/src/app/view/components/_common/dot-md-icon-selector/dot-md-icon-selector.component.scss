@@ -1,17 +1,14 @@
 @use "variables" as *;
+@import "dotcms-theme/components/form/common";
+@import "mixins";
 
 dot-material-icon-picker {
-    border: solid 1px $color-palette-gray-500;
-    border-radius: $border-radius-xs;
-    transition: border-color $basic-speed ease-in;
+    @extend #form-field-extend;
+    padding-right: 0;
 
     &.is-open {
-        box-shadow: inset 0 0 0 1px $color-palette-primary;
-        border-color: $color-palette-primary;
-    }
-
-    &:hover {
-        border-color: $color-palette-primary;
+        border: $field-border-size solid $color-palette-primary-400;
+        @include field-focus;
     }
 
     &::ng-deep {
@@ -19,11 +16,15 @@ dot-material-icon-picker {
         .dot-material-icon__button,
         .dot-material-icon__preview {
             border: 0;
-            background: none;
+            height: calc(
+                $field-height-md - ($field-border-size * 2)
+            ); // All of this is relative so it's not really taking the height of the field and we need to center the icon
         }
 
         .dot-material-icon__input {
             padding: $spacing-2;
+            padding-right: 0;
+            font-size: $font-size-md;
 
             &:focus {
                 outline: none;
@@ -32,21 +33,29 @@ dot-material-icon-picker {
 
         .dot-material-icon__preview {
             font-size: $font-size-xl;
-            margin-left: $spacing-2;
         }
 
-        .dot-material-icon__button mwc-icon {
-            font-size: 2rem; // we don't have 2rem var this is for this icon only
+        .dot-material-icon__button {
+            @extend #field-trigger;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            mwc-icon {
+                font-size: $font-size-xl;
+                width: $field-height-md;
+            }
         }
 
         .dot-material-icon__list {
             border: 0;
-            box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14),
-                0 3px 14px 2px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 5px 5px -3px $color-palette-black-op-20,
+                0 8px 10px 1px $color-palette-black-op-10, 0 3px 14px 2px $color-palette-black-op-10;
             color: $black;
 
             li:hover {
-                background: rgba($color-palette-secondary, 0.12);
+                background: $bg-hover;
                 color: $black;
             }
 

@@ -164,7 +164,7 @@ public class UserAPITest extends IntegrationTestBase {
 		/**
 		 * Set permission to role
 		 */
-		List<Permission> permissionsToSave = new ArrayList<Permission>();
+		List<Permission> permissionsToSave = new ArrayList<>();
 		permissionsToSave.add(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_EDIT_PERMISSIONS), true));
 		permissionsToSave.add(new Permission(Host.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
 		permissionsToSave.add(new Permission(Folder.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN), true));
@@ -192,7 +192,7 @@ public class UserAPITest extends IntegrationTestBase {
 		Structure pageStructure = StructureFactory.getStructureByVelocityVarName(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME);
 		perAPI.permissionIndividually(host, pageStructure, systemUser);
 
-		List<Permission> permissions = new ArrayList<Permission>();
+		List<Permission> permissions = new ArrayList<>();
 		Permission p1=new Permission();
 		p1.setPermission(PermissionAPI.PERMISSION_READ);
 		p1.setRoleId(newRole.getId());
@@ -386,7 +386,7 @@ public class UserAPITest extends IntegrationTestBase {
 		container.setCode("<div><h3>content $!{title}</h3><p>$!{body}</p></div>");
 		container.setPostLoop("postloop code");
 
-		List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+		List<ContainerStructure> csList = new ArrayList<>();
 		ContainerStructure cs = new ContainerStructure();
 		cs.setStructureId(st.getInode());
 		cs.setCode(container.getCode());

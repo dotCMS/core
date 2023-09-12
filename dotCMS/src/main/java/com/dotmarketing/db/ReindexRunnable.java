@@ -32,7 +32,7 @@ public abstract class ReindexRunnable implements Runnable {
 	public ReindexRunnable(Contentlet reindexId, Action action) {
 		super();
 
-		contentToIndex = new ArrayList<Contentlet>();
+		contentToIndex = new ArrayList<>();
 		contentToIndex.add(reindexId);
 		this.action = action;
 

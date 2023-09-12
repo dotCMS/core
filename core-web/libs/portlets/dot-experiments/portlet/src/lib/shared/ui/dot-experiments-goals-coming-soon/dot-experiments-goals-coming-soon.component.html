@@ -1,0 +1,39 @@
+<h5>{{ 'experiments.configure.coming.soon' | dm }}</h5>
+
+<div class="flex">
+    <p-card class="col-3" [header]="'experiments.configure.coming.soon.time.page' | dm">
+        <ng-template pTemplate="header">
+            <i class="pi pi-clock"></i>
+        </ng-template>
+        <span>
+            {{ 'experiments.configure.coming.soon.time.page.description' | dm }}
+        </span>
+    </p-card>
+
+    <p-card class="col-3" [header]="'experiments.configure.coming.soon.number.pages' | dm">
+        <ng-template pTemplate="header">
+            <i class="pi pi-check-square"></i>
+        </ng-template>
+        <span>
+            {{ 'experiments.configure.coming.soon.number.pages.description' | dm }}
+        </span>
+    </p-card>
+
+    <p-card class="col-3" [header]="'experiments.configure.coming.soon.rule.based' | dm">
+        <ng-template pTemplate="header">
+            <i class="pi pi-chart-line"></i>
+        </ng-template>
+        <span>
+            {{ 'experiments.configure.coming.soon.rule.based.description' | dm }}
+        </span>
+    </p-card>
+
+    <p-card class="col-3" [header]="'experiments.configure.coming.soon.javascript' | dm">
+        <ng-template pTemplate="header">
+            <i class="pi pi-code"></i>
+        </ng-template>
+        <span>
+            {{ 'experiments.configure.coming.soon.javascript.description' | dm }}
+        </span>
+    </p-card>
+</div>

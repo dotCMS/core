@@ -217,7 +217,7 @@ public class ProxyTool {
 
 
         try {
-            List<NameValuePair> data = new ArrayList<NameValuePair>();
+            List<NameValuePair> data = new ArrayList<>();
             StringBuilder urlParamsSB = new StringBuilder();
             String appender = "?";
             if (url.contains("?")) {
@@ -314,7 +314,7 @@ public class ProxyTool {
         Logger.debug(this, "send(String) called with url=" + url + ", params=" + params + ", and method=" + method + ", contentType = "
                 + contentType + ", creds=" + UtilMethods.isSet(creds));
 
-        Map<String, String> queryPairs = new LinkedHashMap<String, String>();
+        Map<String, String> queryPairs = new LinkedHashMap<>();
         if (params.length() > 0) {
             String[] pairs = params.split("&");
             for (String pair : pairs) {

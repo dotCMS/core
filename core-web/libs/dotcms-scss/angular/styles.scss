@@ -6,28 +6,12 @@
 @import "dotcms-theme/utils/theme-variables"; /* temporary */
 @import "dotcms-theme/theme"; /* prime-ng */
 
-// CSS VARIABLEs
-:root {
-    --color-background: #3a3847;
-    --color-main: #6b4de2;
-    --color-main_mod: #8674c0;
-    --color-main_rgb: 107, 77, 226;
-    --color-sec: #6f5fa3;
-    --color-sec_rgb: 111, 95, 163;
-    --color-white: #fff;
-    --color-white_rgb: 255, 255, 255;
-    --empty-message: "";
-}
+// INCLUDE FONT FACES
+@include assistant-font-face(400, "Regular");
+@include assistant-font-face(500, "SemiBold");
+@include assistant-font-face(700, "Bold");
 
-/*
-    FONT AWESOME
-    Legacy code, this is to support font awesome icons in the main navigation
-*/
-// @import "../node_modules/font-awesome/css/font-awesome.css";
-
-// Fonts
 // MATERIAL DESIGN ICONS
-/* fallback */
 @font-face {
     font-family: "Material Icons";
     font-style: normal;
@@ -53,45 +37,8 @@
     -webkit-font-smoothing: antialiased;
 }
 
-// GOOGLE FONTS
-/* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-    font-family: "Roboto";
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: local(""),
-        url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2")
-            format("woff2"),
-        /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff")
-            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
-/* roboto-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-    font-family: "Roboto";
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: local(""),
-        url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff2")
-            format("woff2"),
-        /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff")
-            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
-/* roboto-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-    font-family: "Roboto";
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: local(""),
-        url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff2")
-            format("woff2"),
-        /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff")
-            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+:root {
+    @include root-colors();
 }
 
 *,
@@ -108,17 +55,15 @@ body {
 }
 
 html {
-    -ms-overflow-style: -ms-autohiding-scrollbar; // Hiding scrollbars in IE11 and Edge by default
+    color: $black;
+    font-family: $font-default;
+    font-size: $font-size-default;
 }
 
-// For the login component user photo background
 body {
     background-position: top center;
     background-repeat: no-repeat;
     background-size: cover;
-    color: $black;
-    font-family: $font-default;
-    font-size: $font-size-default;
 }
 
 a {

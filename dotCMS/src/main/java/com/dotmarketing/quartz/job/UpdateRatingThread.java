@@ -106,7 +106,7 @@ public class UpdateRatingThread implements StatefulJob {
 				if(numOfVotesField ==null){
 					numOfVotesField = s.getField("Number Of Votes");
 				}
-				Float ctAvgFloat = new Float(0);
+				Float ctAvgFloat = Float.valueOf(0);
 				Long ctNumberOfVotesObj = null;
 
 				if(avgField != null && c != null){

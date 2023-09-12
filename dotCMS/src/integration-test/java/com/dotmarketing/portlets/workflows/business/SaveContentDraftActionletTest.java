@@ -314,7 +314,7 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
 
         Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
         ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
-        List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
+        List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<>();
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Map.Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
             Relationship relationship = relEntry.getKey();

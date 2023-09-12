@@ -5,7 +5,6 @@ import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -34,7 +33,7 @@ describe('DotCopyButtonComponent', () => {
                 },
                 DotClipboardUtil
             ],
-            imports: [UiDotIconButtonModule, TooltipModule, ButtonModule]
+            imports: [TooltipModule, ButtonModule]
         }).compileComponents();
     }));
 
@@ -57,12 +56,18 @@ describe('DotCopyButtonComponent', () => {
     describe('with label', () => {
         beforeEach(() => {
             component.label = 'Label';
-            fixture.detectChanges();
             button = de.query(By.css('button'));
         });
 
         it('should show label', () => {
-            expect(button.nativeElement.textContent).toBe('content_copy Label\n');
+            fixture.detectChanges();
+            expect(button.nativeElement.textContent.trim()).toBe('Label');
+        });
+
+        it('should not show label', () => {
+            component.label = null;
+            fixture.detectChanges();
+            expect(button.nativeElement.textContent.trim()).toBe('');
         });
 
         it('should have pTooltip attributes', () => {

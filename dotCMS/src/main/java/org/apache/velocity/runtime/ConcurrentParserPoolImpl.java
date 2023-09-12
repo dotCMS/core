@@ -40,7 +40,7 @@ public class ConcurrentParserPoolImpl implements ParserPool {
 	 */
 	public void initialize(RuntimeServices rsvc) {
 		Logger.info(getClass(), "Initializing Velocity Parser Pool - min: " + min + " max:" + max);
-		pool = new ConcurrentPool<Parser>(min, max, 30, rsvc);
+		pool = new ConcurrentPool<>(min, max, 30, rsvc);
 		if (Logger.isDebugEnabled(this.getClass())) {
 			Logger.debug(this, "Created '" + max + "' parsers.");
 		}

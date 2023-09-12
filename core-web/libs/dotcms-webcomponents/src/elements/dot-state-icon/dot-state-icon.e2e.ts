@@ -16,11 +16,28 @@ describe('dot-state-icon', () => {
         element = await page.find('dot-state-icon');
     });
 
-    it('should set Archived attributes', async () => {
+    it('should set Archived attributes with param "deleted"', async () => {
         const archivedState: DotContentState = {
             live: 'false',
             working: 'true',
             deleted: 'true',
+            hasLiveVersion: 'false'
+        };
+
+        element.setAttribute('size', '14px');
+        element.setProperty('state', archivedState);
+        await page.waitForChanges();
+
+        expect(element.getAttribute('aria-label')).toEqual('Archived');
+        expect(icon.getAttribute('class')).toEqual('archived');
+        expect(await tooltip.getProperty('content')).toEqual('Archived');
+    });
+
+    it('should set Archived attributes with param "archived"', async () => {
+        const archivedState: DotContentState = {
+            live: 'false',
+            working: 'true',
+            archived: 'true',
             hasLiveVersion: 'false'
         };
 

@@ -143,7 +143,7 @@ public class TemplateLayoutRow implements Serializable{
     public void addColumnContainers ( List<ContainerUUID> containers, Boolean isPreview ) {
 
         if ( columns == null ) {
-            columns = new ArrayList<TemplateLayoutColumn>();
+            columns = new ArrayList<>();
         }
 
         int leftIndex = 1;

@@ -1,1 +1,2 @@
-<h2 style="text-align: $!item.attrs.textAlign">$!item.attrs.data.title</h2>
+
+<h2#if($item.attrs.textAlign) style="text-align: $item.attrs.textAlign;"#end>$!item.attrs.data.title</h2>

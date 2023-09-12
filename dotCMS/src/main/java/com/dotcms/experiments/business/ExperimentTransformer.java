@@ -5,16 +5,19 @@ import static com.dotcms.experiments.business.ExperimentsAPI.EXPERIMENT_LOOKBACK
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Goals;
+import com.dotcms.experiments.model.RunningIds;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBColumnToJSONConverter;
 import com.dotcms.util.transform.DBTransformer;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.control.Try;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,6 +50,10 @@ public class ExperimentTransformer implements DBTransformer<Experiment> {
     }
 
     private Experiment transform(Map<String, Object> map)  {
+        final RunningIds runningIds = map.get("running_ids") != null ?
+                DBColumnToJSONConverter.getObjectFromDBJson(map.get("running_ids"), RunningIds.class) :
+                new RunningIds();
+
         return Experiment.builder().pageId((String) map.get("page_id")).name((String) map.get("name"))
                 .description((String) map.get("description"))
                 .id((String) map.get("id"))
@@ -65,6 +72,7 @@ public class ExperimentTransformer implements DBTransformer<Experiment> {
                 .goals(Optional.ofNullable(DBColumnToJSONConverter
                         .getObjectFromDBJson(map.get("goals"), Goals.class)))
                 .lookBackWindowExpireTime(ConversionUtils.toInt(map.get("lookback_window"), EXPERIMENT_LOOKBACK_WINDOW))
+                .runningIds(runningIds)
                 .build();
     }
 }

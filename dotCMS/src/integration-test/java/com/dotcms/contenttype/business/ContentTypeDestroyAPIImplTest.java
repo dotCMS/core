@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPIImpl.ContentletVersionInfo;
 import com.dotcms.contenttype.model.field.Field;
@@ -30,11 +31,11 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -202,14 +203,14 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
         final ContentType parent = new ContentTypeDataGen()
                 .host(host)
                 .fields(
-                        Collections.singletonList(new FieldDataGen().name("Title").velocityVarName("title").next())
+                        List.of(new FieldDataGen().name("Title").velocityVarName("title").next())
                 )
                 .nextPersisted();
 
         final ContentType child = new ContentTypeDataGen()
                 .host(host)
                 .fields(
-                        Collections.singletonList(new FieldDataGen().name("Title").velocityVarName("title").next())
+                        List.of(new FieldDataGen().name("Title").velocityVarName("title").next())
                 )
                 .nextPersisted();
 
@@ -229,7 +230,7 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
                 .nextPersisted();
 
         final Contentlet parentCheckout = ContentletDataGen.checkout(parentInstance);
-        parentCheckout.setProperty(relationship.getChildRelationName(), Collections.singletonList(childInstance));
+        parentCheckout.setProperty(relationship.getChildRelationName(), List.of(childInstance));
         ContentletDataGen.checkin(parentCheckout);
 
         final ContentTypeDestroyAPIImpl impl = new ContentTypeDestroyAPIImpl();
@@ -289,6 +290,44 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
         final int countAfterDestroy = new DotConnect().setSQL("select count(*) from tag_inode ti where inode = ?").addParam(personaLike.getInode()).getInt("count");
         Assert.assertEquals("There should be at least one tag entry ",0,countAfterDestroy);
 
+    }
+
+    /**
+     * Method to Test: {@link ContentTypeDestroyAPIImpl#relocateContentletsForDeletion(ContentType, ContentType)}
+     * Given Scenario: We create a Content Type with a random number or contentlets in it.
+     * Expected Result: We call relocate and all the contentlets should be moved to the target content type.
+     * @throws DotDataException
+     */
+    @Test
+    public void Test_Relocate_Contentlets() throws DotDataException {
+        final Random random = new Random();
+        for (int i = 0; i < 10; i++) {
+            TestContentRelocation(random.nextInt(19));
+        }
+    }
+
+    /**
+     * Method to Test: {@link ContentTypeDestroyAPIImpl#relocateContentletsForDeletion(ContentType, ContentType)}
+     * @param numOfContentlets
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    void TestContentRelocation(int numOfContentlets) throws DotDataException{
+        final Tuple2<ContentType,Set<String>> source = simpleContentTypeWithData(numOfContentlets);
+        final Tuple2<ContentType, Set<String>> target = simpleContentTypeWithData(0);
+        final ContentTypeDestroyAPIImpl impl = new ContentTypeDestroyAPIImpl();
+        final int relocated = impl.relocateContentletsForDeletion(source._1(), target._1());
+        Assert.assertEquals(numOfContentlets, relocated);
+        int sourceCount = new DotConnect().setSQL("select count(*) as x from contentlet where structure_inode = ?")
+                .addParam(source._1().inode())
+                .getInt("x");
+
+        int relocatedCount = new DotConnect().setSQL("select count(*) as x from contentlet where structure_inode = ?")
+                .addParam(target._1().inode())
+                .getInt("x");
+
+        Assert.assertEquals(0, sourceCount);
+        Assert.assertEquals(numOfContentlets, relocatedCount);
     }
 
 }

@@ -35,7 +35,6 @@ import java.io.StringReader;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -145,7 +144,7 @@ public class AjaxDirectorServletIntegrationTest {
 
                 // add an asset to the bundle
                 PublisherAPI.getInstance()
-                        .saveBundleAssets(Collections.singletonList(assetIdentifier),
+                        .saveBundleAssets(List.of(assetIdentifier),
                                 bundle.getId(), APILocator.systemUser());
             } catch(DotDataException | DotPublisherException e) {
                 throw new RuntimeException(e);

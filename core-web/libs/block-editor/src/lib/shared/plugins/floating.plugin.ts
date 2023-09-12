@@ -1,6 +1,5 @@
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import tippy, { Instance, Props } from 'tippy.js';
 
 import { Editor, posToDOMRect, Range } from '@tiptap/core';
 
@@ -13,8 +12,6 @@ interface PluginState {
 
 export interface FloatingActionsPluginProps {
     editor: Editor;
-    element: HTMLElement;
-    tippyOptions?: Partial<Props>;
     render?: () => FloatingRenderActions;
     command: ({
         editor,
@@ -57,71 +54,20 @@ export class FloatingActionsView {
     editor: Editor;
     element: HTMLElement;
     view: EditorView;
-    tippy!: Instance;
     render: () => FloatingRenderActions;
     command: (props: { editor: Editor; range: Range; props: SuggestionsCommandProps }) => void;
     key: PluginKey;
     invalidNodes = ['codeBlock', 'blockquote'];
-    tippyOptions: Partial<Props>;
 
-    constructor({
-        editor,
-        element,
-        view,
-        tippyOptions,
-        render,
-        command,
-        key
-    }: FloatingActionsViewProps) {
+    constructor({ editor, view, render, command, key }: FloatingActionsViewProps) {
         this.editor = editor;
-        this.element = element;
         this.view = view;
-        this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.editor.on('focus', () => {
-            this.tippy.unmount();
             this.update(this.editor.view);
         });
-        this.element.style.visibility = 'visible';
         this.render = render;
         this.command = command;
         this.key = key;
-        this.tippyOptions = tippyOptions;
-    }
-
-    /**
-     * Element mousedown handler to update the plugin state and open
-     *
-     * @param {MouseEvent} e
-     * @memberof FloatingActionsView
-     */
-    mousedownHandler = (e: MouseEvent): void => {
-        e.preventDefault();
-        this.editor.chain().insertContent('/').run();
-    };
-
-    /**
-     * Create the tooltip for the element
-     *
-     * @param {Partial<Props>} [options={}]
-     * @memberof FloatingActionsView
-     */
-    createTooltip(options: Partial<Props> = {}): void {
-        const { element: editorElement } = this.editor.options;
-        const editorIsAttached = !!editorElement.parentElement;
-        if (this.tippy || !editorIsAttached) {
-            return;
-        }
-
-        this.tippy = tippy(this.view.dom, {
-            duration: 0,
-            getReferenceClientRect: null,
-            content: this.element,
-            interactive: true,
-            trigger: 'manual',
-            placement: 'left',
-            hideOnClick: 'toggle',
-            ...options
-        });
     }
 
     /**
@@ -133,36 +79,8 @@ export class FloatingActionsView {
      * @memberof FloatingActionsView
      */
     update(view: EditorView, prevState?: EditorState): void {
-        const { selection } = view.state;
-        const { $anchor, empty, from, to } = selection;
-        const isRootDepth = $anchor.depth === 1;
-        const isNodeEmpty =
-            !selection.$anchor.parent.isLeaf && !selection.$anchor.parent.textContent;
-        const isActive = isRootDepth && isNodeEmpty;
-        const nodeType = $anchor.parent.type.name;
-
         const next = this.key?.getState(view.state);
         const prev = prevState ? this.key?.getState(prevState) : null;
-
-        if (!prev?.open && (!isActive || !empty)) {
-            this.hide();
-
-            return;
-        }
-
-        // Hide is Parent node is not the editor
-        if (!prev?.open && this.invalidNodes.includes(nodeType)) {
-            this.hide();
-
-            return;
-        }
-
-        this.createTooltip(this.tippyOptions);
-        this.tippy?.setProps({
-            getReferenceClientRect: () => posToDOMRect(this.view, from, to)
-        });
-
-        this.show();
 
         if (next.open) {
             const { from, to } = this.editor.state.selection;
@@ -177,19 +95,6 @@ export class FloatingActionsView {
         } else if (prev && prev.open) {
             this.render().onExit(null);
         }
-    }
-
-    show() {
-        this.tippy?.show();
-    }
-
-    hide() {
-        this.tippy?.hide();
-    }
-
-    destroy() {
-        this.tippy?.destroy();
-        this.element.removeEventListener('mousedown', this.mousedownHandler);
     }
 }
 

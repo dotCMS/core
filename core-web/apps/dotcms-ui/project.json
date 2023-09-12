@@ -39,7 +39,8 @@
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css"
+                    "node_modules/primeng/resources/primeng.min.css",
+                    "node_modules/gridstack/dist/gridstack.min.css"
                 ],
                 "scripts": [],
                 "stylePreprocessorOptions": {
@@ -97,7 +98,7 @@
             "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
                 "browserTarget": "dotcms-ui:build:development",
-                "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.json"
+                "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs"
             }
         },
         "extract-i18n": {
@@ -151,7 +152,6 @@
             "executor": "@storybook/angular:build-storybook",
             "outputs": ["{options.outputPath}"],
             "options": {
-                "deleteOutputPath": false,
                 "outputDir": "dist-docs",
                 "configDir": "apps/dotcms-ui/.storybook",
                 "browserTarget": "dotcms-ui:build",

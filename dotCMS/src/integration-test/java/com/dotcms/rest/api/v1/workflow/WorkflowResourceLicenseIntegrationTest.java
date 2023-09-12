@@ -1,36 +1,10 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createImportExportObjectForm;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.stepName;
-import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_INVALID_LICENSE;
-import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION;
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.mock.response.MockAsyncResponse;
@@ -67,17 +41,43 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createImportExportObjectForm;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.stepName;
+import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_INVALID_LICENSE;
+import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION;
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class WorkflowResourceLicenseIntegrationTest {
 
@@ -453,7 +453,7 @@ public class WorkflowResourceLicenseIntegrationTest {
                         actionCommentable(false).
                         requiresCheckout(false).
                         actionNextAssign(adminRoleId).
-                        whoCanUse(Collections.singletonList("")).
+                        whoCanUse(List.of("")).
                         actionCondition("").
                         build();
 
@@ -489,7 +489,7 @@ public class WorkflowResourceLicenseIntegrationTest {
                     actionCommentable(false).
                     requiresCheckout(false).
                     actionNextAssign(adminRoleId).
-                    whoCanUse(Collections.singletonList("")).
+                    whoCanUse(List.of("")).
                     actionCondition("").
                     build();
 
@@ -593,14 +593,17 @@ public class WorkflowResourceLicenseIntegrationTest {
     public void Find_Available_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final ContentType contentType = APILocator.getContentTypeAPI(userAdmin).find("webPageContent");
-        Contentlet contentlet = new ContentletDataGen(contentType.id()).setProperty("title", "content1").setProperty("body", "content1").nextPersisted();
+        Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty("title", "content1")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .nextPersisted();
         contentlet = ContentletDataGen.publish(contentlet);
         Logger.error(this, "Contentlet: " + contentlet);
         final Response response = nonLicenseWorkflowResource.findAvailableActions(request,  new EmptyHttpResponse(), contentlet.getInode(), null);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
-        List<WorkflowAction> actions = List.class.cast(ev.getEntity());
-        for(WorkflowAction action:actions){
+        final ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
+        final List<WorkflowAction> actions = List.class.cast(ev.getEntity());
+        for (final WorkflowAction action : actions) {
             assertEquals(WorkflowScheme.SYSTEM_WORKFLOW_ID,action.getSchemeId());
         }
     }

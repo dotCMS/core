@@ -31,7 +31,7 @@ public class FocalPointImageFilter extends ImageFilter {
 
         final Optional<FocalPoint> focalPoint = util.parseFocalPointFromParams(parameters);
 
-        if (!overwrite(file, parameters) || !focalPoint.isPresent()) {
+        if (!overwrite(file, parameters) || focalPoint.isEmpty()) {
             return file;
         }
 

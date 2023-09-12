@@ -24,7 +24,7 @@ import java.util.Map;
 
 public class FixTask00060FixAssetType implements FixTask {
     
-    private List<Map<String, String>> modifiedData = new ArrayList<Map<String,String>>();
+    private List<Map<String, String>> modifiedData = new ArrayList<>();
     
     @Override
     public boolean shouldRun() {
@@ -34,7 +34,7 @@ public class FixTask00060FixAssetType implements FixTask {
     @SuppressWarnings({"unchecked","deprecation"})
     @Override
     public List<Map<String, Object>> executeFix() throws DotDataException, DotRuntimeException {
-        List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> returnValue = new ArrayList<>();
         if (!FixAssetsProcessStatus.getRunning()) {
             try {
                 FixAssetsProcessStatus.startProgress();

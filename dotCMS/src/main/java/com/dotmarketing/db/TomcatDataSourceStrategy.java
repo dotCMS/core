@@ -40,7 +40,7 @@ public class TomcatDataSourceStrategy implements DotDataSourceStrategy {
                     "---------- Error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE + " from context.xml",
                     e);
 
-            throw new DotRuntimeException(e.toString());
+            throw new DotRuntimeException(e.toString(), e);
         }
     }
 }

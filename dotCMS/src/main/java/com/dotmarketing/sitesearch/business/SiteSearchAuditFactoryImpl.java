@@ -46,7 +46,7 @@ class SiteSearchAuditFactoryImpl implements SiteSearchAuditFactory {
         dc.setSQL(auditSQL.findrecent);
         auditSQL.setRecentParams(dc, jobId, limit, offset);
         List<Map<String,Object>> results = dc.loadObjectResults();
-        List<SiteSearchAudit> recents=new ArrayList<SiteSearchAudit>();
+        List<SiteSearchAudit> recents=new ArrayList<>();
         for (Map<String, Object> map : results) {
             SiteSearchAudit audit=new SiteSearchAudit();
             audit.setAllHosts(DbConnectionFactory.isDBTrue(map.get("all_hosts").toString()));

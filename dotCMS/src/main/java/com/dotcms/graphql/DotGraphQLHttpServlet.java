@@ -10,8 +10,9 @@ import graphql.kickstart.servlet.GraphQLConfiguration;
 import graphql.kickstart.servlet.input.GraphQLInvocationInputFactory;
 import io.vavr.Function0;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -46,7 +47,7 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
     protected GraphQLConfiguration getConfiguration() {
         return GraphQLConfiguration
             .with(new DotGraphQLSchemaProvider())
-            .with(Collections.singletonList(new DotGraphQLServletListener()))
+            .with(List.of(new DotGraphQLServletListener()))
             .with(new DotGraphQLContextBuilder())
             .build();
     }

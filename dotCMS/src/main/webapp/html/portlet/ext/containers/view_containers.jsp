@@ -210,7 +210,7 @@ function setBrowserFolder(path) {
 <input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
 <input type="hidden" id="showDeleted" name="showDeleted" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "value=\"true\"" : "value=\"false\"" %> >
 
-<div class="portlet-toolbar">
+<div class="portlet-toolbar" style="margin-top: 1rem;">
 	<div class="portlet-toolbar__actions-primary">
 		<select name="structure_id" id="structure_id" autocomplete="false"  dojoType="dijit.form.FilteringSelect" onChange="submitfm()" >
 			<OPTION value=" " <%=!UtilMethods.isSet(structureId)?"selected":""%>><%= LanguageUtil.get(pageContext, "Any-Structure") %></OPTION>

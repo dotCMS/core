@@ -128,13 +128,6 @@ jobs:
             echo "color=#ff2400" >>$GITHUB_OUTPUT
             exit 1;
           fi
-      - name: Push Tests to GitHub
-        id: persist_results
-        if: success() || failure()
-        run: |
-          chmod +x .cicd/github.sh && source .cicd/github.sh
-          persistResults
-          echo "message=$(logResults)" >>$GITHUB_OUTPUT
       - name: Build
         id: build
         working-directory: core-web

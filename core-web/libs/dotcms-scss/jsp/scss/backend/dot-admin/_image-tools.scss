@@ -22,7 +22,7 @@
     border-top: 1px solid silver;
     padding: 5px 15px 1px 15px;
     vertical-align: middle;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 3px $color-palette-black-op-20;
 }
 
 #imageViewPort {
@@ -218,8 +218,8 @@
     cursor: pointer;
     opacity: 0.5;
     padding: 0 $spacing-1;
-    height: $field-height;
-    line-height: $field-height - ($field-border-size * 2);
+    height: $field-height-md;
+    line-height: calc($field-height-md - ($field-border-size * 2));
     position: absolute;
     right: $spacing-1;
 }

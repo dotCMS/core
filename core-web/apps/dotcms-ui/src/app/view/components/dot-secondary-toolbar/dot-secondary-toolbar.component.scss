@@ -54,14 +54,31 @@
 
     .dot-secondary-toolbar__main.edit-page-variant-mode {
         background-color: $color-palette-primary;
+        color: $white;
+        .main-toolbar-left {
+            color: $white;
+            i,
+            dot-copy-button button,
+            button .pi {
+                color: $white;
+            }
 
-        dot-icon-button {
-            button.dot-icon-button {
-                background-color: $white;
+            h2 {
+                color: inherit;
+                font-size: $font-size-xxl;
+                font-weight: normal;
+            }
 
-                i {
-                    color: $color-palette-primary;
+            dot-copy-button button {
+                i.pi {
+                    color: $white;
                 }
+                &:hover {
+                    background-color: $color-palette-white-op-10;
+                }
+            }
+            button:hover {
+                background-color: $color-palette-white-op-10;
             }
         }
 
@@ -70,38 +87,6 @@
                 margin: 0;
                 font-size: $font-size-lg;
             }
-        }
-
-        h2 {
-            color: $white;
-            font-size: $font-size-xxl;
-            font-weight: normal;
-        }
-
-        button {
-            color: $white;
-
-            &:hover {
-                color: $color-palette-primary;
-                background-color: $white;
-            }
-        }
-
-        button.p-button-text.p-button-vertical {
-            color: $white;
-        }
-
-        dot-copy-button,
-        dot-api-link {
-            a,
-            button {
-                color: $white;
-                border: 1px solid $white;
-            }
-        }
-
-        i {
-            color: $white;
         }
     }
 }

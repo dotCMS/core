@@ -85,10 +85,10 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
                 Arrays.asList(environmentNameParam,filterKeyParam, Boolean.toString(pushRemove)));
         // Set the role ID of the people who can use the action
         addWhoCanUseToAction(schemeStepActionResult.getAction(),
-                Collections.singletonList(TestUserUtils.getOrCreateAdminRole().getId()));
+                List.of(TestUserUtils.getOrCreateAdminRole().getId()));
         // Associate the scheme to the content type
         workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
-                Collections.singletonList(schemeStepActionResult.getScheme()));
+                List.of(schemeStepActionResult.getScheme()));
     }
 
     private static void createTestContentType()

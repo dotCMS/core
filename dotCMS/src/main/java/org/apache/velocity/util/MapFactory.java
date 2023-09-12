@@ -101,7 +101,7 @@ public class MapFactory
                 try
                 {
                     map = (Map)concurrentHashMapConstructor.newInstance(
-                        new Object[] { new Integer(size), new Float(loadFactor), new Integer(concurrencyLevel) });
+                        new Object[] { Integer.valueOf(size), Float.valueOf(loadFactor), Integer.valueOf(concurrencyLevel) });
                 }
                 catch (Exception ex)
                 {

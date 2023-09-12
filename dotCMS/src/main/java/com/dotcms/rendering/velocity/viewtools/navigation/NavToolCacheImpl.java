@@ -88,7 +88,7 @@ public class NavToolCacheImpl implements NavToolCache {
                 if(folder==null || !UtilMethods.isSet(folder.getIdentifier()) || !folder.isShowOnMenu()) {
                     // if the folder have been deleted or should not be shown on menu lets 
                     // remove cache recursively
-                    LinkedList<String> ids=new LinkedList<String>();
+                    LinkedList<String> ids=new LinkedList<>();
                     ids.add(folderInode);
                     while(!ids.isEmpty()) {
                         String fid=ids.pop();

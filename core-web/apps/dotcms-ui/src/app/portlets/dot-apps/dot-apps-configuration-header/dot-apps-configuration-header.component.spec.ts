@@ -12,6 +12,7 @@ import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive'
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotApps } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -56,6 +57,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
                 CommonModule,
                 DotCopyLinkModule,
                 DotPipesModule,
+                DotMessagePipe,
                 DotAvatarDirective,
                 AvatarModule
             ],

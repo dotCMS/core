@@ -7,6 +7,8 @@ import { waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
@@ -40,6 +42,7 @@ describe('DotContentTypeEditResolver', () => {
                 DotContentTypesInfoService,
                 DotHttpErrorManagerService,
                 { provide: DotCrudService, useClass: CrudServiceMock },
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,

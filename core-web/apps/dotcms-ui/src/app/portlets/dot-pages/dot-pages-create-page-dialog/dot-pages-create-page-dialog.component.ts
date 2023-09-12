@@ -10,7 +10,6 @@ import { distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs
 
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import {
     DotESContentService,
     DotLanguagesService,
@@ -18,18 +17,12 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-pages-create-page-dialog',
     standalone: true,
-    imports: [
-        CommonModule,
-        DotAutofocusModule,
-        DotIconModule,
-        DotMessagePipeModule,
-        InputTextModule
-    ],
+    imports: [CommonModule, DotAutofocusModule, DotIconModule, DotMessagePipe, InputTextModule],
     providers: [
         DotESContentService,
         DotLanguagesService,
@@ -60,7 +53,7 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
      */
     goToCreatePage(variableName: string): void {
         this.ref.close();
-        this.dotRouterService.goToCreateContent(variableName);
+        this.dotRouterService.goToURL(`/pages/new/${variableName}`);
     }
 
     ngOnInit(): void {

@@ -1,5 +1,5 @@
 name: "Analytics Integration"
-iconUrl: "https://static.dotcms.com/assets/icons/apps/saml.png"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/analytics.png"
 allowExtraParameters: false
 description: "Analytics integration provides the ability to, given a Client Id and Client Secret, resolve an access token to be injected across all the analytics services included the resolving of the Analytics Key (Id)."
 

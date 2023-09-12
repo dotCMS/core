@@ -132,7 +132,7 @@ public class MaintenanceUtil {
 			if (!x.equals(Inode.class)){
 				Object o;
 				try {
-					o = x.newInstance();
+					o = x.getDeclaredConstructor().newInstance();
 				} catch (Exception e) {
 					Logger.info(MaintenanceUtil.class, "Unable to instaniate object");
 					Logger.debug(MaintenanceUtil.class,"Unable to instaniate object", e);
@@ -153,7 +153,7 @@ public class MaintenanceUtil {
 			if (!x.equals(Inode.class)){
 				Object o;
 				try {
-					o = x.newInstance();
+					o = x.getDeclaredConstructor().newInstance();
 				} catch (Exception e) {
 					Logger.info(MaintenanceUtil.class,"Unable to instaniate object");
 					Logger.debug(MaintenanceUtil.class,"Unable to instaniate object", e);
@@ -192,7 +192,7 @@ public class MaintenanceUtil {
 		DotConnect dc = new DotConnect();
 		StringBuffer deletePermissionAssetConSQL = new StringBuffer(BASE_DELETE_ASSETID);
 		int i = 0;
-		List<String> inodesAux =  new ArrayList<String>();
+		List<String> inodesAux =  new ArrayList<>();
 		boolean first = true;
 		for (String inode : inodes) {
 			inodesAux.add(inode);
@@ -243,7 +243,7 @@ public class MaintenanceUtil {
 		} catch (DotDataException e) {
 			Logger.error(MaintenanceUtil.class,e.getMessage(), e);
 		}
-		List<String> inodesToDelete = new ArrayList<String>();
+		List<String> inodesToDelete = new ArrayList<>();
 		for (HashMap<String, String> r : results) {
 			inodesToDelete.add(r.get("inode"));
 		}
@@ -309,7 +309,7 @@ public class MaintenanceUtil {
 			before = Integer.parseInt(result.get(0).get("count"));
 			dc.setSQL(selectSQL);
 			List<HashMap<String, String>> results =  dc.getResults();
-			List<String> inodesToClean = new ArrayList<String>();
+			List<String> inodesToClean = new ArrayList<>();
 			boolean runDelete = false;
 			for (HashMap<String, String> r : results) {
 				inodesToClean.add(r.get("inode"));
@@ -339,7 +339,7 @@ public class MaintenanceUtil {
 		DotConnect dc = new DotConnect();
 		StringBuffer deleteInodeSQL = new StringBuffer("delete from inode where inode in (");
 		StringBuffer deleteConSQL = new StringBuffer("delete from " + tableName + " where inode in (");
-		List<String> inodesAux =  new ArrayList<String>();
+		List<String> inodesAux =  new ArrayList<>();
 		int i = 0;
 		boolean first = true;
 		for (String inode : inodes) {
@@ -392,7 +392,7 @@ public class MaintenanceUtil {
 		StringBuffer deleteTreeChildConSQL = new StringBuffer("delete from tree where child in (");
 		StringBuffer deleteTreeParentConSQL = new StringBuffer("delete from tree where parent in (");
 		int i = 0;
-		List<String> inodesAux =  new ArrayList<String>();
+		List<String> inodesAux =  new ArrayList<>();
 		boolean first = true;
 		for (String inode : inodes) {
 			inodesAux.add(inode);
@@ -592,7 +592,7 @@ public class MaintenanceUtil {
 			before = Integer.parseInt(result.get(0).get("count"));
 			dc.setSQL(selectNullIdentsSQL);
 			List<HashMap<String, String>> results = dc.getResults();
-			List<String> inodesToClean = new ArrayList<String>();
+			List<String> inodesToClean = new ArrayList<>();
 			boolean runDelete = false;
 			for (HashMap<String, String> r : results) {
 				inodesToClean.add(r.get("inode"));
@@ -621,7 +621,7 @@ public class MaintenanceUtil {
 		File[] files = folder.listFiles();
 		if (0 < files.length) {
 			List<Structure> structures = StructureFactory.getStructures();
-			List<Field> binaryFields = new ArrayList<Field>();
+			List<Field> binaryFields = new ArrayList<>();
 			List<Field> fields;
 			for (Structure structure: structures) {
 				fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
@@ -656,7 +656,7 @@ public class MaintenanceUtil {
 	@WrapInTransaction
 	public static void fixImagesTable() throws SQLException{
 		DotConnect dc = new DotConnect();
-		List<String> imageIds = new ArrayList<String>();
+		List<String> imageIds = new ArrayList<>();
 		final String selectImageIdsSQL = "select i.imageid from image i";
 		String deleteImageSQL = "delete from image where imageid like '' or imageid is null";
 		dc.setSQL(selectImageIdsSQL);

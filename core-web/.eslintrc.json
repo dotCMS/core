@@ -1,7 +1,7 @@
 {
     "root": true,
     "ignorePatterns": ["**/*"],
-    "plugins": ["@nrwl/nx", "eslint-plugin-import"],
+    "plugins": ["@nrwl/nx", "eslint-plugin-import", "ban"],
     "overrides": [
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
@@ -67,6 +67,15 @@
                     }
                 ],
                 "no-duplicate-imports": "error",
+                "ban/ban": [
+                    2,
+                    { "name": ["describe", "only"], "message": "don't focus tests" },
+                    { "name": "fdescribe", "message": "don't focus tests" },
+                    { "name": ["it", "only"], "message": "don't focus tests" },
+                    { "name": "fit", "message": "don't focus tests" },
+                    { "name": ["test", "only"], "message": "don't focus tests" },
+                    { "name": "ftest", "message": "don't focus tests" }
+                ],
                 "import/order": [
                     "error",
                     {

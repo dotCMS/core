@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -189,7 +190,9 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 }
 
                 HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
-                    this.getTemplate(htmlPage, mode).merge(context, tmpOut);
+                HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+
+                this.getTemplate(htmlPage, mode).merge(context, tmpOut);
 
                 if (shouldCache) {
                     final String trimmedPage = tmpOut.toString().trim();

@@ -259,7 +259,7 @@ public class DbExporterUtil {
      */
     public static Optional<String> isPgDumpAvailable() {
         return DbConnectionFactory.isPostgres()
-                ? RuntimeUtils.runProcessAndGetOutput(PG_DUMP_PATH.get(), "--help")
+                ? RuntimeUtils.runProcessAndGetOutput(PG_DUMP_PATH.get(), "--version")
                 : Optional.empty();
     }
 

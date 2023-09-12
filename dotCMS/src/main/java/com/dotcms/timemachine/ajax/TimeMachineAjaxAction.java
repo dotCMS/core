@@ -110,15 +110,15 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
             }
         });
 
-        List<Map<String,String>> list=new ArrayList<Map<String,String>>(hosts.size());
+        List<Map<String,String>> list=new ArrayList<>(hosts.size());
         for(Host hh : hosts) {
-            Map<String,String> m=new HashMap<String,String>();
+            Map<String,String> m=new HashMap<>();
             m.put("id", hh.getIdentifier());
             m.put("hostname", hh.getHostname());
             list.add(m);
         }
 
-        Map<String, Object> m=new HashMap<String,Object>();
+        Map<String, Object> m=new HashMap<>();
         m.put("identifier", "id");
         m.put("label", "hostname");
         m.put("items", list);
@@ -150,15 +150,15 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
 
         DateFormat fmtPretty=DateFormat.getDateInstance(DateFormat.MEDIUM, l);
 
-        List<Map<String,String>> list=new ArrayList<Map<String,String>>(snaps.size());
+        List<Map<String,String>> list=new ArrayList<>(snaps.size());
         for(Date dd : snaps) {
-            Map<String,String> m=new HashMap<String,String>();
+            Map<String,String> m=new HashMap<>();
             m.put("id", Long.toString(dd.getTime()));
             m.put("pretty", fmtPretty.format(dd) + " -  " + UtilMethods.dateToHTMLTime(dd).toLowerCase());
             list.add(m);
         }
 
-        Map<String, Object> m=new HashMap<String,Object>();
+        Map<String, Object> m=new HashMap<>();
         m.put("identifier", "id");
         m.put("label", "pretty");
         m.put("items", list);
@@ -181,11 +181,11 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         List<String> langs=APILocator.getTimeMachineAPI().getAvailableLangForTimeMachine(
                                  host, new Date(Long.parseLong(datestr)));
 
-        List<Map<String,String>> list=new ArrayList<Map<String,String>>();
+        List<Map<String,String>> list=new ArrayList<>();
 
         for(String lid : langs) {
             Language lang=APILocator.getLanguageAPI().getLanguage(lid);
-            Map<String,String> m=new HashMap<String,String>();
+            Map<String,String> m=new HashMap<>();
             m.put("id", lid);
             m.put("pretty", lang.getLanguage()+" - "+lang.getCountry());
             list.add(m);
@@ -198,7 +198,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
             }
         });
 
-        Map<String, Object> m=new HashMap<String,Object>();
+        Map<String, Object> m=new HashMap<>();
         m.put("identifier", "id");
         m.put("label", "pretty");
         m.put("items", list);
@@ -303,9 +303,9 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         ActivityLogger.logInfo(getClass(), "Modifying Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
         AdminLogger.log(getClass(), "Modifying Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
 
-        List<Host> hosts=new ArrayList<Host>();
+        List<Host> hosts=new ArrayList<>();
 
-        List<Language> langs=new ArrayList<Language>(langids.length);
+        List<Language> langs=new ArrayList<>(langids.length);
 
         if(allhost)
             hosts=APILocator.getHostAPI().findAll(getUser(), false);

@@ -71,7 +71,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			rc.add(r);
 			try {
 				if(r != null && InodeUtils.isSet(r.getId())){
-					List<Role> roles = new ArrayList<Role>();
+					List<Role> roles = new ArrayList<>();
 					roles.add(r);
 					populatChildrenForRoles(roles);
 					if(translateFQN) {
@@ -96,7 +96,7 @@ public class RoleFactoryImpl extends RoleFactory {
 	@Override
 	protected List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles) throws DotDataException {
 		try {
-			List<Role> roles = new ArrayList<Role>();
+			List<Role> roles = new ArrayList<>();
 			List<UserRoleCacheHelper> helpers = rc.getRoleIdsForUser(userId);
 			if(helpers != null){
 				for (UserRoleCacheHelper h : helpers) {
@@ -108,9 +108,9 @@ public class RoleFactoryImpl extends RoleFactory {
 					}
 				}
 			}else{
-				helpers = new ArrayList<RoleCache.UserRoleCacheHelper>();
-				LinkedList<Role> rolesToProcess = new LinkedList<Role>();
-				Set<String> rids = new HashSet<String>();
+				helpers = new ArrayList<>();
+				LinkedList<Role> rolesToProcess = new LinkedList<>();
+				Set<String> rids = new HashSet<>();
 				DotConnect dc = new DotConnect();
 				dc.setSQL("select distinct role_id from users_cms_roles where users_cms_roles.user_id  = ?");
 				dc.addParam(userId);
@@ -157,7 +157,7 @@ public class RoleFactoryImpl extends RoleFactory {
 	@Override
 	protected List<Role> getRolesByName(String filter, int start, int limit) throws DotDataException {
 		if(filter==null) {
-			return new ArrayList<Role>();
+			return new ArrayList<>();
 		}
 
 		filter = "%" + filter.toLowerCase() + "%";
@@ -341,8 +341,8 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 
 		//We need to update the role FQN and well as the role children, grand-children, etc as well
-		List<Role> rolesToUpdate = new ArrayList<Role>();
-		Queue<String> roleIdsToProcess = new LinkedList<String>();
+		List<Role> rolesToUpdate = new ArrayList<>();
+		Queue<String> roleIdsToProcess = new LinkedList<>();
 		roleIdsToProcess.add(r.getId());
 		while(roleIdsToProcess.size()>0) {
 			String parentId = roleIdsToProcess.poll();
@@ -351,7 +351,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			hu.setParam(parentId);
 			Role parentRole = (Role)hu.load();
 			rolesToUpdate.add(parentRole);
-			List<Role> toPopulate = new ArrayList<Role>();
+			List<Role> toPopulate = new ArrayList<>();
 			toPopulate.add(parentRole);
 			try {
 				populatChildrenForRoles(toPopulate);
@@ -375,7 +375,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			rc.remove(parent.getRoleKey());
 		}
 
-		List<Role> singleRole = new ArrayList<Role>();
+		List<Role> singleRole = new ArrayList<>();
 		singleRole.add(r);
 		try {
 			populatChildrenForRoles(singleRole);
@@ -466,7 +466,7 @@ public class RoleFactoryImpl extends RoleFactory {
     @Override
     protected List<String> findUserIdsForRole ( Role role, boolean includeInherited ) throws DotDataException {
 
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         if ( !includeInherited ) {
             return findUserIdsForRole( role );
         }
@@ -486,7 +486,7 @@ public class RoleFactoryImpl extends RoleFactory {
         dc.addParam( "%" + role.getId() );
         List<Map<String, Object>> rows = dc.loadObjectResults();
 
-        List<String> roles = new ArrayList<String>();
+        List<String> roles = new ArrayList<>();
         if ( rows != null ) {
             for ( Map<String, Object> row : rows ) {
 
@@ -543,7 +543,7 @@ public class RoleFactoryImpl extends RoleFactory {
      */
     private List<String> getUserIdsForRoleIds ( StringBuffer inRolesIdsQuery ) throws DotDataException {
 
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
 
         DotConnect dc = new DotConnect();
         dc.setSQL( "select distinct user_id from users_cms_roles where role_id in ( " + inRolesIdsQuery.toString() + " )" );
@@ -566,7 +566,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		List<UsersRoles> urs = (List<UsersRoles>)hu.list();
 		List<String> ret = null;
 		if(urs != null){
-			ret = new ArrayList<String>();
+			ret = new ArrayList<>();
 			for (UsersRoles ur : urs) {
 				ret.add(ur.getUserId());
 			}
@@ -587,7 +587,7 @@ public class RoleFactoryImpl extends RoleFactory {
 	    sb.append(") AND parent<>id");
 	    dc.setSQL(sb.toString());
 	    List<Map<String,String>> childs=dc.loadResults();
-	    List<String> newchilds=new ArrayList<String>();
+	    List<String> newchilds=new ArrayList<>();
 	    for(Map<String,String> cc : childs) {
 	        final String cid=cc.get("id");
 	        if(!list.contains(cid)) {
@@ -613,15 +613,15 @@ public class RoleFactoryImpl extends RoleFactory {
 		if(helpers != null){
 			for (UserRoleCacheHelper helper : helpers) {
 				if(roleIds == null){
-					roleIds = new ArrayList<String>();
+					roleIds = new ArrayList<>();
 				}
 				roleIds.add(helper.getRoleId());
 			}
 		}
 		if(roleIds == null){
-			List<Role> roles = new ArrayList<Role>();
+			List<Role> roles = new ArrayList<>();
 		    roles=loadRolesForUser(user.getUserId(),true);
-		    roleIds= new ArrayList<String>();
+		    roleIds= new ArrayList<>();
 		    for (Role r : roles) {
 				roleIds.add(r.getId());
 			}
@@ -639,7 +639,7 @@ public class RoleFactoryImpl extends RoleFactory {
 	protected List<String> loadLayoutIdsForRole(Role role) throws DotDataException {
 		List<String> layouts = rc.getLayoutsForRole(role.getId());
 		if(layouts == null){
-			layouts = new ArrayList<String>();
+			layouts = new ArrayList<>();
 			HibernateUtil hu = new HibernateUtil(Role.class);
 			hu.setQuery("from " + LayoutsRoles.class.getName() + " where role_id = ?");
 			hu.setParam(role.getId());
@@ -745,7 +745,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			r = (Role)hu.load();
 			try {
 				if(r != null && InodeUtils.isSet(r.getId())){
-					List<Role> roles = new ArrayList<Role>();
+					List<Role> roles = new ArrayList<>();
 					roles.add(r);
 					populatChildrenForRoles(roles);
 					for (Role role : roles) {
@@ -772,7 +772,7 @@ public class RoleFactoryImpl extends RoleFactory {
 				"and cr1.parent != cr1.id order by lower(cr1.role_name) asc";
     
 		DotConnect dc = new DotConnect();
-		List<Map<String,String>> sqlResults = new ArrayList<Map<String,String>>();
+		List<Map<String,String>> sqlResults = new ArrayList<>();
 		String ids = "";
 		int count = 0;
 		for (Role role : roles) {
@@ -804,7 +804,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			List<String> childrenList = roleMap.get(row.get("parentid")) != null?
 					roleMap.get(row.get("parentid")).getRoleChildren(): null;
 			if(childrenList == null){
-				childrenList = new ArrayList<String>();
+				childrenList = new ArrayList<>();
 			}
 			childrenList.add(row.get("childid"));
 			if(roleMap.get(row.get("parentid")) != null)

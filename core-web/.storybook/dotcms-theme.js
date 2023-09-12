@@ -3,32 +3,32 @@ import { create } from '@storybook/theming/create';
 export default create({
     base: 'light',
 
-    colorPrimary: '#6B4DE2',
-    colorSecondary: '#6B4DE2',
+    colorPrimary: '#426BF0',
+    colorSecondary: '#7042F0',
 
     // UI
-    appBg: '#ede8fb',
+    appBg: '#FAFAFB',
     appContentBg: '#fff',
-    appBorderColor: '#93929f',
+    appBorderColor: '#6C7389',
     appBorderRadius: 4,
 
     // Typography
-    fontBase: 'Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif',
+    fontBase: 'Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif',
     fontCode: 'Menlo, Monaco, Consolas',
 
     // Text colors
-    textColor: '#0a0725',
+    textColor: '#14151A',
     textInverseColor: '#fff',
 
     // Toolbar default and active colors
     barTextColor: '#fff',
     barSelectedColor: '#fff',
-    barBg: '#6B4DE2',
+    barBg: '#426BF0',
 
     // Form colors
     inputBg: '#fff',
-    inputBorder: '#93929f',
-    inputTextColor: '#0a0725',
+    inputBorder: '#6C7389',
+    inputTextColor: '#14151A',
     inputBorderRadius: 2,
 
     brandTitle: 'DotCMS Components Library',

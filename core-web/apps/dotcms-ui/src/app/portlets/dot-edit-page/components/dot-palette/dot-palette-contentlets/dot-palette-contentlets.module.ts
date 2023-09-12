@@ -4,7 +4,7 @@ import { NgModule } from '@angular/core';
 import { PaginatorModule } from 'primeng/paginator';
 
 import { DotPaletteContentletsComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette-contentlets/dot-palette-contentlets.component';
-import { DotSpinnerModule } from '@dotcms/ui';
+import { DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
@@ -15,7 +15,8 @@ import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-pal
         DotPipesModule,
         DotPaletteInputFilterModule,
         PaginatorModule,
-        DotSpinnerModule
+        DotSpinnerModule,
+        DotMessagePipe
     ],
     declarations: [DotPaletteContentletsComponent],
     exports: [DotPaletteContentletsComponent]

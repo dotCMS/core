@@ -20,7 +20,7 @@ public class ExposureImageFilter extends ImageFilter {
 
 		double exp = parameters.get(getPrefix() + "exp") != null ? Double.parseDouble(parameters.get(getPrefix()
 				+ "exp")[0]) : 0.0;
-		float f = new Double(exp).floatValue();
+		float f = Double.valueOf(exp).floatValue();
 
 		
 		

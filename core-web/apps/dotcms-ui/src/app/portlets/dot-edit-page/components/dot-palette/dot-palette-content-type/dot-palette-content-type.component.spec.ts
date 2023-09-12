@@ -9,7 +9,7 @@ import { By } from '@angular/platform-browser';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -90,6 +90,7 @@ describe('DotPaletteContentTypeComponent', () => {
             declarations: [TestHostComponent, DotPaletteContentTypeComponent],
             imports: [
                 DotPipesModule,
+                DotMessagePipe,
                 DotIconModule,
                 DotFilterPipeModule,
                 FormsModule,

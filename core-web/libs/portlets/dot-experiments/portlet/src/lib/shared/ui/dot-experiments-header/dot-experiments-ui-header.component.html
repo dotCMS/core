@@ -1,0 +1,36 @@
+<div class="wrapper flex flex-row align-items-center gap-2">
+    <button
+        class="p-button-rounded p-button-text"
+        (click)="goBack.emit(true)"
+        data-testId="goback-link"
+        icon="pi pi-arrow-left"
+        pButton></button>
+
+    <ng-container *ngIf="!isLoading; else loadingTpl">
+        <span data-testId="title">{{ title }}</span>
+    </ng-container>
+
+    <ng-container *ngIf="!!experiment?.status">
+        <div class="flex flex-grow-1 align-items-center justify-content-between">
+            <p-tag
+                [value]="
+                    (experiment?.status | titlecase | dm) +
+                    (experiment?.status === experimentStatus.RUNNING
+                        ? ' ' +
+                          ('dot.common.until' | dm) +
+                          ' ' +
+                          (experiment?.scheduling.endDate | date : runningUntilDateFormat)
+                        : '')
+                "
+                data-testId="status-tag"
+                styleClass="{{ experiment?.status | lowercase }}">
+            </p-tag>
+        </div>
+    </ng-container>
+
+    <ng-content></ng-content>
+</div>
+
+<ng-template #loadingTpl>
+    <p-skeleton height="1rem" width="12rem"></p-skeleton>
+</ng-template>

@@ -42,7 +42,7 @@ public enum ESProperty {
 	}
 
 	public static List<String> getPropertiesList() {
-		List<String> propertiesList = new ArrayList<String>();
+		List<String> propertiesList = new ArrayList<>();
 		Class<ESProperty> c = ESProperty.class;
 		ESProperty[] contants = (ESProperty[]) c.getEnumConstants();
 
@@ -54,7 +54,7 @@ public enum ESProperty {
 	}
 
 	public static Map<ESProperty, String> getCacheDefaultMap() {
-		Map<ESProperty, String> defaultMap = new HashMap<ESProperty, String>();
+		Map<ESProperty, String> defaultMap = new HashMap<>();
 		Class<ESProperty> c = ESProperty.class;
 		ESProperty[] contants = (ESProperty[]) c.getEnumConstants();
 
@@ -69,7 +69,7 @@ public enum ESProperty {
 	}
 
 	public static Map<ESProperty, String> getESDefaultMap() {
-		Map<ESProperty, String> defaultMap = new HashMap<ESProperty, String>();
+		Map<ESProperty, String> defaultMap = new HashMap<>();
 		Class<ESProperty> c = ESProperty.class;
 		ESProperty[] contants = (ESProperty[]) c.getEnumConstants();
 

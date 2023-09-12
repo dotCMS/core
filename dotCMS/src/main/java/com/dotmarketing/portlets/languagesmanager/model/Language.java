@@ -8,6 +8,7 @@ import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import java.io.Serializable;
 import java.util.Locale;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
@@ -36,6 +37,8 @@ public class Language implements Serializable, ManifestItem {
 
     /** nullable persistent field */
     private String country;
+
+    private String isoCode;
 
     /**
      * @param languageCode
@@ -175,12 +178,17 @@ public class Language implements Serializable, ManifestItem {
         return new EqualsBuilder().append(this.id, castOther.id).isEquals();
     }
 
+    public String getIsoCode() {
+        if (isoCode == null) {
+            isoCode = ((StringUtils.isNotBlank(countryCode)) ? languageCode.toLowerCase() + "-"
+                    + countryCode : languageCode).toLowerCase();
+        }
+        return isoCode;
+    }
+
 	@Override
 	public String toString() {
-		if(this.getCountryCode()!=null){
-			return (this.getLanguageCode() + "-"+ this.getCountryCode()).toLowerCase();
-		}
-		return this.getLanguageCode().toLowerCase();
+		return getIsoCode();
 	}
 
     @JsonIgnore

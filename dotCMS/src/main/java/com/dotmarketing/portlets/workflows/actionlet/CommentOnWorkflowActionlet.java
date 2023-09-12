@@ -31,7 +31,7 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
     @Override
     public synchronized List<WorkflowActionletParameter> getParameters() {
         if (paramList == null) {
-            paramList = new ArrayList<WorkflowActionletParameter>();
+            paramList = new ArrayList<>();
             paramList.add(new WorkflowActionletParameter("comment", "Workflow Comment", null, true));
         }
         return paramList;

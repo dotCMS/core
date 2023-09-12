@@ -1,8 +1,11 @@
 <!-- Block Editor Settings -->
 <form class="wrapper" [formGroup]="form">
     <div class="field" *ngFor="let setting of settings">
-        <label [class.required]="setting.required">{{ setting.label }}</label>
+        <label [checkIsRequiredControl]="setting.key" [for]="setting.key" dotFieldRequired>{{
+            setting.label
+        }}</label>
         <p-multiSelect
+            [id]="setting.key"
             [placeholder]="setting.placeholder"
             [formControlName]="setting.key"
             [options]="setting.options"

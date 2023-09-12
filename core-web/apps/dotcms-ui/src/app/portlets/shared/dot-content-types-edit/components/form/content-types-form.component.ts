@@ -129,7 +129,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
         return `${this.dotMessageService.get(
             `contenttypes.content.${type}`
-        )} ${this.dotMessageService.get('contenttypes.form.name')} *`;
+        )} ${this.dotMessageService.get('contenttypes.form.name')}`;
     }
 
     private bindActionButtonState(): void {
@@ -157,13 +157,6 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         const dateVarOptions = FieldUtil.getFieldsWithoutLayout(this.layout)
             .filter((field: DotCMSContentTypeField) => this.isDateVarField(field))
             .map((field: DotCMSContentTypeField) => this.getDateVarFieldOption(field));
-
-        if (dateVarOptions.length) {
-            dateVarOptions.unshift({
-                label: '',
-                value: ''
-            });
-        }
 
         return this.isNewDateVarFields(dateVarOptions) ? dateVarOptions : [];
     }

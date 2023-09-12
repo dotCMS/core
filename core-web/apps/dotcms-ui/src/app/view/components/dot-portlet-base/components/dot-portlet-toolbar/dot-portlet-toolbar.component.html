@@ -1,35 +1,33 @@
 <p-toolbar>
-    <div class="p-toolbar-group-left" data-testId="leftGroup">
-        <h3 data-testId="title" *ngIf="title">{{ title }}</h3>
+    <div class="p-toolbar-group-start" data-testId="leftGroup">
+        <h3 *ngIf="title" data-testId="title">{{ title }}</h3>
         <div class="dot-portlet-toolbar__extra-left">
             <ng-content select="[left]"></ng-content>
         </div>
     </div>
 
-    <div class="p-toolbar-group-right" data-testId="rightGroup">
+    <div class="p-toolbar-group-end" data-testId="rightGroup">
         <div class="dot-portlet-toolbar__extra-right">
             <ng-content select="[right]"></ng-content>
         </div>
 
         <div class="dot-portlet-toolbar__actions" data-testId="actionsWrapper">
             <button
-                data-testId="actionsCancelButton"
+                class="p-button-outlined"
                 *ngIf="actions?.cancel"
-                pButton
-                (click)="onCancelClick($event)"
                 [label]="cancelButtonLabel || ('cancel' | dm)"
-                class="p-button-secondary"
-            ></button>
+                (click)="onCancelClick($event)"
+                data-testId="actionsCancelButton"
+                pButton></button>
 
             <ng-container *ngIf="actions?.primary?.length">
                 <button
                     *ngIf="actions?.primary?.length === 1; else elseBlock"
-                    data-testId="actionsPrimaryButton"
-                    pButton
                     [label]="actions?.primary[0]?.label || ('save' | dm)"
-                    (click)="onPrimaryClick($event)"
                     [disabled]="actions?.primary[0]?.disabled"
-                ></button>
+                    (click)="onPrimaryClick($event)"
+                    data-testId="actionsPrimaryButton"
+                    pButton></button>
             </ng-container>
         </div>
     </div>
@@ -37,12 +35,11 @@
 
 <ng-template #elseBlock>
     <button
+        [label]="actionsButtonLabel || ('actions' | dm)"
+        (click)="menu.toggle($event)"
         data-testId="actionsMenuButton"
         pButton
         icon="pi pi-chevron-down"
-        iconPos="right"
-        [label]="actionsButtonLabel || ('actions' | dm)"
-        (click)="menu.toggle($event)"
-    ></button>
+        iconPos="right"></button>
     <p-menu #menu [popup]="true" [model]="actions?.primary" data-testId="actionsMenu"></p-menu>
 </ng-template>

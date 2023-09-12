@@ -33,7 +33,9 @@ import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.language.LanguageUtil;
@@ -58,7 +60,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
+import java.text.ParseException;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -492,13 +496,20 @@ public class UserResource implements Serializable {
 	 * @param req    The {@link HttpServletRequest} object.
 	 * @param userID The ID of the user that is being impersonated.
 	 *
-	 * @throws DotDataException     An error ocurred when accessing the data source.
+	 * @throws DotDataException     An error occurred when accessing the data source.
 	 * @throws DotSecurityException The specified user does not have permissions to perform this action.
+	 * @throws DotRuntimeException  There are missing session attributes, or the User doesn't have access to any Site.
 	 */
 	private void setImpersonatedUserSite(final HttpServletRequest req, final String userID) throws DotDataException, DotSecurityException {
 		final HttpSession session = req.getSession();
 		final User user = this.userAPI.loadUserById(userID);
 		final String currentSiteID = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		if (UtilMethods.isNotSet(currentSiteID)) {
+			final String errorMsg = String.format("The CMS_SELECTED_HOST_ID attribute is not present in the session " +
+					"for User '%s'", userID);
+			Logger.error(this, errorMsg);
+			throw new DotRuntimeException(errorMsg);
+		}
 		Host currentSite;
 		try {
 			currentSite = this.siteAPI.find(currentSiteID, user, false);
@@ -602,7 +613,7 @@ public class UserResource implements Serializable {
 		final User user = initData.getUser();
 		try {
 			checkUserLoginAsRole(initData.getUser());
-			final List<Role> roles = Collections.singletonList(roleAPI.loadBackEndUserRole());
+			final List<Role> roles = List.of(roleAPI.loadBackEndUserRole());
 			final Map<String, Object> extraParams = Map.of(
 					UserPaginator.ROLES_PARAM, roles,
 					UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, false,
@@ -638,5 +649,116 @@ public class UserResource implements Serializable {
 			throw new DotSecurityException(errorMsg);
 		}
 	}
+
+	/**
+	 * Creates an user.
+	 * If userId is sent will be use, if not will be created "userId-" + UUIDUtil.uuid().
+	 * By default, users will be inactive unless the active = true is sent and user has permissions( is Admin or access
+	 * to Users and Roles portlets).
+	 * FirstName, LastName, Email and Password are required.
+	 *
+	 *
+	 * Scenarios:
+	 *  1. No Auth or User doing the request do not have access to Users and Roles Portlets
+	 *  	- Always will be inactive
+	 *  	- Only the	Role DOTCMS_FRONT_END_USER will be added
+	 *  2. Auth, User is Admin or have access to Users and Roles Portlets
+	 *  	- Can be active if JSON includes ("active": true)
+	 *  	- The list of RoleKey will be use to assign the roles, if the roleKey doesn't exist will be
+	 *  		created under the ROOT ROLE.
+	 *
+	 * @param httpServletRequest
+	 * @param createUserForm
+	 * @return User Created
+	 * @throws Exception
+	 */
+	@POST
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response create(@Context final HttpServletRequest httpServletRequest,
+								 @Context final HttpServletResponse httpServletResponse,
+								 final CreateUserForm createUserForm) throws Exception {
+
+		final User modUser = new WebResource.InitBuilder(webResource)
+				.requestAndResponse(httpServletRequest, httpServletResponse)
+				.rejectWhenNoUser(true)
+				.init().getUser();
+
+		final boolean isRoleAdministrator = modUser.isAdmin() ||
+				(
+						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
+						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
+				);
+
+		if (isRoleAdministrator) {
+			final User userToUpdated = this.createNewUser(
+					modUser, createUserForm);
+
+			return Response.ok(new ResponseEntityView(map("userID", userToUpdated.getUserId(),
+					"user", userToUpdated.toMap()))).build(); // 200
+		}
+
+		throw new ForbiddenException("User " + modUser.getUserId() + " does not have permissions to create users");
+	} // create.
+
+	protected User createNewUser(final User modUser,
+								 final CreateUserForm createUserForm)
+			throws DotDataException, DotSecurityException, ParseException {
+
+		final String userId = UtilMethods.isSet(createUserForm.getUserId())?
+				createUserForm.getUserId(): "userId-" + UUIDUtil.uuid();
+		final User user = this.userAPI.createUser(userId, createUserForm.getEmail());
+
+		user.setFirstName(createUserForm.getFirstName());
+
+		if (UtilMethods.isSet(createUserForm.getLastName())) {
+			user.setLastName(createUserForm.getLastName());
+		}
+
+		if (UtilMethods.isSet(createUserForm.getBirthday())) {
+			user.setBirthday(DateUtil.parseISO(createUserForm.getBirthday()));
+		}
+
+		if (UtilMethods.isSet(createUserForm.getMiddleName())) {
+			user.setMiddleName(createUserForm.getMiddleName());
+		}
+
+		if (createUserForm.getLanguageId() <= 0) {
+			user.setLanguageId(String.valueOf(createUserForm.getLanguageId() <= 0?
+					APILocator.getLanguageAPI().getDefaultLanguage().getId(): createUserForm.getLanguageId()));
+		}
+
+		if (UtilMethods.isSet(createUserForm.getNickName())) {
+			user.setNickName(createUserForm.getNickName());
+		}
+
+		if (UtilMethods.isSet(createUserForm.getTimeZoneId())) {
+			user.setTimeZoneId(createUserForm.getTimeZoneId());
+		}
+
+		user.setPassword(new String(createUserForm.getPassword()));
+		user.setMale(createUserForm.isMale());
+		user.setCreateDate(new Date());
+
+		if (UtilMethods.isSet(createUserForm.getAdditionalInfo())) {
+			user.setAdditionalInfo(createUserForm.getAdditionalInfo());
+		}
+
+		final List<String> roleKeys = UtilMethods.isSet(createUserForm.getRoles())?
+				createUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
+
+		this.userAPI.save(user, APILocator.systemUser(), false);
+		Logger.debug(this,  ()-> "User with userId '" + userId + "' and email '" +
+				createUserForm.getEmail() + "' has been created.");
+
+		for (final String roleKey : roleKeys) {
+
+			UserHelper.getInstance().addRole(user, roleKey, false	, false);
+		}
+
+		return user;
+	}
+
 
 }

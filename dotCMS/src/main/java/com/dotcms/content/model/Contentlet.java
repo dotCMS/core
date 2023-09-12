@@ -54,9 +54,5 @@ public interface Contentlet {
     Map<String, FieldValue<?>> fields();
     @Nullable
     String friendlyName();
-    @Value.Default
-    default String variantId() {
-        return VariantAPI.DEFAULT_VARIANT.name();
-    }
 
 }

@@ -53,8 +53,8 @@ public class TemplateAjax {
 		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
 		if(count<=0)count=10;
 
-		List<Template> fullListTemplates = new ArrayList<Template>();
-		List<Template> totalTemplates = new ArrayList<Template>();
+		List<Template> fullListTemplates = new ArrayList<>();
+		List<Template> totalTemplates = new ArrayList<>();
 		Host host = hostAPI.find(query.get("hostId"), user, respectFrontendRoles);
 
 		try{
@@ -108,8 +108,8 @@ public class TemplateAjax {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 		//Collections.sort(fullListTemplates, new TemplateComparator(baseHostId));
-		Map<String, Object> results = new HashMap<String, Object>();
-		List<Map<String, Object>> list = new LinkedList<Map<String, Object>> ();
+		Map<String, Object> results = new HashMap<>();
+		List<Map<String, Object>> list = new LinkedList<> ();
 
 		boolean shouldIncludeTemplate = true;
 		String toInclude = queryOptions.get("includeTemplate");
@@ -162,7 +162,7 @@ public class TemplateAjax {
 			templateMap.put("hostName", parentHost.getHostname());
 			templateMap.put("hostId", parentHost.getIdentifier());
 			templateMap.put("fullTitle",   templateMap.get("title") + " (" + parentHost.getHostname() + ")" );
-			templateMap.put("htmlTitle",  "<div><div style='float:left'>" + templateMap.get("title") + "</div><div style='float:right'>" + parentHost.getHostname() + "</div></div>" );
+			templateMap.put("htmlTitle",  "<div>" + templateMap.get("title") + "</div><small>" + parentHost.getHostname() + "</div></small>" );
 		} else {
 			templateMap.put("fullTitle", templateMap.get("title"));
 			templateMap.put("htmlTitle", templateMap.get("title"));
@@ -222,7 +222,7 @@ public class TemplateAjax {
 	}
 
 	public Map<String, Object> fetchTemplateImage(String id) throws DotDataException, DotSecurityException {
-		Map<String, Object> toReturn =  new HashMap<String, Object>();
+		Map<String, Object> toReturn =  new HashMap<>();
 		Template template = null;
 		try{
 		   template = templateAPI.findWorkingTemplate(id, APILocator.getUserAPI().getSystemUser(), false);

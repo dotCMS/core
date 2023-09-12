@@ -1,7 +1,11 @@
 package com.dotcms.publisher.util.dependencies;
 
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+
 import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
@@ -10,8 +14,10 @@ import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestReason;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -47,6 +53,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -56,6 +63,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import org.apache.commons.math3.analysis.function.Exp;
 
 /**
  * Implementation class for the {@link DependencyProcessor} interface.
@@ -144,6 +152,9 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         if (publisherFilter.isDependencies() && !config.justIncludesUsers() && !config.justIncludesCategories()) {
             setLanguageVariables();
         }
+
+        dependencyProcessor.addProcessor(PusheableAsset.EXPERIMENT,
+                (experiment) -> processExperimentDependencies((Experiment) experiment));
     }
 
     /**
@@ -782,6 +793,67 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         }
     }
 
+    private void processExperimentDependencies(final Experiment experiment)  {
+        try {
+
+
+            final Contentlet parentPage = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(experiment.pageId());
+
+            final long languageId = parentPage.getLanguageId();
+
+            if (UtilMethods.isSet(parentPage)) {
+                tryToAddAsDependency(PusheableAsset.CONTENTLET, parentPage,
+                        experiment);
+            } else {
+                throw new DotDataException(
+                        String.format("For Experiment '%s', no parent with ID '%s' could be found", experiment.id().orElse(""),
+                                experiment.pageId()));
+            }
+
+            List<Variant> variants = experiment.trafficProportion().variants().stream()
+                    .map((experimentVariant -> {
+                        try {
+                            return APILocator.getVariantAPI().get(experimentVariant.id()).orElseThrow();
+                        } catch (DotDataException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })).filter((variant) -> !variant.name().equals(DEFAULT_VARIANT.name())).collect(
+                            Collectors.toList());
+
+            tryToAddAllAndProcessDependencies(PusheableAsset.VARIANT, variants,
+                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
+
+            final List<Contentlet> contentDependencies = new ArrayList<>();
+
+            for (Variant variant : variants) {
+                List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
+                        .getMultiTreesByVariant(experiment.pageId(), variant.name());
+
+                for (MultiTree multiTree : multiTrees) {
+                    Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
+                            multiTree.getContentlet(), false, languageId, variant.name(), user,
+                            false);
+
+                    if(!UtilMethods.isSet(contentlet)) {
+                        contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
+                                multiTree.getContentlet(), false, languageId, DEFAULT_VARIANT.name(), user,
+                                false);
+                    }
+
+                    contentDependencies.add(contentlet);
+                }
+            }
+
+            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentDependencies,
+                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
+
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.error(this, String.format("An error occurred when processing dependencies on Experiment '%s' [%s]: %s",
+                    experiment.name(), experiment.id().orElse(""), e.getMessage()), e);
+        }
+    }
+
     @Override
     public void addAsset(Object asset, PusheableAsset pusheableAsset) {
         dependencyProcessor.addAsset(asset, pusheableAsset);
@@ -984,7 +1056,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     }
 
     private <T> boolean shouldCheckModDate(T asset) {
-        return !Language.class.isInstance(asset);
+        return !(asset instanceof Language) && !(asset instanceof Variant);
     }
 
     private void setLanguageVariables() {

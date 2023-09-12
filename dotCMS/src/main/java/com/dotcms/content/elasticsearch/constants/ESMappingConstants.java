@@ -9,6 +9,8 @@ package com.dotcms.content.elasticsearch.constants;
  */
 public final class ESMappingConstants {
 
+
+
     /**
      * Constructor
      */
@@ -47,6 +49,10 @@ public final class ESMappingConstants {
     public static final String TYPE ="type";
     public static final String CONTENT = "content";
     public static final String INODE = "inode";
+
+    // boolean that says if a content type is or not a system.
+    public static final String SYSTEM_TYPE = "systemType";
+
     public static final String MOD_DATE = "modDate";
     public static final String OWNER = "owner";
     public static final String MOD_USER = "modUser";

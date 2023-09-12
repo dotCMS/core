@@ -114,7 +114,7 @@ public abstract class DotStatefulJob extends DotJob implements StatefulJob {
     protected Map<String, Serializable> getExecutionData(final Trigger trigger, final Class<? extends StatefulJob> jobClass){
 
         final Optional<Map<String, Object>> triggerJobDetailOptional = getTriggerJobDetail(jobClass);
-        if(!triggerJobDetailOptional.isPresent()){
+        if(triggerJobDetailOptional.isEmpty()){
             throw new IllegalArgumentException(
                     String.format("Unable to get job detail data `%s`. ", trigger.getName()));
         }

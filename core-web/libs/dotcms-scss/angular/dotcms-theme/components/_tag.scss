@@ -33,7 +33,7 @@ p-tag.sm {
 p-tag {
     &.p-tag-success .p-tag {
         background-color: $color-alert-green-light;
-        color: $color-alert-green;
+        color: $color-accessible-text-green;
     }
 
     &.p-tag-info .p-tag {
@@ -44,5 +44,10 @@ p-tag {
     &.p-tag-warning .p-tag {
         background-color: $color-alert-yellow-light;
         color: $color-alert-yellow;
+    }
+
+    &.p-tag-error .p-tag {
+        background-color: $color-alert-red-light;
+        color: $color-alert-red;
     }
 }

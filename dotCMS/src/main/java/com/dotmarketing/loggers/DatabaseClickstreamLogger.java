@@ -51,7 +51,7 @@ public class DatabaseClickstreamLogger implements ClickstreamLogger {
 		clickstream.setLastSaved(new Date());
 		ClickstreamFactory.save(clickstream);
 		
-		List<ClickstreamRequest> myStream = new ArrayList<ClickstreamRequest>();
+		List<ClickstreamRequest> myStream = new ArrayList<>();
 		myStream.addAll(clickstream.getClickstreamRequests());
 		long clickStreamId = clickstream.getClickstreamId();
 		if (myStream != null ) {
@@ -61,7 +61,7 @@ public class DatabaseClickstreamLogger implements ClickstreamLogger {
 			}
 		}
 		
-		List<Clickstream404> my404Stream = new ArrayList<Clickstream404>();
+		List<Clickstream404> my404Stream = new ArrayList<>();
 		my404Stream.addAll(clickstream.getClickstream404s());
 		if (my404Stream != null ) {
 			for(Clickstream404 myClickstream404  : my404Stream){

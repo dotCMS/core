@@ -3,6 +3,7 @@ package com.dotcms.experiments.business.result;
 import com.dotcms.analytics.metrics.Metric;
 
 import com.dotcms.experiments.model.Experiment;
+import java.util.Collection;
 
 /**
  * Analyze  a set of {@link BrowserSession} to get the total or partial {@link Experiment} results
@@ -12,6 +13,13 @@ import com.dotcms.experiments.model.Experiment;
  */
 public interface MetricExperimentAnalyzer {
 
-    void addResults(final Metric goal, final BrowserSession browserSession, final ExperimentResults.Builder experimentResultBuilder);
+    /**
+     * Look for all the occurrences of a Metric inside a {@link BrowserSession}
+     *
+     * @param metric
+     * @param browserSession
+     * @return Set of {@link Event} where the Metric was met.
+     */
+    Collection<Event> getOccurrences(final Metric metric, final BrowserSession browserSession);
 
 }

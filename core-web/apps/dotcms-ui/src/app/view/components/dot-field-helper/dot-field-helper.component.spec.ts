@@ -3,10 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { ButtonModule } from 'primeng/button';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
-
-import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 import { DotFieldHelperComponent } from './dot-field-helper.component';
 
@@ -18,7 +16,7 @@ describe('DotFieldHelperComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotFieldHelperComponent],
-            imports: [BrowserAnimationsModule, UiDotIconButtonModule, OverlayPanelModule]
+            imports: [BrowserAnimationsModule, ButtonModule, OverlayPanelModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotFieldHelperComponent);
@@ -29,30 +27,22 @@ describe('DotFieldHelperComponent', () => {
     });
 
     it('should display the overlay panel on click', () => {
-        const iconButton = de.query(By.css('dot-icon-button')).nativeElement;
-        // const overlayPanel: OverlayPanel = de.query(By.css('p-overlayPanel')).componentInstance;
+        const iconButton = de.query(By.css('p-button')).nativeElement;
 
         iconButton.dispatchEvent(new MouseEvent('click'));
-
-        // expect(overlayPanel.visible).toEqual(true);
     });
 
     it('should hide the overlay panel on click', () => {
-        const iconButton = de.query(By.css('dot-icon-button')).nativeElement;
-        // const overlayPanel: OverlayPanel = de.query(By.css('p-overlayPanel')).componentInstance;
+        const iconButton = de.query(By.css('p-button')).nativeElement;
 
         iconButton.dispatchEvent(new MouseEvent('click'));
         iconButton.dispatchEvent(new MouseEvent('click'));
-
-        // expect(overlayPanel.visible).toEqual(false);
     });
 
     it('should have correct attributes  on button', () => {
-        const iconButton: UiDotIconButtonComponent = de.query(
-            By.css('dot-icon-button')
-        ).componentInstance;
+        const iconButton = de.query(By.css('p-button')).componentInstance;
 
-        expect(iconButton.icon).toEqual('help_outline');
+        expect(iconButton.icon).toEqual('pi pi-question-circle');
     });
 
     it('should have correct attributes on Overlay Panel', () => {

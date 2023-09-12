@@ -64,7 +64,7 @@ public class Host extends Folder {
     private final HttpClient client;
     private final TransferService transferService;
     private final FileSyncer fileSyncer;
-    private final List<ConnectionListener> connectionListeners = new ArrayList<ConnectionListener>();
+    private final List<ConnectionListener> connectionListeners = new ArrayList<>();
     private String propFindXml = PROPFIND_XML;
     private boolean secure; // use HTTPS if true
 

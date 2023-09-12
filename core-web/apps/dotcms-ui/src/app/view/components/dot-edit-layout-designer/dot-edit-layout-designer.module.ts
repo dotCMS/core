@@ -14,16 +14,16 @@ import { DotGlobalMessageModule } from '@components/_common/dot-global-message/d
 import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotPageLayoutService } from '@dotcms/data-access';
+import { TemplateBuilderModule } from '@dotcms/template-builder';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 
 import { DotLayoutDesignerModule } from './components/dot-layout-designer/dot-layout-designer.module';
-import { DotLayoutPropertiesModule } from './components/dot-layout-properties/dot-layout-properties.module';
 import { DotSidebarPropertiesModule } from './components/dot-sidebar-properties/dot-sidebar-properties.module';
 import { DotThemeSelectorModule } from './components/dot-theme-selector/dot-theme-selector.module';
 import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';
 
-import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { DotDialogModule } from '../dot-dialog/dot-dialog.module';
 
 @NgModule({
@@ -37,8 +37,6 @@ import { DotDialogModule } from '../dot-dialog/dot-dialog.module';
         DotContainerSelectorModule,
         DotEditPageInfoModule,
         DotGlobalMessageModule,
-        UiDotIconButtonModule,
-        DotLayoutPropertiesModule,
         DotSidebarPropertiesModule,
         DotThemeSelectorModule,
         FormsModule,
@@ -49,7 +47,9 @@ import { DotDialogModule } from '../dot-dialog/dot-dialog.module';
         DotSecondaryToolbarModule,
         DotPipesModule,
         DotLayoutDesignerModule,
-        DotDialogModule
+        DotDialogModule,
+        TemplateBuilderModule,
+        DotMessagePipe
     ],
     exports: [DotEditLayoutDesignerComponent],
     providers: [DotPageLayoutService]

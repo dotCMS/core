@@ -33,7 +33,7 @@ public class PluginMergerTest extends UnitTestBase {
 
 		String dwr = sb.toString();
 
-		Map<String,String> overrideMap = new HashMap<String, String>();
+		Map<String,String> overrideMap = new HashMap<>();
 		overrideMap.put("create", "javascript");
 
 		sb = new StringBuilder("<!DOCTYPE dwr PUBLIC \"-//GetAhead Limited//DTD Direct Web Remoting 3.0//EN\" \"http://getahead.org/dwr//dwr30.dtd\">");

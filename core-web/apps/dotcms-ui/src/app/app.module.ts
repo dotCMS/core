@@ -9,6 +9,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 // App is our top level component
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -36,7 +37,8 @@ import { SharedModule } from './shared/shared.module';
         DotPipesModule,
         SharedModule.forRoot(),
         MonacoEditorModule,
-        MarkdownModule.forRoot()
+        MarkdownModule.forRoot(),
+        DotMessagePipe
     ],
     providers: [ENV_PROVIDERS],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]

@@ -8,6 +8,7 @@ import com.dotcms.util.Converter;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.EnvironmentVariablesService;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -24,7 +25,6 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.CompressionCodec;
 import io.lettuce.core.codec.RedisCodec;
-import io.lettuce.core.internal.LettuceAssert;
 import io.lettuce.core.masterreplica.MasterReplica;
 import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection;
 import io.lettuce.core.output.ValueOutput;
@@ -36,7 +36,6 @@ import io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands;
 import io.lettuce.core.resource.DefaultClientResources;
 import io.lettuce.core.resource.DirContextDnsResolver;
 import io.lettuce.core.support.ConnectionPoolSupport;
-import io.lettuce.core.support.ConnectionWrapping;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -56,49 +55,45 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * Master replica implementation of redis cache, works as a replicator when there is more than 1 uri as part of the REDIS_LETTUCECLIENT_URLS config.
- * This implementation wraps keys, members and channels by prefixing with the cluster id, this helps to avoid collisions on ghetto redis cluster implementation
- * where can live 2 or more clients into the same redis space.
+ * Master replica implementation of redis cache. It works as a replicator when there is more than 1 URIs as part of the
+ * {@code REDIS_LETTUCECLIENT_URLS} config. This implementation wraps keys, members and channels by prefixing them with
+ * the cluster id -- usually the shortified version of the ID. This helps to avoid collisions on ghetto Redis cluster
+ * implementation where can live 2 or more clients into the same Redis space. It handles the connections for GET, PUT,
+ * INC and hashes by pool, and you can configure it via the following properties:
+ * <ul>
+ *     <li>{@code REDIS_LETTUCECLIENT_TIMEOUT_MS}: Timeout (3000 by default).</li>
+ *     <li>{@code REDIS_LETTUCECLIENT_MIN_IDLE_CONNECTIONS}: Min connections to redis alive when idle (2 by default).
+ *     </li>
+ *     <li>{@code REDIS_LETTUCECLIENT_MAX_CONNECTIONS}: Max connections at all (5 by default).</li>
+ * </ul>
+ * <p>You can create as many clients as you need. By default, the empty constructor uses the {@link DotObjectCodec}
+ * which is a GZIP, Java serialized byte code. In addition, internally, the keys, channels, member names, etc are
+ * handled as Strings. However, you can use whatever you want as a key, but a converter to transform the key to String
+ * and vice-versa must be provided. In case the key (the most normal case) is a String, you do not need to implement
+ * anything.</p>
+ * <p>In case you need to use the Redis connection, you can get it via the
+ * {@link MasterReplicaLettuceClient#getConnection()} method. You can use the {@link LettuceAdapter} in order to
+ * transform the connection to a Lettuce connection. In case the implementation is run by another library, it would need
+ * another adapter. By default, dotCMS uses the Lettuce Client to connect to Redis.</p>
+ * <p><b>IMPORTANT:</b> When the Tomcat Redis Session Manager is enabled, you can skip the Lettuce Client configuration
+ * and fall back to using the plugin's configuration instead. This will avoid having two separate Redis setups for the
+ * same dotCMS environment.</p>
  *
- * It handles the connections for get, put, inc and hashes by pool you can config it by using:
- * - REDIS_LETTUCECLIENT_TIMEOUT_MS, timeout (3000 by default)
- * - REDIS_LETTUCECLIENT_MIN_IDLE_CONNECTIONS, min connections to redis alive when idle (2 by default)
- * - REDIS_LETTUCECLIENT_MAX_CONNECTIONS, max connections at all (5 by default)
- *
- * You can create as much as clients you need, by default the empty constructor uses the {@link DotObjectCodec} which is a gzip, java serialized byte code.
- * In addition internal the keys, channels, member names, etc are handled by string, however you can use whatever you want as a key but it should be provided
- * a converter to transform the key to string and viceversa, in case the key (the most normal case) is a string you do not need to implement anything seems the
- * default implement has been made thinking on keys as a strings
- *
- * In case you need to use the redis connection you can use {@link MasterReplicaLettuceClient#getConnection()} method, you can use the
- * {@link LettuceAdapter} in order to transform the connection to a lettuce connection. In case the implementation is running by another library
- * would need another adapter, by default dotCMS uses Lettuce client to connect to Redis.
- *
- * @param <K>
- * @param <V>
+ * @param <K> The Class representing the key used to store data in Redis. Usually a String.
+ * @param <V> The Class representing the value stored in Redis. Usually an Object.
  * @author jsanca
  */
 public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
-    private final static String OK_RESPONSE = "OK";
-    private final static String ERROR_RESPONSE = "ERROR";
-    private final List<RedisURI> redisUris = Arrays
-                    .asList(Config.getStringArrayProperty("REDIS_LETTUCECLIENT_URLS",
-                                    new String[] {"redis://password@oboxturbo"}))
-                    .stream()
-                    .map(u -> RedisURI.create(u))
-                    .collect(Collectors.toList());
+    private static final String OK_RESPONSE = "OK";
+    private static final String ERROR_RESPONSE = "ERROR";
 
-    private final int timeout = Config.getIntProperty("REDIS_LETTUCECLIENT_TIMEOUT_MS", 3000);
-    private final int minIdleConnections = Config.getIntProperty("REDIS_LETTUCECLIENT_MIN_IDLE_CONNECTIONS", 2);
-    private final int maxConnections = Config.getIntProperty("REDIS_LETTUCECLIENT_MAX_CONNECTIONS", 5);
+    private final List<RedisURI> redisUris = this.createRedisConnection();
     private final GenericObjectPool<StatefulRedisConnection<String, V>> pool;
     private final RedisCodec<String, V> codec;
     private final String clusterId;
@@ -130,6 +125,46 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                 DefaultClientResources.builder().dnsResolver(new DirContextDnsResolver()).build();
         this.lettuceClient = io.lettuce.core.RedisClient.create(clientResources);
         this.pool = buildPool();
+    }
+
+    /**
+     * Creates the appropriate connection objects used by dotCMS to access the Redis server. The connection is created
+     * based on a fallback mechanism:
+     * <ul>
+     *     <li>If the {@code REDIS_LETTUCECLIENT_URLS} property -- which allows to set one or more Redis servers -- is
+     *     set, dotCMS will create the Lettuce Clients based on such a configuration.</li>
+     *     <li>If the Lettuce Client configuration is not set, but the Tomcat Redis Session Manager plugin is activated
+     *     -- via the {@code TOMCAT_REDIS_SESSION_ENABLED} property -- dotCMS will create the it based on the existing
+     *     configuration set in the plugin, as a fallback.</li>
+     * </ul>
+     * For more information, please refer to the list of available configuration parameters in the
+     * <a href="https://github.com/dotCMS/tomcat-redis-session-manager/blob/trunk/README.markdown">Redis Session Manager
+     * repository</a>
+     *
+     * @return The list with one or more {@link RedisURI} objects representing the Redis servers that dotCMS will
+     * connect to.
+     */
+    protected List<RedisURI> createRedisConnection() {
+        final EnvironmentVariablesService envVarService = EnvironmentVariablesService.getInstance();
+        final List<String> lettuceUrls = Arrays.asList(Config.getStringArrayProperty("REDIS_LETTUCECLIENT_URLS", new String[]{}));
+        if (!lettuceUrls.isEmpty()) {
+            return lettuceUrls.stream()
+                    .map(RedisURI::create)
+                    .collect(Collectors.toList());
+        }
+        final String redisSessionEnabled = envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_ENABLED", "false");
+        if (Boolean.parseBoolean(redisSessionEnabled)) {
+            final RedisURI redisURI = RedisURI.builder()
+                    .withHost(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_HOST", "localhost"))
+                    .withPort(Integer.parseInt(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_PORT", "6379")))
+                    .withPassword(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_PASSWORD", "").toCharArray())
+                    .withSsl(Boolean.parseBoolean(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_SSL_ENABLED", "false")))
+                    .withDatabase(Config.getIntProperty("TOMCAT_REDIS_SESSION_DATABASE", 0))
+                    .withTimeout(Duration.ofMillis(Integer.parseInt(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_TIMEOUT", "2000"))))
+                    .build();
+            return List.of(redisURI);
+        }
+        return List.of(RedisURI.create("redis://password@oboxturbo"));
     }
 
     /**
@@ -883,20 +918,31 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
         }
     }
 
-    //////////
-
+    /**
+     * Builds the Generic Connection Pool for the provided Redis servers. Its configuration parameters are set based on
+     * the following criteria:
+     * <ul>
+     *     <li>If specific Lettuce Client parameters are set, use them.</li>
+     *     <li>If they're not, use the configuration parameters used by the Tomcat Redis Session Manager.</li>
+     *     <li>If they're not set either, use default values.</li>
+     * </ul>
+     *
+     * @return The {@link GenericObjectPool} object used by the Redis Cache.
+     */
     private GenericObjectPool<StatefulRedisConnection<String, V>> buildPool() {
-
         //todo: we have to have a mechanism when the connection is wrong on a bad space, to remove it from the pool and create a new one
-        final GenericObjectPoolConfig<StatefulRedisConnection<String, V>>  config = new GenericObjectPoolConfig<>();
-
+        final GenericObjectPoolConfig<StatefulRedisConnection<String, V>> config = new GenericObjectPoolConfig<>();
+        final int timeout = this.getIntProperty("REDIS_LETTUCECLIENT_TIMEOUT_MS", "TOMCAT_REDIS_SESSION_TIMEOUT", 3000);
+        final int minIdleConnections = this.getIntProperty("REDIS_LETTUCECLIENT_MIN_IDLE_CONNECTIONS", "TOMCAT_REDIS_MIN_IDLE_CONNECTIONS", 2);
+        final int maxIdleConnections = this.getIntProperty("REDIS_LETTUCECLIENT_MAX_IDLE_CONNECTIONS", "TOMCAT_REDIS_MAX_IDLE_CONNECTIONS", 2);
+        final int maxConnections = this.getIntProperty("REDIS_LETTUCECLIENT_MAX_CONNECTIONS", "TOMCAT_REDIS_MAX_CONNECTIONS", 5);
         config.setTestOnBorrow(true);
         config.setMinEvictableIdleTimeMillis(TimeUnit.MINUTES.toMillis(5));
+        config.setMinIdle(minIdleConnections);
+        config.setMaxIdle(maxIdleConnections);
+        config.setMaxTotal(maxConnections);
 
-        config.setMinIdle(this.minIdleConnections);
-        config.setMaxTotal(this.maxConnections);
-
-        GenericObjectPool<StatefulRedisConnection<String, V>> pool = null;
+        GenericObjectPool<StatefulRedisConnection<String, V>> genericPool;
         if (redisUris.size() == 1) { // only one node
 
             final Supplier<StatefulRedisConnection<String, V>> connectionSupplier = () -> {
@@ -918,7 +964,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                 }
             };
 
-            pool = ConnectionPoolSupport.createGenericObjectPool(connectionSupplier, config, true);
+            genericPool = ConnectionPoolSupport.createGenericObjectPool(connectionSupplier, config, true);
         } else {
 
             final Supplier<StatefulRedisConnection<String, V>> connectionSupplier = () -> {
@@ -946,9 +992,38 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                 }
             };
 
-            pool = ConnectionPoolSupport.createGenericObjectPool(connectionSupplier, config, true);
+            genericPool = ConnectionPoolSupport.createGenericObjectPool(connectionSupplier, config, true);
         }
 
-        return pool;
+        return genericPool;
     }
+
+    /**
+     * Utility method that returns the value of a specific Environment Variable. It's very important to note that the
+     * internal {@code "DOT_"} prefix is automatically prepended to the {@code key} parameter. This method has two
+     * fallback options:
+     * <ol>
+     *     <li>If the requested Environment Variable is not set, then use the default Environment Variable, which DOES
+     *     NOT the {@code "DOT_"} prefix set.</li>
+     *     <li>If it's not set either, then default value is returned.</li>
+     * </ol>
+     *
+     * @param key          The name of the Environment Variable to be requested.
+     * @param defaultKey   The name of the default Environment Variable to be requested in case the {@code key} doesn't
+     *                     return any value.
+     * @param defaultValue The default value to be returned in case neither {@code key} nor {@code defaultKey} return
+     *                     any value.
+     * @return The value of the requested Environment Variable, based on the rules described above.
+     */
+    protected int getIntProperty(final String key, final String defaultKey, final int defaultValue) {
+        String value = Config.getStringProperty(key, null);
+        if (!UtilMethods.isSet(value)) {
+            value = EnvironmentVariablesService.getInstance().getenv().get(defaultKey);
+            if (!UtilMethods.isSet(value)) {
+                return defaultValue;
+            }
+        }
+        return Integer.parseInt(value);
+    }
+
 }

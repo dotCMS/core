@@ -808,7 +808,7 @@ public class AppsAPIImpl implements AppsAPI {
             for (final AppSecrets appSecrets : importEntry.getValue()) {
                 final Optional<AppDescriptor> appDescriptor = getAppDescriptor(appSecrets.getKey(),
                         user);
-                if (!appDescriptor.isPresent()) {
+                if (appDescriptor.isEmpty()) {
                     if (failSilently) {
                         Logger.warn(AppsAPIImpl.class, () -> String
                                 .format("No App Descriptor `%s` was found locally.",

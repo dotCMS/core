@@ -1,4 +1,4 @@
-import { DotPageRenderParameters } from '@dotcms/dotcms-models';
+import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 
 /**
  * Generate an anchor element with a Blob file to eventually be click to force a download
@@ -20,13 +20,49 @@ export function formatMessage(message: string, args: string[]): string {
 }
 
 // Generates an unique Url with host, language and device Ids
-export function generateDotFavoritePageUrl(params: DotPageRenderParameters): string {
-    const { page, site, viewAs } = params;
+export function generateDotFavoritePageUrl(params: {
+    languageId: number;
+    pageURI: string;
+    deviceInode?: string;
+    siteId?: string;
+}): string {
+    const { deviceInode, languageId, pageURI, siteId } = params;
 
     return (
-        `${page?.pageURI}?` +
-        (site?.identifier ? `host_id=${site?.identifier}` : '') +
-        `&language_id=${viewAs.language.id}` +
-        (viewAs.device?.inode ? `&device_inode=${viewAs.device?.inode}` : '&device_inode=')
+        `${pageURI}?` +
+        (siteId ? `host_id=${siteId}` : '') +
+        `&language_id=${languageId}` +
+        (deviceInode ? `&device_inode=${deviceInode}` : '&device_inode=')
     );
+}
+
+/**
+ * Get the query parameter separator
+ * @param url
+ * @returns
+ */
+export function getQueryParameterSeparator(url: string): string {
+    const regex = /[?&]/;
+
+    return url.match(regex) ? '&' : '?';
+}
+
+/**
+ * This method is used to get the runnable link for the tool
+ * @param url
+ * @returns
+ */
+export function getRunnableLink(url: string, currentPageUrlParams: DotPageToolUrlParams): string {
+    const { currentUrl, requestHostName, siteId, languageId } = currentPageUrlParams;
+
+    url = url
+        .replace('{requestHostName}', requestHostName ?? '')
+        .replace('{currentUrl}', currentUrl ?? '')
+        .replace('{siteId}', siteId ? `${getQueryParameterSeparator(url)}host_id=${siteId}` : '')
+        .replace(
+            '{languageId}',
+            languageId ? `${getQueryParameterSeparator(url)}language_id=${String(languageId)}` : ''
+        );
+
+    return url;
 }

@@ -22,13 +22,11 @@ export interface DotFavoritePageProps {
 }
 
 export interface DotFavoritePageFormData {
-    currentUserRoleId: string;
     inode?: string;
     thumbnail?: string;
     title: string;
     url: string;
     order: number;
-    permissions?: string[];
 }
 
 @Component({
@@ -61,7 +59,6 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         // Needed to avoid browser to cache thumbnail img when reloaded, since it's fetched from the same URL
         this.timeStamp = new Date().getTime().toString();
-
         this.store.formState$
             .pipe(
                 takeUntil(this.destroy$),
@@ -69,13 +66,11 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
             )
             .subscribe((formStateData: DotFavoritePageFormData) => {
                 this.form = this.fb.group({
-                    currentUserRoleId: [formStateData?.currentUserRoleId, Validators.required],
                     inode: [formStateData?.inode],
                     thumbnail: [formStateData?.thumbnail],
                     title: [formStateData?.title, Validators.required],
                     url: [formStateData?.url, Validators.required],
-                    order: [formStateData?.order, Validators.required],
-                    permissions: [formStateData?.permissions]
+                    order: [formStateData?.order, Validators.required]
                 });
 
                 this.isFormValid$ = this.form.valueChanges.pipe(
@@ -169,6 +164,10 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                 } else {
                     this.form.get('thumbnail').setValue('');
                     this.store.setShowFavoriteEmptySkeleton(true);
+                    console.warn(
+                        'We apologize for the inconvenience. The following error occurred while generating a thumbnail for this page:',
+                        event?.detail?.error
+                    );
                 }
             });
         }

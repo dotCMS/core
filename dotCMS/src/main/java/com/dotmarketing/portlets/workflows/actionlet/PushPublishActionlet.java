@@ -68,7 +68,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 			final Contentlet ref = processor.getContentlet();
 		    final User user = processor.getUser();
 		try {
-			doPushPublish(getPushPublishDataAsMap(ref),Collections.singletonList(ref.getIdentifier()), user);
+			doPushPublish(getPushPublishDataAsMap(ref),List.of(ref.getIdentifier()), user);
 		} catch (Exception e) {
 			Logger.debug(PushPublishActionlet.class, e.getMessage());
 			throw new WorkflowActionFailureException(e.getMessage(), e);

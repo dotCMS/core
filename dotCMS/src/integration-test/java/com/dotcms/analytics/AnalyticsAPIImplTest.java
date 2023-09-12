@@ -6,6 +6,7 @@ import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.AccessTokenFetchMode;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.exception.AnalyticsException;
 import com.dotcms.exception.UnrecoverableAnalyticsException;
@@ -18,7 +19,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.time.Instant;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -56,7 +60,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void test_getAccessToken_fetchWhenNotCached() throws Exception {
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp, true);
+        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp, AccessTokenFetchMode.BACKEND_FALLBACK);
         assertNotNull(accessToken);
         assertTrue(analyticsCache.getAccessToken(analyticsApp.getAnalyticsProperties().clientId(), null).isPresent());
     }
@@ -75,8 +79,14 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
         AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
         assertNull(accessToken);
 
-        analyticsAPI.getAccessToken(analyticsApp, true);
+        analyticsAPI.getAccessToken(analyticsApp, AccessTokenFetchMode.BACKEND_FALLBACK);
         accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        assertNotNull(accessToken);
+
+        final Instant issueDate = accessToken.issueDate();
+        analyticsAPI.getAccessToken(analyticsApp, AccessTokenFetchMode.FORCE_RENEW);
+        accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        assertNotEquals(issueDate, accessToken.issueDate());
         assertNotNull(accessToken);
     }
 
@@ -88,7 +98,8 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
     @Test(expected = AnalyticsException.class)
     public void test_getAccessToken_fail() throws Exception {
         analyticsCache.removeAccessToken(analyticsApp.getAnalyticsProperties().clientId(), null);
-        new AnalyticsAPIImpl("http://some-host:9999", analyticsCache).getAccessToken(analyticsApp, true);
+        new AnalyticsAPIImpl("http://some-host:9999", analyticsCache)
+            .getAccessToken(analyticsApp, AccessTokenFetchMode.FORCE_RENEW);
     }
 
     /**
@@ -155,7 +166,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void test_resetAccessToken() throws Exception {
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp, true);
+        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp, AccessTokenFetchMode.BACKEND_FALLBACK);
         assertNotNull(accessToken);
 
         analyticsAPI.resetAccessToken(analyticsApp);
@@ -170,7 +181,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void test_getAnalyticsKey() throws Exception {
-        analyticsAPI.getAccessToken(analyticsApp, true);
+        analyticsAPI.resetAnalyticsKey(analyticsApp, true);
         final String analyticsKey = analyticsAPI.getAnalyticsKey(host);
         assertNotNull(analyticsKey);
         analyticsApp = new AnalyticsApp(host);
@@ -180,14 +191,14 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
     /**
      * Given an {@link AnalyticsApp}
      * With no analytics key set at all
-     * When {@link AnalyticsAPI#resetAnalyticsKey(AnalyticsApp)} called to set a new key
+     * When {@link AnalyticsAPI#resetAnalyticsKey(AnalyticsApp, boolean)} called to set a new key
      * Then verify new {@link AnalyticsApp} has a not null value
      */
     @Test
     public void test_resetAnalyticsKey() throws Exception {
-        analyticsAPI.getAccessToken(analyticsApp, true);
+        analyticsAPI.getAccessToken(analyticsApp, AccessTokenFetchMode.FORCE_RENEW);
         analyticsAPI.getAnalyticsKey(host);
-        analyticsAPI.resetAnalyticsKey(analyticsApp);
+        analyticsAPI.resetAnalyticsKey(analyticsApp, false);
 
         analyticsApp = AnalyticsHelper.get().appFromHost(host);
         assertNotNull(analyticsApp.getAnalyticsProperties().analyticsKey());

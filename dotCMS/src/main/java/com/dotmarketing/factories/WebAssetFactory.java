@@ -535,7 +535,7 @@ public class WebAssetFactory {
 	        	FactoryLocator.getTemplateFactory().save(Template.class.cast(workingwebasset));
 			} else {
 				// persists the webasset
-				HibernateUtil.saveOrUpdate(workingwebasset);
+				HibernateUtil.merge(workingwebasset);
 			}
 
 			final Map webAssetMap = currWebAsset.getMap();
@@ -748,7 +748,7 @@ public class WebAssetFactory {
 
 			if(offset < 0) offset = 0;
 
-			String type = ((Inode) c.newInstance()).getType();
+			String type = ((Inode) c.getDeclaredConstructor().newInstance()).getType();
 			String tableName = Inode.Type.valueOf(type.toUpperCase()).getTableName();
 			String versionTable=Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
 
@@ -767,7 +767,7 @@ public class WebAssetFactory {
 			if(orderby != null)
 				sb.append(" order by " + orderby);
 
-			List<WebAsset> toReturn = new ArrayList<WebAsset>();
+			List<WebAsset> toReturn = new ArrayList<>();
 			int internalLimit = 500;
 			int internalOffset = 0;
 			boolean done = false;
@@ -912,7 +912,7 @@ public class WebAssetFactory {
 			APILocator.getVersionableAPI().deleteVersionInfo(identifier.getId());
 
 			//### Get and delete the webAsset ###
-			List<Versionable> webAssetList = new ArrayList<Versionable>();
+			List<Versionable> webAssetList = new ArrayList<>();
 			if(currWebAsset instanceof Container)
 			{
 			    new ContainerLoader().invalidate((Container)currWebAsset);
@@ -936,7 +936,7 @@ public class WebAssetFactory {
 			//### END Get and delete the webAsset and the identifier ###
 
 			//### Get and delete the tree entries ###
-			List<Tree> treeList = new ArrayList<Tree>();
+			List<Tree> treeList = new ArrayList<>();
 			treeList.addAll(TreeFactory.getTreesByChild(identifier.getInode()));
 			treeList.addAll(TreeFactory.getTreesByParent(identifier.getInode()));
 			for(Tree tree : treeList)
@@ -946,7 +946,7 @@ public class WebAssetFactory {
 			//### END Get and delete the tree entries ###
 
 			//### Get and delete the multitree entries ###
-			List<MultiTree> multiTrees = new ArrayList<MultiTree>();
+			List<MultiTree> multiTrees = new ArrayList<>();
 			if (currWebAsset instanceof Container)
 			{
 				multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(identifier);

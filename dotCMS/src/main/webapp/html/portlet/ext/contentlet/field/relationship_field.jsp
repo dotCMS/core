@@ -171,7 +171,8 @@
                } else {
                    fieldValue = "";
                }
-               return String.format("%s: \"%s\"", key, fieldValue);
+			   fieldValue = UtilMethods.makeHtmlSafe(fieldValue);
+			   return String.format("%s: \"%s\"", key, fieldValue);
            })
            .collect(Collectors.joining(","));
 %>
@@ -401,22 +402,57 @@
                   dijit.byId("<%= relationJsName %>Dialog")._doSearchPage1();
 		}
 
+		//Map to determine if a content is multiligual and if there is a version in the selected language
+		function mapToCheckCurrentLangExists(listRelationships){
+			const idExists = new Map();
+			for (var indexK = 0; indexK < listRelationships.length; indexK++) {
+				idExists.set(listRelationships[indexK]['identifier'], false);
+				for (var indexL = 0; indexL < listRelationships.length; indexL++) {
+					if(listRelationships[indexK]['identifier'] == listRelationships[indexL]['identifier'] &&
+							listRelationships[indexL]['langId'] == <%= contentlet.getLanguageId() %>) {
+						idExists.set(listRelationships[indexK]['identifier'], true);
+						break;
+					}
+				}
+			}
+			return idExists;
+		}
+
 
 		//Invoked when a contentlet is selected to fill the contentlet data in the table
 		function <%= relationJsName %>_addRelationshipCallback(selectedData){
+			console.log("selectedData");
+			console.log(selectedData);
+
+			//A new list will be created with all the relationships but will remove multilingual ones, and in that
+			//case will add the one of the selected language.
+			const mapIdCurrentLangExist = mapToCheckCurrentLangExists(selectedData);
+			const newList = [];
+			for (var indexL = 0; indexL < selectedData.length; indexL++) {
+				var currentContent = selectedData[indexL];
+				var currentContentId = currentContent['identifier'];
+				var mapValue = mapIdCurrentLangExist.get(currentContentId);
+				if(mapValue && currentContent['langId'] == <%= contentlet.getLanguageId() %>){
+					newList.push(currentContent);
+				}
+				if(!mapValue){
+					newList.push(currentContent);
+				}
+			}
+
 			var data = new Array();
 			var dataToRelate = new Array();
             var entries = numberOfRows<%= relationJsName%>();
 			// Eliminating existing relations
-			for (var indexJ = 0; indexJ < selectedData.length; indexJ++) {
+			for (var indexJ = 0; indexJ < newList.length; indexJ++) {
 				var relationExists = (<%=thereCanBeOnlyOne%> && (entries > 0 || dataToRelate.length>0)) ? true : false;
 				for (var indexI = 0; indexI < <%= relationJsName %>_Contents.length; indexI++) {
-					if(selectedData[indexJ]['id'] == <%= relationJsName %>_Contents[indexI]['id']){
+					if(newList[indexJ]['id'] == <%= relationJsName %>_Contents[indexI]['id']){
 						relationExists = true;
 					}
 				}
 				if(!relationExists){
-					dataToRelate[dataToRelate.length] = selectedData[indexJ];
+					dataToRelate[dataToRelate.length] = newList[indexJ];
 				}
 			}
 
@@ -544,18 +580,18 @@
 	    	
 			var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 			referer += 	"<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-			referer += "<portlet:param name='cmd' value='edit' />";					
+			referer += "<portlet:param name='cmd' value='edit' />";
 			referer += "</portlet:actionURL>";
 			referer += "&inode="+myNode;
 			referer += "&lang=" + '<%= contentlet.getLanguageId() %>';
-			referer += "&relend=true";					
+			referer += "&relend=true";
 
 			var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 			href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-			href += "<portlet:param name='cmd' value='new' />";					
+			href += "<portlet:param name='cmd' value='new' />";
 			href += "</portlet:actionURL>";
 
-			//href += "&_content_selectedStructure=" + structureInode ; 
+			//href += "&_content_selectedStructure=" + structureInode ;
 			href += "&inode" + "";
 			href += "&selectedStructure=" + structureInode ;
 			href += "&lang=" + '<%= langAPI.getDefaultLanguage().getId() %>';
@@ -612,7 +648,7 @@
             imgCell.style.textAlign = 'center';
             var imageValue;
 			imageValue = item.hasTitleImage === 'true'
-				? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/64w">'
+				? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/500w/50q">'
 				: '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
 
             imgCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(item, imageValue);
@@ -646,7 +682,7 @@
                         var fieldCell = row.insertCell(row.cells.length);
                         fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
                             item,
-                            <%= relationJsName %>_specialFields[fieldName] || item[fieldName] || "");
+                            item[fieldName] || "");
                     }
                 });
             }
@@ -702,7 +738,7 @@
             
 			var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 			referer += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-			referer += "<portlet:param name='cmd' value='edit' />";					
+			referer += "<portlet:param name='cmd' value='edit' />";
 			referer += "</portlet:actionURL>";
 			referer += "&inode="+'<%=contentletInode%>';
 			referer += "&lang=" + '<%= contentlet.getLanguageId() %>';
@@ -752,7 +788,7 @@
                 var row = document.getElementById('<%= relationJsName %>_order_' + identifierToUnrelate).closest('tr');
                 row.remove();
             }
- 			<%= relationJsName %>_removeContentFromRelationship (identifierToUnrelate);		 			
+ 			<%= relationJsName %>_removeContentFromRelationship (identifierToUnrelate);
  			renumberAndReorder<%= relationJsName %>();
  		}
 
@@ -891,17 +927,14 @@
 	
 
 	<div jsId="contentSelector" id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector"
-	     structureInode="<%= targetStructure.getInode() %>" 
+	     structureInode="<%= targetStructure.getInode() %>"
 	     relationJsName="<%= relationJsName %>"
 		 multiple="<%= relationship.getCardinality() != 2%>"
          useRelateContentOnSelect="true"
 		 selectButtonLabel='<%= LanguageUtil.get(pageContext, "Relate")%>'
-	     title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>" 
+	     title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>"
 	     counter_radio="<%= randomNumber %>"
 	     searchCounter="<%= randomNumber %>"
 	     contentletLanguageId="<%=contentlet.getLanguageId() %>"
 	     dialogCounter="<%= randomNumber %>">
 	 </div>
-
-
-

@@ -1,30 +1,29 @@
 package com.dotcms.rest.api.v1.browsertree;
 
-import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.util.TreeableNameComparator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.UserAPI;
-import com.dotcms.util.TreeableNameComparator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
+import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -34,7 +33,9 @@ public class BrowserTreeHelper {
 
     private final HostAPI hostAPI;
     private final FolderAPI folderAPI;
-    private final UserAPI userAPI;
+
+    public static final String OPEN_FOLDER_IDS = "siteBrowserOpenFolderIds";
+    public static final String ACTIVE_FOLDER_ID = "siteBrowserActiveFolderInode";
 
     private final static TreeableNameComparator TREEABLE_NAME_COMPARATOR =
             new TreeableNameComparator();
@@ -42,7 +43,6 @@ public class BrowserTreeHelper {
     private BrowserTreeHelper () {
         this.hostAPI = APILocator.getHostAPI();
         this.folderAPI = APILocator.getFolderAPI();
-        this.userAPI = APILocator.getUserAPI();
     }
 
     private static class SingletonHolder {
@@ -84,20 +84,6 @@ public class BrowserTreeHelper {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Tries to find the select folder
-     * @return Optional String, present if the folder select exists
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    public Optional<String> findSelectedFolder (final HttpServletRequest request) throws DotDataException, DotSecurityException {
-
-        final BrowserAjax browserAjax = (BrowserAjax)request.getSession().getAttribute("BrowserAjax");
-        String siteBrowserActiveFolderInode = (String)request.getSession().getAttribute("siteBrowserActiveFolderInode");
-        return Optional.ofNullable(null == siteBrowserActiveFolderInode && null != browserAjax?
-                browserAjax.getActiveFolderInode(): siteBrowserActiveFolderInode);
-    }
-
     private Optional<Host> findHostFromPath(final String folderPath, final User user) {
 
         final int hostIndicatorIndex = folderPath.indexOf(HostUtil.HOST_INDICATOR);
@@ -132,42 +118,50 @@ public class BrowserTreeHelper {
     }
 
     /**
-     * Set the session configuration to select on the site browser a particular folder
-     * @param request {@link HttpServletRequest}
-     * @param fullFolderPath
-     * @param user
-     * @param respectFrontendRoles
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Sets all the Session parameters that are required for the Site Browser to display a specific folder path in the
+     * folder tree. This is useful, for instance, when a User clicks a Container as File and is taken to the exact
+     * location where the Container's files live in the Site Browser.
+     *
+     * @param request              The current {@link HttpServletRequest} instance.
+     * @param fullFolderPath       The full path of the folder to select.
+     * @param user                 The current {@link User} that is calling this action.
+     * @param respectFrontendRoles If {@code true}, permissions will be checked against the User's roles.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The current User does not have the required permissions to perform this action.
      */
-    public void selectFolder (final HttpServletRequest request, final String fullFolderPath,
-                              final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
-        final Optional<Host> hostOpt = findHostFromPath(fullFolderPath, user);
-        final Host host              = hostOpt.isPresent()? hostOpt.get(): APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles);
-        final Host currentHost       = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        final String folderPath      = getFolderPath(fullFolderPath);
-        final Folder folder          = APILocator.getFolderAPI().findFolderByPath(folderPath, host, user, respectFrontendRoles);
-
-        if (null != folder && UtilMethods.isSet(folder.getIdentifier()) && null != host) {
-
-            if (null == currentHost || !host.getIdentifier().equals(currentHost.getIdentifier())) {
-
-                HostUtil.switchSite(request, host);
+    public void selectFolder(final HttpServletRequest request, final String fullFolderPath, final User user,
+                             final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        final Optional<Host> siteOpt = this.findHostFromPath(fullFolderPath, user);
+        final Host site              = siteOpt.isPresent() ? siteOpt.get() : this.hostAPI.findDefaultHost(user, respectFrontendRoles);
+        final Host currentSite       = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final String folderPath      = this.getFolderPath(fullFolderPath);
+        final Folder folder          = this.folderAPI.findFolderByPath(folderPath, site, user, respectFrontendRoles);
+        if (null == folder || !UtilMethods.isSet(folder.getIdentifier()) || null == site || !UtilMethods.isSet(site.getIdentifier())) {
+            throw new IllegalArgumentException(String.format("Path '%s' is pointing to an invalid Site or an invalid " +
+                                                                     "Folder path", fullFolderPath));
+        }
+        if (null == currentSite || !site.getIdentifier().equals(currentSite.getIdentifier())) {
+            HostUtil.switchSite(request, site);
+        }
+        final HttpSession session = request.getSession();
+        session.setAttribute(ACTIVE_FOLDER_ID, folder.getInode());
+        final Folder leafFolder = this.folderAPI.find(folder.getInode(), user, false);
+        if (null != leafFolder && UtilMethods.isSet(leafFolder.getIdentifier())) {
+            Set<String> openFolderIds = (Set<String>) session.getAttribute(OPEN_FOLDER_IDS);
+            if (null == openFolderIds) {
+                openFolderIds = new HashSet<>();
             }
-
-            BrowserAjax browserAjax = (BrowserAjax)request.getSession().getAttribute("BrowserAjax");
-            if (null == browserAjax) {
-
-                browserAjax = new BrowserAjax();
-                request.getSession().setAttribute("BrowserAjax", browserAjax);
+            session.setAttribute(OPEN_FOLDER_IDS, openFolderIds);
+            openFolderIds.add(folder.getInode());
+            Permissionable parent = leafFolder.getParentPermissionable();
+            while (parent != null) {
+                if (parent instanceof Folder) {
+                    openFolderIds.add(((Folder) parent).getIdentifier());
+                }
+                parent = parent.getParentPermissionable();
             }
-
-            browserAjax.setCurrentOpenFolder(folder.getInode(), host.getIdentifier(), user);
-            request.getSession().setAttribute("siteBrowserActiveFolderInode", folder.getInode());
-        } else {
-
-            throw new IllegalArgumentException("The path seems to be not valid: " + fullFolderPath);
         }
     }
+
 }

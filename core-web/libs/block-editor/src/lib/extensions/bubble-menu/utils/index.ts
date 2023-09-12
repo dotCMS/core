@@ -3,12 +3,13 @@ import { isTextSelection } from '@tiptap/core';
 import { ImageNode } from '../../../nodes';
 import { findParentNode } from '../../../shared';
 import { LINK_FORM_PLUGIN_KEY } from '../../bubble-link-form/bubble-link-form.extension';
-import { BubbleMenuItem, ShouldShowProps } from '../models';
+import { BubbleMenuItem, HideBubbleMenuExtensions, ShouldShowProps } from '../models';
 
-const hideBubbleMenuOn = {
+const hideBubbleMenuOn: HideBubbleMenuExtensions = {
     tableCell: true,
     table: true,
-    video: true
+    youtube: true,
+    dotVideo: true
 };
 
 /**
@@ -131,6 +132,16 @@ const textMarks: Array<BubbleMenuItem> = [
     {
         icon: 'strikethrough_s',
         markAction: 'strike',
+        active: false
+    },
+    {
+        icon: 'superscript',
+        markAction: 'superscript',
+        active: false
+    },
+    {
+        icon: 'subscript',
+        markAction: 'subscript',
         active: false,
         divider: true
     }
@@ -210,6 +221,12 @@ const imageOptions: Array<BubbleMenuItem> = [
     {
         text: 'Properties',
         markAction: 'properties',
+        active: false,
+        divider: true
+    },
+    {
+        icon: 'delete',
+        markAction: 'deleteNode',
         active: false
     }
 ];

@@ -24,7 +24,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.liferay.portal.model.User;
-import java.util.Collections;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -170,7 +169,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
                 actionCommentable(false).
                 requiresCheckout(false).
                 actionNextAssign(adminRoleId).
-                whoCanUse(Collections.singletonList(adminRoleId)).
+                whoCanUse(List.of(adminRoleId)).
                 actionCondition("").
                 build();
 

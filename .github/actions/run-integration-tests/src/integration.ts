@@ -23,7 +23,7 @@ const buildEnv = core.getInput('build_env')
 const projectRoot = core.getInput('project_root')
 const workspaceRoot = path.dirname(projectRoot)
 const dotCmsRoot = path.join(projectRoot, 'dotCMS')
-const dbType = core.getInput('db_type')
+const dbType = core.getInput('db_type') || 'postgres'
 const runtTestsPrefix = 'integration-tests:'
 const dockerFolder = `${projectRoot}/cicd/docker`
 const outputDir = `${dotCmsRoot}/build/test-results/integrationTest`
@@ -82,6 +82,11 @@ export interface Commands {
 
 export const COMMANDS: Commands = {
   gradle: [
+    {
+      cmd: './gradlew',
+      args: ['generateDependenciesFromMaven'],
+      workingDir: dotCmsRoot
+    },
     {
       cmd: './gradlew',
       args: ['integrationTest', `-PdatabaseType=${dbType}`, '--stacktrace'],

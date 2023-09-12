@@ -112,7 +112,7 @@ public final class LuceneQueryDateTimeFormatter {
         }
 
         //DOTCMS - 4127
-        final List<Field> dateFields = new ArrayList<Field>();
+        final List<Field> dateFields = new ArrayList<>();
         String tempStructureVarName;
         Structure tempStructure;
 

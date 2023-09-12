@@ -317,7 +317,7 @@ public class FieldFactory {
 	        } catch (DotStateException | DotDataException e) {
 	            Logger.error(FieldFactory.class, e.getMessage());
 	        }
-	        return new ArrayList<FieldVariable>();
+	        return new ArrayList<>();
 	}
 
 }

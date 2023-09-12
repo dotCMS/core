@@ -18,6 +18,7 @@ import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
+import com.dotcms.regex.MatcherTimeoutFactory;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.vanityurl.util.VanityUrlUtil;
@@ -220,27 +221,36 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                     cachedVanityUrl.url.equalsIgnoreCase(url)).findFirst();
 
     // tries specific site, language and pattern
-    if(!matched.isPresent()) {
-      matched = load(site, language).stream()
-              .filter(cachedVanityUrl ->
-                      cachedVanityUrl.pattern.matcher(url).matches()).findFirst();
+    if(matched.isEmpty()) {
+        
+        try {
+        
+      matched = load(site, language)
+                      .stream()
+                      .filter(cachedVanityUrl ->
+                      Try.of(()-> MatcherTimeoutFactory.matcher(cachedVanityUrl.pattern, url).matches()).getOrElseThrow(DotRuntimeException::new))
+                      .findFirst();
+        }
+        catch(Exception e) {
+            Logger.warnAndDebug(this.getClass(), e);
+        }
     }
 
     
     // try language fallback
-    if (!matched.isPresent()  && !languageAPI.getDefaultLanguage().equals(language) && languageFallback) {
+    if (matched.isEmpty()  && !languageAPI.getDefaultLanguage().equals(language) && languageFallback) {
 
       matched = resolveVanityUrl(url, site, languageAPI.getDefaultLanguage());
     }
     
     // tries SYSTEM_HOST
-    if (!matched.isPresent() && !APILocator.systemHost().equals(site)) {
+    if (matched.isEmpty() && !APILocator.systemHost().equals(site)) {
 
         matched = resolveVanityUrl(url, APILocator.systemHost(), language);
     }
     
     // if this is the /cmsHomePage vanity
-    if (!matched.isPresent() && StringPool.FORWARD_SLASH.equals(url)) {
+    if (matched.isEmpty() && StringPool.FORWARD_SLASH.equals(url)) {
 
         matched = resolveVanityUrl(LEGACY_CMS_HOME_PAGE, site, language);
     }

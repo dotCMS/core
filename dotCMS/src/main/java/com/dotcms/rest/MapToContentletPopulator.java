@@ -2,13 +2,17 @@ package com.dotcms.rest;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.RelationshipUtil;
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -29,6 +33,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -38,14 +43,19 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.tools.ant.filters.StringInputStream;
+import org.apache.tools.ant.util.ReaderInputStream;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.StringReader;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.VARIANT_ID;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
 import static com.liferay.util.StringPool.BLANK;
@@ -59,6 +69,7 @@ import static com.liferay.util.StringPool.COMMA;
 public class MapToContentletPopulator  {
 
     public  static final MapToContentletPopulator INSTANCE = new MapToContentletPopulator();
+    private static final SecurityUtils securityUtils = new SecurityUtils();
     private static final String RELATIONSHIP_KEY           = Contentlet.RELATIONSHIP_KEY;
     private static final String LANGUAGE_ID                = "languageId";
     private static final String IDENTIFIER                 = "identifier";
@@ -147,6 +158,8 @@ public class MapToContentletPopulator  {
 
                 // fill fields
                 this.fillFields(contentlet, map, type, fieldMap);
+
+                contentlet.setVariantId(map.get(VARIANT_ID) != null ? map.get(VARIANT_ID).toString() : null);
             }
 
             this.setIndexPolicy (contentlet, map);
@@ -231,6 +244,11 @@ public class MapToContentletPopulator  {
                        ) {
 
                     this.processFileOrImageField(contentlet, value, field);
+                } else if ((BinaryField.class.getName().equals(field.getFieldType()) ||
+                        LegacyFieldTypes.BINARY.legacyValue().equals(field.getFieldType()))
+                        && null != value && value instanceof Map) {
+
+                    this.processPlainValueForBinaryField(map, field, value, contentlet);
                 } else {
                     APILocator.getContentletAPI()
                             .setContentletProperty(contentlet, field, value);
@@ -238,6 +256,48 @@ public class MapToContentletPopulator  {
             }
         }
     } // fillFields.
+
+    private static void processPlainValueForBinaryField(final Map<String, Object> map,
+                                                        final Field field,
+                                                        final Object value,
+                                                        final Contentlet contentlet) {
+
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        if (null != request) {
+
+            try {
+
+                final Map valueMap = (Map) value;
+
+                if (valueMap.containsKey("content")) {
+
+                    final String fileName = FileUtil.sanitizeFileName((String) valueMap.getOrDefault("fileName", map.getOrDefault("fileName",
+                            map.getOrDefault("title", "unknown"))));
+                    if (fileName == null || fileName.startsWith(".") || fileName.contains("/.")) {
+
+                        throw new IllegalArgumentException("Invalid FileName: " + fileName);
+                    }
+
+                    securityUtils.validateFile(fileName);
+
+                    final String content  = valueMap.get("content").toString(); // todo: we need to discuss how to validate the file content
+                    final DotTempFile dotTempFile = APILocator.getTempFileAPI().createTempFile(FileUtil.sanitizeFileName(fileName), request,
+                            new ReaderInputStream(new StringReader(content), UtilMethods.getCharsetConfiguration()));
+                    if (null != dotTempFile) {
+                        APILocator.getContentletAPI()
+                                .setContentletProperty(contentlet, field, dotTempFile.id);
+                    } else {
+
+                        Logger.debug(MapToContentletPopulator.class, ()-> "The file: " + fileName + "couldn't be created");
+                    }
+                }
+            } catch (DotSecurityException e) {
+
+                Logger.debug(MapToContentletPopulator.class, e.getMessage(), e);
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     private void processFileOrImageField(final Contentlet contentlet,
                                          final Object value,

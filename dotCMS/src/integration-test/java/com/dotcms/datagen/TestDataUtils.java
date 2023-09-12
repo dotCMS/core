@@ -27,9 +27,7 @@ import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.PersonaContentType;
-import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -47,10 +45,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -89,6 +87,90 @@ public class TestDataUtils {
     public static final String FILE_ASSET_1 = "fileAsset1";
     public static final String FILE_ASSET_2 = "fileAsset2";
     public static final String FILE_ASSET_3 = "fileAsset3";
+
+    /**
+     * This is a simple example of what the content of the Block Editor field with a simple
+     * "Generic Content Body" message looks like.
+     */
+    public static final String BLOCK_EDITOR_DUMMY_CONTENT =
+            "{" +
+                    "\"type\":\"doc\"," +
+                    "\"attrs\":" +
+                        "{" +
+                            "\"chartCount\":20," +
+                            "\"wordCount\":3," +
+                            "\"readingTime\":1" +
+                        "}," +
+                    "\"content\":" +
+                        "[{" +
+                            "\"type\":\"paragraph\"," +
+                            "\"attrs\":" +
+                                "{" +
+                                    "\"textAlign\":\"left\"" +
+                                "}," +
+                            "\"content\":" +
+                                "[{" +
+                                    "\"type\":\"text\"," +
+                                    "\"text\":\"Generic Content Body\"" +
+                                "}]" +
+                        "}]" +
+            "}";
+
+    /**
+     * This is a simple example of what the content of the Block Editor field looks like, but it
+     * allows you to add your own custom message via {@link String#format(String, Object...)}.
+     */
+    public static final String BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT =
+            "{" +
+                    "\"type\":\"doc\"," +
+                    "\"attrs\":" +
+                        "{" +
+                            "\"chartCount\":20," +
+                            "\"wordCount\":3," +
+                            "\"readingTime\":1" +
+                        "}," +
+                    "\"content\":" +
+                        "[{" +
+                            "\"type\":\"paragraph\"," +
+                            "\"attrs\":" +
+                                "{" +
+                                "\"textAlign\":\"left\"" +
+                                "}," +
+                            "\"content\":" +
+                                "[{" +
+                                    "\"type\":\"text\"," +
+                                    "\"text\":\"%s\"" +
+                                "}]" +
+                        "}]" +
+            "}";
+
+    /**
+     * This is a simple example of what the content of the Block Editor field with accented
+     * characters such as "Numéro de téléphone" looks like.
+     */
+    public static final String BLOCK_EDITOR_DUMMY_CONTENT_UNICODE_CHARS =
+            "{" +
+                    "\"type\":\"doc\"," +
+                    "\"attrs\":" +
+                        "{" +
+                            "\"chartCount\":20," +
+                            "\"wordCount\":3," +
+                            "\"readingTime\":1" +
+                        "}," +
+                    "\"content\":" +
+                        "[{" +
+                            "\"type\":\"paragraph\"," +
+                            "\"attrs\":" +
+                                "{" +
+                                "\"textAlign\":\"left\"" +
+                                "}," +
+                            "\"content\":" +
+                                "[{" +
+                                    "\"type\":\"text\"," +
+                                    "\"text\":\"Numéro de téléphone\"" +
+                                "}]" +
+                        "}]" +
+            "}";
 
     public static ContentType getBlogLikeContentType() {
         return getBlogLikeContentType("Blog" + System.currentTimeMillis());
@@ -990,7 +1072,7 @@ public class TestDataUtils {
         return getGenericContentContent(persist, languageId, null);
     }
 
-    public static Contentlet getGenericContentContent(Boolean persist, long languageId, Host site) {
+    public static Contentlet getGenericContentContent(final Boolean persist, final long languageId, Host site) {
 
         try {
 
@@ -998,25 +1080,19 @@ public class TestDataUtils {
                 site = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
             }
 
-            ContentType webPageContentContentType = APILocator
+            final ContentType webPageContentContentType = APILocator
                     .getContentTypeAPI(APILocator.systemUser())
                     .find("webPageContent");
-
-            ContentletDataGen contentletDataGen = new ContentletDataGen(
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(
                     webPageContentContentType.id())
                     .languageId(languageId)
                     .host(site)
                     .setProperty("contentHost", site)
                     .setProperty("title", "genericContent")
                     .setProperty("author", "systemUser")
-                    .setProperty("body", "Generic Content Body");
-
-            if (persist) {
-                return contentletDataGen.nextPersisted();
-            } else {
-                return contentletDataGen.next();
-            }
-        } catch (Exception e) {
+                    .setProperty("body", BLOCK_EDITOR_DUMMY_CONTENT);
+            return persist ? contentletDataGen.nextPersisted() : contentletDataGen.next();
+        } catch (final Exception e) {
             throw new DotRuntimeException(e);
         }
     }
@@ -2513,17 +2589,21 @@ public class TestDataUtils {
          *
          * @return the parent category
          */
-    public static boolean waitForEmptyQueue() {
+    public static boolean waitForEmptyQueue(int waitTime) {
         final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
         try {
-            Awaitility.await().atMost(120, TimeUnit.SECONDS)
+            Awaitility.await().atMost(waitTime, TimeUnit.SECONDS)
                     .pollInterval(1, TimeUnit.SECONDS)
                     .until(reindexQueueAPI::areRecordsLeftToIndex, equalTo(false));
             return true;
         } catch (ConditionTimeoutException e) {
-            Logger.warn(TestWorkflowUtils.class, "Reindex Queue is not empty after 120 seconds");
+            Logger.warn(TestWorkflowUtils.class, "Reindex Queue is not empty after "+waitTime+"s", new Throwable());
             return false;
         }
+    }
+
+    public static boolean waitForEmptyQueue() {
+        return waitForEmptyQueue(Config.getIntProperty("DEFAULT_INDEX_QUEUE_WAIT",30));
     }
 
     public static void assertEmptyQueue() {

@@ -64,7 +64,7 @@ public class UserTrackerUtil {
 		if (Validator.isNotNull(LISTENER)) {
 			try {
 				listener = (ModelListener) Class.forName(LISTENER)
-						.newInstance();
+						.getDeclaredConstructor().newInstance();
 			} catch (Exception e) {
 				Logger.error(UserTrackerUtil.class, e.getMessage(), e);
 			}
@@ -94,7 +94,7 @@ public class UserTrackerUtil {
 		if (Validator.isNotNull(LISTENER)) {
 			try {
 				listener = (ModelListener) Class.forName(LISTENER)
-						.newInstance();
+						.getDeclaredConstructor().newInstance();
 			} catch (Exception e) {
 				Logger.error(UserTrackerUtil.class, e.getMessage(), e);
 			}

@@ -28,7 +28,7 @@ public class AutoUpdaterAjax {
 		
 		int limit = 10;
 		
-		Map<String, Object> toReturn = new HashMap<String, Object>();
+		Map<String, Object> toReturn = new HashMap<>();
 
 		String autoUpdaterFilesQuery =    "http://dotcms.com/JSONContent/?type=json&q="+
 		                                   URLEncoder.encode("+structureName:AutoupdaterFiles +AutoupdaterFiles.released:true +AutoupdaterFiles.minor:*"+ReleaseInfo.getVersion()+ "* -AutoupdaterFiles.minor:autoupdater_* +deleted:false +working:true", "UTF-8")+

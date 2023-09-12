@@ -6,9 +6,8 @@ import { Injectable } from '@angular/core';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
 

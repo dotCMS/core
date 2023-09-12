@@ -67,3 +67,21 @@ export const mockWorkflowsActions: DotCMSWorkflowAction[] = [
         actionInputs: []
     }
 ];
+
+export const mockPublishAction = {
+    assignable: false,
+    commentable: false,
+    condition: '',
+    icon: 'workflowIcon',
+    id: 'b9d89c80-3d88-4311-8365-187323c96436',
+    name: 'Publish',
+    nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
+    nextStep: 'dc3c9cd0-8467-404b-bf95-cb7df3fbc293',
+    nextStepCurrentStep: false,
+    order: 0,
+    owner: null,
+    roleHierarchyForAssign: false,
+    schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+    showOn: ['LOCKED'],
+    actionInputs: []
+};

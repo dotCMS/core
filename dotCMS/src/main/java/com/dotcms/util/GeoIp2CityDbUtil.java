@@ -105,7 +105,7 @@ public class GeoIp2CityDbUtil {
 	public static long getLastModified() {
 	    GeoIp2CityDbUtil.getInstance();
 	    GeoIp2CityDbUtil.getDatabaseReader();
-	    return new Long(lastModified);
+	    return Long.valueOf(lastModified);
 	}
 	
     @VisibleForTesting

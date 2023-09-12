@@ -1,16 +1,16 @@
 <div class="field relationship__type" *ngIf="!editing">
     <p-radioButton
+        [(ngModel)]="status"
         [label]="'contenttypes.field.properties.relationship.new.label' | dm"
         [value]="STATUS_NEW"
-        [(ngModel)]="status"
         (click)="clean()"
     >
     </p-radioButton>
 
     <p-radioButton
+        [(ngModel)]="status"
         [label]="'contenttypes.field.properties.relationship.existing.label' | dm"
         [value]="STATUS_EXISTING"
-        [(ngModel)]="status"
         (click)="clean()"
     >
     </p-radioButton>
@@ -18,8 +18,8 @@
 
 <div class="relationship__config">
     <dot-new-relationships
-        *ngIf="status === STATUS_NEW; else existing"
         class="relationships__new"
+        *ngIf="status === STATUS_NEW; else existing"
         [velocityVar]="group.get(property.name).value.velocityVar"
         [cardinality]="group.get(property.name).value.cardinality"
         [editing]="editing"
@@ -29,8 +29,14 @@
 
     <ng-template #existing>
         <div class="field">
-            <label for="" class="form__label">Relationship</label>
-            <dot-edit-relationships class="relationships__existing" (switch)="handleChange($event)">
+            <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired
+                >Relationship</label
+            >
+            <dot-edit-relationships
+                class="relationships__existing"
+                [id]="property.name"
+                (switch)="handleChange($event)"
+            >
             </dot-edit-relationships>
         </div>
     </ng-template>

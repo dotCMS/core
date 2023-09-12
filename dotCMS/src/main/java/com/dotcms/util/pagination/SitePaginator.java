@@ -54,10 +54,15 @@ public class SitePaginator implements PaginatorOrdered<Host> {
             sites = this.hostAPI.search(sanitizedFilter, showArchived, !showLive, showSystem, limit, offset,
                     user, false);
         } else if (showArchived != null) {
-            // If archived Sites must be returned, then the showStopped flag must be "true". Otherwise, it must be "false"
-            final boolean showStopped = showArchived ? true : false;
-            sites = this.hostAPI.search(sanitizedFilter, showArchived, showStopped, showSystem, limit, offset,
-                    user, false);
+            if (!showArchived){
+                sites = this.hostAPI.search(sanitizedFilter, false, true, showSystem, limit, offset,
+                        user, false);
+            }else {
+                // If archived Sites must be returned, then the showStopped flag must be "true". Otherwise, it must be "false"
+                final boolean showStopped = showArchived ? true : false;
+                sites = this.hostAPI.search(sanitizedFilter, showArchived, showStopped, showSystem, limit, offset,
+                        user, false);
+            }
         } else if (showLive != null) {
             sites = this.hostAPI.searchByStopped(sanitizedFilter, !showLive, showSystem, limit, offset,
                     user, false);

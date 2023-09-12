@@ -59,7 +59,7 @@ public class PortletPreferencesUtil {
 
 		if (Validator.isNotNull(LISTENER)) {
 			try {
-				listener = (ModelListener)Class.forName(LISTENER).newInstance();
+				listener = (ModelListener)Class.forName(LISTENER).getDeclaredConstructor().newInstance();
 			}
 			catch (Exception e) {
 				Logger.error(PortletPreferencesUtil.class,e.getMessage(),e);
@@ -87,7 +87,7 @@ public class PortletPreferencesUtil {
 
 		if (Validator.isNotNull(LISTENER)) {
 			try {
-				listener = (ModelListener)Class.forName(LISTENER).newInstance();
+				listener = (ModelListener)Class.forName(LISTENER).getDeclaredConstructor().newInstance();
 			}
 			catch (Exception e) {
 				Logger.error(PortletPreferencesUtil.class,e.getMessage(),e);

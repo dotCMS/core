@@ -142,7 +142,7 @@ public class OracleQueryTokenizer extends QueryTokenizer implements IQueryTokeni
 	 */
 	private void removeSqlPlusSetCommands()
 	{
-		ArrayList<String> tmp = new ArrayList<String>();
+		ArrayList<String> tmp = new ArrayList<>();
 		for (Iterator<String> iter = _queries.iterator(); iter.hasNext();)
 		{
 			String next = iter.next();
@@ -183,7 +183,7 @@ public class OracleQueryTokenizer extends QueryTokenizer implements IQueryTokeni
 	private void removeRemainingSlashes()
 	{
 
-		ArrayList<String> tmp = new ArrayList<String>();
+		ArrayList<String> tmp = new ArrayList<>();
 		boolean foundEOLSlash = false;
 		for (Iterator<String> iter = _queries.iterator(); iter.hasNext();)
 		{
@@ -231,7 +231,7 @@ public class OracleQueryTokenizer extends QueryTokenizer implements IQueryTokeni
 	 */
 	private void breakApartNewLines()
 	{
-		ArrayList<String> tmp = new ArrayList<String>();
+		ArrayList<String> tmp = new ArrayList<>();
 		String sep = _prefs.getProcedureSeparator();
 		for (Iterator<String> iter = _queries.iterator(); iter.hasNext();)
 		{
@@ -268,7 +268,7 @@ public class OracleQueryTokenizer extends QueryTokenizer implements IQueryTokeni
 
 		boolean inMultiSQLStatement = false;
 		StringBuffer collector = null;
-		ArrayList<String> tmp = new ArrayList<String>();
+		ArrayList<String> tmp = new ArrayList<>();
 		String sep = _prefs.getProcedureSeparator();
 		for (Iterator<String> iter = _queries.iterator(); iter.hasNext();)
 		{

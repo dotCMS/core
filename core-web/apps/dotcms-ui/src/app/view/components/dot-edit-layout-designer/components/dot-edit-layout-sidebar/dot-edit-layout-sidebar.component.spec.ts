@@ -10,6 +10,7 @@ import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotLayoutSideBar } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     mockDotContainers,
     MockDotMessageService,
@@ -24,12 +25,13 @@ let fakeValue: DotLayoutSideBar;
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `<form [formGroup]="form">
+    template: ` <form [formGroup]="form">
         <dot-edit-layout-sidebar formControlName="sidebar"></dot-edit-layout-sidebar>
     </form>`
 })
 class TestHostComponent {
     form: UntypedFormGroup;
+
     constructor() {
         this.form = new UntypedFormGroup({
             sidebar: new UntypedFormControl(fakeValue)
@@ -59,7 +61,8 @@ describe('DotEditLayoutSidebarComponent', () => {
             imports: [
                 DotContainerSelectorLayoutModule,
                 BrowserAnimationsModule,
-                DotSidebarPropertiesModule
+                DotSidebarPropertiesModule,
+                DotMessagePipe
             ],
             providers: [
                 DotEditLayoutService,

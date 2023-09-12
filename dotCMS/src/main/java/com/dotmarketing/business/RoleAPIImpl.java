@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -93,7 +94,7 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 		
 		List<Role> roles =  findRoleHierarchy(role);
-        List<User> users = new ArrayList<User>();
+        List<User> users = new ArrayList<>();
         for(Role x : roles){
         	List<User> ul = findUsersForRole(x);
         	if(ul!=null){
@@ -107,7 +108,7 @@ public class RoleAPIImpl implements RoleAPI {
 	public List<Role> findRoleHierarchy(Role role) throws DotDataException, NoSuchUserException, DotSecurityException{
 
 		
-        List<Role> roles = new ArrayList<Role>();
+        List<Role> roles = new ArrayList<>();
         roles.add(role);
         int i=0;
         while(!role.getParent().equals(role.getId()) && i< 100){
@@ -390,7 +391,7 @@ public class RoleAPIImpl implements RoleAPI {
 	@Override
 	public List<User> findUsersForRole(final Role role) throws DotDataException, NoSuchUserException, DotSecurityException {
 		List<String> uids = findUserIdsForRole(role);
-		List<User> users = new ArrayList<User>();
+		List<User> users = new ArrayList<>();
 		for (String uid : uids)
 			users.add(APILocator.getUserAPI().loadUserById(uid, APILocator.getUserAPI().getSystemUser(), true));
 		return users;
@@ -459,7 +460,7 @@ public class RoleAPIImpl implements RoleAPI {
 	public void removeRoleFromUser(final Role role, final User user) throws DotDataException, DotStateException {
 		final Role roleFromDb = loadRoleById(role.getId());
 		roleFactory.removeRoleFromUser(roleFromDb, user);
-	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(Visibility.USER, user.getUserId()));
 	}
 
 	@Override
@@ -469,7 +470,7 @@ public class RoleAPIImpl implements RoleAPI {
 		for(Role role : roles) {
 			removeRoleFromUser(role, user);
 		}
-        APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(Visibility.USER, user.getUserId()));
 	}
 
 	@WrapInTransaction

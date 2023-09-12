@@ -1,0 +1,39 @@
+@use "variables" as *;
+
+p-panel {
+    display: block;
+    margin-bottom: $spacing-5;
+}
+
+.p-panel-toggleable {
+    cursor: pointer;
+    background-color: $color-palette-primary-100;
+
+    &.p-panel-expanded {
+        cursor: default;
+    }
+}
+
+.p-panel-header {
+    font-size: $font-size-xl;
+    margin: $spacing-1 0;
+    padding: $spacing-3 0;
+    position: relative;
+
+    .p-panel-icons span {
+        color: $color-palette-primary;
+        font-size: $font-size-xl;
+        margin-left: $spacing-1;
+        margin-right: $spacing-2;
+    }
+}
+
+.p-panel-icons {
+    display: flex;
+    justify-content: end;
+    flex: 1;
+}
+
+.p-panel-header .p-panel-icons span.pi {
+    margin-right: $spacing-4;
+}

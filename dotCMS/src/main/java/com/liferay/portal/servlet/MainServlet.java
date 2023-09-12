@@ -113,10 +113,10 @@ public class MainServlet extends ActionServlet {
 
 
 
-      // Checking for execute upgrades
       try {
+        // Checking for execute upgrades
         StartupTasksExecutor.getInstance().executeStartUpTasks();
-        StartupTasksExecutor.getInstance().executeUpgrades();
+        StartupTasksExecutor.getInstance().executeSchemaUpgrades();
         StartupTasksExecutor.getInstance().executeBackportedTasks();
 
         final Task00030ClusterInitialize clusterInitializeTask = new Task00030ClusterInitialize();
@@ -234,6 +234,13 @@ public class MainServlet extends ActionServlet {
 
       // Init other dotCMS services.
       DotInitializationService.getInstance().initialize();
+
+      try {
+        // Now that everything is up we can check if we need to execute data upgrade tasks
+        StartupTasksExecutor.getInstance().executeDataUpgrades();
+      } catch (Exception e) {
+        throw new DotRuntimeException("Error executing data upgrade tasks", e);
+      }
     }
   }
 

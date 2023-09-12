@@ -72,7 +72,7 @@ public interface VariantAPI {
      * It means that all the contentlets's version in the specific {@link Variant} are going
      * to be copied and set as the DEFAULT version.
      *
-     * Also this new copies are goignt o be the LIVE version into teh DEFAULT {@link Variant}.
+     * Also this new copies are going to be the LIVE version of the DEFAULT {@link Variant}.
      *
      * @param variant
      * @param user to check permissions

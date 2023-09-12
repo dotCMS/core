@@ -455,6 +455,11 @@ public class WorkflowResource {
 
     private WorkflowActionView toWorkflowActionView(final WorkflowAction workflowAction) {
 
+        return convertToWorkflowActionView(workflowAction);
+    }
+
+    public static WorkflowActionView convertToWorkflowActionView(final WorkflowAction workflowAction) {
+
         final WorkflowActionView workflowActionView = new WorkflowActionView();
 
         workflowActionView.setId(workflowAction.getId());
@@ -479,12 +484,12 @@ public class WorkflowResource {
         workflowActionView.setDeleteActionlet(workflowAction.hasDeleteActionlet());
         workflowActionView.setDestroyActionlet(workflowAction.hasDestroyActionlet());
         workflowActionView.setShowOn(workflowAction.getShowOn());
-        workflowActionView.setActionInputs(this.createActionInputViews(workflowAction));
+        workflowActionView.setActionInputs(createActionInputViews(workflowAction));
 
         return workflowActionView;
     }
 
-    private List<ActionInputView> createActionInputViews (final WorkflowAction workflowAction) {
+    private static List<ActionInputView> createActionInputViews (final WorkflowAction workflowAction) {
 
         final List<ActionInputView> actionInputViews = new ArrayList<>();
 
@@ -2657,27 +2662,31 @@ public class WorkflowResource {
 
         Contentlet contentlet = null;
         PageMode mode = pageMode;
+        final String finalInode      = UtilMethods.isSet(inode)? inode:
+                (String)Try.of(()->fireActionForm.getContentletFormData().get("inode")).getOrNull();
+        final String finalIdentifier = UtilMethods.isSet(identifier)? identifier:
+                (String)Try.of(()->fireActionForm.getContentletFormData().get("identifier")).getOrNull();
 
-        if(UtilMethods.isSet(inode)) {
+        if(UtilMethods.isSet(finalInode)) {
 
-            Logger.debug(this, ()-> "Fire Action, looking for content by inode: " + inode);
+            Logger.debug(this, ()-> "Fire Action, looking for content by inode: " + finalInode);
 
             final Contentlet currentContentlet = this.contentletAPI.find
-                    (inode, initDataObject.getUser(), mode.respectAnonPerms);
+                    (finalInode, initDataObject.getUser(), mode.respectAnonPerms);
 
             DotPreconditions.notNull(currentContentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
 
             contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet,mode);
-        } else if (UtilMethods.isSet(identifier)) {
+        } else if (UtilMethods.isSet(finalIdentifier)) {
 
-            Logger.debug(this, ()-> "Fire Action, looking for content by identifier: " + identifier
+            Logger.debug(this, ()-> "Fire Action, looking for content by identifier: " + finalIdentifier
                     + " and language id: " + language);
 
             mode = PageMode.EDIT_MODE; // when asking for identifier it is always edit
             final Optional<Contentlet> currentContentlet =  language <= 0?
-                    this.workflowHelper.getContentletByIdentifier(identifier, mode, initDataObject.getUser(), sessionLanguage):
+                    this.workflowHelper.getContentletByIdentifier(finalIdentifier, mode, initDataObject.getUser(), sessionLanguage):
                     this.contentletAPI.findContentletByIdentifierOrFallback
-                            (identifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms);
+                            (finalIdentifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms);
 
             DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
 

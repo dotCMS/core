@@ -1,5 +1,6 @@
 #parse( "static/storyblock/render.vtl" )
 
-<blockquote style="text-align: $!item.attrs.textAlign;">
+<blockquote#if($item.attrs.textAlign) style="text-align: $item.attrs.textAlign;"#end>
     #renderContentBlock($!item.content)
+
 </blockquote>

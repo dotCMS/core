@@ -1062,6 +1062,8 @@ dojo.declare(
                     });
             }
 
+            const variantName = window.sessionStorage.getItem('variantName') || 'DEFAULT';
+
             ContentletAjax.searchContentlets(
                 searchFor,
                 fieldsValues,
@@ -1075,6 +1077,7 @@ dojo.declare(
                 this.currentSortBy,
                 null,
                 null,
+                variantName,
                 dojo.hitch(this, this._fillResults)
             );
 
@@ -1221,7 +1224,7 @@ dojo.declare(
                       iconName +
                       '\')" src="/dA/' +
                       cellData.inode +
-                      '/titleImage/256w" alt="' +
+                      '/titleImage/500w/50q" alt="' +
                       cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') +
                       '" >'
                     : '<span class="' +

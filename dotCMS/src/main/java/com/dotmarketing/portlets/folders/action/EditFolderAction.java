@@ -86,7 +86,7 @@ public class EditFolderAction extends DotPortletAction {
         if (UtilMethods.isSet(req.getParameter("referer"))) {
             referer = req.getParameter("referer");
         } else {
-    		java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
+    		java.util.Map<String, String[]> params = new java.util.HashMap<>();
     		params.put("struts_action",
     				new String[] { "/ext/folders/view_folders" });
     		params.put("openNodes", new String[] { req.getParameter("openNodes") });
@@ -253,7 +253,7 @@ public class EditFolderAction extends DotPortletAction {
 		}
 				
         //show on menu
-		req.setAttribute(WebKeys.FOLDER_SHOWMENU, new Boolean(f.isShowOnMenu()));
+		req.setAttribute(WebKeys.FOLDER_SHOWMENU, Boolean.valueOf(f.isShowOnMenu()));
 
 	}
 

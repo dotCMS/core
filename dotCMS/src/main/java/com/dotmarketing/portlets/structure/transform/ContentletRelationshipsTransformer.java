@@ -57,7 +57,7 @@ public class ContentletRelationshipsTransformer implements DBTransformer<Content
         final Structure structure = CacheLocator.getContentTypeCache()
                 .getStructureByInode(contentlet.getStructureInode());
         final ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
-        final List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
+        final List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<>();
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
 
         for(final Map.Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {

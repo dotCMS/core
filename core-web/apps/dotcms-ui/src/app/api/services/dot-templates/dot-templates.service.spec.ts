@@ -185,6 +185,7 @@ describe('DotTemplatesService', () => {
             }
         });
     });
+
     it('should put to save and publish a template', () => {
         service
             .saveAndPublish({
@@ -211,6 +212,7 @@ describe('DotTemplatesService', () => {
             }
         });
     });
+
     it('should delete a template', () => {
         service.delete(['testId01']).subscribe();
         const req = httpMock.expectOne(TEMPLATE_API_URL);

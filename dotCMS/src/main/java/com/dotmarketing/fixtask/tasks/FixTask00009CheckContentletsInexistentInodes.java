@@ -32,7 +32,7 @@ public class FixTask00009CheckContentletsInexistentInodes implements FixTask {
 
 	public List <Map <String,Object>>executeFix()throws DotDataException, DotRuntimeException {
 
-		List <Map <String,Object>>  returnValue =  new ArrayList <Map <String,Object>>();
+		List <Map <String,Object>>  returnValue =  new ArrayList <>();
 		Logger.info(CMSMaintenanceFactory.class,
 				"Beginning fixAssetsInconsistencies");
 		

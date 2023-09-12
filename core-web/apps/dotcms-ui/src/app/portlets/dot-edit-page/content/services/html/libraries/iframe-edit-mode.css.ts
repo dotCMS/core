@@ -9,48 +9,39 @@ const grayLight = '#c5c5c5';
 export const getEditPageCss = (timestampId: string): string => {
     return `
     // GOOGLE FONTS
-    /* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+    /* Assistant-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
-        font-family: 'Roboto';
+        font-family: 'Assistant';
         font-style: normal;
         font-weight: 400;
         font-display: swap;
         src: local(''),
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+        url('/dotAdmin/assets/Assistant-Regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url('/dotAdmin/assets/Assistant-Regular.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
-    /* roboto-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+    /* Assistant-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
-        font-family: 'Roboto';
+        font-family: 'Assistant';
         font-style: normal;
         font-weight: 500;
         font-display: swap;
         src: local(''),
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+        url('/dotAdmin/assets/Assistant-SemiBold.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url('/dotAdmin/assets/Assistant-SemiBold.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
-    /* roboto-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+    /* Assistant-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
-        font-family: 'Roboto';
+        font-family: 'Assistant';
         font-style: normal;
         font-weight: 700;
         font-display: swap;
         src: local(''),
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-    }
-
-    ${timestampId}:root {
-        --color-background: #3A3847;
-        --color-main: #C336E5;
-        --color-main_mod: #D369EC;
-        --color-main_rgb: 195, 54, 229;
-        --color-sec: #54428E;
-        --color-sec_rgb: 84, 66, 142;
+        url('/dotAdmin/assets/Assistant-Bold.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url('/dotAdmin/assets/Assistant-Bold.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
 
     ${timestampId} [data-dot-object="container"] {
-        border: solid 1px #53c2f9 !important;
+        border: solid 1px var(--color-palette-primary-300) !important;
         margin-bottom: 35px !important;
         min-height: 120px !important;
         display: flex !important;
@@ -239,19 +230,19 @@ export const getEditPageCss = (timestampId: string): string => {
 
     ${timestampId} .dotedit-container__add {
         background-image: url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjRkZGRkZGIiBoZWlnaHQ9IjI0IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gICAgPHBhdGggZD0iTTE5IDEzaC02djZoLTJ2LTZINXYtMmg2VjVoMnY2aDZ2MnoiLz4gICAgPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==) !important;
-        background-color: var(--color-main) !important;
+        background-color: var(--color-palette-primary-500) !important;
     }
 
     ${timestampId} .dotedit-container__add:hover {
-        background-color: var(--color-main_mod) !important;
+        background-color: var(--color-palette-primary-700) !important;
     }
 
     ${timestampId} .dotedit-container__add:focus {
-        background-color: var(--color-main_mod) !important;
+        background-color: var(--color-palette-primary-700) !important;
     }
 
     ${timestampId} .dotedit-container__add:active {
-        background-color: var(--color-main_mod) !important;
+        background-color: var(--color-palette-primary-700) !important;
     }
 
     ${timestampId} button.dotedit-contentlet__drag {
@@ -280,7 +271,7 @@ export const getEditPageCss = (timestampId: string): string => {
         color: #000 !important;
         background-color: #ffffff !important;
         box-shadow: ${mdShadow1} !important;
-        font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif !important;
+        font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif !important;
         font-size: 13px !important;
         list-style: none !important;
         margin: 0 !important;
@@ -357,10 +348,10 @@ export const getEditPageCss = (timestampId: string): string => {
 
     ${timestampId} .loader {
         animation: load8 1.1s infinite linear !important;
-        border-bottom: solid 5px rgba(var(--color-sec_rgb), 0.2) !important;
-        border-left: solid 5px var(--color-sec) !important;
-        border-right: solid 5px rgba(var(--color-sec_rgb), 0.2) !important;
-        border-top: solid 5px rgba(var(--color-sec_rgb), 0.2) !important;
+        border-bottom: solid 5px var(--color-palette-secondary-op-20) !important;
+        border-left: solid 5px var(--color-palette-secondary-500) !important;
+        border-right: solid 5px var(--color-palette-secondary-op-20) !important;
+        border-top: solid 5px var(--color-palette-secondary-op-20) !important;
         display: inline-block !important;
         font-size: 10px !important;
         overflow: hidden !important;
@@ -435,7 +426,7 @@ export const getEditPageCss = (timestampId: string): string => {
     }
 
     ${timestampId} .dotcms__navbar-form .reorder-menu-link {
-        background-color: var(--color-main);
+        background-color: var(--color-palette-primary-500);
         border-radius: 3px;
         display: flex;
         flex-direction: row;

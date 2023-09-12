@@ -131,7 +131,7 @@ public class CMSUsersWebAPI implements ViewTool {
 	 */
 	public List<User> getAllUsersInGroup(String groupId) {
 		List<String> uids;
-		List<User> ret = new ArrayList<User>();
+		List<User> ret = new ArrayList<>();
 		try {
 			uids = APILocator.getRoleAPI().findUserIdsForRole(APILocator.getRoleAPI().loadRoleById(groupId));
 		} catch (Exception e1) {

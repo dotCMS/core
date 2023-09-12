@@ -1,15 +1,17 @@
+@forward "../shared/common";
+@forward "../shared/colors";
+@forward "../shared/fonts";
+@forward "../shared/shadows";
+@forward "../shared/spacing";
+@forward "../shared/mixins";
+
 @use "sass:math";
 @use "../shared/common" as *;
 @use "../shared/colors" as *;
 @use "../shared/fonts" as *;
 @use "../shared/shadows" as *;
 @use "../shared/spacing" as *;
-
-@forward "../shared/common";
-@forward "../shared/colors";
-@forward "../shared/fonts";
-@forward "../shared/shadows";
-@forward "../shared/spacing";
+@use "../shared/mixins" as *;
 
 $input-border-color-hover: $color-palette-primary;
 $input-inset-shadow: inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary,
@@ -19,20 +21,20 @@ $input-border-color-focus: $color-palette-gray-500;
 $input-bg-color: $color-palette-gray-500;
 $input-bg-color-hover: $color-palette-gray-500;
 
-$bg-highlight: rgba($color-palette-primary, 0.12);
+$bg-highlight: $color-palette-primary-op-10;
 $text-color-highlight: $color-palette-primary;
-$border-color-highlight: rgba($color-palette-primary, 0.12);
+$border-color-highlight: $color-palette-primary-op-10;
 
-$focus-bg: rgba($color-palette-primary, 0.12);
+$focus-bg: $color-palette-primary-op-10;
 $focus-text-color: $black;
 
-$bg-hover: $color-palette-gray-200;
+$bg-hover: $color-palette-primary-100;
 $text-color-hover: $black;
 $border-color-hover: $color-palette-primary;
 
 $button-text-color-disabled: $color-palette-gray-500;
 $button-text-color: $color-palette-gray-500;
-$button-shadow-focus: 0 0 0 4px rgba(var(--color-sec_rgb), 0.2);
+$button-shadow-focus: 0 0 0 4px $color-palette-secondary-op-20;
 
 // Tables
 $th-text-color: $color-palette-gray-500;
@@ -60,10 +62,9 @@ $toolbar-height: 60px;
 $toolbar-background: $white;
 $toolbar-color: $black;
 $navigation-item-height: 48px;
-$navigation-width: 200px;
+$navigation-width: 220px;
 $navigation-width-collased: 70px;
 $content-palette-width: 16rem;
-$experiment-header-height: 60px;
 
 //Dot Secondary Toolbar
 $dot-secondary-toolbar-height: 52px;
@@ -72,11 +73,6 @@ $dot-secondary-toolbar-main-height: 68px;
 // GRIDS
 $gutter-width: $spacing-9;
 $gutter-border: math.div($gutter-width, 2);
-
-$screen-sm: 40em; // 640px
-$screen-md: 40.063em; // 641px;
-$screen-lg: 64.063em; // 1025px
-$screen-xl: 90.063em; // 1441px;
 
 // Breakpoints min
 $screen-sm-min: $screen-sm;
@@ -92,13 +88,13 @@ $screen-lg-max: $screen-xl-min - 1;
 $screen-device-container-max: 1545px;
 
 // FORMS
-$label-color: rgba($color-palette-gray-800, 0.6);
+$label-color: $color-palette-black-op-60;
 $label-font-size: $font-size-sm;
 $form-field-spacing: $spacing-3;
 $form-width: 400px;
 
 // CONTENT TYPES
-$content-type-field-height: 74px;
+$content-type-field-height: 72px;
 $dot-editor-size: 16px;
 
 // CONFIRM POPUP

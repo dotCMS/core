@@ -142,12 +142,12 @@ public class ContentletBaseTest extends IntegrationTestBase {
 
         defaultHost = hostAPI.findDefaultHost( user, false );
 
-        structures = new ArrayList<Structure>();
-        permissions = new ArrayList<Permission>();
-        contentlets = new ArrayList<Contentlet>();
-        containers = new ArrayList<Container>();
-        templates = new ArrayList<Template>();
-        identifiers = new ArrayList<Identifier>();
+        structures = new ArrayList<>();
+        permissions = new ArrayList<>();
+        contentlets = new ArrayList<>();
+        containers = new ArrayList<>();
+        templates = new ArrayList<>();
+        identifiers = new ArrayList<>();
 
         //*******************************************************************************
         //Create the new folder
@@ -641,7 +641,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
             contentletRelationships.new ContentletRelationshipRecords( relationship, internalHasParent );
         contentletRelationshipRecords.setRecords( contentRelationships );
 
-        List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
+        List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<>();
         relationshipsRecords.add( contentletRelationshipRecords );
         contentletRelationships.setRelationshipsRecords( relationshipsRecords );
 

@@ -314,7 +314,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                   )
                   .subscribe((data) => {
                       requestAnimationFrame(() => {
-                          this.editor.commands.setImage({ ...data });
+                          this.editor.commands.updateAttributes(ImageNode.name, { ...data });
                           this.editor.commands.closeForm();
                       });
                   });
@@ -400,6 +400,14 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 this.editor.commands.unsetAllMarks();
                 this.editor.commands.clearNodes();
                 break;
+
+            case 'superscript':
+                this.editor.commands.toggleSuperscript();
+                break;
+
+            case 'subscript':
+                this.editor.commands.toggleSubscript();
+                break;
         }
     }
 
@@ -411,6 +419,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     changeToItems() {
         const allowedBlocks: string[] = this.editor.storage.dotConfig.allowedBlocks;
+
         const parentNode = findParentNode(this.editor.state.selection.$from);
 
         let changeToOptions = parentNode.type.name === 'table' ? tableChangeToItems : changeToItems;
@@ -429,6 +438,15 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             },
             heading3: () => {
                 this.editor.chain().focus().clearNodes().setHeading({ level: 3 }).run();
+            },
+            heading4: () => {
+                this.editor.chain().focus().clearNodes().setHeading({ level: 4 }).run();
+            },
+            heading5: () => {
+                this.editor.chain().focus().clearNodes().setHeading({ level: 5 }).run();
+            },
+            heading6: () => {
+                this.editor.chain().focus().clearNodes().setHeading({ level: 6 }).run();
             },
             paragraph: () => {
                 this.editor.chain().focus().clearNodes().run();

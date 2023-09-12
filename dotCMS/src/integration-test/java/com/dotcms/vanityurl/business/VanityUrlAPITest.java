@@ -216,13 +216,13 @@ public class VanityUrlAPITest {
         Optional<CachedVanityUrl> vanityCached = vanityUrlAPI.resolveVanityUrl(uri, defaultHost, defaultLanguage);
 
         // it is not here because it is not published
-        assert(!vanityCached.isPresent());
+        assert(vanityCached.isEmpty());
 
             
         // it is stored in the cache as an Optional.empty();
         optionalCache = cache.getDirectMapping(uri, defaultHost, defaultLanguage);
         
-        assert(optionalCache!=null && !optionalCache.isPresent());
+        assert(optionalCache!=null && optionalCache.isEmpty());
             
     }
 
@@ -253,7 +253,7 @@ public class VanityUrlAPITest {
         Optional<CachedVanityUrl> vanityResolved = vanityUrlAPI.resolveVanityUrl(uri, defaultHost, defaultLanguage);
         
         // there is no vanity as it is not published
-        assert(!vanityResolved.isPresent());
+        assert(vanityResolved.isEmpty());
         
         
         // publish the vanity
@@ -309,7 +309,7 @@ public class VanityUrlAPITest {
         Optional<CachedVanityUrl> vanityResolved = vanityUrlAPI.resolveVanityUrl(requestUir, defaultHost, defaultLanguage);
 
         // does not match /safety
-        assert(!vanityResolved.isPresent());
+        assert(vanityResolved.isEmpty());
         
         
         // add a regex, which should now match
@@ -376,7 +376,7 @@ public class VanityUrlAPITest {
 
         // old vanity is removed
         Optional<CachedVanityUrl> oldVanity= vanityUrlAPI.resolveVanityUrl(uri, defaultHost, defaultLanguage);
-        assert(!oldVanity.isPresent());
+        assert(oldVanity.isEmpty());
         
         // updated vanity present with the new URI
         Optional<CachedVanityUrl> updatedVanity= vanityUrlAPI.resolveVanityUrl(newUri, defaultHost, defaultLanguage);
@@ -510,7 +510,7 @@ public class VanityUrlAPITest {
 
        
         // we do not have a spanish vanity because it is not published
-        assert(!spanishVanity.isPresent());
+        assert(spanishVanity.isEmpty());
         
         filtersUtil.publishVanityUrl(vanityURLContentletSpanish);
 
@@ -526,7 +526,7 @@ public class VanityUrlAPITest {
         
         
         englishVanity = vanityUrlAPI.resolveVanityUrl("/testing" + currentTime, defaultHost, defaultLanguage);
-        assert(!englishVanity.isPresent());
+        assert(englishVanity.isEmpty());
 
         
         spanishVanity = vanityUrlAPI.resolveVanityUrl("/testing" + currentTime, defaultHost, spanish);
@@ -690,7 +690,7 @@ public class VanityUrlAPITest {
 
         
         Optional<CachedVanityUrl> vanityURLCached= vanityUrlAPI.resolveVanityUrl(requestedURL, defaultHost, defaultLanguage);
-        assert(!vanityURLCached.isPresent());
+        assert(vanityURLCached.isEmpty());
         
         
         //------------------------------------
@@ -719,7 +719,7 @@ public class VanityUrlAPITest {
         /////////
 
         vanityURLCached = vanityUrlAPI.resolveVanityUrl(requestedURL, defaultHost, defaultLanguage);
-        assert(!vanityURLCached.isPresent());
+        assert(vanityURLCached.isEmpty());
 
 
     }
@@ -794,7 +794,7 @@ public class VanityUrlAPITest {
             //NO match from SYSTEM_HOST
             vanityURLCached = vanityUrlAPI
                     .resolveVanityUrl(requestedURL, APILocator.systemHost(), defaultLanguage);
-            assert(!vanityURLCached.isPresent());
+            assert(vanityURLCached.isEmpty());
 
 
             //match from defaultHost
@@ -879,12 +879,12 @@ public class VanityUrlAPITest {
         //Request a vanity with a URL with no matches
         vanityURLCached = vanityUrlAPI.resolveVanityUrl(requestedURL, defaultHost, defaultLanguage);
         assert(vanityURLCached!=null);
-        assert(!vanityURLCached.isPresent());
+        assert(vanityURLCached.isEmpty());
 
         //Check the cache, now we get an Optional.empty, which means 404
         vanityURLCached = cache.getDirectMapping(requestedURL, defaultHost, defaultLanguage);
         assert(vanityURLCached!=null);
-        assert(!vanityURLCached.isPresent());
+        assert(vanityURLCached.isEmpty());
 
 
 

@@ -13,6 +13,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import java.util.List;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -23,6 +24,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -41,18 +43,14 @@ public class PersonaAPITest {
   
   @BeforeClass
   public static void initData() throws Exception {
-    IntegrationTestInitService.getInstance().init();
-    personaAPI = APILocator.getPersonaAPI();
-    // create a host and add 4 personas to it
-    host = new SiteDataGen().nextPersisted();
-    when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
-    .thenReturn(new MultiMessageResources(MultiMessageResourcesFactory.createFactory(),""));
-    final ContentletAPI capi = APILocator.getContentletAPI();
-    
-    // delete system host personas
-    List<Contentlet> cons = capi.search("+baseType:" + BaseContentType.PERSONA.getType() + " +conhost:" + Host.SYSTEM_HOST,1000, 0, null, APILocator.systemUser(), false);
-    capi.destroy(cons, APILocator.systemUser(), false);
-    
+      IntegrationTestInitService.getInstance().init();
+      personaAPI = APILocator.getPersonaAPI();
+      // create a host and add 4 personas to it
+      host = new SiteDataGen().nextPersisted();
+      when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
+                      .thenReturn(new MultiMessageResources(MultiMessageResourcesFactory.createFactory(), ""));
+
+      deleteAllPersonas();
     
     
     persona1 = new PersonaDataGen().hostFolder(host.getIdentifier()).nextPersisted();
@@ -64,6 +62,31 @@ public class PersonaAPITest {
     assertTrue("total allPersonas should be 5, got:" + allPersonasOnHost._2, allPersonasOnHost._2 == 5);
   }
 
+  private static void deleteAllPersonas() throws Exception{
+      final ContentletAPI capi = APILocator.getContentletAPI();
+      List<String> inodes = new DotConnect().setSQL(
+                       "select working_inode from "
+                      + "contentlet_version_info cvi, "
+                      + "identifier "
+                      + "where "
+                      + "identifier.id = cvi.identifier and "
+                      + "identifier.asset_subtype='persona' ")
+                      .loadObjectResults().stream().map(m -> (String) m.get("working_inode")).collect(Collectors.toList());
+
+
+    
+    // delete system host personas
+    List<Contentlet> cons = capi.findContentlets(inodes);
+    capi.destroy(cons, APILocator.systemUser(), false);
+    APILocator.getCacheProviderAPI().removeAll(false);
+    
+      
+      
+  }
+  
+  
+  
+  
   @AfterClass
   public static void nullOutData() throws Exception {
 

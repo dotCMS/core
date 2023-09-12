@@ -10,6 +10,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import javax.management.InstanceAlreadyExistsException;
@@ -28,8 +29,8 @@ import org.apache.felix.framework.OSGIUtil;
 import org.apache.lucene.search.BooleanQuery;
 import org.quartz.SchedulerException;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.rest.api.v1.maintenance.ClusterManagementTopic;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 
 import com.dotcms.util.GeoIp2CityDbUtil;
@@ -89,8 +90,6 @@ public class InitServlet extends HttpServlet {
         }
 
         Logger.info(this, "dotCMS shutting down Elastic Search");
-        Logger.info(this, "dotCMS shutting down Hazelcast");
-        HazelcastUtil.getInstance().shutdown();
 
         Logger.info(this, "dotCMS shutting down");
     }
@@ -126,27 +125,11 @@ public class InitServlet extends HttpServlet {
         Logger.debug(this, "");
         Logger.debug(this, "InitServlet: Setting Application Context!!!!!!");
 
-        // creates the velocity folders to make sure they are there
-        new java.io.File(ConfigUtils.getDynamicVelocityPath() + File.separator + "live").mkdirs();
-        new java.io.File(ConfigUtils.getDynamicVelocityPath() + File.separator + "working").mkdirs();
 
-        //Used com.dotcms.rendering.velocity.viewtools.NavigationWebAPI
-        String velocityRootPath = ConfigUtils.getDynamicVelocityPath() + java.io.File.separator;
-        String menuVLTPath = velocityRootPath + "menus" + java.io.File.separator;
-
-        java.io.File fileFolder = new java.io.File(menuVLTPath);
-        if (!fileFolder.exists()) {
-            fileFolder.mkdirs();
-        }
-
-        if(Config.getBooleanProperty("CACHE_DISK_SHOULD_DELETE_NAVTOOL", false)){
-            // deletes all menues that have been generated
-            RefreshMenus.deleteMenus();
-            CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache", false);
-        }
+        // initialize Cluster Management Topic
+        ClusterManagementTopic.getInstance();
 
         try {
-
           APILocator.getVanityUrlAPI().populateAllVanityURLsCache();
         }
         catch(Exception e) {
@@ -162,7 +145,7 @@ public class InitServlet extends HttpServlet {
 
         try {
             DotInitScheduler.start();
-        } catch (SchedulerException e2) {
+        } catch (Exception e2) {
             Logger.fatal(InitServlet.class, e2.getMessage(), e2);
             throw new ServletException(e2.getMessage(), e2);
         }
@@ -211,6 +194,11 @@ public class InitServlet extends HttpServlet {
             }
             Logger.info(this, "");
         }
+        
+        
+        
+        
+        
 
         /*
          * SHOULD BE LAST THING THAT HAPPENS
@@ -241,8 +229,7 @@ public class InitServlet extends HttpServlet {
         //Just get the Engine to make sure it gets inited on time before the first request
         VelocityUtil.getEngine();
 
-        // Tell the world we are started up
-        System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
+
 
 
         //Initializing System felix
@@ -262,7 +249,12 @@ public class InitServlet extends HttpServlet {
         }
         
         
+
+        // Starting the re-indexation thread
+        ReindexThread.startThread();
         
+        // Tell the world we are started up
+        System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
 
         // Record how long it took to start us up.
         try{
@@ -274,10 +266,6 @@ public class InitServlet extends HttpServlet {
         } catch (Exception e) {
             Logger.warn(this.getClass(), "Unable to record startup time :" + e);
         }
-        // Starting the re-indexation thread
-        ReindexThread.startThread();
-        
-        
 
     }
 
@@ -399,7 +387,7 @@ public class InitServlet extends HttpServlet {
                 if(UtilMethods.isSet(LicenseUtil.getValidUntil())){
                     data.append(URLEncoder.encode("licenseValid", "UTF-8"));
                     data.append("=");
-                    data.append(URLEncoder.encode(UtilMethods.dateToJDBC(LicenseUtil.getValidUntil())));
+                    data.append(URLEncoder.encode(UtilMethods.dateToJDBC(LicenseUtil.getValidUntil()), StandardCharsets.UTF_8));
                     data.append("&");
                 }
                 data.append(URLEncoder.encode("perpetual", "UTF-8"));

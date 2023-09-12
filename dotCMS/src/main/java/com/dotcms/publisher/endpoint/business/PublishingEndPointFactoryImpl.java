@@ -53,11 +53,11 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		if(cache.isLoaded()) {
 			return cache.getEndPoints();
 		}
-		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
+		List<PublishingEndPoint> endPoints = new ArrayList<>();
 		DotConnect dc = new DotConnect();
 		dc.setSQL(GET_END_POINTS);
 		List<Map<String, Object>> res = dc.loadObjectResults();
-		Map<String, PublishingEndPoint> endPointsMap = new HashMap<String, PublishingEndPoint>();
+		Map<String, PublishingEndPoint> endPointsMap = new HashMap<>();
 		for(Map<String, Object> row : res){
 			PublishingEndPoint endPoint = PublisherUtil.getObjectByMap(row);
 			endPoints.add(endPoint);
@@ -71,7 +71,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 	@Override
 	public List<PublishingEndPoint> getReceivingEndPoints() throws DotDataException {
 		ensureCacheIsLoaded();
-		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
+		List<PublishingEndPoint> endPoints = new ArrayList<>();
 		List<PublishingEndPoint> allEndPoints = getEndPoints();
 		for(PublishingEndPoint endPoint : allEndPoints) {
 			if(endPoint.isSending() == false)
@@ -198,7 +198,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 	@Override
 	public List<PublishingEndPoint> getSendingEndPointsByEnvironment(String environmentId) throws DotDataException {
 		ensureCacheIsLoaded();
-		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
+		List<PublishingEndPoint> endPoints = new ArrayList<>();
 		for(PublishingEndPoint endPoint : getEndPoints()) {
 			if(endPoint.getGroupId().equals(environmentId) && endPoint.isSending()==false) {
 				endPoints.add(endPoint);
@@ -210,7 +210,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 	@Override
 	public List<PublishingEndPoint> getEnabledReceivingEndPoints() throws DotDataException {
 		ensureCacheIsLoaded();
-		List<PublishingEndPoint> receiverEndPoints = new ArrayList<PublishingEndPoint>();
+		List<PublishingEndPoint> receiverEndPoints = new ArrayList<>();
 		List<PublishingEndPoint> allEndPoints = getEndPoints();
 		for(PublishingEndPoint endPoint : allEndPoints) {
 			if(endPoint.isSending() == false && endPoint.isEnabled()) {
@@ -223,7 +223,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 	@Override
 	public List<String> findSendGroups() throws DotDataException {
 		ensureCacheIsLoaded();
-		List<String> sendGroups = new ArrayList<String>();
+		List<String> sendGroups = new ArrayList<>();
 		List<PublishingEndPoint> allEndPoints = getEndPoints();
 		for(PublishingEndPoint endPoint : allEndPoints) {
 			if(endPoint.getGroupId() != null && sendGroups.contains(endPoint.getGroupId()) == false) {

@@ -260,7 +260,7 @@ uploadArchives {
                     def dependenciesNode = asNode().appendNode('dependencies')
                     configurations.all {
                         it.allDependencies.all { dep ->
-                            if (dep.group && dep.name && dep.version) {
+                            if (dep.group && dep.name && dep.version && dep.group != 'com.ettrema' && dep.name != 'unspecified') {
                                 def dependencyNode = dependenciesNode.appendNode('dependency')
                                 dependencyNode.appendNode('groupId', dep.group)
                                 dependencyNode.appendNode('artifactId', dep.name)

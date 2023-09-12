@@ -5,19 +5,7 @@ author: 'victoralfaro-dotcms'
 inputs:
   test_type:
     description: 'Test Type'
-    type: choice
-    options:
-    - unit
-    - integration
-    - postman
     required: true
-  db_type:
-    description: 'Database type'
-    type: choice
-    options:
-    - postgres
-    - mysql
-    required: false
   test_results_status:
     description: 'Status of run tests'
     type: choice

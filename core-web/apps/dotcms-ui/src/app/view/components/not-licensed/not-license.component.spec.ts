@@ -11,7 +11,7 @@ import {
     DotMessageService,
     DotUnlicensedPortletData
 } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { NotLicensedComponent } from './not-licensed.component';
@@ -38,7 +38,7 @@ describe('NotLicensedComponent', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [NotLicensedComponent],
-            imports: [CommonModule, ButtonModule, DotIconModule],
+            imports: [CommonModule, ButtonModule, DotIconModule, DotMessagePipe],
             providers: [
                 {
                     provide: DotMessageService,

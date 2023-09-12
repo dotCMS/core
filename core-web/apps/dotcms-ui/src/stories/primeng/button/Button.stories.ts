@@ -1,113 +1,72 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+// How to write stories? https://storybook.js.org/docs/6.5/angular/writing-stories/introduction
+// Controls https://storybook.js.org/docs/6.5/angular/essentials/controls
+// Annotations: https://storybook.js.org/docs/6.5/angular/essentials/controls#annotation
 
-import { ButtonModule } from 'primeng/button';
+import { Meta, Story } from '@storybook/angular';
+
+import { Button } from 'primeng/button';
 
 export default {
-    title: 'PrimeNG/Button/Button',
-    decorators: [
-        moduleMetadata({
-            imports: [ButtonModule]
-        })
-    ],
-    parameters: {
-        layout: 'centered',
-        docs: {
-            description: {
-                component:
-                    'All the buttons, more information: https://primefaces.org/primeng/showcase/#/button'
-            }
+    title: 'PrimeNG/Button',
+    component: Button,
+    args: {
+        label: 'Button',
+        disabled: false,
+        icon: false,
+        size: 'p-button-md',
+        iconPos: 'left',
+        severity: '-',
+        type: '-'
+    },
+    argTypes: {
+        size: {
+            options: ['p-button-sm', 'p-button-md', 'p-button-lg'],
+            control: { type: 'radio' }
+        },
+        severity: {
+            options: ['-', 'p-button-secondary', 'p-button-danger'],
+            control: { type: 'select' }
+        },
+        type: {
+            options: ['-', 'p-button-text', 'p-button-outlined'],
+            control: { type: 'select' }
+        },
+        iconPos: {
+            control: 'inline-radio',
+            options: ['left', 'right']
         }
     }
 } as Meta;
 
-const PrimaryTemplate = `
-    <p><button pButton label="Submit"></button></p>
-    <p><button pButton label="Submit" icon="pi pi-check"></button></p>
-    <p><button pButton label="Submit" icon="pi pi-check" iconPos="right"></button></p>
-    <p><button pButton label="Disabled" disabled="true"></button></p>
-    <hr />
-    <p><button pButton label="Small Button" class="p-button-sm"></button></p>
-    <p><button pButton label="Big Button" class="p-button-lg"></button></p>
-`;
-
-const SecondaryTemplate = `
-    <p><button pButton label="Submit" class="p-button-secondary"></button></p>
-    <p><button pButton label="Submit" icon="pi pi-check" class="p-button-secondary"></button></p>
-    <p><button pButton label="Submit" icon="pi pi-check" iconPos="right" class="p-button-secondary"></button></p>
-    <p><button pButton label="Disabled" disabled="true" class="p-button-secondary"></button></p>
-    <hr />
-    <p><button pButton label="Small Button" class="p-button-secondary p-button-sm"></button></p>
-    <p><button pButton label="Big Button" class="p-button-secondary p-button-lg"></button></p>
-`;
-
-const TextTemplate = `
-    <p><button pButton label="Submit" class="p-button-text"></button></p>
-    <p><button pButton label="Submit" icon="pi pi-check" class="p-button-text"></button></p>
-    <p><button pButton label="Submit" icon="pi pi-check" iconPos="right" class="p-button-text"></button></p>
-    <p><button pButton label="Disabled" disabled="true" class="p-button-text"></button></p>
-    <hr />
-    <p><button pButton label="Small Button" class="p-button-text p-button-sm"></button></p>
-    <p><button pButton label="Big Button" class="p-button-text p-button-lg"></button></p>
-`;
-
-export const Primary: Story = () => {
-    return {
-        template: PrimaryTemplate
-    };
-};
-
-Primary.parameters = {
-    docs: {
-        source: {
-            code: PrimaryTemplate
+export const Main: Story = (args) => {
+    const parts = [];
+    for (const key of Object.keys(args)) {
+        if (
+            typeof args[key] === 'string' &&
+            args[key].trim() !== '-' &&
+            args[key].trim().length > 0
+        ) {
+            parts.push(args[key].trim());
         }
     }
-};
 
-export const Secondary: Story = () => {
+    const joined = parts.join(' ');
+
     return {
-        template: SecondaryTemplate
+        props: {
+            label: args.label,
+            classes: joined,
+            disabled: args.disabled,
+            icon: args.icon ? 'pi pi-home' : '',
+            iconPos: args.iconPos
+        },
+        template: `
+            <p-button
+                [icon]="icon"
+                [iconPos]="iconPos"
+                [disabled]="disabled"
+                [label]="label"
+                [styleClass]="classes">
+            </p-button>`
     };
-};
-
-Secondary.parameters = {
-    docs: {
-        source: {
-            code: SecondaryTemplate
-        }
-    }
-};
-
-const IconsTemplate = `
-    <p><button pButton type="button" icon="pi pi-check" class="p-button-rounded p-button-text"></button></p>
-    <p><button pButton type="button" icon="pi pi-sitemap" class="p-button-rounded p-button-text"></button></p>
-    <p><button pButton type="button" disabled="true" icon="pi pi-shopping-cart" class="p-button-rounded p-button-text"></button></p>
-`;
-export const Icons: Story = () => {
-    return {
-        template: IconsTemplate
-    };
-};
-
-Icons.parameters = {
-    docs: {
-        source: {
-            code: IconsTemplate
-        }
-    }
-};
-
-export const Text: Story = () => {
-    return {
-        template: TextTemplate
-    };
-};
-
-Text.parameters = {
-    docs: {
-        source: {
-            code: TextTemplate
-        }
-    }
 };

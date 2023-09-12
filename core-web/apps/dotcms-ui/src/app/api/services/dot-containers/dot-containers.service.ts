@@ -20,6 +20,7 @@ export const CONTAINER_API_URL = '/api/v1/containers/';
  * Provide util methods to handle containers in the system.
  * @export
  * @class DotContainersService
+ * @deprecated use DotContainersService from the data-access lib instead
  */
 @Injectable()
 export class DotContainersService {

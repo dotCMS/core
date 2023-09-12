@@ -2,15 +2,12 @@ package com.dotcms.cli.common;
 
 import static io.quarkus.devtools.messagewriter.MessageIcons.ERROR_ICON;
 import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
+import static org.apache.commons.lang3.StringUtils.abbreviate;
 
-import com.dotcms.api.provider.ClientObjectMapper;
-import com.dotcms.api.provider.YAMLMapperSupplier;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.arc.Arc;
 import io.quarkus.devtools.messagewriter.MessageWriter;
-
-import java.io.File;
+import io.quarkus.logging.Log;
 import java.io.PrintWriter;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -25,14 +22,10 @@ public class OutputOptionMixin implements MessageWriter {
     @CommandLine.Option(names = { "-e", "--errors" }, description = "Display error messages.", hidden = true)
     boolean showErrors;
 
-    @CommandLine.Option(names = { "--verbose" }, description = "Verbose mode.", hidden = true)
+    @CommandLine.Option(names = { "-v", "--verbose" }, description = "Verbose mode.", hidden = true)
     boolean verbose;
 
-    @CommandLine.Option(names = {"-sh","--short"},  description = "Pulled Content is shown in shorten format.", hidden = true)
-    boolean shortenOutput;
-
-    @CommandLine.Option(names = {
-            "--cli-test" }, hidden = true, description = "Manually set output streams for unit test purposes.")
+    @CommandLine.Option(names = {"--cli-test" }, description = "Manually set output streams for unit test purposes.", hidden = true)
     boolean cliTestMode;
 
     Path testProjectRoot;
@@ -45,31 +38,6 @@ public class OutputOptionMixin implements MessageWriter {
 
     @CommandLine.Spec(CommandLine.Spec.Target.MIXEE)
     CommandSpec mixee;
-
-    @CommandLine.Option(names = {"-fmt", "--format"}, description = "Enum values: ${COMPLETION-CANDIDATES}")
-    InputOutputFormat inputOutputFormat = InputOutputFormat.defaultFormat();
-
-    @CommandLine.Option(names = { "-i", "--interactive" },
-            order = 20,
-            description = {"Use to break down a long process into stages"},
-            defaultValue = "true")
-    boolean interactive = true;
-
-    ObjectMapper objectMapper;
-
-    public ObjectMapper objectMapper() {
-        if (null != objectMapper) {
-            return objectMapper;
-        }
-
-        if (inputOutputFormat == InputOutputFormat.JSON) {
-            objectMapper = new ClientObjectMapper().getContext(null);
-        } else {
-            objectMapper = new YAMLMapperSupplier().get();
-        }
-
-        return objectMapper;
-    }
 
     ColorScheme scheme;
     PrintWriter out;
@@ -107,10 +75,6 @@ public class OutputOptionMixin implements MessageWriter {
         return verbose || picocliDebugEnabled;
     }
 
-    public boolean isShortenOutput() {
-        return shortenOutput;
-    }
-
     public boolean isCliTest() {
         return cliTestMode;
     }
@@ -119,12 +83,13 @@ public class OutputOptionMixin implements MessageWriter {
         return CommandLine.Help.Ansi.AUTO.enabled();
     }
 
-    public boolean isInteractive() {
-        return interactive;
+    public void print(String text) {
+        out().print(colorScheme().ansi().new Text(text, colorScheme()));
+        out().flush(); // print is not flushing like println does
     }
 
-    public InputOutputFormat getInputOutputFormat() {
-        return inputOutputFormat;
+    public void println(String text) {
+        out().println(colorScheme().ansi().new Text(text, colorScheme()));
     }
 
     public void printText(String... text) {
@@ -179,7 +144,14 @@ public class OutputOptionMixin implements MessageWriter {
         out().println(colorScheme().ansi().new Text("@|yellow " + WARN_ICON + " " + msg + "|@", colorScheme()));
     }
 
-    // CommandLine must be passed in (forwarded commands)
+    /**
+     * Throws an UnmatchedArgumentException if there are any unmatched arguments in the given
+     * CommandLine object.
+     *
+     * @param cmd the CommandLine object to check for unmatched arguments
+     * @throws CommandLine.UnmatchedArgumentException if there are any unmatched arguments in the
+     *                                                CommandLine object
+     */
     public void throwIfUnmatchedArguments(CommandLine cmd) {
         List<String> unmatchedArguments = cmd.getUnmatchedArguments();
         if (!unmatchedArguments.isEmpty()) {
@@ -187,14 +159,52 @@ public class OutputOptionMixin implements MessageWriter {
         }
     }
 
-    public int handleCommandException(Exception ex, String message) {
-        CommandLine cmd = mixee.commandLine();
-        printStackTrace(ex);
-        if (ex instanceof CommandLine.ParameterException) {
-            CommandLine.UnmatchedArgumentException.printSuggestions((CommandLine.ParameterException) ex, out());
+
+    ExceptionHandler exceptionHandler;
+
+    ExceptionHandler getExceptionHandler(){
+        if(null == exceptionHandler){
+           exceptionHandler = Arc.container().instance(ExceptionHandler.class).get();
         }
+        return exceptionHandler;
+    }
+
+    public int handleCommandException(Exception ex, String message){
+        return handleCommandException(ex, message, !isShowErrors());
+    }
+
+    public int handleCommandException(Exception ex, String message, boolean showFullDetailsBanner) {
+
+        final ExceptionHandler exHandler = getExceptionHandler();
+
+        if (ex instanceof CommandLine.ParameterException) {
+            CommandLine.UnmatchedArgumentException.printSuggestions(
+                    (CommandLine.ParameterException) ex, out());
+        }
+
+        final Exception unwrappedEx = exHandler.unwrap(ex);
+
+        //Extract the proper exception and remove all server side noise
+        final Exception handledEx = exHandler.handle(unwrappedEx);
+        //Short error message
+        message = String.format("%s %s  ", message,
+                handledEx.getMessage() != null ? abbreviate(handledEx.getMessage(), "...", 200)
+                        : "No error message was provided");
         error(message);
-        return cmd.getExitCodeExceptionMapper() != null ? cmd.getExitCodeExceptionMapper().getExitCode(ex)
+        Log.error(message, ex);
+        //Won't print unless the "showErrors" flag is on
+        printStackTrace(unwrappedEx);
+        //We show the show message notice only if we're not already showing errors
+        if(showFullDetailsBanner) {
+            info("@|bold,yellow run with -e or --errors for full details on the exception.|@");
+        }
+
+        final CommandLine cmd = mixee.commandLine();
+        //If we want to force usage to be printed upon certain type of exception we could do:
+        // cmd.usage(cmd.getOut());
+
+        return cmd.getExitCodeExceptionMapper() != null ? cmd.getExitCodeExceptionMapper()
+                .getExitCode(unwrappedEx)
                 : mixee.exitCodeOnInvalidInput();
     }
 

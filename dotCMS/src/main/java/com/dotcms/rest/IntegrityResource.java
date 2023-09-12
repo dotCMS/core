@@ -93,7 +93,7 @@ public class IntegrityResource {
     }
 
     private static class EndpointState {
-        private final Map<String, Cookie> cookies = new ConcurrentHashMap<String, Cookie>();
+        private final Map<String, Cookie> cookies = new ConcurrentHashMap<>();
 
         public Map<String, Cookie> getCookies() {
             return cookies;
@@ -118,7 +118,7 @@ public class IntegrityResource {
                                                          final String url,
                                                          final MediaType mediaType) {
         final Optional<String> requestToken = AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint);
-        if (!requestToken.isPresent()) {
+        if (requestToken.isEmpty()) {
             Logger.warn(IntegrityResource.class, "No Auth Token set for endpoint: " + endpoint.getId());
             return Optional.empty();
         }
@@ -270,7 +270,7 @@ public class IntegrityResource {
 
             final Optional<IntegrityUtil.IntegrityDataExecutionMetadata> integrityMetadata =
                     IntegrityUtil.getIntegrityMetadata(pushPublishAuthenticationToken.getKey());
-            if (!integrityMetadata.isPresent()) {
+            if (integrityMetadata.isEmpty()) {
                 Logger.error(
                         IntegrityResource.class,
                         String.format(

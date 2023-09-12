@@ -1,10 +1,5 @@
 package com.dotcms.rendering.velocity.services;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -16,12 +11,28 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerAsFileDataGen;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.MultiTreeDataGen;
+import com.dotcms.datagen.PersonaDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateAsFileDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -55,28 +66,41 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import com.liferay.util.StringPool;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Function2;
 import org.jetbrains.annotations.NotNull;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-import com.dotcms.visitor.domain.Visitor;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+@SuppressWarnings("JUnitMalformedDeclaration")
 @RunWith(DataProviderRunner.class)
 public class HTMLPageAssetRenderedTest {
 
@@ -96,29 +120,13 @@ public class HTMLPageAssetRenderedTest {
     private static Persona persona;
     private static Visitor visitor;
 
-    @BeforeClass
-    public static void setConfigVariable() {
-        contentFallbackDefaultValue = Config.getBooleanProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE,
-                false);
-        pageFallbackDefaultValue = Config.getBooleanProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE,
-                true);
-    }
 
     @DataProvider
     public static Object[][] cases() throws Exception {
-        if (systemUser == null) {
-            prepareGlobalData();
-        }
-
-        final Container container = createContainer();
-        final Template templateContainer = createTemplate(container);
-
-        final Container fileContainer = createFileContainer();
-        final Template templateFileContainer = createTemplate(fileContainer);
 
         return new Object[][]{
-                {container, templateContainer},
-                {fileContainer, templateFileContainer}
+                {TestContainerType.DEFAULT},
+                {TestContainerType.FILE}
         };
     }
 
@@ -172,12 +180,12 @@ public class HTMLPageAssetRenderedTest {
     }
 
     private static FileAssetContainer createFileContainer()
-            throws DotSecurityException, DotDataException, WebAssetException {
+            throws DotSecurityException, DotDataException {
         return createFileContainer(site);
     }
 
     private static FileAssetContainer createFileContainer(final Host host)
-            throws DotSecurityException, DotDataException, WebAssetException {
+            throws DotSecurityException, DotDataException {
 
         final String containerName = "containerHTMLPageRenderedTest" + System.currentTimeMillis();
         FileAssetContainer container = new ContainerAsFileDataGen()
@@ -205,6 +213,11 @@ public class HTMLPageAssetRenderedTest {
     public static void prepare() throws Exception {
 
         IntegrationTestInitService.getInstance().init();
+        contentFallbackDefaultValue = Config.getBooleanProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE,
+                false);
+        pageFallbackDefaultValue = Config.getBooleanProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE,
+                true);
+        prepareGlobalData();
     }
 
     public static void prepareGlobalData() throws Exception {
@@ -244,11 +257,11 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content1")
-                .setProperty("body", "content1")
+                .setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1"))
                 .nextPersisted();
 
-        contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet1.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet1.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet1.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet1, systemUser, false);
         //Assign permissions
@@ -261,26 +274,26 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content2")
-                .setProperty("body", "content2")
+                .setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2"))
                 .nextPersisted();
 
-        contentlet2English.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet2English.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet2English.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet2English.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet2English.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet2English, systemUser, false);
 
         Contentlet contentlet2Spanish = contentletAPI.checkout(contentlet2English.getInode(),
                 systemUser, false);
         contentlet2Spanish.setProperty("title", "content2Spa");
-        contentlet2Spanish.setProperty("body", "content2Spa");
+        contentlet2Spanish.setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2Spa"));
         contentlet2Spanish.setLanguageId(spanishLanguage.getId());
-        contentlet2Spanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet2Spanish.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet2Spanish.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentlet2Spanish = contentletAPI.checkin(contentlet2Spanish, systemUser, false);
 
-        contentlet2Spanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet2Spanish.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet2Spanish.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet2Spanish, systemUser, false);
         //Assign permissions
@@ -293,11 +306,11 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content3Spa")
-                .setProperty("body", "content3Spa")
+                .setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content3Spa"))
                 .nextPersisted();
 
-        contentlet3.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet3.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet3.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet3.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet3.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet3, systemUser, false);
         //Assign permissions
@@ -308,11 +321,11 @@ public class HTMLPageAssetRenderedTest {
         final Contentlet contentlet4 = new ContentletDataGen(contentGenericType.id())
                 .languageId(1)
                 .setProperty("title", "content4")
-                .setProperty("body", "content4")
+                .setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content4"))
                 .nextPersisted();
 
-        contentlet4.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet4.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet4.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet4.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet4.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet4, systemUser, false);
         //Assign permissions
@@ -358,26 +371,43 @@ public class HTMLPageAssetRenderedTest {
     @AfterClass
     public static void restore() throws Exception {
 
+        Logger.info(HTMLPageAssetRenderedTest.class,"Cleaning up ..............................");
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, contentFallbackDefaultValue);
         Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, pageFallbackDefaultValue);
 
+
+        TestDataUtils.waitForEmptyQueue();
+
         //Deleting the folder will delete all the pages inside it
         if (folder != null) {
+
             APILocator.getFolderAPI().delete(folder, systemUser, false);
         }
 
+        TestDataUtils.waitForEmptyQueue();
+
         for (final String contentletId : contentletsIds) {
+
             final Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
                     contentletId);
             if (null == contentlet) {
+                Logger.warn(HTMLPageAssetRenderedTest.class,
+                        "Contentlet with identifier " + contentletId + " not found to delete");
                 continue;
             }
+            else
+            {
+                Logger.info(HTMLPageAssetRenderedTest.class,"Deleting contentlet with identifier " + contentletId);
+            }
 
-            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
-            contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
             contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
             contentletAPI.destroy(contentlet, systemUser, false);
         }
+
+        TestDataUtils.waitForEmptyQueue();
+        Logger.info(HTMLPageAssetRenderedTest.class,"Cleanup complete ..............................");
 
     }
 
@@ -388,12 +418,17 @@ public class HTMLPageAssetRenderedTest {
      * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true And the page have version just in ENG And the
      * page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP
      * version, content 3 is just in ESP version Should: Since the page is requests in ENG version
-     * it should be render with content1 and content2
+     * it should be rendered with content1 and content2
      */
     @Test
     @UseDataProvider("cases")
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3(
-            final Container container, final Template template) throws Exception {
+            final TestContainerType containerType) throws Exception {
+
+        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
+        final Template template = containerFactory.getTemplate(containerType);
 
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
         Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, true);
@@ -405,8 +440,8 @@ public class HTMLPageAssetRenderedTest {
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
                 .getMultiTrees(pageEnglishVersion, container);
-        Assert.assertNotNull(multiTrees);
-        Assert.assertEquals(4, multiTrees.size());
+        assertNotNull(multiTrees);
+        assertEquals(4, multiTrees.size());
 
         int contentletSpaCount = 0;
         for (final MultiTree multiTree : multiTrees) {
@@ -419,11 +454,11 @@ public class HTMLPageAssetRenderedTest {
                 if (null != contentletSpa) {
                     contentletSpaCount += 1;
                 }
-            } catch (DotContentletStateException e) {
+            } catch (DotContentletStateException ignored) {
             }
         }
 
-        Assert.assertEquals(2, contentletSpaCount);
+        assertEquals(2, contentletSpaCount);
 
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
@@ -459,7 +494,12 @@ public class HTMLPageAssetRenderedTest {
     @Test
     @UseDataProvider("cases")
     public void render_spanish_contentlets_on_english_page(
-            final Container container, final Template template) throws Exception {
+            final TestContainerType containerType) throws Exception {
+
+        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
+        final Template template = containerFactory.getTemplate(containerType);
 
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
         Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, true);
@@ -471,8 +511,8 @@ public class HTMLPageAssetRenderedTest {
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
                 .getMultiTrees(pageEnglishVersion, container);
-        Assert.assertNotNull(multiTrees);
-        Assert.assertEquals(4, multiTrees.size());
+        assertNotNull(multiTrees);
+        assertEquals(4, multiTrees.size());
 
         int contentletSpaCount = 0;
         for (final MultiTree multiTree : multiTrees) {
@@ -485,11 +525,11 @@ public class HTMLPageAssetRenderedTest {
                 if (null != contentletSpa) {
                     contentletSpaCount += 1;
                 }
-            } catch (DotContentletStateException e) {
+            } catch (DotContentletStateException ignored) {
             }
         }
 
-        Assert.assertEquals(2, contentletSpaCount);
+        assertEquals(2, contentletSpaCount);
 
         //request page ESP version
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -548,8 +588,8 @@ public class HTMLPageAssetRenderedTest {
                 .cacheTTL(0)
                 .nextPersisted();
 
-        pageEnglishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
         addAnonymousPermissions(pageEnglishVersion);
@@ -563,13 +603,18 @@ public class HTMLPageAssetRenderedTest {
      * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true And the page have version in ENG and ESP And
      * the page have tree content, where: content1 is just in ENG version, content2 is in ENG and
      * ESP version, content 3 is just in ESP version Should: If the page is requests in ENG version
-     * it should be render with content1 and content2 If the page is requests in ESP version it
-     * should be render with content3 and content2 (both in ESP version)
+     * it should be rendered with content1 and content2 If the page is requests in ESP version it
+     * should be rendered with content3 and content2 (both in ESP version)
      */
     @Test
     @UseDataProvider("cases")
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3(
-            final Container container, final Template template) throws Exception {
+            final TestContainerType containerType) throws Exception {
+
+        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
+        final Template template = containerFactory.getTemplate(containerType);
 
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
         Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, true);
@@ -580,13 +625,13 @@ public class HTMLPageAssetRenderedTest {
         Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),
                 systemUser, false);
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion, systemUser, false);
 
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageSpanishVersion, systemUser, false);
         addAnonymousPermissions(pageSpanishVersion);
@@ -637,11 +682,16 @@ public class HTMLPageAssetRenderedTest {
      * have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP
      * version, content 3 is just in ESP version Should: If the page is requests in ENG version it
      * should be thrown a {@link HTMLPageAssetNotFoundException} If the page is requests in ESP
-     * version it should be render with content3 and content2 (both in ESP version)
+     * version it should be rendered with content3 and content2 (both in ESP version)
      */
     @UseDataProvider("cases")
     public void ContentFallbackFalse_PageFallbackTrue_PageSpanish_ViewEnglish404_ViewSpanishContent2And3(
-            final Container container, final Template template) throws Exception {
+            final TestContainerType containerType) throws Exception {
+
+        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
+        final Template template = containerFactory.getTemplate(containerType);
 
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
         Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, true);
@@ -699,12 +749,17 @@ public class HTMLPageAssetRenderedTest {
      * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to false And the page have version in ENG And the
      * page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP
      * version, content 3 is just in ESP version Should: If the page is requests in ENG version it
-     * should be render with content1 and content2 If the page is requests in ESP version it should
+     * should be rendered with content1 and content2 If the page is requests in ESP version it should
      * be thrown a {@link HTMLPageAssetNotFoundException}
      */
     @UseDataProvider("cases")
     public void ContentFallbackFalse_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404(
-            final Container container, final Template template) throws Exception {
+            final TestContainerType containerType) throws Exception {
+
+        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
+        final Template template = containerFactory.getTemplate(containerType);
 
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
         Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, false);
@@ -756,7 +811,7 @@ public class HTMLPageAssetRenderedTest {
     /**
      * Method to test:
      * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
-     * HttpServletResponse)} When: A Page has a content that have a Image field and this content is
+     * HttpServletResponse)} When: A Page has a content that have an Image field and this content is
      * using a FileAsset Image Should: the [field_variable]ImageURI variable should be equals to
      * /contentAsset/raw-data/[content_id]/fileAsset?language_id=1
      */
@@ -776,8 +831,9 @@ public class HTMLPageAssetRenderedTest {
                 .nextPersisted();
 
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
-        final File image = new File(Thread.currentThread().getContextClassLoader()
-                .getResource("images/test.jpg").getFile());
+        final File image = new File(
+                Objects.requireNonNull(Thread.currentThread().getContextClassLoader()
+                        .getResource("images/test.jpg")).getFile());
         final Contentlet imageContentlet = new FileAssetDataGen(folder, image)
                 .host(host)
                 .nextPersisted();
@@ -849,13 +905,13 @@ public class HTMLPageAssetRenderedTest {
     /**
      * Method to test:
      * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
-     * HttpServletResponse)} When: A Page has a content that have a Image field and this content is
+     * HttpServletResponse)} When: A Page has a content that have an Image field and this content is
      * using a DotAsset Image Should: the [field_variable]ImageURI variable should be equals to
      * /contentAsset/raw-data/[content_id]/fileAsset?language_id=1
      */
     @Test
     public void renderPageWithDotAssetImage()
-            throws DotDataException, DotSecurityException, WebAssetException, IOException {
+            throws DotDataException, DotSecurityException, WebAssetException {
 
         final Host host = new SiteDataGen().nextPersisted();
 
@@ -868,8 +924,9 @@ public class HTMLPageAssetRenderedTest {
                 .field(imageField)
                 .nextPersisted();
 
-        final File image = new File(Thread.currentThread().getContextClassLoader()
-                .getResource("images/test.jpg").getFile());
+        final File image = new File(
+                Objects.requireNonNull(Thread.currentThread().getContextClassLoader()
+                        .getResource("images/test.jpg")).getFile());
 
         final ContentType dotAssetContentType = APILocator.getContentTypeAPI(
                         APILocator.systemUser())
@@ -954,14 +1011,18 @@ public class HTMLPageAssetRenderedTest {
      * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to false And the page have version in ENG and ESP And
      * the page have tree content, where: content1 is just in ENG version, content2 is in ENG and
      * ESP version, content 3 is just in ESP version Should: If the page is requests in ENG version
-     * it should be render with content1 and content2 If the page is requests in ESP version it
-     * should be render with content3 and content2 (both in ESP version)
+     * it should be rendered with content1 and content2 If the page is requests in ESP version it
+     * should be rendered with content3 and content2 (both in ESP version)
      */
     @Test
     @UseDataProvider("cases")
     public void ContentFallbackFalse_PageFallbackFalse_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3(
-            final Container container, final Template template) throws Exception {
+            final TestContainerType containerType) throws Exception {
 
+        final TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
+        final Template template = containerFactory.getTemplate(containerType);
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
         Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, false);
 
@@ -971,12 +1032,12 @@ public class HTMLPageAssetRenderedTest {
         Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),
                 systemUser, false);
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion, systemUser, false);
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageSpanishVersion, systemUser, false);
         addAnonymousPermissions(pageSpanishVersion);
@@ -998,7 +1059,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue("ENG = " + html, html.contains("content1") && html.contains("content2"));
+        assertTrue("Expected text is NOT present in generated HTML = " + html, html.contains("content1") && html.contains("content2"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(
@@ -1025,13 +1086,18 @@ public class HTMLPageAssetRenderedTest {
      * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true And the page have version in ENG and ESP And
      * the page have tree content, where: content1 is just in ENG version, content2 is in ENG and
      * ESP version, content 3 is just in ESP version Should: If the page is requests in ENG version
-     * it should be render with content1 and content2 If the page is requests in ESP version it
-     * should be render with content1 (ENG version), content3 and content2 (both in ESP version)
+     * it should be rendered with content1 and content2 If the page is requests in ESP version it
+     * should be rendered with content1 (ENG version), content3 and content2 (both in ESP version)
      */
     @Test
     @UseDataProvider("cases")
     public void ContentFallbackTrue_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent1And2And3(
-            final Container container, final Template template) throws Exception {
+            final TestContainerType containerType) throws Exception {
+
+        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
+        final Template template = containerFactory.getTemplate(containerType);
 
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, true);
         Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, true);
@@ -1042,13 +1108,13 @@ public class HTMLPageAssetRenderedTest {
                 systemUser, false);
 
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion, systemUser, false);
 
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageSpanishVersion, systemUser, false);
         addAnonymousPermissions(pageSpanishVersion);
@@ -1098,12 +1164,17 @@ public class HTMLPageAssetRenderedTest {
      * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to false And the page have version just in ENG And
      * the page have tree content, where: content1 is just in ENG version, content2 is in ENG and
      * ESP version, content 3 is just in ESP version Should: If the page is requests in ENG version
-     * it should be render with content1 and content2 If the page is requests in ESP version it
+     * it should be rendered with content1 and content2 If the page is requests in ESP version it
      * should be thrown a {@link HTMLPageAssetNotFoundException}
      */
     @UseDataProvider("cases")
     public void ContentFallbackTrue_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404(
-            final Container container, final Template template) throws Exception {
+            final TestContainerType containerType) throws Exception {
+
+        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
+        final Template template = containerFactory.getTemplate(containerType);
 
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, true);
         Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, false);
@@ -1158,12 +1229,17 @@ public class HTMLPageAssetRenderedTest {
      * contentlet of this new widget and add it to a page. If you update the value widget code, and
      * hit again the page the new value should show up.
      *
-     * @throws Exception
+     * @throws Exception if something goes wrong
      */
     @Test
     @UseDataProvider("cases")
-    public void constantField_notUpdatedCache_whenChanged(final Container container,
-            final Template template) throws Exception {
+    public void constantField_notUpdatedCache_whenChanged(
+            final TestContainerType containerType) throws Exception {
+
+        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
+        final Template template = containerFactory.getTemplate(containerType);
 
         ContentType contentType = ContentTypeBuilder
                 .builder(BaseContentType.WIDGET.immutableClass())
@@ -1177,7 +1253,7 @@ public class HTMLPageAssetRenderedTest {
             List<Field> fields = contentType.fields();
             ImmutableConstantField codeField = (ImmutableConstantField) fields.stream()
                     .filter(field -> field.name().equalsIgnoreCase("widget code")).findFirst()
-                    .get();
+                    .orElseThrow();
             codeField = codeField.withValues("original code");
             APILocator.getContentTypeFieldAPI().save(codeField, systemUser);
             contentType = APILocator.getContentTypeAPI(systemUser).save(contentType);
@@ -1228,7 +1304,7 @@ public class HTMLPageAssetRenderedTest {
             fields = contentType.fields();
             codeField = (ImmutableConstantField) fields.stream()
                     .filter(field -> field.name().equalsIgnoreCase("widget code")).findFirst()
-                    .get();
+                    .orElseThrow();
             codeField = codeField.withValues("this has been changed");
             APILocator.getContentTypeFieldAPI().save(codeField, systemUser);
             contentType = APILocator.getContentTypeAPI(systemUser).save(contentType);
@@ -1356,12 +1432,16 @@ public class HTMLPageAssetRenderedTest {
      * for default persona, and 1 content to another persona ExpectedResult: The page should return
      * the content according to the persona set into the request
      *
-     * @throws Exception
+     * @throws Exception if something goes wrong
      */
     @Test
     @UseDataProvider("cases")
-    public void shouldReturnPageHTMLForPersona(final Container container, final Template template)
-            throws Exception {
+    public void shouldReturnPageHTMLForPersona(  final TestContainerType containerType) throws Exception {
+
+        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
+        final Template template = containerFactory.getTemplate(containerType);
 
         final String pageName = "test5Page-" + System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
@@ -1417,12 +1497,15 @@ public class HTMLPageAssetRenderedTest {
      * HttpServletRequest, HttpServletResponse)} Given Scenario: Create a page with legacy UUID
      * ExpectedResult: The page should return the right HTML
      *
-     * @throws Exception
+     * @throws Exception the exception
      */
     @Test
     @UseDataProvider("cases")
-    public void shouldReturnPageHTMLForLegacyUUID(final Container container,
-            final Template templateTestCase) throws Exception {
+    public void shouldReturnPageHTMLForLegacyUUID(  final TestContainerType containerType) throws Exception {
+
+        final TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
 
         final String containerId = container.getIdentifier();
 
@@ -1461,14 +1544,16 @@ public class HTMLPageAssetRenderedTest {
         final HttpSession session = createHttpSession(mockRequest);
         when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
 
-        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+        final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(page.getURI())
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("content2content1", html);
+        final String generatedHtml = String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1");
+        assertEquals("The content in the page is NOT the expected one", html, generatedHtml);
     }
 
     /**
@@ -1478,12 +1563,16 @@ public class HTMLPageAssetRenderedTest {
      * HttpServletRequest, HttpServletResponse)} Given Scenario: Create a page with legacy UUID and
      * MultiTree ExpectedResult: The page should return the right HTML
      *
-     * @throws Exception
+     * @throws Exception the exception
      */
     @Test
     @UseDataProvider("cases")
-    public void shouldReturnPageHTMLForLegacyUUIDAndMultiTree(final Container container,
-            final Template templateTestCase) throws Exception {
+    public void shouldReturnPageHTMLForLegacyUUIDAndMultiTree(  final TestContainerType containerType) throws Exception {
+
+        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
+
         final String containerId = container.getIdentifier();
 
         //Create a Template
@@ -1528,7 +1617,9 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("content2content1", html);
+        final String expectedHtml = String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1");
+        assertEquals("Expected HTML code was NOT found", html, expectedHtml);
     }
 
     /**
@@ -1539,12 +1630,16 @@ public class HTMLPageAssetRenderedTest {
      * directive into its template, and request the HTML in EDIT_MODE ExpectedResult: should return
      * a UUID with the 'dotParser_' prefix
      *
-     * @throws Exception
+     * @throws Exception the exception
      */
     @Test
     @UseDataProvider("cases")
-    public void shouldReturnParserContainerUUID(final Container container, final Template template)
-            throws Exception {
+    public void shouldReturnParserContainerUUID(  final TestContainerType containerType) throws Exception {
+
+        TestContainerFactory containerFactory = TestContainerFactory.getInstance();
+
+        final Container container = containerFactory.getContainer(containerType);
+        final Template template = containerFactory.getTemplate(containerType);
 
         boolean defaultContentToDefaultLangOriginalValue =
                 Config.getBooleanProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
@@ -1589,11 +1684,9 @@ public class HTMLPageAssetRenderedTest {
 
 
     @DataProvider(format = "%m page Host: %p[0] Template Host: %p[1] Container Host: %p[2]")
-    public static Object[][] fileContainerCases() throws Exception {
-        if (systemUser == null) {
-            prepareGlobalData();
-        }
+    public static Object[][] fileContainerCases() {
 
+        // These are ok to pass since it is a function and is lazy evaluated.
         final Function2<FileAssetContainer, Host, String> relativePath =
                 (FileAssetContainer container, Host host) -> container.getPath();
         final Function2<FileAssetContainer, Host, String> absolutePath =
@@ -1601,20 +1694,21 @@ public class HTMLPageAssetRenderedTest {
                         + container.getPath();
 
         final Function2<Host, String, Template> advanceTemplate =
-                (final Host templateHost, final String containerPath) -> createAdvancedTemplate(
-                        templateHost, containerPath);
+                HTMLPageAssetRenderedTest::createAdvancedTemplate;
         final Function2<Host, String, Template> drawedTemplate =
-                (final Host templateHost, final String containerPath) -> createDrawedTemplate(
-                        templateHost, containerPath);
+                HTMLPageAssetRenderedTest::createDrawedTemplate;
 
-        final Host anotherHost = new SiteDataGen().nextPersisted();
-        final Host defaultHost = APILocator.getHostAPI()
-                .findDefaultHost(APILocator.systemUser(), true);
-        final Host currentHost = site;
+        // Need to lazy process these in the test.
+        final TestHostType anotherHost = TestHostType.ANOTHER;
+        final TestHostType defaultHost = TestHostType.DEFAULT;
+        final TestHostType currentHost = TestHostType.CURRENT;
 
+        /* We are not using this mocked request ?
         final HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(currentHost);
+
+         */
 
         return new Object[][]{
                 {currentHost, currentHost, currentHost, relativePath, advanceTemplate, true},
@@ -1651,18 +1745,25 @@ public class HTMLPageAssetRenderedTest {
      * in the same site or different site - Using Advance Template or not Advance Template - Using
      * relative or absolute path ExpectedResult: should work
      *
-     * @throws Exception
+     * @throws Exception if something goes wrong
      */
     @Test
     @UseDataProvider("fileContainerCases")
     public void shouldRenderTemplateAndContainers(
-            final Host pageHost,
-            final Host templateHost,
-            final Host containerHost,
+            final TestHostType pageHostType,
+            final TestHostType templateHostType,
+            final TestHostType containerHostType,
             final Function2<FileAssetContainer, Host, String> pathConverter,
             final Function2<Host, String, Template> templateCreator,
             final boolean shouldWork)
             throws Exception {
+
+        TestHostFactory hostFactory = TestHostFactory.getInstance();
+
+        final Host pageHost = hostFactory.getHost(pageHostType);
+        final Host templateHost = hostFactory.getHost(templateHostType);
+        final Host containerHost = hostFactory.getHost(containerHostType);
+
 
         final FileAssetContainer container = createFileContainer(containerHost);
         final String path = pathConverter.apply(container, containerHost);
@@ -1763,20 +1864,20 @@ public class HTMLPageAssetRenderedTest {
         try {
 
             Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, true);
-            //Update the Preexecute Field to have some code in it
-            final String preExcuteCode = "PreExecute Code Displayed";
+            //Update the preExecute Field to have some code in it
+            final String preExecuteCode = "PreExecute Code Displayed";
             ContentType contentType = TestDataUtils.getWidgetLikeContentType();
             final Field preExecuteField = APILocator.getContentTypeFieldAPI()
                     .byContentTypeIdAndVar(contentType.id(),
                             WidgetContentType.WIDGET_PRE_EXECUTE_FIELD_VAR);
             APILocator.getContentTypeFieldAPI()
-                    .save(FieldBuilder.builder(preExecuteField).values(preExcuteCode).build(),
+                    .save(FieldBuilder.builder(preExecuteField).values(preExecuteCode).build(),
                             systemUser);
             // Assert that the widget has set the pre-execute field
-            assertTrue(APILocator.getContentTypeFieldAPI()
+            assertEquals(preExecuteCode, APILocator.getContentTypeFieldAPI()
                     .byContentTypeIdAndVar(contentType.id(),
                             WidgetContentType.WIDGET_PRE_EXECUTE_FIELD_VAR)
-                    .values().equals(preExcuteCode));
+                    .values());
 
             //Create Contentlet
             final Contentlet widgetContentlet = TestDataUtils.getWidgetContent(true, 1,
@@ -1811,7 +1912,7 @@ public class HTMLPageAssetRenderedTest {
 
             //Page html must contains the pre-execute code
             assertTrue("Page Mode: " + testCase.pageMode + " html: " + html,
-                    html.contains(preExcuteCode));
+                    html.contains(preExecuteCode));
         } finally {
             Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
                     defaultContentToDefaultLangOriginalValue);
@@ -1847,7 +1948,7 @@ public class HTMLPageAssetRenderedTest {
     /**
      * Method to test:
      * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
-     * HttpServletResponse)} When: A container is add twice in a page Should: render the pge
+     * HttpServletResponse)} When: A container is added twice in a page Should: render the pge
      */
     @Test
     public void containerTwiceIntoPage() throws Exception {
@@ -1869,11 +1970,11 @@ public class HTMLPageAssetRenderedTest {
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
                 .getContainerMultiTrees(container.getIdentifier());
-        Assert.assertNotNull(multiTrees);
-        Assert.assertEquals(8, multiTrees.size());
+        assertNotNull(multiTrees);
+        assertEquals(8, multiTrees.size());
 
         //request page ENG version
-        HttpServletRequest mockRequest = new MockSessionRequest(
+        final HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
@@ -1881,20 +1982,25 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+        final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals(html, "content1content2content1content2");
+        // These are the contents of the repeated Containers: [ content1, content2 ] must be present twice
+        final String expectedHtml = String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2");
+        assertEquals("Container added twice is NOT showing the expected HTML code", expectedHtml, html);
     }
 
     /**
      * Method to test:
      * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
-     * HttpServletResponse)} When: A container is add twice in a page using a TemplateLayout Should:
+     * HttpServletResponse)} When: A container is added twice in a page using a TemplateLayout Should:
      * render the pge
      */
     @Test
@@ -1924,11 +2030,11 @@ public class HTMLPageAssetRenderedTest {
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
                 .getContainerMultiTrees(container.getIdentifier());
-        Assert.assertNotNull(multiTrees);
-        Assert.assertEquals(8, multiTrees.size());
+        assertNotNull(multiTrees);
+        assertEquals(8, multiTrees.size());
 
         //request page ENG version
-        HttpServletRequest mockRequest = new MockSessionRequest(
+        final HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
@@ -1936,14 +2042,19 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+        final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue(html.contains("content1content2content1content2"));
+        // These are the contents of the repeated Containers: [ content1, content2 ] must be present twice
+        final String generatedHtml = String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2");
+        assertTrue("The content in the page is NOT the expected one", html.contains(generatedHtml));
     }
 
     @Test
@@ -1985,13 +2096,14 @@ public class HTMLPageAssetRenderedTest {
                         .build(),
                 mockRequest, mockResponse);
 
-        final String toFind = "content1content2";
+        final String toFind = String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content1")
+                + String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, "content2");
 
         final int firstIndex = html.indexOf(toFind);
         final int secondIndex = html.indexOf(toFind, firstIndex + toFind.length());
         final int thirdIndex = html.indexOf(toFind, secondIndex + toFind.length());
 
-        assertTrue(firstIndex != -1 && secondIndex != -1 && firstIndex != secondIndex
+        assertTrue("Expected HTML code was NOT found", firstIndex != -1 && secondIndex != -1 && firstIndex != secondIndex
                 && thirdIndex == -1);
     }
 
@@ -2105,7 +2217,7 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content1")
-                .setProperty("body", defaultPersona.getKeyTag())
+                .setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, defaultPersona.getKeyTag()))
                 .nextPersisted();
 
         final Contentlet notDefaultPersonaContentlet = new ContentletDataGen(
@@ -2114,7 +2226,7 @@ public class HTMLPageAssetRenderedTest {
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "content1")
-                .setProperty("body", notDefaultPersona.getKeyTag())
+                .setProperty("body", String.format(TestDataUtils.BLOCK_EDITOR_DUMMY_CUSTOM_CONTENT, notDefaultPersona.getKeyTag()))
                 .nextPersisted();
 
         ContentletDataGen.publish(page);
@@ -2179,6 +2291,76 @@ public class HTMLPageAssetRenderedTest {
         public TestContainerUUID(final Container container, final String UUID) {
             this.container = container;
             this.UUID = UUID;
+        }
+    }
+
+    private enum TestContainerType {
+        DEFAULT, FILE
+    }
+    private static class TestContainerFactory {
+
+        private static final TestContainerFactory INSTANCE = new TestContainerFactory();
+        private final Map<TestContainerType, Container> containerMap;
+        private final Map<TestContainerType, Template> templateMap;
+
+        public static TestContainerFactory getInstance() {
+            return TestContainerFactory.INSTANCE;
+        }
+
+        TestContainerFactory() {
+            Logger.info(TestContainerFactory.class, "Creating TestContainerFactory");
+            containerMap = new HashMap<>();
+            containerMap.put(TestContainerType.DEFAULT, Sneaky.sneak(
+                    HTMLPageAssetRenderedTest::createContainer));
+            containerMap.put(TestContainerType.FILE, Sneaky.sneak(
+                    HTMLPageAssetRenderedTest::createFileContainer));
+
+            templateMap = new HashMap<>();
+            templateMap.put(TestContainerType.DEFAULT, Sneaky.sneak(() -> createTemplate(containerMap.get(TestContainerType.DEFAULT))));
+            templateMap.put(TestContainerType.FILE,Sneaky.sneak(() -> createTemplate(containerMap.get(TestContainerType.FILE))));
+        }
+
+        Container getContainer(TestContainerType type) {
+            if (type == null) {
+                throw new IllegalArgumentException("Invalid container type");
+            }
+            return containerMap.get(type);
+        }
+
+        Template getTemplate(TestContainerType type) {
+            if (type == null) {
+                throw new IllegalArgumentException("Invalid container type");
+            }
+            return templateMap.get(type);
+        }
+    }
+    private enum TestHostType {
+        CURRENT, ANOTHER, DEFAULT
+    }
+
+    private static class TestHostFactory {
+        // This works like a Holder and is initialized lazily on class load
+        private static final TestHostFactory INSTANCE = new TestHostFactory();
+
+        private final Map<TestHostType, Host> hostMap = new HashMap<>();
+
+        public static TestHostFactory getInstance() {
+            return TestHostFactory.INSTANCE;
+        }
+
+        private TestHostFactory() {
+            Logger.info(TestContainerFactory.class, "Creating TestHostFactory");
+            hostMap.put(TestHostType.CURRENT, site);
+            hostMap.put(TestHostType.ANOTHER, new SiteDataGen().nextPersisted());
+            hostMap.put(TestHostType.DEFAULT, Sneaky.sneak(() ->
+                    APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), true)));
+        }
+
+        public Host getHost(TestHostType testType) {
+            if (!hostMap.containsKey(testType)) {
+                throw new IllegalArgumentException("Invalid host type");
+            }
+            return hostMap.get(testType);
         }
     }
 }

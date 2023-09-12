@@ -79,7 +79,7 @@ public class LoginPostAction extends Action {
 						// Disable old login
 
 						userTracker.getHttpSession().setAttribute(
-							WebKeys.STALE_SESSION, new Boolean(true));
+							WebKeys.STALE_SESSION, Boolean.valueOf(true));
 					}
 				}
 			}

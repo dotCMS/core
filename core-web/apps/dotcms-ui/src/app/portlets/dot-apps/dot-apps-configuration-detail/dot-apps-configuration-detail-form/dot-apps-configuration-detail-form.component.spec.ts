@@ -2,9 +2,9 @@ import { MarkdownService } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
@@ -14,7 +14,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
@@ -89,6 +89,13 @@ const formState = {
     integration: secrets[4].value
 };
 
+@Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'markdown',
+    template: `<ng-content></ng-content>`
+})
+class MockMarkdownComponent {}
+
 describe('DotAppsConfigurationDetailFormComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -102,10 +109,11 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
                 InputTextareaModule,
                 InputTextModule,
                 ReactiveFormsModule,
-                TooltipModule
+                TooltipModule,
+                DotFieldRequiredDirective
             ],
-            declarations: [DotAppsConfigurationDetailFormComponent],
-            providers: [MarkdownService]
+            declarations: [DotAppsConfigurationDetailFormComponent, MockMarkdownComponent],
+            providers: [MarkdownService, FormGroupDirective]
         });
     });
 
@@ -132,12 +140,16 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(de.query(By.css('dot-icon'))).toBeFalsy();
         });
 
-        it('should focus on first input when loaded', async () => {
-            const focusField = component.formContainer.nativeElement.querySelector('#name');
-            spyOn(focusField, 'focus');
+        it('should focus the first form field after view init', async () => {
             fixture.detectChanges();
             await fixture.whenStable();
-            expect(focusField.focus).toHaveBeenCalledTimes(1);
+            const firstFormField = fixture.nativeElement.querySelector(
+                `#${component.formFields[0].name}`
+            );
+            spyOn(firstFormField, 'focus');
+            component.ngAfterViewInit();
+            expect(firstFormField.focus).toHaveBeenCalled();
+            expect(document.activeElement).toEqual(firstFormField);
         });
 
         it('should load Label, Textarea & Hint with right attributes', () => {
@@ -145,10 +157,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[0].label);
             expect(
-                row.query(By.css('label')).nativeElement.classList.contains('form__label')
-            ).toBeTruthy();
-            expect(
-                row.query(By.css('label')).nativeElement.classList.contains('required')
+                row
+                    .query(By.css('label'))
+                    .nativeElement.classList.contains('p-label-input-required')
             ).toBeTruthy();
             expect(row.query(By.css('textarea')).nativeElement.attributes.id.value).toBe(
                 secrets[0].name
@@ -179,12 +190,6 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             const row = de.query(By.css('[data-testid="select"]'));
             expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[3].label);
-            expect(
-                row.query(By.css('label')).nativeElement.classList.contains('form__label')
-            ).toBeTruthy();
-            expect(
-                row.query(By.css('label')).nativeElement.classList.contains('required')
-            ).toBeTruthy();
             expect(row.query(By.css('p-dropdown')).nativeElement.id).toBe(secrets[3].name);
             expect(row.query(By.css('p-dropdown')).componentInstance.options).toBe(
                 secrets[3].options
@@ -200,9 +205,6 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         it('should load Label, Button & Hint with right attributes', () => {
             const row = de.query(By.css('[data-testid="integration"]'));
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[4].label);
-            expect(
-                row.query(By.css('label')).nativeElement.classList.contains('form__label')
-            ).toBeTruthy();
             expect(row.query(By.css('button')).nativeElement.id).toBe(secrets[4].name);
             expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
                 secrets[4].hint
@@ -227,7 +229,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(openMock).toHaveBeenCalledWith(secrets[4].value, '_blank');
         });
 
-        it('should emit form state when loaded', () => {
+        it('should emit form state when loaded', async () => {
+            fixture.detectChanges();
+            await fixture.whenStable();
             expect(component.data.emit).toHaveBeenCalledWith(formState);
             expect(component.valid.emit).toHaveBeenCalledWith(true);
         });
@@ -236,8 +240,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             component.myFormGroup.get('name').setValue('Test2');
             component.myFormGroup.get('password').setValue('Password2');
             component.myFormGroup.get('enabled').setValue('false');
-            expect(component.data.emit).toHaveBeenCalledTimes(4);
-            expect(component.valid.emit).toHaveBeenCalledTimes(4);
+            expect(component.data.emit).toHaveBeenCalledTimes(3);
+            expect(component.valid.emit).toHaveBeenCalledTimes(3);
         });
 
         it('should emit form state disabled when required field empty', () => {

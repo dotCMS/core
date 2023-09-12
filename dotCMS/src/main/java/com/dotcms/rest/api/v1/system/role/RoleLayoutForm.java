@@ -6,6 +6,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import java.util.Set;
 
+/**
+ * Form to save a layout on a role
+ * @author jsanca
+ */
 @JsonDeserialize(builder = RoleLayoutForm.Builder.class)
 public class RoleLayoutForm extends Validated {
 

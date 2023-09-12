@@ -7,7 +7,6 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
@@ -29,13 +28,7 @@ let dotIframeComponent: IframeComponent;
 
 const getTestConfig = (hostComponent) => {
     return {
-        imports: [
-            DotDialogModule,
-            BrowserAnimationsModule,
-            IFrameModule,
-            RouterTestingModule,
-            UiDotIconButtonModule
-        ],
+        imports: [DotDialogModule, BrowserAnimationsModule, IFrameModule, RouterTestingModule],
         providers: [
             {
                 provide: LoginService,

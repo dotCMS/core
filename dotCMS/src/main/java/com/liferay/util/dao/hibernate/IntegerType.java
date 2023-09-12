@@ -68,7 +68,7 @@ public class IntegerType implements UserType {
 		Integer value  = (Integer)Hibernate.INTEGER.nullSafeGet(rs, names[0]);
 
 		if (value == null) {
-			return new Integer(DEFAULT_VALUE);
+			return Integer.valueOf(DEFAULT_VALUE);
 		}
 		else {
 			return value;
@@ -79,7 +79,7 @@ public class IntegerType implements UserType {
 		throws HibernateException, SQLException {
 
 		if (obj == null) {
-			obj = new Integer(DEFAULT_VALUE);
+			obj = Integer.valueOf(DEFAULT_VALUE);
 		}
 
 		Hibernate.INTEGER.nullSafeSet(ps, obj, index);

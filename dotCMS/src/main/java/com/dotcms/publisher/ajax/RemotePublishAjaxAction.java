@@ -208,7 +208,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             final String _iWantTo = request.getParameter( "iWantTo" );
             final String whoToSendTmp = request.getParameter( "whoToSend" );
             final List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
-            final List<Environment> envsToSendTo = new ArrayList<Environment>();
+            final List<Environment> envsToSendTo = new ArrayList<>();
             final String filterKey = request.getParameter("filterKey");
             final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault(
                     FilterDescriptor.FORCE_PUSH_KEY,false);
@@ -239,7 +239,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             if ( _assetId.startsWith( "query_" ) ) { //Support for lucene queries
 
                 String luceneQuery = _assetId.replace( "query_", "" );
-                List<String> queries = new ArrayList<String>();
+                List<String> queries = new ArrayList<>();
                 queries.add( luceneQuery );
                 ids = PublisherUtil.getContentIds( queries );
 
@@ -462,7 +462,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 publishAuditAPI.updatePublishAuditStatus( bundle.getId(), status.getStatus(), auditHistory, true );
 
                 //Get the identifiers on this bundle
-                HashSet<String> identifiers = new HashSet<String>();
+                HashSet<String> identifiers = new HashSet<>();
                 final Collection<ManifestInfo> assets = csvManifestReader
                         .getAssets(ManifestReason.INCLUDE_BY_USER);
 
@@ -474,10 +474,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 
                 //Now depending of the operation lets add it to the queue job
                 if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
-					publisherAPI.addContentsToPublish(new ArrayList<String>(identifiers), bundleId, new Date(),
+					publisherAPI.addContentsToPublish(new ArrayList<>(identifiers), bundleId, new Date(),
 							getUser(), deliveryStrategy);
 				} else {
-					publisherAPI.addContentsToUnpublish(new ArrayList<String>(identifiers), bundleId, new Date(),
+					publisherAPI.addContentsToUnpublish(new ArrayList<>(identifiers), bundleId, new Date(),
 							getUser(), deliveryStrategy);
 				}
                 //Success...
@@ -517,7 +517,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         config.setId( bid );
         File bundleRoot = BundlerUtil.getBundleRoot( config );
 
-        ArrayList<File> list = new ArrayList<File>( 1 );
+        ArrayList<File> list = new ArrayList<>( 1 );
         list.add( bundleRoot );
         File bundle = new File( bundleRoot + File.separator + ".." + File.separator + config.getId() + ".tar.gz" );
         if ( !bundle.exists() ) {
@@ -804,14 +804,14 @@ public class RemotePublishAjaxAction extends AjaxAction {
             // allow content to be added by query
             if(UtilMethods.isSet(query)) {
                 String luceneQuery = query;
-                List<String> queries = new ArrayList<String>();
+                List<String> queries = new ArrayList<>();
                 queries.add( luceneQuery );
                 ids = PublisherUtil.getContentIds( queries );
             }
             else if ( assetIdentifier.startsWith( "query_" ) ) { //Support for lucene queries in the assetIdentifier field (legacy support)
 
                 String luceneQuery = assetIdentifier.replace( "query_", "" );
-                List<String> queries = new ArrayList<String>();
+                List<String> queries = new ArrayList<>();
                 queries.add( luceneQuery );
                 ids = PublisherUtil.getContentIds( queries );
 
@@ -890,6 +890,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         final String iWantTo = request.getParameter( "iWantTo" );
         final String whoToSendTmp = request.getParameter( "whoToSend" );
         final String filterKey = request.getParameter("filterKey");
+        final String timezoneId = request.getParameter( "timezoneId" );
 
         try {
             final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false);
@@ -910,13 +911,19 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 return;
             }
 
+            final TimeZone currentTimeZone =
+                    UtilMethods.isSet(timezoneId) ? TimeZone.getTimeZone(timezoneId)
+                            : APILocator.systemTimeZone();
+
+            final Date publishDate = DateUtil
+                    .convertDate(contentPushPublishDate + "-" + contentPushPublishTime,
+                            currentTimeZone, STANDARD_DATE_FORMAT);
+
             //Put the selected environments in session in order to have the list of the last selected environments
             request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + getUser().getUserId(), envsToSendTo );
             //Clean up the selected bundle
             request.getSession().removeAttribute( WebKeys.SELECTED_BUNDLE + getUser().getUserId() );
 
-            final SimpleDateFormat dateFormat = new SimpleDateFormat(STANDARD_DATE_FORMAT);
-            final Date publishDate = dateFormat.parse( contentPushPublishDate + "-" + contentPushPublishTime );
             final Bundle bundle = bundleAPI.getBundleById(bundleId);
             bundle.setForcePush(forcePush);
             bundle.setFilterKey(filterKey);
@@ -927,12 +934,16 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 bundleAPI.updateBundle(bundle);
              	publisherAPI.publishBundleAssets(bundle.getId(), publishDate);
             } else if (iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE) && UtilMethods.isSet(contentPushExpireDate) && UtilMethods.isSet(contentPushExpireTime)) {
-                final Date expireDate = dateFormat.parse( contentPushExpireDate + "-" + contentPushExpireTime );
+                final Date expireDate = DateUtil
+                        .convertDate(contentPushExpireDate + "-" + contentPushExpireTime,
+                                currentTimeZone, STANDARD_DATE_FORMAT);
                 bundle.setExpireDate(expireDate);
                 bundleAPI.updateBundle(bundle);
                 publisherAPI.unpublishBundleAssets(bundle.getId(), expireDate);
             } else if (iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE) && UtilMethods.isSet(contentPushExpireDate) && UtilMethods.isSet(contentPushExpireTime)) {
-                final Date expireDate = dateFormat.parse( contentPushExpireDate + "-" + contentPushExpireTime );
+                final Date expireDate = DateUtil
+                        .convertDate(contentPushExpireDate + "-" + contentPushExpireTime,
+                                currentTimeZone, STANDARD_DATE_FORMAT);
                 bundle.setPublishDate(publishDate);
                 bundle.setExpireDate(expireDate);
                 bundleAPI.updateBundle(bundle);
@@ -973,7 +984,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
     private List<String> getIdsToPush ( List<String> assetIds, String bundleId, String _contentFilterDate, SimpleDateFormat dateFormat )
             throws ParseException, DotDataException {
 
-    	List<String> ids = new ArrayList<String>();
+    	List<String> ids = new ArrayList<>();
 
         for ( String assetId : assetIds ) {
 

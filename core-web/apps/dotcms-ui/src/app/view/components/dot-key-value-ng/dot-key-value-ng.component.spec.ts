@@ -8,7 +8,7 @@ import { DotKeyValueTableRowModule } from '@components/dot-key-value-ng/dot-key-
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
@@ -25,7 +25,7 @@ export const mockKeyValue = [
     {
         key: 'password',
         hidden: true,
-        value: '*****'
+        value: '123456'
     }
 ];
 
@@ -34,8 +34,7 @@ export const mockKeyValue = [
     template: `
         <dot-key-value-ng
             [showHiddenField]="showHiddenField"
-            [variables]="value"
-        ></dot-key-value-ng>
+            [variables]="value"></dot-key-value-ng>
     `
 })
 class TestHostComponent {
@@ -68,7 +67,8 @@ describe('DotKeyValueComponent', () => {
                 DotIconModule,
                 TableModule,
                 DotKeyValueTableRowModule,
-                DotKeyValueTableInputRowModule
+                DotKeyValueTableInputRowModule,
+                DotMessagePipe
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -175,6 +175,6 @@ describe('DotKeyValueComponent', () => {
         tableRow = de.query(By.css('dot-key-value-table-input-row')).componentInstance;
         tableRow.save.emit(mockKeyValue[1]);
         expect(component.save.emit).toHaveBeenCalledWith(mockKeyValue[1]);
-        expect(component.variables[1]).toEqual({ ...mockKeyValue[1], value: '********' });
+        expect(component.variables[1]).toEqual({ ...mockKeyValue[1], value: '123456' });
     });
 });

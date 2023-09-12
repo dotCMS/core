@@ -6,9 +6,12 @@ import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -27,7 +30,9 @@ import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -35,6 +40,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
@@ -117,6 +123,18 @@ public class PublisherTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test the push of a content with a unique field
+     * Method to test: {@link com.dotcms.publisher.receiver.BundlePublisher#process(PublishStatus)}
+     * When:
+     * - Create a ContentType with a unique field
+     * - Create a {@link Contentlet} with a value for the unique field and add it to a bundle
+     * - Delete the {@link Contentlet} from the previous step
+     * - Create a new {@link Contentlet} with a different value for the unique field
+     * - Push publish the bundle
+     * Should: The {@link Contentlet} from the bundle with the unique field should replace
+     * the {@link Contentlet} version with a different value for the unique field
+     */
     @Test
     public void testPushContentWithUniqueField() throws Exception {
 
@@ -131,7 +149,7 @@ public class PublisherTest extends IntegrationTestBase {
         try {
 
             // Create test content type
-            testContentType = createContentType("Test Content Type", systemUser);
+            testContentType = createContentType("Test Content Type", systemUser, true);
 
             // Create test environment and endpoint
             final User adminUser = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com",
@@ -170,20 +188,98 @@ public class PublisherTest extends IntegrationTestBase {
 
         } finally {
 
-            if (UtilMethods.isSet(resultContentlet)) {
-                APILocator.getContentletAPI().destroy(resultContentlet, systemUser, false );
-            }
-
-            if (UtilMethods.isSet(ppBean)) {
-                PublisherTestUtil.cleanBundleEndpointEnv(null, ppBean.endPoint, ppBean.environment);
-            }
-
-            if (UtilMethods.isSet(testContentType) && UtilMethods.isSet(testContentType.id())) {
-                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
-            }
+            deleteTestPPData(systemUser, testContentType, ppBean, resultContentlet);
 
         }
 
+    }
+
+    /**
+     * Test the push of a multi-language content, with an archived version
+     * Method to test: {@link com.dotcms.publisher.receiver.BundlePublisher#process(PublishStatus)}
+     * When:
+     * - Create a ContentType with title and description fields
+     * - Create a {@link Contentlet} with the default language and publish it
+     * - Create a {@link Contentlet} with a different language and archive it
+     * - Push publish the content
+     * Should: The {@link Contentlet} version with the default language should be in live state
+     * and the {@link Contentlet} version with a different language should be archived
+     */
+    @Test
+    public void testPushArchivedAndMultiLanguageContent() throws Exception {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        ContentType testContentType = null;
+        PPBean ppBean = null;
+        Contentlet resultContentlet = null;
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
+
+        final String defaultLangTitle = "Default Title";
+        final String defaultLangDescription = "Default Description";
+        final String spanishLangTitle = "Spanish Title";
+        final String spanishLangDescription = "Spanish Description";
+
+        try {
+
+            // Create test content type
+            testContentType = createContentType("Test Content Type", systemUser, false);
+
+            // Create test environment and endpoint
+            final User adminUser = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com",
+                    systemUser, false);
+            ppBean = createPushPublishEnv(adminUser);
+            assertPPBean(ppBean);
+
+            // Generate bundle
+            final Contentlet contentlet = new ContentletDataGen(testContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setProperty(TEST_TITLE, defaultLangTitle)
+                    .setProperty(TEST_DESCRIPTION, defaultLangDescription).nextPersisted();
+            ContentletDataGen.publish(contentlet);
+
+            final Contentlet spanishCotentlet = ContentletDataGen.checkout(contentlet);
+            spanishCotentlet.setLanguageId(spanishLanguage.getId());
+            spanishCotentlet.setProperty(TEST_TITLE, spanishLangTitle);
+            spanishCotentlet.setProperty(TEST_DESCRIPTION, spanishLangDescription);
+            ContentletDataGen.checkin(spanishCotentlet);
+            ContentletDataGen.archive(spanishCotentlet);
+
+            final Map<String, Object> bundleData = generateContentBundle(
+                    "archived-multi-language-content-test-1", contentlet, adminUser, ppBean);
+            assertNotNull(bundleData);
+            assertNotNull(bundleData.get(PublisherTestUtil.FILE));
+
+            final String contentIdentifier = contentlet.getIdentifier();
+            APILocator.getContentletAPI().destroy(contentlet, adminUser, false );
+
+            // Publish bundle
+            final PublisherConfig publisherConfig = publishContentBundle(
+                    (File) bundleData.get(PublisherTestUtil.FILE), ppBean.endPoint);
+            assertNotNull(publisherConfig);
+            assertEquals(((File) bundleData.get(PublisherTestUtil.FILE)).getName(),
+                    publisherConfig.getId());
+
+            // Check result content
+            resultContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifier(contentIdentifier,
+                            false, spanishLanguage.getId(), adminUser, false);
+            assertNotNull(resultContentlet);
+            assertEquals(spanishLangTitle, resultContentlet.getStringProperty(TEST_TITLE));
+            assertTrue(resultContentlet.isArchived());
+
+            resultContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifier(contentIdentifier,
+                            true, defaultLanguage.getId(), adminUser, false);
+            assertNotNull(resultContentlet);
+            assertEquals(defaultLangTitle, resultContentlet.getStringProperty(TEST_TITLE));
+
+        } finally {
+
+            deleteTestPPData(systemUser, testContentType, ppBean, resultContentlet);
+
+        }
     }
 
     /**
@@ -285,6 +381,29 @@ public class PublisherTest extends IntegrationTestBase {
         return new PPBean(environment, endPoint);
     }
 
+    /**
+     * Method to test: PublisherAPI.addContentsToPublish()
+     * Given Scenario: Limited users should be able to PP folder successfully if they have the correct permissions.
+     * ExpectedResult: The response of the method should not return any errors.
+     *
+     */
+    @Test
+    //this is a test for push publish a folder with nothing inside
+    public void testPushPublishFolderWithNothingInside() throws Exception {
+
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        final Folder folderPage = PublisherTestUtil.createFolder("testPushPublishFolderWithNothingInside");
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+
+        final PPBean ppBean = createPushPublishEnv(limitedUser);
+        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        final Bundle bundle = PublisherTestUtil.createBundle("testPPFolder", limitedUser, ppBean.environment);
+        Map<String, Object> response = publisherAPI.addContentsToPublish(Arrays.asList(folderPage.getIdentifier()), bundle.getId(), new Date(), limitedUser);
+        assertTrue(response.size() > 0);
+        assertEquals(0, response.get("errors"));
+    }
+
     private PushResult pushFolderPage(final String bundleName, final FolderPage folderPage, final User user, final PPBean ppBean)
             throws DotDataException, DotPublisherException, InstantiationException, IllegalAccessException, DotSecurityException {
 
@@ -335,7 +454,8 @@ public class PublisherTest extends IntegrationTestBase {
                 new PushResult(bundle, PublisherTestUtil.remoteRemove (assets, bundle, user), assetRealPath + "/bundles/" + bundle.getId());
     }
 
-    private ContentType createContentType(final String contentTypeName, final User user)
+    private ContentType createContentType(final String contentTypeName,
+            final User user, final boolean uniqueTitle)
             throws DotSecurityException, DotDataException {
 
         final long time = System.currentTimeMillis();
@@ -349,14 +469,14 @@ public class PublisherTest extends IntegrationTestBase {
 
         final Field textField = FieldBuilder.builder(TextField.class).name(TEST_TITLE)
                 .variable(TEST_TITLE).contentTypeId(contentType.id()).required(true)
-                .listed(true).unique(true).indexed(true).sortOrder(1).readOnly(false)
+                .listed(true).unique(uniqueTitle).indexed(true).sortOrder(1).readOnly(false)
                 .fixed(false).searchable(true).dataType(DataTypes.TEXT).build();
 
         APILocator.getContentTypeFieldAPI().save(textField, user);
 
         final Field descField = FieldBuilder.builder(TextField.class).name(TEST_DESCRIPTION)
                 .variable(TEST_DESCRIPTION).contentTypeId(contentType.id()).required(false)
-                .listed(false).unique(false).indexed(false).sortOrder(1).readOnly(false)
+                .listed(false).unique(false).indexed(false).sortOrder(2).readOnly(false)
                 .fixed(false).searchable(false).dataType(DataTypes.TEXT).build();
 
         APILocator.getContentTypeFieldAPI().save(descField, user);
@@ -401,6 +521,20 @@ public class PublisherTest extends IntegrationTestBase {
         bundlePublisher.init(publisherConfig);
         return bundlePublisher.process(null);
 
+    }
+
+    private void deleteTestPPData(User systemUser, ContentType testContentType, PPBean ppBean, Contentlet resultContentlet) throws DotDataException, DotSecurityException {
+        if (UtilMethods.isSet(resultContentlet)) {
+            APILocator.getContentletAPI().destroy(resultContentlet, systemUser, false );
+        }
+
+        if (UtilMethods.isSet(ppBean)) {
+            PublisherTestUtil.cleanBundleEndpointEnv(null, ppBean.endPoint, ppBean.environment);
+        }
+
+        if (UtilMethods.isSet(testContentType) && UtilMethods.isSet(testContentType.id())) {
+            APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+        }
     }
 
     /**

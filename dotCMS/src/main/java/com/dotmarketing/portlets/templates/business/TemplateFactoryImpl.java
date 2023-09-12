@@ -91,7 +91,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	@SuppressWarnings("unchecked")
 	public List<Template> findTemplatesUserCanUse(final User user, final String hostId, final String query, final boolean searchHost , final int offset, final int limit) throws DotDataException, DotSecurityException {
 		return findTemplates(user, false,
-				UtilMethods.isSet(query) ? Collections.singletonMap("filter", query.toLowerCase())
+				UtilMethods.isSet(query) ? Map.of("filter", query.toLowerCase())
 						: null, hostId, null, null, null, offset, limit, "title");
 	}
 
@@ -199,8 +199,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			int offset, int limit, String orderBy) throws DotSecurityException,
 			DotDataException {
 
-		PaginatedArrayList<Template> assets = new PaginatedArrayList<Template>();
-		List<Permissionable> toReturn = new ArrayList<Permissionable>();
+		PaginatedArrayList<Template> assets = new PaginatedArrayList<>();
+		List<Permissionable> toReturn = new ArrayList<>();
 		int internalLimit = 500;
 		int internalOffset = 0;
 		boolean done = false;
@@ -289,7 +289,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 						final Template templateInode =
 								params != null ? find(params.get("filter").toString()) : null;
 						resultList =
-								templateInode != null ? Collections.singletonList(templateInode)
+								templateInode != null ? List.of(templateInode)
 										: Collections.emptyList();
 					}
 
@@ -349,7 +349,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	@Override
 	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		List<Container> result = new ArrayList<Container>();
+		List<Container> result = new ArrayList<>();
 		Collection<String> ids = getContainerIds(template);
 		for(String containerId : ids) {
 			Container container = APILocator.getContainerAPI().getWorkingContainerById(containerId, user, respectFrontendRoles);
@@ -409,7 +409,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	private List<String> getContainerIdsFromHTML(String templateBody) {
-		Set<String> ids = new HashSet<String>();
+		Set<String> ids = new HashSet<>();
 		if(!UtilMethods.isSet(templateBody)){
 			return new ArrayList<>(ids);
 		}
@@ -700,7 +700,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI().
 				getContentletVersionInfo(propertiesIdentifer.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-		if(!contentletVersionInfo.isPresent()) {
+		if(contentletVersionInfo.isEmpty()) {
 			throw new DotDataException("Can't find ContentletVersionInfo. Identifier:"
 					+ propertiesIdentifer.getId() + ". Lang:"
 					+ APILocator.getLanguageAPI().getDefaultLanguage().getId());
@@ -736,11 +736,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		final DotConnect dotConnect = new DotConnect();
 
 		if (DbConnectionFactory.isMsSql()) {
-			dotConnect.setSQL("SELECT identifier,inode,language_id, JSON_VALUE(contentlet_as_json, '$.variantId') as variant "
+			dotConnect.setSQL("SELECT identifier,inode,language_id, variant_id as variant "
 					+ "FROM contentlet "
 					+ "WHERE JSON_VALUE(contentlet_as_json, '$.fields.template.value') = ?");
 		} else {
-			dotConnect.setSQL("SELECT identifier,inode,language_id,contentlet_as_json->>'variantId' as variant "
+			dotConnect.setSQL("SELECT identifier,inode,language_id,variant_id as variant "
 					+ "FROM contentlet "
 					+ "WHERE contentlet_as_json->'fields'->'template'->>'value' =  ?");
 		}

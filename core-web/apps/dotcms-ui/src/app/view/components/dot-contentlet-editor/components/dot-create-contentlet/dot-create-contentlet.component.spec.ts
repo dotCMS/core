@@ -116,6 +116,14 @@ describe('DotCreateContentletComponent', () => {
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
     });
 
+    it('should emit shutdown and redirect to Pages page when shutdown from pages', () => {
+        routerService.currentSavedURL = '/pages/new/';
+        dotCreateContentletWrapper.triggerEventHandler('shutdown', {});
+        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
+        expect(routerService.gotoPortlet).toHaveBeenCalledTimes(1);
+        expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
+    });
+
     it('should emit custom', () => {
         dotCreateContentletWrapper.triggerEventHandler('custom', {});
         expect(component.custom.emit).toHaveBeenCalledTimes(1);

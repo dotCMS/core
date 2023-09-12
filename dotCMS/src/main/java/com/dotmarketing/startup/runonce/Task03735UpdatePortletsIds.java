@@ -22,7 +22,7 @@ import com.dotmarketing.startup.StartupTask;
  */
 public class Task03735UpdatePortletsIds implements StartupTask {
 
-	private Map<String, String> portletIds = new HashMap<String,String>();
+	private Map<String, String> portletIds = new HashMap<>();
 
 	@Override
 	public boolean forceRun() {

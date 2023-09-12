@@ -248,7 +248,7 @@ public class StaticPublisherIntegrationTest {
         final Optional<FileExpected> fileExpectedOptional = testCase.getFileExpected(
                 file.getAbsolutePath());
 
-        if (!fileExpectedOptional.isPresent()) {
+        if (fileExpectedOptional.isEmpty()) {
             throw new AssertionError(String.format("File %s Expected", file.getAbsolutePath()));
         }
 

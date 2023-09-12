@@ -16,7 +16,7 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotThemesServiceMock,
@@ -25,7 +25,6 @@ import {
     mockSites,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotThemeSelectorComponent } from './dot-theme-selector.component';
 
@@ -67,7 +66,7 @@ describe('DotThemeSelectorComponent', () => {
                 BrowserAnimationsModule,
                 DotDialogModule,
                 DotIconModule,
-                DotMessagePipeModule,
+                DotMessagePipe,
                 HttpClientTestingModule
             ],
             providers: [

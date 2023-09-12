@@ -76,7 +76,7 @@ public class FolderHelper {
             throw new IllegalArgumentException(String.format(" Couldn't find any host with name `%s` ",siteName));
         }
 
-        final List<Folder> savedFolders = new ArrayList<Folder>();
+        final List<Folder> savedFolders = new ArrayList<>();
         for (final String path : paths) {
             savedFolders.add(folderAPI.createFolders(path, host, user, true));
         }

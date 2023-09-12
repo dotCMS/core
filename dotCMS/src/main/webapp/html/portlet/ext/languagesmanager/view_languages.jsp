@@ -45,12 +45,12 @@ function replaceWithIcon(parentElement, iconName) {
 
 <div class="portlet-main">
 	<!-- START Toolbar -->
-	<div class="portlet-toolbar">
+	<div class="portlet-toolbar" style="margin-top: 1rem;">
 		<div class="portlet-toolbar__actions-primary">
-			
+
 		</div>
 		<div class="portlet-toolbar__info">
-			
+
 		</div>
     	<div class="portlet-toolbar__actions-secondary">
     		<button dojoType="dijit.form.Button" onClick="editDefault" iconClass="editIcon">
@@ -90,7 +90,7 @@ function replaceWithIcon(parentElement, iconName) {
 			    final String langIcon = LanguageUtil.getLiteralLocale(strLangCode, strCountryCode);
 				final boolean isDefaultLang = (defaultLang.getId() == longLanguageId);
 			%>
-			<td id="tdLanguage-<%=String.valueOf(longLanguageId)%>" class="tdLanguage" 
+			<td id="tdLanguage-<%=String.valueOf(longLanguageId)%>" class="tdLanguage"
                 data-href-edit-variables="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
                     <portlet:param name="struts_action" value="/ext/languages_manager/edit_language_keys" />
                     <portlet:param name="id" value="<%= String.valueOf(longLanguageId) %>" />
@@ -131,8 +131,8 @@ function replaceWithIcon(parentElement, iconName) {
 	%>
 	</table>
 	<!-- End Listing -->
-	
-	
+
+
     <div id="popups"></div>
 </liferay:box>
 

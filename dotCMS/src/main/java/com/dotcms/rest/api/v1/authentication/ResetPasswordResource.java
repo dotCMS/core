@@ -68,7 +68,7 @@ public class ResetPasswordResource {
         try {
 
             final Optional<String> userIdOpt = APILocator.getUserAPI().getUserIdByToken(token);
-            if(!userIdOpt.isPresent()){
+            if(userIdOpt.isEmpty()){
                 throw new DotInvalidTokenException(token);
             }
 

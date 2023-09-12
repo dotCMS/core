@@ -1,7 +1,9 @@
 package com.dotcms.model.language;
 
 import com.dotcms.model.annotation.ValueType;
+import com.dotcms.model.views.CommonViews;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.Optional;
 import org.immutables.value.Value;
@@ -12,13 +14,27 @@ import org.immutables.value.Value;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractLanguage {
 
+    String TYPE = "Language";
+
+    @JsonView(CommonViews.InternalView.class)
+    @Value.Derived
+    default String dotCMSObjectType() {
+        return TYPE;
+    }
+
     Optional<Long> id();
 
-    String languageCode();
+    Optional<String> languageCode();
 
-    String countryCode();
+    Optional<String> countryCode();
 
-    String language();
+    Optional<String> language();
 
-    String country();
+    Optional<String> country();
+
+    @JsonView(CommonViews.InternalView.class)
+    Optional<Boolean> defaultLanguage();
+
+    String isoCode();
+
 }

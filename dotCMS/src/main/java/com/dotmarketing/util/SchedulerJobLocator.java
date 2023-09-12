@@ -7,7 +7,7 @@ public class SchedulerJobLocator {
 	
 	public static List<String> getJobClassess(){
 		
-		List<String> jobsList = new ArrayList<String>();
+		List<String> jobsList = new ArrayList<>();
 		jobsList.add("com.dotmarketing.quartz.job.BinaryCleanupJob");
 		jobsList.add("com.dotmarketing.quartz.job.CascadePermissionsJob");
 		jobsList.add("com.dotmarketing.quartz.job.ContentFromEmailJob");

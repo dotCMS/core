@@ -222,7 +222,6 @@ import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletName;
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTable;
 import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariant;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantField;
-import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovable;
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTable;
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuProperty;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperiment;
@@ -232,6 +231,12 @@ import com.dotmarketing.startup.runonce.Task230119MigrateContentToProperPersonaT
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseType;
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumn;
 import com.dotmarketing.startup.runonce.Task230320FixMissingContentletAsJSON;
+import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByCol;
+import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTables;
+import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentlet;
+import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentField;
+import com.dotmarketing.startup.runonce.Task230707CreateSystemTable;
+import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSize;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -322,7 +327,7 @@ public class TaskLocatorUtil {
 	 * The number after the "Task" word and before the description represents
 	 * the system version number in the {@code DB_VERSION} table. A successfully
 	 * executed upgrade task will add a new record in such a table with the
-	 * number in the class name. This allows dotCMS to keep track of the tasks 
+	 * number in the class name. This allows dotCMS to keep track of the tasks
 	 * that have been run.
 	 *
 	 * @return The list of Run-Once Tasks.
@@ -526,7 +531,6 @@ public class TaskLocatorUtil {
 		.add(Task220512UpdateNoHTMLRegexValue.class)
 		.add(Task220606UpdatePushNowActionletName.class)
 		.add(Task220822CreateVariantTable.class)
-		.add(Task220825MakeSomeSystemFieldsRemovable.class)
     	.add(Task220822CreateVariantTable.class)
 		.add(Task220829CreateExperimentsTable.class)
 		.add(Task220912UpdateCorrectShowOnMenuProperty.class)
@@ -537,12 +541,17 @@ public class TaskLocatorUtil {
 		.add(Task221018CreateVariantFieldInMultiTree.class)
 		.add(Task230119MigrateContentToProperPersonaTagAndRemoveDupTags.class)
 	    .add(Task230110MakeSomeSystemFieldsRemovableByBaseType.class)
-	    .add(Task230320FixMissingContentletAsJSON.class)
 		.add(Task230328AddMarkedForDeletionColumn.class)
+		.add(Task230426AlterVarcharLengthOfLockedByCol.class)
+		.add(Task230523CreateVariantFieldInContentlet.class)
+		.add(Task230630CreateRunningIdsExperimentField.class)
+		.add(Task230701AddHashIndicesToWorkflowTables.class)
+		.add(Task230707CreateSystemTable.class)
+		.add(Task230713IncreaseDisabledWysiwygColumnSize.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
-	
+
     final static private Comparator<Class<?>> classNameComparator = new Comparator<Class<?>>() {
         public int compare(Class<?> o1, Class<?> o2) {
             return o1.getName().compareTo(o2.getName());
@@ -578,6 +587,25 @@ public class TaskLocatorUtil {
 	 */
 	public static List<Class<?>> getBackportedUpgradeTaskClasses() {
 		final List<Class<?>> ret = new ArrayList<>();
+		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
+	}
+
+	/**
+	 * Returns the list of data tasks that are run <b>only once</b>, which allows to solve
+	 * existing data issues, data tasks are mostly tasks to solve data issues using our existing APIs.
+	 * <p>
+	 * The number after the "Task" word and before the description represents
+	 * the system data version number in the {@code DATA_VERSION} table. A successfully
+	 * executed upgrade task will add a new record in such a table with the
+	 * number in the class name. This allows dotCMS to keep track of the tasks
+	 * that have been run.
+	 *
+	 * @return The list of Run-Once Data Tasks.
+	 */
+	public static List<Class<?>> getStartupRunOnceDataTaskClasses() {
+		final List<Class<?>> ret = ImmutableList.<Class<?>>builder()
+				.add(Task230320FixMissingContentletAsJSON.class)
+				.build();
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

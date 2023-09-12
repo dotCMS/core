@@ -1,6 +1,6 @@
 <div class="dot-container-code__content-tab-container" [formGroup]="fg">
     <div class="field mb-0">
-        <label class="block p-label-input-required">{{
+        <label class="block" dotFieldRequired>{{
             'message.containers.create.content_type_code' | dm
         }}</label>
     </div>
@@ -62,7 +62,7 @@
             </ng-template>
             <div [formGroupName]="i">
                 <button
-                    class="p-button-secondary dot-container-code__variable-btn ml-3 mb-2 mt-2 p-button-sm"
+                    class="p-button-outlined dot-container-code__variable-btn ml-3 mb-2 mt-2 p-button-sm"
                     [label]="'add-variable' | dm"
                     [disabled]="contentTypes.length === 0"
                     (click)="handleAddVariable(containerContent.value)"

@@ -181,7 +181,7 @@ public class ResourceCollectorUtil {
     public static Collection<String> getResources(List<String> jarPrefixesFilter) {
 
     	Pattern pattern = Pattern.compile(".*\\.class");
-        final Set<String> retval = new HashSet<String>();
+        final Set<String> retval = new HashSet<>();
         final String classPath = System.getProperty("java.class.path", ".");
         boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
 
@@ -241,7 +241,7 @@ public class ResourceCollectorUtil {
     private static Collection<String> getResources(
         final String element,
         final Pattern pattern){
-        final ArrayList<String> retval = new ArrayList<String>();
+        final ArrayList<String> retval = new ArrayList<>();
         final File file = new File(element);
         if(file.isDirectory()){
             retval.addAll(getResourcesFromDirectory(file, pattern));
@@ -254,7 +254,7 @@ public class ResourceCollectorUtil {
     private static Collection<String> getResourcesFromJarFile(
         final File file,
         final Pattern pattern){
-        final Set<String> retval = new HashSet<String>();
+        final Set<String> retval = new HashSet<>();
 
         if(file==null) return retval;
 
@@ -295,7 +295,7 @@ public class ResourceCollectorUtil {
     private static Collection<String> getResourcesFromDirectory(
         final File directory,
         final Pattern pattern){
-        final Set<String> retval = new HashSet<String>();
+        final Set<String> retval = new HashSet<>();
         final File[] fileList = directory.listFiles();
         for(final File file : fileList){
             if(file.isDirectory()){

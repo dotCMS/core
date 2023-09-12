@@ -1,5 +1,6 @@
-import { of as observableOf, Observable, Subject, merge } from 'rxjs';
+import { of as observableOf, Observable, Subject, merge, of } from 'rxjs';
 import { Site } from '@dotcms/dotcms-js';
+import { switchMap } from 'rxjs/operators';
 
 export const mockSites: Site[] = [
     {
@@ -37,8 +38,13 @@ export class SiteServiceMock {
         this._switchSite$.next(site || mockSites[0]);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    switchSite(_site: Site) {}
+    switchSiteById(): Observable<Site> {
+        return this.getSiteById().pipe(switchMap((site) => this.switchSite(site)));
+    }
+
+    switchSite(site: Site): Observable<Site> {
+        return of(site);
+    }
 
     getCurrentSite(): Observable<Site> {
         return merge(observableOf(mockSites[0]), this.switchSite$);

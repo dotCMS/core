@@ -287,7 +287,7 @@ public class SecretsKeyStoreHelper {
             try {
                 @SuppressWarnings("unchecked")
                 final SigningKeyFactory customKeyProvider = ((Class<SigningKeyFactory>) Class
-                        .forName(providerClassName)).newInstance();
+                        .forName(providerClassName)).getDeclaredConstructor().newInstance();
                 return customKeyProvider.getKey();
             } catch (Exception e) {
                 Logger.error(this.getClass(), " Fail to get Security Key from Custom Key Provider Will fallback to default key provider. ", e);

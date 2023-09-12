@@ -283,6 +283,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				}
 			}
 		}
+
+		fileAsset.setVariantId(con.getVariantId());
 		this.contentletCache.add(fileAsset);
 		return fileAsset;
 	}
@@ -298,7 +300,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 
 	public List<IFileAsset> fromContentletsI(final List<Contentlet> contentlets) {
-		final List<IFileAsset> fileAssets = new ArrayList<IFileAsset>();
+		final List<IFileAsset> fileAssets = new ArrayList<>();
 		for (Contentlet con : contentlets) {
 			fileAssets.add(fromContentlet(con));
 		}
@@ -611,7 +613,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
     /**
      * This method returns the root path for assets
-     *
+     * @deprecated Use ConfigUtils.getAbsoluteAssetsRootPath();
      * @return the root folder of where assets are stored
      */
     public String getRealAssetsRootPath() {
@@ -808,13 +810,12 @@ public class FileAssetAPIImpl implements FileAssetAPI {
     	return MimeTypeUtils.getMimeType(binary);
 	}
 
+	/**
+	 * @deprecated Use ConfigUtils.getAssetTempPath()
+	 * @return String
+	 */
 	public String getRealAssetPathTmpBinary() {
-
-		java.io.File adir=new java.io.File(getRealAssetsRootPath() + java.io.File.separator + TMP_UPLOAD);
-		if(!adir.isDirectory())
-			adir.mkdirs();
-
-		return adir.getPath();
+		return ConfigUtils.getAssetTempPath();
 	}
 
     /**

@@ -15,10 +15,12 @@ import { take } from 'rxjs/operators';
 import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
+    DotExperiment,
     DotPageMode,
     DotPageRenderState,
     DotVariantData,
-    FeaturedFlags
+    FeaturedFlags,
+    RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
 
 @Component({
@@ -29,6 +31,7 @@ import {
 export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy {
     @Input() pageState: DotPageRenderState;
     @Input() variant: DotVariantData | null = null;
+    @Input() runningExperiment: DotExperiment | null = null;
     @Output() cancel = new EventEmitter<boolean>();
     @Output() actionFired = new EventEmitter<DotCMSContentlet>();
     @Output() favoritePage = new EventEmitter<boolean>();
@@ -40,6 +43,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     pageRenderedHtml: string;
     // TODO: Remove next line when total functionality of Favorite page is done for release
     showFavoritePageStar = false;
+    runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 

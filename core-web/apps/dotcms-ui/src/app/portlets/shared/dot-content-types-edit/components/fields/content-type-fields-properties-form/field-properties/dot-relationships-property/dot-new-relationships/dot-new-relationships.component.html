@@ -1,11 +1,9 @@
 <div class="field">
-    <label for="" class="form__label"
-        >{{ 'contenttypes.field.properties.relationships.contentType.label' | dm }}*</label
-    >
+    <label dotFieldRequired for="contentType">{{
+        'contenttypes.field.properties.relationships.contentType.label' | dm
+    }}</label>
     <dot-searchable-dropdown
-        (switch)="triggerChanged()"
-        (filterChange)="getContentTypeList($event)"
-        (pageChange)="getContentTypeList($event.filter, $event.first)"
+        id="contentType"
         [(ngModel)]="contentType"
         [data]="contentTypeCurrentPage | async"
         [disabled]="editing"
@@ -15,16 +13,18 @@
         "
         [rows]="paginatorService.paginationPerPage"
         [totalRecords]="paginatorService.totalRecords"
+        (switch)="triggerChanged()"
+        (filterChange)="getContentTypeList($event)"
+        (pageChange)="getContentTypeList($event.filter, $event.first)"
         labelPropertyName="name"
         width="100%"
     >
     </dot-searchable-dropdown>
 </div>
 <div class="field">
-    <label for="" class="form__label">{{
-        'contenttypes.field.properties.relationships.label' | dm
-    }}</label>
+    <label for="cardinality">{{ 'contenttypes.field.properties.relationships.label' | dm }}</label>
     <dot-cardinality-selector
+        id="cardinality"
         [value]="cardinality"
         [disabled]="editing"
         (switch)="cardinalityChanged($event)"

@@ -37,7 +37,7 @@ public class EmailActionlet extends WorkFlowActionlet {
 
     @Override
     public List<WorkflowActionletParameter> getParameters() {
-        List<WorkflowActionletParameter> params = new ArrayList<WorkflowActionletParameter>();
+        List<WorkflowActionletParameter> params = new ArrayList<>();
 
         params.add(new WorkflowActionletParameter("fromEmail", "From Email", "", true));
         params.add(new WorkflowActionletParameter("fromName", "From Name", "", true));
@@ -211,7 +211,7 @@ public class EmailActionlet extends WorkFlowActionlet {
                             Identifier id = APILocator.getIdentifierAPI().find(fileHost, filename);
                             Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(),processor.getContentlet().getLanguageId());
 
-                            if(!vinfo.isPresent()) {
+                            if(vinfo.isEmpty()) {
                                 throw new DotDataException("Unable to find version info for attachment. Identifier: " + id.getId() + ", lang: " + processor.getContentlet().getLanguageId());
                             }
 

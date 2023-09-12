@@ -10,7 +10,7 @@
         transition: background-color $basic-speed ease;
 
         &:hover {
-            background-color: rgba($white, 0.1);
+            background-color: $color-palette-white-op-10;
 
             dot-sub-nav {
                 height: auto !important;
@@ -33,7 +33,7 @@
         }
 
         dot-sub-nav {
-            background: var(--color-background);
+            background: var(--color-palette-primary-800);
             border-bottom-right-radius: 0.1875rem;
             border-top-right-radius: 0.1875rem;
             box-shadow: $md-shadow-2;

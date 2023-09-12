@@ -383,14 +383,14 @@ public class HibernateUtil {
 
         if (id == 0) {
             try {
-                return thisClass.newInstance();
+                return thisClass.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
                 throw new DotRuntimeException(e.toString());
             }
         }
 
         try {
-            return session.load(thisClass, new Long(id));
+            return session.load(thisClass, Long.valueOf(id));
         } catch (ObjectNotFoundException e) {
             Logger.debug(this, "---------- DotHibernate: error on load ---------------", e);
             /*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback
@@ -422,7 +422,7 @@ public class HibernateUtil {
 
         if (id == null) {
             try {
-                return thisClass.newInstance();
+                return thisClass.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
                 throw new DotRuntimeException(e.toString());
             }
@@ -454,7 +454,7 @@ public class HibernateUtil {
         try {
             Session session = getSession();
             if (id == 0) {
-                return thisClass.newInstance();
+                return thisClass.getDeclaredConstructor().newInstance();
             }
             return session.get(thisClass, id);
         } catch (Exception e) {
@@ -467,7 +467,7 @@ public class HibernateUtil {
         try {
             Session session = getSession();
 			if (id == null) {
-				return thisClass.newInstance();
+				return thisClass.getDeclaredConstructor().newInstance();
 			}
             return session.get(thisClass, id);
         } catch (Exception e) {

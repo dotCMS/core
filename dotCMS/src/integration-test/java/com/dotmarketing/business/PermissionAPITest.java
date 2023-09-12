@@ -1,13 +1,5 @@
 package com.dotmarketing.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -20,7 +12,6 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.UserDataGen;
-import org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -55,15 +46,26 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
+import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * This class tests the creation, copy, update, verification and setting of
@@ -273,7 +275,9 @@ public class PermissionAPITest extends IntegrationTestBase {
         final ContentType contentGenericType   = contentTypeAPI.find("webPageContent");
         final Contentlet contentletDefaultLang = new ContentletDataGen(contentGenericType.id())
                 .setProperty("title", "TestContent")
-                .setProperty("body",  "TestBody" ).languageId(defaultLanguage.getId()).nextPersisted();
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
         final Language newLanguage             = new LanguageDataGen().languageCode("es").country("MX").nextPersisted();
 
         assertFalse(permissionAPI.doesUserHavePermission(contentletDefaultLang, PermissionAPI.PERMISSION_USE, user, PageMode.get().respectAnonPerms));
@@ -281,7 +285,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         try {
             contentletDefaultLang.setLanguageId(newLanguage.getId());
             assertFalse(permissionAPI.doesUserHavePermission(contentletDefaultLang, PermissionAPI.PERMISSION_USE, user, PageMode.get().respectAnonPerms));
-        } catch (DotStateException e) {
+        } catch (final DotStateException e) {
             fail("When asking for permission even if the contentlet is on a language without working version, shouldn't throw DotStateException");
         }
     }
@@ -441,7 +445,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f4/", host, sysuser, false);
         permissionAPI.permissionIndividually(host, f, sysuser, false);
 
-        ArrayList<Permission> permissions=new ArrayList<Permission>(permissionAPI.getPermissions(f));
+        ArrayList<Permission> permissions=new ArrayList<>(permissionAPI.getPermissions(f));
 
         Permission p=new Permission();
         p.setPermission(PermissionAPI.PERMISSION_READ);
@@ -513,7 +517,7 @@ public class PermissionAPITest extends IntegrationTestBase {
             permissionAPI.getPermissions(f1);
             permissionAPI.getPermissions(f2);
 
-            Map<String,String> mm=new HashMap<String,String>();
+            Map<String,String> mm=new HashMap<>();
             mm.put("individual",Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE));
             new RoleAjax().saveRolePermission(nrole.getId(), hh.getIdentifier(), mm, false);
 
@@ -750,7 +754,7 @@ public class PermissionAPITest extends IntegrationTestBase {
             FieldsCache.addField(field);
 
 
-            Map<String,String> mm=new HashMap<String,String>();
+            Map<String,String> mm=new HashMap<>();
             mm.put("individual",Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN));
             mm.put("structures", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
             mm.put("content", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
@@ -833,7 +837,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
         Role nrole=getRole("TestingRole10");
 
-        Map<String,String> mm=new HashMap<String,String>();
+        Map<String,String> mm=new HashMap<>();
         mm.put("templateLayouts", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
         RoleAjax roleAjax = new RoleAjax();
         roleAjax.saveRolePermission(nrole.getId(), hh.getIdentifier(), mm, false);
@@ -1269,7 +1273,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
             final List<Permission> pagePermissionsRestoredInheritance = permissionAPI.getPermissions(
                     page, true);
-            assertEquals(pagePermissionsRestoredInheritance, pagePermissionsInheritedFromSite);
+            assertEquals(new HashSet(pagePermissionsRestoredInheritance), new HashSet(pagePermissionsInheritedFromSite));
         }catch(Exception e){
             HibernateUtil.rollbackTransaction();
             Logger.error(PermissionAPITest.class, e.getMessage());

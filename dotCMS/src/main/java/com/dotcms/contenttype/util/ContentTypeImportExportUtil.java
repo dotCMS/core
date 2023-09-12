@@ -135,7 +135,7 @@ public class ContentTypeImportExportUtil {
 
             		List<Field> fields = contentType.fields();
 
-            		List<FieldVariable> fieldVariables=new ArrayList<FieldVariable>();
+            		List<FieldVariable> fieldVariables=new ArrayList<>();
                     for(Field ff : fields) {
                         fieldVariables.addAll(ff.fieldVariables());
                     }

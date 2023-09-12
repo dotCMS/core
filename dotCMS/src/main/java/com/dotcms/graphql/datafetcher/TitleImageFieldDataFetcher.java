@@ -32,7 +32,7 @@ public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Objec
 
             final Optional<Field> imageField = contentlet.getTitleImage();
 
-            if (!imageField.isPresent()) {
+            if (imageField.isEmpty()) {
                 return Collections.emptyMap();
             }
 
@@ -47,7 +47,7 @@ public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Objec
                     APILocator.getContentletAPI().findContentletByIdentifierOrFallback(imageContentletId, contentlet.isLive(),
                         contentlet.getLanguageId(), user, true);
 
-                if(!imageContentletOptional.isPresent()) {
+                if(imageContentletOptional.isEmpty()) {
                     return Collections.emptyMap();
                 }
 

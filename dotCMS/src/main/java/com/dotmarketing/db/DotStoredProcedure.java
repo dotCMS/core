@@ -85,7 +85,7 @@ public class DotStoredProcedure {
 		Object obj = new Object();
 
 		try {
-			obj = getObject(Class.forName(x).newInstance());
+			obj = getObject(Class.forName(x).getDeclaredConstructor().newInstance());
 			return obj;
 		} catch (Exception e) {
 			Logger.error(this, "Create class Exception" + e, e);
@@ -145,7 +145,7 @@ public class DotStoredProcedure {
 			getResult();
 		}
 
-		ArrayList<Object> bar = new ArrayList<Object>();
+		ArrayList<Object> bar = new ArrayList<>();
 
 		for (cursor = 0; cursor < getNumRows(); cursor++) {
 			bar.add(getObject(ObjName));
@@ -161,7 +161,7 @@ public class DotStoredProcedure {
 		ResultSetMetaData rsmd = null;
 		gotResult = true;
 
-		results = new ArrayList<Map<String, String>>();
+		results = new ArrayList<>();
 
 		//build the SQL statement, looping through params
 		try {
@@ -207,7 +207,7 @@ public class DotStoredProcedure {
 	public void setSQL(String x) {
 		cursor = 0;
 		gotResult = false;
-		paramList = new ArrayList<HashMap<String, Object>>();
+		paramList = new ArrayList<>();
 		SQL = x;
 
 		Logger.debug(this, "setSQL: " + x);
@@ -222,7 +222,7 @@ public class DotStoredProcedure {
 	public void setProcedure(String procedureName, int numParam) {
 		cursor = 0;
 		gotResult = false;
-		paramList = new ArrayList<HashMap<String, Object>>();
+		paramList = new ArrayList<>();
 		String params ="";
 		
 		while(numParam > 0){
@@ -244,7 +244,7 @@ public class DotStoredProcedure {
 	public void setFunction(String functionName, int numParam) {
 		cursor = 0;
 		gotResult = true;
-		paramList = new ArrayList<HashMap<String, Object>>();
+		paramList = new ArrayList<>();
 		String params ="";
 		
 		if (0 < numParam)
@@ -328,7 +328,7 @@ public class DotStoredProcedure {
 			ResultSetMetaData rsmd = null;
 			gotResult = true;
 
-			results = new ArrayList<Map<String, String>>();
+			results = new ArrayList<>();
 
 			//build the SQL statement, looping through params
 			try {
@@ -375,14 +375,14 @@ public class DotStoredProcedure {
 
 	public void addObject(Object x) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (Object): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x);
 		paramList.add(paramList.size(), param);
 	}
 
 	public void addParam(Object x) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (Object): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x);
 		paramList.add(paramList.size(), param);
 	}
@@ -395,7 +395,7 @@ public class DotStoredProcedure {
 	 */
 	public void addParam(boolean x) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (boolean): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x + "");
 		paramList.add(paramList.size(), param);
 	}
@@ -409,7 +409,7 @@ public class DotStoredProcedure {
 	 */
 	public void addParam(int x) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (int): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x + "");
 		paramList.add(paramList.size(), param);
 	}
@@ -423,7 +423,7 @@ public class DotStoredProcedure {
 	 */
 	public void addParam(String x) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (String): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x);
 		paramList.add(paramList.size(), param);
 	}
@@ -436,7 +436,7 @@ public class DotStoredProcedure {
 	 */
 	public void addParam(long x) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (long): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x + "");
 		paramList.add(paramList.size(), param);
 	}
@@ -449,7 +449,7 @@ public class DotStoredProcedure {
 	 */
 	public void addParam(double x) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (double): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x + "");
 		paramList.add(paramList.size(), param);
 	}
@@ -462,21 +462,21 @@ public class DotStoredProcedure {
 	 */
 	public void addParam(java.util.Date x) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (date): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, new Timestamp(x.getTime()));
 		paramList.add(paramList.size(), param);
 	}
 	
 	public void registerOutParameter(int paramType) {
 		Logger.debug(this, "db.registerOutParameter " + paramList.size() + " (type): " + paramType);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(outputTypeKey, paramType);
 		paramList.add(paramList.size(), param);
 	}
 	
 	public void addInOutObject(Object x, int paramType) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (Object): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x);
 		param.put(outputTypeKey, paramType);
 		paramList.add(paramList.size(), param);
@@ -484,7 +484,7 @@ public class DotStoredProcedure {
 
 	public void addInOutParam(Object x, int paramType) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (Object): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x);
 		param.put(outputTypeKey, paramType);
 		paramList.add(paramList.size(), param);
@@ -498,7 +498,7 @@ public class DotStoredProcedure {
 	 */
 	public void addInOutParam(boolean x, int paramType) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (boolean): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x + "");
 		param.put(outputTypeKey, paramType);
 		paramList.add(paramList.size(), param);
@@ -512,7 +512,7 @@ public class DotStoredProcedure {
 	 */
 	public void addInOutParam(int x, int paramType) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (int): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x + "");
 		param.put(outputTypeKey, paramType);
 		paramList.add(paramList.size(), param);
@@ -526,7 +526,7 @@ public class DotStoredProcedure {
 	 */
 	public void addInOutParam(String x, int paramType) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (String): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x);
 		param.put(outputTypeKey, paramType);
 		paramList.add(paramList.size(), param);
@@ -540,7 +540,7 @@ public class DotStoredProcedure {
 	 */
 	public void addParam(long x, int paramType) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (long): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x + "");
 		param.put(outputTypeKey, paramType);
 		paramList.add(paramList.size(), param);
@@ -554,7 +554,7 @@ public class DotStoredProcedure {
 	 */
 	public void addParam(double x, int paramType) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (double): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, x + "");
 		param.put(outputTypeKey, paramType);
 		paramList.add(paramList.size(), param);
@@ -568,7 +568,7 @@ public class DotStoredProcedure {
 	 */
 	public void addParam(java.util.Date x, int paramType) {
 		Logger.debug(this, "db.addParam " + paramList.size() + " (date): " + x);
-		HashMap<String, Object> param = new HashMap<String, Object>();
+		HashMap<String, Object> param = new HashMap<>();
 		param.put(inputValueKey, new Timestamp(x.getTime()));
 		param.put(outputTypeKey, paramType);
 		paramList.add(paramList.size(), param);
@@ -603,7 +603,7 @@ public class DotStoredProcedure {
 		
 		if (rs != null) {
 			
-			results = new ArrayList<Map<String,String>>();
+			results = new ArrayList<>();
 			
 			rsmd = rs.getMetaData();
 			
@@ -616,7 +616,7 @@ public class DotStoredProcedure {
 			int i = 0;
 
 			while (rs.next() && (i < maxRows)) {
-				HashMap<String,String> vars = new HashMap<String,String>();
+				HashMap<String,String> vars = new HashMap<>();
 
 				for (int j = 1; j <= rsmd.getColumnCount(); j++) {
 					String x = rsmd.getColumnName(j) + "";
@@ -724,7 +724,7 @@ public class DotStoredProcedure {
 		CallableStatement statement = null;
 		ResultSetMetaData rsmd = null;
 		
-		results = new ArrayList<Map<String, String>>();
+		results = new ArrayList<>();
 		
 		try {
 			result = executeStoredProcedure(conn, statement, rsmd, true);
@@ -743,7 +743,7 @@ public class DotStoredProcedure {
 	}
 	
 	private HashMap<Integer, Object> executeStoredProcedure(Connection conn, CallableStatement statement, ResultSetMetaData rsmd, boolean getResultSet) throws SQLException {
-		HashMap<Integer, Object> result = new HashMap<Integer, Object>();
+		HashMap<Integer, Object> result = new HashMap<>();
 		
 		conn.clearWarnings();
 		statement = conn.prepareCall(SQL);
@@ -803,7 +803,7 @@ public class DotStoredProcedure {
 	
 	private ArrayList<Map<String,String>> convertResultSetToArrayList(ResultSet rs) throws SQLException {
 
-		ArrayList<Map<String,String>> results = new ArrayList<Map<String,String>>();
+		ArrayList<Map<String,String>> results = new ArrayList<>();
 		
 		ResultSetMetaData rsmd = rs.getMetaData();
 		
@@ -817,7 +817,7 @@ public class DotStoredProcedure {
 			int i = 0;
 	
 			while (rs.next() && (i < maxRows)) {
-				HashMap<String,String> vars = new HashMap<String,String>();
+				HashMap<String,String> vars = new HashMap<>();
 	
 				for (int j = 1; j <= rsmd.getColumnCount(); j++) {
 					String x = rsmd.getColumnName(j) + "";

@@ -11,13 +11,16 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.starter.ExportStarterUtil;
+import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.server.JSONP;
@@ -26,10 +29,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -53,6 +58,9 @@ import java.util.concurrent.TimeUnit;
 public class MaintenanceResource implements Serializable {
 
     private final WebResource webResource;
+
+    protected static final Lazy<Boolean> ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE =
+            Lazy.of(() -> Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true));
 
     /**
      * Default class constructor.
@@ -86,15 +94,15 @@ public class MaintenanceResource implements Serializable {
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("maintenance")
+                .requiredPortlet(Portlet.MAINTENANCE)
                 .init();
 
-        Logger.info(this.getClass(), "User:" + initData.getUser() + " is shutting down dotCMS!"); 
+        Logger.info(this.getClass(), String.format("User '%s' is shutting down dotCMS!", initData.getUser()));
         SecurityLogger.logInfo(
                 this.getClass(),
-                "User:" + initData.getUser() + " is shutting down dotCMS from ip:" + request.getRemoteAddr());
+                String.format("User '%s' is shutting down dotCMS from ip: %s", initData.getUser(), request.getRemoteAddr()));
 
-        if (!Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true)) {
+        if (!ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE.get()) {
             return Response.status(Status.FORBIDDEN).build();
         }
 
@@ -109,6 +117,40 @@ public class MaintenanceResource implements Serializable {
         return Response.ok(new ResponseEntityView("Shutdown")).build();
     }
 
+    /**
+     * This method is meant to shut down the current DotCMS instance.
+     * It will pass the control to catalina.sh (Tomcat) script to deal with any exit code.
+     * 
+     * @param request http request
+     * @param response http response
+     * @return string response
+     */
+    @DELETE
+    @Path("/_shutdownCluster")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response shutdownCluster(@Context final HttpServletRequest request,
+                                   @Context final HttpServletResponse response,
+                                   @DefaultValue("60") @QueryParam("rollingDelay") int rollingDelay) {
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(Portlet.MAINTENANCE)
+                .init();
+        final String statusMsg = String.format("User '%s' is shutting down dotCMS Cluster with a rolling delay of %s"
+                , initData.getUser(), rollingDelay);
+        Logger.info(this.getClass(), statusMsg);
+        SecurityLogger.logInfo(this.getClass(), statusMsg);
+        if (!ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE.get()) {
+            return Response.status(Status.FORBIDDEN).build();
+        }
+        ClusterManagementTopic.getInstance().restartCluster(rollingDelay);
+        return Response.ok(new ResponseEntityView("Shutdown")).build();
+    }
+    
     /**
      * This method attempts to send resolved log file using an octet stream http response.
      *
@@ -197,7 +239,7 @@ public class MaintenanceResource implements Serializable {
                     IOUtils.copy(input, output);
 
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new DotRuntimeException(e);
                 }
             }
 
@@ -209,6 +251,7 @@ public class MaintenanceResource implements Serializable {
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
+     * @param oldAssets If the resulting file must have absolutely all versions of all assets, set this to {@code true}.
      *
      * @return The {@link StreamingOutput} with the compressed file.
      */
@@ -218,22 +261,22 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadAssets(@Context final HttpServletRequest request,
-                                         @Context final HttpServletResponse response) {
+                                         @Context final HttpServletResponse response,
+                                         @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets) {
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveAssetsFileName();
-        Logger.info(this, String.format("User '%s' is generating compressed Assets file '%s'", user.getUserId(),
-                zipName));
-
+        Logger.info(this, String.format("User '%s' is generating compressed Assets file '%s' with [ oldAssets = %s]", user.getUserId(),
+                zipName, oldAssets));
         final StreamingOutput stream = output -> {
 
-            exportStarterUtil.streamCompressedAssets(output);
+            exportStarterUtil.streamCompressedAssets(output, oldAssets);
             output.flush();
             output.close();
             Logger.info(this, String.format("Compressed Assets file '%s' has been generated successfully!", zipName));
 
         };
-
+        Logger.debug(this, "Returning StreamingOutput response for compressed asset data");
         return this.buildFileResponse(response, stream, zipName);
     }
 
@@ -251,7 +294,7 @@ public class MaintenanceResource implements Serializable {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarter(@Context final HttpServletRequest request,
                                           @Context final HttpServletResponse response) {
-        return downloadStarter(request, response, false);
+        return downloadStarter(request, response, false, true);
     }
 
     /**
@@ -267,8 +310,9 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarterWithAssets(@Context final HttpServletRequest request,
-                                                    @Context final HttpServletResponse response) {
-        return downloadStarter(request, response, true);
+                                                    @Context final HttpServletResponse response,
+                                                    @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets) {
+        return downloadStarter(request, response, true, oldAssets);
     }
 
     /**
@@ -278,26 +322,27 @@ public class MaintenanceResource implements Serializable {
      * @param request       The current instance of the {@link HttpServletRequest}.
      * @param response      The current instance of the {@link HttpServletResponse}.
      * @param includeAssets If the generated Starter must include all assets as well, set this to {@code true}.
+     * @param oldAssets     If the resulting file must have absolutely all versions of all assets, set this to {@code true}.
      *
      * @return The streamed Starter ZIP file.
      */
     private Response downloadStarter(final HttpServletRequest request, final HttpServletResponse response,
-                                     final boolean includeAssets) {
+                                     final boolean includeAssets, final boolean oldAssets) {
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveStarterFileName();
-        Logger.info(this, String.format("User '%s' is generating compressed Starter file '%s'", user.getUserId(),
-                zipName));
+        Logger.info(this, String.format("User '%s' is generating compressed Starter file '%s' with [ includeAssets = %s ]", user.getUserId(),
+                zipName, includeAssets));
 
         final StreamingOutput stream = output -> {
 
-            exportStarterUtil.streamCompressedStarter(output, includeAssets);
+            exportStarterUtil.streamCompressedStarter(output, includeAssets, oldAssets);
             output.flush();
             output.close();
             Logger.info(this, String.format("Compressed Starter file '%s' has been generated successfully!", zipName));
 
         };
-
+        Logger.debug(this, "Returning StreamingOutput response for compressed starter data");
         return this.buildFileResponse(response, stream, zipName);
     }
 
@@ -314,7 +359,7 @@ public class MaintenanceResource implements Serializable {
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("maintenance")
+                .requiredPortlet(Portlet.MAINTENANCE)
                 .init();
     }
 

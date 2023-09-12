@@ -1,14 +1,1 @@
 @use "variables" as *;
-
-:host {
-    display: inline-flex;
-}
-
-.p-button {
-    gap: 0.25rem;
-}
-
-.material-icons {
-    color: $color-palette-primary;
-    font-size: $font-size-default;
-}

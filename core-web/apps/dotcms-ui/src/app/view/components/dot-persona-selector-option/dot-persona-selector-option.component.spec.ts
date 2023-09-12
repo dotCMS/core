@@ -9,17 +9,19 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
 
 @Component({
-    template: `<dot-persona-selector-option [persona]="persona"></dot-persona-selector-option>`
+    template: ` <dot-persona-selector-option [persona]="persona"></dot-persona-selector-option>`
 })
 class TestHostComponent {
     persona = mockDotPersona;
 }
+
 describe('DotPersonaSelectorOptionComponent', () => {
     let component: DotPersonaSelectorOptionComponent;
     let fixture: ComponentFixture<TestHostComponent>;
@@ -38,6 +40,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
                 BadgeModule,
                 AvatarModule,
                 DotPipesModule,
+                DotMessagePipe,
                 ButtonModule
             ],
             providers: [
@@ -72,7 +75,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
         it('should have personalized button with right properties', () => {
             const btnElement: DebugElement = de.query(By.css('button'));
-            expect(btnElement.nativeElement.innerText).toBe('PERSONALIZED');
+            expect(btnElement.nativeElement.innerText).toBe('Personalized');
             expect(btnElement.attributes.icon).toBe('pi pi-times');
             expect(btnElement.attributes.iconPos).toBe('right');
         });

@@ -10,6 +10,7 @@ import { DotActionButtonModule } from '@components/_common/dot-action-button/dot
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
@@ -31,7 +32,8 @@ import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialo
         DotAppsImportExportDialogModule,
         DotDialogModule,
         DotPipesModule,
-        MarkdownModule.forChild()
+        MarkdownModule.forChild(),
+        DotMessagePipe
     ],
     declarations: [DotAppsConfigurationComponent],
     exports: [DotAppsConfigurationComponent],

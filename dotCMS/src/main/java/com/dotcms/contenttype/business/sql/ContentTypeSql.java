@@ -49,8 +49,8 @@ public abstract class ContentTypeSql {
 	public static String INSERT_TYPE_INODE = "insert into inode (inode, idate, owner, type) values (?,?,?,'structure')";
 
 	public static String INSERT_TYPE = "insert into structure(inode,name,description,default_structure,page_detail,"
-			+ "structuretype,system,fixed,velocity_var_name,url_map_pattern,host,folder,expire_date_var,publish_date_var,mod_date,icon,sort_order) "
-			+ "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+			+ "structuretype,system,fixed,velocity_var_name,url_map_pattern,host,folder,expire_date_var,publish_date_var,mod_date,icon,sort_order,marked_for_deletion) "
+			+ "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 	public static String UPDATE_TYPE = "update structure set "
 			+ "name=?, "
@@ -67,7 +67,8 @@ public abstract class ContentTypeSql {
 			+ "publish_date_var=?,"
 			+ "mod_date=?,"
 			+ "icon=?,"
-			+ "sort_order=? "
+			+ "sort_order=?, "
+			+ "marked_for_deletion=? "
 			+ "where inode=?";
 
 	public static String SELECT_QUERY_CONDITION = SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE

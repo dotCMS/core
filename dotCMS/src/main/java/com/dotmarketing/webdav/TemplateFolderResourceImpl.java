@@ -228,7 +228,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	 * @see com.bradmcevoy.http.GetableResource#getMaxAgeSeconds()
 	 */
 	public Long getMaxAgeSeconds() {
-		return new Long(0);
+		return Long.valueOf(0);
 	}
 
 	/*

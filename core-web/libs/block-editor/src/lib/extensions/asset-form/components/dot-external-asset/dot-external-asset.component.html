@@ -1,6 +1,6 @@
 <form class="wrapper" [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
     <div class="form-control">
-        <label for="url">Insert {{ type }} URL</label>
+        <label dotFieldRequired for="url">Insert {{ type }} URL</label>
         <input
             id="url"
             #input

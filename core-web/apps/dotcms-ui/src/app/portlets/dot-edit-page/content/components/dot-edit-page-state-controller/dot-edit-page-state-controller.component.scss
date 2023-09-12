@@ -17,6 +17,10 @@
             height: 100%;
             display: flex;
 
+            .p-button {
+                height: 100%;
+            }
+
             .p-button-label {
                 color: $black;
             }
@@ -45,7 +49,7 @@ p-inputSwitch {
         .p-inputswitch-checked .p-inputswitch-slider:after {
             color: $white;
             content: "lock";
-            transform: translateX(1.5rem);
+            transform: translateX(24px);
         }
 
         .p-state-disabled .p-inputswitch-slider:after {

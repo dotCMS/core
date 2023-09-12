@@ -63,6 +63,9 @@ public class SessionMonitorTest {
         final SessionMonitor sessionMonitor =  new SessionMonitor(systemEventsAPI);
         sessionMonitor.sessionDestroyed(event);
 
-        verify(systemEventsAPI, never()).push(any());
+        final SystemEvent systemEvent = new SystemEvent
+                (SystemEventType.SESSION_LOGOUT,
+                        UserSessionPayloadBuilder.build("user_id", "session_id"));
+        verify(systemEventsAPI).push(systemEvent);
     }
 }

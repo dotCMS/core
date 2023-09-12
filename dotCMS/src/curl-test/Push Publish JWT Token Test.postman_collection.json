@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "8b4691e6-7909-4c9c-9762-1c99a93c9768",
+		"_postman_id": "1b8ca50c-6940-4a0f-bd10-dbbfdae16a63",
 		"name": "Push Publish JWT Token Test",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -14,7 +15,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c2155bbd-d3dc-426e-b7d7-1c38aaac0e30",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -72,12 +72,47 @@
 					"response": []
 				},
 				{
+					"name": "SwitchToDefaultSiteJustInCase Copy",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "logout",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "a4224f86-bfc5-4bc7-9152-4b8d9d5bea76",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -110,7 +145,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "af387593-2eb3-4934-a10c-9f68f1249bdb",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -174,7 +208,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e01586b8-67d6-4b3a-a793-23a8dd9c0bf9",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -202,8 +235,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "expired_token",
@@ -214,7 +246,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "11d5c724-525c-41b8-874e-086835f6b0d4",
 								"exec": [
 									"wait = (ms) => {",
 									"   var start = new Date().getTime();",
@@ -287,7 +318,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f3572e69-ac0d-4573-a5f2-78d562acbbc0",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -320,7 +350,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2626088f-2890-43fb-a29d-ed60d6918851",
 								"exec": [
 									"pm.test(\"Status code is 401\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -382,8 +411,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "fail_not_valid_token",
@@ -394,7 +422,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "40b42855-5cc9-4757-915f-acb76aa425ff",
 								"exec": [
 									"pm.test(\"Status code is 401\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -456,8 +483,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "fail_not_token_sent",
@@ -468,7 +494,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cb0cccdd-711f-43cf-a245-0033e55eb200",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -522,8 +547,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "fail_empty_body",
@@ -534,7 +558,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "570eb6d6-f358-4fa1-93c0-12296af91250",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -597,7 +620,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "72f8b93f-e447-4e3a-9f99-e1c3f90936dc",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -630,7 +652,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ed58b7e3-7ee1-4c17-b652-c0178dbf7d78",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(400);",
@@ -684,8 +705,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "using_basic_authentication_instead_JWT_token",
@@ -696,7 +716,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f062b6ed-058e-4faa-95b4-af8db1a006d8",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -745,9 +764,6 @@
 							"mode": "file",
 							"file": {
 								"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
-							},
-							"options": {
-								"file": {}
 							}
 						},
 						"url": {
@@ -764,15 +780,13 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		}
 	],
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "0075db0e-d8f2-432d-ac2b-b9307eb983e2",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -782,7 +796,6 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "a1ad81a5-b052-4b61-85be-fdb58dbeb204",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -792,20 +805,16 @@
 	],
 	"variable": [
 		{
-			"id": "0288f532-e3dc-4589-b095-11fe96a56e1c",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "2c19ae47-80bb-4a09-b680-617b0e496062",
 			"key": "token",
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk0MjI2YjE0Yy1iMGQ3LTRmNmUtYTQ1ZC0wMmNjOGVkZDBkYWEiLCJ4bW9kIjoxNjAwMjAxMjUyMDAwLCJuYmYiOjE2MDAyMDEyNTIsImlzcyI6ImMyOTJhMWYyYWQiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2MDAyMDEyNTMsImlhdCI6MTYwMDIwMTI1MiwianRpIjoiNDVlYWNjNGQtNWQ4ZS00NDA0LWIzNzEtYTgwYTBhZjgzMjkzIn0._BFWPMWBhPCLlteq3rr4Bst0h6y6Mea8etnAksJnWGg"
 		},
 		{
-			"id": "07068927-39d7-45aa-98d8-e9bb0617dee7",
 			"key": "bundle_id",
 			"value": "bundle_1598948729120"
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }

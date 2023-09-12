@@ -1,0 +1,90 @@
+@use "variables" as *;
+
+$dot-tab-buttons-icon: 1.5rem;
+$dot-tab-height: 2.5rem;
+
+.dot-tab-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: $spacing-1;
+    margin-right: $spacing-5;
+}
+
+.dot-tab-buttons__container {
+    position: relative;
+}
+
+.dot-tab {
+    display: flex;
+    position: relative;
+}
+
+.dot-tab__button {
+    border: $field-border-size solid $color-palette-gray-200;
+    color: $color-palette-primary-500;
+    background-color: transparent;
+    padding: $spacing-1 $spacing-3;
+    border-radius: $border-radius-md;
+    height: $dot-tab-height;
+    font-family: $font-default;
+
+    &:hover {
+        background: $color-palette-primary-100;
+    }
+}
+
+.dot-tab__button--right {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: 0;
+}
+
+.dot-tab__dropdow {
+    background-color: transparent;
+    border: $field-border-size solid $color-palette-gray-200;
+    height: $dot-tab-height;
+    border-top-right-radius: $border-radius-md;
+    border-bottom-right-radius: $border-radius-md;
+    border-left: 0;
+    padding: $spacing-1;
+    color: $color-palette-primary-500;
+
+    &:hover {
+        background: $color-palette-primary-200;
+    }
+}
+
+.dot-tab-indicator {
+    height: 0.25rem;
+    border-radius: $border-radius-xl;
+    width: auto;
+    background-color: $color-palette-primary-500;
+    left: 0;
+    right: 0;
+    bottom: -0.6rem;
+    position: absolute;
+}
+
+.dot-tab--active {
+    background: $color-palette-primary-100;
+    border-radius: $border-radius-md;
+    border-color: $white;
+
+    &.dot-tab__button--right {
+        border-color: $white;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+}
+
+.dot-tab-dropdown--active {
+    background: $color-palette-primary-200;
+    border-color: $white;
+}
+
+.dot-tab-dropdown__icon {
+    width: $dot-tab-buttons-icon;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

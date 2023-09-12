@@ -1,4 +1,4 @@
-import { Component, Prop, Event, EventEmitter, h } from '@stencil/core';
+import { Component, Prop, Event, EventEmitter, h, Element } from '@stencil/core';
 import { DotKeyValueField } from '../../../../../models';
 
 @Component({
@@ -6,6 +6,9 @@ import { DotKeyValueField } from '../../../../../models';
     styleUrl: 'key-value-table.scss'
 })
 export class KeyValueTableComponent {
+    /** to get the current element */
+    @Element() el: HTMLElement;
+
     /** (optional) Items to render in the list of key value */
     @Prop()
     items: DotKeyValueField[] = [];
@@ -56,7 +59,7 @@ export class KeyValueTableComponent {
 
     private bindDraggableEvents() {
         if (!this.disabled) {
-            const rows = document.querySelectorAll('key-value-table tr');
+            const rows = this.el.querySelectorAll('key-value-table tr');
             rows.forEach((row) => {
                 row.setAttribute('draggable', 'true');
 

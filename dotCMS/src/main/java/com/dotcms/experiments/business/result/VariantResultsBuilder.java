@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business.result;
 
+import com.dotcms.experiments.business.result.ExperimentResults.TotalSession;
 import com.dotcms.experiments.business.result.VariantResults.ResultResumeItem;
 
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -27,8 +28,10 @@ public class VariantResultsBuilder {
 
     final ExperimentVariant experimentVariant;
     private Map<String, List<Event>> eventsByLookBackWindow = new HashMap<>();
-    private long totalSessions;
+    private TotalSession totalSessions;
     private long totalVariantSessions;
+    private long pageViews;
+    private float weight;
 
     VariantResultsBuilder(final ExperimentVariant experimentVariant) {
         this.experimentVariant = experimentVariant;
@@ -40,6 +43,10 @@ public class VariantResultsBuilder {
         return list;
     }
 
+    public void pageView(final long pageViews) {
+        this.pageViews += pageViews;
+
+    }
 
     public void success(final String lookBackWindow, final Event event) {
         final List<Event> sessionEvents = UtilMethods.isSet(eventsByLookBackWindow.get(lookBackWindow)) ?
@@ -60,21 +67,22 @@ public class VariantResultsBuilder {
         return events.size();
     }
 
-    public VariantResults build(List<Instant> allDates) {
+    public VariantResults build(final List<Instant> allDates) {
         final VariantResults.UniqueBySessionResume uniqueBySessionResume = new VariantResults.UniqueBySessionResume(
                 totalUniqueBySession(eventsByLookBackWindow),
-                totalVariantSessions,
-                totalSessions);
+                totalVariantSessions);
 
-        final Map<String, ResultResumeItem> details = getDetails(allDates);
+        final Map<String, ResultResumeItem> details = getDetails(allDates, totalSessions);
 
-        return new VariantResults(experimentVariant.id(),
+        return new VariantResults(experimentVariant.id(), experimentVariant.description(),
                 totalMultiBySession(eventsByLookBackWindow),
                 uniqueBySessionResume,
-                details);
+                details, pageViews, weight);
     }
 
-    private Map<String, ResultResumeItem> getDetails(List<Instant> allDates) {
+    private Map<String, ResultResumeItem> getDetails(final List<Instant> allDates,
+            final TotalSession totalSessions) {
+
         final Map<String, Map<String, List<Event>>> eventsOrderByDate = orderEventsByDate();
         final Map<String, ResultResumeItem> result = new HashMap<>();
 
@@ -83,25 +91,33 @@ public class VariantResultsBuilder {
             final Map<String, List<Event>> events = eventsOrderByDate.get(dateAsString);
 
             if (UtilMethods.isSet(events)) {
-                result.put(dateAsString, new ResultResumeItem(totalMultiBySession(events),
-                        totalUniqueBySession(events)
-                ));
+                final long totalSessionByDate = totalSessions.getTotal(experimentVariant.id(), date);
+                final ResultResumeItem resultResumeItem = createResultResumeItem(events, totalSessionByDate);
+                result.put(dateAsString, resultResumeItem);
             } else {
                 result.put(dateAsString, new ResultResumeItem(0, 0));
             }
         }
 
 
-        for (Entry<String, Map<String, List<Event>>> entry : eventsOrderByDate.entrySet()) {
+        /*for (Entry<String, Map<String, List<Event>>> entry : eventsOrderByDate.entrySet()) {
             final String dateAsString = entry.getKey();
             final Map<String, List<Event>> events = entry.getValue();
 
-            result.put(dateAsString, new ResultResumeItem(totalMultiBySession(events),
-                    totalUniqueBySession(events)
-            ));
-        }
+            if (UtilMethods.isSet(events)) {
+                final ResultResumeItem resultResumeItem = createResultResumeItem(events,
+                        totalSessions.getTotal(experimentVariant.id()));
+                result.put(dateAsString, resultResumeItem);
+            }
+        }*/
 
         return result;
+    }
+
+    private ResultResumeItem createResultResumeItem(final Map<String, List<Event>> events,
+            final long totalSessions) {
+
+        return new ResultResumeItem(totalMultiBySession(events), totalUniqueBySession(events), totalSessions);
     }
 
     /**
@@ -150,11 +166,15 @@ public class VariantResultsBuilder {
         return eventsOrderByDate;
     }
 
-    public void setTotalSession(long total) {
-        this.totalSessions = total;
+    public void setTotalSession(final TotalSession totalSession) {
+        this.totalSessions = totalSession;
     }
 
     public void setTotalSessionToVariant(final long total) {
         this.totalVariantSessions = total;
+    }
+
+    public void weight(final float weight) {
+        this.weight = weight;
     }
 }

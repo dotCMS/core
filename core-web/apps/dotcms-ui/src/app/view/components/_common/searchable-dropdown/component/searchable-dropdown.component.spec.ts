@@ -14,15 +14,15 @@ import {
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 
 import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
+
 @Component({
     selector: 'dot-host-component',
     template: ` <dot-searchable-dropdown
@@ -109,8 +109,8 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                UiDotIconButtonModule,
-                DotPipesModule
+                DotPipesModule,
+                DotMessagePipe
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
@@ -232,9 +232,9 @@ describe('SearchableDropdownComponent', () => {
 
         hostFixture.detectChanges();
         const actionBtn = de.query(
-            By.css('.searchable-dropdown__search-action dot-icon-button')
+            By.css('.searchable-dropdown__search-action p-button')
         ).componentInstance;
-        expect(actionBtn.icon).toBe('add');
+        expect(actionBtn.icon).toBe('pi pi-plus');
     });
 
     it('should display defaultFilterTemplate', () => {
@@ -245,7 +245,7 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should not display Action button', () => {
-        const actionBtn = de.query(By.css('.searchable-dropdown__search-action dot-icon-button'));
+        const actionBtn = de.query(By.css('.searchable-dropdown__search-action p-button'));
         expect(actionBtn).toBeNull();
     });
 
@@ -480,8 +480,8 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                UiDotIconButtonModule,
-                DotPipesModule
+                DotPipesModule,
+                DotMessagePipe
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();

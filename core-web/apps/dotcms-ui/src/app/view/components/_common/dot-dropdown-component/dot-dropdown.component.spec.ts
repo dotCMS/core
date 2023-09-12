@@ -1,7 +1,9 @@
-import { Component, DebugElement, Input } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ButtonModule } from 'primeng/button';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 
@@ -24,17 +26,6 @@ class DotTestHostComponent {
         this.icon = 'icon';
         this.title = 'test';
     }
-}
-
-@Component({
-    selector: 'dot-icon-button',
-    template: ''
-})
-class MockDotIconButtonComponent {
-    @Input()
-    icon: string;
-    @Input()
-    disabled?: boolean;
 }
 
 function executeEnabled(
@@ -68,8 +59,8 @@ describe('DotDropdownComponent', () => {
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotDropdownComponent, MockDotIconButtonComponent, DotTestHostComponent],
-            imports: [BrowserAnimationsModule]
+            declarations: [DotDropdownComponent, DotTestHostComponent],
+            imports: [BrowserAnimationsModule, ButtonModule]
         });
 
         hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
@@ -88,8 +79,8 @@ describe('DotDropdownComponent', () => {
             spyOn(comp.toggle, 'emit');
             hostComp.disabled = false;
             hostFixture.detectChanges();
-            button = de.query(By.css('dot-icon-button'));
-            titleButton = de.query(By.css('button'));
+            button = de.query(By.css('[data-testid="icon-button"]'));
+            titleButton = de.query(By.css('[data-testid="title-button"]'));
         });
 
         it(`should dot-icon button be displayed & emit`, () => {
@@ -110,13 +101,13 @@ describe('DotDropdownComponent', () => {
             spyOn(comp.toggle, 'emit');
             hostComp.disabled = true;
             hostFixture.detectChanges();
-            button = de.query(By.css('dot-icon-button'));
-            titleButton = de.query(By.css('button'));
+            button = de.query(By.css('[data-testid="icon-button"]'));
+            titleButton = de.query(By.css('[data-testid="title-button"]'));
         });
 
         it(`should dot-icon button not be displayed --> null`, () => {
             executeDisabled(button, de);
-            expect(button.attributes.disabled).toBe('true');
+            expect(button.componentInstance.disabled).toBe(true);
         });
 
         it(`should title button not be displayed & not emit`, () => {

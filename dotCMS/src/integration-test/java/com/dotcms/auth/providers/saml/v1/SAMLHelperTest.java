@@ -26,7 +26,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import org.eclipse.jetty.security.LoginService;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -76,7 +75,7 @@ public class SAMLHelperTest extends IntegrationTestBase {
         }
 
         @Override
-        public void authentication(HttpServletRequest request, HttpServletResponse response, IdentityProviderConfiguration identityProviderConfiguration) {
+        public void authentication(HttpServletRequest request, HttpServletResponse response, IdentityProviderConfiguration identityProviderConfiguration, String relayState) {
 
         }
 
@@ -91,6 +90,13 @@ public class SAMLHelperTest extends IntegrationTestBase {
         }
 
         @Override
+        public Map<String, String> resolveAllAttributes(final HttpServletRequest request,
+                                                        final HttpServletResponse response,
+                                                        final IdentityProviderConfiguration identityProviderConfiguration) {
+            return null;
+        }
+
+            @Override
         public void renderMetadataXML(Writer writer, IdentityProviderConfiguration identityProviderConfiguration) {
 
         }

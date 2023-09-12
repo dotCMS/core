@@ -493,7 +493,7 @@ public class WorkflowHelper {
         final Optional<SystemActionWorkflowActionMapping> mapping = this.workflowAPI.findSystemActionByIdentifier(identifier, user);
 
         if (mapping.isPresent()) {
-            if (!this.workflowAPI.deleteSystemAction(mapping.get()).isPresent()) {
+            if (this.workflowAPI.deleteSystemAction(mapping.get()).isEmpty()) {
 
                 throw new InternalServerException("Could not delete the system action: " + identifier +
                         ", it may not exists");
@@ -1600,7 +1600,7 @@ public class WorkflowHelper {
                     workflowActionClass.setActionId(newAction.getId());
                     workflowActionClass.setClazz(NotifyAssigneeActionlet.class.getName());
                     try {
-                        workflowActionClass.setName(NotifyAssigneeActionlet.class.newInstance().getName());
+                        workflowActionClass.setName(NotifyAssigneeActionlet.class.getDeclaredConstructor().newInstance().getName());
                         workflowActionClass.setOrder(0);
                         this.workflowAPI.saveActionClass(workflowActionClass, user);
                     } catch (Exception e) {

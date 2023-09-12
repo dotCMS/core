@@ -2,11 +2,12 @@ package com.dotcms.experiments.business.result;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
-import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.filters.Filter.Order;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
+import com.dotcms.experiments.model.AbstractExperiment.Status;
+import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.DotPreconditions;
@@ -55,35 +56,45 @@ import java.util.Map;
  *
  * both part are merged using {@link CubeJSQuery.Builder#merge(CubeJSQuery, CubeJSQuery)} method.
  *
- * @see MetricExperimentResultQuery
+ * @see MetricExperimentResultsQuery
  */
 public enum ExperimentResultsQueryFactory {
 
     INSTANCE;
 
-    final static Lazy<Map<MetricType, MetricExperimentResultQuery>> experimentResultQueryHelpers =
+    final static Lazy<Map<MetricType, MetricExperimentResultsQuery>> experimentResultQueryHelpers =
             Lazy.of(() -> createHelpersMap());
 
 
-    private static Map<MetricType, MetricExperimentResultQuery> createHelpersMap() {
+    private static Map<MetricType, MetricExperimentResultsQuery> createHelpersMap() {
         return map(
-            MetricType.REACH_PAGE, new ReachPageExperimentResultQuery(),
-            MetricType.BOUNCE_RATE, new BounceRateExperimentResultQuery()
+            MetricType.EXIT_RATE, new PageViewExperimentResultQuery(),
+            MetricType.REACH_PAGE, new ReachPageExperimentResultsQuery(),
+            MetricType.BOUNCE_RATE, new PageViewExperimentResultQuery(),
+            MetricType.URL_PARAMETER, new PageViewExperimentResultQuery()
         );
     }
 
     private static CubeJSQuery createRootQuery(final Experiment experiment) {
+
+        DotPreconditions.isTrue(experiment.status() == Status.RUNNING || experiment.status() == Status.ENDED,
+                "Experiment must be running or Ended");
+
+        final String runningId = experiment.runningIds().getCurrent().orElseThrow().id();
+
         return new CubeJSQuery.Builder()
                 .dimensions("Events.experiment",
                         "Events.variant",
                         "Events.utcTime",
                         "Events.url",
                         "Events.lookBackWindow",
-                        "Events.eventType"
+                        "Events.eventType",
+                        "Events.runningId"
                 )
                 .order("Events.lookBackWindow", Order.ASC)
                 .order("Events.utcTime", Order.ASC)
                 .filter("Events.experiment", Operator.EQUALS, experiment.getIdentifier())
+                .filter("Events.runningId", Operator.EQUALS, runningId)
                 .build();
     }
 
@@ -110,9 +121,9 @@ public enum ExperimentResultsQueryFactory {
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
 
-        final Metric primaryGoal = goals.primary();
-        final MetricExperimentResultQuery metricExperimentResultQuery = experimentResultQueryHelpers.get()
-                .get(primaryGoal.type());
+        final Goal primaryGoal = goals.primary();
+        final MetricExperimentResultsQuery metricExperimentResultQuery = experimentResultQueryHelpers.get()
+                .get(primaryGoal.getMetric().type());
         return metricExperimentResultQuery.getCubeJSQuery(experiment);
     }
 }

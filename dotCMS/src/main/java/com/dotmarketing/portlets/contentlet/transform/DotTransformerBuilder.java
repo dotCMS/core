@@ -5,6 +5,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_INFO;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.DATETIME_FIELDS_TO_TIMESTAMP;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
@@ -198,7 +199,8 @@ public class DotTransformerBuilder {
      */
     public DotTransformerBuilder contentResourceOptions(final boolean allCategoriesInfo){
         optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME));
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME,
+                DATETIME_FIELDS_TO_TIMESTAMP));
         if(allCategoriesInfo){
           optionsHolder.remove(CATEGORIES_NAME);
           optionsHolder.add(CATEGORIES_INFO);

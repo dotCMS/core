@@ -4,8 +4,11 @@ import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.language.Language;
+import com.dotcms.model.views.CommonViews;
+import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -44,9 +47,9 @@ public interface LanguageAPI {
     @GET
     @Path("/{languageTag}")
     @Operation(
-            summary = " Returns the Language that matches the specified tag"
+            summary = " Returns the Language that matches the specified ISO code"
     )
-    ResponseEntityView<Language> getFromLanguageTag(@PathParam("languageTag") String languageTag);
+    ResponseEntityView<Language> getFromLanguageIsoCode(@PathParam("languageTag") String languageIsoCode);
 
     @GET
     @Operation(
@@ -58,19 +61,28 @@ public interface LanguageAPI {
     @Operation(
             summary = " Creates a new language in the system"
     )
-    ResponseEntityView<Language> create(Language language);
+    ResponseEntityView<Language> create(
+            @JsonView(CommonViews.ExternalView.class) Language language);
 
     @POST
     @Path("/{languageTag}")
     @Operation(
-            summary = " Creates a new language in the system given its tag"
+            summary = " Creates a new language in the system given its ISO code"
     )
-    ResponseEntityView<Language> create(@PathParam("languageTag") String languageTag);
+    ResponseEntityView<Language> create(@PathParam("languageTag") String languageIsoCode);
 
     @PUT
     @Path("/{languageId}")
     @Operation(
             summary = " Updates an existing language in the system"
     )
-    ResponseEntityView<Language> update(@PathParam("languageId") String languageId, Language language);
+    ResponseEntityView<Language> update(@PathParam("languageId") String languageId,
+            @JsonView(CommonViews.ExternalView.class) Language language);
+
+    @DELETE
+    @Path("/{languageId}")
+    @Operation(
+            summary = " Deletes an existing language from the system"
+    )
+    ResponseEntityView<String> delete(@PathParam("languageId") String languageId);
 }

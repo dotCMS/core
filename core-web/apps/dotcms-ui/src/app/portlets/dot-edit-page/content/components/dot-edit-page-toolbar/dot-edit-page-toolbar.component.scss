@@ -13,8 +13,6 @@
     display: flex;
 }
 
-::ng-deep {
-    .dot-favorite-page-highlight i {
-        color: $color-palette-primary;
-    }
+.dot-edit__experiments-results-tag {
+    cursor: pointer;
 }

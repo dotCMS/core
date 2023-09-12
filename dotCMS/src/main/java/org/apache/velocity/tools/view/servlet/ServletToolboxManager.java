@@ -140,7 +140,7 @@ public class ServletToolboxManager extends XMLToolboxManager
 	        // Register main service
 	        BundleContext context = HostActivator.instance().getBundleContext();
 	        if (context != null) {
-                Hashtable<String, String> props = new Hashtable<String, String>();
+                Hashtable<String, String> props = new Hashtable<>();
                 context.registerService(PrimitiveToolboxManager.class.getName(), this, props);
             }
     	}
@@ -173,7 +173,7 @@ public class ServletToolboxManager extends XMLToolboxManager
                 // if not under WEB-INF/toolbox.xml, try the classpath
                 if(is==null) {
                     LOG.info("Trying config file 'toolbox.xml'");
-                    is= ServletToolboxManager.class.getClassLoader().getResourceAsStream("toolbox.xml");
+                    is= Thread.currentThread().getContextClassLoader().getResourceAsStream("toolbox.xml");
                 }
                 if (is != null)
                 {
@@ -478,7 +478,7 @@ public class ServletToolboxManager extends XMLToolboxManager
                 if (lock == null)
                 {
                     // use a Boolean because it is serializable and small
-                    lock = new Boolean(true);
+                    lock = Boolean.valueOf(true);
                     session.setAttribute("session.mutex", lock);
                 }
             }

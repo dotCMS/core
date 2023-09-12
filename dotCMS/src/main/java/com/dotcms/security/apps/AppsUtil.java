@@ -1,10 +1,5 @@
 package com.dotcms.security.apps;
 
-import static com.dotcms.security.apps.AppsAPI.DOT_GLOBAL_SERVICE;
-import static com.dotcms.security.apps.AppsAPI.HOST_SECRET_KEY_SEPARATOR;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
-import static com.dotmarketing.util.UtilMethods.isSet;
-
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -19,6 +14,12 @@ import com.google.common.io.ByteStreams;
 import com.liferay.util.Base64;
 import com.liferay.util.Encryptor;
 import com.liferay.util.EncryptorException;
+import io.vavr.control.Try;
+import org.apache.commons.io.input.CharSequenceInputStream;
+import org.apache.commons.lang3.ArrayUtils;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -40,11 +41,18 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-import org.apache.commons.io.input.CharSequenceInputStream;
-import org.apache.commons.lang3.ArrayUtils;
 
+import static com.dotcms.security.apps.AppsAPI.DOT_GLOBAL_SERVICE;
+import static com.dotcms.security.apps.AppsAPI.HOST_SECRET_KEY_SEPARATOR;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.dotmarketing.util.UtilMethods.isSet;
+
+/**
+ * This class provides useful methods to interact with information related to Apps in dotCMS.
+ *
+ * @author Fabrizzio Araya
+ * @since Apr 15th, 2020
+ */
 public class AppsUtil {
 
     public static final String APPS_IMPORT_EXPORT_DEFAULT_PASSWORD = "APPS_IMPORT_EXPORT_DEFAULT_PASSWORD";
@@ -485,6 +493,24 @@ public class AppsUtil {
                 );
             }
         }
+    }
+
+    /**
+     * Returns the Secrets of a specific App for a given Site in dotCMS.
+     *
+     * @param appConfigId          The ID of the dotCMS App.
+     * @param site                 The {@link Host} object whose Secrets will be retrieved.
+     * @param fallbackOnSystemHost If {@code true}, this method will try to retrieve the Secrets from the System Host
+     *                             if they are not found in the given Site.
+     *
+     * @return An Optional with the {@link AppSecrets} object.
+     */
+    public static Optional<AppSecrets> getAppSecrets(final String appConfigId, final Host site, final boolean fallbackOnSystemHost) {
+        final Optional<AppSecrets> appSecrets = Try.of(() -> APILocator.getAppsAPI().getSecrets(appConfigId, fallbackOnSystemHost, site, APILocator.systemUser())).getOrNull();
+        if (appSecrets.isEmpty()) {
+            Logger.warn(AppsUtil.class, String.format("App ID '%s' for Site '%s' was not found", appConfigId, site));
+        }
+        return appSecrets;
     }
 
 }

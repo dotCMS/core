@@ -10,7 +10,6 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.google.common.base.CaseFormat;

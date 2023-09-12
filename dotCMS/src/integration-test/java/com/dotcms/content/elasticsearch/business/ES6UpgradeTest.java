@@ -134,7 +134,7 @@ public class ES6UpgradeTest extends IntegrationTestBase {
         try {
             final String fullClassName = String.format("%s$%s",getClass().getName(),className);
             Logger.info(this, fullClassName + " maps to file "+ fileName);
-            final QueryDataLoader queryData = QueryDataLoader.class.cast(Class.forName(fullClassName).newInstance());
+            final QueryDataLoader queryData = QueryDataLoader.class.cast(Class.forName(fullClassName).getDeclaredConstructor().newInstance());
             ignore = queryData.ignore();
             if(!ignore){
                 queryData.loadData();

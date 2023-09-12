@@ -10,7 +10,6 @@ interface TestsStatus {
 interface TypeLabels {
   unit: string
   integration_postgres: string
-  integration_mssql: string
   postman: string
 }
 
@@ -20,11 +19,10 @@ export interface OverallTestsStatus {
   message: string
 }
 
-const inputTypes = ['unit', 'integration_postgres', 'integration_mssql', 'postman']
+const inputTypes = ['unit', 'integration_postgres', 'postman']
 const typeLabels: TypeLabels = {
   unit: 'Unit Tests',
   integration_postgres: 'Integration Tests [Postgres]',
-  integration_mssql: 'Integration Tests [MSSQL]',
   postman: 'Postman Tests'
 }
 const PASSED = 'PASSED'

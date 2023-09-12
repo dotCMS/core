@@ -24,7 +24,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 	}
 	
 	public DbContentTypeTransformer(List<Map<String, Object>> initList){
-		List<ContentType> newList = new ArrayList<ContentType>();
+		List<ContentType> newList = new ArrayList<>();
 		for(Map<String, Object> map : initList){
 			newList.add(transform(map));
 		}

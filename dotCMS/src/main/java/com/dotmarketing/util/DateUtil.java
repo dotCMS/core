@@ -3,7 +3,6 @@ package com.dotmarketing.util;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
@@ -171,7 +170,7 @@ public class DateUtil {
 	 *		- {@link DateUtil}.DIFF_MINUTES
 	 */
 	public static HashMap<String, Long> diffDates(final Date from, final Date to) {
-		final HashMap<String, Long> result = new HashMap<String, Long>(8);
+		final HashMap<String, Long> result = new HashMap<>(8);
 
 		try {
 
@@ -351,7 +350,7 @@ public class DateUtil {
 
 			} else if (13 < diffDates.get(DateUtil.DIFF_DAYS)) {
 				sinceMessage =
-						LanguageUtil.format(locale, "x-weeks-ago", new Double(Math.floor(diffDates.get(DateUtil.DIFF_DAYS) / 7)).intValue());
+						LanguageUtil.format(locale, "x-weeks-ago", Double.valueOf(Math.floor(diffDates.get(DateUtil.DIFF_DAYS) / 7)).intValue());
 
 			} else if (6 < diffDates.get(DateUtil.DIFF_DAYS)) {
 				sinceMessage = LanguageUtil.get(locale, "last-week");

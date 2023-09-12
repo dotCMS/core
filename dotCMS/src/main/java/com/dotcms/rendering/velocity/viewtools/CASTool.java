@@ -26,7 +26,7 @@ public class CASTool implements ViewTool {
 
 	public boolean isCASUserLoggedIn(User user, HttpServletRequest req) {
 		
-		List<Role> userRoles = new ArrayList<Role>();
+		List<Role> userRoles = new ArrayList<>();
 		boolean isLDAPUser = false;
 		String userIdFromCAS = "";
 		try {

@@ -3,6 +3,7 @@ package com.dotcms.auth.providers.saml.v1;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
+import com.dotcms.rest.api.v1.user.UserHelper;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
 import com.dotcms.saml.DotSamlException;
@@ -439,7 +440,7 @@ public class SAMLHelper {
         this.addRolesFromIDP(user, attributesBean, identityProviderConfiguration, buildRolesStrategy);
 
         // Add SAML User role
-        this.addRole(user, DotSamlConstants.DOTCMS_SAML_USER_ROLE, true, true);
+        UserHelper.getInstance().addRole(user, DotSamlConstants.DOTCMS_SAML_USER_ROLE, true, true);
         Logger.debug(this, ()->"Default SAML User role has been assigned");
 
         // the only strategy that does not include the saml user role is the "idp"
@@ -453,7 +454,7 @@ public class SAMLHelper {
 
                 for (final String roleExtra : rolesExtra){
 
-                    this.addRole(user, roleExtra, false, false);
+                    UserHelper.getInstance().addRole(user, roleExtra, false, false);
                     Logger.debug(this, () -> "Optional user role: " +
                             this.getSamlConfigurationService().getConfigAsString(identityProviderConfiguration,
                                     SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE) + " has been assigned");
@@ -585,66 +586,9 @@ public class SAMLHelper {
                 roleObject.replaceFirst(removeRolePrefix, StringUtils.EMPTY):
                 roleObject;
 
-        addRole(user, roleKey, false, false);
+        UserHelper.getInstance().addRole(user, roleKey, false, false);
     }
 
-    private void addRole(final User user, final String roleKey, final boolean createRole, final boolean isSystem)
-            throws DotDataException {
-
-        Role role = this.roleAPI.loadRoleByKey(roleKey);
-
-        // create the role, in case it does not exist
-        if (role == null && createRole) {
-            Logger.info(this, "Role with key '" + roleKey + "' was not found. Creating it...");
-            role = createNewRole(roleKey, isSystem);
-        }
-
-        if (null != role) {
-            if (!this.roleAPI.doesUserHaveRole(user, role)) {
-                this.roleAPI.addRoleToUser(role, user);
-                Logger.debug(this, "Role named '" + role.getName() + "' has been added to user: " + user.getEmailAddress());
-            } else {
-                Logger.debug(this,
-                        "User '" + user.getEmailAddress() + "' already has the role '" + role + "'. Skipping assignment...");
-            }
-        } else {
-            Logger.debug(this, "Role named '" + roleKey + "' does NOT exists in dotCMS. Ignoring it...");
-        }
-    }
-
-    private Role createNewRole(String roleKey, boolean isSystem) throws DotDataException {
-        Role role = new Role();
-        role.setName(roleKey);
-        role.setRoleKey(roleKey);
-        role.setEditUsers(true);
-        role.setEditPermissions(false);
-        role.setEditLayouts(false);
-        role.setDescription("");
-        role.setId(UUIDGenerator.generateUuid());
-
-        // Setting SYSTEM role as a parent
-        role.setSystem(isSystem);
-        Role parentRole = roleAPI.loadRoleByKey(Role.SYSTEM);
-        role.setParent(parentRole.getId());
-
-        String date = DateUtil.getCurrentDate();
-
-        ActivityLogger.logInfo(ActivityLogger.class, getClass() + " - Adding Role",
-                "Date: " + date + "; " + "Role:" + roleKey);
-        AdminLogger.log(AdminLogger.class, getClass() + " - Adding Role", "Date: " + date + "; " + "Role:" + roleKey);
-
-        try {
-            role = roleAPI.save(role, role.getId());
-        } catch (DotDataException | DotStateException e) {
-            ActivityLogger.logInfo(ActivityLogger.class, getClass() + " - Error adding Role",
-                    "Date: " + date + ";  " + "Role:" + roleKey);
-            AdminLogger.log(AdminLogger.class, getClass() + " - Error adding Role",
-                    "Date: " + date + ";  " + "Role:" + roleKey);
-            throw e;
-        }
-
-        return role;
-    }
 
     private String toString(final String... rolePatterns) {
         return null == rolePatterns ? DotSamlConstants.NULL : Arrays.asList(rolePatterns).toString();

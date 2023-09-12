@@ -50,7 +50,7 @@ public class ContentletRelationships
 	 */
 	public ContentletRelationships(Contentlet contentlet) {
 		this.contentlet = contentlet;
-		this.relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
+		this.relationshipsRecords = new ArrayList<> ();
 	}
 
 

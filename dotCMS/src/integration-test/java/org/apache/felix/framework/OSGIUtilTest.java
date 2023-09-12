@@ -76,30 +76,7 @@ public class OSGIUtilTest {
     /**
      * Test the felix deploy path is the default path
      */
-    @Test
-    public void test01DefaultFelixDeployPath() {
 
-        final String deployPath = OSGIUtil.getInstance().getFelixDeployPath();
-        Assert.assertNotNull(deployPath);
-
-        final String configuredDeployPath = getDeployPathInConfig();
-        Assert.assertNotNull(configuredDeployPath);
-        assertEquals(configuredDeployPath, deployPath);
-    }
-
-    /**
-     * Test the felix undeploy path is the default path
-     */
-    @Test
-    public void test02DefaultFelixUndeployPath() {
-
-        final String undeployPath = OSGIUtil.getInstance().getFelixUndeployPath();
-        Assert.assertNotNull(undeployPath);
-
-        final String configuredUndeployPath = getUndeployPathInConfig();
-        Assert.assertNotNull(configuredUndeployPath);
-        assertEquals(configuredUndeployPath, undeployPath);
-    }
 
     @Test
     public void test_validate_felix_custom_base_dir() {

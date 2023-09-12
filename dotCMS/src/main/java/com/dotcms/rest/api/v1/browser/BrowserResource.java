@@ -7,20 +7,14 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,6 +28,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Optional;
+
+import static com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper.ACTIVE_FOLDER_ID;
 
 /**
  * Expose the Browser functionality such as get the contents in a folder
@@ -79,11 +75,12 @@ public class BrowserResource {
 
         final User user = initDataObject.getUser();
 
-        final Optional<String> selectedPathOpt = BrowserTreeHelper.getInstance().findSelectedFolder(request);
+        final Optional<String> selectedPathOpt = Optional.ofNullable((String) request.getSession().getAttribute(ACTIVE_FOLDER_ID));
         return selectedPathOpt.isPresent()?
                 Response.ok(new ResponseEntityView(APILocator.getFolderAPI().find(selectedPathOpt.get(), user, false))).build():
                 Response.status(Response.Status.NOT_FOUND).build();
     }
+
     /**
      * Set the select folder into the site browser, next time the site browser is opened will expand to selected folder
      * @param request  {@link HttpServletRequest}

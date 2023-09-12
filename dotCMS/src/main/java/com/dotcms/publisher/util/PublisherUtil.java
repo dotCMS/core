@@ -74,7 +74,7 @@ public class PublisherUtil {
 
 
 	public static Set<String> getPropertiesSet(List<Map<String, Object>> list, String property) {
-		Set<String> properties = new HashSet<String>();
+		Set<String> properties = new HashSet<>();
 
 		for(Map<String, Object> row : list) {
 			properties.add((String) row.get(property));
@@ -131,8 +131,8 @@ public class PublisherUtil {
      */
     public static List<String> getContentIds ( List<String> luceneQueries ) {
 
-        List<String> ret = new ArrayList<String>();
-        List<ContentletSearch> cs = new ArrayList<ContentletSearch>();
+        List<String> ret = new ArrayList<>();
+        List<ContentletSearch> cs = new ArrayList<>();
         for ( String luceneQuery : luceneQueries ) {
             try {
             	cs.addAll(APILocator.getContentletAPI().searchIndex( luceneQuery, 0, 0, "moddate", APILocator.getUserAPI().getSystemUser(), false ));
@@ -155,7 +155,7 @@ public class PublisherUtil {
 
         StringBuilder assetBuffer = new StringBuilder();
         List<String> assets;
-        assets = new ArrayList<String>();
+        assets = new ArrayList<>();
 
         if ( bundle.size() == 1 && bundle.get( 0 ).getType().equals( "contentlet" ) ) {
             assetBuffer.append( "+" + IDENTIFIER ).append( bundle.get( 0 ).getAsset() );

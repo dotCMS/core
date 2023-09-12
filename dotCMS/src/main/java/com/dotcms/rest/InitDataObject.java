@@ -11,7 +11,7 @@ public class InitDataObject {
 	private User user;
 
 	public InitDataObject() {
-		paramsMap = new HashMap<String, String>();
+		paramsMap = new HashMap<>();
 	}
 
 	public Map<String, String> getParamsMap() {

@@ -16,10 +16,11 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.util.Html;
-import java.util.Collections;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.WordUtils;
 import org.apache.velocity.exception.ParseErrorException;
+
+import java.util.List;
 
 
 public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.event.MethodExceptionEventHandler {
@@ -80,7 +81,7 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 
 			SystemMessageEventUtil.getInstance().
 					pushMessage(exception.getMessage(), systemMessageBuilder.create(),
-							Collections.singletonList(userId));
+							List.of(userId));
 		}
 		return messageAsString;
 	}
@@ -110,7 +111,7 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 		if (UtilMethods.isSet(userId)) {
 			SystemMessageEventUtil.getInstance().
 					pushMessage("",
-							systemMessageBuilder.create(), Collections.singletonList(userId));
+							systemMessageBuilder.create(), List.of(userId));
 		}
 		return messageAsString;
 	}

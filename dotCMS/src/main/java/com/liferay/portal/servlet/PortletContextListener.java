@@ -108,7 +108,7 @@ public class PortletContextListener implements ServletContextListener {
 
 				com.dotcms.repackage.javax.portlet.Portlet portletInstance =
 					(com.dotcms.repackage.javax.portlet.Portlet)contextClassLoader.loadClass(
-						portlet.getPortletClass()).newInstance();
+						portlet.getPortletClass()).getDeclaredConstructor().newInstance();
 
 
 

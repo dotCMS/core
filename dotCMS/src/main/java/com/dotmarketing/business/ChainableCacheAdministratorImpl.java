@@ -6,12 +6,9 @@ package com.dotmarketing.business;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
@@ -20,7 +17,6 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
-import com.dotmarketing.business.jgroups.NullTransport;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -130,7 +126,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
         localServer = Server.builder(localServer).withCachePort(Integer.parseInt(bindPort)).build();
 
-        List<Server> aliveServers = serverAPI.getAliveServers(Collections.singletonList(localServer.getServerId()));
+        List<Server> aliveServers = serverAPI.getAliveServers(List.of(localServer.getServerId()));
         aliveServers.add(localServer);
 
         List<String> initialHosts = new ArrayList<>();
@@ -232,7 +228,9 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
         group = group.toLowerCase();
 
         flushGroupLocalOnly(group, false);
-
+        // Distributed caches invalidate themselves we need to
+        // invalidate the other nodes in the cluster if any non distributed cache
+        // The group is not distributed if any of the caches is not distributed
         if (!cacheProviderAPI.isGroupDistributed(group)) {
             try {
                 getTransport().send("0:" + group);
