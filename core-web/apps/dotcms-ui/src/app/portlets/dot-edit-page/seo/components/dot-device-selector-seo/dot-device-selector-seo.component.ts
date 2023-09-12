@@ -161,7 +161,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         return this.dotDevicesService.get().pipe(
             take(1),
             mergeMap((devices: DotDevice[]) => {
-                this.linkToEditDeviceQueryParams.devices = devices[0].stInode;
+                this.linkToEditDeviceQueryParams.devices = devices[0]?.stInode;
 
                 return devices;
             }),
