@@ -319,7 +319,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @CloseDBIfOpened
     @Override
     public Set<String> getPersonalizationsForPage(final String pageID) throws DotDataException {
-        IHTMLPage pageId = APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageID));
+        IHTMLPage pageId = APILocator.getHTMLPageAssetAPI()
+                .fromContentlet(APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageID));
         return getPersonalizationsForPage(pageId);
     }
     
