@@ -507,7 +507,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230119MigrateContentToProperPersonaTagAndRemoveDupTagsTest.class,
         Task230426AlterVarcharLengthOfLockedByColTest.class,
         CMSUrlUtilTest.class,
-        WorkflowProcessorTest.class
+        WorkflowProcessorTest.class,
+        Task230713IncreaseDisabledWysiwygColumnSizeTest.class
 })
 public class MainSuite {
 
