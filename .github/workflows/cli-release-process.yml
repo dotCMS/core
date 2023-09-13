@@ -45,7 +45,7 @@ jobs:
           ./mvnw -B versions:set versions:commit -DnewVersion=$VERSION
           git config --global user.name "dcolina"
           git commit -a -m "Releasing version $VERSION"
-          git branch -b
+          git branch -l
           git push origin "$BRANCH"
 
   release:
