@@ -11,11 +11,13 @@ on:
       dry_run:
         description: 'Dry run'
         required: true
-        default: true
   push:
     branches:
       - '25951-implement-gha-generate-cli-release'
-
+env:
+  JAVA_VERSION: 11
+  JAVA_DISTRO: temurin
+  
 jobs:
   helloworld:
     name: Hello world
@@ -27,3 +29,27 @@ jobs:
           echo "version: ${{ github.event.inputs.version || 'latest' }}"
           echo "branch: ${{ github.event.inputs.branch || github.ref_name }}"
           echo "dry_run: ${{ github.event.inputs.dry_run }}"
+          
+  precheck:
+    name: Pre-check
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.vars.outputs.version }}
+      BRANCH: ${{ steps.vars.outputs.branch }}
+      DRY_RUN: ${{ github.event.inputs.dry_run }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Version
+        id: vars
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli
+        shell: bash
+        run: |
+          VERSION=${{ github.event.inputs.version || '1.1.0-SNAPSHOT' }}
+          BRANCH=${{ github.event.inputs.branch || '25951-implement-gha-generate-cli-release' }}
+          DRY_RUN=${{ github.event.inputs.dry_run || true }}
+          
+          echo "VERSION=$VERSION"
+          echo "BRANCH=$BRANCH"
+          echo "DRY_RUN=$DRY_RUN"
