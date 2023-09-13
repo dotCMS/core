@@ -45,8 +45,14 @@ distributions:
       - path: tools/dotcms-cli/cli/target/cli-{{projectVersion}}-runner.jar
         transform: tools/dotcms-cli/cli/target/dotcli-{{projectVersion}}.jar
 
-packagers:
-  brew:
+#packagers:
+#  brew:
+#    active: ALWAYS
+#    continueOnError: false
+#    multiPlatform: true
+
+announce:
+  slack:
     active: ALWAYS
-    continueOnError: false
-    multiPlatform: true
+    channel: '#jreleaser'
+    message: '🚀 {{projectNameCapitalized}} {{projectVersion}} has been released!'
