@@ -1,6 +1,10 @@
 name: CLI Release
 
 on:
+  pull_request:
+    branches:
+      - master
+      - release-*
   workflow_dispatch:
     inputs:
       version:
@@ -35,8 +39,8 @@ jobs:
         id: vars
         shell: bash
         run: |
-          VERSION=${{ github.event.inputs.version }}
-          BRANCH=${{ github.event.inputs.branch }}     
+          VERSION=${{ github.event.inputs.version || '1.1.0-SNAPSHOT' }}
+          BRANCH=${{ github.event.inputs.branch || '25951-implement-gha-generate-cli-release' }}     
           ./mvnw -B versions:set versions:commit -DnewVersion=$VERSION
           git config --global user.name "GitHub Action"
           git commit -a -m "Releasing version $VERSION"
@@ -86,4 +90,4 @@ jobs:
           JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
         working-directory: ${{ github.workspace }}
         run: |
-          tools/dotcms-cli/mvnw -Prelease jreleaser:release -Djreleaser.git.root.search=true -pl :dotCMS-cli -Djreleaser.dry.run=${{ needs.precheck.outputs.DRY_RUN }}   
+          tools/dotcms-cli/mvnw -Prelease jreleaser:release -Djreleaser.git.root.search=true -pl :dotCMS-cli -Djreleaser.dry.run=${{ github.event.inputs.dry_run || true }}   
