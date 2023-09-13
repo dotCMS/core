@@ -55,7 +55,7 @@ public class EntryCommand  {
     ExceptionHandlerImpl exceptionHandler;
 
     @Inject
-    ParamAuthenticator paramAuthenticator;
+    ParamAuthentication paramAuthenticator;
 
 }
 
