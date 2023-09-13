@@ -35,7 +35,7 @@ jobs:
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         shell: bash
         run: |
-          VERSION=${{ github.event.inputs.version || '1.1.0' }}
+          VERSION=${{ github.event.inputs.version || '1.1.1' }}
           BRANCH=${{ github.event.inputs.branch || '25951-implement-gha-generate-cli-release' }}
           DRY_RUN=${{ github.event.inputs.dry_run || false }}
           
