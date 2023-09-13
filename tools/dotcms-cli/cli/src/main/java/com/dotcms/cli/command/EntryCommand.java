@@ -54,6 +54,9 @@ public class EntryCommand  {
     @Inject
     ExceptionHandlerImpl exceptionHandler;
 
+    @Inject
+    ParamAuthenticator paramAuthenticator;
+
 }
 
 @ApplicationScoped

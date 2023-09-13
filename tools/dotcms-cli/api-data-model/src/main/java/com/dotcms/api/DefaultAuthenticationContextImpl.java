@@ -1,6 +1,7 @@
 package com.dotcms.api;
 
 
+import com.dotcms.api.client.ParamAuthentication;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
@@ -36,6 +37,9 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     @Inject
     RestClientFactory clientFactory;
 
+    @Inject
+    ParamAuthentication paramAuthentication;
+
     private String user;
 
     private char[] token;
@@ -60,6 +64,12 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
 
     @Override
     public Optional<char[]> getToken() {
+
+        final Optional<String> paramToken = paramAuthentication.getToken();
+        if(paramToken.isPresent()){
+            return Optional.of(paramToken.get().toCharArray());
+        }
+
         final Optional<String> optionalUser = getUser();
         if (optionalUser.isPresent()) {
             if(null != token  && token.length > 0){

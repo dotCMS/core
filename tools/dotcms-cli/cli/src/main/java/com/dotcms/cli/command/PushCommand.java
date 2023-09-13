@@ -1,5 +1,6 @@
 package com.dotcms.cli.command;
 
+import com.dotcms.cli.common.AuthenticationMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
@@ -40,6 +41,9 @@ public class PushCommand implements Callable<Integer>, DotCommand {
 
     @CommandLine.Mixin
     PushMixin pushMixin;
+
+    @CommandLine.Mixin
+    AuthenticationMixin authenticationMixin;
 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
