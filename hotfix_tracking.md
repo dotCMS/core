@@ -185,3 +185,4 @@ This maintenance release includes the following code fixes:
 153. https://github.com/dotCMS/core/issues/23082 : File Handles not getting cleared #23082
 154. https://github.com/dotCMS/core/issues/23359 : Display PDFs and Video in the content edit screen. #23359
 155. https://github.com/dotCMS/core/issues/23407 : provide stable path to tomcat directory in dotCMS build #23407
+156. https://github.com/dotCMS/core/issues/23481 : Update remote fetch IP Blacklist #23481
