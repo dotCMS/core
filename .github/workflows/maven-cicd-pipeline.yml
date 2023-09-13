@@ -314,13 +314,27 @@ jobs:
       - name: Prepare workflow data
         run: |
           AGGREGATE_STATUS="SUCCESS"
-          FIRST_FAIL_STEP=""
+          jobs_status="${{ toJson(needs) }}"
+          echo "job status=${jobs_status}"
+          while IFS=" " read -r key result; do
+            key=$(echo $key | tr -d ' {')
+            result=$(echo $result | tr -d ',')
+            
+            echo "Job: $key, Result: $result"
+            
+            if [[ $result == "cancelled" ]]; then
+              AGGREGATE_STATUS="CANCELLED"
+              break
+            elif [[ $result == "failure" ]]; then
+              AGGREGATE_STATUS="FAILURE"
+            fi
+          done < <(echo "$jobs_status" | awk -F': ' '/result:/ {print $1,$2}')
+                                          
+                                          
+                                          
+                                          
+                                          FIRST_FAIL_STEP=""
           FIRST_FAIL_MODULE=""
-          
-          # Check if the workflow was cancelled
-          if [[ "${{ github.event_name }}" == "workflow_run" && "${{ github.event.workflow_run.conclusion }}" == "cancelled" ]]; then
-            AGGREGATE_STATUS="CANCELLED"
-          fi
           
           echo '{' > workflow-data.json
           
