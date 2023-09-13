@@ -21,7 +21,7 @@ on:
         default: false
 env:
   JAVA_VERSION: 11
-  JAVA_DISTRO: corretto
+  JAVA_DISTRO: temurin
 
 jobs:
   precheck:
@@ -37,6 +37,7 @@ jobs:
 
       - name: Version
         id: vars
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli
         shell: bash
         run: |
           VERSION=${{ github.event.inputs.version || '1.1.0-SNAPSHOT' }}
