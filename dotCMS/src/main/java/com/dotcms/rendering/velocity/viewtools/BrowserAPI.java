@@ -34,12 +34,8 @@ import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class BrowserAPI {
@@ -53,6 +49,11 @@ public class BrowserAPI {
     		List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks, long languageId ) throws DotSecurityException, DotDataException {
     	return getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, languageId);
     }
+
+	public Map<String, Object> getFolderContent ( User usr, String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
+												  List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks, long languageId, long oneEntryLanguage ) throws DotSecurityException, DotDataException {
+		return getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, languageId, oneEntryLanguage);
+	}
 
     public Map<String, Object> getFolderContent ( User usr, String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
                                                   List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc, long languageId ) throws DotSecurityException, DotDataException {
@@ -182,6 +183,18 @@ public class BrowserAPI {
 			int offset, int maxResults, String filter, List<String> mimeTypes,
 			List<String> extensions, boolean showWorking, boolean showArchived, boolean noFolders,
 			boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks, long languageId)
+			throws DotSecurityException, DotDataException {
+
+		return getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions,
+				showWorking, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, languageId, 0);
+
+
+	}
+
+	private Map<String, Object> getFolderContent(User user, String folderId,
+												 int offset, int maxResults, String filter, List<String> mimeTypes,
+												 List<String> extensions, boolean showWorking, boolean showArchived, boolean noFolders,
+												 boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks, long languageId, long oneEntryLanguage)
 			throws DotSecurityException, DotDataException {
 
 		if (!UtilMethods.isSet(sortBy)) {
@@ -538,6 +551,11 @@ public class BrowserAPI {
 				sortByDesc);
 		Collections.sort(returnList, comparator);
 
+		// One entry by language
+		if (oneEntryLanguage > 0) {
+			listCleanup(returnList, oneEntryLanguage);
+		}
+
 		// Offsetting
 		if (offset < 0)
 			offset = 0;
@@ -550,6 +568,143 @@ public class BrowserAPI {
 		returnMap.put("total", returnList.size());
 		returnMap.put("list", returnList.subList(offset, offset + maxResults));
 		return returnMap;
+	}
+
+	/**
+	 * The list of content under a folder might include the identifier
+	 * several times, representing all the available languages for a single
+	 * content.
+	 * <p>
+	 * This method takes that list and <i>leaves only one identifier per
+	 * page</i>. This unique record represents either the content with the default
+	 * language ID, or the content with the next language ID in the list of system
+	 * languages.
+	 * </p>
+	 * * <p>
+	 * If the fallback properties are false <i>leaves only one identifier per
+	 * page that match the param languageId</i>.
+	 * </p>
+	 *
+	 * @param results
+	 *            - The full list of pages under a given path/directory.
+	 * @param languageId
+	 *            - Content Language of the results.
+	 */
+	private void listCleanup(List<Map<String, Object>> results, long languageId) {
+		Map<String, Integer> contentLangCounter = new HashMap<>();
+
+		// Examine only the pages with more than 1 assigned language
+		for (Map<String, Object> content : results) {
+			if ((boolean) content.get("isContentlet")) {
+				String ident = (String) content.get("identifier");
+				if (contentLangCounter.containsKey(ident)) {
+					int counter = contentLangCounter.get(ident);
+					contentLangCounter.put(ident, counter + 1);
+				} else {
+					contentLangCounter.put(ident, 1);
+				}
+			}
+		}
+
+		Set<String> identifierSet = contentLangCounter.keySet();
+		for (String identifier : identifierSet) {
+			int counter = contentLangCounter.get(identifier);
+			if (counter > 1) {
+				// Remove all languages except the default one
+				boolean isDeleted = removeAdditionalLanguages(identifier, results, languageId);
+				if (!isDeleted) {
+					// Otherwise, leave only the next available language
+					List<Language> languages = this.langAPI.getLanguages();
+					for (Language language : languages) {
+						if (language.getId() != languageId) {
+							isDeleted = removeAdditionalLanguages(identifier, results, language.getId());
+							if (isDeleted) {
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Removes all other contents from the given list that ARE NOT associated to
+	 * the specified language ID. In the end, the list will contain one content per
+	 * identifier with either the default language ID or the next available
+	 * language.
+	 *
+	 * @param identifier
+	 *            - The identifier of the page to clean up in the list.
+	 * @param resultList
+	 *            - The list of all pages that will be displayed.
+	 * @param languageId
+	 *            - The language ID of the page that will remain in the list.
+	 * @return If <code>true</code>, the identifier with the specified language
+	 *         ID was successfully cleaned up. If <code>false</code>, the
+	 *         identifier is not associated to the specified language ID and was
+	 *         not removed from the list.
+	 */
+	private boolean removeAdditionalLanguages(String identifier,
+											  List<Map<String, Object>> resultList, long languageId) {
+
+		boolean removeOtherLangs = false;
+
+		for (Map<String, Object> contentInfo : resultList) {
+			if ((boolean) contentInfo.get("isContentlet")) {
+				String ident = (String) contentInfo.get("identifier");
+				if (identifier.equals(ident)) {
+					long langId = (long) contentInfo.get("languageId");
+					// If specified language is found, remove all others
+					if (languageId == langId) {
+						removeOtherLangs = true;
+						break;
+					}
+				}
+			}
+		}
+
+		if (removeOtherLangs) {
+			removeLangOtherThan(resultList, identifier, languageId);
+		}
+
+		return removeOtherLangs;
+	}
+
+	/**
+	 * Removes all the pages from the list that are not associated to the
+	 * specified language. In the end, the list will contain one page per
+	 * identifier.
+	 *
+	 * @param resultList
+	 *            - The list of pages that will be displayed.
+	 * @param identifier
+	 *            - The identifier for the page to lookup in the list.
+	 * @param languageId
+	 *            - The language ID that <b>MUST REMAIN</b> in the list.
+	 */
+	private void removeLangOtherThan(List<Map<String, Object>> resultList,
+									 String identifier, long languageId) {
+		List<Integer> itemsToRemove = new ArrayList<Integer>();
+		for (int i = 0; i < resultList.size(); i++) {
+			Map<String, Object> pageInfo = resultList.get(i);
+			if ((boolean) pageInfo.get("isContentlet")) {
+				String ident = (String) pageInfo.get("identifier");
+				if (identifier.equals(ident)) {
+					long langId = (long) pageInfo.get("languageId");
+					if (languageId != langId) {
+						itemsToRemove.add(i);
+					}
+				}
+			}
+		}
+		int deletionCounter = 0;
+		for (int index : itemsToRemove) {
+			// Adjust index based on previous deletions
+			int indexAfterDeletion = index - deletionCounter;
+			resultList.remove(indexAfterDeletion);
+			deletionCounter++;
+		}
 	}
 
 }
