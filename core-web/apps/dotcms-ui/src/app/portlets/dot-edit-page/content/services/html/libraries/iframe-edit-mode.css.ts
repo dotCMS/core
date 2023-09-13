@@ -9,35 +9,35 @@ const grayLight = '#c5c5c5';
 export const getEditPageCss = (timestampId: string): string => {
     return `
     // GOOGLE FONTS
-    /* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+    /* Assistant-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
-        font-family: 'Roboto';
+        font-family: 'Assistant';
         font-style: normal;
         font-weight: 400;
         font-display: swap;
         src: local(''),
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+        url('/dotAdmin/assets/Assistant-Regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url('/dotAdmin/assets/Assistant-Regular.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
-    /* roboto-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+    /* Assistant-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
-        font-family: 'Roboto';
+        font-family: 'Assistant';
         font-style: normal;
         font-weight: 500;
         font-display: swap;
         src: local(''),
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+        url('/dotAdmin/assets/Assistant-SemiBold.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url('/dotAdmin/assets/Assistant-SemiBold.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
-    /* roboto-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+    /* Assistant-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
-        font-family: 'Roboto';
+        font-family: 'Assistant';
         font-style: normal;
         font-weight: 700;
         font-display: swap;
         src: local(''),
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+        url('/dotAdmin/assets/Assistant-Bold.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url('/dotAdmin/assets/Assistant-Bold.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
 
     ${timestampId} [data-dot-object="container"] {
@@ -271,7 +271,7 @@ export const getEditPageCss = (timestampId: string): string => {
         color: #000 !important;
         background-color: #ffffff !important;
         box-shadow: ${mdShadow1} !important;
-        font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif !important;
+        font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif !important;
         font-size: 13px !important;
         list-style: none !important;
         margin: 0 !important;

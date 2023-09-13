@@ -21,7 +21,8 @@ RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 COPY --from=dotcms --chown=$USER_NAME:$USER_GROUP /srv/ /srv/
 
 ARG DEBIAN_FRONTEND=noninteractive
-ENV PG_VERSION=15
+ARG UBUNTU_RELEASE=jammy
+ARG PG_VERSION=15
 ARG PGDATA=/data/postgres
 ARG DEBIAN_FRONTEND=noninteractive
 ARG DEBCONF_NONINTERACTIVE_SEEN=true
@@ -33,10 +34,10 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends bash zip unzip wget libtcnative-1\
     tzdata tini ca-certificates openssl libapr1 libpq-dev curl gnupg\
-    lsb-release vim libarchive-tools
+    vim libarchive-tools
 
 
-RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $UBUNTU_RELEASE-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 
 RUN wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null \
   && apt-get update -y \
