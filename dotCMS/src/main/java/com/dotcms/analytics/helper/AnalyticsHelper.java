@@ -29,7 +29,9 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
@@ -440,6 +442,38 @@ public class AnalyticsHelper {
                             AnalyticsHelper.get().extractMissingAnalyticsProps(e)))
                     .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())));
         }
+    }
+
+    /**
+     * Resolves a cache key from token client id and audience.
+     *
+     * @param clientId token client id
+     * @param audience token audience
+     * @return key to use as key to cache for a specific access token
+     */
+    public String resolveKey(final String clientId, final String audience) {
+        final List<String> keyChunks = new ArrayList<>();
+        keyChunks.add(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_KEY_PREFIX);
+
+        if (StringUtils.isNotBlank(clientId)) {
+            keyChunks.add(clientId);
+        }
+
+        if (StringUtils.isNotBlank(audience)) {
+            keyChunks.add(audience);
+        }
+
+        return String.join(StringPool.UNDERLINE, keyChunks);
+    }
+
+    /**
+     * Creates a cache key from given {@link AccessToken} evaluating several conditions.
+     *
+     * @param accessToken provided access token
+     * @return key to use as key to cache for a specific access token
+     */
+    public String resolveKey(final AccessToken accessToken) {
+        return resolveKey(accessToken.clientId(), accessToken.aud());
     }
 
 }
