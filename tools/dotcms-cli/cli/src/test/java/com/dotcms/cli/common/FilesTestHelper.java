@@ -264,6 +264,7 @@ public class FilesTestHelper {
      * @throws IOException If an error occurs while deleting the directory or its contents
      */
     protected void deleteTempDirectory(Path folderPath) throws IOException {
+        /*
         Files.walkFileTree(folderPath, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
@@ -279,6 +280,7 @@ public class FilesTestHelper {
                 return FileVisitResult.CONTINUE;
             }
         });
+         */
     }
 
 }
