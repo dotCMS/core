@@ -41,12 +41,14 @@ jobs:
         run: |
           VERSION=${{ github.event.inputs.version || '1.1.0-SNAPSHOT' }}
           BRANCH=${{ github.event.inputs.branch || '25951-implement-gha-generate-cli-release'}}
+
+          git checkout -b $BRANCH
           
           ./mvnw -B versions:set versions:commit -DnewVersion=$VERSION
           
           git config --global user.name "dcolina"
           git config --global user.email "daniel.colina@dotcms.com"
-          git checkout -b "$BRANCH"
+          
           git commit -a -m "Releasing version $VERSION"
           git push origin "$BRANCH"
 
@@ -57,7 +59,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: main
+          ref: master
           fetch-depth: 0
 
       - name: Setup Java
