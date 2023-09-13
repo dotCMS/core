@@ -64,8 +64,15 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
    @CommandLine.ArgGroup(exclusive = false,  heading = "\n@|bold,blue Filter/Search Options. |@\n")
    FilterOptions filter;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         if(null != filter){
             return list(filter);
         }

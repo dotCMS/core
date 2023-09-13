@@ -11,6 +11,8 @@ import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog
 import { DotSessionStorageService, PaginatorService } from '@dotcms/data-access';
 import { DotPageMode, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
 
+export const DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND = 'modes.persona.no.persona';
+
 /**
  * It is dropdown of personas, it handle pagination and global search
  *
@@ -42,6 +44,7 @@ export class DotPersonaSelectorComponent implements OnInit {
     personas: DotPersona[] = [];
     totalRecords: number;
     value: DotPersona;
+    defaultPersonaIdentifier = DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND;
     private personaSeachQuery: string;
 
     constructor(

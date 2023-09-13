@@ -261,7 +261,7 @@ public class PageResourceTest {
                 .folder(APILocator.getFolderAPI().findSystemFolder())
                 .host(host)
                 .setProperty("title", "content1")
-                .setProperty("body", "content1")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         final Persona persona    = new PersonaDataGen().keyTag("persona"+System.currentTimeMillis()).hostFolder(host.getIdentifier()).nextPersisted();
@@ -524,7 +524,7 @@ public class PageResourceTest {
 
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
         final Contentlet contentlet = contentletDataGen.setProperty("title", "title")
-                .setProperty("body", "body").languageId(languageId).nextPersisted();
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).languageId(languageId).nextPersisted();
 
 
         final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
@@ -965,7 +965,7 @@ public class PageResourceTest {
                 .folder(folder)
                 .host(host)
                 .setProperty("title", "content1")
-                .setProperty("body", "content1")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
@@ -973,7 +973,7 @@ public class PageResourceTest {
         contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         APILocator.getContentletAPI().publish(contentlet1, systemUser, false);
 
-        MultiTree multiTree = new MultiTree(page.getIdentifier(), container1.getIdentifier(), contentlet1.getIdentifier(),"1",0);
+        final MultiTree multiTree = new MultiTree(page.getIdentifier(), container1.getIdentifier(), contentlet1.getIdentifier(),"1",0);
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
         final Response response = pageResource
@@ -982,7 +982,7 @@ public class PageResourceTest {
 
         final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) ((ResponseEntityView) response.getEntity()).getEntity();
 
-        assertEquals(htmlPageAssetRendered.getHtml(), "<div>content1</div><div></div>");
+        assertEquals("Rendered HTML Page is NOT the same as the expected one", "<div>" + TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT + "</div><div></div>", htmlPageAssetRendered.getHtml());
 
         final ObjectMapper MAPPER = new ObjectMapper();
         final String layoutString =
@@ -1010,7 +1010,7 @@ public class PageResourceTest {
                 "}";
 
         final PageForm.Builder builder = MAPPER.readValue(layoutString, PageForm.Builder.class);
-        final Response layoutResponse = pageResource.saveLayout(request, this.response, builder.build());
+        pageResource.saveLayout(request, this.response, builder.build());
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
 
@@ -1071,7 +1071,7 @@ public class PageResourceTest {
                 .folder(folder)
                 .host(host)
                 .setProperty("title", "content1")
-                .setProperty("body", "content1")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
         contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
@@ -1079,7 +1079,7 @@ public class PageResourceTest {
         contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         APILocator.getContentletAPI().publish(contentlet1, systemUser, false);
 
-        MultiTree multiTree = new MultiTree(page.getIdentifier(), ((FileAssetContainer) container).getPath(), contentlet1.getIdentifier(),"1",0);
+        final MultiTree multiTree = new MultiTree(page.getIdentifier(), ((FileAssetContainer) container).getPath(), contentlet1.getIdentifier(),"1",0);
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
         final Response response = pageResource

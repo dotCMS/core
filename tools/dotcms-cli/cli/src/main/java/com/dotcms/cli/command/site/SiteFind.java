@@ -48,8 +48,14 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer>, 
     @CommandLine.Mixin
     InteractiveOptionMixin interactiveOption;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
         if(null != filter){
            return filter(filter);

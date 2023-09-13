@@ -56,8 +56,14 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
     @Parameters( paramLabel = "idOrName", index = "0", arity = "1", description = "Identifier or Name.")
     String idOrVar;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws IOException {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
 

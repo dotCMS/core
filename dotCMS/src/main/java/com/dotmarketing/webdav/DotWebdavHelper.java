@@ -48,12 +48,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.URLUtils;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
@@ -106,7 +101,6 @@ public class DotWebdavHelper {
 		}
 	};
 	private  org.apache.oro.text.regex.Pattern tempResourcePattern;
-	private File tempHolderDir;
 	private String tempFolderPath = "dotwebdav";
 
 	private HostAPI hostAPI = APILocator.getHostAPI();
@@ -142,16 +136,7 @@ public class DotWebdavHelper {
 			Logger.error(this,mfe.getMessage(),mfe);
 		}
 
-		try {
-			tempHolderDir = File.createTempFile("placeHolder", "dot");
-			String tp = tempHolderDir.getParentFile().getPath() + File.separator + tempFolderPath;
-			FileUtil.deltree(tempHolderDir);
-			tempHolderDir = new File(tp);
-			tempHolderDir.mkdirs();
-		} catch (IOException e1) {
-			Logger.error(this, "Unable to setup temp folder for webdav");
-			Logger.error(this, e1.getMessage() ,e1);
-		}
+
 		// Load the MD5 helper used to calculate signatures.
 		try {
 			md5Helper = MessageDigest.getInstance("MD5");
@@ -409,8 +394,7 @@ public class DotWebdavHelper {
 			Logger.error( this, "Error happened with uri: [" + url + "]", e);
 		}
 		Logger.debug(this, "Getting temp file from path " + url);
-		File f = new File(tempHolderDir.getPath() + url);
-		return f;
+		return new File(getTempDir().getPath() + url);
 	}
 
 	/**
@@ -485,7 +469,7 @@ public class DotWebdavHelper {
 			String p = APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath();
 			if ( p.contains( "/" ) )
 				p.replace( "/", File.separator );
-			File tempDir = new File( tempHolderDir.getPath() + File.separator + folderHost.getHostname() + p );
+			File tempDir = new File( getTempDir().getPath() + File.separator + folderHost.getHostname() + p );
 			p = identifierAPI.find(parentFolder.getIdentifier()).getPath();
 			if ( !p.endsWith( "/" ) )
 				p = p + "/";
@@ -516,7 +500,7 @@ public class DotWebdavHelper {
 	}
 
 	public File getTempDir () {
-		return tempHolderDir;
+		return new File(ConfigUtils.getAssetTempPath());
 	}
 
 	public String getHostName ( String uri ) {
@@ -541,13 +525,13 @@ public class DotWebdavHelper {
 		} catch (IOException e) {
 			Logger.error( this, "Error happened with uri: [" + path + "]", e);
 		}
-		if(path.startsWith(tempHolderDir.getPath()))
-			path = path.substring(tempHolderDir.getPath().length(), path.length());
+		if(path.startsWith(getTempDir().getPath()))
+			path = path.substring(getTempDir().getPath().length(), path.length());
 		if(path.startsWith("/") || path.startsWith("\\")){
 			path = path.substring(1, path.length());
 		}
 		path = path.replace("/", File.separator);
-		File f = new File(tempHolderDir.getPath() + File.separator + path);
+		File f = new File(getTempDir().getPath() + File.separator + path);
 		f.mkdirs();
 		return f;
 	}
@@ -588,7 +572,7 @@ public class DotWebdavHelper {
 	}
 
 	public File createTempFile(String path) throws IOException{
-		File file = new File(tempHolderDir.getPath() + path);
+		File file = new File(getTempDir().getPath() + path);
 		String p = file.getPath().substring(0,file.getPath().lastIndexOf(File.separator));
 		File f = new File(p);
 		f.mkdirs();

@@ -75,8 +75,14 @@ public class FilesLs extends AbstractFilesCommand implements Callable<Integer>, 
     @Inject
     RemoteTraversalService remoteTraversalService;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
         var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
         var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);

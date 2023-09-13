@@ -12,17 +12,11 @@ $nav-size: 80px;
     width: $nav-size;
     transition: background-color $basic-speed ease-in;
 
-    &.portlet-content {
-        top: $toolbar-height + $dot-secondary-toolbar-main-height;
-    }
-
-    &.portlet-layout {
-        top: $toolbar-height + $dot-secondary-toolbar-main-height;
-    }
-
+    &.portlet-content,
+    &.portlet-layout,
     &.portlet-rules,
     &.portlet-experiments {
-        top: $toolbar-height;
+        top: $toolbar-height + $dot-secondary-toolbar-main-height;
     }
 
     &.edit-page-variant-mode {

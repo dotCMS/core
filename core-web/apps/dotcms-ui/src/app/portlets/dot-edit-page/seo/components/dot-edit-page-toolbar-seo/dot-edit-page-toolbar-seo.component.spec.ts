@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { CommonModule, Location } from '@angular/common';
+import { CommonModule, DatePipe, Location } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -53,7 +53,8 @@ import {
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
-    ESContent
+    ESContent,
+    RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
@@ -180,7 +181,8 @@ describe('DotEditPageToolbarSeoComponent', () => {
                         'dot.common.cancel': 'Cancel',
                         'favoritePage.dialog.header': 'Add Favorite Page',
                         'dot.edit.page.toolbar.preliminary.results': 'Preliminary Results',
-                        running: 'Running'
+                        running: 'Running',
+                        'dot.common.until': 'until'
                     })
                 },
                 {
@@ -397,7 +399,14 @@ describe('DotEditPageToolbarSeoComponent', () => {
     describe('Go to Experiment results', () => {
         it('should show an experiment is running an go to results', (done) => {
             const location = de.injector.get(Location);
-            componentHost.runningExperiment = { pageId: 'pageId', id: 'id' } as DotExperiment;
+            componentHost.runningExperiment = {
+                pageId: 'pageId',
+                id: 'id',
+                scheduling: { endDate: 2 }
+            } as DotExperiment;
+
+            const expectedStatus =
+                'Running until ' + new DatePipe('en-US').transform(2, RUNNING_UNTIL_DATE_FORMAT);
 
             fixtureHost.detectChanges();
 
@@ -405,7 +414,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
 
             experimentTag.nativeElement.click();
 
-            expect(experimentTag.componentInstance.value).toEqual('Running');
+            expect(experimentTag.componentInstance.value).toEqual(expectedStatus);
             fixtureHost.whenStable().then(() => {
                 expect(location.path()).toEqual('/edit-page/experiments/pageId/id/reports');
                 done();

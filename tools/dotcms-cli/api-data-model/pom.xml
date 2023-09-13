@@ -5,7 +5,7 @@
     <parent>
         <artifactId>dotCMS-cli</artifactId>
         <groupId>com.dotcms</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -21,10 +21,8 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>2.9.1.Final</quarkus.platform.version>
-        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <testcontainers.version>1.17.6</testcontainers.version>
-        <skip.surefire.tests>false</skip.surefire.tests>
-        <skip.failsafe.tests>false</skip.failsafe.tests>
+        <failsafe-plugin.version>3.0.0-M5</failsafe-plugin.version>
         <test.failure.ignore>false</test.failure.ignore>
         <maven.plugin.jar.version>3.3.0</maven.plugin.jar.version>
     </properties>
@@ -148,26 +146,13 @@
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${surefire-plugin.version}</version>
-                <configuration>
-                    <testFailureIgnore>${test.failure.ignore}</testFailureIgnore>
-                    <skipTests>${skip.surefire.tests}</skipTests>
-                    <systemPropertyVariables>
-                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                        <maven.home>${maven.home}</maven.home>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${surefire-plugin.version}</version>
+                <version>${failsafe-plugin.version}</version>
                 <configuration>
                     <testFailureIgnore>${test.failure.ignore}</testFailureIgnore>
-                    <skipTests>${skip.failsafe.tests}</skipTests>
                     <includes>
-                        <include>**/*IntegrationTest.java</include>
+                        <include>**/*Test.java</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -213,7 +198,7 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${surefire-plugin.version}</version>
+                        <version>${failsafe-plugin.version}</version>
                         <executions>
                             <execution>
                                 <goals>

@@ -1222,32 +1222,42 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final List<Event> currentEvents = new ArrayList<>();
         final List<BrowserSession> sessions = new ArrayList<>();
 
-        for (final ResultSetItem resultSetItem : cubeJSResultSet) {
-            final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
-                    .map(Object::toString)
-                    .orElse(StringPool.BLANK);
+        try {
+            for (final ResultSetItem resultSetItem : cubeJSResultSet) {
+                final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
+                        .map(Object::toString)
+                        .orElse(StringPool.BLANK);
 
-            if (!currentLookBackWindow.equals(previousLookBackWindow)) {
-                if (!currentEvents.isEmpty()) {
-                    sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-                    currentEvents.clear();
+                if (!currentLookBackWindow.equals(previousLookBackWindow)) {
+                    if (!currentEvents.isEmpty()) {
+                        sessions.add(new BrowserSession(previousLookBackWindow,
+                                new ArrayList<>(currentEvents)));
+                        currentEvents.clear();
+                    }
                 }
-            }
 
-            currentEvents.add(new Event(resultSetItem.getAll(),
+                currentEvents.add(new Event(resultSetItem.getAll(),
                         EventType.get(resultSetItem.get("Events.eventType")
                                 .map(Object::toString)
-                                .orElseThrow(() -> new IllegalStateException("Type into Event is expected")))
-            ));
+                                .orElseThrow(() -> new IllegalStateException(
+                                        "Type into Event is expected")))
+                ));
 
-            previousLookBackWindow = currentLookBackWindow;
+                previousLookBackWindow = currentLookBackWindow;
+            }
+
+            if (!currentEvents.isEmpty()) {
+                sessions.add(
+                        new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
+            }
+
+            return sessions;
+        } catch (final Exception e) {
+            final String message = String.format("Error getting result for Experiment %s: %s", experiment.name(),
+                    e.getMessage());
+            Logger.error(this, message, e);
+            throw new DotDataException(message, e);
         }
-
-        if (!currentEvents.isEmpty()) {
-            sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-        }
-
-        return sessions;
     }
 
     @Override

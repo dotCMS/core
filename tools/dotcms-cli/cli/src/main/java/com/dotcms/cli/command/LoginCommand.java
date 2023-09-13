@@ -42,8 +42,15 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
     @Inject
     AuthenticationContext authenticationContext;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         output.info(String.format("Logging in as [@|bold,cyan %s|@]. ",user));
         authenticationContext.login(user, password);
         output.info(String.format("@|bold,green Successfully logged-in as |@[@|bold,blue %s|@]", user));
