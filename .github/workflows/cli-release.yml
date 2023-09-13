@@ -1,0 +1,26 @@
+name: dotCLI Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+      branch:
+        description: 'Branch to cut from'
+        required: true
+      dry_run:
+        description: 'Dry run'
+        required: true
+        default: true
+
+jobs:
+  helloworld:
+    name: Hello world
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hello world
+        run: |
+          echo "Hello world"
+          echo "version: ${{ github.event.inputs.version }}"
+          echo "branch: ${{ github.event.inputs.branch }}"
+          echo "dry_run: ${{ github.event.inputs.dry_run }}"
