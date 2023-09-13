@@ -17,8 +17,8 @@ on:
 #        default: master
       dry_run:
         description: 'Dry run'
-        required: false
-        default: false
+        required: true
+        default: true
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
@@ -41,12 +41,14 @@ jobs:
         shell: bash
         run: |
           VERSION=${{ github.event.inputs.version || '1.1.0-SNAPSHOT' }}
-          BRANCH=${{ github.event.inputs.branch || '25951-implement-gha-generate-cli-release' }}     
+          BRANCH=${{ github.event.inputs.branch || $GITHUB_REF_NAME }}
+          
           ./mvnw -B versions:set versions:commit -DnewVersion=$VERSION
+          
           git config --global user.name "dcolina"
+          git config --global user.email "daniel.colina@dotcms.com"
+          git branch -b $BRANCH
           git commit -a -m "Releasing version $VERSION"
-          git branch -l
-          echo "BRANCH=$GITHUB_REF_NAME"
           git push origin "$BRANCH"
 
   release:
