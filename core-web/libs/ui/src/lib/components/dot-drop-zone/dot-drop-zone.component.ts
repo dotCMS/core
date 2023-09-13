@@ -13,10 +13,13 @@ export interface DropZoneFileEvent {
     validity: DropZoneFileValidity;
 }
 
+export type DropZoneErrorType = 'fileTypeMismatch' | 'maxFileSizeExceeded';
+
 export interface DropZoneFileValidity {
     fileTypeMismatch: boolean;
     maxFileSizeExceeded: boolean;
     multipleFilesDropped: boolean;
+    errorType?: DropZoneErrorType;
     valid: boolean;
 }
 

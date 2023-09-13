@@ -1,22 +1,26 @@
 <div class="binary-field__container">
     <div class="binary-field__drop-zone" [ngClass]="{ 'binary-field__drop-zone--active': active }">
         <dot-drop-zone
+            [accept]="accept"
+            [maxFileSize]="maxFileSize"
             (fileDragOver)="setActiveState(true)"
             (fileDragLeave)="setActiveState(false)"
-            (fileDropped)="setActiveState(false)">
-            <div class="binary-field__drop-zone-icon">
-                <i class="pi pi-upload" style="font-size: 2rem"></i>
+            (fileDropped)="onFileDropped($event)">
+            <!-- Todo convert this into a Component to Clean HTML -->
+            <div [ngClass]="['binary-field__drop-zone-icon', dropZoneMessage.severity]">
+                <i [ngClass]="dropZoneMessage.icon" style="font-size: 2rem"></i>
             </div>
-
-            <span class="binary-field__text"
-                >Drag and Drop or
-                <span class="binary-field__drop-zone-link" (click)="openFileSelector()"
-                    >Choose File</span
-                >
-                to upload</span
-            >
+            <span
+                class="binary-field__drop-zone-message"
+                #message
+                [innerHTML]="dropZoneMessage.message | dm : dropZoneMessage.args"></span>
         </dot-drop-zone>
-        <input class="binary-field__input" #inputFile type="file" />
+        <input
+            class="binary-field__input"
+            #inputFile
+            [accept]="accept"
+            (change)="onSelectFile($event)"
+            type="file" />
     </div>
 
     <div class="binary-field__actions">
@@ -31,7 +35,7 @@
     </div>
 </div>
 
-<div class="binary-field__helper">
+<div class="binary-field__helper" *ngIf="helperLabel">
     <i class="pi pi-info-circle binary-field__helper-icon"></i>
-    <span>This is an example of a helper</span>
+    <span>{{ helperLabel }}</span>
 </div>

@@ -53,17 +53,30 @@
         cursor: default;
         flex-grow: 1;
 
-        &-link {
-            text-decoration: underline;
-            cursor: pointer;
-            color: $color-palette-primary-500;
-        }
-
         &-icon {
-            color: $color-palette-secondary-500;
+            &.info {
+                color: $color-palette-secondary-500;
+                background: $color-palette-secondary-200;
+            }
+
+            &.error {
+                color: $color-alert-yellow;
+                background: $color-alert-yellow-light;
+            }
+
             border-radius: 50%;
             padding: 1rem;
-            background: $color-palette-secondary-200;
+        }
+
+        &-message {
+            text-align: center;
+            line-height: 140%;
+
+            ::ng-deep a {
+                text-decoration: underline;
+                cursor: pointer;
+                color: $color-palette-primary-500;
+            }
         }
 
         &--active {
