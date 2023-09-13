@@ -24,6 +24,11 @@ jobs:
             type=sha,enable=true,priority=100,prefix=5.1.6.k_,suffix=_SNAPSHOT,format=short
             type=raw,value=5.1.6.k_latest_SNAPSHOT
       -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: amd64,arm64
+      -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       -
@@ -38,6 +43,7 @@ jobs:
         with:
           push: true
           context: docker/images/dotcms
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           pull: true
           no-cache: true
