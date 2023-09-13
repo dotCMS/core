@@ -1,0 +1,39 @@
+@use "variables" as *;
+
+.drop-zone-message {
+    &__container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        height: 100%;
+        padding: 1rem;
+    }
+
+    &__icon {
+        &--info {
+            color: $color-palette-secondary-500;
+            background: $color-palette-secondary-200;
+        }
+
+        &--error {
+            color: $color-alert-yellow;
+            background: $color-alert-yellow-light;
+        }
+
+        border-radius: 50%;
+        padding: 1rem;
+    }
+
+    &__text {
+        text-align: center;
+        line-height: 140%;
+
+        ::ng-deep a {
+            text-decoration: underline;
+            cursor: pointer;
+            color: $color-palette-primary-500;
+        }
+    }
+}

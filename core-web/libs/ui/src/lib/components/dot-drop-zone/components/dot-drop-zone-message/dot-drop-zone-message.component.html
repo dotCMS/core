@@ -1,0 +1,8 @@
+<div class="drop-zone-message__container">
+    <div class="drop-zone-message__icon drop-zone-message__icon--{{ severity }}">
+        <i [ngClass]="icon" style="font-size: 2rem"></i>
+    </div>
+    <div class="drop-zone-message__text">
+        <div [innerHTML]="safeHTML"></div>
+    </div>
+</div>

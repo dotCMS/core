@@ -53,32 +53,6 @@
         cursor: default;
         flex-grow: 1;
 
-        &-icon {
-            &.info {
-                color: $color-palette-secondary-500;
-                background: $color-palette-secondary-200;
-            }
-
-            &.error {
-                color: $color-alert-yellow;
-                background: $color-alert-yellow-light;
-            }
-
-            border-radius: 50%;
-            padding: 1rem;
-        }
-
-        &-message {
-            text-align: center;
-            line-height: 140%;
-
-            ::ng-deep a {
-                text-decoration: underline;
-                cursor: pointer;
-                color: $color-palette-primary-500;
-            }
-        }
-
         &--active {
             border-radius: $border-radius-md;
             border: 1.5px dashed $color-palette-secondary-500;
@@ -90,11 +64,6 @@
         dot-drop-zone {
             height: 100%;
             width: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 1rem;
         }
     }
 

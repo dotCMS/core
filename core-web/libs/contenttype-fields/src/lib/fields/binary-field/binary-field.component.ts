@@ -1,20 +1,14 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 import { NgClass, NgIf } from '@angular/common';
-import {
-    AfterViewInit,
-    ChangeDetectionStrategy,
-    Component,
-    ElementRef,
-    Input,
-    ViewChild
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, Input, ViewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
 import {
     DotDropZoneComponent,
+    DotDropZoneMessageComponent,
     DotMessagePipe,
     DropZoneFileEvent,
     DropZoneFileValidity
@@ -32,35 +26,23 @@ import { DropZoneMessage, getDropZoneMessage } from '../../utils/binary-field-ut
         DialogModule,
         DotDropZoneComponent,
         MonacoEditorModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotDropZoneMessageComponent
     ],
     templateUrl: './binary-field.component.html',
     styleUrls: ['./binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BinaryFieldComponent implements AfterViewInit {
+export class BinaryFieldComponent {
     //Inputs
     @Input() accept: string[];
     @Input() maxFileSize: number;
     @Input() helperLabel: string;
 
     @ViewChild('inputFile', { static: true }) inputFile: ElementRef;
-    @ViewChild('message', { static: true }) messageHTML: ElementRef;
 
     active = false;
     dropZoneMessage: DropZoneMessage = getDropZoneMessage('default');
-
-    ngAfterViewInit(): void {
-        // TODO: Consider a component state or service to handle this
-        const observer = new MutationObserver(() => this.bindChooseFileBtn());
-        // Start observing the target node for configured mutations
-        observer.observe(this.messageHTML.nativeElement, {
-            childList: true,
-            characterData: true,
-            subtree: true
-        });
-        this.bindChooseFileBtn();
-    }
 
     setActiveState(value: boolean) {
         this.active = value;
@@ -104,12 +86,11 @@ export class BinaryFieldComponent implements AfterViewInit {
         }
     }
 
-    onSelectFile(_event) {
-        // TODO: Implement
+    openChooseFileDialog() {
+        this.inputFile.nativeElement.click();
     }
 
-    private bindChooseFileBtn() {
-        const chooseFileBtn: HTMLAnchorElement = this.messageHTML.nativeElement.querySelector('a');
-        chooseFileBtn.addEventListener('click', () => this.inputFile.nativeElement.click());
+    onSelectFile(_event) {
+        // TODO: Implement
     }
 }

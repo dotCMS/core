@@ -6,14 +6,12 @@
             (fileDragOver)="setActiveState(true)"
             (fileDragLeave)="setActiveState(false)"
             (fileDropped)="onFileDropped($event)">
-            <!-- Todo convert this into a Component to Clean HTML -->
-            <div [ngClass]="['binary-field__drop-zone-icon', dropZoneMessage.severity]">
-                <i [ngClass]="dropZoneMessage.icon" style="font-size: 2rem"></i>
-            </div>
-            <span
-                class="binary-field__drop-zone-message"
-                #message
-                [innerHTML]="dropZoneMessage.message | dm : dropZoneMessage.args"></span>
+            <dot-drop-zone-message
+                [message]="dropZoneMessage.message"
+                [icon]="dropZoneMessage.icon"
+                [severity]="dropZoneMessage.severity"
+                [messageArgs]="dropZoneMessage.args"
+                (chooseFile)="openChooseFileDialog()"></dot-drop-zone-message>
         </dot-drop-zone>
         <input
             class="binary-field__input"

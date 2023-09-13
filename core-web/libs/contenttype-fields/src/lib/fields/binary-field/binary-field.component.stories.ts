@@ -9,7 +9,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotDropZoneComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotDropZoneComponent, DotDropZoneMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { BinaryFieldComponent } from './binary-field.component';
 
@@ -28,7 +28,8 @@ export default {
                 DialogModule,
                 MonacoEditorModule,
                 DotDropZoneComponent,
-                DotMessagePipe
+                DotMessagePipe,
+                DotDropZoneMessageComponent
             ],
             providers: [
                 {
