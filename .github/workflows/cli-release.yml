@@ -46,7 +46,7 @@ jobs:
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         shell: bash
         run: |
-          VERSION=${{ github.event.inputs.version || '1.2.0-SNAPSHOT' }}
+          VERSION=${{ github.event.inputs.version || '1.3.0-SNAPSHOT' }}
           BRANCH=${{ github.event.inputs.branch || '25951-implement-gha-generate-cli-release' }}
           DRY_RUN=${{ github.event.inputs.dry_run || true }}
           
@@ -112,4 +112,6 @@ jobs:
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
         working-directory: ${{ github.workspace }}
         run: |
-          tools/dotcms-cli/mvnw -Prelease jreleaser:release -Djreleaser.git.root.search=true -pl :dotcms-cli -Djreleaser.dry.run=${{ needs.precheck.outputs.DRY_RUN }}             
+          pwd
+          ls -la
+          tools/dotcms-cli/mvnw -Prelease jreleaser:full-release -Djreleaser.dry.run=${{ needs.precheck.outputs.DRY_RUN }} -Djreleaser.git.root.search=true -pl :dotCMS-cli
