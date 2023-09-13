@@ -28,6 +28,11 @@ RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${B
 RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
 RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 
+# ensure only one tomcat directory exists
+RUN ["/bin/bash", "-c", "[ $(ls -d /srv/dotserver/tomcat-* | wc -l) == 1 ] || exit 1" ]
+# provide stable path to tomcat dir
+RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat
+
 # ----------------------------------------------
 # Stage 2:  Construct our container using the minimal-java image
 #           and copying the prebuilt dotcms
