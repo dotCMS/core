@@ -1,13 +1,6 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.util.ConversionUtils;
-import com.dotcms.variant.VariantAPI;
-import com.dotmarketing.util.UtilMethods;
-import java.io.File;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -24,8 +17,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.TagUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import io.vavr.control.Try;
+
+import java.io.File;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author will
