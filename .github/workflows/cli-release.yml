@@ -12,6 +12,9 @@ on:
         description: 'Dry run'
         required: true
         default: true
+  push:
+    branches:
+      - '25951-implement-gha-generate-cli-release'
 
 jobs:
   helloworld:
@@ -21,6 +24,6 @@ jobs:
       - name: Hello world
         run: |
           echo "Hello world"
-          echo "version: ${{ github.event.inputs.version }}"
-          echo "branch: ${{ github.event.inputs.branch }}"
+          echo "version: ${{ github.event.inputs.version || 'latest' }}"
+          echo "branch: ${{ github.event.inputs.branch || github.ref_name }}"
           echo "dry_run: ${{ github.event.inputs.dry_run }}"
