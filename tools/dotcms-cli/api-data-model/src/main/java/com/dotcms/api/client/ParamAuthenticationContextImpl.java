@@ -9,14 +9,14 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class ParamAuthenticationContextImpl implements ParamAuthentication {
 
-    WeakReference<String> token;
+    WeakReference<char[]> token;
 
     @Override
-    public void setToken(String token) {
+    public void setToken(final char[] token) {
         this.token = new WeakReference<>(token);
     }
 
-    public Optional<String> getToken() {
+    public Optional<char[]> getToken() {
         if (null == token || null == token.get()) {
             return Optional.empty();
         }

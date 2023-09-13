@@ -65,11 +65,12 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     @Override
     public Optional<char[]> getToken() {
 
-        final Optional<String> paramToken = paramAuthentication.getToken();
+        //This injects the token from the command line if present
+        final Optional<char[]> paramToken = paramAuthentication.getToken();
         if(paramToken.isPresent()){
-            return Optional.of(paramToken.get().toCharArray());
+            return paramToken;
         }
-
+        //Otherwise we try to load it from the service manager
         final Optional<String> optionalUser = getUser();
         if (optionalUser.isPresent()) {
             if(null != token  && token.length > 0){
@@ -77,9 +78,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
             }
             final String userString = optionalUser.get();
             final Optional<char[]> optionalToken = loadToken(getServiceKey(), userString);
-            optionalToken.ifPresent(s -> {
-                token = s;
-            });
+            optionalToken.ifPresent(s -> token = s);
             return optionalToken;
         }
         return Optional.empty();
