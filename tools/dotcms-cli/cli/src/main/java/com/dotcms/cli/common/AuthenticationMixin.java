@@ -8,6 +8,9 @@ import picocli.CommandLine.IParameterConsumer;
 import picocli.CommandLine.Model.ArgSpec;
 import picocli.CommandLine.Model.CommandSpec;
 
+/**
+ * This class is used to pass the token from the CLI to the API client. If the
+ */
 public class AuthenticationMixin {
 
     @CommandLine.Option(names = {"--token"},
