@@ -9,8 +9,7 @@ on:
       branch:
         description: 'Branch to cut from'
         required: true
-#        default: 25951-implement-gha-generate-cli-release
-#        default: master
+
       dry_run:
         description: 'Dry run'
         required: true
@@ -47,7 +46,6 @@ jobs:
           
           git config --global user.name "dcolina"
           git config --global user.email "daniel.colina@dotcms.com"
-#          git branch -b $BRANCH
           git commit -a -m "Releasing version $VERSION"
           git push origin "$BRANCH"
 
