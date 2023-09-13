@@ -1017,7 +1017,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void resultWithPaginationWhenTheLastPageIsNotComplte() throws DotDataException, DotSecurityException {
+    public void resultWithPaginationWhenTheLastPageIsNotComplete() throws DotDataException, DotSecurityException {
 
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -1126,6 +1126,123 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 Assert.assertEquals(500, resultResumeItem.getMultiBySession());
             }
         } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have four pages: A, B, C and D
+     * - You create an {@link Experiment} with one Variant using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D.
+     * - You have 500 Sessions, 250 for each Variant (Default and Variant), in each session you have the follow page_view:
+     * A, B, D, C, A, B, D, C and A.
+     * this is 4500 Events it means 5 pages but the last one jut it going to have 500 events
+     * - But ine of the Pagination Request to CubeJS is going to fail
+     *
+     * Should: Got a DotDataException
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void resultWithPaginationWhenOnePageFailed() throws DotDataException, DotSecurityException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageB, pageD);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+
+        final List<Map<String, String>> cubeJsQueryAllData = new ArrayList<>();
+
+        for (int i= 0; i < 500; i++) {
+            final String variantToUse = i % 2 == 0 ? variantName : "DEFAULT";
+            final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                    experiment, variantToUse, pageA, pageB, pageD, pageC, pageA, pageB, pageD, pageC, pageA);
+
+            cubeJsQueryAllData.addAll(cubeJsQueryData);
+        }
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        final Experiment experimentStarted = APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+
+        final int failedRequest = (int) Math.random() * 5;
+
+        int offset = 0;
+        for (int i = 0; i < 5; i++) {
+
+            final int totalItems = i ==4 ? 500 : 1000;
+            final List<Map<String, String>> page = new ArrayList<>(
+                    cubeJsQueryAllData.subList(offset, offset + totalItems));
+
+            final Map<String, List<Map<String, String>>> pageCubeJsQueryResult =  map("data", page);
+
+            final String cubeJSQueryExpected = getExpectedPageReachQuery(experimentStarted, 1000, offset);
+
+            if (i == failedRequest) {
+                addFailedContext(mockhttpServer, cubeJSQueryExpected);
+            } else {
+                addContext(mockhttpServer, cubeJSQueryExpected,
+                        JsonUtil.getJsonStringFromObject(pageCubeJsQueryResult));
+            }
+
+            offset += 1000;
+        }
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "2250"),
+                map("Events.variant", "DEFAULT", "Events.count", "2250")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        final String countExpectedPageReachQuery = getCountExpectedPageReachQuery(experiment);
+        final List<Map<String, Object>> countResponseExpected = list(
+                map("Events.count", "4500")
+        );
+
+        addContext(mockhttpServer, countExpectedPageReachQuery,
+                JsonUtil.getJsonStringFromObject(map("data", countResponseExpected)));
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
+
+            setAnalyticsHelper(mockAnalyticsHelper);
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
+
+            throw new AssertionError("Must throw an exception");
+        } catch (DotDataException e) {
+            //expected
+
+            final String message = "Error getting result for Experiment " + experiment.name() + ": It is not possible to get all the Events from the CubeJS Server";
+            assertEquals(message, e.getMessage());
+        }finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
 
             IPUtils.disabledIpPrivateSubnet(false);
@@ -5433,6 +5550,22 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .responseStatus(HttpURLConnection.HTTP_OK)
                 .mustBeCalled()
                 .responseBody(responseBody)
+                .build();
+
+        mockHttpServer.addContext(mockHttpServerContext);
+    }
+
+    private static void addFailedContext(final MockHttpServer mockHttpServer, final String expectedQuery) {
+
+        final MockHttpServerContext mockHttpServerContext = new  MockHttpServerContext.Builder()
+                .uri("/cubejs-api/v1/load")
+                .requestCondition((requestContext) ->
+                                String.format( "Cube JS Query is not right, \nExpected: %s \nCurrent %s",
+                                        expectedQuery, requestContext.getRequestParameter("query")
+                                                .orElse(StringPool.BLANK)),
+                        requestContext -> isEquals(expectedQuery, requestContext))
+                .responseStatus(HttpURLConnection.HTTP_INTERNAL_ERROR)
+                .mustBeCalled()
                 .build();
 
         mockHttpServer.addContext(mockHttpServerContext);
