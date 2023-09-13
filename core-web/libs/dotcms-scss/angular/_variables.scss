@@ -3,6 +3,7 @@
 @forward "../shared/fonts";
 @forward "../shared/shadows";
 @forward "../shared/spacing";
+@forward "../shared/mixins";
 
 @use "sass:math";
 @use "../shared/common" as *;
@@ -10,6 +11,7 @@
 @use "../shared/fonts" as *;
 @use "../shared/shadows" as *;
 @use "../shared/spacing" as *;
+@use "../shared/mixins" as *;
 
 $input-border-color-hover: $color-palette-primary;
 $input-inset-shadow: inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary,

@@ -2830,6 +2830,12 @@
   content: "\f2e0";
 }
 
+/*
+  ========================== WARNING ==========================
+  Don't use this in your components, use $font-size-md instead,
+  this is only for the root element
+  =============================================================
+*/
 *,
 *:before,
 *:after {
@@ -3050,6 +3056,12 @@
   --empty-message: "";
 }
 
+/*
+  ========================== WARNING ==========================
+  Don't use this in your components, use $font-size-md instead,
+  this is only for the root element
+  =============================================================
+*/
 .dojoDndItem {
   padding: 0;
 }
@@ -3341,7 +3353,7 @@
   background-color: #ffffff;
   border: solid 1.5px #d1d4db;
   color: #14151a;
-  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   padding: 0.5rem;
   font-size: 1rem;
 }
@@ -5156,7 +5168,7 @@
 }
 .dojoxGrid .dojoxGridRow .dojoxGridRowTable .dojoxGridCell,
 .dojoxGrid .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
-  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   padding: 10px 0.5rem;
 }
 .dojoxGrid .dojoxGridPaginator {
@@ -8878,7 +8890,7 @@ Styles for commons fields along the backend
   background: var(--color-palette-primary-200);
   border-radius: 0.25rem;
   color: var(--color-palette-primary-500);
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -8892,7 +8904,7 @@ Styles for commons fields along the backend
 .tagLink:after {
   color: var(--color-palette-primary-500);
   content: "✕";
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   text-align: center;
 }
 .tagLink:hover {
@@ -8931,7 +8943,7 @@ Styles for commons fields along the backend
 #label, .fieldName, dl.vertical dt label {
   color: #14151a;
   display: block;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   margin-bottom: 0.25rem;
 }
 
@@ -10365,8 +10377,8 @@ a.category_higlighted, a.tag_higlighted {
   display: none;
 }
 .context-menu__item .arrowRightIcon {
-  font-size: 0.875rem;
-  margin-top: -0.4375rem;
+  font-size: 0.75rem;
+  margin-top: -0.375rem;
   position: absolute;
   right: 0.5rem;
   top: 50%;
@@ -11099,13 +11111,34 @@ Resize Handle
   border: solid 1px #f3f3f4;
   border-radius: 0.375rem;
   color: #6c7389;
-  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 1rem;
   line-height: 2.5rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
 }
 
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local(""), url("/dotAdmin/assets/Assistant-Regular.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-Regular.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: local(""), url("/dotAdmin/assets/Assistant-SemiBold.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-SemiBold.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local(""), url("/dotAdmin/assets/Assistant-Bold.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-Bold.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
 @font-face {
   font-family: "Material Icons";
   font-style: normal;
@@ -11123,32 +11156,8 @@ Resize Handle
   border-top: 1px solid #d1d4db;
 }
 
-/* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-  font-family: "Roboto";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: local(""), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2") format("woff2"), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
-/* roboto-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-  font-family: "Roboto";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: local(""), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff2") format("woff2"), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
-/* roboto-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-  font-family: "Roboto";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: local(""), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff2") format("woff2"), url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
 html {
-  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 1rem;
   color: #14151a;
 }
@@ -11174,5 +11183,3 @@ body {
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
 }
-
-/*# sourceMappingURL=dotcms.css.map */

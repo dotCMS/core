@@ -585,7 +585,7 @@ describe('DotPageStateService', () => {
                 const subscribeCallback = jasmine.createSpy('spy');
                 service.haveContent$.subscribe(subscribeCallback);
 
-                expect(subscribeCallback).toHaveBeenCalledWith(false);
+                expect(subscribeCallback).toHaveBeenCalledWith(true);
 
                 service.updatePageStateHaveContent({
                     type: PageModelChangeEventType.REMOVE_CONTENT,
