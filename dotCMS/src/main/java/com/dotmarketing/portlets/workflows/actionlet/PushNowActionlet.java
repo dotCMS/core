@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-@Actionlet(pushPublish = true)
 public class PushNowActionlet extends WorkFlowActionlet {
 
     private static final long serialVersionUID = 1L;
@@ -73,13 +72,19 @@ public class PushNowActionlet extends WorkFlowActionlet {
             for (String name : whereToSend) {
                 if (UtilMethods.isSet(name)) {
                     name = name.trim();
-                    Environment e = APILocator.getEnvironmentAPI().findEnvironmentByName(name);
+                    final Environment e = APILocator.getEnvironmentAPI().findEnvironmentByName(name);
                     if (e != null) {
 
                         envsToSendTo.add(e);
+                    }else {
+                        Logger.error(PushNowActionlet.class, "The Environment " + name + " does not exists");
                     }
                 }
 
+            }
+
+            if(envsToSendTo.isEmpty()){
+                throw new DotPublisherException("There are no environments to send the bundle");
             }
 
 
@@ -96,7 +101,7 @@ public class PushNowActionlet extends WorkFlowActionlet {
                     try {
                         permissionedEnv.addAll(APILocator.getEnvironmentAPI().findEnvironmentsByRole(r.getId()));
                     } catch (Exception e) {
-                        Logger.error(PushPublishActionlet.class, e.getMessage());
+                        Logger.error(PushNowActionlet.class, e.getMessage());
                     }
                 }
             }
@@ -118,10 +123,10 @@ public class PushNowActionlet extends WorkFlowActionlet {
             publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, processor.getUser());
 
         } catch (DotPublisherException e) {
-            Logger.debug(PushPublishActionlet.class, e.getMessage());
+            Logger.debug(PushNowActionlet.class, e.getMessage());
             throw new WorkflowActionFailureException(e.getMessage(),e);
         } catch (DotDataException e) {
-            Logger.debug(PushPublishActionlet.class, e.getMessage());
+            Logger.debug(PushNowActionlet.class, e.getMessage());
             throw new WorkflowActionFailureException(e.getMessage(),e);
         }
 
