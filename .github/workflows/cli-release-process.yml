@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           VERSION=${{ github.event.inputs.version || '1.1.0-SNAPSHOT' }}
-          BRANCH=${{ github.event.inputs.branch || github.ref_name }}
+          BRANCH=${{ github.event.inputs.branch || github.ref }}
           
           ./mvnw -B versions:set versions:commit -DnewVersion=$VERSION
           
