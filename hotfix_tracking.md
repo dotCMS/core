@@ -182,3 +182,4 @@ This maintenance release includes the following code fixes:
 150. https://github.com/dotCMS/core/issues/26046 : Radio Button no longer accept 1/0 as valid when searching in ES #26046
 151. https://github.com/dotCMS/core/issues/21855 : Unable to save content of a Widget with WYSIWYG Code view #21855
 152. https://github.com/dotCMS/core/issues/22157 : If there isn't space after data-identifier breaks edit contentlet #22157
+153. https://github.com/dotCMS/core/issues/23082 : File Handles not getting cleared #23082

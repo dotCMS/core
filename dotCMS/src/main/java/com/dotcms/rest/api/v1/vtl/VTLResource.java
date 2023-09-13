@@ -534,8 +534,10 @@ public class VTLResource {
                     "bodyMap", bodyMap,
                     "binaries", Arrays.asList(binaries));
 
-            return evalVelocity(request, response, velocityReader.getVelocity(velocityReaderParams), contextParams,
-                    initDataObject.getUser(), cache);
+            try(Reader reader = velocityReader.getVelocity(velocityReaderParams)){
+                return evalVelocity(request, response, reader, contextParams,
+                        initDataObject.getUser(), cache);
+            }
         }  catch(Exception e) {
             Logger.error(this,"Exception on VTL endpoint. GET method: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
