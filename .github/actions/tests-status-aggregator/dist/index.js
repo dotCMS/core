@@ -78,7 +78,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.aggregate = void 0;
 const core = __importStar(__nccwpck_require__(186));
-const inputTypes = ['unit', 'integration_postgres', 'postman'];
+const inputTypes = ['postman'];
 const typeLabels = {
     unit: 'Unit Tests',
     integration_postgres: 'Integration Tests [Postgres]',
