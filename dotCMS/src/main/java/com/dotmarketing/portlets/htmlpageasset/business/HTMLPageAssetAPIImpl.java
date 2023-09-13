@@ -61,13 +61,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
 
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
-
-
 public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
-    public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
+
+    public static final Lazy<String> CMS_INDEX_PAGE = Lazy.of(() -> Config.getStringProperty(
+            "CMS_INDEX_PAGE", "index"));
+    public static final Lazy<Boolean> DEFAULT_PAGE_TO_DEFAULT_LANGUAGE =
+            Lazy.of(() -> Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true));
+
     public static final String DEFAULT_HTML_PAGE_ASSET_STRUCTURE_HOST_FIELD = "defaultHTMLPageAssetStructure";
 
     private final PermissionAPI permissionAPI;
@@ -192,7 +196,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         try {
             contentletAPI.copyProperties((Contentlet) pa, con.getMap());
         } catch (Exception e) {
-            throw new DotStateException("Page Copy Failed", e);
+            throw new DotStateException("Page Copy Failed on Contentlet Inode: " + con.getInode(), e);
         }
         pa.setHost(con.getHost());
         pa.setVariantId(con.getVariantId());
@@ -205,7 +209,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 pa.setFolder(folder.getInode());
             }catch(Exception e){
             	pa=new HTMLPageAsset();
-                Logger.warn(this, "Unable to convert contentlet to page asset " + con, e);
+                Logger.warn(this, "Unable to convert contentlet to page asset: " + con, e);
             }
         }
 
@@ -216,11 +220,11 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 if(identifier != null && UtilMethods.isSet(identifier.getAssetName())){
                     pa.setPageUrl(identifier.getAssetName());
                 } else {
-                    Logger.warn(this, "Unable to convert Contentlet to page asset, error at set PageUrl " + con);
+                    Logger.warn(this, "Unable to convert Contentlet to page asset, error at set PageUrl: " + con);
                 }
             }catch(Exception e){
                 pa=new HTMLPageAsset();
-                Logger.warn(this, "Unable to convert Contentlet to page asset " + con, e);
+                Logger.warn(this, "Unable to convert Contentlet to page asset: " + con, e);
             }
         }
 
@@ -247,7 +251,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             try {
                 id = identifierAPI.find(host, uri);
             } catch (Exception e) {
-                Logger.error(this.getClass(), "Unable to find" + uri);
+                Logger.error(this.getClass(), "Unable to find URI: " + uri);
                 return null;
             }
         }
@@ -279,7 +283,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 }
 
             } catch (Exception e) {
-                Logger.error(this.getClass(), "Unable to find" + uri);
+                Logger.error(this.getClass(), "Unable to find URI: " + uri);
                 return null;
             }
         }
@@ -288,12 +292,12 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     private Identifier getIndexPageIdentifier(final String folderURI, final Host host) {
         final String indexPageUri = folderURI.endsWith("/") ?
-                folderURI + CMS_INDEX_PAGE : folderURI + "/" + CMS_INDEX_PAGE;
+                folderURI + CMS_INDEX_PAGE.get() : folderURI + "/" + CMS_INDEX_PAGE.get();
 
         try {
             return identifierAPI.find(host, indexPageUri);
         } catch (Exception e) {
-            Logger.error(this.getClass(), "Unable to find" + folderURI);
+            Logger.error(this.getClass(), "Unable to find folder URI: " + folderURI);
             return null;
         }
     }
@@ -911,14 +915,12 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     @Override
-    public IHTMLPage findByIdLanguageVariantFallback(@NotNull String identifier, long tryLang,
-                                                     @NotNull String tryVariant, boolean live,
-                                                     @NotNull User user,
-                                                     boolean respectFrontEndPermissions) throws DotSecurityException {
-
-
-        long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        boolean fallbackLang = tryLang != defaultLang && Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
+    public IHTMLPage findByIdLanguageVariantFallback(@NotNull final String identifier, final long tryLang,
+                                                     @NotNull final String tryVariant, final boolean live,
+                                                     @NotNull final User user,
+                                                     final boolean respectFrontEndPermissions) throws DotSecurityException {
+        final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final boolean fallbackLang = tryLang != defaultLang && DEFAULT_PAGE_TO_DEFAULT_LANGUAGE.get();
 
         // given lang and variant
         HTMLPageAsset asset = Try.of(() -> fromContentlet(contentletAPI
@@ -926,15 +928,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         if (asset == null) {
 
-            // given lang and DEFAULT variant
+            // given lang and DEFAULT varian
             asset = Try.of(() -> fromContentlet(contentletAPI.findContentletByIdentifier(identifier, live, tryLang, VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), true))).getOrNull();
-
         }
 
         if (asset == null && fallbackLang) {
             // DEFAULT lang and given variant
             asset = Try.of(() -> fromContentlet(contentletAPI.findContentletByIdentifier(identifier, live, defaultLang, tryVariant, APILocator.systemUser(), true))).getOrNull();
-
             if (asset == null) {
                 // DEFAULT lang and DEFAULT variant
                 asset = Try.of(() -> fromContentlet(contentletAPI.findContentletByIdentifier(identifier, live, defaultLang, VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), true))).getOrNull();
@@ -945,10 +945,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         }
 
         permissionAPI.checkPermission(asset, PermissionLevel.READ, user);
-
-
         return asset;
-
-
     }
+
 }
