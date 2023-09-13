@@ -14,10 +14,10 @@ on:
         description: 'Dry run'
         required: true
         default: true
-  pull_request:
-    branches:
-      - master
-      - release-*
+#  pull_request:
+#    branches:
+#      - master
+#      - release-*
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
