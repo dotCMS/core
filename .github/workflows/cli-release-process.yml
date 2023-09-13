@@ -46,6 +46,7 @@ jobs:
           git config --global user.name "dcolina"
           git commit -a -m "Releasing version $VERSION"
           git branch -l
+          echo "BRANCH=$GITHUB_REF_NAME"
           git push origin "$BRANCH"
 
   release:
