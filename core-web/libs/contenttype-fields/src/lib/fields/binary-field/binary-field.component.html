@@ -23,13 +23,14 @@
 
     <div class="binary-field__actions">
         <p-button
-            label="Import from URL"
-            styleClass="p-button-link binary-field__button"
+            [label]="'dot.binary.field.action.import.from.url' | dm"
+            styleClass="p-button-link"
             icon="pi pi-link"></p-button>
         <p-button
-            label="Create New File"
-            styleClass="p-button-link binary-field__button"
-            icon="pi pi-code"></p-button>
+            [label]="'dot.binary.field.action.create.new.file' | dm"
+            styleClass="p-button-link"
+            icon="pi pi-code">
+        </p-button>
     </div>
 </div>
 

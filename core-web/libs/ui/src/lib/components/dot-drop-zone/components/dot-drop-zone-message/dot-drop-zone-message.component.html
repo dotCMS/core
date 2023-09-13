@@ -3,6 +3,6 @@
         <i [ngClass]="icon" style="font-size: 2rem"></i>
     </div>
     <div class="drop-zone-message__text">
-        <div [innerHTML]="safeHTML"></div>
+        <div [innerHTML]="sanitizeHTML(message | dm : messageArgs)"></div>
     </div>
 </div>

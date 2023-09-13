@@ -16,7 +16,6 @@ import { DotMessagePipe } from '../../../../dot-message/dot-message.pipe';
     selector: 'dot-drop-zone-message',
     standalone: true,
     imports: [CommonModule, DotMessagePipe],
-    providers: [DotMessagePipe],
     templateUrl: './dot-drop-zone-message.component.html',
     styleUrls: ['./dot-drop-zone-message.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -24,21 +23,12 @@ import { DotMessagePipe } from '../../../../dot-message/dot-message.pipe';
 export class DotDropZoneMessageComponent implements AfterViewInit {
     @Output() chooseFile = new EventEmitter();
 
+    @Input() message: string;
     @Input() icon: string;
     @Input() severity: string;
     @Input() messageArgs: string[] = [];
 
-    safeHTML: SafeHtml;
-    @Input() set message(value: string) {
-        const html = this.dm.transform(value, this.messageArgs);
-        this.safeHTML = this.sanitizeHTML(html);
-    }
-
-    constructor(
-        private readonly element: ElementRef,
-        private readonly sanitizer: DomSanitizer,
-        private readonly dm: DotMessagePipe
-    ) {}
+    constructor(private readonly element: ElementRef, private readonly sanitizer: DomSanitizer) {}
 
     ngAfterViewInit(): void {
         const observer = new MutationObserver(() => this.bindChooseFileBtn());
