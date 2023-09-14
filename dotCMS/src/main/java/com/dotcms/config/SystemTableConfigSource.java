@@ -16,6 +16,9 @@ public class SystemTableConfigSource {
 
     // private static final ThreadLocal<HashMap<String, String>> configuration =
     //        new ThreadLocal<>();
+
+    // there are some keys that can not be configured on the system table, all which includes concurrent are not
+    private static final Set<String> SKIP_KEYS_LOWER_SET = Set.of("concurrent", "scheduler");
     private final SystemTable systemTable = APILocator.getSystemAPI().getSystemTable();
 
     public SystemTableConfigSource() {
@@ -36,8 +39,18 @@ public class SystemTableConfigSource {
     // @Override
     public String getValue(final String propertyName) {
 
-        final Optional<String> valueOpt = this.systemTable.get(propertyName);
+        Optional<String> valueOpt = Optional.empty();
+        if (null != propertyName) {
+            if(this.isAllowed(propertyName)) {
+                valueOpt = this.systemTable.get(propertyName);
+            }
+        }
         return valueOpt.isPresent() ? valueOpt.get() : null;
+    }
+
+    private boolean isAllowed(final String propertyName) {
+        final String lowerPropertyName = propertyName.toLowerCase();
+        return SKIP_KEYS_LOWER_SET.stream().noneMatch(lowerPropertyName::contains);
     }
 
     public String put(final String propertyName, final String value) {

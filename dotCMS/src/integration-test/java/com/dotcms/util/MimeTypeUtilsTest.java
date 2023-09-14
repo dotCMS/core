@@ -103,6 +103,14 @@ public class MimeTypeUtilsTest extends UnitTestBase {
     }
 
     @Test
+    public void test_match_MimeType_application_pdf_vrs_application_video() {
+
+        boolean match = MimeTypeUtils.match("application/pdf", "application/video");
+
+        Assert.assertFalse("application/pdf must not match with application/video", match);
+    }
+
+    @Test
     public void test_match_MimeType_partial_text() throws IOException {
 
         boolean match = MimeTypeUtils.match("text/*", "text/x-asm");
