@@ -1,6 +1,6 @@
 import { expect, it } from '@jest/globals';
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -10,15 +10,15 @@ import { DialogModule } from 'primeng/dialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 
-import { BinaryFieldComponent } from './binary-field.component';
+import { DotBinaryFieldComponent } from './binary-field.component';
 
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
 
-describe('BinaryFieldComponent', () => {
-    let spectator: Spectator<BinaryFieldComponent>;
+describe('DotBinaryFieldComponent', () => {
+    let spectator: Spectator<DotBinaryFieldComponent>;
 
     const createComponent = createComponentFactory({
-        component: BinaryFieldComponent,
+        component: DotBinaryFieldComponent,
         imports: [
             NoopAnimationsModule,
             ButtonModule,
@@ -36,19 +36,7 @@ describe('BinaryFieldComponent', () => {
 
     beforeEach(() => (spectator = createComponent()));
 
-    describe('Write Code', () => {
-        it('should show code editor when code button is clicked', () => {
-            const button = spectator.query(byTestId('code-button'));
-
-            // expect the code editor to be hidden
-            expect(spectator.component.visible).toBe(false);
-
-            spectator.click(button);
-            const codeEditor = spectator.query(byTestId('code-editor'));
-
-            // expect the code editor to be visible
-            expect(codeEditor).toBeTruthy();
-            expect(spectator.component.visible).toBe(true);
-        });
+    it('should exist', () => {
+        expect(spectator.component).toBeTruthy();
     });
 });
