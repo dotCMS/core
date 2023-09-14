@@ -4113,7 +4113,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         categories = permissionAPI.filterCollection(categories, PermissionAPI.PERMISSION_USE, respect, user);
         categories.addAll(categoriesUserCannotRemove);
 
-        categoryAPI.setParents(toContentlet, categories, user, respect);
+        categoryAPI.setParents(toContentlet, categories, APILocator.systemUser(), respect);
     }
 
     @CloseDBIfOpened
