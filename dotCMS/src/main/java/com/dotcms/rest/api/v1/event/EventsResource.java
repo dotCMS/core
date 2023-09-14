@@ -30,6 +30,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
@@ -131,7 +132,8 @@ public class EventsResource implements Serializable {
         Response response             = null;
         final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         //final AppContext appContext =  new SimpleMapAppContext();
-        final AppContext appContext   =  WebSessionContext.getInstance(request);
+        final AppContext appContext   = new EventAppContentWrapper(
+                WebSessionContext.getInstance(request), request, asyncResponse);
 
         try {
 
@@ -184,6 +186,45 @@ public class EventsResource implements Serializable {
                     new ResponseEntityView(Arrays.asList(new ErrorEntity("operation-timeout", message)))).build();
 
             asyncResponse.resume(response);
+        }
+    }
+
+    private static class EventAppContentWrapper implements AppContext {
+
+        private final AppContext appContext;
+        private final HttpServletRequest request;
+        private final AsyncResponse response;
+
+        public EventAppContentWrapper(final AppContext appContext,
+                                      final HttpServletRequest request, final AsyncResponse response) {
+            this.appContext = appContext;
+            this.request = request;
+            this.response = response;
+        }
+
+        @Override
+        public <T> T getAttribute(String attributeName) {
+            if (request.isRequestedSessionIdValid()) {
+                HttpSession httpSession = request.getSession(false);
+                if (httpSession != null) {
+                    return appContext.getAttribute(attributeName);
+                }
+            }
+            if (SystemEventsDelegate.RESPONSE.equals(attributeName)) {
+                return (T) response;
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public <T> void setAttribute(String attributeName, T attributeValue) {
+            if (request.isRequestedSessionIdValid()) {
+                HttpSession httpSession = request.getSession(false);
+                if (httpSession != null) {
+                    appContext.setAttribute(attributeName, attributeValue);
+                }
+            }
         }
     }
 } // E:O:F:EventsResource.
