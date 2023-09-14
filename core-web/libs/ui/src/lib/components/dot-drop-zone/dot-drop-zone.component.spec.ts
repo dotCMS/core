@@ -202,7 +202,7 @@ describe('DotDropZoneComponent', () => {
             const spy = spyOn(spectator.component.fileDragOver, 'emit');
             const event = new DragEvent('dragover');
 
-            spectator.component.onDragEnter(event);
+            spectator.component.onDragOver(event);
             spectator.detectChanges();
 
             expect(spy).toHaveBeenCalledWith(true);

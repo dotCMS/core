@@ -1,22 +1,56 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
+
+import { CommonModule } from '@angular/common';
+import { DomSanitizer } from '@angular/platform-browser';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotDropZoneMessageComponent } from './dot-drop-zone-message.component';
 
+export const MESSAGES_MOCK = {
+    'dot.test.action.example.action.choose.file': '<a data-id="choose-file">Choose File</a>'
+};
+
+export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
+
 describe('DotDropZoneMessageComponent', () => {
-    let component: DotDropZoneMessageComponent;
-    let fixture: ComponentFixture<DotDropZoneMessageComponent>;
+    let spectator: SpectatorHost<DotDropZoneMessageComponent>;
+
+    const createHost = createHostFactory({
+        component: DotDropZoneMessageComponent,
+        imports: [CommonModule],
+        providers: [
+            {
+                provide: DomSanitizer,
+                useValue: {
+                    bypassSecurityTrustHtml: (val: string) => val
+                }
+            },
+            {
+                provide: DotMessageService,
+                useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+            }
+        ]
+    });
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotDropZoneMessageComponent]
-        }).compileComponents();
+        spectator = createHost(
+            `<dot-drop-zone-message></dot-drop-zone-message>`,
 
-        fixture = TestBed.createComponent(DotDropZoneMessageComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+            {
+                hostProps: {
+                    message: 'dot.test.action.example.action.choose.file',
+                    icon: 'icon',
+                    severity: 'severity',
+                    messageArgs: ['messageArgs']
+                }
+            }
+        );
+        spectator.detectChanges();
     });
 
     it('should create', () => {
-        expect(component).toBeTruthy();
+        expect(spectator.component).toBeTruthy();
     });
 });
