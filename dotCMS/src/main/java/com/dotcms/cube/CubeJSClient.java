@@ -136,7 +136,7 @@ public class CubeJSClient {
         }
 
         final Response<String> response = Try.of(cubeJSClient::doResponse)
-                .onFailure(e -> Logger.warnAndDebug(EventLogRunnable.class, e.getMessage(), e))
+                .onFailure(e -> Logger.warnAndDebug(CubeJSClient.class, e.getMessage(), e))
                 .getOrElse(CircuitBreakerUrl.EMPTY_RESPONSE);
 
         try {

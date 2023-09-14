@@ -51,10 +51,6 @@ public class PaginationCubeJSResultSet implements CubeJSResultSet {
                         .build();
 
                 currentIterator = cubeJSClient.send(cubeJSQuery).iterator();
-
-                if (!currentIterator.hasNext()) {
-                    throw new PaginationException("It is not possible to get all the Events from the CubeJS Server");
-                }
             }
 
             return currentIterator.hasNext();
