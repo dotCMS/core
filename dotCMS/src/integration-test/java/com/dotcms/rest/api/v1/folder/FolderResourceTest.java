@@ -1,12 +1,9 @@
 package com.dotcms.rest.api.v1.folder;
 
+import com.dotcms.datagen.HttpRequestUtil;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
-import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
-import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
@@ -21,17 +18,16 @@ import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class FolderResourceTest {
 
@@ -49,21 +45,6 @@ public class FolderResourceTest {
         adminUser = TestUserUtils.getAdminUser();
     }
 
-    private HttpServletRequest getHttpRequest(final String userEmail,final String password) {
-        final String userEmailAndPassword = userEmail + ":" + password;
-        final MockHeaderRequest request = new MockHeaderRequest(
-                new MockSessionRequest(
-                        new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
-                                .request())
-                        .request());
-
-            request.setHeader("Authorization",
-                    "Basic " + new String(Base64.encode(userEmailAndPassword.getBytes())));
-
-
-        return request;
-    }
-
     /**
      * Method to test: createFolders in the FolderResource
      * Given Scenario: Create a few folders using the admin as the user
@@ -76,7 +57,7 @@ public class FolderResourceTest {
         final List<String> foldersToCreate = Arrays.asList("test_"+currentTime+"/folder_"+currentTime,"/test2_"+currentTime+"/","test3_"+currentTime);
         final Host newHost = new SiteDataGen().nextPersisted();
 
-        final Response responseResource = resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
+        final Response responseResource = resource.createFolders(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
 
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -108,7 +89,7 @@ public class FolderResourceTest {
         final long currentTime = System.currentTimeMillis();
         final List<String> foldersToCreate = Arrays.asList("test"+currentTime+"/folder"+currentTime,"/test2"+currentTime+"/","test3"+currentTime);
 
-        resource.createFolders(getHttpRequest(chrisUser.getEmailAddress(),password),response,foldersToCreate,newHost.getHostname());
+        resource.createFolders(HttpRequestUtil.getHttpRequest("localhost", "/", chrisUser.getEmailAddress(),password),response,foldersToCreate,newHost.getHostname());
 
     }
 
@@ -123,7 +104,7 @@ public class FolderResourceTest {
         final long currentTime = System.currentTimeMillis();
         final List<String> foldersToCreate = Arrays.asList("test"+currentTime+"/folder"+currentTime,"/test2"+currentTime+"/","test3"+currentTime);
 
-        resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,"siteNameNotExists");
+        resource.createFolders(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,foldersToCreate,"siteNameNotExists");
 
     }
 
@@ -138,7 +119,7 @@ public class FolderResourceTest {
         final Host newHost = new SiteDataGen().nextPersisted();
         final List<String> foldersToCreate = Arrays.asList("dotcms");
 
-        resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
+        resource.createFolders(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
 
     }
 
@@ -155,13 +136,13 @@ public class FolderResourceTest {
         final Host newHost = new SiteDataGen().nextPersisted();
 
         //Create Folders and SubFolders
-        Response responseResource = resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
+        Response responseResource = resource.createFolders(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
 
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
 
         //Get all the folders and subfolders
-        responseResource = resource.loadFolderAndSubFoldersByPath(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,newHost.getIdentifier(),"test_"+currentTime);
+        responseResource = resource.loadFolderAndSubFoldersByPath(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,newHost.getIdentifier(),"test_"+currentTime);
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
 
@@ -187,13 +168,13 @@ public class FolderResourceTest {
         final Host newHost = new SiteDataGen().nextPersisted();
 
         //Create Folders and SubFolders
-        Response responseResource = resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
+        Response responseResource = resource.createFolders(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
 
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
 
         //Get all the folders and subfolders
-        resource.loadFolderAndSubFoldersByPath(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        resource.loadFolderAndSubFoldersByPath(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 UUIDGenerator.uuid(),"test_"+currentTime);
     }
 
@@ -211,13 +192,13 @@ public class FolderResourceTest {
         final Host newHost = new SiteDataGen().nextPersisted();
 
         //Create Folders and SubFolders
-        Response responseResource = resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
+        Response responseResource = resource.createFolders(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
 
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
 
         //Get all the folders and subfolders
-        resource.loadFolderAndSubFoldersByPath(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        resource.loadFolderAndSubFoldersByPath(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 newHost.getIdentifier(),"folderpathnotexist");
     }
 
@@ -236,7 +217,7 @@ public class FolderResourceTest {
         final Host newHost = new SiteDataGen().nextPersisted();
 
         //Create Folders and SubFolders
-        Response responseResource = resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
+        Response responseResource = resource.createFolders(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
 
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -254,7 +235,7 @@ public class FolderResourceTest {
         APILocator.getPermissionAPI().save(permissions, newHost, APILocator.systemUser(), false);
 
         //Get all the folders and subfolders using the limited user
-        resource.loadFolderAndSubFoldersByPath(getHttpRequest(limitedUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
+        resource.loadFolderAndSubFoldersByPath(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
     }
 
     /**
@@ -272,7 +253,7 @@ public class FolderResourceTest {
         final Host newHost = new SiteDataGen().nextPersisted();
 
         //Create Folders and SubFolders
-        Response responseResource = resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
+        Response responseResource = resource.createFolders(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
 
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -283,7 +264,7 @@ public class FolderResourceTest {
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
 
         //Get all the folders and subfolders using the limited user
-        responseResource = resource.loadFolderAndSubFoldersByPath(getHttpRequest(limitedUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
+        responseResource = resource.loadFolderAndSubFoldersByPath(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
 
     }
 
@@ -302,13 +283,13 @@ public class FolderResourceTest {
         final Host newHost = new SiteDataGen().nextPersisted();
 
         //Create Folders and SubFolders
-        Response responseResource = resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
+        Response responseResource = resource.createFolders(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
 
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
 
         //Get all the folders and subfolders using the admin
-        responseResource = resource.loadFolderAndSubFoldersByPath(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,newHost.getIdentifier(),"test_"+currentTime);
+        responseResource = resource.loadFolderAndSubFoldersByPath(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,newHost.getIdentifier(),"test_"+currentTime);
 
         //Get The parent folder Id to give permission over it
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -335,7 +316,7 @@ public class FolderResourceTest {
         APILocator.getPermissionAPI().save(permissions, folder, APILocator.systemUser(), false);
 
         //Get all the folders and subfolders using the limited user
-        responseResource = resource.loadFolderAndSubFoldersByPath(getHttpRequest(limitedUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
+        responseResource = resource.loadFolderAndSubFoldersByPath(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
 
         //Check Results
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());

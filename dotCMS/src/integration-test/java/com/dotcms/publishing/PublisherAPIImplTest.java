@@ -1,11 +1,5 @@
 package com.dotcms.publishing;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.set;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -55,14 +49,12 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -73,10 +65,8 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -85,6 +75,16 @@ import com.sun.net.httpserver.HttpServer;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -95,40 +95,33 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.set;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {
 
     public static final String DEPENDENCY_FROM_TEMPLATE = "Dependency from: ID: %s Title: %s";
-    private static String MANIFEST_HEADERS = "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
     private static Contentlet languageVariableCreated;
+    private static final List<String> manifestMetadataLines = list("#Bundle ID:", "#Operation", "#Filter:");
 
-    private static List<String> manifestMetadataLines = list("#Bundle ID:", "#Operation", "#Filter:");
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
@@ -304,7 +297,7 @@ public class PublisherAPIImplTest {
 
         final WorkflowScheme workflowScheme = new WorkflowDataGen().nextPersisted();
         final WorkflowStep workflowStep = new WorkflowStepDataGen(workflowScheme.getId()).nextPersisted();
-        final WorkflowAction workflowAction = new WorkflowActionDataGen(workflowScheme.getId(), workflowStep.getId())
+        new WorkflowActionDataGen(workflowScheme.getId(), workflowStep.getId())
                 .nextPersisted();
 
 
@@ -325,7 +318,12 @@ public class PublisherAPIImplTest {
                 .folder(folderWithDependencies)
                 .nextPersisted();
 
-        final File image = new File(Thread.currentThread().getContextClassLoader().getResource("images/test.jpg").getFile());
+        final String testImagePath = "images/test.jpg";
+        final URL imageAsURL = Thread.currentThread().getContextClassLoader().getResource(testImagePath);
+        if (null == imageAsURL) {
+            Assert.fail(String.format("Test image file %s was not found", testImagePath));
+        }
+        final File image = new File(imageAsURL.getFile());
         final Contentlet contentlet = new FileAssetDataGen(folderWithDependencies, image)
                 .host(host)
                 .nextPersisted();
@@ -467,7 +465,7 @@ public class PublisherAPIImplTest {
 
         List<Contentlet> languageVariables = getLanguageVariables();
 
-        Set<?> languagesVariableDependencies = !User.class.isInstance(testAsset.asset) && !Category.class.isInstance(testAsset.asset) ?
+        Set<?> languagesVariableDependencies = !(testAsset.asset instanceof User) && !(testAsset.asset instanceof Category) ?
                 getLanguagesVariableDependencies(
                         languageVariables,
                         testAsset.addLanguageVariableDependencies, true, true)
@@ -507,7 +505,7 @@ public class PublisherAPIImplTest {
 
         final ManifestItemsMapTest manifestLines = testAsset.manifestLines();
 
-        if (Category.class.isInstance(testAsset.asset)) {
+        if (testAsset.asset instanceof Category) {
             List<Category> topLevelCategories = APILocator.getCategoryAPI()
                     .findTopLevelCategories(APILocator.systemUser(), true);
 
@@ -521,9 +519,7 @@ public class PublisherAPIImplTest {
                 final List<Category> children = APILocator.getCategoryAPI()
                         .findChildren(APILocator.systemUser(), topLevel.getInode(), true,
                                 null);
-                for (Category child : children) {
-                    dependencies.add(child);
-                }
+                dependencies.addAll(children);
 
                 final List<ManifestItem> childManifestItems = children.stream()
                         .map(category -> (ManifestItem) category).collect(Collectors.toList());
@@ -535,8 +531,8 @@ public class PublisherAPIImplTest {
 
         assertBundle(testAsset, dependencies, extractHere);
 
-        if (!Rule.class.isInstance(testAsset.asset) && !User.class.isInstance(testAsset.asset)) {
-            if (!Category.class.isInstance(testAsset.asset)) {
+        if (!(testAsset.asset instanceof Rule) && !(testAsset.asset instanceof User)) {
+            if (!(testAsset.asset instanceof Category)) {
                 manifestLines.addExcludes(map("Excluded System Folder/Host/Container/Template",
                         list(APILocator.getHostAPI().findSystemHost(),
                                 APILocator.getFolderAPI().findSystemFolder())));
@@ -562,7 +558,7 @@ public class PublisherAPIImplTest {
             final List<Contentlet> languageVariablesAddInBundle)
             throws DotDataException, DotSecurityException {
 
-        languageVariablesAddInBundle.stream().forEach(
+        languageVariablesAddInBundle.forEach(
                 contentlet -> manifestLines.add(contentlet, "Added Automatically by dotCMS")
         );
 
@@ -572,7 +568,7 @@ public class PublisherAPIImplTest {
             final Collection<Object> dependenciesFrom = getLanguageVariable(languageVariable,
                     addLanguageVariableDependencies, true, true);
 
-            dependenciesFrom.stream().forEach(
+            dependenciesFrom.forEach(
                     dependency -> manifestLines.add((ManifestItem) dependency,
                             String.format(DEPENDENCY_FROM_TEMPLATE, languageVariable.getIdentifier(), languageVariable.getTitle())
                     ));
@@ -605,7 +601,7 @@ public class PublisherAPIImplTest {
 
     private static Collection<Object> getJustOneList(Collection<?>... collections){
         return Arrays.stream(collections)
-                .flatMap(collection -> collection.stream())
+                .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
     }
 
@@ -625,15 +621,16 @@ public class PublisherAPIImplTest {
             String line;
             int nLines = 0;
 
-            final StringBuffer buffer = new StringBuffer();
+            final StringBuilder buffer = new StringBuilder();
 
             while ((line = csvReader.readLine()) != null) {
                 System.out.println("line = " + line);
-                buffer.append(line + "\n");
+                buffer.append(line).append("\n");
 
                 if (nLines < manifestMetadataLines.size()) {
                     assertTrue("Wrong Metadata " + nLines + " " + line, line.startsWith(manifestMetadataLines.get(nLines)));
                 } else if (nLines == manifestMetadataLines.size()) {
+                    String MANIFEST_HEADERS = "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
                     assertEquals("Wrong headers", MANIFEST_HEADERS, line);
                 } else {
                     final boolean contains = manifestItems.contains(line);
@@ -682,14 +679,13 @@ public class PublisherAPIImplTest {
         final BundleFactoryImpl bundleFactory = new BundleFactoryImpl();
         bundleFactory.saveBundleEnvironment(bundle, environment);
 
-        final Collection<Object> dependencies = new HashSet<>();
-        dependencies.addAll(testAsset.getDependencies());
+        final Collection<Object> dependencies = new HashSet<>(testAsset.getDependencies());
         dependencies.add(testAsset.asset);
         dependencies.addAll(testAsset.otherVersions);
 
         createLanguageVariableIfNeeded();
 
-        if (!User.class.isInstance(testAsset.asset)) {
+        if (!(testAsset.asset instanceof User)) {
             addLanguageVariableDependencies(dependencies,
                     testAsset.addLanguageVariableDependencies);
         }
@@ -723,7 +719,7 @@ public class PublisherAPIImplTest {
             httpServer.stop(0);
         }
 
-        if (!User.class.isInstance(testAsset.asset)) {
+        if (!(testAsset.asset instanceof User)) {
             assertPushAsset(bundle, environment, publishingEndPoint, dependencies);
         }
     }
@@ -793,7 +789,7 @@ public class PublisherAPIImplTest {
                 + "/working/System Host/855a2d72-f2f3-4169-8b04-ac5157c4380c.contentType.json";
 
         final List<File> files = FileUtil.listFilesRecursively(bundleRoot).stream()
-                .filter(file -> file.isFile())
+                .filter(File::isFile)
                 .filter(file -> !file.getAbsolutePath().equals(systemHostPath))
                 .filter(file -> !file.getParentFile().getAbsolutePath().equals(messagesPath))
                 .collect(Collectors.toList());
@@ -803,8 +799,8 @@ public class PublisherAPIImplTest {
         final int numberFiles = files.size();
 
         final List<String> filesExpectedPath = filesExpected.stream()
-                .map(file -> file.getAbsolutePath()).collect(Collectors.toList());
-        final List<String> filePaths = files.stream().map(file -> file.getAbsolutePath())
+                .map(File::getAbsolutePath).collect(Collectors.toList());
+        final List<String> filePaths = files.stream().map(File::getAbsolutePath)
                 .collect(Collectors.toList());
 
         List<String> differences = getDifferences(numberFilesExpected, numberFiles,
@@ -858,9 +854,9 @@ public class PublisherAPIImplTest {
             final Host  systemHost = APILocator.getHostAPI().findSystemHost();
             final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
 
-            if (Contentlet.class.isInstance(dependency)){
+            if (dependency instanceof Contentlet){
                 return ((Contentlet) dependency).getIdentifier().equals(systemHost.getIdentifier());
-            } else  if (Folder.class.isInstance(dependency)){
+            } else  if (dependency instanceof Folder){
                 return ((Folder) dependency).getIdentifier().equals(systemFolder.getIdentifier());
             } else {
                 return false;
@@ -1037,7 +1033,7 @@ public class PublisherAPIImplTest {
         Object asset;
         Map<ManifestItem, Collection<ManifestItem>> dependencies;
         String fileExpectedPath;
-        boolean addLanguageVariableDependencies = true;
+        boolean addLanguageVariableDependencies;
         Set<Object> otherVersions;
 
         public TestAsset(
@@ -1093,7 +1089,7 @@ public class PublisherAPIImplTest {
 
         public Collection<Object> getDependencies() {
             return dependencies.values().stream()
-                    .flatMap(dependencies -> dependencies.stream())
+                    .flatMap(Collection::stream)
                     .collect(Collectors.toList());
         }
     }
@@ -1162,77 +1158,65 @@ public class PublisherAPIImplTest {
     }
 
     /**
-     * Tests All filter related methods
-     *  First we mock real assets-path.
-     *  then we create a brand-new descriptor file then we..
-     *  Try different scenarios like removing the file then trying to locate it via finders using the key
-     *  Then we update the descriptor using the upsert method and verify the changes take place
-     *  Finally we test the descriptor can be removed and does not show up on the finders result
+     * <ul>
+     *     <li><b>Methods to test: </b>{@link PublisherAPI#existsFilterDescriptor(String)},
+     *     {@link PublisherAPI#upsertFilterDescriptor(FilterDescriptor)},
+     *     {@link PublisherAPI#getFilterDescriptorByKey(String)},
+     *     {@link PublisherAPI#deleteFilterDescriptor(String)}</li>
+     *     <li><b>Given Scenario: </b>Create a test Push Publishing Filter and perform different
+     *     actions on it: Test that it exists, update it, retrieve it, and delete it.</li>
+     *     <li><b>Expected Result: </b>All operations must be the expected ones. Also, this test
+     *     Filter must be deleted at the end.</li>
+     * </ul>
      */
     @Test
-    public void testFilterDescriptors() throws IOException {
-
-        final String realAssetsRootPath = Config.getStringProperty("ASSET_REAL_PATH", null);
-
+    public void testFilterDescriptors() {
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+        final String filterKey = "foo-pp-filter.yml";
+        final String title = "Foo push Publishing Filter";
         try {
-            final Path base = Files.createTempDirectory("tmp_real_assets");
-            final String canonicalPath = base.toFile().getCanonicalPath();
-            Config.setProperty("ASSET_REAL_PATH", canonicalPath);
-
-            final Path path = Paths.get(canonicalPath, "server", "publishing-filters");
-
-            final File dir = path.toFile();
-            if (dir.exists()) {
-                Assert.assertTrue(dir.delete());
-            }
-
-            final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
-            publisherAPI.init();
-
-            Assert.assertTrue(path.toFile().exists());
-
-            final String filterKey = "foo";
-
-            final String title = "any";
-
-            Assert.assertFalse(publisherAPI.existsFilterDescriptor(filterKey));
+            assertFalse(String.format("Test PP Filter '%s' CANNOT exist at this point",
+                    filterKey), publisherAPI.existsFilterDescriptor(filterKey));
 
             final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().key(filterKey)
                     .title(title).nextPersisted();
+            publisherAPI.upsertFilterDescriptor(filterDescriptor);
+
+            assertTrue(String.format("Test PP Filter '%s' MUST exist at this point", filterKey),
+                    publisherAPI.existsFilterDescriptor(filterKey));
+
+            final FilterDescriptor descriptorByKey =
+                    publisherAPI.getFilterDescriptorByKey(filterKey);
+
+            assertEquals(String.format("Retrieved PP Filter '%s' is NOT the same as the original " +
+                    "one", filterKey), filterDescriptor, descriptorByKey);
+            assertTrue(String.format("Test PP Filter '%s' failed to be deleted", filterKey),
+                    publisherAPI.deleteFilterDescriptor(filterKey));
+            assertFalse(String.format("Test PP Filter '%s' is NOT supposed to be present anymore"
+                    , filterKey), publisherAPI.existsFilterDescriptor(filterKey));
 
             publisherAPI.upsertFilterDescriptor(filterDescriptor);
 
-            Assert.assertTrue(publisherAPI.existsFilterDescriptor(filterKey));
+            assertTrue(String.format("Test PP Filter '%s' MUST exist at this point", filterKey),
+                    publisherAPI.existsFilterDescriptor(filterKey));
 
-            final FilterDescriptor descriptorByKey = publisherAPI.getFilterDescriptorByKey(
-                    filterKey);
-
-            Assert.assertEquals(filterDescriptor, descriptorByKey);
-
-            Assert.assertTrue(publisherAPI.deleteFilterDescriptor(filterKey));
-
-            Assert.assertFalse(publisherAPI.existsFilterDescriptor(filterKey));
-
-            publisherAPI.upsertFilterDescriptor(filterDescriptor);
-
-            Assert.assertTrue(publisherAPI.existsFilterDescriptor(filterKey));
-
-            final FilterDescriptor modified = new FilterDescriptorDataGen().key(filterKey)
-                    .title("modified").sort("1").forcePush(true).next();
-
+            final FilterDescriptor modified =
+                    new FilterDescriptorDataGen().key(filterKey).title(title + "-modified").sort(
+                            "1").forcePush(true).next();
             publisherAPI.upsertFilterDescriptor(modified);
 
             final FilterDescriptor afterUpsert = publisherAPI.getFilterDescriptorByKey(filterKey);
 
-            Assert.assertNotNull(afterUpsert);
-
-            Assert.assertEquals(afterUpsert.getTitle(), "modified");
-            Assert.assertEquals(afterUpsert.getSort(), "1");
-
-            Assert.assertTrue(publisherAPI.deleteFilterDescriptor(filterKey));
-        }finally {
-            Config.setProperty("ASSET_REAL_PATH", realAssetsRootPath);
+            assertNotNull(String.format("Test PP Filter '%s' MUST be present", filterKey),
+                    afterUpsert);
+            assertEquals(String.format("Test PP Filter title '%s' DOES NOT match the expected " +
+                    "one", afterUpsert.getTitle()), title + "-modified", afterUpsert.getTitle());
+            assertEquals(String.format("Test PP Filter '%s' with sort order '%s' DOES NOT match " +
+                    "the expected one", afterUpsert.getTitle(), afterUpsert.getSort()), "1",
+                    afterUpsert.getSort());
+        } finally {
+            publisherAPI.deleteFilterDescriptor(filterKey);
         }
-
     }
+
 }

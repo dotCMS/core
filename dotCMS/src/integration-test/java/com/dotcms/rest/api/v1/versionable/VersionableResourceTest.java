@@ -2,16 +2,13 @@ package com.dotcms.rest.api.v1.versionable;
 
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HttpRequestUtil;
 import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
-import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
-import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
@@ -29,16 +26,15 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
-import java.util.Collections;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.Collections;
+import java.util.List;
 
 public class VersionableResourceTest {
 
@@ -54,21 +50,6 @@ public class VersionableResourceTest {
         resource = new VersionableResource();
         adminUser = TestUserUtils.getAdminUser();
         response = new MockHttpResponse();
-    }
-
-    private HttpServletRequest getHttpRequest(final String userEmail,final String password) {
-        final String userEmailAndPassword = userEmail + ":" + password;
-        final MockHeaderRequest request = new MockHeaderRequest(
-                new MockSessionRequest(
-                        new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
-                                .request())
-                        .request());
-
-        request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode(userEmailAndPassword.getBytes())));
-
-
-        return request;
     }
 
     /**
@@ -87,7 +68,7 @@ public class VersionableResourceTest {
         container.setInode(UUIDGenerator.generateUuid());
         container = APILocator.getContainerAPI().save(container, Collections.emptyList(),newHost,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.deleteVersion(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        final Response responseResource = resource.deleteVersion(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 oldContainerInode);
         //Check that the response is 200
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -107,7 +88,7 @@ public class VersionableResourceTest {
         //Create container and a new version
         final Container container = new ContainerDataGen().site(newHost).nextPersisted();
         //Call Resource
-        resource.deleteVersion(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        resource.deleteVersion(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 container.getInode());
     }
 
@@ -137,7 +118,7 @@ public class VersionableResourceTest {
                 PermissionAPI.PERMISSION_READ, true);
         APILocator.getPermissionAPI().save(permissions, container, APILocator.systemUser(), false);
         //Call Resource
-        resource.deleteVersion(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
+        resource.deleteVersion(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,
                 container.getInode());
     }
 
@@ -157,7 +138,7 @@ public class VersionableResourceTest {
         contentlet.setInode(UUIDGenerator.generateUuid());
         contentlet = APILocator.getContentletAPI().checkin(contentlet,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.deleteVersion(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        final Response responseResource = resource.deleteVersion(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 oldContentletInode);
         //Check that the response is 200
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -177,7 +158,7 @@ public class VersionableResourceTest {
         //Create contentlet and a new version
         final Contentlet contentlet = TestDataUtils.getGenericContentContent(true,1,newHost);
         //Call Resource
-        resource.deleteVersion(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        resource.deleteVersion(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 contentlet.getInode());
     }
 
@@ -207,7 +188,7 @@ public class VersionableResourceTest {
                 PermissionAPI.PERMISSION_READ, true);
         APILocator.getPermissionAPI().save(permissions, contentlet, APILocator.systemUser(), false);
         //Call Resource
-        resource.deleteVersion(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
+        resource.deleteVersion(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,
                 contentlet.getInode());
     }
 
@@ -227,7 +208,7 @@ public class VersionableResourceTest {
         container.setInode(UUIDGenerator.generateUuid());
         container = APILocator.getContainerAPI().save(container, Collections.emptyList(),newHost,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.findVersionable(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        final Response responseResource = resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 oldContainerInode);
         //Check that the response is 200
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -254,7 +235,7 @@ public class VersionableResourceTest {
         link.setInode(UUIDGenerator.generateUuid());
         APILocator.getMenuLinkAPI().save(link,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.findVersionable(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        final Response responseResource = resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 oldLinkInode);
         //Check that the response is 200
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -281,7 +262,7 @@ public class VersionableResourceTest {
         contentlet.setInode(UUIDGenerator.generateUuid());
         contentlet = APILocator.getContentletAPI().checkin(contentlet,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.findVersionable(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        final Response responseResource = resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 oldContentletInode);
         //Check that the response is 200
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -308,7 +289,7 @@ public class VersionableResourceTest {
         template.setInode(UUIDGenerator.generateUuid());
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.findVersionable(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        final Response responseResource = resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 oldTemplateInode);
         //Check that the response is 200
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -337,7 +318,7 @@ public class VersionableResourceTest {
         limitedUser.setPassword(password);
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
-        resource.findVersionable(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
+        resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,
                 container.getInode());
     }
 
@@ -360,7 +341,7 @@ public class VersionableResourceTest {
         limitedUser.setPassword(password);
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
-        resource.findVersionable(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
+        resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,
                 contentlet.getInode());
     }
 
@@ -383,7 +364,7 @@ public class VersionableResourceTest {
         limitedUser.setPassword(password);
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
-        resource.findVersionable(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
+        resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,
                 template.getInode());
     }
 
@@ -397,7 +378,7 @@ public class VersionableResourceTest {
     public void test_findVersion_inodeDoesNotExist_return404()
             throws DotSecurityException, DotDataException {
         //Call Resource
-        resource.findVersionable(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 UUIDGenerator.generateUuid());
     }
 
@@ -416,7 +397,7 @@ public class VersionableResourceTest {
         container.setInode(UUIDGenerator.generateUuid());
         container = APILocator.getContainerAPI().save(container, Collections.emptyList(),newHost,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.findVersionable(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        final Response responseResource = resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 container.getIdentifier());
         //Check that the response is 200
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -442,7 +423,7 @@ public class VersionableResourceTest {
         link.setInode(UUIDGenerator.generateUuid());
         APILocator.getMenuLinkAPI().save(link,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.findVersionable(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        final Response responseResource = resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 link.getIdentifier());
         //Check that the response is 200
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -468,7 +449,7 @@ public class VersionableResourceTest {
         contentlet.setInode(UUIDGenerator.generateUuid());
         contentlet = APILocator.getContentletAPI().checkin(contentlet,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.findVersionable(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        final Response responseResource = resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 contentlet.getIdentifier());
         //Check that the response is 200
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -494,7 +475,7 @@ public class VersionableResourceTest {
         template.setInode(UUIDGenerator.generateUuid());
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.findVersionable(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        final Response responseResource = resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 template.getIdentifier());
         //Check that the response is 200
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -524,7 +505,7 @@ public class VersionableResourceTest {
         limitedUser.setPassword(password);
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
-        resource.findVersionable(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
+        resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,
                 contentlet.getIdentifier());
     }
 
@@ -547,7 +528,7 @@ public class VersionableResourceTest {
         limitedUser.setPassword(password);
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
-        resource.findVersionable(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
+        resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,
                 template.getIdentifier());
     }
 
@@ -561,7 +542,7 @@ public class VersionableResourceTest {
     public void test_findAllVersion_identifierDoesNotExist_return404()
             throws DotSecurityException, DotDataException {
         //Call Resource
-        resource.findVersionable(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        resource.findVersionable(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 UUIDGenerator.generateUuid());
     }
 
@@ -582,7 +563,7 @@ public class VersionableResourceTest {
         container.setInode(UUIDGenerator.generateUuid());
         container = APILocator.getContainerAPI().save(container, Collections.emptyList(),newHost,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.bringBack(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        final Response responseResource = resource.bringBack(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 oldContainerInode);
         //Check that the response is 200
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
@@ -614,7 +595,7 @@ public class VersionableResourceTest {
                 PermissionAPI.PERMISSION_READ, true);
         APILocator.getPermissionAPI().save(permissions, container, APILocator.systemUser(), false);
         //Call Resource
-        resource.bringBack(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
+        resource.bringBack(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,
                 container.getInode());
     }
 
@@ -628,7 +609,7 @@ public class VersionableResourceTest {
     public void test_restoreVersion_inodeDoesNotExist_return404()
             throws DotSecurityException, DotDataException {
         //Call Resource
-        resource.bringBack(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+        resource.bringBack(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,
                 UUIDGenerator.generateUuid());
     }
 }

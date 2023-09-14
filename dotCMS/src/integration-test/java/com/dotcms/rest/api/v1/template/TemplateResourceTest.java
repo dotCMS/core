@@ -1,10 +1,5 @@
 package com.dotcms.rest.api.v1.template;
 
-import static com.dotcms.rendering.velocity.directive.ParseContainer.PARSE_CONTAINER_UUID_PREFIX;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -13,17 +8,16 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.HttpRequestUtil;
 import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.datagen.UserDataGen;
-import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
-import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.BulkResultView;
@@ -32,7 +26,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -42,6 +35,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
@@ -49,19 +43,22 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Set;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TemplateResourceTest {
 
@@ -77,21 +74,6 @@ public class TemplateResourceTest {
         resource = new TemplateResource();
         adminUser = TestUserUtils.getAdminUser();
         response = new MockHttpResponse();
-    }
-
-    private HttpServletRequest getHttpRequest(final String userEmail,final String password) {
-        final String userEmailAndPassword = userEmail + ":" + password;
-        final MockHeaderRequest request = new MockHeaderRequest(
-                new MockSessionRequest(
-                        new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
-                                .request())
-                        .request());
-
-        request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode(userEmailAndPassword.getBytes())));
-
-
-        return request;
     }
 
     /**
@@ -110,13 +92,13 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        final Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
     }
 
     /**
@@ -134,14 +116,14 @@ public class TemplateResourceTest {
         //Create template
         final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
         //Call Resource
-        final Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        final Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -160,24 +142,24 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
-        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+        Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(), "admin"), response,
                         new ArrayList<>(
                                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class
                 .cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
         //Call again the resource
-        responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+        responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(), "admin"), response,
                 new ArrayList<>(
                         Set.of(template.getIdentifier())));
-        Assert.assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
         responseEntityView = ResponseEntityView.class
                 .cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
     }
 
     /**
@@ -199,14 +181,14 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        final Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier(), uuid)));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -237,14 +219,14 @@ public class TemplateResourceTest {
                 PermissionAPI.PERMISSION_READ, true);
         APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
         //Call Resource
-        final Response responseResource = resource.archive(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        final Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -263,21 +245,21 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
-        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
         //Call Resource to UnArchive
-        responseResource = resource.unarchive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        responseResource = resource.unarchive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
     }
 
     /**
@@ -294,14 +276,14 @@ public class TemplateResourceTest {
         //Create template
         final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
         //Call Resource to UnArchive
-        final Response responseResource = resource.unarchive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        final Response responseResource = resource.unarchive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -320,14 +302,14 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to UnArchive
-        final Response responseResource = resource.unarchive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        final Response responseResource = resource.unarchive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -349,23 +331,23 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
-        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
         //Call Resource to UnArchive
-        responseResource = resource.unarchive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        responseResource = resource.unarchive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier(),uuid)));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -385,14 +367,14 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
-        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
 
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
@@ -407,14 +389,14 @@ public class TemplateResourceTest {
         APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
 
         //Call Resource to UnArchive
-        responseResource = resource.unarchive(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        responseResource = resource.unarchive(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -433,24 +415,24 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
-        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
 
         //Call Resource to Delete
-        responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        responseResource = resource.delete(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -468,14 +450,14 @@ public class TemplateResourceTest {
         //Create template
         final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
         //Call Resource to Archive
-        Response responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        Response responseResource = resource.delete(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
 
     }
 
@@ -498,24 +480,24 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
-        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
 
         //Call Resource to Delete
-        responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        responseResource = resource.delete(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier(),uuid)));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -535,14 +517,14 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
-        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
 
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
@@ -557,14 +539,14 @@ public class TemplateResourceTest {
         APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
 
         //Call Resource to Delete
-        responseResource = resource.delete(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        responseResource = resource.delete(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -586,23 +568,23 @@ public class TemplateResourceTest {
         //Create a page that uses that template
         final HTMLPageAsset page = new HTMLPageDataGen(newHost,template).nextPersisted();
         //Call Resource to Archive
-        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
         //Call Resource to Delete
-        responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        responseResource = resource.delete(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
 
     }
 
@@ -621,14 +603,14 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        final Response responseResource = resource.publish(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -648,24 +630,24 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
-        Response responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        Response responseResource = resource.publish(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
 
         //Call Resource again
-        responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        responseResource = resource.publish(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -685,24 +667,24 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
-        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
 
         //Call Resource
-        responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        responseResource = resource.publish(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -724,14 +706,14 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        final Response responseResource = resource.publish(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier(), uuid)));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -762,14 +744,14 @@ public class TemplateResourceTest {
                 PermissionAPI.PERMISSION_READ, true);
         APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
         //Call Resource
-        final Response responseResource = resource.publish(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        final Response responseResource = resource.publish(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -786,14 +768,14 @@ public class TemplateResourceTest {
         //Create template
         final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
         //Call Resource
-        final Response responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        final Response responseResource = resource.unpublish(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -811,24 +793,24 @@ public class TemplateResourceTest {
         //Create template
         final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
         //Call Resource
-        Response responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        Response responseResource = resource.unpublish(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
 
         //Call Resource again
-        responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        responseResource = resource.unpublish(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -848,24 +830,24 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
-        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        Response responseResource = resource.archive(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(0,results.getFails().size());
 
         //Call Resource
-        responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        responseResource = resource.unpublish(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Set.of(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -885,14 +867,14 @@ public class TemplateResourceTest {
         //Create template
         final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
         //Call Resource
-        final Response responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        final Response responseResource = resource.unpublish(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier(), uuid)));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -922,14 +904,14 @@ public class TemplateResourceTest {
                 PermissionAPI.PERMISSION_READ, true);
         APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
         //Call Resource
-        final Response responseResource = resource.unpublish(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+        final Response responseResource = resource.unpublish(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier())));
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
+        assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -948,12 +930,12 @@ public class TemplateResourceTest {
         Template template = new TemplateDataGen().title(title).next();
         template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.copy(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,template.getIdentifier());
+        final Response responseResource = resource.copy(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,template.getIdentifier());
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final TemplateView results = TemplateView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(title + " - 1",results.getTitle());
+        assertEquals(title + " - 1",results.getTitle());
     }
 
     /**
@@ -967,7 +949,7 @@ public class TemplateResourceTest {
             throws DotSecurityException, DotDataException {
         final String uuid = UUIDGenerator.generateUuid();
         //Call Resource
-        resource.copy(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,uuid);
+        resource.copy(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,uuid);
     }
 
     /**
@@ -990,7 +972,7 @@ public class TemplateResourceTest {
         limitedUser.setPassword(password);
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
-        resource.copy(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
+        resource.copy(HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
     }
 
     /**
@@ -1010,16 +992,16 @@ public class TemplateResourceTest {
         Template templateB = new TemplateDataGen().title(title).next();
         templateB = APILocator.getTemplateAPI().saveTemplate(templateB,newHostB,adminUser,false);
         //Call Resource
-        final Response responseResource = resource.list(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,"",0,40,"mod_date","DESC",newHostA.getIdentifier(),false);
+        final Response responseResource = resource.list(HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin"),response,"",0,40,"mod_date","DESC",newHostA.getIdentifier(),false);
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
-        final PaginatedArrayList paginatedArrayListWithoutSystemTemplate =  this.removeSystemTemplate(paginatedArrayList);
-        Assert.assertEquals(1,paginatedArrayListWithoutSystemTemplate.size());
+        final PaginatedArrayList paginatedArrayListWithoutSystemTemplate =  this.removeSystemTemplateFromList(paginatedArrayList);
+        assertEquals(1,paginatedArrayListWithoutSystemTemplate.size());
     }
 
-    private PaginatedArrayList removeSystemTemplate(final PaginatedArrayList paginatedArrayList) {
+    private PaginatedArrayList<?> removeSystemTemplateFromList(final PaginatedArrayList<?> paginatedArrayList) {
 
         final PaginatedArrayList paginatedArrayListWithoutSystemTemplate = new PaginatedArrayList();
 
@@ -1029,7 +1011,7 @@ public class TemplateResourceTest {
         for(Object templateObject : paginatedArrayList) {
 
             if (templateObject instanceof TemplateView &&
-                    !Template.SYSTEM_TEMPLATE.equals(TemplateView.class.cast(templateObject).getIdentifier())) {
+                    !Template.SYSTEM_TEMPLATE.equals(((TemplateView) templateObject).getIdentifier())) {
 
                 paginatedArrayListWithoutSystemTemplate.add(templateObject);
             }
@@ -1056,61 +1038,88 @@ public class TemplateResourceTest {
         Template templateB = new TemplateDataGen().title(title).next();
         templateB = APILocator.getTemplateAPI().saveTemplate(templateB,newHostB,adminUser,false);
         //Create Request and set Attribute
-        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(),"admin");
+        final HttpServletRequest request = HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(),"admin");
         request.getSession().setAttribute(WebKeys.CURRENT_HOST,newHostA);
         //Call Resource
         final Response responseResource = resource.list(request,response,"",0,40,"mod_date","DESC","",false);
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
-        final PaginatedArrayList paginatedArrayListWihoutSystemTemplate = removeSystemTemplate(paginatedArrayList);
-        Assert.assertEquals(1,paginatedArrayListWihoutSystemTemplate.size());
-        Assert.assertEquals(APILocator.getIdentifierAPI().find(templateA.getIdentifier()).getHostId(),
+        final PaginatedArrayList paginatedArrayListWihoutSystemTemplate = removeSystemTemplateFromList(paginatedArrayList);
+        assertEquals(1,paginatedArrayListWihoutSystemTemplate.size());
+        assertEquals(APILocator.getIdentifierAPI().find(templateA.getIdentifier()).getHostId(),
                 APILocator.getIdentifierAPI().find(((TemplateView) paginatedArrayListWihoutSystemTemplate.get(0)).getIdentifier()).getHostId());
     }
 
     /**
-     * Method to test: list in the TemplateResource
-     * Given Scenario: Create 2 templates, and a limited user. Give READ Permissions to one template to
-     *                  the limited user. Get All the templates that the user can READ.
-     * ExpectedResult: The endpoint should return 200, and the size of the results must be 1.
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link TemplateResource#list(HttpServletRequest, HttpServletResponse, String, int, int, String, String, String, boolean)}</li>
+     *     <li><b>Given Scenario: </b>Create 2 templates, and a limited user. Give READ
+     *     Permissions to one template to the limited user. Get All the templates that the user
+     *     can READ.</li>
+     *     <li><b>Expected Result: </b>The endpoint should return 200, and the size of the
+     *     results must be 1.</li>
+     * </ul>
      */
     @Test
     public void test_listTemplate_limitedUserNoREADPermissionsOverOneTemplate()
             throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHostA = new SiteDataGen().nextPersisted();
+        final String postfix = String.valueOf(System.currentTimeMillis());
+        final Host newHostA = new SiteDataGen().name("site.for.templates-" + postfix).nextPersisted();
+        final TemplateAPI templateAPI = APILocator.getTemplateAPI();
+        final User SYSTEM_USER = APILocator.systemUser();
+
         //Create template
-        Template templateA = new TemplateDataGen().title(title).next();
-        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,adminUser,false);
-        Template templateB = new TemplateDataGen().title(title).next();
-        templateB = APILocator.getTemplateAPI().saveTemplate(templateB,newHostA,adminUser,false);
+        final Template templateA = new TemplateDataGen().title("Template-A-" + postfix).next();
+        templateAPI.saveTemplate(templateA, newHostA, adminUser, false);
+        Template templateB = new TemplateDataGen().title("Template-B-" + postfix).next();
+        templateB = templateAPI.saveTemplate(templateB, newHostA, adminUser, false);
         //Call Resource
-        Response responseResource = resource.list(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,"",0,40,"mod_date","DESC",newHostA.getIdentifier(),false);
+        Response responseResource = resource.list(
+                HttpRequestUtil.getHttpRequest("localhost", "/", adminUser.getEmailAddress(), "admin"),
+                response, "", 0, 40, "mod_date", "DESC",
+                newHostA.getIdentifier(), false);
+
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(2, this.removeSystemTemplate(paginatedArrayList).size());
+        assertEquals(String.format("Resulting Status Code '%s' IS NOT the expected one",
+                responseResource.getStatus()), Status.OK.getStatusCode(),
+                responseResource.getStatus());
+
+        ResponseEntityView<?> responseEntityView = (ResponseEntityView<?>) responseResource.getEntity();
+        PaginatedArrayList<?> paginatedArrayList = (PaginatedArrayList<?>) responseEntityView.getEntity();
+
+        int resultTemplateListSize = this.removeSystemTemplateFromList(paginatedArrayList).size();
+        assertEquals(String.format("The total returned templates: '%d' IS NOT the expected " +
+                "result", resultTemplateListSize), 2, resultTemplateListSize);
+
         //Create the limited user
-        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        final String password = "admin";
-        limitedUser.setPassword(password);
-        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        final User limitedUser = new UserDataGen().emailAddress("user-template-list" + postfix + "@dotcms.com").roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        limitedUser.setPassword("admin");
+        APILocator.getUserAPI().save(limitedUser, SYSTEM_USER,false);
         //Give Permissions Over the Template B
-        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+        final Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                 templateB.getPermissionId(),
                 APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
                 PermissionAPI.PERMISSION_READ, true);
-        APILocator.getPermissionAPI().save(permissions, templateB, APILocator.systemUser(), false);
+        APILocator.getPermissionAPI().save(permissions, templateB, SYSTEM_USER, false);
         //Call Resource
-        responseResource = resource.list(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,"",0,40,"mod_date","DESC",newHostA.getIdentifier(),false);
+        responseResource = resource.list(
+                HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(), "admin"),
+                response, "", 0, 40, "mod_date", "DESC",
+                newHostA.getIdentifier(), false);
+
         //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(1, this.removeSystemTemplate(paginatedArrayList).size());
+        assertEquals(String.format("Resulting Status Code '%s' IS NOT the expected one", responseResource.getStatus()), Status.OK.getStatusCode(), responseResource.getStatus());
+
+        responseEntityView = (ResponseEntityView<?>) responseResource.getEntity();
+        paginatedArrayList = (PaginatedArrayList<?>) responseEntityView.getEntity();
+
+        resultTemplateListSize = this.removeSystemTemplateFromList(paginatedArrayList).size();
+        assertEquals(String.format("The total returned templates: '%d' IS NOT the expected " +
+                "result", resultTemplateListSize), 1,
+                this.removeSystemTemplateFromList(paginatedArrayList).size());
     }
 
     /**

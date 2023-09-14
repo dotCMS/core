@@ -20,16 +20,17 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This class will test operations related with interacting with Containers.
@@ -347,28 +348,30 @@ public class ContainerAPITest extends ContentletBaseTest {
                         .findFirst().orElse(null);
 
         // Assertions
-        assertTrue("System Container MUST be returned in this test", null != systemContainer);
+        assertNotNull("System Container MUST be returned in this test", systemContainer);
     }
 
     /**
-     * Method to test: {@link ContainerAPI#findContainers(User, ContainerAPI.SearchParams)}
-     *
-     * Given Scenario: Creating a Container, and then deleting it.
-     *
-     * Expected Result: The total Container count must be different.
+     * <ul>
+     *     <li><b>Method to
+     *     test: </b>{@link ContainerAPI#findContainers(User, ContainerAPI.SearchParams)}</li>
+     *     <li><b>Given Scenario: </b>Create a Container, get the total number of Containers in
+     *     the repo, and then delete it.</li>
+     *     <li><b>Expected Result: </b>The new total Container count in the repo after the
+     *     deletion must be lower than the initial one.</li>
+     * </ul>
      */
     @Test
     public void compareCountDeletedContainer() throws DotDataException, DotSecurityException {
         // Initialization
-        final ContentType contentGenericContentType = APILocator.getContentTypeAPI(user).find("webPageContent");
-        final Container container = new ContainerDataGen()
-                .title("My Test Container-" + System.currentTimeMillis())
-                .withContentType(contentGenericContentType, "").nextPersisted();
+        final Container container =
+                new ContainerDataGen().title("My-Test-Container-" + System.currentTimeMillis()).site(defaultHost).nextPersisted();
         final boolean showSystemContainer = Boolean.FALSE;
+        final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
+                .includeArchived(false)
+                .includeSystemContainer(showSystemContainer)
+                .siteId(defaultHost.getIdentifier()).build();
         try {
-            final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
-                    .includeArchived(false)
-                    .includeSystemContainer(showSystemContainer).build();
             List<Container> allContainers = containerAPI.findContainers(user, searchParams);
             final int originalCount = allContainers.size();
 
@@ -377,8 +380,8 @@ public class ContainerAPITest extends ContentletBaseTest {
             allContainers = containerAPI.findContainers(user, searchParams);
 
             // Assertions
-            assertTrue("Total Container count MUST be lower than the original count",
-                    originalCount > allContainers.size());
+            assertTrue(String.format("Total Container count: '%s' MUST be lower than the original" +
+                    " count", allContainers.size()), originalCount > allContainers.size());
         } finally {
             if (null != container) {
                 containerAPI.delete(container, user, false);
