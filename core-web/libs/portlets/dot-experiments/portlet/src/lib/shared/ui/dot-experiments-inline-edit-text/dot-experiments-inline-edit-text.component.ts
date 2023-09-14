@@ -25,6 +25,7 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { MAX_INPUT_DESCRIPTIVE_LENGTH } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+import { DotValidators } from '@shared/validators/dotValidators';
 
 type InplaceInputSize = 'small' | 'large';
 const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; input: string }> = {
@@ -115,7 +116,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
     form: FormGroup;
 
     protected readonly inplaceSizes = InplaceInputSizeMapPrimeNg;
-    private validatorsFn: ValidatorFn[] = [];
+    private validatorsFn: ValidatorFn[] = [DotValidators.noWhitespaceOnly];
 
     constructor() {
         this.initForm();
