@@ -1,0 +1,28 @@
+name: dotCLI Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+      next:
+        description: 'Next version'
+        required: false
+
+defaults:
+  run:
+    shell: bash
+  
+jobs:
+  precheck:
+    name: Pre-check
+    runs-on: ubuntu-latest
+    outputs:
+      RELEASE_VERSION: ${{ steps.vars.outputs.version }}
+      NEXT_VERSION: ${{ steps.vars.outputs.next }}
+    steps:
+      - name: Print inputs
+        run: |
+          echo "RELEASE_VERSION=$RELEASE_VERSION"
+          echo "NEXT_VERSION=$NEXT_VERSION"
+      
