@@ -1,6 +1,6 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { NgClass, NgIf } from '@angular/common';
+import { NgClass, NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, Input, ViewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -16,12 +16,20 @@ import {
 
 import { DropZoneMessage, getDropZoneMessage } from '../../utils/binary-field-utils';
 
+enum UPLOAD_FILE_METHOD {
+    UPLOAD = 'UPLOAD',
+    IMPORT_FROM_URL = 'IMPORT_FROM_URL',
+    WRITE_CODE = 'WRITE_CODE'
+}
+
 @Component({
     selector: 'dotcms-binary-field',
     standalone: true,
     imports: [
         NgIf,
         NgClass,
+        NgSwitch,
+        NgSwitchCase,
         ButtonModule,
         DialogModule,
         DotDropZoneComponent,
@@ -41,11 +49,17 @@ export class BinaryFieldComponent {
 
     @ViewChild('inputFile', { static: true }) inputFile: ElementRef;
 
-    active = false;
+    dropZoneActive = false;
     dropZoneMessage: DropZoneMessage = getDropZoneMessage('default');
+    readonly UPLOAD_FILE_METHOD = UPLOAD_FILE_METHOD;
+    readonly dialogOptions = {
+        mode: UPLOAD_FILE_METHOD.UPLOAD,
+        header: '',
+        visible: false
+    };
 
-    setActiveState(value: boolean) {
-        this.active = value;
+    setDropZoneActiveState(value: boolean) {
+        this.dropZoneActive = value;
     }
 
     /**
@@ -55,8 +69,8 @@ export class BinaryFieldComponent {
      * @return {*}
      * @memberof BinaryFieldComponent
      */
-    onFileDropped({ validity }: DropZoneFileEvent) {
-        this.setActiveState(false);
+    handleFileDrop({ validity }: DropZoneFileEvent) {
+        this.setDropZoneActiveState(false);
 
         if (!validity.valid) {
             this.handleDropZoneError(validity);
@@ -86,11 +100,27 @@ export class BinaryFieldComponent {
         }
     }
 
-    openChooseFileDialog() {
+    openFilePicker() {
         this.inputFile.nativeElement.click();
     }
 
-    onSelectFile(_event) {
+    handleFileSelection(_event) {
         // TODO: Implement
+    }
+
+    openDialog(method: UPLOAD_FILE_METHOD) {
+        this.dialogOptions.visible = true;
+        this.dialogOptions.mode = method;
+        this.dialogOptions.header = this.getDialogLabel(method);
+    }
+
+    getDialogLabel(method: UPLOAD_FILE_METHOD): string {
+        switch (method) {
+            case UPLOAD_FILE_METHOD.IMPORT_FROM_URL:
+                return 'URL';
+
+            case UPLOAD_FILE_METHOD.WRITE_CODE:
+                return 'File Details';
+        }
     }
 }

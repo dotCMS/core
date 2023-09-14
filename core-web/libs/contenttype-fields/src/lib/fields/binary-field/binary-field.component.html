@@ -1,38 +1,56 @@
 <div class="binary-field__container">
-    <div class="binary-field__drop-zone" [ngClass]="{ 'binary-field__drop-zone--active': active }">
+    <div
+        class="binary-field__drop-zone"
+        [ngClass]="{ 'binary-field__drop-zone--active': dropZoneActive }">
         <dot-drop-zone
             [accept]="accept"
             [maxFileSize]="maxFileSize"
-            (fileDragOver)="setActiveState(true)"
-            (fileDragLeave)="setActiveState(false)"
-            (fileDropped)="onFileDropped($event)">
+            (fileDragOver)="setDropZoneActiveState(true)"
+            (fileDragLeave)="setDropZoneActiveState(false)"
+            (fileDropped)="handleFileDrop($event)">
             <dot-drop-zone-message
                 [message]="dropZoneMessage.message"
                 [icon]="dropZoneMessage.icon"
                 [severity]="dropZoneMessage.severity"
                 [messageArgs]="dropZoneMessage.args"
-                (chooseFile)="openChooseFileDialog()"></dot-drop-zone-message>
+                (chooseFile)="openFilePicker()"></dot-drop-zone-message>
         </dot-drop-zone>
         <input
             class="binary-field__input"
             #inputFile
             [accept]="accept"
-            (change)="onSelectFile($event)"
+            (change)="handleFileSelection($event)"
             type="file" />
     </div>
 
     <div class="binary-field__actions">
         <p-button
             [label]="'dot.binary.field.action.import.from.url' | dm"
+            (click)="openDialog(UPLOAD_FILE_METHOD.IMPORT_FROM_URL)"
             styleClass="p-button-link"
             icon="pi pi-link"></p-button>
         <p-button
             [label]="'dot.binary.field.action.create.new.file' | dm"
+            (click)="openDialog(UPLOAD_FILE_METHOD.WRITE_CODE)"
             styleClass="p-button-link"
             icon="pi pi-code">
         </p-button>
     </div>
 </div>
+
+<p-dialog
+    [(visible)]="dialogOptions.visible"
+    [header]="dialogOptions.header"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false">
+    <div [ngSwitch]="dialogOptions.mode">
+        <div *ngSwitchCase="UPLOAD_FILE_METHOD.IMPORT_FROM_URL">
+            TODO: Implement Import from URL
+        </div>
+        <div *ngSwitchCase="UPLOAD_FILE_METHOD.WRITE_CODE">TODO: Implement Write Code</div>
+    </div>
+</p-dialog>
 
 <div class="binary-field__helper" *ngIf="helperLabel">
     <i class="pi pi-info-circle binary-field__helper-icon"></i>
