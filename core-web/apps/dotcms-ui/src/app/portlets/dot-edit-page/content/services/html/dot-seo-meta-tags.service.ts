@@ -53,6 +53,12 @@ export class DotSeoMetaTagsService {
         const title = pageDocument.querySelectorAll('title');
         const titleOgElements = pageDocument.querySelectorAll('meta[property="og:title"]');
         const imagesOgElements = pageDocument.querySelectorAll('meta[property="og:image"]');
+        const twitterCardElements = pageDocument.querySelectorAll('meta[name="twitter:card"]');
+        const twitterTitleElements = pageDocument.querySelectorAll('meta[name="twitter:title"]');
+        const twitterImageElements = pageDocument.querySelectorAll('meta[name="twitter:image"]');
+        const twitterDescriptionElements = pageDocument.querySelectorAll(
+            'meta[name="twitter:description"]'
+        );
 
         metaTagsObject['faviconElements'] = favicon;
         metaTagsObject['titleElements'] = title;
@@ -60,6 +66,10 @@ export class DotSeoMetaTagsService {
         metaTagsObject['title'] = title[0]?.innerText;
         metaTagsObject['titleOgElements'] = titleOgElements;
         metaTagsObject['imageOgElements'] = imagesOgElements;
+        metaTagsObject['twitterCardElements'] = twitterCardElements;
+        metaTagsObject['twitterTitleElements'] = twitterTitleElements;
+        metaTagsObject['twitterDescriptionElements'] = twitterDescriptionElements;
+        metaTagsObject['twitterImageElements'] = twitterImageElements;
 
         return metaTagsObject;
     }
@@ -129,6 +139,30 @@ export class DotSeoMetaTagsService {
                 getItems: (metaTagsObject: SeoMetaTags) => this.getOgImagesItems(metaTagsObject),
                 sort: 6,
                 info: ''
+            },
+            [SEO_OPTIONS.TWITTER_CARD]: {
+                getItems: (metaTagsObject: SeoMetaTags) =>
+                    of(this.getTwitterCardItems(metaTagsObject)),
+                sort: 1,
+                info: ''
+            },
+            [SEO_OPTIONS.TWITTER_TITLE]: {
+                getItems: (metaTagsObject: SeoMetaTags) =>
+                    of(this.getTwitterTitleItems(metaTagsObject)),
+                sort: 2,
+                info: ''
+            },
+            [SEO_OPTIONS.TWITTER_DESCRIPTION]: {
+                getItems: (metaTagsObject: SeoMetaTags) =>
+                    of(this.getTwitterDescriptionItems(metaTagsObject)),
+                sort: 3,
+                info: ''
+            },
+            [SEO_OPTIONS.TWITTER_IMAGE]: {
+                getItems: (metaTagsObject: SeoMetaTags) =>
+                    this.getTwitterImageItems(metaTagsObject),
+                sort: 4,
+                info: ''
             }
         };
     }
@@ -140,19 +174,14 @@ export class DotSeoMetaTagsService {
      * @returns
      */
     getFilteredMetaTagsByMedia(
-        results: Observable<SeoMetaTagsResult[]>,
+        results: SeoMetaTagsResult[],
         seoMedia: string
-    ): Observable<SeoMetaTagsResult[]> {
-        return results.pipe(
-            map((resultsArray) => {
-                return resultsArray
-                    .map((result) => result)
-                    .filter((result) =>
-                        SeoMediaKeys[seoMedia.toLowerCase()].includes(result.key.toLowerCase())
-                    )
-                    .sort((a, b) => a.sort - b.sort);
-            })
-        );
+    ): SeoMetaTagsResult[] {
+        return results
+            .filter((result) =>
+                SeoMediaKeys[seoMedia.toLowerCase()].includes(result.key.toLowerCase())
+            )
+            .sort((a, b) => a.sort - b.sort);
     }
 
     private getFaviconItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
@@ -372,6 +401,189 @@ export class DotSeoMetaTagsService {
                         message: this.dotMessageService.get('seo.rules.og-image.more.one.found'),
                         color: SEO_RULES_COLORS.ERROR,
                         itemIcon: SEO_RULES_ICONS.TIMES
+                    });
+                }
+
+                return of(result);
+            })
+        );
+    }
+
+    private getTwitterCardItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
+        const result: SeoRulesResult[] = [];
+        const titleCardElements = metaTagsObject['twitterCardElements'];
+        const titleCard = metaTagsObject['twitter:card'];
+
+        if (titleCardElements.length === 0) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.twitter-card.not.found'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (titleCardElements?.length > 1) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.twitter-card.more.one.found'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (titleCard && titleCard.length === 0) {
+            result.push({
+                message: this.dotMessageService.get('twitter:image meta tag found, but is empty!'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (titleCard) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.twitter-card.found'),
+                color: SEO_RULES_COLORS.DONE,
+                itemIcon: SEO_RULES_ICONS.CHECK
+            });
+        }
+
+        return result;
+    }
+
+    private getTwitterTitleItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
+        const result: SeoRulesResult[] = [];
+        const titleCardElements = metaTagsObject['twitterTitleElements'];
+        const titleCard = metaTagsObject['twitter:title'];
+
+        if (titleCardElements.length === 0) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.twitter-card.not.found'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (titleCardElements?.length > 1) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.twitter-card.more.one.found'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (titleCard && titleCard.length === 0) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.twitter-title.empty'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (titleCard) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.twitter-title.found'),
+                color: SEO_RULES_COLORS.DONE,
+                itemIcon: SEO_RULES_ICONS.CHECK
+            });
+        }
+
+        return result;
+    }
+
+    private getTwitterDescriptionItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
+        const result: SeoRulesResult[] = [];
+        const twitterDescriptionElements = metaTagsObject['twitterDescriptionElements'];
+        const twitterDescription = metaTagsObject['twitter:description'];
+
+        if (twitterDescriptionElements.length === 0) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.twitter-card.not.found'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (twitterDescriptionElements.length > 1) {
+            result.push({
+                message: this.dotMessageService.get(
+                    'seo.rules.twitter-card-description.more.one.found'
+                ),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (twitterDescription && twitterDescription.length === 0) {
+            result.push({
+                message: this.dotMessageService.get(
+                    'seo.rules.twitter-card-description.more.one.found.empty'
+                ),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (
+            twitterDescription &&
+            twitterDescription.length > SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
+        ) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.twitter-card-description.greater'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        if (
+            twitterDescription &&
+            twitterDescription.length < SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
+        ) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.twitter-card-description.found'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
+        }
+
+        return result;
+    }
+
+    private getTwitterImageItems(metaTagsObject: SeoMetaTags): Observable<SeoRulesResult[]> {
+        const twitterImageElements = metaTagsObject['twitterImageElements'];
+        const twitterImage = metaTagsObject['twitter:image'];
+
+        return this.getImageFileSize(twitterImage).pipe(
+            switchMap((imageMetaData) => {
+                const result: SeoRulesResult[] = [];
+
+                if (twitterImage && imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES) {
+                    result.push({
+                        message: this.dotMessageService.get('seo.rules.og-image.found'),
+                        color: SEO_RULES_COLORS.DONE,
+                        itemIcon: SEO_RULES_ICONS.CHECK
+                    });
+                }
+
+                if (twitterImageElements.length === 0) {
+                    result.push({
+                        message: this.dotMessageService.get('seo.rules.og-image.not.found'),
+                        color: SEO_RULES_COLORS.ERROR,
+                        itemIcon: SEO_RULES_ICONS.TIMES
+                    });
+                }
+
+                if (twitterImageElements?.length > 1) {
+                    result.push({
+                        message: this.dotMessageService.get('seo.rules.og-image.more.one.found'),
+                        color: SEO_RULES_COLORS.ERROR,
+                        itemIcon: SEO_RULES_ICONS.TIMES
+                    });
+                }
+
+                if (imageMetaData.length > SEO_LIMITS.MAX_TWITTER_IMAGE_BYTES) {
+                    result.push({
+                        message: this.dotMessageService.get('seo.rules.twitter-image.over'),
+                        color: SEO_RULES_COLORS.DONE,
+                        itemIcon: SEO_RULES_ICONS.CHECK
                     });
                 }
 

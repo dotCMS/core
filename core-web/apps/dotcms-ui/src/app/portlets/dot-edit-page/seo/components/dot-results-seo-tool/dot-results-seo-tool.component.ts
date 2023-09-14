@@ -15,6 +15,8 @@ import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit } from '@a
 
 import { CardModule } from 'primeng/card';
 
+import { map } from 'rxjs/operators';
+
 import {
     SeoMetaTags,
     SeoMetaTagsResult
@@ -83,9 +85,10 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges() {
-        this.currentResults = this.dotSeoMetaTagsService.getFilteredMetaTagsByMedia(
-            this.seoOGTagsResults,
-            this.seoMedia
+        this.currentResults = this.seoOGTagsResults.pipe(
+            map((tags) => {
+                return this.dotSeoMetaTagsService.getFilteredMetaTagsByMedia(tags, this.seoMedia);
+            })
         );
     }
 }

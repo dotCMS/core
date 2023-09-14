@@ -6,7 +6,11 @@ export enum SEO_OPTIONS {
     DESCRIPTION = 'description',
     OG_DESCRIPTION = 'og:description',
     OG_TITLE = 'og:title',
-    OG_IMAGE = 'og:image'
+    OG_IMAGE = 'og:image',
+    TWITTER_CARD = 'twitter:card',
+    TWITTER_TITLE = 'twitter:title',
+    TWITTER_DESCRIPTION = 'twitter:description',
+    TWITTER_IMAGE = 'twitter:image'
 }
 
 export enum SEO_RULES_ICONS {
@@ -24,7 +28,9 @@ export enum SEO_LIMITS {
     MAX_OG_TITLE_LENGTH = 160,
     MAX_FAVICONS = 1,
     MAX_TITLES = 1,
-    MAX_IMAGE_BYTES = 8000000
+    MAX_IMAGE_BYTES = 8000000,
+    MAX_TWITTER_IMAGE_BYTES = 5000000,
+    MAX_TWITTER_DESCRIPTION_LENGTH = 200
 }
 
 export enum SEO_RULES_COLORS {
@@ -64,20 +70,33 @@ export interface SeoMetaTags {
     'og:description'?: string;
     'og:image'?: string;
     'og:title'?: string;
+    'twitter:card'?: string;
+    'twitter:title'?: string;
+    'twitter:description'?: string;
+    'twitter:image'?: string;
 }
 
 export const SeoMediaKeys = {
     facebook: [SEO_OPTIONS.DESCRIPTION, SEO_OPTIONS.OG_IMAGE, SEO_OPTIONS.OG_TITLE],
     google: [SEO_OPTIONS.DESCRIPTION, SEO_OPTIONS.FAVICON, SEO_OPTIONS.TITLE],
+    twitter: [
+        SEO_OPTIONS.TWITTER_CARD,
+        SEO_OPTIONS.TWITTER_TITLE,
+        SEO_OPTIONS.TWITTER_DESCRIPTION,
+        SEO_OPTIONS.TWITTER_IMAGE
+    ],
     linkedin: [],
-    twitter: [],
     all: [
         SEO_OPTIONS.DESCRIPTION,
         SEO_OPTIONS.OG_IMAGE,
         SEO_OPTIONS.OG_TITLE,
         SEO_OPTIONS.FAVICON,
         SEO_OPTIONS.TITLE,
-        SEO_OPTIONS.OG_DESCRIPTION
+        SEO_OPTIONS.OG_DESCRIPTION,
+        SEO_OPTIONS.TWITTER_CARD,
+        SEO_OPTIONS.TWITTER_TITLE,
+        SEO_OPTIONS.TWITTER_DESCRIPTION,
+        SEO_OPTIONS.TWITTER_IMAGE
     ]
 };
 
