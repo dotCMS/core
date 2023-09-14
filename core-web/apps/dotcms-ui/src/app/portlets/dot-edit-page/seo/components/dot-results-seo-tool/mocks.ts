@@ -170,4 +170,63 @@ const seoOGTagsResultOgMock = [
     }
 ];
 
-export { seoOGTagsMock, seoOGTagsResultMock, seoOGTagsResultOgMock };
+const seoOGTagsResultOgMockTwitter = [
+    {
+        key: 'twitter:card',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message: 'seo.rules.twitter-card.not.found',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 1,
+        info: ''
+    },
+    {
+        key: 'twitter:title',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message: 'seo.rules.twitter-card.not.found',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 2,
+        info: ''
+    },
+    {
+        key: 'twitter:description',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message: 'seo.rules.twitter-card.not.found',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 3,
+        info: ''
+    },
+    {
+        key: 'twitter:image',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message: 'og:image metatag not found!',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 4,
+        info: ''
+    }
+];
+
+export { seoOGTagsMock, seoOGTagsResultMock, seoOGTagsResultOgMock, seoOGTagsResultOgMockTwitter };

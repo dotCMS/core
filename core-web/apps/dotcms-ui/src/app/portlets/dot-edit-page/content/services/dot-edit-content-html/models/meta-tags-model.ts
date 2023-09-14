@@ -110,3 +110,23 @@ export interface OpenGraphOptions {
     sort: number;
     info: string;
 }
+
+export interface MetaTagsPreview {
+    hostName: string;
+    title: string;
+    description: string;
+    type: string;
+    isMobile: boolean;
+    image?: string;
+    twitterTitle?: string;
+    twitterCard?: string;
+    twitterDescription?: string;
+    twitterImage?: string;
+}
+
+export enum SEO_MEDIA_TYPES {
+    GOOGLE = 'Google',
+    TWITTER = 'Twitter',
+    LINKEDIN = 'LinkedIn',
+    FACEBOOK = 'Facebook'
+}

@@ -7,6 +7,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
 import { seoOGTagsMock, seoOGTagsResultMock } from './mocks';
 
+import { SEO_MEDIA_TYPES } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
 
 describe('DotResultsSeoToolComponent', () => {
@@ -65,17 +66,17 @@ describe('DotResultsSeoToolComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                hostName: 'A title',
+                hostName: 'dotcms.com',
                 seoOGTags: seoOGTagsMock,
                 seoOGTagsResults: of(seoOGTagsResultMock),
-                seoMedia: 'google'
+                seoMedia: SEO_MEDIA_TYPES.GOOGLE
             }
         });
     });
 
-    it('should display title', () => {
-        const title = spectator.query(byTestId('page-title'));
-        expect(title).toHaveText(spectator.component.hostName);
+    it('should display host Name', () => {
+        const hostName = spectator.query(byTestId('page-hostName'));
+        expect(hostName).toHaveText(spectator.component.hostName);
     });
 
     it('should display SEO Tags', () => {
@@ -102,18 +103,37 @@ describe('DotResultsSeoToolComponent', () => {
     });
 
     it('should display mobile size for the preview', () => {
-        const previews = spectator.queryAll(byTestId('seo-preview'));
+        spectator.setInput({
+            seoMedia: SEO_MEDIA_TYPES.GOOGLE
+        });
+        spectator.detectChanges();
+        const previews = spectator.queryAll(byTestId('seo-preview-mobile'));
         expect(previews[1]).toHaveClass('results-seo-tool__version--small');
     });
 
     it('should filter seo results by seoMedia on changes', () => {
-        spectator.fixture.componentInstance.seoMedia = 'facebook';
-        spectator.component.ngOnChanges();
+        spectator.setInput({
+            seoMedia: SEO_MEDIA_TYPES.FACEBOOK
+        });
+        spectator.detectChanges();
         spectator.component.currentResults.subscribe((items) => {
             expect(items.length).toEqual(3);
             expect(items[0].key).toEqual(seoOGTagsResultMock[1].key);
             expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
             expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
+        });
+    });
+
+    it('should filter seo results by seoMedia on changes', () => {
+        spectator.setInput({
+            seoMedia: SEO_MEDIA_TYPES.TWITTER
+        });
+        spectator.detectChanges();
+        spectator.component.currentResults.subscribe((items) => {
+            expect(items.length).toEqual(3);
+            expect(items[0].key).toEqual(seoOGTagsResultMock[0].key);
+            expect(items[1].key).toEqual(seoOGTagsResultMock[1].key);
+            expect(items[2].key).toEqual(seoOGTagsResultMock[2].key);
         });
     });
 });

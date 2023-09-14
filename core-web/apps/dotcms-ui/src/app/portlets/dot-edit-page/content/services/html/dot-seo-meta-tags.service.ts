@@ -432,7 +432,7 @@ export class DotSeoMetaTagsService {
 
         if (titleCard && titleCard.length === 0) {
             result.push({
-                message: this.dotMessageService.get('twitter:image meta tag found, but is empty!'),
+                message: this.dotMessageService.get('seo.rules.twitter-image.more.one.found.empty'),
                 color: SEO_RULES_COLORS.ERROR,
                 itemIcon: SEO_RULES_ICONS.TIMES
             });
