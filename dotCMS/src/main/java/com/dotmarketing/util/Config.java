@@ -382,7 +382,7 @@ public class Config {
                 ThreadContextUtil.getOrCreateContext().setTag("ConfigSystemTable");
 
                 for (final String name : names) {
-                    final String value = SYSTEM_TABLE_CONFIG_SOURCE.getValue(name);
+                    final String value = Try.of(()->SYSTEM_TABLE_CONFIG_SOURCE.getValue(name)).getOrNull();
                     if (null != value) {
                         return value;
                     }
