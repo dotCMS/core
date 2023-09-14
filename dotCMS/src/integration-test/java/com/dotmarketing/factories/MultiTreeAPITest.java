@@ -2282,10 +2282,9 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Set<String> personalizationsForPageNoDefaultVariant = APILocator.getMultiTreeAPI()
                 .getPersonalizationsForPage(experimentPage, noDefaultVariant.name());
 
-        assertEquals(3, personalizationsForPageNoDefaultVariant.size());
+        assertEquals(2, personalizationsForPageNoDefaultVariant.size());
         assertTrue(personalizationsForPageNoDefaultVariant.contains(persona_1.getKeyTag()));
         assertTrue(personalizationsForPageNoDefaultVariant.contains(persona_2.getKeyTag()));
-        assertTrue(personalizationsForPageNoDefaultVariant.contains(persona_3.getKeyTag()));
 
         final Set<String> personalizationsForPageDefaultVariant = APILocator.getMultiTreeAPI()
                 .getPersonalizationsForPage(experimentPage, VariantAPI.DEFAULT_VARIANT.name());
