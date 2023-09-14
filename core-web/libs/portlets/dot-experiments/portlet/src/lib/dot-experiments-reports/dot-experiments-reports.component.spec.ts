@@ -197,7 +197,9 @@ describe('DotExperimentsReportsComponent', () => {
         spectator.detectChanges();
         jest.spyOn(store, 'loadExperimentAndResults');
 
-        spectator.click(byTestId('reload-button'));
+        const summaryComponent = spectator.query(DotExperimentsExperimentSummaryComponent);
+
+        summaryComponent.updateResults.emit();
 
         expect(store.loadExperimentAndResults).toHaveBeenCalledWith(
             ActivatedRouteMock.snapshot.params.experimentId
