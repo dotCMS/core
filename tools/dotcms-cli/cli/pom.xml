@@ -41,7 +41,6 @@
             <groupId>com.dotcms</groupId>
             <artifactId>api-data-model</artifactId>
             <version>1.0.0-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
 
         <dependency>
