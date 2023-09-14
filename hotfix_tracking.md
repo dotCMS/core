@@ -173,7 +173,7 @@ This maintenance release includes the following code fixes:
 144. https://github.com/dotCMS/core/issues/24683 : Copy button on Page Edit portlet should copy the entire URL, not just the path #24683
 145. https://github.com/dotCMS/core/issues/24829 : NavTool method getNav must return only published links #24829
 146. https://github.com/dotCMS/core/issues/25371 : PP: pushing new folder with limited user fails #25371
-147. https://github.com/dotCMS/core/issues/25797 : When uploading multiple files, the files are always in English #25797
+147. https://github.com/dotCMS/core/issues/25797 : When uploading multiple files, the files are always in English #25797[ProductSeriesMarshaller.java](..%2F..%2F..%2FDesktop%2Futils%2Fsrc%2Fmain%2Fjava%2Fcom%2Fbelfuse%2Fsite%2Futils%2Fparametricsearch%2FProductSeriesMarshaller.java)
 148. https://github.com/dotCMS/core/issues/25229 : PP - Integrity Checker, fixing conflicts is not populating the contentlet_as_json field #25229
 149. https://github.com/dotCMS/core/issues/25896 : Creating a contentlet in a 2nd language removes related content #25896
 
@@ -186,3 +186,4 @@ This maintenance release includes the following code fixes:
 154. https://github.com/dotCMS/core/issues/23359 : Display PDFs and Video in the content edit screen. #23359
 155. https://github.com/dotCMS/core/issues/23407 : provide stable path to tomcat directory in dotCMS build #23407
 156. https://github.com/dotCMS/core/issues/23481 : Update remote fetch IP Blacklist #23481
+157. https://github.com/dotCMS/core/issues/26019 : PubSubListener with vanilla postgres #26019
