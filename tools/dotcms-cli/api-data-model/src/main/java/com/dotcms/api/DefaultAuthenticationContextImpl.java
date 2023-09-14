@@ -1,7 +1,7 @@
 package com.dotcms.api;
 
 
-import com.dotcms.api.client.ParamAuthentication;
+import com.dotcms.api.client.AuthenticationParam;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
@@ -38,7 +38,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     RestClientFactory clientFactory;
 
     @Inject
-    ParamAuthentication paramAuthentication;
+    AuthenticationParam authenticationParam;
 
     private String user;
 
@@ -66,7 +66,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     public Optional<char[]> getToken() {
 
         //This injects the token from the command line if present
-        final Optional<char[]> paramToken = paramAuthentication.getToken();
+        final Optional<char[]> paramToken = authenticationParam.getToken();
         if(paramToken.isPresent()){
             return paramToken;
         }

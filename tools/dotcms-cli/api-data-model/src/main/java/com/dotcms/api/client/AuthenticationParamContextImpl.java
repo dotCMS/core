@@ -5,9 +5,12 @@ import java.lang.ref.WeakReference;
 import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 
+/**
+ * This class is used to pass the token from the CLI to the API client. If the token is present here we use directly
+ */
 @DefaultBean
 @ApplicationScoped
-public class ParamAuthenticationContextImpl implements ParamAuthentication {
+public class AuthenticationParamContextImpl implements AuthenticationParam {
 
     WeakReference<char[]> token;
 
