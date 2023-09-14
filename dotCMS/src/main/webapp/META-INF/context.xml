@@ -15,6 +15,15 @@
 
     <Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="localhost" />
 
+    <!-- POSTGRESQL -->
+    <Resource name="jdbc/dotCMSPool" auth="Container"
+          type="javax.sql.DataSource"
+          factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
+          driverClassName="org.postgresql.Driver"
+          url="jdbc:postgresql://localhost/dotcms"
+          username="postgres" password="admin" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
+          removeAbandonedOnBorrow="true" removeAbandonedOnMaintenance="true" removeAbandonedTimeout="60" logAbandoned="true"
+          timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true" />
 
 
 </Context>
