@@ -23,6 +23,7 @@ on:
       - '*.adoc'
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
+      - 'core-web/**'
   pull_request:
     paths-ignore:
       - '.gitignore'
@@ -35,6 +36,7 @@ on:
       - '*.adoc'
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
+      - 'core-web/**'
 jobs:
   cli_tests:
     name: CLI tests
