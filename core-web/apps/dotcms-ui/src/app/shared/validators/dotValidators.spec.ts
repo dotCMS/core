@@ -67,5 +67,17 @@ describe('DotValidators', () => {
             control.setValue('my%amazing%parametername');
             expect(control.hasError('validQueryParamName')).toBe(true);
         });
+
+        it('should return hasError true when the input is all white spaces', () => {
+            const control = new UntypedFormControl('input', DotValidators.noWhitespaceOnly);
+            control.setValue('       ');
+            expect(control.hasError('whiteSpaceOnly')).toBe(true);
+        });
+
+        it('should return not return error when the input contain text', () => {
+            const control = new UntypedFormControl('input', DotValidators.noWhitespaceOnly);
+            control.setValue('  test     ');
+            expect(control.hasError('whiteSpaceOnly')).toBe(false);
+        });
     });
 });

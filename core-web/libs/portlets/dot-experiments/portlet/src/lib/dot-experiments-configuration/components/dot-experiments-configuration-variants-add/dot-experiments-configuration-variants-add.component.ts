@@ -20,6 +20,7 @@ import {
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+import { DotValidators } from '@shared/validators/dotValidators';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
@@ -92,7 +93,11 @@ export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
         this.form = new FormGroup({
             name: new FormControl<string>('', {
                 nonNullable: true,
-                validators: [Validators.required, Validators.maxLength(50)]
+                validators: [
+                    Validators.required,
+                    Validators.maxLength(50),
+                    DotValidators.noWhitespaceOnly
+                ]
             })
         });
     }

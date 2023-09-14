@@ -1,4 +1,4 @@
-import { AbstractControl, FormControl } from '@angular/forms';
+import { AbstractControl } from '@angular/forms';
 
 const QUERY_PARAM_NAME_REGEX = /^[a-zA-Z0-9\-_]+$/;
 const ALPHA_NUMERIC_REGEX = /^[a-zA-Z0-9_]*$/;
@@ -9,6 +9,9 @@ const DOT_ERROR_MESSAGES = {
     },
     validQueryParamNameErrorMsg: {
         validQueryParamName: 'dot.common.form.field.validation.validQueryParamName'
+    },
+    whiteSpaceOnlyMgs: {
+        whiteSpaceOnly: 'dot.common.form.field.validation.noWhitespaceOnly'
     }
 };
 
@@ -32,11 +35,15 @@ export class DotValidators {
     }
 
     /**
-     * Validate there is not only white spaces in a field
+     * Validate there is not only white spaces in a field when is not empty.
      *
      * @param {AbstractControl} control
      */
-    static noWhitespaceOnly(control: FormControl): { whitespace: boolean } {
-        return (control.value || '').trim().length ? null : { whitespace: true };
+    static noWhitespaceOnly(control: AbstractControl): { [key: string]: string } | null {
+        return control.value
+            ? control.value.trim().length
+                ? null
+                : DOT_ERROR_MESSAGES.whiteSpaceOnlyMgs
+            : null;
     }
 }
