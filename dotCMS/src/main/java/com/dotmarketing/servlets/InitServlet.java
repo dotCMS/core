@@ -22,6 +22,7 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
+import com.dotcms.rest.api.v1.maintenance.ClusterManagementTopic;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.lucene.search.BooleanQuery;
@@ -125,24 +126,8 @@ public class InitServlet extends HttpServlet {
         Logger.debug(this, "");
         Logger.debug(this, "InitServlet: Setting Application Context!!!!!!");
 
-        // creates the velocity folders to make sure they are there
-        new java.io.File(ConfigUtils.getDynamicVelocityPath() + File.separator + "live").mkdirs();
-        new java.io.File(ConfigUtils.getDynamicVelocityPath() + File.separator + "working").mkdirs();
-
-        //Used com.dotcms.rendering.velocity.viewtools.NavigationWebAPI
-        String velocityRootPath = ConfigUtils.getDynamicVelocityPath() + java.io.File.separator;
-        String menuVLTPath = velocityRootPath + "menus" + java.io.File.separator;
-
-        java.io.File fileFolder = new java.io.File(menuVLTPath);
-        if (!fileFolder.exists()) {
-            fileFolder.mkdirs();
-        }
-
-        if(Config.getBooleanProperty("CACHE_DISK_SHOULD_DELETE_NAVTOOL", false)){
-            // deletes all menues that have been generated
-            RefreshMenus.deleteMenus();
-            CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache", false);
-        }
+        // initialize Cluster Management Topic
+        ClusterManagementTopic.getInstance();
 
         try {
 

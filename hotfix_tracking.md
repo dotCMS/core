@@ -187,3 +187,4 @@ This maintenance release includes the following code fixes:
 155. https://github.com/dotCMS/core/issues/23407 : provide stable path to tomcat directory in dotCMS build #23407
 156. https://github.com/dotCMS/core/issues/23481 : Update remote fetch IP Blacklist #23481
 157. https://github.com/dotCMS/core/issues/26019 : PubSubListener with vanilla postgres #26019
+158. https://github.com/dotCMS/core/issues/22507 : Make instance restart function capable of restarting the cluster #22507
