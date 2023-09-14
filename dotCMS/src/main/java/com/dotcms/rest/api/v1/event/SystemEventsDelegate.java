@@ -6,6 +6,7 @@ import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketUserSessionData;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.system.AppContext;
 import com.dotcms.util.Delegate;
 import com.dotcms.util.marshal.MarshalFactory;
@@ -17,6 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.dotcms.rest.exception.SecurityException;
 
 import java.util.List;
 
@@ -176,8 +178,16 @@ public class SystemEventsDelegate implements Delegate<AppContext> {
     private void doMarshall (final AppContext context, final List<SystemEvent> newEvents) {
 
         final AsyncResponse asyncResponse = context.getAttribute(RESPONSE);
-        final String json = this.marshalUtils.marshal(new ResponseEntityView(newEvents));
-        final Response response = Response.ok(json).build();
+        final User user = context.getAttribute(USER);
+        Response response = null;
+        if (user == null) {
+            response = ExceptionMapperUtil.createResponse(
+                    new SecurityException("Not logged user", Response.Status.UNAUTHORIZED),
+                    Response.Status.UNAUTHORIZED);
+        } else {
+            final String json = this.marshalUtils.marshal(new ResponseEntityView(newEvents));
+            response = Response.ok(json).build();
+        }
 
         asyncResponse.resume(response);
     } // doMarshall.
