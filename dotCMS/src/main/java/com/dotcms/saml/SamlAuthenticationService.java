@@ -41,9 +41,10 @@ public interface SamlAuthenticationService {
      * @param request {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
      * @param identityProviderConfiguration {@link IdentityProviderConfiguration}
+     * @param relayState {@link String}
      */
     void authentication(final HttpServletRequest request, final HttpServletResponse response,
-                        final IdentityProviderConfiguration identityProviderConfiguration);
+                        final IdentityProviderConfiguration identityProviderConfiguration, final String relayState);
 
     /**
      * Do the logout call for SAML

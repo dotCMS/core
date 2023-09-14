@@ -27,3 +27,6 @@ export * from './floating-button/floating-button.component';
 export * from './floating-button/floating-button.extension';
 export * from './floating-button/plugin/floating-button.plugin';
 export * from './freeze-scroll/freeze-scroll.extension';
+export * from './ai-content-prompt/ai-content-prompt.component';
+export * from './ai-content-prompt/ai-content-prompt.extension';
+export * from './ai-content-prompt/plugins/ai-content-prompt.plugin';

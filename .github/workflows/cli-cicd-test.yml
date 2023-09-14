@@ -153,10 +153,10 @@ jobs:
           
           cat ${CICD_RES_PATH}/cli/cli-results-footer.html >> ${INDEX_FILE}
 
-          echo "BUILD_ID=${BUILD_ID}" >> "$GITHUB_ENV"
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
           echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
-          echo "results_location=${XML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
-          echo "results_report_location=${HTML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
+          echo "results_location=${XML_REPORTS_PATH}" >> $GITHUB_OUTPUT
+          echo "results_report_location=${HTML_REPORTS_PATH}" >> $GITHUB_OUTPUT
           
           tree ${RESULTS_PATH}
 

@@ -11,8 +11,7 @@
                 [disabled]="item.disabled"
                 [pTooltip]="'editpage.toolbar.' + item.label.toLowerCase() + '.page.clipboard' | dm"
                 data-testId="dot-tab-button-text"
-                tooltipPosition="bottom"
-            >
+                tooltipPosition="bottom">
                 {{ item.label }}
             </button>
 
@@ -20,15 +19,13 @@
                 class="dot-tab__dropdow"
                 *ngIf="item.value === pageMode.PREVIEW"
                 [ngClass]="{ 'dot-tab-dropdown--active': mode === pageMode.PREVIEW }"
-                value="openMenu"
-            >
+                value="openMenu">
                 <i class="dot-tab-dropdown__icon" [value]="'openMenu'" [class]="icon"></i>
             </button>
         </div>
         <div
             class="dot-tab-indicator"
             *ngIf="mode === item.value"
-            data-testId="dot-tab-button"
-        ></div>
+            data-testId="dot-tab-button"></div>
     </div>
 </div>
