@@ -49,7 +49,7 @@ import { BINARY_FIELD_MODE, DotBinaryFieldStore } from './store/binary-field.sto
 })
 export class DotBinaryFieldComponent implements OnInit {
     //Inputs
-    @Input() accept: string[];
+    @Input() accept: string[] = [];
     @Input() maxFileSize: number;
     @Input() helperText: string;
 
