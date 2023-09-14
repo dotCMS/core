@@ -1045,7 +1045,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-	public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField, User user) {
+	public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField, User user, final boolean respectFrontEndRoles) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getFieldValue(contentlet, theField, user);
 			if(!preResult){
@@ -1053,7 +1053,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		Object c = conAPI.getFieldValue(contentlet, theField, user);
+		Object c = conAPI.getFieldValue(contentlet, theField, user,respectFrontEndRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.getFieldValue(contentlet, theField,c, user);
 		}
