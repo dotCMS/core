@@ -1,11 +1,4 @@
-export interface DropZoneMessage {
-    message: string;
-    severity: string;
-    icon: string;
-    args?: string[];
-}
-
-const DropZoneMessageMap = {
+const UiMessage = {
     default: {
         message: 'dot.binary.field.drag.and.drop.message',
         severity: 'info',
@@ -28,8 +21,22 @@ const DropZoneMessageMap = {
     }
 };
 
-export const getDropZoneMessage = (messageKey: string, ...args: string[]): DropZoneMessage => {
-    const { message, severity, icon } = DropZoneMessageMap[messageKey];
+export enum UI_MESSAGE_KEYS {
+    DEFAULT = 'default',
+    COULD_NOT_LOAD = 'couldNotLoad',
+    FILE_TYPE_MISMATCH = 'fileTypeMismatch',
+    MAX_FILE_SIZE_EXCEEDED = 'maxFileSizeExceeded'
+}
+
+export interface UiMessageI {
+    message: string;
+    severity: string;
+    icon: string;
+    args?: string[];
+}
+
+export const getUiMessage = (messageKey: string, ...args: string[]): UiMessageI => {
+    const { message, severity, icon } = UiMessage[messageKey];
 
     return {
         message,

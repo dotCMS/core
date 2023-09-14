@@ -11,13 +11,14 @@ import { DialogModule } from 'primeng/dialog';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotDropZoneComponent, DotDropZoneMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { BinaryFieldComponent } from './binary-field.component';
+import { DotBinaryFieldComponent } from './binary-field.component';
+import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
 
 export default {
-    title: 'Library / Contenttype Fields / Fields / BinaryFieldComponent',
-    component: BinaryFieldComponent,
+    title: 'Library / Contenttype Fields / Fields / DotBinaryFieldComponent',
+    component: DotBinaryFieldComponent,
     decorators: [
         moduleMetadata({
             imports: [
@@ -28,10 +29,11 @@ export default {
                 DialogModule,
                 MonacoEditorModule,
                 DotDropZoneComponent,
-                DotMessagePipe,
-                DotDropZoneMessageComponent
+                DotDropZoneMessageComponent,
+                DotMessagePipe
             ],
             providers: [
+                DotBinaryFieldStore,
                 {
                     provide: DotMessageService,
                     useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK
@@ -42,7 +44,7 @@ export default {
     args: {
         accept: ['image/*'],
         maxFileSize: 1000000,
-        helperLabel: 'This field accepts only images with a maximum size of 1MB.'
+        helperText: 'This field accepts only images with a maximum size of 1MB.'
     },
     argTypes: {
         accept: {
@@ -55,20 +57,20 @@ export default {
             control: 'number',
             description: 'Maximum file size in bytes'
         },
-        helperLabel: {
+        helperText: {
             defaultValue: 'This field accepts only images with a maximum size of 1MB.',
             control: 'text',
             description: 'Helper label to be displayed below the field'
         }
     }
-} as Meta<BinaryFieldComponent>;
+} as Meta<DotBinaryFieldComponent>;
 
-const Template: Story<BinaryFieldComponent> = (args: BinaryFieldComponent) => ({
+const Template: Story<DotBinaryFieldComponent> = (args: DotBinaryFieldComponent) => ({
     props: args,
     template: `<dotcms-binary-field
         [accept]="accept"
         [maxFileSize]="maxFileSize"
-        [helperLabel]="helperLabel"
+        [helperText]="helperText"
     ></dotcms-binary-field>`
 });
 

@@ -1,0 +1,133 @@
+import { ComponentStore } from '@ngrx/component-store';
+
+import { Injectable } from '@angular/core';
+
+import { filter, tap } from 'rxjs/operators';
+
+import { DropZoneFileEvent, DropZoneFileValidity } from '@dotcms/ui';
+
+import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../../utils/binary-field-utils';
+
+export interface BinaryFieldState {
+    file: File;
+    mode: BINARY_FIELD_MODE;
+    status: BINARY_FIELD_STATUS;
+    UiMessage: UiMessageI;
+    rules: {
+        accept: string[];
+        maxFileSize: number;
+    };
+}
+
+export enum BINARY_FIELD_MODE {
+    DROPZONE = 'DROPZONE',
+    URL = 'URL',
+    EDITOR = 'EDITOR'
+}
+
+enum BINARY_FIELD_STATUS {
+    INIT = 'INIT',
+    UPLOADING = 'UPLOADING',
+    UPLOADED = 'UPLOADED',
+    ERROR = 'ERROR'
+}
+
+const initialState: BinaryFieldState = {
+    file: null,
+    mode: BINARY_FIELD_MODE.DROPZONE,
+    status: BINARY_FIELD_STATUS.INIT,
+    rules: {
+        accept: [],
+        maxFileSize: 0
+    },
+    UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT)
+};
+
+@Injectable()
+export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
+    // State
+    readonly state$ = this.select((state) => state);
+
+    // File state
+    readonly file$ = this.select((state) => state.file);
+
+    // Mode state
+    readonly mode$ = this.select((state) => state.mode);
+
+    constructor() {
+        super(initialState);
+    }
+
+    // Updaters
+    readonly setFile = this.updater<File>((state, file) => ({
+        ...state,
+        file
+    }));
+
+    readonly setUiMessage = this.updater<UiMessageI>((state, UiMessage) => ({
+        ...state,
+        UiMessage
+    }));
+
+    readonly setMode = this.updater<BINARY_FIELD_MODE>((state, mode) => ({
+        ...state,
+        mode
+    }));
+
+    readonly setStatus = this.updater<BINARY_FIELD_STATUS>((state, status) => ({
+        ...state,
+        status
+    }));
+
+    readonly setRules = this.updater<{ accept: string[]; maxFileSize: number }>((state, rules) => ({
+        ...state,
+        rules
+    }));
+
+    //  Effects
+    readonly handleFileDrop = this.effect<DropZoneFileEvent>((event$) => {
+        return event$.pipe(
+            filter(({ validity }) => {
+                if (!validity.valid) {
+                    this.handleFileDropError(validity);
+                }
+
+                return validity.valid;
+            }),
+            tap(() => this.setUiMessage(getUiMessage(UI_MESSAGE_KEYS.DEFAULT))),
+            tap(({ file }) => this.setFile(file))
+        );
+    });
+
+    readonly uploadFile = this.effect<File>((file$) => {
+        /* To be implemented */
+        return file$.pipe();
+    });
+
+    /**
+     *  Handle file drop error
+     *
+     * @private
+     * @param {DropZoneFileValidity} { fileTypeMismatch, maxFileSizeExceeded }
+     * @memberof DotBinaryFieldStore
+     */
+    private handleFileDropError({
+        fileTypeMismatch,
+        maxFileSizeExceeded
+    }: DropZoneFileValidity): void {
+        const { accept, maxFileSize } = this.get().rules;
+        const acceptedTypes = accept.join(', ');
+        const maxSize = `${maxFileSize} bytes`;
+        let uiMessage: UiMessageI;
+        
+        if (fileTypeMismatch) {
+            uiMessage = getUiMessage(UI_MESSAGE_KEYS.FILE_TYPE_MISMATCH, acceptedTypes);
+        } else if (maxFileSizeExceeded) {
+            uiMessage = getUiMessage(UI_MESSAGE_KEYS.MAX_FILE_SIZE_EXCEEDED, maxSize);
+        } else {
+            uiMessage = getUiMessage(UI_MESSAGE_KEYS.COULD_NOT_LOAD);
+        }
+
+        this.setUiMessage(uiMessage);
+    }
+}

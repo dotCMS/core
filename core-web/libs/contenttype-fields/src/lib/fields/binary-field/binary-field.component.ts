@@ -1,26 +1,30 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { NgClass, NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { AsyncPipe, NgClass, NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    ViewChild
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+
+import { filter } from 'rxjs/operators';
 
 import {
     DotDropZoneComponent,
     DotDropZoneMessageComponent,
     DotMessagePipe,
-    DropZoneFileEvent,
-    DropZoneFileValidity
+    DropZoneFileEvent
 } from '@dotcms/ui';
 
-import { DropZoneMessage, getDropZoneMessage } from '../../utils/binary-field-utils';
-
-enum UPLOAD_FILE_METHOD {
-    UPLOAD = 'UPLOAD',
-    IMPORT_FROM_URL = 'IMPORT_FROM_URL',
-    WRITE_CODE = 'WRITE_CODE'
-}
+import { BINARY_FIELD_MODE, DotBinaryFieldStore } from './store/binary-field.store';
 
 @Component({
     selector: 'dotcms-binary-field',
@@ -30,6 +34,7 @@ enum UPLOAD_FILE_METHOD {
         NgClass,
         NgSwitch,
         NgSwitchCase,
+        AsyncPipe,
         ButtonModule,
         DialogModule,
         DotDropZoneComponent,
@@ -37,27 +42,51 @@ enum UPLOAD_FILE_METHOD {
         DotMessagePipe,
         DotDropZoneMessageComponent
     ],
+    providers: [DotBinaryFieldStore],
     templateUrl: './binary-field.component.html',
     styleUrls: ['./binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BinaryFieldComponent {
+export class DotBinaryFieldComponent implements OnInit {
     //Inputs
     @Input() accept: string[];
     @Input() maxFileSize: number;
-    @Input() helperLabel: string;
+    @Input() helperText: string;
 
     @ViewChild('inputFile', { static: true }) inputFile: ElementRef;
 
-    dropZoneActive = false;
-    dropZoneMessage: DropZoneMessage = getDropZoneMessage('default');
-    readonly UPLOAD_FILE_METHOD = UPLOAD_FILE_METHOD;
-    readonly dialogOptions = {
-        mode: UPLOAD_FILE_METHOD.UPLOAD,
-        header: '',
-        visible: false
-    };
+    @Output() fileChange = new EventEmitter<File>();
 
+    readonly dialogHeaderMap = {
+        [BINARY_FIELD_MODE.URL]: 'URL',
+        [BINARY_FIELD_MODE.EDITOR]: 'File Details'
+    };
+    readonly BINARY_FIELD_MODE = BINARY_FIELD_MODE;
+    readonly mode$ = this.dotBinaryFieldStore.mode$;
+    readonly vm$ = this.dotBinaryFieldStore.state$;
+
+    dialogOpen = false;
+    dropZoneActive = false;
+
+    constructor(private readonly dotBinaryFieldStore: DotBinaryFieldStore) {}
+
+    ngOnInit() {
+        this.dotBinaryFieldStore.file$
+            .pipe(filter((file) => !!file))
+            .subscribe((file) => this.fileChange.emit(file));
+
+        this.dotBinaryFieldStore.setRules({
+            accept: this.accept,
+            maxFileSize: this.maxFileSize
+        });
+    }
+
+    /**
+     *  Set drop zone active state
+     *
+     * @param {boolean} value
+     * @memberof DotBinaryFieldComponent
+     */
     setDropZoneActiveState(value: boolean) {
         this.dropZoneActive = value;
     }
@@ -69,58 +98,40 @@ export class BinaryFieldComponent {
      * @return {*}
      * @memberof BinaryFieldComponent
      */
-    handleFileDrop({ validity }: DropZoneFileEvent) {
+    handleFileDrop(event: DropZoneFileEvent) {
         this.setDropZoneActiveState(false);
-
-        if (!validity.valid) {
-            this.handleDropZoneError(validity);
-
-            return;
-        }
-
-        this.dropZoneMessage = getDropZoneMessage('default');
+        this.dotBinaryFieldStore.handleFileDrop(event);
     }
 
     /**
-     * Handle drop zone error
-     * TODO: Consider a component state or service to handle this
+     * Open dialog
      *
-     * @param {DropZoneFileValidity} validity
-     * @memberof BinaryFieldComponent
+     * @param {BINARY_FIELD_MODE} mode
+     * @memberof DotBinaryFieldComponent
      */
-    handleDropZoneError({ fileTypeMismatch, maxFileSizeExceeded }: DropZoneFileValidity): void {
-        if (fileTypeMismatch) {
-            const acceptedTypes = this.accept.join(', ');
-            this.dropZoneMessage = getDropZoneMessage('fileTypeMismatch', acceptedTypes);
-        } else if (maxFileSizeExceeded) {
-            const maxSize = `${this.maxFileSize} bytes`;
-            this.dropZoneMessage = getDropZoneMessage('maxFileSizeExceeded', maxSize);
-        } else {
-            this.dropZoneMessage = getDropZoneMessage('couldNotLoad');
-        }
+    openDialog(mode: BINARY_FIELD_MODE) {
+        this.dotBinaryFieldStore.setMode(mode);
+        this.dialogOpen = true;
     }
 
+    /**
+     * Open file picker dialog
+     *
+     * @memberof DotBinaryFieldComponent
+     */
     openFilePicker() {
         this.inputFile.nativeElement.click();
     }
 
     handleFileSelection(_event) {
-        // TODO: Implement
+        // TODO: Implement - Chose File
     }
 
-    openDialog(method: UPLOAD_FILE_METHOD) {
-        this.dialogOptions.visible = true;
-        this.dialogOptions.mode = method;
-        this.dialogOptions.header = this.getDialogLabel(method);
+    handleCreateFile(_event) {
+        // TODO: Implement - Write Code
     }
 
-    getDialogLabel(method: UPLOAD_FILE_METHOD): string {
-        switch (method) {
-            case UPLOAD_FILE_METHOD.IMPORT_FROM_URL:
-                return 'URL';
-
-            case UPLOAD_FILE_METHOD.WRITE_CODE:
-                return 'File Details';
-        }
+    handleExternalSourceFile(_event) {
+        // TODO: Implement - FROM URL
     }
 }
