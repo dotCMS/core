@@ -1110,13 +1110,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public Object getFieldValue(final Contentlet contentlet,
             final com.dotcms.contenttype.model.field.Field theField) {
-        return getFieldValue(contentlet, theField, null);
+        return getFieldValue(contentlet, theField, null,false);
     }
 
     @CloseDBIfOpened
     @Override
     public Object getFieldValue(final Contentlet contentlet,
-            final com.dotcms.contenttype.model.field.Field theField, final User user) {
+                                final com.dotcms.contenttype.model.field.Field theField, final User user,
+                                final boolean respectFrontEndRoles) {
         try {
             User currentUser = user;
             if (currentUser == null) {
@@ -1134,13 +1135,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     return contentlet.getFolder();
                 }
             } else if (theField instanceof CategoryField) {
-                final Category category = categoryAPI.find(theField.values(), currentUser, false);
+                final Category category = categoryAPI.find(theField.values(), currentUser, respectFrontEndRoles);
                 // Get all the Contentlets Categories
                 final List<Category> selectedCategories = categoryAPI
-                        .getParents(contentlet, currentUser, false);
+                        .getParents(contentlet, currentUser, respectFrontEndRoles);
                 final Set<Category> categoryList = new HashSet<Category>();
                 final List<Category> categoryTree = categoryAPI
-                        .getAllChildren(category, currentUser, false);
+                        .getAllChildren(category, currentUser, respectFrontEndRoles);
                 if (selectedCategories.size() > 0 && categoryTree != null) {
                     for (int k = 0; k < categoryTree.size(); k++) {
                         final Category cat = categoryTree.get(k);
@@ -4112,7 +4113,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         categories = permissionAPI.filterCollection(categories, PermissionAPI.PERMISSION_USE, respect, user);
         categories.addAll(categoriesUserCannotRemove);
 
-        categoryAPI.setParents(toContentlet, categories, user, respect);
+        categoryAPI.setParents(toContentlet, categories, APILocator.systemUser(), respect);
     }
 
     @CloseDBIfOpened

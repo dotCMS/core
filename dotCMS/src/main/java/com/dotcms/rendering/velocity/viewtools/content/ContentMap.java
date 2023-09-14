@@ -33,6 +33,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -47,6 +48,8 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * The purpose of this object is to provide an easy way on the frontend of dotCMS
@@ -131,6 +134,7 @@ public class ContentMap {
 	
 	private Object get(String fieldVariableName, Boolean parseVelocity) {
 		try {
+			final boolean respectFrontEndRoles = PageMode.get(Try.of(()->(HttpServletRequest)context.get("request")).getOrNull()).respectAnonPerms;
 			Object ret = null;
 			Field f = retriveField(fieldVariableName);
 			if(f==null){
@@ -169,7 +173,7 @@ public class ContentMap {
 			if(f != null && f.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
 				return perAPI.filterCollection(new ArrayList<Category>((Set<Category>)
 						conAPI.getFieldValue(content, new LegacyFieldTransformer(f).from(),
-								this.user)), PermissionAPI.PERMISSION_USE, true, user);
+								this.user, respectFrontEndRoles)), PermissionAPI.PERMISSION_USE, true, user);
 			}else if(f != null && (f.getFieldType().equals(Field.FieldType.FILE.toString()) || f.getFieldType().equals(Field.FieldType.IMAGE.toString()))){
                 // Check if image or file is in fieldValueMap hashmap
                 Object fieldvalue = retriveFieldValue(f);
@@ -330,7 +334,7 @@ public class ContentMap {
 	private Object getRelationshipInfo(final Field field)
 			throws DotDataException, DotSecurityException {
 		final ContentletRelationships relationships = (ContentletRelationships) conAPI.getFieldValue(content,
-				new LegacyFieldTransformer(field).from(), this.user);
+				new LegacyFieldTransformer(field).from(), this.user,false);
 		final ContentletRelationshipRecords records = relationships.getRelationshipsRecords().get(0);
 		if(records.getRecords().isEmpty()) {
 		    return null;

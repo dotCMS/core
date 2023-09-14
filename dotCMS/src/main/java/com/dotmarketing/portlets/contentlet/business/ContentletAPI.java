@@ -409,7 +409,7 @@ public interface ContentletAPI {
      * @param user
      * @return Object from DB with field's value
      */
-    Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField, User user);
+	Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField, User user, final boolean respectFrontEndRoles);
 
     /**
 	 * Gets the value of a field with a given contentlet
