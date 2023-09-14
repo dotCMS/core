@@ -14,12 +14,12 @@ import {
     DropZoneFileValidity
 } from '@dotcms/ui';
 
-import { DropZoneMessage, getDropZoneMessage } from '../../utils/binary-field-utils';
+import { BinaryFieldMessage, getBinaryFieldMessage } from '../../utils/binary-field-utils';
 
-enum UPLOAD_FILE_METHOD {
-    UPLOAD = 'UPLOAD',
-    IMPORT_FROM_URL = 'IMPORT_FROM_URL',
-    WRITE_CODE = 'WRITE_CODE'
+export enum BINARY_FIELD_MODE {
+    DROPZONE = 'DROPZONE',
+    URL = 'URL',
+    EDITOR = 'EDITOR'
 }
 
 @Component({
@@ -45,15 +45,15 @@ export class BinaryFieldComponent {
     //Inputs
     @Input() accept: string[];
     @Input() maxFileSize: number;
-    @Input() helperLabel: string;
+    @Input() helperText: string;
 
     @ViewChild('inputFile', { static: true }) inputFile: ElementRef;
 
     dropZoneActive = false;
-    dropZoneMessage: DropZoneMessage = getDropZoneMessage('default');
-    readonly UPLOAD_FILE_METHOD = UPLOAD_FILE_METHOD;
+    dropZoneMessage: BinaryFieldMessage = getBinaryFieldMessage('default');
+    readonly BINARY_FIELD_MODE = BINARY_FIELD_MODE;
     readonly dialogOptions = {
-        mode: UPLOAD_FILE_METHOD.UPLOAD,
+        mode: BINARY_FIELD_MODE.DROPZONE,
         header: '',
         visible: false
     };
@@ -78,7 +78,7 @@ export class BinaryFieldComponent {
             return;
         }
 
-        this.dropZoneMessage = getDropZoneMessage('default');
+        this.dropZoneMessage = getBinaryFieldMessage('default');
     }
 
     /**
@@ -91,12 +91,12 @@ export class BinaryFieldComponent {
     handleDropZoneError({ fileTypeMismatch, maxFileSizeExceeded }: DropZoneFileValidity): void {
         if (fileTypeMismatch) {
             const acceptedTypes = this.accept.join(', ');
-            this.dropZoneMessage = getDropZoneMessage('fileTypeMismatch', acceptedTypes);
+            this.dropZoneMessage = getBinaryFieldMessage('fileTypeMismatch', acceptedTypes);
         } else if (maxFileSizeExceeded) {
             const maxSize = `${this.maxFileSize} bytes`;
-            this.dropZoneMessage = getDropZoneMessage('maxFileSizeExceeded', maxSize);
+            this.dropZoneMessage = getBinaryFieldMessage('maxFileSizeExceeded', maxSize);
         } else {
-            this.dropZoneMessage = getDropZoneMessage('couldNotLoad');
+            this.dropZoneMessage = getBinaryFieldMessage('couldNotLoad');
         }
     }
 
@@ -108,18 +108,18 @@ export class BinaryFieldComponent {
         // TODO: Implement
     }
 
-    openDialog(method: UPLOAD_FILE_METHOD) {
+    openDialog(method: BINARY_FIELD_MODE) {
         this.dialogOptions.visible = true;
         this.dialogOptions.mode = method;
         this.dialogOptions.header = this.getDialogLabel(method);
     }
 
-    getDialogLabel(method: UPLOAD_FILE_METHOD): string {
+    getDialogLabel(method: BINARY_FIELD_MODE): string {
         switch (method) {
-            case UPLOAD_FILE_METHOD.IMPORT_FROM_URL:
+            case BINARY_FIELD_MODE.URL:
                 return 'URL';
 
-            case UPLOAD_FILE_METHOD.WRITE_CODE:
+            case BINARY_FIELD_MODE.EDITOR:
                 return 'File Details';
         }
     }

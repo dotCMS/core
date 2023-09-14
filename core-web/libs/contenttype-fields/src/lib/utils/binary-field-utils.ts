@@ -1,11 +1,11 @@
-export interface DropZoneMessage {
+export interface BinaryFieldMessage {
     message: string;
     severity: string;
     icon: string;
     args?: string[];
 }
 
-const DropZoneMessageMap = {
+const BinaryFieldMessageMap = {
     default: {
         message: 'dot.binary.field.drag.and.drop.message',
         severity: 'info',
@@ -28,8 +28,11 @@ const DropZoneMessageMap = {
     }
 };
 
-export const getDropZoneMessage = (messageKey: string, ...args: string[]): DropZoneMessage => {
-    const { message, severity, icon } = DropZoneMessageMap[messageKey];
+export const getBinaryFieldMessage = (
+    messageKey: string,
+    ...args: string[]
+): BinaryFieldMessage => {
+    const { message, severity, icon } = BinaryFieldMessageMap[messageKey];
 
     return {
         message,
