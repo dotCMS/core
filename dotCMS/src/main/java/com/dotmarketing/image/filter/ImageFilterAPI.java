@@ -27,6 +27,7 @@ public interface ImageFilterAPI {
     String THUMBNAIL = "thumbnail";
     String THUMB = "thumb";
     String WEBP = "webp";
+    String QUANTIZE="quantize";
 
     Function0<ImageFilterApiImpl> apiInstance = Function0.of(ImageFilterApiImpl::new).memoized();
 

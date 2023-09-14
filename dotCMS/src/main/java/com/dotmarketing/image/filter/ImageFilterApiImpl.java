@@ -54,6 +54,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
                     .put(GIF, GifImageFilter.class)
                     .put(GRAY_SCALE, GrayscaleImageFilter.class)
                     .put(HSB, HsbImageFilter.class)
+                    .put(QUANTIZE, QuantizeImageFilter.class)
                     .put(JPEG, JpegImageFilter.class)
                     .put(JPG, JpegImageFilter.class)
                     .put(PDF, PDFImageFilter.class)
