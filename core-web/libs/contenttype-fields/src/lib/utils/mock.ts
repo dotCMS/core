@@ -3,6 +3,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 const MESSAGES_MOCK = {
     'dot.binary.field.action.create.new.file': 'Create New File',
     'dot.binary.field.action.import.from.url': 'Import from URL',
+    'dot.binary.field.dialog.create.new.file.header': 'File Details',
+    'dot.binary.field.dialog.import.from.url.header': 'URL',
     'dot.binary.field.drag.and.drop.message':
         'Drag and Drop or <a data-id="choose-file">Choose File</a> to upload',
     'dot.binary.field.drag.and.drop.error.could.not.load.message':

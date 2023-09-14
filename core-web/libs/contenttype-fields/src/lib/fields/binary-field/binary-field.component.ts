@@ -58,8 +58,8 @@ export class DotBinaryFieldComponent implements OnInit {
     @Output() fileChange = new EventEmitter<File>();
 
     readonly dialogHeaderMap = {
-        [BINARY_FIELD_MODE.URL]: 'URL',
-        [BINARY_FIELD_MODE.EDITOR]: 'File Details'
+        [BINARY_FIELD_MODE.URL]: 'dot.binary.field.dialog.import.from.url.header',
+        [BINARY_FIELD_MODE.EDITOR]: 'dot.binary.field.dialog.create.new.file.header'
     };
     readonly BINARY_FIELD_MODE = BINARY_FIELD_MODE;
     readonly mode$ = this.dotBinaryFieldStore.mode$;

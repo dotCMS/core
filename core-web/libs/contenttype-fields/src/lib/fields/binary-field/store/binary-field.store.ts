@@ -99,6 +99,21 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         );
     });
 
+    readonly handleFileSelection = this.effect<File>((file$) => {
+        /* To be implemented */
+        return file$.pipe();
+    });
+
+    readonly handleCreateFile = this.effect<{ name: string; code: string }>((fileDetails$) => {
+        /* To be implemented */
+        return fileDetails$.pipe();
+    });
+
+    readonly handleExternalSourceFile = this.effect<string>((url$) => {
+        /* To be implemented */
+        return url$.pipe();
+    });
+
     readonly uploadFile = this.effect<File>((file$) => {
         /* To be implemented */
         return file$.pipe();
@@ -119,7 +134,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         const acceptedTypes = accept.join(', ');
         const maxSize = `${maxFileSize} bytes`;
         let uiMessage: UiMessageI;
-        
+
         if (fileTypeMismatch) {
             uiMessage = getUiMessage(UI_MESSAGE_KEYS.FILE_TYPE_MISMATCH, acceptedTypes);
         } else if (maxFileSizeExceeded) {
