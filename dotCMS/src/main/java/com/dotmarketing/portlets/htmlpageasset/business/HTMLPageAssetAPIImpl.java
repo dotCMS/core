@@ -13,6 +13,7 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -21,6 +22,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
@@ -53,6 +55,14 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -60,15 +70,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
-
 
 public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
-    public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
+
+    public static final Lazy<String> CMS_INDEX_PAGE = Lazy.of(() -> Config.getStringProperty(
+            "CMS_INDEX_PAGE", "index"));
+    public static final Lazy<Boolean> DEFAULT_PAGE_TO_DEFAULT_LANGUAGE =
+            Lazy.of(() -> Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true));
+
     public static final String DEFAULT_HTML_PAGE_ASSET_STRUCTURE_HOST_FIELD = "defaultHTMLPageAssetStructure";
 
     private final PermissionAPI permissionAPI;
@@ -193,7 +202,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         try {
             contentletAPI.copyProperties((Contentlet) pa, con.getMap());
         } catch (Exception e) {
-            throw new DotStateException("Page Copy Failed", e);
+            throw new DotStateException("Page Copy Failed on Contentlet Inode: " + con.getInode(), e);
         }
         pa.setHost(con.getHost());
         pa.setVariantId(con.getVariantId());
@@ -206,7 +215,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 pa.setFolder(folder.getInode());
             }catch(Exception e){
             	pa=new HTMLPageAsset();
-                Logger.warn(this, "Unable to convert contentlet to page asset " + con, e);
+                Logger.warn(this, "Unable to convert contentlet to page asset: " + con, e);
             }
         }
 
@@ -217,11 +226,11 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 if(identifier != null && UtilMethods.isSet(identifier.getAssetName())){
                     pa.setPageUrl(identifier.getAssetName());
                 } else {
-                    Logger.warn(this, "Unable to convert Contentlet to page asset, error at set PageUrl " + con);
+                    Logger.warn(this, "Unable to convert Contentlet to page asset, error at set PageUrl: " + con);
                 }
             }catch(Exception e){
                 pa=new HTMLPageAsset();
-                Logger.warn(this, "Unable to convert Contentlet to page asset " + con, e);
+                Logger.warn(this, "Unable to convert Contentlet to page asset: " + con, e);
             }
         }
 
@@ -248,7 +257,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             try {
                 id = identifierAPI.find(host, uri);
             } catch (Exception e) {
-                Logger.error(this.getClass(), "Unable to find" + uri);
+                Logger.error(this.getClass(), "Unable to find URI: " + uri);
                 return null;
             }
         }
@@ -280,7 +289,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 }
 
             } catch (Exception e) {
-                Logger.error(this.getClass(), "Unable to find" + uri);
+                Logger.error(this.getClass(), "Unable to find URI: " + uri);
                 return null;
             }
         }
@@ -289,12 +298,12 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     private Identifier getIndexPageIdentifier(final String folderURI, final Host host) {
         final String indexPageUri = folderURI.endsWith("/") ?
-                folderURI + CMS_INDEX_PAGE : folderURI + "/" + CMS_INDEX_PAGE;
+                folderURI + CMS_INDEX_PAGE.get() : folderURI + "/" + CMS_INDEX_PAGE.get();
 
         try {
             return identifierAPI.find(host, indexPageUri);
         } catch (Exception e) {
-            Logger.error(this.getClass(), "Unable to find" + folderURI);
+            Logger.error(this.getClass(), "Unable to find folder URI: " + folderURI);
             return null;
         }
     }
@@ -911,5 +920,38 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         return htmlPage;
     }
 
+    @Override
+    public IHTMLPage findByIdLanguageVariantFallback(@NotNull final String identifier, final long tryLang,
+                                                     @NotNull final String tryVariant, final boolean live,
+                                                     @NotNull final User user,
+                                                     final boolean respectFrontEndPermissions) throws DotSecurityException {
+        final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final boolean fallbackLang = tryLang != defaultLang && DEFAULT_PAGE_TO_DEFAULT_LANGUAGE.get();
+
+        // given lang and variant
+        HTMLPageAsset asset = Try.of(() -> fromContentlet(contentletAPI
+                .findContentletByIdentifier(identifier, live, tryLang, tryVariant, APILocator.systemUser(), true))).getOrNull();
+
+        if (asset == null) {
+
+            // given lang and DEFAULT varian
+            asset = Try.of(() -> fromContentlet(contentletAPI.findContentletByIdentifier(identifier, live, tryLang, VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), true))).getOrNull();
+        }
+
+        if (asset == null && fallbackLang) {
+            // DEFAULT lang and given variant
+            asset = Try.of(() -> fromContentlet(contentletAPI.findContentletByIdentifier(identifier, live, defaultLang, tryVariant, APILocator.systemUser(), true))).getOrNull();
+            if (asset == null) {
+                // DEFAULT lang and DEFAULT variant
+                asset = Try.of(() -> fromContentlet(contentletAPI.findContentletByIdentifier(identifier, live, defaultLang, VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), true))).getOrNull();
+            }
+        }
+        if (asset == null) {
+            throw new DotStateException("Unable to find page that matches. id:" + identifier + " lang:" + tryLang + " variant:" + tryVariant);
+        }
+
+        permissionAPI.checkPermission(asset, PermissionLevel.READ, user);
+        return asset;
+    }
 
 }
