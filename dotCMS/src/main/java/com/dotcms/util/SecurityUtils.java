@@ -7,6 +7,9 @@ import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.security.multipart.IllegalFileExtensionsValidator;
+import com.dotcms.security.multipart.IllegalTraversalFilePathValidator;
+import com.dotcms.security.multipart.SecureFileValidator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
@@ -29,6 +32,9 @@ import io.vavr.control.Try;
  *
  */
 public class SecurityUtils {
+
+  private static final List<SecureFileValidator> secureFileValidatorList = new ImmutableList.Builder<SecureFileValidator>()
+          .add(new IllegalTraversalFilePathValidator()).add(new IllegalFileExtensionsValidator()).build(); // todo: could be good to have the ability to add more SecureFileValidator by OSGI
 
   /**
    * Contains the different delay strategies that can be used to halt the normal flow of a request or
@@ -235,7 +241,7 @@ public class SecurityUtils {
    * @param url
    * @return
    */
-  private String hostFromUrl(final String url) {
+  public String hostFromUrl(final String url) {
     if(url==null) return null;
     return Try.of(() -> {
       return (url.contains("://")) ? new URL(url.trim()).getHost().toLowerCase() : new URL("http://" + url.trim()).getHost().toLowerCase();
@@ -283,5 +289,18 @@ public class SecurityUtils {
     }
     return IGNORE_REFERER_FOR_HOSTS;
   }
-  
+
+
+  /**
+   * Validate if the fileName and path are secure and valid
+   * @param fileName  {@link String}
+   */
+  public void validateFile (final String fileName) {
+
+    for (final SecureFileValidator secureFileValidator : secureFileValidatorList) {
+
+      secureFileValidator.validate(fileName);
+    }
+  }
+
 }
