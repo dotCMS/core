@@ -55,7 +55,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            dotcms/dotcms
+            dotcms/dotcms-dev
           # generate Docker tags based on the following events/attributes
           tags: |
             type=sha,enable=true,priority=100,prefix=master_,suffix=_SNAPSHOT,format=short
@@ -76,14 +76,13 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: ${{ github.event.inputs.docker_build_push || 'false' }}
-          context: docker/dotcms
+          context: docker/dev-env
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           pull: true
           no-cache: ${{ github.event.inputs.docker_build_cache || 'false' }}
           build-args: |
-            BUILD_ID=${{ github.head_ref }}
-            BUILD_FROM=COMMIT 
+            DOTCMS_DOCKER_TAG=master_latest_SNAPSHOT
             
       - id: prepare-license
         name: Prepare license
