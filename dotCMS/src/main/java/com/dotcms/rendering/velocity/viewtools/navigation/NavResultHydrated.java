@@ -1,10 +1,16 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -21,21 +27,17 @@ import com.liferay.portal.model.User;
 
 public final class NavResultHydrated extends NavResult{
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
     final NavResult navResult;
     final transient ViewContext context;
 
     public NavResultHydrated(final NavResult navResult, final ViewContext context) {
-        super(navResult);
+        super(navResult instanceof NavResultHydrated ?
+                ((NavResultHydrated)navResult).navResult : navResult);
         this.navResult = navResult;
         this.context = context;
 
     }
-
-
 
     public boolean isActive() {
         if (context != null && UtilMethods.isSet(navResult.getHref())) {
@@ -106,7 +108,6 @@ public final class NavResultHydrated extends NavResult{
         return navResult.getOrder();
     }
 
-
     @Override
     public boolean isFolder() {
         return navResult.isFolder();
@@ -115,11 +116,9 @@ public final class NavResultHydrated extends NavResult{
     @Override
     public List<? extends NavResult> getChildren() throws Exception {
 
+        List<NavResultHydrated> list = navResult.getChildren(this.context).stream().map(result ->
+                new NavResultHydrated(result, this.context)).collect(Collectors.toList());
 
-        List<NavResultHydrated> list = navResult.getChildren().stream().map(result -> new NavResultHydrated(result, this.context)).collect(Collectors.toList());
-        
-        
-        
         if (Config.getBooleanProperty("ENABLE_NAV_PERMISSION_CHECK", false)) {
             // now filtering permissions
             List<NavResult> allow = new ArrayList<NavResult>(list.size());
@@ -130,10 +129,10 @@ public final class NavResultHydrated extends NavResult{
             if (currentUser == null)
                 currentUser = APILocator.getUserAPI()
                     .getAnonymousUser();
-            for (NavResult nv : list) {
+            for (NavResultHydrated nv : list) {
                 try {
                     if (APILocator.getPermissionAPI()
-                        .doesUserHavePermission(nv, PermissionAPI.PERMISSION_READ, currentUser)) {
+                            .doesUserHavePermission(nv.navResult, PermissionAPI.PERMISSION_READ, currentUser)) {
                         allow.add(nv);
                     }
                 } catch (Exception ex) {
@@ -145,39 +144,54 @@ public final class NavResultHydrated extends NavResult{
         return list;
     }
 
-
+    @Override
     public String getParentPath() throws DotDataException, DotSecurityException {
         return navResult.getParentPath();
     }
 
+    @Override
+    public String getParentStr() {
+        return navResult.getParentStr();
+    }
 
-
+    @Override
     public NavResult getParent() throws DotDataException, DotSecurityException {
         return navResult.getParent();
     }
 
-
-
+    @Override
     public List<String> getChildrenFolderIds() {
         return navResult.getChildrenFolderIds();
     }
 
-
+    @Override
     public String getType() {
         return navResult.getType();
     }
 
-
-
+    @Override
     public String getTarget() {
         return navResult.getTarget();
     }
 
-
+    @Override
     public String getOwner() {
         return navResult.getOwner();
     }
 
+    @Override
+    public long getLanguageId() {
+        return navResult.getLanguageId();
+    }
 
+    @Override
+    public String getFolderId() {
+        return navResult.getFolderId();
+    }
+
+    @Override
+    public String getPermissionId() {
+        return navResult.getPermissionId();
+    }
 
 }
