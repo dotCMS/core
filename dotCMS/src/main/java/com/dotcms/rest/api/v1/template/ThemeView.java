@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.template;
 import com.dotmarketing.business.Theme;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -13,7 +14,7 @@ import java.util.Date;
  * @author Jose Castro
  * @since Sep 15th, 2023
  */
-public class ThemeView {
+public class ThemeView implements Serializable {
 
     private final String path;
     private final String defaultFileType;
