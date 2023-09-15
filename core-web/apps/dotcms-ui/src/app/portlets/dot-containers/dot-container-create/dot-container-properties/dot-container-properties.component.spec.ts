@@ -321,12 +321,19 @@ describe('DotContainerPropertiesComponent', () => {
         });
 
         it('should focus on title field', async () => {
+            const inplace = de.query(By.css('[data-testId="inplace"]'));
+            inplace.componentInstance.activate();
             fixture.detectChanges();
             const title = de.query(By.css('[data-testId="title"]'));
+
+            expect(inplace.componentInstance.active).toBe(true);
             expect(title.attributes.dotAutofocus).toBeDefined();
         });
 
         it('should setup title', () => {
+            const inplace = de.query(By.css('[data-testId="inplace"]'));
+            inplace.componentInstance.activate();
+            fixture.detectChanges();
             const field = de.query(By.css('[data-testId="title"]'));
             expect(field.attributes.pInputText).toBeDefined();
         });
