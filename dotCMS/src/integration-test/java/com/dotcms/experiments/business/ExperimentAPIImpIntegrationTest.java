@@ -608,8 +608,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 cubeJSQueryExpected,
                 JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
 
-        addCountQueryContext(experiment, cubeJsQueryData.size(), mockHttpServer);
-
         mockHttpServer.start();
 
         IPUtils.disabledIpPrivateSubnet(true);
@@ -729,7 +727,10 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Experiment experimentStarted = ExperimentDataGen.start(experiment);
 
-        addCountQueryContext(experimentStarted, 0, mockhttpServer);
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", Collections.EMPTY_LIST);
+
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
 
         try {
 
@@ -811,8 +812,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 4, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -932,6 +931,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             offset += 1000;
         }
 
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experimentStarted, 1000, 9000);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(Collections.EMPTY_LIST));
+
         final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
         final List<Map<String, Object>> totalPageViewsResponseExpected = list(
                 map("Events.variant", variantName, "Events.count", "4500"),
@@ -940,14 +942,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        final String countExpectedPageReachQuery = getCountExpectedPageReachQuery(experiment);
-        final List<Map<String, Object>> countResponseExpected = list(
-                map("Events.count", "9000")
-        );
-
-        addContext(mockhttpServer, countExpectedPageReachQuery,
-                JsonUtil.getJsonStringFromObject(map("data", countResponseExpected)));
 
         mockhttpServer.start();
 
@@ -1075,13 +1069,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        final String countExpectedPageReachQuery = getCountExpectedPageReachQuery(experiment);
-        final List<Map<String, Object>> countResponseExpected = list(
-                map("Events.count", "4500")
-        );
-
-        addContext(mockhttpServer, countExpectedPageReachQuery,
-                JsonUtil.getJsonStringFromObject(map("data", countResponseExpected)));
 
         mockhttpServer.start();
 
@@ -1240,7 +1227,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         } catch (DotDataException e) {
             //expected
 
-            final String message = "Error getting result for Experiment " + experiment.name() + ": It is not possible to get all the Events from the CubeJS Server";
+            final String message = "Error getting result for Experiment " + experiment.name() + ": CubeJS Server is not available";
             assertEquals(message, e.getMessage());
         }finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -1377,7 +1364,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 20, mockhttpServer);
         mockhttpServer.start();
 
         try {
@@ -1512,8 +1498,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 2, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -1605,8 +1589,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 2, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -1696,8 +1678,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 2, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -1794,8 +1774,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 4, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -1908,8 +1886,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 4, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -2025,8 +2001,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 4, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -2129,8 +2103,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 3, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -2236,8 +2208,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -2335,8 +2305,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 1, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -2427,8 +2395,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 3, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -2526,8 +2492,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -2624,8 +2588,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 2, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -2718,8 +2680,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 1, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -2820,8 +2780,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 1, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -2925,8 +2883,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 1, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -3029,8 +2985,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 1, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -3125,8 +3079,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 1, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -3218,8 +3170,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 3, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -3594,8 +3544,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -3693,8 +3641,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 3, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -3809,8 +3755,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -3913,8 +3857,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 3, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -4019,8 +3961,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -4121,8 +4061,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 3, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -4229,8 +4167,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -4331,8 +4267,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 3, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -4438,8 +4372,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -4537,8 +4469,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 3, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -4640,8 +4570,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 3, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -4778,8 +4706,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -4886,8 +4812,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -4987,7 +4911,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 3, mockhttpServer);
         mockhttpServer.start();
 
         try {
@@ -5083,8 +5006,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 2, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -5188,8 +5109,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 4, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -5239,17 +5158,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             IPUtils.disabledIpPrivateSubnet(false);
             mockhttpServer.stop();
         }
-    }
-
-    private static void addCountQueryContext(final Experiment experiment, final int count,
-            final MockHttpServer mockhttpServer) {
-        final String countExpectedPageReachQuery = getCountExpectedPageReachQuery(experiment);
-        final List<Map<String, Object>> countResponseExpected = list(
-                map("Events.count", String.valueOf(count))
-        );
-
-        addContext(mockhttpServer, countExpectedPageReachQuery,
-                JsonUtil.getJsonStringFromObject(map("data", countResponseExpected)));
     }
 
     private Experiment createExperimentWithBounceRateGoalAndVariant(final HTMLPageAsset experimentPage) {
@@ -5343,6 +5251,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     .orElseThrow();
 
             final String cubeJSQueryExpected ="{"
+                    +   "\"offset\":0,"
+                    +   "\"limit\":1000,"
                     +   "\"filters\":["
                     +       "{"
                     +           "\"values\":["
@@ -5494,6 +5404,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     .orElseThrow();
 
             final String cubeJSQueryExpected ="{"
+                    +   "\"offset\":0,"
+                    +   "\"limit\":1000,"
                     +   "\"filters\":["
                     +       "{"
                     +           "\"values\":["
@@ -5901,8 +5813,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 4, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -6002,7 +5912,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 20, mockhttpServer);
         mockhttpServer.start();
 
         try {
@@ -6087,8 +5996,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -6157,8 +6064,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 50, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -6230,8 +6135,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 50, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -6313,8 +6216,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 100, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -6533,8 +6434,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 4, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -6655,8 +6554,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 2, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -6779,9 +6676,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -6895,8 +6789,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
-        addCountQueryContext(experiment, 3, mockhttpServer);
-
         mockhttpServer.start();
 
         try {
@@ -7004,8 +6896,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 1, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -7120,8 +7010,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-        addCountQueryContext(experiment, 3, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -8149,8 +8037,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
            addContext(mockhttpServer, queryTotalPageViews,
                    JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
-
-           addCountQueryContext(experiment, 27, mockhttpServer);
 
            mockhttpServer.start();
 
