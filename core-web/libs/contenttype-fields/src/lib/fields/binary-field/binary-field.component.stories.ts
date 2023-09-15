@@ -8,7 +8,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotDropZoneComponent, DotDropZoneMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
@@ -34,6 +34,25 @@ export default {
             ],
             providers: [
                 DotBinaryFieldStore,
+                {
+                    provide: DotUploadService,
+                    useValue: {
+                        uploadFile: () => {
+                            return new Promise((resolve) => {
+                                resolve({
+                                    fileName: 'fileName',
+                                    folder: 'folder',
+                                    id: 'tempFileId',
+                                    image: true,
+                                    length: 10000,
+                                    mimeType: 'mimeType',
+                                    referenceUrl: 'referenceUrl',
+                                    thumbnailUrl: 'thumbnailUrl'
+                                });
+                            });
+                        }
+                    }
+                },
                 {
                     provide: DotMessageService,
                     useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK

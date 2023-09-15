@@ -41,7 +41,7 @@
 <p-dialog
     *ngIf="mode$ | async as mode"
     [(visible)]="dialogOpen"
-    [header]="dialogHeaderMap[mode]"
+    [header]="dialogHeaderMap[mode] | dm"
     [modal]="true"
     [draggable]="false"
     [resizable]="false">

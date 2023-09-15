@@ -17,6 +17,7 @@ import { DialogModule } from 'primeng/dialog';
 
 import { filter } from 'rxjs/operators';
 
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
     DotDropZoneMessageComponent,
@@ -53,9 +54,10 @@ export class DotBinaryFieldComponent implements OnInit {
     @Input() maxFileSize: number;
     @Input() helperText: string;
 
-    @ViewChild('inputFile', { static: true }) inputFile: ElementRef;
+    @ViewChild('inputFile') inputFile: ElementRef;
 
-    @Output() fileChange = new EventEmitter<File>();
+    @Output() tempFile = new EventEmitter<DotCMSTempFile>();
+    @Output() tempId = new EventEmitter<string>();
 
     readonly dialogHeaderMap = {
         [BINARY_FIELD_MODE.URL]: 'dot.binary.field.dialog.import.from.url.header',
@@ -71,9 +73,9 @@ export class DotBinaryFieldComponent implements OnInit {
     constructor(private readonly dotBinaryFieldStore: DotBinaryFieldStore) {}
 
     ngOnInit() {
-        this.dotBinaryFieldStore.file$
-            .pipe(filter((file) => !!file))
-            .subscribe((file) => this.fileChange.emit(file));
+        this.dotBinaryFieldStore.tempFile$
+            .pipe(filter((tempFile) => !!tempFile))
+            .subscribe((tempFile) => this.tempFile.emit(tempFile));
 
         this.dotBinaryFieldStore.setRules({
             accept: this.accept,
