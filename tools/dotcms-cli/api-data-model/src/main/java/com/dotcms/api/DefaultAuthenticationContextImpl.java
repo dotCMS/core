@@ -1,6 +1,7 @@
 package com.dotcms.api;
 
 
+import com.dotcms.api.client.AuthenticationParam;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
@@ -36,6 +37,9 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     @Inject
     RestClientFactory clientFactory;
 
+    @Inject
+    AuthenticationParam authenticationParam;
+
     private String user;
 
     private char[] token;
@@ -60,6 +64,13 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
 
     @Override
     public Optional<char[]> getToken() {
+
+        //This injects the token from the command line if present
+        final Optional<char[]> paramToken = authenticationParam.getToken();
+        if(paramToken.isPresent()){
+            return paramToken;
+        }
+        //Otherwise we try to load it from the service manager
         final Optional<String> optionalUser = getUser();
         if (optionalUser.isPresent()) {
             if(null != token  && token.length > 0){
@@ -67,9 +78,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
             }
             final String userString = optionalUser.get();
             final Optional<char[]> optionalToken = loadToken(getServiceKey(), userString);
-            optionalToken.ifPresent(s -> {
-                token = s;
-            });
+            optionalToken.ifPresent(s -> token = s);
             return optionalToken;
         }
         return Optional.empty();
