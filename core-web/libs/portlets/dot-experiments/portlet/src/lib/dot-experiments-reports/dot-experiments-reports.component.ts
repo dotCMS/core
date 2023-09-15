@@ -84,7 +84,7 @@ export class DotExperimentsReportsComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.store.loadExperimentAndResults(this.route.snapshot.params['experimentId']);
+        this.loadExperimentsResults();
     }
 
     /**
@@ -123,5 +123,14 @@ export class DotExperimentsReportsComponent implements OnInit {
                 this.store.promoteVariant({ experimentId, variant });
             }
         });
+    }
+
+    /**
+     * Load Experiments Resutls.
+     * @returns void
+     * @memberof DotExperimentsReportsComponent
+     */
+    loadExperimentsResults() {
+        this.store.loadExperimentAndResults(this.route.snapshot.params['experimentId']);
     }
 }
