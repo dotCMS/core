@@ -245,6 +245,10 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 width: '8%'
             },
             {
+                fieldName: 'theme',
+                header: this.dotMessageService.get('templates.fieldName.theme')
+            },
+            {
                 fieldName: 'friendlyName',
                 header: this.dotMessageService.get('templates.fieldName.description')
             },

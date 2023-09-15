@@ -175,6 +175,7 @@ const messages = {
     'templates.fieldName.description': 'Description',
     'templates.fieldName.lastEdit': 'Last Edit',
     'templates.fieldName.name': 'Name',
+    'templates.fieldName.theme': 'Theme',
     'templates.fieldName.status': 'Status',
     'Delete-Template': 'Delete Template',
     Archive: 'Archive',
