@@ -29,7 +29,7 @@ export enum BINARY_FIELD_MODE {
     EDITOR = 'EDITOR'
 }
 
-enum BINARY_FIELD_STATUS {
+export enum BINARY_FIELD_STATUS {
     INIT = 'INIT',
     UPLOADING = 'UPLOADING',
     PREVIEW = 'PREVIEW',

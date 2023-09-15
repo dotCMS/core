@@ -9,7 +9,12 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
-import { DotDropZoneComponent, DotDropZoneMessageComponent, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotDropZoneComponent,
+    DotDropZoneMessageComponent,
+    DotMessagePipe,
+    DotSpinnerModule
+} from '@dotcms/ui';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
 import { DotBinaryFieldStore } from './store/binary-field.store';
@@ -30,7 +35,8 @@ export default {
                 MonacoEditorModule,
                 DotDropZoneComponent,
                 DotDropZoneMessageComponent,
-                DotMessagePipe
+                DotMessagePipe,
+                DotSpinnerModule
             ],
             providers: [
                 DotBinaryFieldStore,
@@ -39,16 +45,18 @@ export default {
                     useValue: {
                         uploadFile: () => {
                             return new Promise((resolve) => {
-                                resolve({
-                                    fileName: 'fileName',
-                                    folder: 'folder',
-                                    id: 'tempFileId',
-                                    image: true,
-                                    length: 10000,
-                                    mimeType: 'mimeType',
-                                    referenceUrl: 'referenceUrl',
-                                    thumbnailUrl: 'thumbnailUrl'
-                                });
+                                setTimeout(() => {
+                                    resolve({
+                                        fileName: 'fileName',
+                                        folder: 'folder',
+                                        id: 'tempFileId',
+                                        image: true,
+                                        length: 10000,
+                                        mimeType: 'mimeType',
+                                        referenceUrl: 'referenceUrl',
+                                        thumbnailUrl: 'thumbnailUrl'
+                                    });
+                                }, 8000);
                             });
                         }
                     }

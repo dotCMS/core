@@ -22,6 +22,7 @@ import {
     DotDropZoneComponent,
     DotDropZoneMessageComponent,
     DotMessagePipe,
+    DotSpinnerModule,
     DropZoneFileEvent
 } from '@dotcms/ui';
 
@@ -41,7 +42,8 @@ import { BINARY_FIELD_MODE, DotBinaryFieldStore } from './store/binary-field.sto
         DotDropZoneComponent,
         MonacoEditorModule,
         DotMessagePipe,
-        DotDropZoneMessageComponent
+        DotDropZoneMessageComponent,
+        DotSpinnerModule
     ],
     providers: [DotBinaryFieldStore],
     templateUrl: './binary-field.component.html',

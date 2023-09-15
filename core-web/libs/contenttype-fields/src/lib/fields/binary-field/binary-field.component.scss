@@ -9,80 +9,94 @@
     @import "node_modules/primeicons/primeicons";
 }
 
-.binary-field {
-    &__container {
-        display: flex;
-        width: 100%;
-        gap: 1rem;
-        border-radius: $border-radius-md;
-        border: 1px solid $color-palette-gray-300;
-        padding: 0.5rem;
-        margin-bottom: 0.5rem;
-    }
+.binary-field__container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    gap: 1rem;
+    border-radius: $border-radius-md;
+    border: 1px solid $color-palette-gray-300;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    height: 10rem;
+}
 
-    &__helper {
-        &-icon {
-            color: $color-palette-gray-600;
-        }
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        gap: 0.5rem;
-        color: $color-palette-gray-700;
-        font-weight: 14px;
-    }
+.binary-field__container--uploading {
+    border: 1.5px dashed $color-palette-gray-300;
+}
 
-    &__actions {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        justify-content: center;
-        align-items: flex-start;
+.binary-field__helper-icon {
+    color: $color-palette-gray-600;
+}
 
-        ::ng-deep .p-button-link {
-            .p-button-label {
-                color: $black;
-            }
+.binary-field__helper {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.5rem;
+    color: $color-palette-gray-700;
+    font-weight: 14px;
+}
 
-            .p-button-icon {
-                color: $color-palette-secondary-500;
-            }
-        }
-    }
+.binary-field__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    justify-content: center;
+    align-items: flex-start;
+}
 
-    &__drop-zone {
-        border: 1px dashed $input-border-color;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 10rem;
-        border-radius: $border-radius-md;
-        user-select: none;
-        cursor: default;
-        flex-grow: 1;
-
-        &--active {
-            border-radius: $border-radius-md;
-            border: 1.5px dashed $color-palette-secondary-500;
-            background: var(--White, #fff);
-            box-shadow: 0px 10px 18px 0px rgba(20, 21, 26, 0.1),
-                0px 0px 4px 0px rgba(20, 21, 26, 0.06);
+.binary-field__actions ::ng-deep {
+    .p-button-link {
+        .p-button-label {
+            color: $black;
         }
 
-        dot-drop-zone {
-            height: 100%;
-            width: 100%;
+        .p-button-icon {
+            color: $color-palette-secondary-500;
         }
     }
+}
 
-    &__input {
-        display: none;
-    }
+.binary-field__drop-zone-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
 
-    &__code-editor {
-        border: 1px solid $input-border-color;
-        display: block;
-        height: 25rem;
-    }
+.binary-field__drop-zone {
+    border: 1px dashed $input-border-color;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: $border-radius-md;
+    user-select: none;
+    cursor: default;
+    flex-grow: 1;
+}
+
+.binary-field__drop-zone--active {
+    border-radius: $border-radius-md;
+    border: 1.5px dashed $color-palette-secondary-500;
+    background: $white;
+    box-shadow: $md-shadow-6;
+}
+
+.binary-field__drop-zone dot-drop-zone {
+    height: 100%;
+    width: 100%;
+}
+
+.binary-field__input {
+    display: none;
+}
+
+.binary-field__code-editor {
+    border: 1px solid $input-border-color;
+    display: block;
+    height: 25rem;
 }
