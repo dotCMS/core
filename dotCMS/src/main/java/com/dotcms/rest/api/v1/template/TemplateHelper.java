@@ -118,6 +118,7 @@ public class TemplateHelper {
                 .sortOrder(template.getSortOrder())
                 .layout(this.toLayoutView(layout))
                 .containers(this.findContainerInLayout(layout))
+                .themeInfo(null != templateTheme ? new ThemeView(templateTheme) : null)
                 .build();
     }
 
