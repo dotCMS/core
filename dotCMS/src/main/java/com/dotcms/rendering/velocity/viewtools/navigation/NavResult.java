@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewRenderTool;
 
 import com.liferay.portal.model.User;
@@ -164,20 +165,26 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         return folderId != null;
     }
 
-    public List<? extends NavResult> getChildren() throws Exception {
+    public List<? extends NavResult> getChildren(ViewContext context) throws Exception {
         if (children == null && hostId != null && folderId != null) {
             // lazy loadinge children
             Host host = APILocator.getHostAPI()
-                .find(hostId, sysuser, true);
+                    .find(hostId, sysuser, true);
             Folder folder = APILocator.getFolderAPI()
-                .find(folderId, sysuser, true);
+                    .find(folderId, sysuser, true);
             Identifier ident = APILocator.getIdentifierAPI()
-                .find(folder);
-            NavResult lazyMe = new NavTool().getNav(host, ident.getPath(), languageId, sysuser);
+                    .find(folder);
+            NavTool navTool = new NavTool();
+            navTool.init(context);
+            NavResult lazyMe = navTool.getNav(host, ident.getPath(), languageId, sysuser);
 
             children = lazyMe.getChildren();
             childrenFolderIds = lazyMe.getChildrenFolderIds();
         }
+        return getChildren();
+    }
+
+    public List<? extends NavResult> getChildren() throws Exception {
         if (children != null) {
             ArrayList<NavResult> list = new ArrayList<NavResult>();
             for (NavResult nn : children) {
