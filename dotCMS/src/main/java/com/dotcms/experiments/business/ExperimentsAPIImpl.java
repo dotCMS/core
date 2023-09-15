@@ -1443,7 +1443,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         // Setting "now" with an additional minute to avoid failing validation
         final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
         return Scheduling.builder().startDate(now)
-                .endDate(now.plus(EXPERIMENTS_MAX_DURATION.get(), ChronoUnit.DAYS))
+                .endDate(now.plus(EXPERIMENTS_DEFAULT_DURATION.get(), ChronoUnit.DAYS))
                 .build();
     }
 
@@ -1501,12 +1501,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     "Invalid Scheduling. Start date is in the past");
 
             toReturn = scheduling.withEndDate(scheduling.startDate().get()
-                    .plus(EXPERIMENTS_MAX_DURATION.get(), ChronoUnit.DAYS));
+                    .plus(EXPERIMENTS_DEFAULT_DURATION.get(), ChronoUnit.DAYS));
         } else if(scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
             DotPreconditions.checkState(scheduling.endDate().get().isAfter(NOW),
                     "Invalid Scheduling. End date is in the past");
 
-            final Instant startDate = scheduling.endDate().get().minus(EXPERIMENTS_MAX_DURATION.get(),
+            final Instant startDate = scheduling.endDate().get().minus(EXPERIMENTS_DEFAULT_DURATION.get(),
                     ChronoUnit.DAYS);
 
             toReturn = scheduling.withStartDate(startDate);
