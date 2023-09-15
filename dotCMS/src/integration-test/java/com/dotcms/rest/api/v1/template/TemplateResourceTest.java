@@ -53,7 +53,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -1107,7 +1111,7 @@ public class TemplateResourceTest {
         //Call Resource
         responseResource = resource.list(
                 HttpRequestUtil.getHttpRequest("localhost", "/", limitedUser.getEmailAddress(), "admin"),
-                response, "", 0, 40, "mod_date", "DESC",
+                response, "", 0, 400, "mod_date", "DESC",
                 newHostA.getIdentifier(), false);
 
         //Check that the response is 200, OK
@@ -1117,9 +1121,17 @@ public class TemplateResourceTest {
         paginatedArrayList = (PaginatedArrayList<?>) responseEntityView.getEntity();
 
         resultTemplateListSize = this.removeSystemTemplateFromList(paginatedArrayList).size();
-        assertEquals(String.format("The total returned templates: '%d' IS NOT the expected " +
-                "result", resultTemplateListSize), 1,
+        assertEquals(String.format("The total returned templates: '%d' in site '%s' IS NOT the expected " +
+                "result: %s", resultTemplateListSize, newHostA.getHostname(), templateData(paginatedArrayList)), 1,
                 this.removeSystemTemplateFromList(paginatedArrayList).size());
+    }
+
+    private List<Map<String, String>> templateData(PaginatedArrayList list) {
+        return (List<Map<String, String>>) list.stream().map(item -> {
+
+            return Map.of("title", ((TemplateView) item).getTitle());
+
+        }).collect(Collectors.toList());
     }
 
     /**

@@ -370,6 +370,7 @@ public class ContainerAPITest extends ContentletBaseTest {
         final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
                 .includeArchived(false)
                 .includeSystemContainer(showSystemContainer)
+                .limit(5000)
                 .siteId(defaultHost.getIdentifier()).build();
         try {
             List<Container> allContainers = containerAPI.findContainers(user, searchParams);
@@ -381,7 +382,8 @@ public class ContainerAPITest extends ContentletBaseTest {
 
             // Assertions
             assertTrue(String.format("Total Container count: '%s' MUST be lower than the original" +
-                    " count", allContainers.size()), originalCount > allContainers.size());
+                    " count: %d", allContainers.size(), originalCount),
+                    originalCount > allContainers.size());
         } finally {
             if (null != container) {
                 containerAPI.delete(container, user, false);

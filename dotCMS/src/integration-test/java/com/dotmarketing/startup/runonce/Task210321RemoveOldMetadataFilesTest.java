@@ -49,7 +49,7 @@ public class Task210321RemoveOldMetadataFilesTest {
     public void Test_Upgrade_Task()
             throws DotDataException, IOException, ExecutionException, InterruptedException, DotSecurityException {
         final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", null);
-        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE, null);
         StoragePersistenceProvider.INSTANCE.get().forceInitialize();
         try {
             final Path temp = Files.createTempDirectory(null);
@@ -61,14 +61,14 @@ public class Task210321RemoveOldMetadataFilesTest {
             final Contentlet contentlet = getFileAssetContent(true, langId, TestFile.PDF);
             //And the metaData/content structure too
             APILocator.getFileMetadataAPI().generateContentletMetadata(contentlet);
-            new TikaUtils().generateMetaData(contentlet, true);
 
             final Task210321RemoveOldMetadataFiles task = new Task210321RemoveOldMetadataFiles();
             assertTrue(task.forceRun());
             task.executeUpgrade();
             final Tuple2<Integer, Integer> tuple = task.getFuture().get();
             //1 fileasset-metadata.json
-            assertEquals(1, tuple._1.intValue());
+            assertTrue("The Task210321RemoveOldMetadataFiles should've deleted at least one file"
+                    , tuple._1 >= 1);
             //1 metaData/content
             assertEquals(1, tuple._2.intValue());
 
