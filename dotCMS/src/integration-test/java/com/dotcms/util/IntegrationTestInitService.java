@@ -54,11 +54,12 @@ public class IntegrationTestInitService {
 
                 System.setProperty(TestUtil.DOTCMS_INTEGRATION_TEST, TestUtil.DOTCMS_INTEGRATION_TEST);
                 
-                
-                
                 Awaitility.setDefaultPollInterval(10, TimeUnit.MILLISECONDS);
                 Awaitility.setDefaultPollDelay(Duration.ZERO);
                 Awaitility.setDefaultTimeout(Duration.ONE_MINUTE);
+
+                //Running the always run startup tasks
+                StartupTasksUtil.getInstance().init();
 
                 ConfigTestHelper._setupFakeTestingContext();
 
@@ -66,8 +67,6 @@ public class IntegrationTestInitService {
                 FactoryLocator.init();
                 APILocator.init();
 
-                //Running the always run startup tasks
-                StartupTasksUtil.getInstance().init();
 
                 //For these tests fire the reindex immediately
                 Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", false);
