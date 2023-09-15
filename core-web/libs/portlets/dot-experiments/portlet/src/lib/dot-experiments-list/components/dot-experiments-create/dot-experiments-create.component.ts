@@ -97,11 +97,11 @@ export class DotExperimentsCreateComponent implements OnInit {
                 validators: [
                     Validators.required,
                     Validators.maxLength(this.maxNameLength),
-                    DotValidators.noWhitespaceOnly
+                    DotValidators.noWhitespace
                 ]
             }),
             description: new FormControl<string>('', {
-                validators: [Validators.maxLength(255), DotValidators.noWhitespaceOnly]
+                validators: [Validators.maxLength(255), DotValidators.noWhitespace]
             })
         });
     }

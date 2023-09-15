@@ -116,7 +116,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
     form: FormGroup;
 
     protected readonly inplaceSizes = InplaceInputSizeMapPrimeNg;
-    private validatorsFn: ValidatorFn[] = [DotValidators.noWhitespaceOnly];
+    private validatorsFn: ValidatorFn[] = [DotValidators.noWhitespace];
 
     constructor() {
         this.initForm();

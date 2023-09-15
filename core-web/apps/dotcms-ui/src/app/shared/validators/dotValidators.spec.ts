@@ -69,13 +69,13 @@ describe('DotValidators', () => {
         });
 
         it('should return hasError true when the input is all white spaces', () => {
-            const control = new UntypedFormControl('input', DotValidators.noWhitespaceOnly);
+            const control = new UntypedFormControl('input', DotValidators.noWhitespace);
             control.setValue('       ');
             expect(control.hasError('whiteSpaceOnly')).toBe(true);
         });
 
         it('should return not return error when the input contain text', () => {
-            const control = new UntypedFormControl('input', DotValidators.noWhitespaceOnly);
+            const control = new UntypedFormControl('input', DotValidators.noWhitespace);
             control.setValue('  test     ');
             expect(control.hasError('whiteSpaceOnly')).toBe(false);
         });

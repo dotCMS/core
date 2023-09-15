@@ -143,7 +143,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
                     validators: [
                         Validators.required,
                         Validators.maxLength(this.maxNameLength),
-                        DotValidators.noWhitespaceOnly
+                        DotValidators.noWhitespace
                     ]
                 }),
                 type: new FormControl('', {

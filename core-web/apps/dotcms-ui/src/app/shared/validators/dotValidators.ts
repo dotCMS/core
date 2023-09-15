@@ -11,7 +11,7 @@ const DOT_ERROR_MESSAGES = {
         validQueryParamName: 'dot.common.form.field.validation.validQueryParamName'
     },
     whiteSpaceOnlyMgs: {
-        whiteSpaceOnly: 'dot.common.form.field.validation.noWhitespaceOnly'
+        whiteSpaceOnly: 'dot.common.form.field.validation.noWhitespace'
     }
 };
 
@@ -39,7 +39,7 @@ export class DotValidators {
      *
      * @param {AbstractControl} control
      */
-    static noWhitespaceOnly(control: AbstractControl): { [key: string]: string } | null {
+    static noWhitespace(control: AbstractControl): { [key: string]: string } | null {
         return control.value
             ? control.value.trim().length
                 ? null

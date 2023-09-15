@@ -96,7 +96,7 @@ export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
                 validators: [
                     Validators.required,
                     Validators.maxLength(50),
-                    DotValidators.noWhitespaceOnly
+                    DotValidators.noWhitespace
                 ]
             })
         });
