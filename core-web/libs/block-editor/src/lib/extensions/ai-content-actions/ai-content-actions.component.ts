@@ -11,15 +11,19 @@ interface ActionOption {
     callback: () => void;
 }
 
+export enum ACTIONS {
+    ACCEPT = 'ACCEPT',
+    DELETE = 'DELETE',
+    REGENERATE = 'REGENERATE'
+}
+
 @Component({
     selector: 'dot-ai-content-actions',
     templateUrl: './ai-content-actions.component.html',
     styleUrls: ['./ai-content-actions.component.scss']
 })
 export class AIContentActionsComponent implements OnInit {
-    @Output() acceptEmitter = new EventEmitter<boolean>();
-    @Output() regenerateEmitter = new EventEmitter<boolean>();
-    @Output() deleteEmitter = new EventEmitter<boolean>();
+    @Output() actionEmitter = new EventEmitter<ACTIONS>();
 
     actionOptions!: ActionOption[];
 
@@ -30,40 +34,30 @@ export class AIContentActionsComponent implements OnInit {
             {
                 label: 'Accept',
                 icon: 'pi pi-check',
-                callback: this.acceptContent.bind(this),
+                callback: () => this.emitAction(ACTIONS.ACCEPT),
                 selectedOption: true
             },
             {
                 label: 'Regenerate',
                 icon: 'pi pi-sync',
-                callback: this.regenerateContent.bind(this),
+                callback: () => this.emitAction(ACTIONS.REGENERATE),
                 selectedOption: false
             },
             {
                 label: 'Delete',
                 icon: 'pi pi-trash',
-                callback: this.deleteContent.bind(this),
+                callback: () => this.emitAction(ACTIONS.DELETE),
                 selectedOption: false
             }
         ];
     }
 
-    private acceptContent() {
-        this.acceptEmitter.emit(true);
-    }
-
-    private regenerateContent() {
-        this.regenerateEmitter.emit(true);
-    }
-
-    private deleteContent() {
-        this.deleteEmitter.emit(true);
+    private emitAction(action: ACTIONS) {
+        this.actionEmitter.emit(action);
     }
 
     getLatestContent() {
-        const latestContent: string = this.aiContentService.getLastContentResponse();
-
-        return latestContent;
+        return this.aiContentService.getLastContentResponse();
     }
 
     getNewContent(): Observable<string> {

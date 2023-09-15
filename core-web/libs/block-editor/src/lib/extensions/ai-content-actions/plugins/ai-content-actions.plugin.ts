@@ -10,7 +10,7 @@ import { takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { AIContentActionsComponent } from '../ai-content-actions.component';
+import { ACTIONS, AIContentActionsComponent } from '../ai-content-actions.component';
 import { AI_CONTENT_ACTIONS_PLUGIN_KEY } from '../ai-content-actions.extension';
 import { TIPPY_OPTIONS } from '../utils';
 
@@ -62,16 +62,20 @@ export class AIContentActionsView {
         this.pluginKey = pluginKey;
         this.component = component;
 
-        this.component.instance.acceptEmitter.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.acceptContent();
-        });
+        this.component.instance.actionEmitter.pipe(takeUntil(this.destroy$)).subscribe((action) => {
+            switch (action) {
+                case ACTIONS.ACCEPT:
+                    this.acceptContent();
+                    break;
 
-        this.component.instance.regenerateEmitter.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.generateContent();
-        });
+                case ACTIONS.REGENERATE:
+                    this.generateContent();
+                    break;
 
-        this.component.instance.deleteEmitter.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.deleteContent();
+                case ACTIONS.DELETE:
+                    this.deleteContent();
+                    break;
+            }
         });
 
         this.view.dom.addEventListener('keydown', this.handleKeyDown.bind(this));
