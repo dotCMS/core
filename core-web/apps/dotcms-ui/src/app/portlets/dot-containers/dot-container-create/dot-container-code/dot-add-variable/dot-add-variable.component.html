@@ -11,12 +11,11 @@
             </div>
 
             <button
-                class="p-button-outlined p-button-secondary p-button-sm"
+                class="p-button-outlined p-button-primary p-button-sm"
                 [attr.data-testId]="variable.variable"
                 [label]="'Add' | dm"
                 (click)="onSave(variable.variable)"
-                pButton
-            ></button>
+                pButton></button>
         </div>
     </ng-template>
 </p-dataView>

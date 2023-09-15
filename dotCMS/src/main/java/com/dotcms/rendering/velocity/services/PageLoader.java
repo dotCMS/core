@@ -1,13 +1,6 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.util.ConversionUtils;
-import com.dotcms.variant.VariantAPI;
-import com.dotmarketing.util.UtilMethods;
-import java.io.File;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -24,7 +17,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.TagUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.io.File;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author will
@@ -212,19 +211,9 @@ public class PageLoader implements DotLoader {
     private HTMLPageAsset getPage(VelocityResourceKey key)
             throws DotDataException, DotSecurityException {
 
-        try {
-            return APILocator.getHTMLPageAssetAPI()
-                    .fromContentlet(APILocator.getContentletAPI()
-                            .findContentletByIdentifier(key.id1, key.mode.showLive,
-                                    ConversionUtils.toLong(key.language),
-                                    key.variant, sysUser(), true));
-        } catch (DotStateException e) {
-            return APILocator.getHTMLPageAssetAPI()
-                    .fromContentlet(APILocator.getContentletAPI()
-                            .findContentletByIdentifier(key.id1, key.mode.showLive,
-                                    ConversionUtils.toLong(key.language),
-                                    VariantAPI.DEFAULT_VARIANT.name(), sysUser(), true));
-        }
+        return (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findByIdLanguageVariantFallback(key.id1, ConversionUtils.toLong(key.language), key.variant, key.mode.showLive, sysUser(), true);
+
+
     }
 
 
