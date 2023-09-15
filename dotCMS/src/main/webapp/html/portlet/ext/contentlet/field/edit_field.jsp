@@ -782,7 +782,9 @@
 
 
     <%-- File uploader --%>
-
+    <!-- TODO: Create a Feature Flag for this
+        <dotcms-binary-field></dotcms-binary-field>
+    -->
     <div
             assetName="<%= contentlet.isFileAsset() ? resourceLink.getAssetName() : "" %>"
             resourceLink="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkAsString() : "" %>"

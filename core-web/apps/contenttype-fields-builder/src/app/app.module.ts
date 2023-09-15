@@ -4,8 +4,8 @@ import { createCustomElement } from '@angular/elements';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { ContenttypeFieldsModule } from '@dotcms/contenttype-fields';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotBinaryFieldComponent } from '@dotcms/contenttype-fields';
+import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 
 import { AppComponent } from './app.component';
 
@@ -14,16 +14,26 @@ interface ContenttypeFieldElement {
     component: Type<unknown>; // Expected to be a component
 }
 
-const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [];
+const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
+    {
+        tag: 'dotcms-binary-field',
+        component: DotBinaryFieldComponent
+    }
+];
 
 @NgModule({
     declarations: [AppComponent],
-    imports: [BrowserModule, BrowserAnimationsModule, HttpClientModule, ContenttypeFieldsModule],
-    providers: [DotMessageService],
-    bootstrap: [AppComponent]
+    imports: [BrowserModule, BrowserAnimationsModule, HttpClientModule, DotBinaryFieldComponent],
+    providers: [DotMessageService, DotUploadService]
 })
 export class AppModule implements DoBootstrap {
-    constructor(private readonly injector: Injector) {}
+    constructor(
+        private readonly injector: Injector,
+        private readonly dotMessageService: DotMessageService
+    ) {
+        // Need it, so all the contenttype fields caan access to the dotMessageService
+        this.dotMessageService.init();
+    }
 
     ngDoBootstrap(): void {
         try {
