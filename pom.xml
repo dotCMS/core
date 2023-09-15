@@ -15,7 +15,7 @@
     </properties>
     <modules>
         <!-- This is an aggregator pom, we make it separate than the parent pom
-        as the aggregate will always build last and we want to make sure the
+        as the aggregate will always build last, and we want to make sure the
         parent pom is built first. -->
         <module>parent</module>
         <module>independent-projects</module>
