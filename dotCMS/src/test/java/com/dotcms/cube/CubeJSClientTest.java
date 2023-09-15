@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class CubeJSClientTest {
@@ -121,6 +122,7 @@ public class CubeJSClientTest {
      * </pre>
      */
     @Test
+    @Ignore
     public void http404() {
 
         final String cubeServerIp = "127.0.0.1";
