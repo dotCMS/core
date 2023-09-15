@@ -233,7 +233,20 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response filter(@Context final HttpServletRequest request, @PathParam("params") final String params) {
+		Logger.info(this, "Request to retrieve list of dotCMS users");
 		final InitDataObject initData = webResource.init(params, true, request, true, null);
+
+		final User user = initData.getUser();
+		User anonymousUser = null;
+		try {
+			anonymousUser = APILocator.getUserAPI().getAnonymousUser();
+		} catch (DotDataException e) {
+			Logger.error(this, "Error trying to get anonymous user", e);
+		}
+		Logger.info(this, "Logged-in user retrieving list of dotCMS users: "
+				+ (user == null ? "(no-user)" : user.getUserId() + " - "
+				+ (user.equals(anonymousUser) ? "this is anonymous user" : "not anonymous user")));
+
 		final Map<String, String> urlParams = initData.getParamsMap();
 		Map<String, Object> userList = null;
 		try {
@@ -249,6 +262,9 @@ public class UserResource implements Serializable {
 			Logger.error(this, "An error occurred when processing the request.", e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
+
+		Logger.info(this, "Retrieved list of dotCMS users requested by: "
+				+ (user == null ? "(no-user)" : user.getUserId()));
 		return Response.ok(new ResponseEntityView(userList)).build();
 	}
 

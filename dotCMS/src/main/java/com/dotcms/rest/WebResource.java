@@ -258,8 +258,10 @@ public  class WebResource {
             user = getFrontEndUserFromRequest(request, userWebAPI);
         }
 
-        if(user == null && (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser) ) {
-
+        if((user == null || user.equals(this.getAnonymousUser()))
+                && (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser)) {
+            Logger.info(this, "No authenticated user, and anonymous user rejected, returning Invalid User error"
+                    + ", request URL: " + request.getRequestURI());
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
         } else if(user == null) {
             user = this.getAnonymousUser();
