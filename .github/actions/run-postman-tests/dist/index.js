@@ -154,7 +154,8 @@ const DEPS_ENV = {
     POSTGRES_USER: 'postgres',
     POSTGRES_PASSWORD: 'postgres',
     POSTGRES_DB: 'dotcms',
-    JVM_ENDPOINT_TEST_PASS: 'obfuscate_me'
+    JVM_ENDPOINT_TEST_PASS: 'obfuscate_me',
+    DOT_PERMISSION_REFERENCES_UPDATE_ASYNC: 'false'
 };
 /*
  * Run postman tests and provides a summary of such.
