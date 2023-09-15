@@ -141,6 +141,7 @@ public class CubeJSClientTest {
             // this should throw a timeout and add pattern to quarantine
            try {
                cubeJSResultSet = cubeClient.send(cubeJSQuery);
+               assertTrue(false);
            }
            catch(Exception e){
                assertTrue(e instanceof RuntimeException);
