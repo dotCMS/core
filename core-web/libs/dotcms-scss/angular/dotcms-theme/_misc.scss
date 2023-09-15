@@ -28,6 +28,7 @@
 .p-link {
     border-radius: $border-radius-xs;
 }
+
 .p-link:focus {
     outline: 0 none;
     outline-offset: 0;
@@ -37,6 +38,7 @@
 .p-fluid .p-inputgroup .p-button {
     width: auto;
 }
+
 .p-fluid .p-inputgroup .p-button.p-button-icon-only {
     width: $spacing-6;
 }
