@@ -12,6 +12,7 @@ import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/do
 import {
     AIContentPromptComponent,
     AIContentActionsComponent,
+    AIImagePromptComponent,
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
     BubbleMenuComponent,
@@ -54,7 +55,8 @@ import { SharedModule } from './shared/shared.module';
         DotEditorCountBarComponent,
         FloatingButtonComponent,
         AIContentPromptComponent,
-        AIContentActionsComponent
+        AIContentActionsComponent,
+        AIImagePromptComponent
     ],
     providers: [DotUploadFileService, LoggerService, StringUtils, AiContentService],
     exports: [
@@ -66,7 +68,8 @@ import { SharedModule } from './shared/shared.module';
         BubbleFormComponent,
         DotBlockEditorComponent,
         AIContentPromptComponent,
-        AIContentActionsComponent
+        AIContentActionsComponent,
+        AIImagePromptComponent
     ]
 })
 export class BlockEditorModule {}

@@ -1,0 +1,80 @@
+@use "variables" as *;
+
+.ai-image-dialog {
+    position: fixed;
+    top: 0%;
+    left: 0%;
+    transform: translate(-55%, -5%);
+    width: 90vw;
+    height: 60vh;
+    padding: $spacing-5;
+    margin: $spacing-5;
+    border: 2px solid #d1d4db;
+    box-shadow: 0px 8px 16px 0px rgba(20, 21, 26, 0.08);
+    border-radius: $border-radius-lg;
+    z-index: 9999;
+    background: #fff;
+}
+
+.title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semi-bold;
+}
+
+.input-field-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+
+    .input-field {
+        width: 100%;
+        height: 70%;
+        padding: $spacing-1;
+        line-height: normal;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: $border-radius-sm;
+        color: #6c7389;
+    }
+}
+
+.choice-div-container {
+    display: flex;
+    justify-content: space-between;
+    height: 80%;
+    margin-bottom: $spacing-1;
+}
+
+.choice-div,
+form {
+    height: 100%;
+    width: 48%;
+    padding: $spacing-2;
+    border: 2px solid #d1d4db;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: $border-radius-lg;
+    cursor: pointer;
+
+    &:hover {
+        border: 2px solid #c6b3f9;
+    }
+}
+
+.choice-div .icon-wrapper,
+.submit-btn-container {
+    background-color: #d1d4db;
+    margin-bottom: $spacing-3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+span {
+    text-align: center;
+}
