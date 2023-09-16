@@ -122,7 +122,6 @@ public class CubeJSClientTest {
      * </pre>
      */
     @Test
-    @Ignore
     public void http404() {
 
         final String cubeServerIp = "127.0.0.1";
