@@ -115,7 +115,7 @@ public enum PageMode {
 
                 if (null != user && APILocator.getUserAPI().getAnonymousUser().equals(user)) {
 
-                    final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(req, pageMode);
+                    final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(req, user);
                     if (null == host || !APILocator.getPermissionAPI().doesUserHavePermission
                             (host, PermissionLevel.READ.getType(), user)) {
 

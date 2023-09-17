@@ -24,9 +24,12 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 import java.util.Optional;
@@ -120,7 +123,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final HttpServletResponse response)
                 throws DotSecurityException, DotDataException {
 
-        final Host host = resolveSite(context, request);
+        final Host host = getCurrentHost(request, context.getUser());
         final IHTMLPage page = getHtmlPageAsset(context, host, request);
 
         return new HTMLPageAssetRenderedBuilder()
@@ -162,7 +165,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         PageMode.setPageMode(request, mode);
 
-        final Host host = resolveSite(context, request);
+        final Host host = getCurrentHost(request, context.getUser());
         final HTMLPageAsset page = context.getPage() != null
                 ? context.getPage()
                 : (HTMLPageAsset) getHtmlPageAsset(context, host, request);
@@ -202,12 +205,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         try {
             final User systemUser = userAPI.getSystemUser();
 
-            final Host host = this.resolveSite(
-                    PageContextBuilder.builder()
-                            .setUser(systemUser)
-                            .setPageMode(PageMode.PREVIEW_MODE)
-                            .build(),
-                    request);
+            final Host host = getCurrentHost(request, systemUser);
 
             final IHTMLPage htmlPageAsset = this.getHtmlPageAsset(
                     PageContextBuilder.builder()
@@ -235,7 +233,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final HttpServletResponse response)
                 throws DotSecurityException, DotDataException {
 
-        final Host host = resolveSite(context, request);
+        final Host host = getCurrentHost(request, context.getUser());
         final IHTMLPage page = getHtmlPageAsset(context, host, request);
 
         return new HTMLPageAssetRenderedBuilder()
@@ -354,26 +352,15 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return request != null ? this.languageWebAPI.getLanguage(request) : defaultLanguage;
     }
 
-    private Host resolveSite(final PageContext context, final HttpServletRequest request)
+    private Host getCurrentHost(final HttpServletRequest request, final User user)
             throws DotDataException, DotSecurityException {
 
-        final User user = context.getUser();
-        final PageMode mode = context.getPageMode();
-        
-        final String hostId = request.getParameter("host_id");
-        if (null != hostId) {
-            return this.hostAPI.find(hostId, user, mode.respectAnonPerms);
+        try {
+            return this.hostWebAPI.getCurrentHost(request, user);
+        } catch (PortalException | SystemException e) {
+            Logger.error(this,"System error getting current host", e);
+            throw new DotDataException(e);
         }
-
-        Host site;
-        if(mode.isAdmin && request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )!=null) {
-            site = this.hostAPI.find(request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID ).toString(), user, mode.respectAnonPerms);
-        } else {
-            final String siteName = (null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME)) ?
-                    request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
-            site = this.hostWebAPI.resolveHostName(siteName, user, mode.respectAnonPerms);
-        }
-        return site;
 
     }
 }
