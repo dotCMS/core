@@ -1,51 +1,53 @@
 package com.dotmarketing.business.portal;
 
-import static com.dotcms.util.CollectionsUtils.list;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableMap;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotDataValidationException;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.google.common.collect.ImmutableSet;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
-import io.vavr.control.Try;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import java.util.stream.Collectors;
-import javax.servlet.ServletContext;
-
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.PortletContext;
+import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portlet.PortletConfigImpl;
 import com.liferay.portlet.PortletContextImpl;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
+
+import javax.servlet.ServletContext;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 public class PortletAPIImpl implements PortletAPI {
 
     String companyId = CompanyUtils.getDefaultCompany().getCompanyId();
 
     private ServletContext context;
+    private final static Set<String> portletsToRemove = Collections.synchronizedSet(new HashSet<>());
 
     public PortletAPIImpl(PortletFactory portletFac, ServletContext context) {
         this.portletFac = portletFac;
@@ -168,7 +170,7 @@ public class PortletAPIImpl implements PortletAPI {
     @Override
     @CloseDBIfOpened
     public Collection<Portlet> findAllPortlets() throws SystemException {
-        return portletFac.getPortlets();
+        return portletFac.getPortlets().stream().filter(p -> !portletsToRemove.contains(p.getPortletId())).collect(Collectors.toList());
     }
     @Override
     public boolean canAddPortletToLayout(Portlet portlet) {
@@ -268,4 +270,48 @@ public class PortletAPIImpl implements PortletAPI {
         return portletFac.updatePortlet(portlet);
     }
 
+    @Override
+    public void addToPortletsToRemove(final String portletId) {
+        if (!portletsToRemove.contains(portletId)) {
+            portletsToRemove.add(portletId);
+        }
+        CacheLocator.getLayoutCache().clearCache();
+        try {
+            final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
+            systemEventsAPI.pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+        } catch (DotDataException e) {
+            Logger.error(this, "Couldn't generate update portlets system event", e);
+        }
+    }
+
+    @Override
+    public boolean isInPortletToRemove(final String portletId) {
+        return portletsToRemove.contains(portletId);
+    }
+
+    @Override
+    public void dropFromPortletsToRemove(final String portletId) {
+        if (portletsToRemove.contains(portletId)) {
+            portletsToRemove.remove(portletId);
+        }
+        CacheLocator.getLayoutCache().clearCache();
+        try {
+            final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
+            systemEventsAPI.pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+        } catch (DotDataException e) {
+            Logger.error(this, "Couldn't generate update portlets system event", e);
+        }
+    }
+
+    @Override
+    public void cleanPorletsToRemove() {
+
+        //Remove Portlets in the list
+        synchronized (this.getClass()) {
+            portletsToRemove.stream().forEach(p -> deletePortlet(p));
+            Logger.info(this, "Portlets Removed: " + portletsToRemove.toString());
+            portletsToRemove.clear();
+        }
+
+    }
 }

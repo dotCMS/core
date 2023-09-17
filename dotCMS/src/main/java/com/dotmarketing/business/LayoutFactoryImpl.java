@@ -133,7 +133,9 @@ public class LayoutFactoryImpl extends LayoutFactory {
 		List<String> pids = new ArrayList<String>();
 		if(pls != null && pls.size()>0){
 			for (PortletsLayouts pl : pls) {
-				pids.add(pl.getPortletId());
+				if (!APILocator.getPortletAPI().isInPortletToRemove(pl.getPortletId())) {
+					pids.add(pl.getPortletId());
+				}
 			}
 			
 		}

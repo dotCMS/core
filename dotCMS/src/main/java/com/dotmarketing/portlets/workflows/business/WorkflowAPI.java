@@ -842,6 +842,8 @@ public interface WorkflowAPI {
 	 */
     List<WorkflowTimelineItem> getCommentsAndChangeHistory(WorkflowTask task) throws DotDataException;
 
+	void cleanActionletsToRemove();
+
 	/**
 	 * Render mode for the available actions
 	 */

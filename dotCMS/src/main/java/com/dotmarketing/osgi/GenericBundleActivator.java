@@ -421,7 +421,12 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
 
             Logger.info( this, "Added Portlet: " + portlet.getPortletId() );
+            APILocator.getPortletAPI().dropFromPortletsToRemove(portlet.getPortletId());
+
         }
+
+        //Adding Language Variables, for example Portlet Name.
+        registerBundleResourceMessages(context);
 
         //Forcing a refresh of the portlets cache
         APILocator.getPortletAPI().findAllPortlets();
@@ -1019,9 +1024,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterPortlets () throws Exception {
         if ( portlets != null ) {
-            
             for ( Portlet portlet : portlets ) {
-              APILocator.getPortletAPI().deletePortlet(portlet.getPortletId());
+                APILocator.getPortletAPI().addToPortletsToRemove(portlet.getPortletId());
             }
         }
     }
