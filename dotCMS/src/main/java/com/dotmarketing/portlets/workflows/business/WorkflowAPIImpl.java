@@ -48,6 +48,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.apache.felix.framework.OSGIUtil;
 import org.elasticsearch.search.query.QueryPhaseExecutionException;
 import org.osgi.framework.BundleContext;
 
@@ -73,6 +74,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private final List<Class<? extends WorkFlowActionlet>> actionletClasses;
 
 	private static Map<String, WorkFlowActionlet> actionletMap;
+
+	private final static Set<String> actionletsToRemove = Collections.synchronizedSet(new HashSet<>());
 
 	private final WorkFlowFactory workFlowFactory = FactoryLocator.getWorkFlowFactory();
 
@@ -291,20 +294,25 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		Logger.debug(this,
 				() -> "Adding actionlet class: " + workFlowActionletClass);
 
+		//Prevent dupes
+		removeActionlet(workFlowActionletClass);
 		actionletClasses.add(workFlowActionletClass);
 		refreshWorkFlowActionletMap();
+
+		if (actionletsToRemove.contains(workFlowActionletClass.getCanonicalName())) {
+			actionletsToRemove.remove(workFlowActionletClass.getCanonicalName());
+		}
+
 		return workFlowActionletClass.getCanonicalName();
 	}
 
 	@Override
 	public void removeActionlet(final String workFlowActionletName) {
 
-		Logger.debug(this,
-				() -> "Removing actionlet: " + workFlowActionletName);
+		if (!actionletsToRemove.contains(workFlowActionletName)) {
+			actionletsToRemove.add(workFlowActionletName);
+		}
 
-		final WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
-		actionletClasses.remove(actionlet.getClass());
-		refreshWorkFlowActionletMap();
 	}
 
 	@Override
@@ -1783,7 +1791,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public List<WorkFlowActionlet> findActionlets() throws DotDataException {
 		final List<WorkFlowActionlet> workFlowActionlets = new ArrayList<WorkFlowActionlet>();
 		final Map<String,WorkFlowActionlet>  actionlets  = getActionlets();
-		for (final String actionletName : actionlets.keySet()) {
+		for (final String actionletName : actionlets.keySet().stream()
+				.filter(a -> !actionletsToRemove.contains(a)).collect(Collectors.toSet())) {
 			workFlowActionlets.add(getActionlets().get(actionletName));
 		}
 		return workFlowActionlets;
@@ -3285,6 +3294,38 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	    return workflowTimelineItems.stream()
                 .sorted(Comparator.comparing(WorkflowTimelineItem::createdDate))
                 .collect(CollectionsUtils.toImmutableList());
+	}
+
+	@Override
+	public void cleanActionletsToRemove() {
+
+		//Remove Actionlets in the list
+		synchronized (this.getClass()) {
+			actionletsToRemove.stream().forEach(a -> { deleteActionletToRemove(a); });
+			Logger.info(this, "Actionlets Removed: " + actionletsToRemove.toString());
+			actionletsToRemove.clear();
+		}
+
+	}
+
+	private void deleteActionletToRemove(final String workFlowActionletName) {
+		Logger.debug(this,
+				() -> "Removing actionlet: " + workFlowActionletName);
+
+		final WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
+		removeActionlet(actionlet.getClass());
+		refreshWorkFlowActionletMap();
+	}
+
+	private void removeActionlet(final Class<? extends WorkFlowActionlet> workFlowActionletClass) {
+		final boolean found = actionletClasses.remove(workFlowActionletClass);
+		if (!found) {
+			final String canonicalName = workFlowActionletClass.getCanonicalName();
+			final Optional<Class<? extends WorkFlowActionlet>> optionalClass = actionletClasses
+					.stream().filter(s -> s.getCanonicalName().equals(canonicalName))
+					.findFirst();
+			optionalClass.ifPresent(actionletClasses::remove);
+		}
 	}
 
 }

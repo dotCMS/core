@@ -3,6 +3,7 @@ package org.apache.felix.framework;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
@@ -28,11 +29,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import javax.servlet.ServletContext;
+
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.apache.commons.io.FileUtils;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
+import org.apache.poi.ss.formula.functions.T;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -219,6 +223,13 @@ public class OSGIUtil {
      * Stops the OSGi framework
      */
     public void stopFramework() {
+
+        try {
+            APILocator.getPortletAPI().cleanPorletsToRemove();
+            APILocator.getWorkflowAPI().cleanActionletsToRemove();
+        } catch (Exception e) {
+            Logger.warn(this, "Error cleaning removed portlets and actionlets: " + e.getMessage(), e);
+        }
 
         try {
             //Closing tracker associated to the HttpServlet

@@ -41,4 +41,12 @@ public interface PortletAPI {
 
   Portlet updatePortlet(final Portlet portlet) throws DotDataException;
 
+  void addToPortletsToRemove(String portletId);
+
+  boolean isInPortletToRemove(String portletId);
+
+  void dropFromPortletsToRemove(String portletId);
+
+  void cleanPorletsToRemove();
+
 }
