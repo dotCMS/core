@@ -537,7 +537,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	@Override
 	public String getRealAssetPath(String inode, String fileName) {
 
-		String extension = UtilMethods.getFileExtension(fileName);
+		String extension = UtilMethods.getFileExtension(fileName, false);
 		String fileNameWOExtenstion  =  UtilMethods.getFileName(fileName);
 
 
