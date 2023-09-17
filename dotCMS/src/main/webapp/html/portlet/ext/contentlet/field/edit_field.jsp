@@ -716,7 +716,7 @@
             name="<%=field.getFieldContentlet()%>MultiSelect"
             id="<%=field.getVelocityVarName()%>MultiSelect"
             onchange="update<%=field.getVelocityVarName()%>MultiSelect();emmitFieldDataChange(true)" 
-            style="width: 200px;""<%=field.isReadOnly()?"readonly=\"readonly\"":""%>">
+            style="max-width: 100%;width: max-content;overflow-x: auto;""<%=field.isReadOnly()?"readonly=\"readonly\"":""%>">
     <%
         String compareValue = (UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : ""));
         String[] compareValueTokens = compareValue.split(",");
