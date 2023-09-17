@@ -364,13 +364,14 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         if (null != hostId) {
             return this.hostAPI.find(hostId, user, mode.respectAnonPerms);
         }
-        
-        final String siteName = (null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME)) ?
-                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
-        Host site = this.hostWebAPI.resolveHostName(siteName, user, mode.respectAnonPerms);
 
+        Host site;
         if(mode.isAdmin && request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )!=null) {
             site = this.hostAPI.find(request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID ).toString(), user, mode.respectAnonPerms);
+        } else {
+            final String siteName = (null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME)) ?
+                    request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
+            site = this.hostWebAPI.resolveHostName(siteName, user, mode.respectAnonPerms);
         }
         return site;
 
