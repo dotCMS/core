@@ -6,6 +6,7 @@ import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.get
 
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.model.MultiUserReferenceParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -15,6 +16,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import io.vavr.Tuple2;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -126,8 +129,9 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
         final String emailSubject = getParameterValue(params.get(PARAM_EMAIL_SUBJECT));
         final String emailBody = getParameterValue(params.get(PARAM_EMAIL_BODY));
         final boolean isHtml = getParameterValue(params.get(PARAM_IS_HTML), true);
-        final Set<User> requiredContentApprovers = getUsersFromIds(userIds, ID_DELIMITER);
-        // Add this approval to the history
+        final Tuple2<Set<User>, Set<Role>> usersAndRoles = getUsersFromIds(userIds, ID_DELIMITER);
+        final Set<Role> approverRoles            = usersAndRoles._2();
+        final Set<User> requiredContentApprovers = usersAndRoles._1();        // Add this approval to the history
         final WorkflowHistory history = new WorkflowHistory();
         history.setActionId(processor.getAction().getId());
         history.setMadeBy(processor.getUser().getUserId());
@@ -146,6 +150,15 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
             // email ONLY to the users who have NOT approved
             final List<String> emails = new ArrayList<>();
             boolean setNextAssign = Boolean.TRUE;
+
+            for (final Role role : approverRoles) {
+                if (setNextAssign) {
+                    processor.setNextAssign(role);
+                    setNextAssign = Boolean.FALSE;
+                    break;
+                }
+            }
+
             for (final User user : requiredContentApprovers) {
                 if (!hasApproved.contains(user)) {
                     emails.add(user.getEmailAddress());
