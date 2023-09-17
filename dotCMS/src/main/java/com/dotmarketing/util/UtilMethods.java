@@ -968,6 +968,11 @@ public class UtilMethods {
     }
 
     public static String getFileExtension(String x) {
+        return getFileExtension(x, true);
+    }
+
+    public static String getFileExtension(String x, boolean toLowerCase) {
+
     	String r = "";
         try {
             if (x.lastIndexOf(".") != -1) {
