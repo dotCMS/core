@@ -614,7 +614,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			  resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 			}
 		}catch (Exception e) {
-			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
+			Logger.error(BinaryExporterServlet.class, "[Exception] An error occurred when accessing '" + uri + "'", e);
 			Logger.error(BinaryExporterServlet.class, "[Exception] An error occurred when accessing '" + uri + "': " + e.getMessage());
             if(!resp.isCommitted()){
               resp.sendError(HttpServletResponse.SC_NOT_FOUND);
