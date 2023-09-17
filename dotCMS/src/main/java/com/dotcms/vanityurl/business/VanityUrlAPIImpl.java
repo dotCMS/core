@@ -129,9 +129,41 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                         (siteId, languageId, includeSystemHost);
             }
         } catch (final Exception e) {
-            throw new DotRuntimeException("Error searching and populating the Vanity URL Cache", e);
+            throw new DotRuntimeException(String.format("Error searching and populating the Vanity URL from DB for " +
+                    "Site ID '%s', language ID = '%s': %s", siteId, languageId, e.getMessage()), e);
         }
     } // initializeActiveVanityURLsCacheBySiteAndLanguage.
+
+    /**
+     * Searches for all Vanity URLs for a given Site in the system <b>without loading data into any of the Vanity URL
+     * Cache Regions</b>. This initialization routine will also add Vanity URLs located under System Host.
+     *
+     * @param siteId     The ID of the Site whose Vanity URLs will be retrieved.
+     * @param languageId The ID of the language for the Vanity URLs.
+     *
+     * @return A list of Vanity URLs read from the data source.
+     */
+    private List<CachedVanityUrl> getActiveVanityURLsNoCacheBySiteAndLanguage(final String siteId, final Long languageId) {
+        final boolean includeSystemHost = Boolean.TRUE;
+        try {
+            final List<Contentlet> contentResults = searchAndPopulate(siteId, languageId, includeSystemHost);
+            final List<VanityUrl> vanityUrls = contentResults.stream()
+                    .map(this::getVanityUrlFromContentlet)
+                    .sorted(Comparator.comparing(VanityUrl::getOrder))
+                    .collect(toImmutableList());
+            final List<CachedVanityUrl> cachedVanityUrls = new ArrayList<>();
+            if (UtilMethods.isSet(vanityUrls)) {
+                // Simulate Vanity URLs coming from cache
+                for (final VanityUrl vanityUrl : vanityUrls) {
+                    cachedVanityUrls.add(new CachedVanityUrl(vanityUrl));
+                }
+            }
+            return cachedVanityUrls;
+        } catch (final Exception e) {
+            throw new DotRuntimeException(String.format("Error searching and populating the Vanity URL from DB for " +
+                    "Site ID '%s', language ID = '%s': %s", siteId, languageId, e.getMessage()), e);
+        }
+    }
 
     /**
      * Executes a SQL query that will return all the Vanity URLs that belong to a specific Site. This method moved from
@@ -151,7 +183,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         List<Contentlet> contentlets = new ArrayList<>();
         final StringBuilder query = new StringBuilder();
         query.append("SELECT cvi.live_inode FROM contentlet c ");
-        query.append("INNER JOIN identifier i ON c.identifier = i.id AND i.host_inode ");
+        //c.text2 is the Site Field for Vanity URL Content Type
+        query.append("INNER JOIN identifier i ON c.identifier = i.id AND c.text2 ");
         if (includeSystemHost) {
             query.append("IN ('" + Host.SYSTEM_HOST + "', ?) ");
         } else {
@@ -447,6 +480,12 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                     cachedVanityUrls =
                             this.getVanityUrlBySiteAndLanguageFromCache
                                     (siteId, languageId,true);
+
+                    if (!UtilMethods.isSet(cachedVanityUrls)) {
+                        // If this point is reached, there's probably an issue with the Vanity URL Caches. So, just read
+                        // directly from the data source WITHOUT reading or loading from any cache
+                        cachedVanityUrls = this.getActiveVanityURLsNoCacheBySiteAndLanguage(siteId, languageId);
+                    }
                 }
             }
         }
@@ -557,8 +596,10 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     public void validateVanityUrl(final Contentlet contentlet) {
 
         final User user = getUser(contentlet);
-        final Language language =
+        Language language =
                 APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
+
+        language = (null == language ? APILocator.getLanguageAPI().getDefaultLanguage() : language);
 
         // check fields
         checkMissingField(contentlet, language, VanityUrlContentType.ACTION_FIELD_VAR);
