@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -34,6 +35,11 @@ public class FileTool implements ViewTool {
 		Identifier id = identifierAPI.find(identifier);
 		ContentletVersionInfo  cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
 	    String conInode = (!live) ? cvi.getWorkingInode() : cvi.getLiveInode();
+		if (!UtilMethods.isSet(conInode)) {
+			Logger.velocityWarn(FileTool.class, "There's not a live version for the file asset "
+					+ " id: " + identifier + ", lang: " + languageId);
+			return null;
+		}
 	    FileAsset file  = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(conInode,  userAPI.getSystemUser(), false));
 	    return file;
 	}
