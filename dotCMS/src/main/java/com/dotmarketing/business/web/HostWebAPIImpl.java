@@ -7,11 +7,14 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -23,6 +26,7 @@ import com.liferay.portlet.RenderRequestImpl;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.Optional;
 
 /**
  * 
@@ -31,11 +35,11 @@ import javax.servlet.http.HttpSession;
  */
 public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
-	public Host getCurrentHost(RenderRequest req) throws DotDataException, DotSecurityException, PortalException, SystemException {
+	public Host getCurrentHost(RenderRequest req) throws DotDataException, DotSecurityException {
 		return getCurrentHost(((RenderRequestImpl)req).getHttpServletRequest());
 	}
 	
-	public Host getCurrentHost(ActionRequest req) throws DotDataException, DotSecurityException, PortalException, SystemException {
+	public Host getCurrentHost(ActionRequest req) throws DotDataException, DotSecurityException {
 		return getCurrentHost(((ActionRequestImpl)req).getHttpServletRequest());
 	}
 	
@@ -52,48 +56,99 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
     @CloseDBIfOpened
     public Host getCurrentHost(final HttpServletRequest request)
-            throws DotDataException, DotSecurityException, PortalException, SystemException {
-
-        final PageMode mode = PageMode.get(request);
-
-        return this.getCurrentHost(request, mode);
+            throws DotDataException, DotSecurityException {
+        return this.getCurrentHost(request, null);
     }
 
     @Override
     @CloseDBIfOpened
-    public Host getCurrentHost(final HttpServletRequest request, final PageMode mode)
-            throws DotDataException, DotSecurityException, PortalException, SystemException {
+    public Host getCurrentHost(final HttpServletRequest request, final User userParam)
+            throws DotDataException, DotSecurityException {
 
-        Host host = null;
-        final HttpSession session   = request.getSession(false);
         final UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-        final User systemUser       = userWebAPI.getSystemUser();
-        final boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
-        final String pageHostId = request.getParameter("host_id");
-
-        if (pageHostId != null && mode.isAdmin) {
-            host = find(pageHostId, systemUser, respectFrontendRoles);
-        } else {
-            if (session != null && mode.isAdmin && session.getAttribute(WebKeys.CURRENT_HOST) != null) {
-                host = (Host) session.getAttribute(WebKeys.CURRENT_HOST);
-            } else if (request.getAttribute(WebKeys.CURRENT_HOST) != null) {
-                host = (Host) request.getAttribute(WebKeys.CURRENT_HOST);
-            } else {
-
-                final String serverName = request.getServerName();
-                if (UtilMethods.isSet(serverName)) {
-                    host = resolveHostName(serverName, systemUser, respectFrontendRoles);
-                }
-            }
+        final User user = userParam != null ? userParam : userWebAPI.getSystemUser();
+        final boolean respectAnonPerms;
+        try {
+            respectAnonPerms = !userWebAPI.isLoggedToBackend(request);
+        } catch (PortalException | SystemException e) {
+            throw new DotDataException(e);
         }
 
-        request.setAttribute(WebKeys.CURRENT_HOST, host);
-        if (session != null && mode.isAdmin) {
+        Optional<Host> optionalHost = this.getCurrentHostFromRequest(request, user, respectAnonPerms);
 
-            session.setAttribute(WebKeys.CURRENT_HOST, host);
+        if (!optionalHost.isPresent() && !respectAnonPerms){
+            optionalHost = this.getCurrentHostFromSession(request, user);
         }
+
+        final Host host = optionalHost.isPresent() ? optionalHost.get() : resolveHostName(request.getServerName(),
+                user, respectAnonPerms);
+
+        checkHostPermission(user, respectAnonPerms, host);
+        storeCurrentHost(request, respectAnonPerms, host);
 
         return host;
+    }
+
+    private void checkHostPermission(final User user, boolean respectAnonPerms, final Host host)
+            throws DotDataException, DotSecurityException {
+
+        if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectAnonPerms)){
+            final String userId = (user != null) ? user.getUserId() : null;
+
+            final String message = "User " + userId + " does not have permission to host:" + host.getHostname();
+            Logger.error(HostAPIImpl.class, message);
+            throw new DotSecurityException(message);
+        }
+    }
+
+    private Optional<Host> getCurrentHostFromSession(final HttpServletRequest request, final User user)
+            throws DotSecurityException, DotDataException {
+
+        final HttpSession session = request.getSession(false);
+
+        if (session == null){
+            return Optional.empty();
+        }
+
+        Host host = null;
+        if (session.getAttribute(WebKeys.CURRENT_HOST) != null) {
+            final Host hostFromSession = (Host) session.getAttribute(WebKeys.CURRENT_HOST);
+            final Object hostId = session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID);
+            host = hostFromSession.getIdentifier().equals(hostId) ? hostFromSession : null;
+        }
+
+        if (host == null && session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID) != null) {
+            final String hostId = (String) session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID);
+            host = find(hostId, user, false);
+        }
+
+        return Optional.ofNullable(host);
+    }
+
+    private Optional<Host> getCurrentHostFromRequest(final HttpServletRequest request, final User user, final boolean respectAnonPerms)
+            throws DotDataException, DotSecurityException {
+
+        final String hostId = request.getParameter("host_id");
+
+        if (hostId != null && !respectAnonPerms) {
+            return Optional.ofNullable(find(hostId, user, false));
+        } else if (request.getParameter(Host.HOST_VELOCITY_VAR_NAME) != null) {
+            final String hostName = request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
+            return this.resolveHostNameWithoutDefault(hostName, user, respectAnonPerms);
+        } else if (request.getAttribute(WebKeys.CURRENT_HOST) != null) {
+            return Optional.of((Host) request.getAttribute(WebKeys.CURRENT_HOST));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private void storeCurrentHost(final HttpServletRequest request, final boolean respectAnonPerms, final Host host) {
+        final HttpSession session = request.getSession(false);
+
+        request.setAttribute(WebKeys.CURRENT_HOST, host);
+        if (session != null && !respectAnonPerms) {
+            session.setAttribute(WebKeys.CURRENT_HOST, host);
+        }
     }
 
 	@Override

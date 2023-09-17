@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -28,7 +29,7 @@ public interface HostWebAPI extends HostAPI {
 	
 	public Host getCurrentHost(HttpServletRequest req) throws DotDataException, DotSecurityException, PortalException, SystemException;
 
-	public Host getCurrentHost(final HttpServletRequest request, final PageMode mode) throws DotDataException, DotSecurityException, PortalException, SystemException;
+	public Host getCurrentHost(final HttpServletRequest request, final User userParam) throws DotDataException, DotSecurityException, PortalException, SystemException;
 
 	public Host getHost(HttpServletRequest request);
 
