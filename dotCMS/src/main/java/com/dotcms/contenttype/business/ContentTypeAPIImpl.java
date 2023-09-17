@@ -34,6 +34,7 @@ import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang3.time.StopWatch;
 import org.elasticsearch.action.search.SearchResponse;
 
 import java.util.*;
@@ -475,6 +476,11 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       // not logging, expected when inserting new from separate environment
     }
 
+    Logger.info(this, "Saving Content Type: " + contentTypeToSave.name()
+            + " with ID: " + contentTypeToSave.id());
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
+
     contentTypeToSave = this.contentTypeFactory.save(contentTypeToSave);
 
     if (oldType != null) {
@@ -491,9 +497,17 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         "User " + user.getUserId() + "/" + user.getFullName() + " added ContentType " + contentTypeToSave.name()
             + " to host id:" + contentTypeToSave.host());
     AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + contentTypeToSave.name(), user);
+    stopWatch.stop();
+    Logger.info(this, "Saved Content Type: " + contentTypeToSave.name()
+            + " with ID: " + contentTypeToSave.id() + ", elapsed time: " + stopWatch);
 
     // update the existing content type fields
     if (newFields != null) {
+
+      Logger.info(this, "Removing no longer needed fields for Content Type: " + contentTypeToSave.name()
+              + " with ID: " + contentTypeToSave.id());
+      stopWatch.reset();
+      stopWatch.start();
 
       Map<String, Field> varNamesCantDelete = new HashMap();
 
@@ -512,11 +526,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         }
       }
 
+      stopWatch.stop();
+      Logger.info(this, "Removed no longer needed fields for Content Type: " + contentTypeToSave.name()
+              + " with ID: " + contentTypeToSave.id() + ", elapsed time: " + stopWatch);
+
       // for each field in the content type lets create it if doesn't exists and update its
       // properties if it does
       for (Field field : newFields) {
 
         field = this.checkContentTypeFields(contentTypeToSave, field);
+        Logger.info(this, "Saving field " + field.id() + " with var " + field.variable()
+                + " for Content Type: " + contentTypeToSave.name()
+                + " with ID: " + contentTypeToSave.id());
+        stopWatch.reset();
+        stopWatch.start();
         if (!varNamesCantDelete.containsKey(field.variable())) {
           fieldAPI.save(field, APILocator.systemUser());
         } else {
@@ -544,6 +567,11 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
             }
           }
         }
+        stopWatch.stop();
+        Logger.info(this, "Saving field " + field.id() + " with var " + field.variable()
+                + " for Content Type: " + contentTypeToSave.name()
+                + " with ID: " + contentTypeToSave.id() + ", elapsed time: " + stopWatch);
+
       }
     }
 

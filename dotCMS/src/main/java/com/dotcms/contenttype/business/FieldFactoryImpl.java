@@ -28,14 +28,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.UUID;
+
+import java.util.*;
+
 import org.apache.commons.lang.time.DateUtils;
 
 public class FieldFactoryImpl implements FieldFactory {
@@ -91,7 +86,10 @@ public class FieldFactoryImpl implements FieldFactory {
 
   @Override
   public void delete(Field field) throws DotDataException {
-      deleteFieldInDb(field);
+      if (!(deleteFieldInDb(field))) {
+        Logger.warn(this,"Could not delete field from database, id: " + field.id());
+        throw new DotDataException("Couldn't delete field with id " + field.id());
+      }
   }
 
   @Override
@@ -198,7 +196,6 @@ public class FieldFactoryImpl implements FieldFactory {
     
     Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
     builder.modDate(modDate);
-    
 
     Field oldField = null;
     try {
@@ -235,21 +232,51 @@ public class FieldFactoryImpl implements FieldFactory {
     validateDbColumn(retField);
 
 
-
+    // Validate not duplicated variable name
+    try {
+      if (UtilMethods.isSet(retField.variable())) {
+        final Field existingFieldByVar = byContentTypeIdFieldVar(
+                retField.contentTypeId(), retField.variable());
+        if (existingFieldByVar != null && UtilMethods.isSet(existingFieldByVar.id())) {
+            if (UtilMethods.isSet(retField.id()) && !retField.id().equals(existingFieldByVar.id())) {
+              Logger.warn(this, "Found existing field with same variable name: " + retField.variable()
+                      + " with ID: " + existingFieldByVar.id() + " in content type: " + existingFieldByVar.contentTypeId()
+                      + " when saving field with ID: " + retField.id() + " in content type: " + retField.contentTypeId());
+              throw new DotDataValidationException(
+                      "Field variable : " + retField.variable() + " already used by other field with ID: "
+                        + existingFieldByVar.id() + " in content type: " + existingFieldByVar.contentTypeId()
+                        + " when saving field with ID: " + retField.id() + " in content type: " + retField.contentTypeId(),
+                      "message.category.existing.field");
+            }
+        }
+      }
+    } catch (NotFoundInDbException e) {
+      Logger.info(this, "There aren't other fields with same variable name than: " + retField.variable()
+              + " in content type: " + retField.contentTypeId());
+    }
     
     if (oldField == null) {
+      Logger.info(this, "Adding new field with variable name: " + retField.variable()
+              + " with ID: " + retField.id() + " in content type: " + retField.contentTypeId());
       insertInodeInDb(retField);
       insertFieldInDb(retField);
+      Logger.info(this, "Added field with variable name: " + retField.variable()
+              + " with ID: " + retField.id() + " in content type: " + retField.contentTypeId());
+
     } else {
+      Logger.info(this, "Updating exiting field with variable name: " + retField.variable()
+              + " with ID: " + retField.id() + " in content type: " + retField.contentTypeId());
       updateInodeInDb(retField);
       updateFieldInDb(retField);
+      Logger.info(this, "Updated field with variable name: " + retField.variable()
+              + " with ID: " + retField.id() + " in content type: " + retField.contentTypeId());
     }
 
 
 
     return retField;
   }
-  
+
   private void validateDbColumn(Field field) throws DotDataException {
     
 
@@ -358,13 +385,10 @@ public class FieldFactoryImpl implements FieldFactory {
   private boolean deleteFieldInDb(Field field) throws DotDataException {
     deleteFieldVarsInDb(field);
     DotConnect dc = new DotConnect();
-    dc.setSQL(sql.deleteById);
-    dc.addParam(field.id());
-    dc.loadResult();
-    dc.setSQL(sql.deleteInodeById);
-    dc.addParam(field.id());
-    dc.loadResult();
-    return true;
+    Logger.info(this,"Deleting field " + field.id() + " with stmt: " + sql.deleteById);
+    int numRows = dc.executeUpdate(sql.deleteById, field.id());
+    dc.executeUpdate(sql.deleteInodeById, field.id());
+    return numRows > 0;
   }
 
   private void updateInodeInDb(Field field) throws DotDataException {

@@ -72,7 +72,10 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 
 
 public class FieldAPIImpl implements FieldAPI {
@@ -179,6 +182,8 @@ public class FieldAPIImpl implements FieldAPI {
 
         //if RelationshipField, Relationship record must be added/updated
         if (field instanceof RelationshipField) {
+            Logger.info(this, "Field " + field.name() + ", var name: " + field.variable()
+                + " in content type: " + type.id() + "  is a relationship field, looking for existing relationship");
             Optional<Relationship> relationship = getRelationshipForField(result, contentTypeAPI,
                   type, user);
 
@@ -280,10 +285,16 @@ public class FieldAPIImpl implements FieldAPI {
             final int cardinality = Integer.parseInt(field.values());
 
             final String[] relationType = field.relationType().split("\\.");
-
+            Logger.info(this, "Relation types for field " + field.name() + ", var name: " + field.variable()
+                    + ", related content type: " + relationType[0] + ", field content type: "
+                    + (relationType.length > 1 ? relationType[1] : "()") + ", cardinality: " + cardinality);
             //we need to find the id of the related structure using the velocityVarName set in the relationType
             try {
                 relatedContentType = contentTypeAPI.find(relationType[0]);
+                if (relatedContentType != null) {
+                    Logger.info(this, "Related content type id: " + relatedContentType.id()
+                            + ", name: " + relatedContentType.name() + ", var name: " + relatedContentType.variable());
+                }
             } catch (NotFoundInDbException e) {
                 final String errorMessage = "Unable to save relationships for field " + field.name()
                         + " because the related content type " + relationType[0]
@@ -300,11 +311,24 @@ public class FieldAPIImpl implements FieldAPI {
 
             //verify if the relationship already exists
             if (UtilMethods.isSet(relationship) && UtilMethods.isSet(relationship.getInode())) {
-
+                Logger.info(this, "Relationship exists, updating for field: " + field.name()
+                        + ", var name: " + field.variable()
+                        + ", related content type: " + (relatedContentType == null ? "" : relatedContentType.id())
+                        + ", var name: " + (relatedContentType == null ? "" : relatedContentType.variable())
+                        + ", relationship id: " + relationship.getInode()
+                        + ", relationship parent name: " + relationship.getParentRelationName()
+                        + ", relationship child name: " + relationship.getChildRelationName()
+                        + ", relationship parent inode: " + relationship.getParentStructureInode()
+                        + ", relationship child inode: " + relationship.getChildStructureInode()
+                        + ", relationship type: " + relationship.getRelationTypeValue());
                 updateRelationshipObject(field, type, relatedContentType, relationship, cardinality, user);
 
             } else {
                 //otherwise, a new relationship will be created
+                Logger.info(this, "Adding new relationship for field: " + field.name()
+                        + ", var name: " + field.variable()
+                        + ", related content type: " + (relatedContentType == null ? "" : relatedContentType.id())
+                        + ", var name: " + (relatedContentType == null ? "" : relatedContentType.variable()));
                 relationship = new Relationship(type, relatedContentType, field);
             }
 
@@ -351,6 +375,13 @@ public class FieldAPIImpl implements FieldAPI {
 
         //check which side of the relationship is being updated (parent or child)
         if (isChildField) {
+
+            Logger.info(this, "Relatioship field is child field: "
+                    + field.id() + ", var name: " + field.variable() + ", related content type: "
+                    + relatedContentType.id() + ", with name: " + relatedContentType.name()
+                    + ", and var name: " + relatedContentType.variable()
+                    + ", relationship id: " + relationship.getInode());
+
             //parent is updated
             relationship.setParentRelationName(relationName);
             relationship.setParentRequired(field.required());
@@ -370,7 +401,11 @@ public class FieldAPIImpl implements FieldAPI {
 
             if (relationship.getChildRelationName() != null) {
                 //verify if the cardinality was changed to update it on the other side of the relationship
-                final Field otherSideField = byContentTypeAndVar(relatedContentType,
+                Logger.info(this, "Looking for other side field for child field: "
+                        + relationship.getChildRelationName() + ", in related content type id: "
+                        + relatedContentType.id() + ", with name: " + relatedContentType.name()
+                        + ", and var name: " + relatedContentType.variable());
+                final Field otherSideField = fieldFactory.byContentTypeIdFieldVar(relatedContentType.id(),
                         relationship.getChildRelationName());
 
                 if (!otherSideField.values().equals(field.values())) {
@@ -380,6 +415,13 @@ public class FieldAPIImpl implements FieldAPI {
                 }
             }
         } else {
+
+            Logger.info(this, "Relatioship field is parent field: "
+                    + field.id() + ", var name: " + field.variable() + ", related content type: "
+                    + relatedContentType.id() + ", with name: " + relatedContentType.name()
+                    + ", and var name: " + relatedContentType.variable()
+                    + ", relationship id: " + relationship.getInode());
+
             //child is updated
             relationship.setChildRelationName(relationName);
             relationship.setChildRequired(field.required());
@@ -397,7 +439,13 @@ public class FieldAPIImpl implements FieldAPI {
 
             //verify if the cardinality was changed to update it on the other side of the relationship
             if (relationship.getParentRelationName() != null) {
-                final Field otherSideField = byContentTypeAndVar(relatedContentType,
+
+                Logger.info(this, "Looking for other side field for parent field: "
+                        + relationship.getParentRelationName() + ", in related content type id: "
+                        + relatedContentType.id() + ", with name: " + relatedContentType.name()
+                        + ", and var name: " + relatedContentType.variable());
+
+                final Field otherSideField = fieldFactory.byContentTypeIdFieldVar(relatedContentType.id(),
                         relationship.getParentRelationName());
 
                 if (!otherSideField.values().equals(field.values())) {
@@ -479,6 +527,11 @@ public class FieldAPIImpl implements FieldAPI {
       final Structure structure = new StructureTransformer(type).asStructure();
       com.dotmarketing.portlets.structure.model.Field legacyField = new LegacyFieldTransformer(field).asOldField();
 
+      Logger.info(this, "Deleting Field: " + field.name() + " with ID: " + field.id()
+              + " and var name:" + field.variable() + ", from Content Type: " + structure.getName()
+              + " with ID: " + structure.id());
+      StopWatch stopWatch = new StopWatch();
+      stopWatch.start();
 
       if (!(field instanceof CategoryField) &&
           !(field instanceof ConstantField) &&
@@ -496,6 +549,11 @@ public class FieldAPIImpl implements FieldAPI {
 
       fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder());
       fieldFactory.delete(field);
+
+      stopWatch.stop();
+      Logger.info(this, "Deleted Field: " + field.name() + " with ID: " + field.id()
+                + " and var name:" + field.variable() + ", from Content Type: " + structure.getName()
+                + " with ID: " + structure.id() + ", elapsed time: " + stopWatch);
 
       ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action",
           String.format("User %s/%s deleted field %s from %s Content Type.", user.getUserId(), user.getFirstName(),
@@ -518,7 +576,16 @@ public class FieldAPIImpl implements FieldAPI {
 
       //if RelationshipField, Relationship record must be updated/deleted
       if (field instanceof RelationshipField) {
+          Logger.info(this, "Removing relationship link for: " + field.name()
+                  + " with ID: " + field.id() + " and var name:" + field.variable()
+                  + ", from Content Type: " + structure.getName() + " with ID: " + structure.id());
+          StopWatch relationshipLinkWatch = new StopWatch();
+          relationshipLinkWatch.start();
           removeRelationshipLink(field, type, contentTypeAPI);
+          relationshipLinkWatch.stop();
+          Logger.info(this, "Removed relationship link: " + field.name() + " with ID: " + field.id()
+                  + " and var name:" + field.variable() + ", from Content Type: " + structure.getName()
+                  + " with ID: " + structure.id() + ", elapsed time: " + stopWatch);
       }
 
       // rebuild contentlets indexes

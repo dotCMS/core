@@ -1,6 +1,8 @@
 package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
@@ -911,7 +913,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    List<Language> langs = APILocator.getLanguageAPI().getLanguages();
 	    for(Language l : langs) {
 	        ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, l.getId());
-	        if(cvi!=null && !cvi.isDeleted()) {
+	        Logger.info(this,"Looking contentlet for identifier: " + identifier
+                    + " and language: " + l.getId() + ", is set: "
+                    + (cvi != null  && UtilMethods.isSet(cvi.getIdentifier())));
+	        if(cvi != null  && UtilMethods.isSet(cvi.getIdentifier()) && !cvi.isDeleted()) {
+                Logger.info(this,"Found contentlet for identifier: " + identifier
+                        + " and language: " + l.getId() + ", exists and is not deleted");
 	            return find(cvi.getWorkingInode());
 	        }
 	    }
@@ -2342,30 +2349,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
           return;
         }
         Queries queries = getQueries(field);
-        List<String> inodesToFlush = new ArrayList<>();
+        final List<String> inodesToFlush = new ArrayList<>();
 
         Connection conn = DbConnectionFactory.getConnection();
         
         try(PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
             ps.setObject(1, structureInode);
-            final int BATCH_SIZE = 200;
-
-            try(ResultSet rs = ps.executeQuery();)
-            {
-            	PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate());
-                for (int i = 1; rs.next(); i++) {
-                    String contentInode = rs.getString("inode");
+            try(ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    final String contentInode = rs.getString("inode");
                     inodesToFlush.add(contentInode);
-                    ps2.setString(1, contentInode);
-                    ps2.addBatch();
-
-                    if (i % BATCH_SIZE == 0) {
-                        ps2.executeBatch();
-                    }
                 }
-
-                ps2.executeBatch(); // insert remaining records
             }
+
+            try (PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate())) {
+                ps2.setObject(1, structureInode);
+                int numUpdatedRows = ps2.executeUpdate();
+                Logger.info(this, "Cleared " + numUpdatedRows + " contentlets "
+                    + " for field ID: " + field.getInode() + " with var name: " + field.getVelocityVarName()
+                    + " from content type ID: " + structureInode);
+            }
+
 
         } catch (SQLException e) {
             throw new DotDataException(String.format("Error clearing field '%s' for Content Type with ID: %s",
@@ -2373,9 +2377,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         }
 
-        for (String inodeToFlush : inodesToFlush) {
-            contentletCache.remove(inodeToFlush);
-        }
+        DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+            for (String inodeToFlush : inodesToFlush) {
+                contentletCache.remove(inodeToFlush);
+            }
+        });
+
     }
 
     /**
@@ -2456,7 +2463,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         select.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");
-        update.append(" WHERE inode = ?");
+        update.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");
 
         return new Queries().setSelect(select.toString()).setUpdate(update.toString());
 
