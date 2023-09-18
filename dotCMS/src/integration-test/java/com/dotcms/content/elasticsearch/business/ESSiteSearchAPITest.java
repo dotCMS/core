@@ -12,6 +12,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import java.io.IOException;
 import java.util.Date;
+import java.util.Set;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -34,6 +36,29 @@ public class ESSiteSearchAPITest {
         indexAPI = APILocator.getESIndexAPI();
         indiciesAPI = APILocator.getIndiciesAPI();
         contentletIndexAPI = APILocator.getContentletIndexAPI();
+    }
+
+    @Test
+    public void testCreate_100_SiteSearchIndex() throws IOException, DotDataException {
+        String timeStamp;
+        String indexName;
+        String aliasName;
+        String lastCreatedIndex = "";
+
+         Set<String> data = indexAPI.listIndices();
+//        assertEquals(0, data.size());
+        int indicesAmount = 120;
+        for (int i = 0; i < indicesAmount; i++) {
+            timeStamp = String.valueOf(new Date().getTime());
+            indexName = ES_SITE_SEARCH_NAME + "_" +i+ "_" + timeStamp;
+            aliasName = "indexAlias" + "_" + i + "_" + timeStamp;
+
+            siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
+
+            lastCreatedIndex = indexName;
+        }
+
+        assertTrue(indexAPI.listIndices().contains(lastCreatedIndex));
     }
 
     @Test
