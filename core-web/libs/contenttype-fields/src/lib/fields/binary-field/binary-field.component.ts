@@ -135,10 +135,27 @@ export class DotBinaryFieldComponent implements OnInit {
         this.inputFile.nativeElement.click();
     }
 
+    /**
+     * Handle file selection
+     *
+     * @param {Event} event
+     * @memberof DotBinaryFieldComponent
+     */
     handleFileSelection(event: Event) {
         const input = event.target as HTMLInputElement;
         const file = input.files[0];
         this.dotBinaryFieldStore.handleFileSelection(file);
+    }
+
+    /**
+     * Remove file
+     *
+     * @memberof DotBinaryFieldComponent
+     */
+    removeFile() {
+        this.dotBinaryFieldStore.setFile(null);
+        this.dotBinaryFieldStore.setTempFile(null);
+        this.dotBinaryFieldStore.setStatus(this.BINARY_FIEL_STATUS.INIT);
     }
 
     handleCreateFile(_event) {

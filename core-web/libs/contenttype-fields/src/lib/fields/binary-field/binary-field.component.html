@@ -48,8 +48,15 @@
 
     <dot-spinner *ngIf="vm.status === BINARY_FIEL_STATUS.UPLOADING"></dot-spinner>
 
+    <!-- This component is another ticket -->
     <div *ngIf="vm.status === BINARY_FIEL_STATUS.PREVIEW">
-        {{ dotTempFile.fileName }}
+        <span>
+            {{ dotTempFile.fileName }}
+        </span>
+        <p-button
+            [label]="'dot.binary.field.action.remove' | dm"
+            icon="pi pi-trash"
+            styleClass="p-button-link"></p-button>
     </div>
 </div>
 
