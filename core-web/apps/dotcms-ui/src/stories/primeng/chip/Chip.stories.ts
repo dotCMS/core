@@ -71,13 +71,12 @@ const ComponentStory: Story = (args) => ({
         styleClass: mergeArgsClassNamesToString(args)
     },
     template: `
-    <p-chip
-            [label]="label"
-            [icon]="icon"
-            [styleClass]="styleClass"
-            [removable]="removable"
-            [image]="image"
-            ></p-chip>`
+   <p-chip
+    [label]="label"
+    [icon]="icon"
+    [styleClass]="styleClass"
+    [removable]="removable"
+    [image]="image"></p-chip>`
 });
 
 export const Default = ComponentStory.bind({});

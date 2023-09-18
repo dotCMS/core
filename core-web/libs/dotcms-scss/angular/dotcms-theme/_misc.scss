@@ -59,3 +59,24 @@
     margin-left: 2px;
     vertical-align: middle;
 }
+
+// Global class for handle size of icons
+.pi {
+    aspect-ratio: 1/1;
+    line-height: 1;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    font-size: $icon-md;
+    width: $icon-md-box;
+}
+
+[class$="-sm"] .pi {
+    width: $icon-sm-box;
+    font-size: $icon-sm;
+}
+
+[class$="-lg"] .pi {
+    width: $icon-lg-box;
+    font-size: $icon-lg;
+}

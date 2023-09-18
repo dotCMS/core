@@ -1,6 +1,9 @@
 @use "variables" as *;
 @import "mixins";
 
+$chip-height-sm: 1.5rem; // 24px
+$chip-height-md: 2.5rem; // 40px
+
 p-chip .p-chip {
     background-color: $color-accessible-text-blue-bg;
     color: $color-accessible-text-blue;
@@ -9,26 +12,13 @@ p-chip .p-chip {
     height: $chip-height-md;
     gap: $spacing-1;
 
-    .p-chip-text {
-        font-size: $font-size-md;
-    }
-
     .p-chip-icon,
     .pi-chip-remove-icon {
-        justify-content: center;
-        align-items: center;
-        display: flex;
-
-        line-height: 1;
-        aspect-ratio: 1/1;
-        height: calc($icon-md + 4px);
-        font-size: $icon-md;
+        line-height: inherit;
     }
 
     .pi-chip-remove-icon {
         border-radius: $border-radius-sm;
-        transition: box-shadow 0.15s;
-
         &:focus {
             @include field-focus;
         }
@@ -39,8 +29,8 @@ p-chip .p-chip {
     }
 
     &.p-chip-secondary {
-        background-color: $color-accessible-text-green-bg;
-        color: $color-accessible-text-green;
+        background-color: $color-accessible-text-purple-bg;
+        color: $color-accessible-text-purple;
     }
 
     &.p-chip-warning {
@@ -70,12 +60,6 @@ p-chip .p-chip {
         height: $chip-height-sm;
 
         .p-chip-text {
-            font-size: $font-size-sm;
-        }
-
-        .p-chip-icon,
-        .pi-chip-remove-icon {
-            height: calc($icon-sm + 2px);
             font-size: $icon-sm;
         }
     }
