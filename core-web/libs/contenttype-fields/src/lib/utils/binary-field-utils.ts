@@ -4,8 +4,8 @@ const UiMessage = {
         severity: 'info',
         icon: 'pi pi-upload'
     },
-    couldNotLoad: {
-        message: 'dot.binary.field.drag.and.drop.error.could.not.load.message',
+    serverError: {
+        message: 'dot.binary.field.drag.and.drop.error.server.error.message',
         severity: 'error',
         icon: 'pi pi-exclamation-triangle'
     },
@@ -23,7 +23,7 @@ const UiMessage = {
 
 export enum UI_MESSAGE_KEYS {
     DEFAULT = 'default',
-    COULD_NOT_LOAD = 'couldNotLoad',
+    SERVER_ERROR = 'serverError',
     FILE_TYPE_MISMATCH = 'fileTypeMismatch',
     MAX_FILE_SIZE_EXCEEDED = 'maxFileSizeExceeded'
 }

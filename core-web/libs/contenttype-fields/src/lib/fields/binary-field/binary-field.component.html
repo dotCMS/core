@@ -1,8 +1,10 @@
 <div
     class="binary-field__container"
     *ngIf="vm$ | async as vm"
-    [ngClass]="{ 'binary-field__container--uploading': vm.status === 'UPLOADING' }">
-    <div class="binary-field__drop-zone-container" *ngIf="vm.status === 'INIT'">
+    [ngClass]="{
+        'binary-field__container--uploading': vm.status === BINARY_FIEL_STATUS.UPLOADING
+    }">
+    <div class="binary-field__drop-zone-container" *ngIf="vm.status === BINARY_FIEL_STATUS.INIT">
         <div
             class="binary-field__drop-zone"
             [ngClass]="{ 'binary-field__drop-zone--active': dropZoneActive }">
@@ -12,12 +14,14 @@
                 (fileDragOver)="setDropZoneActiveState(true)"
                 (fileDragLeave)="setDropZoneActiveState(false)"
                 (fileDropped)="handleFileDrop($event)">
-                <dot-drop-zone-message
-                    [message]="vm.UiMessage.message"
+                <dot-ui-message
+                    [message]="vm.UiMessage.message | dm : vm.UiMessage.args"
                     [icon]="vm.UiMessage.icon"
-                    [severity]="vm.UiMessage.severity"
-                    [messageArgs]="vm.UiMessage.args"
-                    (chooseFile)="openFilePicker()"></dot-drop-zone-message>
+                    [severity]="vm.UiMessage.severity">
+                    <button class="binary-field__drop-zone-btn" (click)="openFilePicker()">
+                        {{ 'dot.binary.field.action.choose.file' | dm }}
+                    </button>
+                </dot-ui-message>
             </dot-drop-zone>
             <input
                 class="binary-field__input"
@@ -42,7 +46,11 @@
         </div>
     </div>
 
-    <dot-spinner *ngIf="vm.status === 'UPLOADING'"></dot-spinner>
+    <dot-spinner *ngIf="vm.status === BINARY_FIEL_STATUS.UPLOADING"></dot-spinner>
+
+    <div *ngIf="vm.status === BINARY_FIEL_STATUS.PREVIEW">
+        {{ dotTempFile.fileName }}
+    </div>
 </div>
 
 <p-dialog

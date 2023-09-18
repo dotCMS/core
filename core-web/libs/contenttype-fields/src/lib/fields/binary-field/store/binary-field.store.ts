@@ -117,8 +117,14 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     });
 
     readonly handleFileSelection = this.effect<File>((file$) => {
-        /* To be implemented */
-        return file$.pipe();
+        return file$.pipe(
+            tap((file: File) => {
+                this.setUiMessage(getUiMessage(UI_MESSAGE_KEYS.DEFAULT));
+                this.setFile(file);
+                this.setStatus(BINARY_FIELD_STATUS.UPLOADING);
+            }),
+            switchMap((file) => this.uploadTempFile(file).pipe())
+        );
     });
 
     readonly handleCreateFile = this.effect<{ name: string; code: string }>((fileDetails$) => {
@@ -148,6 +154,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                     this.setTempFile(tempFile);
                 },
                 () => {
+                    this.setUiMessage(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR));
                     this.setStatus(BINARY_FIELD_STATUS.ERROR);
                     this.setTempFile(null);
                 }
@@ -175,8 +182,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             uiMessage = getUiMessage(UI_MESSAGE_KEYS.FILE_TYPE_MISMATCH, acceptedTypes);
         } else if (maxFileSizeExceeded) {
             uiMessage = getUiMessage(UI_MESSAGE_KEYS.MAX_FILE_SIZE_EXCEEDED, maxSize);
-        } else {
-            uiMessage = getUiMessage(UI_MESSAGE_KEYS.COULD_NOT_LOAD);
         }
 
         this.setUiMessage(uiMessage);

@@ -20,13 +20,17 @@ import { filter } from 'rxjs/operators';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
-    DotDropZoneMessageComponent,
     DotMessagePipe,
     DotSpinnerModule,
     DropZoneFileEvent
 } from '@dotcms/ui';
 
-import { BINARY_FIELD_MODE, DotBinaryFieldStore } from './store/binary-field.store';
+import { DotUiMessageComponent } from './components/dot-ui-message/dot-ui-message.component';
+import {
+    BINARY_FIELD_MODE,
+    BINARY_FIELD_STATUS,
+    DotBinaryFieldStore
+} from './store/binary-field.store';
 
 @Component({
     selector: 'dotcms-binary-field',
@@ -42,7 +46,7 @@ import { BINARY_FIELD_MODE, DotBinaryFieldStore } from './store/binary-field.sto
         DotDropZoneComponent,
         MonacoEditorModule,
         DotMessagePipe,
-        DotDropZoneMessageComponent,
+        DotUiMessageComponent,
         DotSpinnerModule
     ],
     providers: [DotBinaryFieldStore],
@@ -59,16 +63,17 @@ export class DotBinaryFieldComponent implements OnInit {
     @ViewChild('inputFile') inputFile: ElementRef;
 
     @Output() tempFile = new EventEmitter<DotCMSTempFile>();
-    @Output() tempId = new EventEmitter<string>();
 
     readonly dialogHeaderMap = {
         [BINARY_FIELD_MODE.URL]: 'dot.binary.field.dialog.import.from.url.header',
         [BINARY_FIELD_MODE.EDITOR]: 'dot.binary.field.dialog.create.new.file.header'
     };
+    readonly BINARY_FIEL_STATUS = BINARY_FIELD_STATUS;
     readonly BINARY_FIELD_MODE = BINARY_FIELD_MODE;
     readonly mode$ = this.dotBinaryFieldStore.mode$;
     readonly vm$ = this.dotBinaryFieldStore.state$;
 
+    dotTempFile: DotCMSTempFile;
     dialogOpen = false;
     dropZoneActive = false;
 
@@ -77,7 +82,10 @@ export class DotBinaryFieldComponent implements OnInit {
     ngOnInit() {
         this.dotBinaryFieldStore.tempFile$
             .pipe(filter((tempFile) => !!tempFile))
-            .subscribe((tempFile) => this.tempFile.emit(tempFile));
+            .subscribe((tempFile) => {
+                this.dotTempFile = tempFile;
+                this.tempFile.emit(tempFile);
+            });
 
         this.dotBinaryFieldStore.setRules({
             accept: this.accept,
@@ -127,8 +135,10 @@ export class DotBinaryFieldComponent implements OnInit {
         this.inputFile.nativeElement.click();
     }
 
-    handleFileSelection(_event) {
-        // TODO: Implement - Chose File
+    handleFileSelection(event: Event) {
+        const input = event.target as HTMLInputElement;
+        const file = input.files[0];
+        this.dotBinaryFieldStore.handleFileSelection(file);
     }
 
     handleCreateFile(_event) {

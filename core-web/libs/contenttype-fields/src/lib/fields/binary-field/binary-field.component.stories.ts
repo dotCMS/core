@@ -9,14 +9,10 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
-import {
-    DotDropZoneComponent,
-    DotDropZoneMessageComponent,
-    DotMessagePipe,
-    DotSpinnerModule
-} from '@dotcms/ui';
+import { DotDropZoneComponent, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
+import { DotUiMessageComponent } from './components/dot-ui-message/dot-ui-message.component';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
@@ -34,7 +30,7 @@ export default {
                 DialogModule,
                 MonacoEditorModule,
                 DotDropZoneComponent,
-                DotDropZoneMessageComponent,
+                DotUiMessageComponent,
                 DotMessagePipe,
                 DotSpinnerModule
             ],
@@ -47,7 +43,7 @@ export default {
                             return new Promise((resolve) => {
                                 setTimeout(() => {
                                     resolve({
-                                        fileName: 'fileName',
+                                        fileName: 'Image.jpg',
                                         folder: 'folder',
                                         id: 'tempFileId',
                                         image: true,
@@ -56,7 +52,7 @@ export default {
                                         referenceUrl: 'referenceUrl',
                                         thumbnailUrl: 'thumbnailUrl'
                                     });
-                                }, 8000);
+                                }, 4000);
                             });
                         }
                     }
