@@ -204,6 +204,20 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Set the selected folder in the Site Browser portlet.
+     *
+     * @param {Event} event
+     * @param {string} path
+     * @memberof DotTemplateListComponent
+     */
+    goToFolder(event: Event, path: string) {
+        event.stopPropagation();
+
+        this.dotSiteBrowserService.setSelectedFolder(path).subscribe(); // This takes one under the hood
+        this.dotRouterService.goToSiteBrowser();
+    }
+
+    /**
      * Map table results to add the disableInteraction property.
      * @param {DotTemplate[]} templates
      * @returns DotTemplate[]
