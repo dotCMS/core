@@ -189,3 +189,4 @@ This maintenance release includes the following code fixes:
 157. https://github.com/dotCMS/core/issues/26019 : PubSubListener with vanilla postgres #26019
 158. https://github.com/dotCMS/core/issues/22507 : Make instance restart function capable of restarting the cluster #22507
 159. https://github.com/dotCMS/core/issues/26158 : Remove :persona from tag when doing ES #26158
+160. https://github.com/dotCMS/core/issues/26159 : Remove Persona Icon from Tag Field #26159
