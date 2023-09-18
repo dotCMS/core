@@ -286,4 +286,4 @@ export enum HealthStatusTypes {
     CONFIGURATION_ERROR = 'CONFIGURATION_ERROR'
 }
 
-export const RUNNING_UNTIL_DATE_FORMAT = 'EEE, LLL dd, Y';
+export const RUNNING_UNTIL_DATE_FORMAT = 'EEE, LLL dd';
