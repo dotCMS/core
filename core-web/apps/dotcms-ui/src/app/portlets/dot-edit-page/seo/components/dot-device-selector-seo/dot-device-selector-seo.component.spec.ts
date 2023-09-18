@@ -206,4 +206,10 @@ describe('DotDeviceSelectorSeoComponent', () => {
 
         expect(component.changeSeoMediaEvent).toHaveBeenCalled();
     });
+
+    it('should emit hideOverlayPanel event when onHideDeviceSelector is called', () => {
+        spyOn(component.hideOverlayPanel, 'emit');
+        component.onHideDeviceSelector();
+        expect(component.hideOverlayPanel.emit).toHaveBeenCalled();
+    });
 });
