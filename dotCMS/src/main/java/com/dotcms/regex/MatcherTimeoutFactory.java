@@ -19,7 +19,12 @@ import io.vavr.control.Try;
  */
 public abstract class MatcherTimeoutFactory {
 
-    public static final String MATCHER_TIMEOUT_PATTERN="MATCHER_TIMEOUT_PATTERNe8f124f0-1427-4b20-bef2-aab09b13fb81";
+
+    /**
+     * This pattern is for TESTING only and not intended to match anything in the real world.
+     */
+    @VisibleForTesting
+    public static final String MATCHER_TIMEOUT_PATTERN="MATCHER_TIMEOUT_TESTING_PATTERNe8f124f01427";
 
 
 
