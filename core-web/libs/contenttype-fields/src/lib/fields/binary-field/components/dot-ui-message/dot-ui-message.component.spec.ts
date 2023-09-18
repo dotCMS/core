@@ -1,4 +1,4 @@
-import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
+import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
 
@@ -14,17 +14,38 @@ describe('DotUiMessageComponent', () => {
     });
 
     beforeEach(async () => {
-        spectator = createHost(`<dot-ui-message></dot-ui-message>`, {
-            hostProps: {
-                message: 'Drag and Drop File',
-                icon: 'icon',
-                severity: 'severity'
+        spectator = createHost(
+            `<dot-ui-message [message]="message" [icon]="icon" [severity]="severity">
+                <button data-testId="choose-file-btn">Choose File</button>
+            </dot-ui-message>`,
+            {
+                hostProps: {
+                    message: 'Drag and Drop File',
+                    icon: 'pi pi-upload',
+                    severity: 'info'
+                }
             }
-        });
+        );
         spectator.detectChanges();
+        await spectator.fixture.whenStable();
     });
 
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
+    it('should have a message, icon, and serverity', () => {
+        const messageText = spectator.query(byTestId('ui-message-span')).innerHTML;
+        const messageIconClass = spectator.query(byTestId('ui-message-icon')).className;
+        const messageIconContainer = spectator.query(
+            byTestId('ui-message-icon-container')
+        ).className;
+
+        expect(messageText).toBe('Drag and Drop File');
+        expect(messageIconClass).toBe('pi pi-upload');
+        expect(messageIconContainer).toBe(
+            'ui-message__icon-container ui-message__icon-container--info'
+        );
+    });
+
+    it('should have a button', () => {
+        const button = spectator.query(byTestId('choose-file-btn'));
+        expect(button).toBeTruthy();
     });
 });

@@ -53,10 +53,12 @@
         <span>
             {{ dotTempFile.fileName }}
         </span>
+        <br />
         <p-button
+            class="p-button-outlined"
             [label]="'dot.binary.field.action.remove' | dm"
-            icon="pi pi-trash"
-            styleClass="p-button-link"></p-button>
+            (click)="removeFile()"
+            icon="pi pi-trash"></p-button>
     </div>
 </div>
 

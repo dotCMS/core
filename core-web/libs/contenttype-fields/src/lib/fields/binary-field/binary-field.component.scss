@@ -19,7 +19,7 @@
     border: 1px solid $color-palette-gray-300;
     padding: $spacing-1;
     margin-bottom: $spacing-1;
-    height: 11rem;
+    height: 10rem;
 }
 
 .binary-field__container--uploading {
@@ -77,6 +77,7 @@
     user-select: none;
     cursor: default;
     flex-grow: 1;
+    height: 100%;
 
     .binary-field__drop-zone-btn {
         border: none;

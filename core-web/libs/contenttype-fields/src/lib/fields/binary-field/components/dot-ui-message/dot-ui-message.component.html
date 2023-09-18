@@ -1,8 +1,10 @@
-<div class="drop-zone-message__container">
-    <div class="drop-zone-message__icon drop-zone-message__icon--{{ severity }}">
-        <i [ngClass]="icon" style="font-size: 2rem"></i>
+<div class="ui-message__container">
+    <div
+        class="ui-message__icon-container ui-message__icon-container--{{ severity }}"
+        data-testId="ui-message-icon-container">
+        <i [ngClass]="icon" data-testId="ui-message-icon" style="font-size: 2rem"></i>
     </div>
-    <div class="drop-zone-message__text">
-        <span [innerHTML]="message"></span> <ng-content></ng-content>
+    <div class="ui-message__text">
+        <span [innerHTML]="message" data-testId="ui-message-span"></span><ng-content></ng-content>
     </div>
 </div>
