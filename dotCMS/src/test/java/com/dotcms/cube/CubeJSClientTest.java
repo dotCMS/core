@@ -2,7 +2,7 @@ package com.dotcms.cube;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.model.AccessToken;
@@ -11,6 +11,7 @@ import com.dotcms.cube.CubeJSQuery.Builder;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
+import com.dotcms.regex.MatcherTimeoutFactory;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
 
@@ -136,7 +137,16 @@ public class CubeJSClientTest {
             final CubeJSClient cubeClient = new CubeJSClient(
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort),
                     getAccessToken());
-            final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
+            CubeJSResultSet cubeJSResultSet = new CubeJSResultSetImpl(List.of());
+            // this should throw a timeout and add pattern to quarantine
+           try {
+               cubeJSResultSet = cubeClient.send(cubeJSQuery);
+               assertTrue(false);
+           }
+           catch(Exception e){
+               assertTrue(e instanceof RuntimeException);
+           }
+
 
             assertEquals(0, cubeJSResultSet.size());
         } finally {
