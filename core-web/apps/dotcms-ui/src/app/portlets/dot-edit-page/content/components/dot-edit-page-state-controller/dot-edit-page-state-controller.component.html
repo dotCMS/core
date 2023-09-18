@@ -17,22 +17,20 @@
         data-testId="selectButton"></p-selectButton>
 </ng-template>
 <ng-container *ngIf="!variant">
-    <ng-container *ngIf="!variant">
-        <p-inputSwitch
-            #locker
-            [(ngModel)]="lock"
-            [class.warn]="lockWarn"
-            [disabled]="!pageState.page.canLock"
-            [pTooltip]="
-                pageState.state.lockedByAnotherUser && pageState.page.canEdit
-                    ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
-                    : null
-            "
-            [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"
-            (click)="onLockerClick()"
-            (onChange)="lockPageHandler()"
-            appendTo="target"></p-inputSwitch>
-    </ng-container>
+    <p-inputSwitch
+        #locker
+        [(ngModel)]="lock"
+        [class.warn]="lockWarn"
+        [disabled]="!pageState.page.canLock"
+        [pTooltip]="
+            pageState.state.lockedByAnotherUser && pageState.page.canEdit
+                ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
+                : null
+        "
+        [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"
+        (click)="onLockerClick()"
+        (onChange)="lockPageHandler()"
+        appendTo="target"></p-inputSwitch>
 
     <dot-edit-page-lock-info
         #pageLockInfo
