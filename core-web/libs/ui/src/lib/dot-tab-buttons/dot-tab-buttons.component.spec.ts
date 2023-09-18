@@ -35,7 +35,7 @@ describe('DotTabButtonsComponent', () => {
             props: {
                 options: optionsMock,
                 mode: DotPageMode.PREVIEW,
-                dotTabsIcon: 'pi-angle-down'
+                icon: 'pi-angle-down'
             }
         });
     });
@@ -50,7 +50,7 @@ describe('DotTabButtonsComponent', () => {
     });
 
     it('should emit openMenu event when showMenu is called', () => {
-        const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
+        const openMenuSpy = spyOn(spectator.component.dropdownClick, 'emit');
         spectator.component.showMenu(null);
         expect(openMenuSpy).toHaveBeenCalled();
     });
@@ -94,13 +94,13 @@ describe('DotTabButtonsComponent', () => {
         const dotTabsIcon = spectator.queryAll(byTestId('dot-tab-icon'));
 
         spectator.setInput({
-            dotTabsIcon: 'pi-angle-up'
+            icon: 'pi-angle-up'
         });
         spectator.detectChanges();
         expect(dotTabsIcon).toHaveClass('dot-tab-dropdown__icon pi pi-angle-up');
 
         spectator.setInput({
-            dotTabsIcon: 'pi-angle-down'
+            icon: 'pi-angle-down'
         });
 
         spectator.fixture.detectChanges();
