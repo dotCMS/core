@@ -35,15 +35,15 @@ export class DotValidators {
     }
 
     /**
-     * Validate there is not only white spaces in a field when is not empty.
+     * Validates a string to allow empty input while ensuring it does not consist solely of white space characters.
      *
      * @param {AbstractControl} control
      */
     static noWhitespace(control: AbstractControl): { [key: string]: string } | null {
-        return control.value
-            ? control.value.trim().length
-                ? null
-                : DOT_ERROR_MESSAGES.whiteSpaceOnlyMgs
-            : null;
+        const notOnlySpacesPattern = /^(?!\s+$).*/;
+
+        return notOnlySpacesPattern.test(control.value)
+            ? null
+            : DOT_ERROR_MESSAGES.whiteSpaceOnlyMgs;
     }
 }
