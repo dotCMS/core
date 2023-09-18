@@ -1,6 +1,6 @@
 <div class="dot-tab-buttons">
     <div class="dot-tab-buttons__container" *ngFor="let item of options">
-        <div class="dot-tab" data-testId="dot-tab-container">
+        <div class="dot-tab">
             <button
                 class="dot-tab__button"
                 [ngClass]="{
@@ -11,6 +11,7 @@
                 [disabled]="item.disabled"
                 [pTooltip]="'editpage.toolbar.' + item.label.toLowerCase() + '.page.clipboard' | dm"
                 (click)="onClickOption($event)"
+                data-testId="dot-tab-button"
                 data-testId="dot-tab-button-text"
                 tooltipPosition="bottom">
                 {{ item.label }}
@@ -21,6 +22,7 @@
                 *ngIf="item.value === pageMode.PREVIEW"
                 [ngClass]="{ 'dot-tab-dropdown--active': mode === pageMode.PREVIEW }"
                 (click)="onClickOption($event)"
+                data-testId="dot-tab-button"
                 value="openMenu">
                 <i
                     class="dot-tab-dropdown__icon pi"
