@@ -427,6 +427,12 @@ public class DotInitScheduler {
 				} catch (Exception e) {
 					Logger.info(DotInitScheduler.class, e.toString());
 				}
+			} else {
+				Logger.info(DotInitScheduler.class, "Delete Old Clickstreams Job schedule disabled on this server");
+				Logger.info(DotInitScheduler.class, "Deleting DeleteOldClickstreams Job");
+				if ((job = sched.getJobDetail("DeleteOldClickstreams", DOTCMS_JOB_GROUP_NAME)) != null) {
+					sched.deleteJob("DeleteOldClickstreams", DOTCMS_JOB_GROUP_NAME);
+				}
 			}
 
 			//SCHEDULE PUBLISH QUEUE JOB
