@@ -3,15 +3,15 @@
         [experiment]="vm.experiment"
         [isLoading]="vm.isLoading"
         [title]="vm.experiment?.name"
-        (goBack)="goToExperimentList(vm.experiment.pageId)">
-    </dot-experiments-header>
+        (goBack)="goToExperimentList(vm.experiment.pageId)" />
     <div class="flex flex-column dot-experiment-report-content">
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
             <dot-experiments-experiment-summary
                 [goals]="vm.experiment.goals"
                 [scheduling]="vm.experiment.scheduling"
                 [sessionsReached]="vm.results ? vm.results.sessions.total : 0"
-                [suggestedWinner]="vm.winnerLegendSummary" />
+                [suggestedWinner]="vm.winnerLegendSummary"
+                (updateResults)="loadExperimentsResults()" />
 
             <div class="flex align-items-center flex-column w-full container gap-3">
                 <p-tabView>

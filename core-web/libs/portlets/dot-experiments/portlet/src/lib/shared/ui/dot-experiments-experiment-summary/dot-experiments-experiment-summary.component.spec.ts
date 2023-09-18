@@ -88,4 +88,14 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
             sessionsReached.toString()
         );
     });
+
+    it('should reload results', () => {
+        const component = spectator.component;
+
+        jest.spyOn(component.updateResults, 'emit');
+
+        spectator.click(byTestId('reload-button'));
+
+        expect(component.updateResults.emit).toHaveBeenCalledWith();
+    });
 });
