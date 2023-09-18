@@ -12,8 +12,8 @@
 <dot-tab-buttons
     [mode]="mode"
     [options]="options"
-    [dotTabsIcon]="dotTabsIcon"
-    (openMenu)="openDeviceSelector($event)"
+    [icon]="dotTabsIcon"
+    (dropdownClick)="openDeviceSelector($event)"
     (clickOption)="stateSelectorHandler($event.target.value)"
     data-testId="dot-tabs-buttons"></dot-tab-buttons>
 <ng-container *ngIf="!variant">

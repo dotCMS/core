@@ -23,11 +23,11 @@ import { DotMessagePipe } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotTabButtonsComponent {
-    @Output() openMenu = new EventEmitter();
+    @Output() dropdownClick = new EventEmitter();
     @Output() clickOption = new EventEmitter();
     @Input() mode: DotPageMode;
     @Input() options: SelectItem[];
-    @Input() dotTabsIcon: string;
+    @Input() icon: string;
 
     protected readonly pageMode = DotPageMode;
     readonly OPEN_MENU = 'openMenu';
@@ -51,6 +51,6 @@ export class DotTabButtonsComponent {
      */
     showMenu(event) {
         this.toggle = !this.toggle;
-        this.openMenu.emit(event);
+        this.dropdownClick.emit(event);
     }
 }
