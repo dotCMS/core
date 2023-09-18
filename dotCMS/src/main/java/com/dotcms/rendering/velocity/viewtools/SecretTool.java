@@ -99,7 +99,7 @@ public class SecretTool implements ViewTool {
 		return config.isPresent()? config.get().getCharArrayOrNull(key, defaultValue) : defaultValue;
 	}
 
-    private static final boolean ENABLE_SCRIPTING = Config.getBooleanProperty("ENABLE_SCRIPTING", false);
+    private static final boolean ENABLE_SCRIPTING = Config.getBooleanProperty("ENABLE_SECRETS_SCRIPTING", false);
 
     /**
      * Test 2 things.
