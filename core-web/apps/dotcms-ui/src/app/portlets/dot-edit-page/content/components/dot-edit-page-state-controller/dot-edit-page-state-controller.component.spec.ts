@@ -510,7 +510,6 @@ describe('DotEditPageStateControllerComponent', () => {
 
     describe('feature flag edit URLContentMap is on', () => {
         beforeEach(() => {
-            getKeyMock.and.callThrough(); // Reset the mock
             getKeyMock.and.returnValue(of('true'));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(

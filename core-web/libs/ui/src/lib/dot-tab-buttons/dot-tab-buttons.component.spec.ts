@@ -57,13 +57,10 @@ describe('DotTabButtonsComponent', () => {
     it('should emit openMenu event when showMenu is called', () => {
         const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
 
-        spectator.component.showMenu({
-            ...pointerEvent,
-            target: {
-                ...pointerEvent.target,
-                value: DotPageMode.PREVIEW + spectator.component.OPEN_MENU
-            }
-        });
+        const button = spectator.query(byTestId('tab-dropdown'));
+
+        spectator.dispatchMouseEvent(button, 'click');
+
         expect(openMenuSpy).toHaveBeenCalled();
     });
 

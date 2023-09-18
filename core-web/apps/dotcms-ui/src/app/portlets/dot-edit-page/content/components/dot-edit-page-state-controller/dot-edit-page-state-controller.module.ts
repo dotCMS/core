@@ -27,7 +27,6 @@ import { DotEditPageStateControllerComponent } from './dot-edit-page-state-contr
         DotMessagePipe,
         DotTabButtonsComponent,
         MenuModule,
-
         DotContentletEditorModule
     ]
 })

@@ -62,15 +62,9 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
 
     readonly featureFlagEditURLContentMap = FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP;
 
-    private readonly menuOpenActions: Record<DotPageMode, (event: PointerEvent) => void> = {
+    private readonly menuOpenActions: Record<DotPageMode.EDIT, (event: PointerEvent) => void> = {
         [DotPageMode.EDIT]: (event: PointerEvent) => {
             this.menu.toggle(event);
-        },
-        [DotPageMode.PREVIEW]: (_: PointerEvent) => {
-            // No logic
-        },
-        [DotPageMode.LIVE]: (_: PointerEvent) => {
-            // No logic
         }
     };
 
@@ -80,7 +74,6 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
         private dotPageStateService: DotPageStateService,
         private dotPersonalizeService: DotPersonalizeService,
         private dotContentletEditor: DotContentletEditorService,
-
         private dotPropertiesService: DotPropertiesService
     ) {}
 
