@@ -12,6 +12,7 @@ import com.dotmarketing.business.APILocator;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
+import com.liferay.util.SystemEnvironmentProperties;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.File;
@@ -53,6 +54,9 @@ public class Config {
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
 
     private static SystemTableConfigSource SYSTEM_TABLE_CONFIG_SOURCE = null;
+
+    @VisibleForTesting
+    public static boolean ENABLE_SYSTEM_TABLE_CONFIG_SOURCE = "true".equalsIgnoreCase(EnvironmentVariablesService.getInstance().getenv().getOrDefault("DOT_ENABLE_SYSTEM_TABLE_CONFIG_SOURCE", "false"));
 
     public static void initSystemTableConfigSource() {
         SYSTEM_TABLE_CONFIG_SOURCE = new SystemTableConfigSource();
@@ -369,7 +373,7 @@ public class Config {
 
     private static String getSystemTableValue(final String ...names) {
 
-        if (null != names && null != SYSTEM_TABLE_CONFIG_SOURCE) {
+        if (null != names && null != SYSTEM_TABLE_CONFIG_SOURCE && ENABLE_SYSTEM_TABLE_CONFIG_SOURCE) {
 
             final String tag = ThreadContextUtil.getOrCreateContext().getTag();
             if (UtilMethods.isSet(tag) && "ConfigSystemTable".equals(tag)) {
