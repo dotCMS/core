@@ -4,7 +4,9 @@
     [ngClass]="{
         'binary-field__container--uploading': vm.status === BINARY_FIEL_STATUS.UPLOADING
     }">
-    <div class="binary-field__drop-zone-container" *ngIf="vm.status === BINARY_FIEL_STATUS.INIT">
+    <div
+        class="binary-field__drop-zone-container"
+        *ngIf="vm.status === BINARY_FIEL_STATUS.INIT || vm.status === BINARY_FIEL_STATUS.ERROR">
         <div
             class="binary-field__drop-zone"
             [ngClass]="{ 'binary-field__drop-zone--active': dropZoneActive }">

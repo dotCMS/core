@@ -51,7 +51,7 @@ const initialState: BinaryFieldState = {
 @Injectable()
 export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     // Selectors
-    readonly state$ = this.select((state) => state);
+    readonly vm$ = this.select((state) => state);
 
     // File state
     readonly file$ = this.select((state) => state.file);
@@ -103,6 +103,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             filter(({ validity }) => {
                 if (!validity.valid) {
                     this.handleFileDropError(validity);
+                    this.setStatus(BINARY_FIELD_STATUS.ERROR);
                 }
 
                 return validity.valid;
@@ -112,7 +113,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                 this.setFile(file);
                 this.setStatus(BINARY_FIELD_STATUS.UPLOADING);
             }),
-            switchMap(({ file }) => this.uploadTempFile(file).pipe())
+            switchMap(({ file }) => this.uploadTempFile(file))
         );
     });
 
@@ -123,7 +124,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                 this.setFile(file);
                 this.setStatus(BINARY_FIELD_STATUS.UPLOADING);
             }),
-            switchMap((file) => this.uploadTempFile(file).pipe())
+            switchMap((file) => this.uploadTempFile(file))
         );
     });
 

@@ -71,7 +71,7 @@ export class DotBinaryFieldComponent implements OnInit {
     readonly BINARY_FIEL_STATUS = BINARY_FIELD_STATUS;
     readonly BINARY_FIELD_MODE = BINARY_FIELD_MODE;
     readonly mode$ = this.dotBinaryFieldStore.mode$;
-    readonly vm$ = this.dotBinaryFieldStore.state$;
+    readonly vm$ = this.dotBinaryFieldStore.vm$;
 
     dotTempFile: DotCMSTempFile;
     dialogOpen = false;
