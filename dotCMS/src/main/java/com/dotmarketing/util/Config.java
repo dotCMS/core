@@ -313,15 +313,7 @@ public class Config {
         final Configuration configuration = interpolator.interpolate(props);
 
         if(configuration instanceof PropertiesConfiguration){
-            PropertiesConfiguration props2 = (PropertiesConfiguration)configuration;
-            props2.getKeys().forEachRemaining(k->{
-                if(props.containsKey(k)){
-                    props.clearProperty(k);
-                    props.setProperty(k,props2.getProperty(k));
-                }
-
-            });
-
+            props.copy(configuration);
         }
 
     }
