@@ -1508,12 +1508,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 								if (contentletTagsBuilder.length() > 0) {
 									contentletTagsBuilder.append(",");
 								}
-								if (relatedTag.isPersona()) {
-									contentletTagsBuilder.append(relatedTag.getTagName())
-											.append(":persona");
-								} else {
 									contentletTagsBuilder.append(relatedTag.getTagName());
-								}
 
 								contentletTagsMap.put(fieldVarName, contentletTagsBuilder);
 							} else {
