@@ -63,7 +63,7 @@
                     *ngIf="rowData.themeInfo"
                     (click)="goToFolder($event, rowData.themeInfo?.path)"
                     data-testId="theme-folder-link"
-                    target="_blank"
+                    target="_self"
                     >{{ rowData.themeInfo?.title }}</a
                 >
             </ng-template>

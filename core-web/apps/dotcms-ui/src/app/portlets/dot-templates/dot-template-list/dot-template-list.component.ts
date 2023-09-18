@@ -213,8 +213,9 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     goToFolder(event: Event, path: string) {
         event.stopPropagation();
 
-        this.dotSiteBrowserService.setSelectedFolder(path).subscribe(); // This takes one under the hood
-        this.dotRouterService.goToSiteBrowser();
+        this.dotSiteBrowserService.setSelectedFolder(path).subscribe(() => {
+            this.dotRouterService.goToSiteBrowser();
+        }); // This takes one under the hood
     }
 
     /**
