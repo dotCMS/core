@@ -50,6 +50,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
     @Output() changeSeoMedia = new EventEmitter<string>();
+    @Output() hideOverlayPanel = new EventEmitter<string>();
     @ViewChild('deviceSelector') overlayPanel: OverlayPanel;
     previewUrl: string;
 
@@ -170,12 +171,23 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         );
     }
 
+    /**
+     * Check if current user is CMS Admin
+     * @returns Observable<boolean>
+     */
     checkIfCMSAdmin(): Observable<boolean> {
         return this.dotCurrentUser.getCurrentUser().pipe(
             map((user: DotCurrentUser) => {
                 return user.admin;
             })
         );
+    }
+
+    /**
+     * Hide the overlay panel
+     */
+    onHideDeviceSelector() {
+        this.hideOverlayPanel.emit();
     }
 
     @Input()

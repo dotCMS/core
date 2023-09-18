@@ -80,7 +80,6 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
                 isMobile: true
             }
         ];
-        this.currentResults = this.seoOGTagsResults;
     }
 
     ngOnChanges() {
