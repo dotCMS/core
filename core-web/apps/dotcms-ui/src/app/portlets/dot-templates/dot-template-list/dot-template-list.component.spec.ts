@@ -539,6 +539,7 @@ describe('DotTemplateListComponent', () => {
             );
 
             expect(links.length).toEqual(4);
+            expect(links[0].attributes['target']).toEqual('_self');
             expect(
                 links.every(
                     (link, i) =>
