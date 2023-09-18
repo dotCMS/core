@@ -35,7 +35,7 @@ export CMS_NOCOMPRESSIONSTRONGETAG=${CMS_NOCOMPRESSIONSTRONGETAG:-"false"}
 export CMS_COMPRESSIBLEMIMETYPE=${CMS_COMPRESSIBLEMIMETYPE:-"text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript,font/eot,font/otf,font/ttf,image/svg+xml"}
 
 # Access Log and Remote IP Valve
-export CMS_ACCESSLOG_PATTERN=${CMS_ACCESSLOG_PATTERN:-"%{Host}i %{org.apache.catalina.AccessLog.RemoteAddr}r %l %u %t &quot;%r&quot; %s %b %D %{Referer}i %{User-Agent}i"}
+export CMS_ACCESSLOG_PATTERN=${CMS_ACCESSLOG_PATTERN:-'%{Host}i %{org.apache.catalina.AccessLog.RemoteAddr}r %l %u %t "%r" %s %b %D %{Referer}i %{User-Agent}i'}
 export CMS_ACCESSLOG_FILEDATEFORMAT=${CMS_ACCESSLOG_FILEDATEFORMAT:-".yyyy-MM-dd"}
 export CMS_ACCESSLOG_MAXDAYS=${CMS_ACCESSLOG_MAXDAYS:-"-1"}
 export CMS_REMOTEIP_REMOTEIPHEADER=${CMS_REMOTEIP_REMOTEIPHEADER:-"x-forwarded-for"}

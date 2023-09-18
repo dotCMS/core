@@ -191,3 +191,4 @@ This maintenance release includes the following code fixes:
 159. https://github.com/dotCMS/core/issues/26158 : Remove :persona from tag when doing ES #26158
 160. https://github.com/dotCMS/core/issues/26159 : Remove Persona Icon from Tag Field #26159
 161. https://github.com/dotCMS/core/issues/26131 : Suggested tags don't work when the content is located in a folder #26131
+162. https://github.com/dotCMS/core/issues/23669 : properties from ENV vars do not need XML encoding #23669
