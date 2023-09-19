@@ -33,7 +33,7 @@
             <input
                 class="binary-field__input"
                 #inputFile
-                [accept]="vm.rules.join(', ')"
+                [accept]="vm.rules.accept.join(',')"
                 (change)="handleFileSelection($event)"
                 data-testId="binary-field__file-input"
                 type="file" />
