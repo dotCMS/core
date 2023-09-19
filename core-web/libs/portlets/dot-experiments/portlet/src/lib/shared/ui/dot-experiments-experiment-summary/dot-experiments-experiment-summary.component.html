@@ -1,17 +1,15 @@
-<div class="grid grid-nogutter justify-content-between md:gap-4 xl:gap-6 wrapper">
+<div class="grid grid-nogutter justify-content-between md:gap-2 xl:gap-3 wrapper">
     <div class="flex align-items-center justify-content-center gap-3" *ngIf="suggestedWinner">
         <ng-container *ngIf="suggestedWinner.icon === 'dot-trophy'; else defaultLegendIconTpl">
             <img
                 alt="winner icon"
                 data-TestId="suggested-winner-icon"
-                src="assets/icon/trophy.svg"
-            />
+                src="assets/icon/trophy.svg" />
         </ng-container>
         <span
             class="flex-grow-1"
             [innerHTML]="suggestedWinner.legend | dm"
-            data-TestId="suggested-winner-legend"
-        ></span>
+            data-TestId="suggested-winner-legend"></span>
     </div>
     <div class="flex align-items-center justify-content-center gap-3" *ngIf="goals">
         <i class="pi pi-flag"></i>
@@ -38,6 +36,15 @@
             <span class="font-bold">{{ 'experiments.summary.winner.session-to-date' | dm }}</span>
             {{ sessionsReached | number }}
         </div>
+    </div>
+    <div class="flex align-items-center justify-content-center gap-3">
+        <button
+            class="p-button-outlined"
+            [label]="'Refresh' | dm"
+            (click)="updateResults.emit()"
+            pButton
+            icon="pi pi-refresh"
+            data-testId="reload-button"></button>
     </div>
 </div>
 

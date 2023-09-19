@@ -308,7 +308,12 @@ public class CircuitBreakerUrl {
     }
 
     public Response<String> doResponse() {
-        return Try.of(() -> new Response<String>(this)).getOrElse((Response<String>) null);
+        try {
+            return new Response(this);
+        } catch (IOException e) {
+            Logger.error(this, e.getMessage(), e);
+            return null;
+        }
     }
 
     public Header[] getResponseHeaders() {

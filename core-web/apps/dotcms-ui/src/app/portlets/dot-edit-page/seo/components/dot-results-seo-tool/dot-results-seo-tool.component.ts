@@ -91,7 +91,7 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
                 isMobile: true
             }
         ];
-
+      
         const [preview] = this.allPreview;
         this.mainPreview = preview;
     }
