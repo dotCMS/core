@@ -400,6 +400,7 @@ describe('DotTemplateListComponent', () => {
     let dotAlertConfirmService: DotAlertConfirmService;
     let coreWebService: CoreWebService;
     let dotSiteBrowserService: DotSiteBrowserService;
+    let mockGoToFolder: jasmine.Spy;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
@@ -510,6 +511,8 @@ describe('DotTemplateListComponent', () => {
             spyOn<any>(dialogService, 'open').and.returnValue({
                 onClose: dialogRefClose
             });
+
+            mockGoToFolder = spyOn(comp, 'goToFolder');
         }));
 
         it('should reload portlet only when the site change', () => {
@@ -549,33 +552,41 @@ describe('DotTemplateListComponent', () => {
         });
 
         it('should trigger goToFolder whem clicking on a theme link', () => {
-            const mockGoToFolder = spyOn(comp, 'goToFolder');
-
             const link = fixture.debugElement.query(By.css('[data-testid="theme-folder-link"]'));
 
             link.nativeElement.click();
 
-            expect(mockGoToFolder).toHaveBeenCalled();
+            expect(mockGoToFolder).toHaveBeenCalledWith(new PointerEvent('click'), 'test');
         });
 
         it("should render 'System Theme' when the theme is SYSTEM_THEME", () => {
-            const mockGoToFolder = spyOn(comp, 'goToFolder');
+            const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
+
+            expect(cells[1].nativeElement.textContent.trim()).toEqual('System Theme');
+        });
+
+        it('should not trigger goToFolder when the theme is SYSTEM_THEME', () => {
             const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
 
             cells[1].nativeElement.click();
-            expect(cells[1].nativeElement.textContent.trim()).toEqual('System Theme');
 
             expect(mockGoToFolder).not.toHaveBeenCalled();
         });
 
         it('should render empty when the theme is undefined or null', () => {
-            const mockGoToFolder = spyOn(comp, 'goToFolder');
+            const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
+
+            const lastCell = cells.pop();
+
+            expect(lastCell.nativeElement.textContent.trim()).toEqual('');
+        });
+
+        it('should not trigger goToFolder when the theme is null or undefined', () => {
             const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
 
             const lastCell = cells.pop();
 
             lastCell.nativeElement.click();
-            expect(lastCell.nativeElement.textContent.trim()).toEqual('');
 
             expect(mockGoToFolder).not.toHaveBeenCalled();
         });
