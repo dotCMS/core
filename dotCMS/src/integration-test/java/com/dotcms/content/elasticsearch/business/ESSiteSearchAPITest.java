@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Set;
 
+import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -38,19 +40,22 @@ public class ESSiteSearchAPITest {
         contentletIndexAPI = APILocator.getContentletIndexAPI();
     }
 
-
+    /**
+     * Method to test: {@link SiteSearchAPI#createSiteSearchIndex(String, String, int)}
+     * Given Scenario: Create many (100+) site search indexes, Attempt to load the list.
+     * ExpectedResult: List should load without errors.
+     *
+     */
     @Test
     public void test_createSiteSearchIndex_shouldBePossibleToAddMoreThan100() throws IOException, DotDataException {
         String timeStamp, indexName, aliasName;
         String lastCreatedIndex = "";
 
-         //Set<String> data = indexAPI.listIndices();
-
         final int indicesAmount = 115;
         for (int i = 0; i < indicesAmount; i++) {
             timeStamp = String.valueOf(new Date().getTime());
-            indexName = ES_SITE_SEARCH_NAME + "_" +i+ "_" + timeStamp;
-            aliasName = "indexAlias" + "_" +i+ "_" + timeStamp;
+            indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
+            aliasName = "indexAlias" + "_" + timeStamp;
 
             siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
 

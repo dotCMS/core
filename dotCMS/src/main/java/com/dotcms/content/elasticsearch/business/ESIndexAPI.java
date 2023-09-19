@@ -863,7 +863,7 @@ public class ESIndexAPI {
 		for (int i = 0; i < indexNames.length; i++){
 			indexNamesWithPrefix[i] = getNameWithClusterIDPrefix(indexNames[i]);
 		}
-		final int batchSize = 50;
+		final int batchSize = 40;
 		int limit = 0;
 
 		//stores the offset to iterate
