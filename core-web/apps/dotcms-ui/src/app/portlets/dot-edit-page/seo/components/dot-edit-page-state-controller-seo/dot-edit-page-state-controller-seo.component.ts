@@ -130,8 +130,8 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
         this.dotPropertiesService
             .getKey(this.featureFlagEditURLContentMap)
             .pipe(take(1))
-            // IF YOU SEE THIS PLEASE REMIND ME TO DELETE THIS FALLBACK BECAUSE IM TESTING SOMETHING AT THIS MOMENT AND I DONT HAVE THE FEATURE FLAG ON THE BACKEND
-            .subscribe((result = 'true') => {
+
+            .subscribe((result) => {
                 this.featureFlagEditURLContentMapIsOn = result && result === 'true';
 
                 if (this.featureFlagEditURLContentMapIsOn && this.pageState.params.urlContentMap) {
