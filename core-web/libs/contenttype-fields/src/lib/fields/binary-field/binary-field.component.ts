@@ -15,7 +15,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
-import { filter } from 'rxjs/operators';
+import { skip } from 'rxjs/operators';
 
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import {
@@ -81,7 +81,7 @@ export class DotBinaryFieldComponent implements OnInit {
 
     ngOnInit() {
         this.dotBinaryFieldStore.tempFile$
-            .pipe(filter((tempFile) => !!tempFile))
+            .pipe(skip(1)) // Skip initial state
             .subscribe((tempFile) => {
                 this.dotTempFile = tempFile;
                 this.tempFile.emit(tempFile);

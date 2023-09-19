@@ -35,6 +35,7 @@ const TEMP_FILE_MOCK: DotCMSTempFile = {
     thumbnailUrl: 'image.png',
     mimeType: 'mimeType'
 };
+
 describe('DotBinaryFieldStore', () => {
     let spectator: SpectatorService<DotBinaryFieldStore>;
     let store: DotBinaryFieldStore;
