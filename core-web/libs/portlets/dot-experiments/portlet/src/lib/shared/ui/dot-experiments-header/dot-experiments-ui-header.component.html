@@ -11,7 +11,7 @@
     </ng-container>
 
     <ng-container *ngIf="!!experiment?.status">
-        <div class="flex flex-grow-1 align-items-center justify-content-between">
+        <div class="flex flex-grow-1 align-items-center justify-content-end">
             <p-tag
                 [value]="
                     (experiment?.status | titlecase | dm) +

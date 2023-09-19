@@ -134,12 +134,11 @@ export class DotSeoMetaTagsService {
     }
 
     /**
-     * Filter
+     * Filter the results by the seoMedia
      * @param results
      * @param seoMedia
      * @returns
      */
-
     getFilteredMetaTagsByMedia(
         results: Observable<SeoMetaTagsResult[]>,
         seoMedia: string
@@ -221,7 +220,7 @@ export class DotSeoMetaTagsService {
             });
         }
 
-        if (ogDescription && ogDescription.length === 0) {
+        if (ogDescription?.length === 0) {
             result.push({
                 message: this.dotMessageService.get('seo.rules.description.found.empty'),
                 color: SEO_RULES_COLORS.ERROR,
@@ -229,7 +228,7 @@ export class DotSeoMetaTagsService {
             });
         }
 
-        if (ogDescription && ogDescription.length > 0) {
+        if (ogDescription && ogDescription?.length > 0) {
             result.push({
                 message: this.dotMessageService.get('seo.rules.description.found'),
                 color: SEO_RULES_COLORS.DONE,
