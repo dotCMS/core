@@ -103,8 +103,6 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
 
     private readonly featureFlagEditURLContentMap = FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP;
 
-    dotTabsIcon = 'pi-angle-down';
-
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
@@ -132,7 +130,8 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
         this.dotPropertiesService
             .getKey(this.featureFlagEditURLContentMap)
             .pipe(take(1))
-            .subscribe((result) => {
+            // IF YOU SEE THIS PLEASE REMIND ME TO DELETE THIS FALLBACK BECAUSE IM TESTING SOMETHING AT THIS MOMENT AND I DONT HAVE THE FEATURE FLAG ON THE BACKEND
+            .subscribe((result = 'true') => {
                 this.featureFlagEditURLContentMapIsOn = result && result === 'true';
 
                 if (this.featureFlagEditURLContentMapIsOn && this.pageState.params.urlContentMap) {
@@ -140,7 +139,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
                         {
                             label: this.dotMessageService.get('modes.Page'),
                             command: () => {
-                                this.stateSelectorHandler(DotPageMode.EDIT);
+                                this.stateSelectorHandler({ optionId: DotPageMode.EDIT });
                             }
                         },
                         {
@@ -194,7 +193,9 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
      * @param {DotPageMode} mode
      * @memberof DotEditPageStateControllerComponent
      */
-    stateSelectorHandler(mode: DotPageMode): void {
+    stateSelectorHandler({ optionId }: { optionId: string }): void {
+        const mode = optionId as DotPageMode;
+
         this.modeChange.emit(mode);
 
         if (this.shouldShowConfirmation(mode)) {
@@ -265,16 +266,6 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
      */
     handleMenuOpen({ event, menuId }: { event: PointerEvent; menuId: string }): void {
         this.menuOpenActions[menuId as DotPageMode](event);
-        this.dotTabsIcon = 'pi-angle-up';
-    }
-    /*
-     * OnChange Device Selector
-     * @param pageState
-     * @returns
-     */
-    onHideDeviceSelector(): void {
-        // Use the reset here
-        this.dotTabsIcon = 'pi-angle-down';
     }
 
     private canTakeLock(pageState: DotPageRenderState): boolean {

@@ -1,14 +1,5 @@
 import { NgClass, NgFor, NgIf } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    HostListener,
-    Input,
-    OnChanges,
-    Output,
-    SimpleChanges
-} from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -23,13 +14,6 @@ interface TabButtonOptions {
     showDropdownButton: boolean;
 }
 
-interface CustomEventTarget extends EventTarget {
-    value: string;
-}
-
-interface CustomEvent extends PointerEvent {
-    target: CustomEventTarget;
-}
 /**
  * This component is responsible to display the tab buttons for the edit page.
  *
@@ -41,12 +25,11 @@ interface CustomEvent extends PointerEvent {
     standalone: true,
     imports: [NgFor, ButtonModule, NgIf, NgClass, TooltipModule, DotMessagePipe],
     templateUrl: './dot-tab-buttons.component.html',
-    styleUrls: ['./dot-tab-buttons.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./dot-tab-buttons.component.scss']
 })
 export class DotTabButtonsComponent implements OnChanges {
     @Output() openMenu = new EventEmitter<{ event: PointerEvent; menuId: string }>();
-    @Output() clickOption = new EventEmitter();
+    @Output() clickOption = new EventEmitter<{ event: PointerEvent; optionId: string }>();
     @Input() activeId: string;
     @Input() options: SelectItem<TabButtonOptions>[];
     @Output() dropdownClick = new EventEmitter();
@@ -55,7 +38,6 @@ export class DotTabButtonsComponent implements OnChanges {
 
     protected readonly dropDownOpenIcon = 'pi pi-angle-up';
     protected readonly dropDownCloseIcon = 'pi pi-angle-down';
-    readonly OPEN_MENU = '-openMenu';
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes.options) {
@@ -74,42 +56,40 @@ export class DotTabButtonsComponent implements OnChanges {
      * Handles the click event on the tab buttons.
      * @param event
      */
-    onClickOption(event: CustomEvent) {
-        const { value } = event.target;
-
-        if (this.shouldShowMenu(value)) {
-            this.showMenu(event);
-        } else if (value !== this.activeId) {
-            this.clickOption.emit(event);
+    onClickOption(event: PointerEvent, optionId: string) {
+        if (optionId === this.activeId) {
+            return;
         }
+
+        this.clickOption.emit({
+            event,
+            optionId
+        });
     }
 
     /**
      * Handles the click event on the menu button.
      * @param event
      */
-    showMenu(event: CustomEvent) {
+    onClickDropdown(event: PointerEvent, menuId: string) {
         event.stopPropagation();
 
-        const { value } = event.target;
-
         this._options = this._options.map((option) => {
-            if (value.includes(option.value.id)) {
+            if (menuId.includes(option.value.id)) {
                 option.value.toggle = !option.value.toggle;
             }
 
             return option;
         });
 
-        this.openMenu.emit({ event, menuId: value.replace(this.OPEN_MENU, '') });
+        this.openMenu.emit({ event, menuId });
     }
 
     /**
-     * Handles the click event on the document to reset the dropdowns state.
+     * Resets all the dropdowns to closed state.
      *
      * @memberof DotTabButtonsComponent
      */
-    @HostListener('document:click', ['$event'])
     resetDropdowns() {
         this._options = this._options.map((option) => {
             option.value.toggle = false;
@@ -118,16 +98,11 @@ export class DotTabButtonsComponent implements OnChanges {
         });
     }
 
-    /**
-     * Check if the dropdown menu should be shown.
-     *
-     * @private
-     * @param {string} value
-     * @return {*}  {boolean}
-     * @memberof DotTabButtonsComponent
-     */
-    private shouldShowMenu(value: string): boolean {
-        return this._options.find(({ value: { id } }) => value.includes(id + this.OPEN_MENU))?.value
-            .showDropdownButton;
+    resetDropdownById(id: string) {
+        this._options = this._options.map((option) => {
+            if (option.value.id === id) option.value.toggle = false;
+
+            return option;
+        });
     }
 }
