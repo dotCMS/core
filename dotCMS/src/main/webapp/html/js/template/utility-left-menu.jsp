@@ -14,7 +14,6 @@ var countAddContainerLinks;
 var countContainersAdded;
 var containersAdded = [];
 
-
 function drawDefault(overrideBody, addContainer, removeContainer,containersStr,containersLen){
 	addContainerMSG = addContainer;
 	removeContainerMSG = removeContainer;
@@ -69,8 +68,15 @@ function drawDefault(overrideBody, addContainer, removeContainer,containersStr,c
 
 function addRow(tableID,prefixSelect,prefixDiv) {
 	var table = document.getElementById(tableID);
+    // get free row index (from rows.length to 0)
 	var rowCount = table.rows.length;
-    var row = table.insertRow(rowCount);
+	while (rowCount >= 0) {
+        if (!document.getElementById(prefixDiv+(rowCount))) {
+            break;
+        }
+        rowCount -= 1;
+    }
+    var row = table.insertRow(-1);
     row.setAttribute("id","_selectRow"+rowCount);
     row.setAttribute("class","spaceUnder");
     var cell1 = row.insertCell(0);
@@ -101,26 +107,7 @@ function addRow(tableID,prefixSelect,prefixDiv) {
 	    dojo.connect(dijit.byId(prefixSelect+(rowCount)), "onChange", this, function(e){addGrid(e, prefixDiv+(rowCount), rowCount);});
 	    addGrid(1,prefixDiv+(rowCount),rowCount);
     }catch(err){
-    	cell2.removeChild(select);
-    	rowCount-=1;
-	    cell2 = row.insertCell(1);
-	    select = document.createElement("select");
-	    select.setAttribute("name", prefixSelect+(rowCount));
-	    select.setAttribute("id", prefixSelect+(rowCount));
-	    select.setAttribute("dojoType", "dijit.form.FilteringSelect");
-	    createOption(select, "1", "<%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %>",true);
-	    createOption(select, "yui-g-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %>",false);
-	    createOption(select, "yui-gc-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %>",false);
-	    createOption(select, "yui-gd-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %>",false);
-	    createOption(select, "yui-ge-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %>",false);
-	    createOption(select, "yui-gf-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %>",false);
-	    createOption(select, "yui-gb-template", "<%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %>",false);
-	    createOption(select, "yui-js-template", "<%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %>",false);
-	    select.onchange=function(){addGrid(select.value, select.getAttribute("name"));};
-	    cell2.appendChild(select);
-	    dojo.parser.parse(cell2);
-	    dojo.connect(dijit.byId(prefixSelect+(rowCount)), "onChange", this, function(e){addGrid(e, prefixDiv+(rowCount), rowCount);});
-	    addGrid(1,prefixDiv+(rowCount),rowCount);
+        console.error(err);
     }
 }
 
