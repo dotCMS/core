@@ -49,6 +49,7 @@ export class DotTabButtonsComponent implements OnChanges {
     @Output() clickOption = new EventEmitter();
     @Input() activeId: string;
     @Input() options: SelectItem<TabButtonOptions>[];
+    @Output() dropdownClick = new EventEmitter();
 
     _options: SelectItem<TabButtonOptions>[] = [];
 
@@ -62,7 +63,6 @@ export class DotTabButtonsComponent implements OnChanges {
             this._options = structuredClone(this.options).map((option) => {
                 if (option.value.showDropdownButton) {
                     option.value.toggle = false;
-                    option.value.icon = this.dropDownCloseIcon;
                 }
 
                 return option;
@@ -96,9 +96,6 @@ export class DotTabButtonsComponent implements OnChanges {
         this._options = this._options.map((option) => {
             if (value.includes(option.value.id)) {
                 option.value.toggle = !option.value.toggle;
-                option.value.icon = option.value.toggle
-                    ? this.dropDownOpenIcon
-                    : this.dropDownCloseIcon;
             }
 
             return option;
@@ -116,7 +113,6 @@ export class DotTabButtonsComponent implements OnChanges {
     resetDropdowns() {
         this._options = this._options.map((option) => {
             option.value.toggle = false;
-            option.value.icon = this.dropDownCloseIcon;
 
             return option;
         });

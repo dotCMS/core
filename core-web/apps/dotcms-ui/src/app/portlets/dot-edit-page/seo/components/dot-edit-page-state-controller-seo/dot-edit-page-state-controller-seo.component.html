@@ -4,6 +4,7 @@
     [apiLink]="apiLink"
     (selected)="changeDeviceHandler($event)"
     (changeSeoMedia)="changeSeoMedia($event)"
+    (hideOverlayPanel)="onHideDeviceSelector()"
     appendTo="body"
     tooltipPosition="bottom"
     tooltipStyleClass="dot-device-selector__dialog"
@@ -18,7 +19,8 @@
 <dot-tab-buttons
     [activeId]="mode"
     [options]="options"
-    (openMenu)="handleMenuOpen($event)"
+    [icon]="dotTabsIcon"
+    (dropdownClick)="openDeviceSelector($event)"
     (clickOption)="stateSelectorHandler($event.target.value)"
     data-testId="dot-tabs-buttons"></dot-tab-buttons>
 <ng-container *ngIf="!variant">

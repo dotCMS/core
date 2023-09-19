@@ -55,12 +55,8 @@ describe('DotTabButtonsComponent', () => {
     });
 
     it('should emit openMenu event when showMenu is called', () => {
-        const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
-
-        const button = spectator.query(byTestId('tab-dropdown'));
-
-        spectator.dispatchMouseEvent(button, 'click');
-
+        const openMenuSpy = spyOn(spectator.component.dropdownClick, 'emit');
+        spectator.component.showMenu(null);
         expect(openMenuSpy).toHaveBeenCalled();
     });
 
@@ -155,5 +151,21 @@ describe('DotTabButtonsComponent', () => {
         it('should have 4 tabs', () => {
             expect(spectator.queryAll(byTestId('dot-tab-button-text')).length).toBe(4);
         });
+    it('should toggle icon', () => {
+        const dotTabsIcon = spectator.queryAll(byTestId('dot-tab-icon'));
+
+        spectator.setInput({
+            icon: 'pi-angle-up'
+        });
+        spectator.detectChanges();
+        expect(dotTabsIcon).toHaveClass('dot-tab-dropdown__icon pi pi-angle-up');
+
+        spectator.setInput({
+            icon: 'pi-angle-down'
+        });
+
+        spectator.fixture.detectChanges();
+
+        expect(dotTabsIcon).toHaveClass('pi-angle-down');
     });
 });

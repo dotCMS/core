@@ -103,6 +103,8 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
 
     private readonly featureFlagEditURLContentMap = FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP;
 
+    dotTabsIcon = 'pi-angle-down';
+
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
@@ -263,6 +265,16 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
      */
     handleMenuOpen({ event, menuId }: { event: PointerEvent; menuId: string }): void {
         this.menuOpenActions[menuId as DotPageMode](event);
+        this.dotTabsIcon = 'pi-angle-up';
+    }
+    /*
+     * OnChange Device Selector
+     * @param pageState
+     * @returns
+     */
+    onHideDeviceSelector(): void {
+        // Use the reset here
+        this.dotTabsIcon = 'pi-angle-down';
     }
 
     private canTakeLock(pageState: DotPageRenderState): boolean {
