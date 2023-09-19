@@ -63,7 +63,6 @@ public class EMAWebInterceptor implements WebInterceptor {
 
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
-
         final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 
         if (!this.existsConfiguration(currentHost.getIdentifier())) {
@@ -89,7 +88,8 @@ public class EMAWebInterceptor implements WebInterceptor {
             if (response instanceof MockHttpCaptureResponse) {
                 final Optional<EMAConfigurationEntry> emaConfig = this.getEmaConfigByURL(currentSite, request.getRequestURI());
                 final Optional<String> proxyUrlOpt = emaConfig.map(EMAConfigurationEntry::getUrlEndpoint);
-                final String proxyUrl = proxyUrlOpt.orElse("[ EMPTY ]");
+                final String proxyUrl = getProxyURL(request).isPresent() ?
+                        getProxyURL(request).get() : proxyUrlOpt.orElse("[ EMPTY ]");
                 final MockHttpCaptureResponse mockResponse = (MockHttpCaptureResponse)response;
                 final String postJson                      = new String(mockResponse.getBytes());
                 final String authToken =
@@ -107,7 +107,7 @@ public class EMAWebInterceptor implements WebInterceptor {
                     this.sendHttpResponse(this.generateErrorPage("Unable to connect with the rendering engine",
                             proxyUrl, pResponse), postJson, response);
                 } else {
-                    this.sendHttpResponse(new String(pResponse.getResponse(), StandardCharsets.UTF_8.name()), postJson, response);
+                    this.sendHttpResponse(new String(pResponse.getResponse(), StandardCharsets.UTF_8), postJson, response);
                 }
             }
         } catch (final Exception e) {
@@ -164,10 +164,8 @@ public class EMAWebInterceptor implements WebInterceptor {
      * @return An Optional with the overridden Proxy URL, if present.
      */
     protected Optional<String> getProxyURL (final HttpServletRequest request) {
-
         Optional<String> proxyURL = Optional.empty();
         if (null != request.getParameter(PROXY_EDIT_MODE_URL_VAR)) {
-
             final String proxyURLParamValue = request.getParameter(PROXY_EDIT_MODE_URL_VAR);
             proxyURL = UtilMethods.isSet(proxyURLParamValue)?Optional.of(proxyURLParamValue):Optional.empty();
             if (null != request.getSession(false)) {
@@ -179,10 +177,8 @@ public class EMAWebInterceptor implements WebInterceptor {
             }
         } else if (null != request.getSession(false) &&
                 UtilMethods.isSet(request.getSession(false).getAttribute(PROXY_EDIT_MODE_URL_VAR))) {
-
             proxyURL = Optional.ofNullable(request.getSession(false).getAttribute(PROXY_EDIT_MODE_URL_VAR).toString());
         }
-
         return proxyURL;
     }
 
