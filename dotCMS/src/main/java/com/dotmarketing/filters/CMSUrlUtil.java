@@ -576,4 +576,26 @@ public class CMSUrlUtil {
 			throw new DotRuntimeException(e);
 		}
 	}
+
+	/**
+	 * Tries to recovery the identifier from the url path
+	 * The url could be a page such as /LIVE/27e8f845c3bd21ad1c601b8fe005caa6/dotParser_1695072095296.container
+	 * Or a call to a resource such as Content/27e8f845c3bd21ad1c601b8fe005caa6_1695072095296
+	 * @param urlPath
+	 * @return
+	 */
+	public String getIdentifierFromUrlPath (final String urlPath) {
+
+		final PageMode[] modes = PageMode.values();
+		for (final PageMode mode : modes) {
+			if (urlPath.startsWith("/" + mode.name() + "/")) {
+
+				final String urlPathWithoutMode = urlPath.substring(mode.name().length() + 2);
+				final String contentletFileAssetInode = urlPathWithoutMode.substring(0, urlPathWithoutMode.indexOf("/"));
+				return contentletFileAssetInode;
+			}
+		}
+
+		return urlPath.substring(urlPath.indexOf("/") + 1, urlPath.indexOf("_"));
+	}
 }

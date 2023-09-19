@@ -6,6 +6,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -123,10 +124,14 @@ public class SecretTool implements ViewTool {
 			this.internalContextAdapter    = new InternalContextAdapterImpl(context);
 			final String fieldResourceName = this.internalContextAdapter.getCurrentTemplateName();
 			if (UtilMethods.isSet(fieldResourceName)) {
-				final String contentletFileAssetInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
-				final Contentlet contentlet = APILocator.getContentletAPI().find(contentletFileAssetInode, APILocator.systemUser(), true);
-				final User lastModifiedUser = APILocator.getUserAPI().loadUserById(contentlet.getModUser(), APILocator.systemUser(), true);
-				hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, scripting);
+				try {
+					final String contentletFileAssetInode = CMSUrlUtil.getInstance().getIdentifierFromUrlPath(fieldResourceName);
+					final Contentlet contentlet = APILocator.getContentletAPI().find(contentletFileAssetInode, APILocator.systemUser(), true);
+					final User lastModifiedUser = APILocator.getUserAPI().loadUserById(contentlet.getModUser(), APILocator.systemUser(), true);
+					hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, scripting);
+				} catch (Exception e) {
+					// Quiet and continue with the next check
+				}
 			}
 
 			if (!hasScriptingRole) {
