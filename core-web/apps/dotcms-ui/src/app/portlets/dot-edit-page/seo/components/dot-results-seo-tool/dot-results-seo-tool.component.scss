@@ -128,12 +128,12 @@
     color: $color-alert-green;
 }
 
+.results-seo-tool__preview-image {
+    width: 100%;
+}
+
 .results-seo-tool__preview {
     margin-top: $spacing-1;
-
-    img {
-        width: "100%";
-    }
 
     h5 {
         padding: 0;

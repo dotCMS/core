@@ -28,7 +28,10 @@
                     </div>
                 </div>
                 <div *ngSwitchCase="seoMediaTypes.TWITTER">
-                    <img [src]="mainPreview.image" alt="preview image" />
+                    <img
+                        class="results-seo-tool__preview-image"
+                        [src]="mainPreview.image"
+                        alt="preview image" />
                     <div class="results-seo-tool__preview">
                         <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                         <h5>{{ mainPreview.twitterTitle }}</h5>
@@ -36,7 +39,10 @@
                     </div>
                 </div>
                 <div *ngSwitchDefault>
-                    <img [src]="mainPreview.image" alt="preview image" />
+                    <img
+                        class="results-seo-tool__preview-image"
+                        [src]="mainPreview.image"
+                        alt="preview image" />
                     <div class="results-seo-tool__preview">
                         <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                         <h5>{{ mainPreview.title }}</h5>
