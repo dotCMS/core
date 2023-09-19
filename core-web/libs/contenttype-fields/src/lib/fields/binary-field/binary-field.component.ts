@@ -56,7 +56,11 @@ import {
 })
 export class DotBinaryFieldComponent implements OnInit {
     //Inputs
-    @Input() accept: string[] = [];
+    private _accept: string[] = [];
+    @Input() set accept(accept: string) {
+        this._accept = accept.split(',').map((type) => type.trim());
+    }
+
     @Input() maxFileSize: number;
     @Input() helperText: string;
 
@@ -88,7 +92,7 @@ export class DotBinaryFieldComponent implements OnInit {
             });
 
         this.dotBinaryFieldStore.setRules({
-            accept: this.accept,
+            accept: this._accept,
             maxFileSize: this.maxFileSize
         });
     }

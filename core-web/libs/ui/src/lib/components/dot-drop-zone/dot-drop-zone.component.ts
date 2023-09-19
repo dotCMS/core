@@ -40,10 +40,12 @@ export class DotDropZoneComponent {
     @Input() maxFileSize: number;
 
     @Input() set accept(types: string[]) {
-        this._accept = types?.map((type) => {
-            // Remove the wildcard character
-            return type.toLowerCase().replace(/\*/g, '');
-        });
+        this._accept = types
+            ?.filter((value) => value !== '*/*')
+            .map((type) => {
+                // Remove the wildcard character
+                return type.toLowerCase().replace(/\*/g, '');
+            });
     }
 
     private _accept: string[] = [];

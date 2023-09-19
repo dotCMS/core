@@ -5,6 +5,7 @@
         <i [ngClass]="icon" data-testId="ui-message-icon" style="font-size: 2rem"></i>
     </div>
     <div class="ui-message__text">
-        <span [innerHTML]="message" data-testId="ui-message-span"></span><ng-content></ng-content>
+        <span [innerHTML]="message" data-testId="ui-message-span"></span>&nbsp;<ng-content
+        ></ng-content>
     </div>
 </div>

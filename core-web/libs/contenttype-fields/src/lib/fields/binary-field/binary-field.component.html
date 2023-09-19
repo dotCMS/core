@@ -12,8 +12,8 @@
             class="binary-field__drop-zone"
             [ngClass]="{ 'binary-field__drop-zone--active': dropZoneActive }">
             <dot-drop-zone
-                [accept]="accept"
-                [maxFileSize]="maxFileSize"
+                [accept]="vm.rules.accept"
+                [maxFileSize]="vm.rules.maxFileSize"
                 (fileDragOver)="setDropZoneActiveState(true)"
                 (fileDragLeave)="setDropZoneActiveState(false)"
                 (fileDropped)="handleFileDrop($event)"
@@ -33,7 +33,7 @@
             <input
                 class="binary-field__input"
                 #inputFile
-                [accept]="accept"
+                [accept]="vm.rules.join(', ')"
                 (change)="handleFileSelection($event)"
                 data-testId="binary-field__file-input"
                 type="file" />
@@ -79,7 +79,6 @@
     *ngIf="mode$ | async as mode"
     [(visible)]="dialogOpen"
     [header]="dialogHeaderMap[mode] | dm"
-    [modal]="true"
     [draggable]="false"
     [resizable]="false">
     <div [ngSwitch]="mode">
