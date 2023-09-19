@@ -89,7 +89,7 @@ public class Config {
     //Config internal properties
     private static int refreshInterval = 5; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
     private static Date lastRefreshTime = new Date();
-    protected static PropertiesConfiguration props = null;
+    protected final static PropertiesConfiguration props = new PropertiesConfiguration();
     private static ClassLoader classLoader = null;
     protected static URL dotmarketingPropertiesUrl = null;
     protected static URL clusterPropertiesUrl = null;
@@ -219,9 +219,9 @@ public class Config {
         File clusterFile = new File(clusterURL.getPath());
         Date lastClusterModified = new Date(clusterFile.lastModified());
 
-        if (props == null) {
+        if (props.isEmpty()) {
             synchronized (Config.class) {
-                if (props == null) {
+                if (props.isEmpty()) {
                     readProperties(dotmarketingFile,
                             "dotmarketing-config.properties");
                     readProperties(clusterFile,
@@ -237,7 +237,7 @@ public class Config {
                     if (lastDotmarketingModified.after(lastRefreshTime)
                             || lastClusterModified.after(lastRefreshTime)) {
                         try {
-                            props = new PropertiesConfiguration();
+                            props.clear();
                             // Cleanup and read the properties for both files
                             readProperties(dotmarketingFile,
                                     "dotmarketing-config.properties");
@@ -248,7 +248,7 @@ public class Config {
                                     Config.class,
                                     "Exception loading property files [dotmarketing-config.properties, dotcms-config-cluster.properties]",
                                     e);
-                            props = null;
+                            props.clear();
                         }
                     }
                 }
@@ -287,9 +287,6 @@ public class Config {
 
             Logger.info(Config.class, "Loading dotCMS [" + fileName + "] Properties...");
 
-            if (props == null) {
-                props = new PropertiesConfiguration();
-            }
 
             propsInputStream = Files.newInputStream(fileToRead.toPath());
             props.load(new InputStreamReader(propsInputStream));
@@ -307,7 +304,7 @@ public class Config {
         } catch (Exception e) {
             Logger.fatal(Config.class, "Exception loading properties for file [" + fileName + "]",
                     e);
-            props = null;
+            props.clear();
         } finally {
 
             IOUtils.closeQuietly(propsInputStream);
@@ -330,8 +327,10 @@ public class Config {
                 customInterpolator : SystemEnvironmentConfigurationInterpolator.INSTANCE;
         final Configuration configuration = interpolator.interpolate(props);
 
-        props = (configuration instanceof PropertiesConfiguration)
-                ? (PropertiesConfiguration) configuration : props;
+        if(configuration instanceof PropertiesConfiguration){
+            props.copy(configuration);
+        }
+
     }
 
     /**
@@ -339,7 +338,7 @@ public class Config {
      */
     private static void _refreshProperties() {
 
-        if ((props == null) || // if props is null go ahead.
+        if ((props.isEmpty()) || // if props is null go ahead.
                 (
                         (!useWatcherMode.get()) &&
                                 // if we are using watcher mode, do not need to check this
