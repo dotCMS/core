@@ -270,8 +270,8 @@ export class DotSeoMetaTagsService {
 
         if (
             ogDescription &&
-            ogDescription?.length >= SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
-            ogDescription?.length <= SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
+            ogDescription?.length > SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
+            ogDescription?.length < SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
         ) {
             result.push(
                 this.getDoneItem(this.dotMessageService.get('seo.rules.og-description.found'))
@@ -306,8 +306,8 @@ export class DotSeoMetaTagsService {
 
         if (
             titleElements?.length === SEO_LIMITS.MAX_TITLES &&
-            title?.length <= SEO_LIMITS.MAX_TITLE_LENGTH &&
-            title?.length >= SEO_LIMITS.MIN_TITLE_LENGTH
+            title?.length < SEO_LIMITS.MAX_TITLE_LENGTH &&
+            title?.length > SEO_LIMITS.MIN_TITLE_LENGTH
         ) {
             result.push(this.getDoneItem(this.dotMessageService.get('seo.rules.title.found')));
         }
@@ -342,8 +342,8 @@ export class DotSeoMetaTagsService {
 
         if (
             titleOg &&
-            titleOg?.length <= SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
-            titleOg?.length >= SEO_LIMITS.MIN_OG_TITLE_LENGTH
+            titleOg?.length < SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
+            titleOg?.length > SEO_LIMITS.MIN_OG_TITLE_LENGTH
         ) {
             result.push(this.getDoneItem(this.dotMessageService.get('seo.rules.og-image.found')));
         }
