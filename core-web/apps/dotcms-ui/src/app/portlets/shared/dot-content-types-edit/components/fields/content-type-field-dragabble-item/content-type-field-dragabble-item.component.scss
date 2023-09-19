@@ -35,10 +35,17 @@
         justify-content: center;
         align-items: center;
         border-radius: 50%;
+
         ::ng-deep {
             i {
                 color: $color-palette-secondary-500;
             }
+        }
+    }
+
+    ::ng-deep {
+        .p-button .p-button-label {
+            text-transform: none;
         }
     }
 }
@@ -89,6 +96,7 @@
             .attributes-container__field-name {
                 color: $color-palette-gray-900;
             }
+
             .attributes-container__attribute {
                 color: $color-palette-gray-700;
             }
