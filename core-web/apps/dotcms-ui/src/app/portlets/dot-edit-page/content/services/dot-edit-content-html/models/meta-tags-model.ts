@@ -26,6 +26,8 @@ export enum SEO_LIMITS {
     MAX_TITLE_LENGTH = 60,
     MIN_OG_TITLE_LENGTH = 30,
     MAX_OG_TITLE_LENGTH = 160,
+    MIN_OG_DESCRIPTION_LENGTH = 55,
+    MAX_OG_DESCRIPTION_LENGTH = 150,
     MAX_FAVICONS = 1,
     MAX_TITLES = 1,
     MAX_IMAGE_BYTES = 8000000,
@@ -66,6 +68,7 @@ export interface SeoMetaTags {
     titleElements?: NodeListOf<Element>;
     titleOgElements?: NodeListOf<Element>;
     imageOgElements?: NodeListOf<Element>;
+    descriptionOgElements?: NodeListOf<Element>;
     description?: string;
     'og:description'?: string;
     'og:image'?: string;
@@ -74,6 +77,10 @@ export interface SeoMetaTags {
     'twitter:title'?: string;
     'twitter:description'?: string;
     'twitter:image'?: string;
+    twitterCardElements?: NodeListOf<Element>;
+    twitterTitleElements?: NodeListOf<Element>;
+    twitterDescriptionElements?: NodeListOf<Element>;
+    twitterImageElements?: NodeListOf<Element>;
 }
 
 export const SeoMediaKeys = {

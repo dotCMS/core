@@ -21,10 +21,8 @@ describe('DotResultsSeoToolComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'seo.rules.favicon.not.found': 'FavIcon not found!',
-                    'seo.rules.favicon.more.one.found': 'More than 1 FavIcon found!',
-                    'seo.rules.favicon.found': 'FavIcon found!',
-                    'seo.rules.description.not.found':
-                        'Meta Description not found! Showing Description instead.',
+                    'seo.rules.favicon.more.one.found': 'More than 1 Favicon found!',
+                    'seo.rules.favicon.found': 'Favicon found!',
                     'seo.rules.description.found.empty': 'Meta Description found, but is empty!',
                     'seo.rules.description.found': 'Meta Description found!',
                     'seo.rules.title.not.found': 'HTML Title not found!',
@@ -81,7 +79,7 @@ describe('DotResultsSeoToolComponent', () => {
 
     it('should display SEO Tags', () => {
         const tags = spectator.queryAll(byTestId('seo-tag'));
-        expect(tags[0]).toContainText('FavIcon found!');
+        expect(tags[0]).toContainText('Favicon found!');
         expect(tags[1]).toContainText('Meta Description not found! Showing Description instead');
         expect(tags[2]).toContainText(
             'HTML Title found, but has fewer than 30 characters of content.'

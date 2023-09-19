@@ -53,6 +53,9 @@ export class DotSeoMetaTagsService {
         const title = pageDocument.querySelectorAll('title');
         const titleOgElements = pageDocument.querySelectorAll('meta[property="og:title"]');
         const imagesOgElements = pageDocument.querySelectorAll('meta[property="og:image"]');
+        const descriptionOgElements = pageDocument.querySelectorAll(
+            'meta[property="og:description"]'
+        );
         const twitterCardElements = pageDocument.querySelectorAll('meta[name="twitter:card"]');
         const twitterTitleElements = pageDocument.querySelectorAll('meta[name="twitter:title"]');
         const twitterImageElements = pageDocument.querySelectorAll('meta[name="twitter:image"]');
@@ -70,6 +73,7 @@ export class DotSeoMetaTagsService {
         metaTagsObject['twitterTitleElements'] = twitterTitleElements;
         metaTagsObject['twitterDescriptionElements'] = twitterDescriptionElements;
         metaTagsObject['twitterImageElements'] = twitterImageElements;
+        metaTagsObject['descriptionOgElements'] = descriptionOgElements;
 
         return metaTagsObject;
     }
@@ -230,10 +234,19 @@ export class DotSeoMetaTagsService {
         const result: SeoRulesResult[] = [];
         const ogDescription = metaTagsObject['og:description'];
         const description = metaTagsObject['description'];
+        const descriptionOgElements = metaTagsObject['descriptionOgElements'];
+
+        if (descriptionOgElements?.length > 1) {
+            result.push(
+                this.getErrorItem(
+                    this.dotMessageService.get('seo.rules.og-description.more.one.found')
+                )
+            );
+        }
 
         if (!ogDescription && description) {
             result.push(
-                this.getErrorItem(this.dotMessageService.get('seo.rules.description.not.found'))
+                this.getErrorItem(this.dotMessageService.get('seo.rules.og-description.not.found'))
             );
         }
 
@@ -243,9 +256,25 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (ogDescription && ogDescription?.length > 0) {
+        if (ogDescription?.length < SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
             result.push(
-                this.getDoneItem(this.dotMessageService.get('seo.rules.description.found'))
+                this.getWarningItem(this.dotMessageService.get('seo.rules.og-description.less'))
+            );
+        }
+
+        if (ogDescription?.length > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
+            result.push(
+                this.getWarningItem(this.dotMessageService.get('seo.rules.og-description.greater'))
+            );
+        }
+
+        if (
+            ogDescription &&
+            ogDescription?.length > SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
+            ogDescription?.length > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
+        ) {
+            result.push(
+                this.getDoneItem(this.dotMessageService.get('seo.rules.og-description.found'))
             );
         }
 
