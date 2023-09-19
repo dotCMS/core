@@ -28,16 +28,16 @@
                     </div>
                 </div>
                 <div *ngSwitchCase="seoMediaTypes.TWITTER">
-                    <img [src]="mainPreview.image" width="100%" alt="preview image" />
-                    <div class="results-seo-tool__facebook">
+                    <img [src]="mainPreview.image" alt="preview image" />
+                    <div class="results-seo-tool__preview">
                         <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                         <h5>{{ mainPreview.twitterTitle }}</h5>
                         <p>{{ mainPreview.twitterDescription }}</p>
                     </div>
                 </div>
                 <div *ngSwitchDefault>
-                    <img [src]="mainPreview.image" width="100%" alt="preview image" />
-                    <div class="results-seo-tool__facebook">
+                    <img [src]="mainPreview.image" alt="preview image" />
+                    <div class="results-seo-tool__preview">
                         <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                         <h5>{{ mainPreview.title }}</h5>
                         <p>{{ mainPreview.description }}</p>
@@ -48,7 +48,7 @@
     </p-card>
 </div>
 
-<p-card class="results-seo-tool__result-card" *ngFor="let result of currentResults | async">
+<p-card class="results-seo-tool__result-card" *ngFor="let result of currentResults$ | async">
     <ng-template class="results-seo-tool__result-card-header" pTemplate="header">
         <div class="results-seo-tool__result-card-title">
             <i

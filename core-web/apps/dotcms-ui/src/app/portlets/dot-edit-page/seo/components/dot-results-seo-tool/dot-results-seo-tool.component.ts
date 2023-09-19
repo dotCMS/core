@@ -50,7 +50,7 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     @Input() seoMedia: string;
     @Input() seoOGTags: SeoMetaTags;
     @Input() seoOGTagsResults: Observable<SeoMetaTagsResult[]>;
-    currentResults: Observable<SeoMetaTagsResult[]>;
+    currentResults$: Observable<SeoMetaTagsResult[]>;
 
     constructor(private dotSeoMetaTagsService: DotSeoMetaTagsService) {}
 
@@ -91,13 +91,13 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
                 isMobile: true
             }
         ];
-      
+
         const [preview] = this.allPreview;
         this.mainPreview = preview;
     }
 
     ngOnChanges() {
-        this.currentResults = this.seoOGTagsResults.pipe(
+        this.currentResults$ = this.seoOGTagsResults.pipe(
             map((tags) => {
                 return this.dotSeoMetaTagsService.getFilteredMetaTagsByMedia(tags, this.seoMedia);
             })

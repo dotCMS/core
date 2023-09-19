@@ -113,7 +113,7 @@ describe('DotResultsSeoToolComponent', () => {
             seoMedia: SEO_MEDIA_TYPES.FACEBOOK
         });
         spectator.detectChanges();
-        spectator.component.currentResults.subscribe((items) => {
+        spectator.component.currentResults$.subscribe((items) => {
             expect(items.length).toEqual(3);
             expect(items[0].key).toEqual(seoOGTagsResultMock[1].key);
             expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
@@ -126,7 +126,7 @@ describe('DotResultsSeoToolComponent', () => {
             seoMedia: SEO_MEDIA_TYPES.TWITTER
         });
         spectator.detectChanges();
-        spectator.component.currentResults.subscribe((items) => {
+        spectator.component.currentResults$.subscribe((items) => {
             expect(items.length).toEqual(4);
             expect(items[0].key).toEqual(seoOGTagsResultOgMockTwitter[0].key);
             expect(items[1].key).toEqual(seoOGTagsResultOgMockTwitter[1].key);
