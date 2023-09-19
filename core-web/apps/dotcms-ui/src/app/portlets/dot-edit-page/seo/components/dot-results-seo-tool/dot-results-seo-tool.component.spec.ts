@@ -5,7 +5,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
-import { seoOGTagsMock, seoOGTagsResultMock } from './mocks';
+import { seoOGTagsMock, seoOGTagsResultMock, seoOGTagsResultOgMockTwitter } from './mocks';
 
 import { SEO_MEDIA_TYPES } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
@@ -16,7 +16,6 @@ describe('DotResultsSeoToolComponent', () => {
         component: DotResultsSeoToolComponent,
         providers: [
             DotSeoMetaTagsService,
-
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
@@ -109,7 +108,7 @@ describe('DotResultsSeoToolComponent', () => {
         expect(previews[1]).toHaveClass('results-seo-tool__version--small');
     });
 
-    it('should filter seo results by seoMedia on changes', () => {
+    it('should filter seo results by Facebook, seoMedia on changes', () => {
         spectator.setInput({
             seoMedia: SEO_MEDIA_TYPES.FACEBOOK
         });
@@ -122,16 +121,17 @@ describe('DotResultsSeoToolComponent', () => {
         });
     });
 
-    it('should filter seo results by seoMedia on changes', () => {
+    it('should filter seo results by Twitter, seoMedia on changes', () => {
         spectator.setInput({
             seoMedia: SEO_MEDIA_TYPES.TWITTER
         });
         spectator.detectChanges();
         spectator.component.currentResults.subscribe((items) => {
-            expect(items.length).toEqual(3);
-            expect(items[0].key).toEqual(seoOGTagsResultMock[0].key);
-            expect(items[1].key).toEqual(seoOGTagsResultMock[1].key);
-            expect(items[2].key).toEqual(seoOGTagsResultMock[2].key);
+            expect(items.length).toEqual(4);
+            expect(items[0].key).toEqual(seoOGTagsResultOgMockTwitter[0].key);
+            expect(items[1].key).toEqual(seoOGTagsResultOgMockTwitter[1].key);
+            expect(items[2].key).toEqual(seoOGTagsResultOgMockTwitter[2].key);
+            expect(items[3].key).toEqual(seoOGTagsResultOgMockTwitter[3].key);
         });
     });
 });

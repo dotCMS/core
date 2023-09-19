@@ -11,6 +11,65 @@ const seoOGTagsMock = {
     'og:image': 'https://dotcms.com/images/default.png'
 };
 
+const seoOGTagsResultOgMockTwitter = [
+    {
+        key: 'twitter:card',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message: 'seo.rules.twitter-card.not.found',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 1,
+        info: ''
+    },
+    {
+        key: 'twitter:title',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message: 'seo.rules.twitter-card.not.found',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 2,
+        info: ''
+    },
+    {
+        key: 'twitter:description',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message: 'seo.rules.twitter-card.not.found',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 3,
+        info: ''
+    },
+    {
+        key: 'twitter:image',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message: 'og:image metatag not found!',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 4,
+        info: ''
+    }
+];
+
 const seoOGTagsResultMock = [
     {
         key: 'Favicon',
@@ -80,7 +139,8 @@ const seoOGTagsResultMock = [
         ],
         sort: 5,
         info: 'HTML Title content should be between 30 and 60 characters.'
-    }
+    },
+    ...seoOGTagsResultOgMockTwitter
 ];
 
 const seoOGTagsResultOgMock = [
@@ -224,65 +284,6 @@ const seoOGTagsResultOgMock = [
                 message: 'twitter:image meta tag found, but image is over 5 MB.',
                 color: 'results-seo-tool__result-icon--alert-green',
                 itemIcon: 'pi-check'
-            }
-        ],
-        sort: 4,
-        info: ''
-    }
-];
-
-const seoOGTagsResultOgMockTwitter = [
-    {
-        key: 'twitter:card',
-        keyIcon: 'pi-exclamation-triangle',
-        keyColor: 'results-seo-tool__result-icon--alert-red',
-        items: [
-            {
-                message: 'seo.rules.twitter-card.not.found',
-                color: 'results-seo-tool__result-icon--alert-red',
-                itemIcon: 'pi-times'
-            }
-        ],
-        sort: 1,
-        info: ''
-    },
-    {
-        key: 'twitter:title',
-        keyIcon: 'pi-exclamation-triangle',
-        keyColor: 'results-seo-tool__result-icon--alert-red',
-        items: [
-            {
-                message: 'seo.rules.twitter-card.not.found',
-                color: 'results-seo-tool__result-icon--alert-red',
-                itemIcon: 'pi-times'
-            }
-        ],
-        sort: 2,
-        info: ''
-    },
-    {
-        key: 'twitter:description',
-        keyIcon: 'pi-exclamation-triangle',
-        keyColor: 'results-seo-tool__result-icon--alert-red',
-        items: [
-            {
-                message: 'seo.rules.twitter-card.not.found',
-                color: 'results-seo-tool__result-icon--alert-red',
-                itemIcon: 'pi-times'
-            }
-        ],
-        sort: 3,
-        info: ''
-    },
-    {
-        key: 'twitter:image',
-        keyIcon: 'pi-exclamation-triangle',
-        keyColor: 'results-seo-tool__result-icon--alert-red',
-        items: [
-            {
-                message: 'og:image metatag not found!',
-                color: 'results-seo-tool__result-icon--alert-red',
-                itemIcon: 'pi-times'
             }
         ],
         sort: 4,
