@@ -2,8 +2,6 @@ import { Meta, Story } from '@storybook/angular';
 
 import { Chip, ChipModule } from 'primeng/chip';
 
-import { ExampleVariations } from './templates';
-
 const DEFAULT = 'default';
 const mergeArgsClassNamesToString = (args): string => {
     const argsContainClassNames = ['style', 'size', 'severity'];
@@ -80,12 +78,3 @@ const ComponentStory: Story = (args) => ({
 });
 
 export const Default = ComponentStory.bind({});
-
-// Template with al the combinations
-const TemplateStory: Story = () => ({
-    template: ExampleVariations
-});
-
-export const Template = TemplateStory.bind({});
-
-Template.parameters = { controls: { disable: true } };
