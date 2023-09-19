@@ -38,20 +38,19 @@ public class ESSiteSearchAPITest {
         contentletIndexAPI = APILocator.getContentletIndexAPI();
     }
 
+
     @Test
-    public void testCreate_100_SiteSearchIndex() throws IOException, DotDataException {
-        String timeStamp;
-        String indexName;
-        String aliasName;
+    public void test_createSiteSearchIndex_shouldBePossibleToAddMoreThan100() throws IOException, DotDataException {
+        String timeStamp, indexName, aliasName;
         String lastCreatedIndex = "";
 
-         Set<String> data = indexAPI.listIndices();
-//        assertEquals(0, data.size());
-        int indicesAmount = 120;
+         //Set<String> data = indexAPI.listIndices();
+
+        final int indicesAmount = 115;
         for (int i = 0; i < indicesAmount; i++) {
             timeStamp = String.valueOf(new Date().getTime());
             indexName = ES_SITE_SEARCH_NAME + "_" +i+ "_" + timeStamp;
-            aliasName = "indexAlias" + "_" + i + "_" + timeStamp;
+            aliasName = "indexAlias" + "_" +i+ "_" + timeStamp;
 
             siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
 

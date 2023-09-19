@@ -859,46 +859,42 @@ public class ESIndexAPI {
 
 	public Map<String,String> getIndexAlias(String[] indexNames) {
 
-		String[] indexNamesWithPrefix = new String[indexNames.length];
+		final String[] indexNamesWithPrefix = new String[indexNames.length];
 		for (int i = 0; i < indexNames.length; i++){
 			indexNamesWithPrefix[i] = getNameWithClusterIDPrefix(indexNames[i]);
 		}
+		final int batchSize = 50;
+		int limit = 0;
 
 		//stores the offset to iterate
 		int currentOffset = 0;
-		int limit = Math.min(50, indexNamesWithPrefix.length);
-
 		//stores arrays of 50 elements or less
-		ArrayList<String[]> partitionLists = new ArrayList<String[]>();
-
-		//stores 50 elements or less
-		String[] partition = new String[limit];
+		final ArrayList<String[]> partitionLists = new ArrayList<String[]>();
 
 		//fill the partition list
 		while (currentOffset < indexNamesWithPrefix.length) {
+			//update the limit to the next iteration
+			limit = Math.min(batchSize, indexNamesWithPrefix.length - currentOffset);
+			final String[] partition = new String[limit];
 			//loop to fill the partition
-			//todo: validar que la cantidad de iteraciones sea correcta
 			for (int i = 0; i < limit; i++) {
 				partition[i] = indexNamesWithPrefix[currentOffset];
 				currentOffset++;
 			}
 			partitionLists.add(partition);
-
-			//update the limit to the next iteration
-			limit = Math.min(50, indexNamesWithPrefix.length - currentOffset);
 		}
 
-		Map<String,String> alias=new HashMap<>();
+		final Map<String,String> alias=new HashMap<>();
 
 		//iterates the partition list
-		for (String[] portionElement : partitionLists ) {
+		for (final String[] portionElement : partitionLists ) {
 
-			GetAliasesRequest request = new GetAliasesRequest();
+			final GetAliasesRequest request = new GetAliasesRequest();
 
-			//set the limited values of the stack
+			//set the limited values
 			request.indices(portionElement);
 
-			GetAliasesResponse response = Sneaky.sneak(()->
+			final GetAliasesResponse response = Sneaky.sneak(()->
 					RestHighLevelClientProvider.getInstance().getClient()
 							.indices().getAlias(request, RequestOptions.DEFAULT));
 
