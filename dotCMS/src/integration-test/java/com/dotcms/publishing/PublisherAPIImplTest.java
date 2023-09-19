@@ -16,7 +16,6 @@ import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.EnvironmentDataGen;
-import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FieldRelationshipDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -33,7 +32,6 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.WorkflowActionDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.datagen.WorkflowStepDataGen;
-import com.dotcms.experiments.model.Experiment;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -176,7 +174,7 @@ public class PublisherAPIImplTest {
         prepare();
 
         return  new TestAsset[]{
-                /*getContentTypeWithHost(),
+                getContentTypeWithHost(),
                 getTemplateWithDependencies(),
                 getContainerWithDependencies(),
                 getFolderWithDependencies(),
@@ -186,16 +184,8 @@ public class PublisherAPIImplTest {
                 getLanguageWithDependencies(),
                 getRuleWithDependencies(),
                 getContentWithSeveralVersions(),
-                getUser(),*/
-                getExperiment()
+                getUser()
         };
-    }
-
-    private static TestAsset getExperiment() {
-            final Experiment experiment = new ExperimentDataGen().nextPersisted();
-            return new TestAsset(experiment,
-                    map(),
-                    "/bundlers-test/user/user.user.xml", false);
     }
 
     private static TestAsset getContentWithSeveralVersions() throws DotDataException, DotSecurityException {
@@ -663,7 +653,7 @@ public class PublisherAPIImplTest {
      * When: Add different assets into a bundle, and send it
      * Should: Create all the files
      */
-    //@Test
+    @Test
     @UseDataProvider("publishers")
     public void sendPushPublishBundle(final TestAsset testAsset)
             throws DotPublishingException, DotSecurityException, IOException, DotDataException, DotPublisherException {
@@ -1121,7 +1111,7 @@ public class PublisherAPIImplTest {
      * When: Add a {@link Category} into a Bundle
      * Should: Add all the {@link Category} into the Bundle
      */
-    //@Test
+    @Test
     public void AddAllCategoryIntoBundle() throws Exception {
         prepare();
         final Class<? extends Publisher> publisher = GenerateBundlePublisher.class;
@@ -1179,7 +1169,7 @@ public class PublisherAPIImplTest {
      *  Then we update the descriptor using the upsert method and verify the changes take place
      *  Finally we test the descriptor can be removed and does not show up on the finders result
      */
-    //@Test
+    @Test
     public void testFilterDescriptors() throws IOException {
 
         final String realAssetsRootPath = Config.getStringProperty("ASSET_REAL_PATH", null);

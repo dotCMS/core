@@ -334,7 +334,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     public Set<String> getPersonalizationsForPage(final IHTMLPage page, final String variantName) throws DotDataException{
         final Set<String> personalizationsForPagVariant = getPersonalizationsForPageInner(page, variantName);
-        Set<String> personalizationsForPagDefault = Collections.emptySet();
+        final Set<String> personalizationsForPagDefault = Collections.emptySet();
 
         return Stream.concat(personalizationsForPagVariant.stream(),
                         personalizationsForPagDefault.stream())
