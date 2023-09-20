@@ -12,6 +12,7 @@ import { By } from '@angular/platform-browser';
 
 import { ConfirmationService } from 'primeng/api';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { MenuModule } from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -33,7 +34,7 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -151,7 +152,9 @@ describe('DotEditPageStateControllerComponent', () => {
                 DotMessagePipe,
                 CommonModule,
                 FormsModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                DotTabButtonsComponent,
+                MenuModule
             ]
         });
     }));
@@ -550,6 +553,17 @@ describe('DotEditPageStateControllerComponent', () => {
                     inode: '123'
                 }
             });
+        });
+
+        it('should resetDropdown on menu hide', () => {
+            const dotTabButtons = deHost.query(
+                By.css('[data-testId="dot-tabs-buttons"]')
+            ).componentInstance;
+
+            const resetMock = spyOn(dotTabButtons, 'resetDropdownById');
+
+            component.menu.onHide.emit();
+            expect(resetMock).toHaveBeenCalledWith(DotPageMode.EDIT);
         });
     });
 });
