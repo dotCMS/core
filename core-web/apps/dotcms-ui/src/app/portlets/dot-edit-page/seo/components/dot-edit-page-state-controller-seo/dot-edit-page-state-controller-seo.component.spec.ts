@@ -38,6 +38,7 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
+import { DotTabButtonsComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -115,8 +116,11 @@ describe('DotEditPageStateControllerSeoComponent', () => {
     let personalizeService: DotPersonalizeService;
     let propertiesService: DotPropertiesService;
     let editContentletService: DotContentletEditorService;
+    let dotTabButtons: DotTabButtonsComponent;
 
     let getKeyMock: jasmine.Spy;
+
+    let pointerEvent: PointerEvent;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -188,6 +192,8 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         spyOn(dotPageStateService, 'setLock');
         spyOn(personalizeService, 'personalized').and.returnValue(of(null));
         getKeyMock = spyOn(propertiesService, 'getKey').and.returnValue(of('false'));
+
+        dotTabButtons = de.query(By.css('[data-testId="dot-tabs-buttons"]')).componentInstance;
     });
 
     describe('elements', () => {
@@ -195,9 +201,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             it('should have mode selector', async () => {
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
                 await fixtureHost.whenRenderingDone();
                 expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options).toEqual([
@@ -250,9 +253,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 componentHost.pageState.page.canRead = false;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
 
                 fixtureHost.whenRenderingDone();
 
@@ -270,9 +270,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 componentHost.pageState.page.canLock = false;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
 
                 await fixtureHost.whenRenderingDone();
 
@@ -288,9 +285,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             it('should enable edit and preview when variant id different than original and draft', async () => {
                 fixtureHost.detectChanges();
                 componentHost.variant = dotVariantDataMock;
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
 
                 await fixtureHost.whenRenderingDone();
 
@@ -312,10 +306,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 };
                 fixtureHost.detectChanges();
 
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
-
                 await fixtureHost.whenRenderingDone();
 
                 expect(dotTabButtons).toBeDefined();
@@ -335,10 +325,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 };
                 fixtureHost.detectChanges();
 
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
-
                 await fixtureHost.whenRenderingDone();
 
                 expect(dotTabButtons).toBeDefined();
@@ -357,10 +343,13 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         it('should without confirmation dialog emit modeChange and update pageState service', async () => {
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-button"]'));
-            dotTabButtons.triggerEventHandler('click', {
-                target: { value: 'EDIT_MODE' },
-                value: DotPageMode.EDIT
+            const dotTabButtons = de.query(
+                By.css('[data-testId="dot-tab-button"]')
+            ).componentInstance;
+
+            dotTabButtons.clickOption.emit({
+                event: pointerEvent,
+                optionId: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -392,11 +381,15 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-button"]'));
-            dotTabButtons.triggerEventHandler('click', {
-                target: { value: 'EDIT_MODE' },
-                value: DotPageMode.EDIT
+            const dotTabButtons = de.query(
+                By.css('[data-testId="dot-tab-button"]')
+            ).componentInstance;
+
+            dotTabButtons.clickOption.emit({
+                event: pointerEvent,
+                optionId: DotPageMode.EDIT
             });
+
             await fixtureHost.whenStable();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
@@ -415,10 +408,13 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-button"]'));
-            dotTabButtons.triggerEventHandler('click', {
-                target: { value: 'EDIT_MODE' },
-                value: DotPageMode.EDIT
+            const dotTabButtons = de.query(
+                By.css('[data-testId="dot-tab-button"]')
+            ).componentInstance;
+
+            dotTabButtons.clickOption.emit({
+                event: pointerEvent,
+                optionId: DotPageMode.EDIT
             });
 
             fixtureHost.whenStable();
@@ -455,10 +451,13 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-button"]'));
-            dotTabButtons.triggerEventHandler('click', {
-                target: { value: 'EDIT_MODE' },
-                value: DotPageMode.EDIT
+            const dotTabButtons = de.query(
+                By.css('[data-testId="dot-tab-button"]')
+            ).componentInstance;
+
+            dotTabButtons.clickOption.emit({
+                event: pointerEvent,
+                optionId: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -493,10 +492,13 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             });
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-button"]'));
-            dotTabButtons.triggerEventHandler('click', {
-                target: { value: 'EDIT_MODE' },
-                value: DotPageMode.EDIT
+            const dotTabButtons = de.query(
+                By.css('[data-testId="dot-tab-button"]')
+            ).componentInstance;
+
+            dotTabButtons.clickOption.emit({
+                event: pointerEvent,
+                optionId: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
