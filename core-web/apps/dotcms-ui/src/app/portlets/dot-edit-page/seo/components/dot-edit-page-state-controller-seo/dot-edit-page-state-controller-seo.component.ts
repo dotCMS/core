@@ -73,11 +73,13 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
     @Output() modeChange = new EventEmitter<DotPageMode>();
     @Input() variant: DotVariantData | null = null;
     @Input() apiLink: string;
+    @ViewChild('deviceSelector') deviceSelector: DotDeviceSelectorSeoComponent;
 
     lock: boolean;
     lockWarn = false;
     mode: DotPageMode;
     options: SelectItem[] = [];
+    dotTabsIcon = 'pi-angle-down';
 
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
@@ -193,6 +195,24 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
      */
     changeSeoMedia(seoMedia: string): void {
         this.dotPageStateService.setSeoMedia(seoMedia);
+    }
+
+    /**
+     * OnChange Device Selector
+     * @param pageState
+     * @returns
+     */
+    onHideDeviceSelector(): void {
+        this.dotTabsIcon = 'pi-angle-down';
+    }
+
+    /**
+     * Open Device Selector
+     * @param event
+     */
+    openDeviceSelector(event): void {
+        this.deviceSelector.openMenu(event);
+        this.dotTabsIcon = 'pi-angle-up';
     }
 
     private canTakeLock(pageState: DotPageRenderState): boolean {
