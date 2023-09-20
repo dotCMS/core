@@ -36,7 +36,7 @@ import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -55,7 +55,6 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -296,7 +295,7 @@ describe('DotContainerPropertiesComponent', () => {
                 DotAddToBundleModule,
                 HttpClientTestingModule,
                 DynamicDialogModule,
-                DotAutofocusModule,
+                DotAutofocusDirective,
                 BrowserAnimationsModule
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]

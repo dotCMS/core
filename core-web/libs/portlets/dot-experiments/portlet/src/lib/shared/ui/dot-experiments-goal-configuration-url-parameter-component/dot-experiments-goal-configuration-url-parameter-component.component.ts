@@ -14,9 +14,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { GOAL_OPERATORS, GoalsConditionsOperatorsListByType } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
 import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
@@ -36,7 +35,7 @@ const PARAMETER_QUERY_PARAMETER = 'queryParameter';
         DotMessagePipe,
         DropdownModule,
         DotFieldRequiredDirective,
-        DotAutofocusModule,
+        DotAutofocusDirective,
         InputTextModule
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
