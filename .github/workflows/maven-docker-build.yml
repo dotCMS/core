@@ -71,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: maven-repo
-          path: maven-repo.tgz
+          path: mavencore-${{ steps.get-date.outputs.date }}
 
 
 
@@ -122,7 +122,7 @@ jobs:
 
       - name: Extract dotCMS WAR
         shell: bash
-        run: cd docker/dotcms-mvn/ROOT/srv/dotserver/tomcat-9.0.53/webapps/ && unzip dotcms-war-1.0.0-SNAPSHOT.war && rm dotcms-war-1.0.0-SNAPSHOT.war
+        run: cd docker/dotcms-mvn/ROOT/srv/dotserver/tomcat-9.0.53/webapps/ROOT && unzip dotcms-war-1.0.0-SNAPSHOT.war && rm dotcms-war-1.0.0-SNAPSHOT.war
 
 
       - name: Build and Push Docker Image
