@@ -42,7 +42,7 @@ public class Config {
     //Generated File Indicator
     public static final String GENERATED_FILE = "dotGenerated_";
     public static final String RENDITION_FILE = "dotRendition_";
-    public static final AtomicBoolean useWatcherMode = new AtomicBoolean(true);
+    public static final AtomicBoolean useWatcherMode = new AtomicBoolean(false);
     public static final AtomicBoolean isWatching = new AtomicBoolean(false);
 
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
@@ -98,29 +98,8 @@ public class Config {
 
     }
 
-    private static void initWatcherAPI() {
 
-        // checki if the watcher is already instantiated.
-        if (null == fileWatcherAPI) {
-            synchronized (Config.class) {
 
-                if (null == fileWatcherAPI) {
-
-                    fileWatcherAPI = APILocator.getFileWatcherAPI();
-                }
-            }
-        }
-    }
-
-    private static void unregisterWatcher(final File fileToRead) {
-
-        initWatcherAPI();
-        if (null != fileWatcherAPI) {
-
-            Logger.debug(APILocator.class, "Stop watching: " + fileToRead);
-            fileWatcherAPI.stopWatchingFile(fileToRead);
-        }
-    }
 
     /**
      *
@@ -262,15 +241,7 @@ public class Config {
             props.load(new InputStreamReader(propsInputStream));
             Logger.info(Config.class, "dotCMS Properties [" + fileName + "] Loaded");
             postProperties();
-            // check if the configuration for the watcher has changed.
-            useWatcherMode.set(getBooleanProperty(DOTCMS_USEWATCHERMODE, true));
-            if (useWatcherMode.get()) {
 
-                registerWatcher(fileToRead);
-            } else if (isWatching.get()) {
-                unregisterWatcher(fileToRead);
-                isWatching.set(false);
-            }
         } catch (Exception e) {
             Logger.fatal(Config.class, "Exception loading properties for file [" + fileName + "]",
                     e);
