@@ -171,7 +171,8 @@ public interface MultiTreeAPI {
      * @return List MultiTree
      * @throws DotDataException
      */
-    List<MultiTree> getMultiTreesByPersonalizedPage(final String pageId, final String personalization) throws DotDataException;
+    List<MultiTree> getMultiTreesByPersonalizedPage(final String pageId,
+            final String personalization, final String targetVariantName) throws DotDataException;
 
     /**
      * Gets a list of all MultiTrees on a page (even if they are bad)
@@ -369,6 +370,16 @@ public interface MultiTreeAPI {
     Set<String> getPersonalizationsForPage(final IHTMLPage page) throws DotDataException;
 
     /**
+     * Get an unique set of the personalization for a page for a specific variant, this set include
+     * all the Persona that has version on the page for the Specific Variant and the Default Variant.
+     *
+     * @param pageId String Page's Id
+     * @return unique Set of personalization values per the page
+     */
+    Set<String> getPersonalizationsForPage(final IHTMLPage page, final String variantName) throws DotDataException;
+
+
+    /**
      * Get an unique set of the personalization for a page
      * @param pageID
      * @return
@@ -397,7 +408,8 @@ public interface MultiTreeAPI {
      * @param newPersonalization String this is the new personalization for the set of containers
      * @return List MultiTree
      */
-    List<MultiTree> copyPersonalizationForPage (String pageId, String basePersonalization, String newPersonalization) throws DotDataException;
+    List<MultiTree> copyPersonalizationForPage (String pageId, String basePersonalization,
+            String newPersonalization, final String targetVariantName ) throws DotDataException;
 
     /**
      * Take a set of containers with a based personalization (the default one) and set to new personalization, for a page.
@@ -405,9 +417,12 @@ public interface MultiTreeAPI {
      * @param newPersonalization String this is the new personalization for the set of containers
      * @return List MultiTree
      */
-    default List<MultiTree> copyPersonalizationForPage (final String pageId, final String newPersonalization) throws DotDataException {
+    default List<MultiTree> copyPersonalizationForPage (final String pageId, final String newPersonalization,
+            final String targetVariantName)
+                throws DotDataException {
 
-        return this.copyPersonalizationForPage(pageId, MultiTree.DOT_PERSONALIZATION_DEFAULT, newPersonalization);
+        return this.copyPersonalizationForPage(pageId, MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                newPersonalization, targetVariantName);
     }
 
     /**
@@ -415,7 +430,7 @@ public interface MultiTreeAPI {
      * @param pageId {@link String} page id
      * @param personalization {@link String} personalization
      */
-    void deletePersonalizationForPage(String pageId, String personalization) throws DotDataException;
+    void deletePersonalizationForPage(String pageId, String personalization, String variantName) throws DotDataException;
 
     /**
      * Overrides: removes the current multitrees by page + personalization and adds the multiTress
