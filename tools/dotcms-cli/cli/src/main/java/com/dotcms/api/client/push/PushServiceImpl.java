@@ -111,6 +111,7 @@ public class PushServiceImpl implements PushService {
      * Analyzes the push data for a local file or folder.
      *
      * @param localFileOrFolder the local file or folder to analyze
+     * @param options           the push options
      * @param output            the output option mixin to use for displaying progress
      * @param provider          the content fetcher used to fetch content for analysis
      * @param comparator        the content comparator used to compare content for analysis
@@ -118,7 +119,9 @@ public class PushServiceImpl implements PushService {
      * @throws PushException if an error occurs during the analysis
      */
     private <T> Pair<List<PushAnalysisResult<T>>, PushAnalysisSummary<T>> analyze(
-            final File localFileOrFolder, final OutputOptionMixin output,
+            final File localFileOrFolder,
+            final PushOptions options,
+            final OutputOptionMixin output,
             final ContentFetcher<T> provider,
             final ContentComparator<T> comparator) {
 
@@ -128,6 +131,7 @@ public class PushServiceImpl implements PushService {
                     // Analyzing what push operations need to be performed
                     return pushAnalysisService.analyze(
                             localFileOrFolder,
+                            options.allowRemove(),
                             provider,
                             comparator
                     );

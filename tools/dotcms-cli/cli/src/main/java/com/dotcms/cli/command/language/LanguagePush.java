@@ -1,14 +1,20 @@
 package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
+import com.dotcms.api.client.push.PushService;
+import com.dotcms.api.client.push.language.LanguageComparator;
+import com.dotcms.api.client.push.language.LanguageFetcher;
+import com.dotcms.api.client.push.language.LanguagePushHandler;
 import com.dotcms.cli.command.DotCommand;
+import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.cli.common.WorkspaceMixin;
+import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.language.Language;
+import com.dotcms.model.push.PushOptions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
@@ -21,38 +27,58 @@ import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
+/**
+ * The LanguagePush class represents a command that allows pushing languages to the server. It
+ * provides functionality to push a language file or folder path, or create a new language by
+ * providing a language ISO code.
+ */
 @ActivateRequestContext
 @CommandLine.Command(
         name = LanguagePush.NAME,
         header = "@|bold,blue Push a language|@",
         description = {
-                " Save or update a language given a Language object (in JSON or YML format) or iso (e.g.: en-us)",
-                " Push a language given a Language object (in JSON or YML format) or iso (e.g.: en-us)",
-                " If no file is specified, a new language will be created using the iso provided.",
+                "This command enables the pushing of languages to the server. It accommodates the "
+                        + "specification of either a language file or a folder path. In addition to "
+                        + "these options, it also facilitates the creation of a new language through "
+                        + "the provision of a language iso code (e.g.: en-us).",
                 "" // empty string to add a new line
         }
 )
-/**
- * Command to push a language given a Language object (in JSON or YML format) or iso code (e.g.: en-us)
- * @author nollymar
- */
-public class LanguagePush extends AbstractLanguageCommand implements Callable<Integer>, DotCommand {
+public class LanguagePush extends AbstractLanguageCommand implements Callable<Integer>, DotCommand,
+        DotPush {
+
     static final String NAME = "push";
+
+    static final String LANGUAGES_PUSH_MIXIN = "languagesPushMixin";
+
+    @CommandLine.Mixin
+    PushMixin pushMixin;
+
+    @CommandLine.Mixin(name = LANGUAGES_PUSH_MIXIN)
+    LanguagesPushMixin languagesPushMixin;
 
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOption;
 
-    @CommandLine.Mixin(name = "workspace")
-    WorkspaceMixin workspaceMixin;
+    @CommandLine.Option(names = {"--byIso"}, description =
+            "Code to be used to create a new language. "
+                    + "Used when no file is specified. For example: en-us")
+    String languageIso;
 
     @Inject
     WorkspaceManager workspaceManager;
 
-    @CommandLine.Option(names = {"--byIso"}, description = "Code to be used to create a new language. Used when no file is specified. For example: en-us")
-    String languageIso;
+    @Inject
+    PushService pushService;
 
-    @CommandLine.Option(names = {"-f", "--file"}, description = "The json/yml formatted content-type descriptor file to be pushed. ")
-    File file;
+    @Inject
+    LanguageFetcher languageProvider;
+
+    @Inject
+    LanguageComparator languageComparator;
+
+    @Inject
+    LanguagePushHandler languagePushHandler;
 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
@@ -60,78 +86,72 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     @Override
     public Integer call() throws Exception {
 
-        // Checking for unmatched arguments
-        output.throwIfUnmatchedArguments(spec.commandLine());
+        // When calling from the global push we should avoid the validation of the unmatched
+        // arguments as we may send arguments meant for other push subcommands
+        if (!pushMixin.noValidateUnmatchedArguments) {
+            // Checking for unmatched arguments
+            output.throwIfUnmatchedArguments(spec.commandLine());
+        }
+
+        // Make sure the path is within a workspace
+        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
+                this.getPushMixin().path.toPath());
+        if (workspace.isEmpty()) {
+            throw new IllegalArgumentException(
+                    String.format("No valid workspace found at path: [%s]",
+                            this.getPushMixin().path.toPath()));
+        }
 
         final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
 
-        File inputFile = this.file;
+        File inputFile = this.getPushMixin().path;
 
         if (null == inputFile && StringUtils.isEmpty(languageIso)) {
-            output.error("You must specify an iso code or file to create a new language.");
+            output.error("You must specify an iso code or file or folder to push a languages.");
             return ExitCode.USAGE;
         }
 
-        final ObjectMapper objectMapper = formatOption.objectMapper(inputFile);
-
-        ResponseEntityView<Language> responseEntityView;
         if (null != inputFile) {
-            final Optional<Workspace> workspace = workspaceManager.findWorkspace(workspaceMixin.workspace());
-            if(workspace.isPresent() && !inputFile.isAbsolute()){
+
+            if (!inputFile.isAbsolute()) {
                 inputFile = Path.of(workspace.get().languages().toString(), inputFile.getName()).toFile();
             }
             if (!inputFile.exists() || !inputFile.canRead()) {
                 throw new IOException(String.format(
-                        "Unable to read the input file [%s] check that it does exist and that you have read permissions on it.",
-                        inputFile)
+                        "Unable to access the path [%s] check that it does exist and that you have "
+                                + "read permissions on it.", inputFile)
                 );
             }
 
-           final Language language = objectMapper.readValue(inputFile, Language.class);
-           responseEntityView = pushLanguageByFile(languageAPI, language);
+            // To make sure that if the user is passing a directory we use the languages folder
+            if (inputFile.isDirectory()) {
+                inputFile = workspace.get().languages().toFile();
+            }
+
+            // Execute the push
+            pushService.push(
+                    inputFile,
+                    PushOptions.builder().
+                            failFast(pushMixin.failFast).
+                            allowRemove(languagesPushMixin.removeLanguages).
+                            maxRetryAttempts(pushMixin.retryAttempts).
+                            dryRun(pushMixin.dryRun).
+                            build(),
+                    output,
+                    languageProvider,
+                    languageComparator,
+                    languagePushHandler
+            );
 
         } else {
-            responseEntityView = pushLanguageByIsoCode(languageAPI);
-        }
+            var responseEntityView = pushLanguageByIsoCode(languageAPI);
+            final Language response = responseEntityView.entity();
 
-        final Language response = responseEntityView.entity();
-        output.info(objectMapper.writeValueAsString(response));
+            final ObjectMapper objectMapper = formatOption.objectMapper();
+            output.info(objectMapper.writeValueAsString(response));
+        }
 
         return CommandLine.ExitCode.OK;
-
-    }
-
-
-
-    private ResponseEntityView<Language> pushLanguageByFile(final LanguageAPI languageAPI, final Language language) {
-
-        final String languageId = language.id().map(String::valueOf).orElse("");
-        final ResponseEntityView<Language> responseEntityView;
-
-        final String isoCode = language.isoCode();
-        language.withLanguageCode(isoCode.split("-")[0]);
-
-        if (isoCode.split("-").length > 1) {
-            language.withCountryCode(isoCode.split("-")[1]);
-        } else {
-            language.withCountryCode("");
-        }
-
-        output.info(String.format("Attempting to save language with code @|bold,green [%s]|@",language.languageCode().get()));
-
-        if (StringUtils.isNotBlank(languageId)){
-            output.info(String.format("The id @|bold,green [%s]|@ provided in the language file will be used for look-up.", languageId));
-            responseEntityView = languageAPI.update(
-                    languageId, Language.builder().from(language).id(Optional.empty()).build());
-        } else  {
-            output.info("The language file @|bold did not|@ provide a language id. ");
-            responseEntityView = languageAPI.create(Language.builder().from(language).id(Optional.empty()).build());
-        }
-
-        output.info(String.format("Language with code @|bold,green [%s]|@ successfully pushed.",language.languageCode().get()));
-
-        return responseEntityView;
-
     }
 
     private ResponseEntityView<Language> pushLanguageByIsoCode(final LanguageAPI languageAPI) {
@@ -153,6 +173,16 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     @Override
     public OutputOptionMixin getOutput() {
         return output;
+    }
+
+    @Override
+    public PushMixin getPushMixin() {
+        return pushMixin;
+    }
+
+    @Override
+    public Optional<String> getCustomMixinName() {
+        return Optional.of(LANGUAGES_PUSH_MIXIN);
     }
 
 }

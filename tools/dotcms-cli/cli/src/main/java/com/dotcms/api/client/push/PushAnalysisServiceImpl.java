@@ -35,17 +35,19 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
      * by comparing the content of the local files with the content of the server files using the
      * specified content comparator.
      *
-     * @param localFile  the local file or directory to be analyzed
-     * @param provider   the content fetcher that provides the server files content
-     * @param comparator the content comparator used to compare the content of local and server
-     *                   files
+     * @param localFile   the local file or directory to be analyzed
+     * @param allowRemove whether to allow removals
+     * @param provider    the content fetcher that provides the server files content
+     * @param comparator  the content comparator used to compare the content of local and server
+     *                    files
      * @return a list of push analysis results which include updates, additions, and removals found
      * during the analysis
      */
     @ActivateRequestContext
-    public <T> List<PushAnalysisResult<T>> analyze(File localFile,
-            ContentFetcher<T> provider,
-            ContentComparator<T> comparator) {
+    public <T> List<PushAnalysisResult<T>> analyze(final File localFile,
+            final boolean allowRemove,
+            final ContentFetcher<T> provider,
+            final ContentComparator<T> comparator) {
 
         List<File> localContents = readLocalContents(localFile);
         List<T> serverContents = provider.fetch();
@@ -55,10 +57,13 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
                 checkLocal(localContents, serverContents, comparator)
         );
 
-        // We don't need to check the server against local files if we are dealing with a single file
-        if (localFile.isDirectory()) {
-            // Checking server files against local files to find removals
-            results.addAll(checkServer(localContents, serverContents, comparator));
+        if (allowRemove) {
+
+            // We don't need to check the server against local files if we are dealing with a single file
+            if (localFile.isDirectory()) {
+                // Checking server files against local files to find removals
+                results.addAll(checkServerForRemovals(localContents, serverContents, comparator));
+            }
         }
 
         return results;
@@ -125,7 +130,7 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
      * @param comparator     a content comparator used to compare server content with local files
      * @return a list of PushAnalysisResult objects representing the analysis results
      */
-    private <T> List<PushAnalysisResult<T>> checkServer(List<File> localFiles,
+    private <T> List<PushAnalysisResult<T>> checkServerForRemovals(List<File> localFiles,
             List<T> serverContents, ContentComparator<T> comparator) {
 
         if (serverContents.isEmpty()) {
