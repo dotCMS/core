@@ -9,6 +9,9 @@ const DOT_ERROR_MESSAGES = {
     },
     validQueryParamNameErrorMsg: {
         validQueryParamName: 'dot.common.form.field.validation.validQueryParamName'
+    },
+    whiteSpaceOnlyMgs: {
+        whiteSpaceOnly: 'dot.common.form.field.validation.noWhitespace'
     }
 };
 
@@ -29,5 +32,18 @@ export class DotValidators {
         return QUERY_PARAM_NAME_REGEX.test(control.value)
             ? null
             : DOT_ERROR_MESSAGES.validQueryParamNameErrorMsg;
+    }
+
+    /**
+     * Validates a string to allow empty input while ensuring it does not consist solely of white space characters.
+     *
+     * @param {AbstractControl} control
+     */
+    static noWhitespace(control: AbstractControl): { [key: string]: string } | null {
+        const notOnlySpacesPattern = /^(?!\s+$).*/;
+
+        return notOnlySpacesPattern.test(control.value)
+            ? null
+            : DOT_ERROR_MESSAGES.whiteSpaceOnlyMgs;
     }
 }

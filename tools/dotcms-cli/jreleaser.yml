@@ -45,6 +45,7 @@ distributions:
       - path: tools/dotcms-cli/cli/target/cli-{{projectVersion}}-runner.jar
         transform: tools/dotcms-cli/cli/target/dotcli-{{projectVersion}}.jar
 
+
 #packagers:
 #  brew:
 #    active: ALWAYS
