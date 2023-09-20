@@ -92,26 +92,11 @@ public class Config {
 
     private static void registerWatcher(final File fileToRead) {
 
-        initWatcherAPI();
-        if (null != fileWatcherAPI) {
+        // if not fileWatcherAPI could not monitoring, so use the fallback
+        useWatcherMode.set(false);
+        isWatching.set(false);
 
-            // if we are not already watching, so register the waticher
-            if (!isWatching.get()) {
-                try {
-
-                    Logger.debug(APILocator.class, "Start watching: " + fileToRead);
-                    fileWatcherAPI.watchFile(fileToRead, () -> _loadProperties());
-                    isWatching.set(true);
-                } catch (IOException e) {
-                    Logger.error(Config.class, e.getMessage(), e);
-                }
-            }
-        } else {
-            // if not fileWatcherAPI could not monitoring, so use the fallback
-            useWatcherMode.set(false);
-            isWatching.set(false);
-        }
-    } // registerWatcher.
+    }
 
     private static void initWatcherAPI() {
 

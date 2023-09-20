@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import io.vavr.Lazy;
 
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
@@ -20,6 +21,7 @@ import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.dotcms.cms.login.LoginServiceAPIFactory.LOG_OUT_ATTRIBUTE;
@@ -35,16 +37,15 @@ public class SessionMonitor implements ServletRequestListener,
 
     public static final String DOT_CLUSTER_SESSION = "DOT_CLUSTER_SESSION";
 
-    private final SystemEventsAPI systemEventsAPI;
+    private final Lazy<SystemEventsAPI> systemEventsAPI;
 
     public SessionMonitor() {
-
-        this (APILocator.getSystemEventsAPI());
+        super ();
+        this.systemEventsAPI= Lazy.of(() -> APILocator.getSystemEventsAPI());
     }
 
     public SessionMonitor(final SystemEventsAPI systemEventsAPI) {
-
-        this.systemEventsAPI = systemEventsAPI;
+        this.systemEventsAPI= Lazy.of(() -> systemEventsAPI);
     }
 
     
@@ -117,10 +118,10 @@ public class SessionMonitor implements ServletRequestListener,
                         event.getSession().getAttribute(LOG_OUT_ATTRIBUTE) != null && Boolean.parseBoolean(event.getSession().getAttribute(LOG_OUT_ATTRIBUTE).toString());
 
                 if (!isLogout) {
-                    this.systemEventsAPI.push(new SystemEvent
+                    this.systemEventsAPI.get().push(new SystemEvent
                             (SystemEventType.SESSION_DESTROYED, UserSessionPayloadBuilder.build(userId, sessionId)));
                 } else {
-                    this.systemEventsAPI.push(new SystemEvent
+                    this.systemEventsAPI.get().push(new SystemEvent
                             (SystemEventType.SESSION_LOGOUT, UserSessionPayloadBuilder.build(userId, sessionId)));
                 }
             } catch (DotDataException e) {

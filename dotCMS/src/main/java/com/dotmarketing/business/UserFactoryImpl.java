@@ -17,6 +17,7 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import org.apache.logging.log4j.util.Strings;
 
 import java.text.SimpleDateFormat;
@@ -39,7 +40,7 @@ public class UserFactoryImpl implements UserFactory {
     private static final String USERID_COLUMN = "userid";
     private static final String AND_DELETE_IN_PROGRESS = " AND delete_in_progress = ";
 
-    private final UserCache userCache;
+    private final Lazy<UserCache> userCache;
 
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
@@ -48,7 +49,7 @@ public class UserFactoryImpl implements UserFactory {
      * Default class constructor.
      */
     public UserFactoryImpl() {
-        userCache = CacheLocator.getUserCache();
+        userCache = Lazy.of(()->CacheLocator.getUserCache());
     }
 
     @Override
@@ -102,7 +103,7 @@ public class UserFactoryImpl implements UserFactory {
 
     @Override
     public User loadUserById(final String userId) throws DotDataException, NoSuchUserException {
-        User user = userCache.get(userId);
+        User user = userCache.get().get(userId);
         if (!UtilMethods.isSet(user)) {
 
             if (user == null) {
@@ -114,7 +115,7 @@ public class UserFactoryImpl implements UserFactory {
                     throw new NoSuchUserException(userId);
                 }else{
                     user = TransformerLocator.createUserTransformer(list).findFirst();
-                    userCache.add(userId, user);
+                    userCache.get().add(userId, user);
                 }
             }
         }
@@ -256,7 +257,7 @@ public class UserFactoryImpl implements UserFactory {
             final String userId = userData.get(USERID_COLUMN).toString();
             final User user = this.loadUserById(userId);
             users.add(user);
-            this.userCache.add(user.getUserId(), user);
+            this.userCache.get().add(user.getUserId(), user);
         }
         return users;
     }
@@ -277,7 +278,7 @@ public class UserFactoryImpl implements UserFactory {
             try {
                 final User oldUser = loadUserById(user.getUserId());
                 if (UtilMethods.isSet(oldUser)) {
-                    userCache.remove(user.getUserId());
+                    userCache.get().remove(user.getUserId());
                     return updateUser(user, oldUser);
                 }
             }catch(NoSuchUserException e){
@@ -394,7 +395,7 @@ public class UserFactoryImpl implements UserFactory {
             throw new DotDataException(e.getMessage(), e);
         }
         if (UtilMethods.isSet(user)) {
-            userCache.add(user.getUserId(), user);
+            userCache.get().add(user.getUserId(), user);
             return true;
         }
         return false;
@@ -734,10 +735,10 @@ public class UserFactoryImpl implements UserFactory {
 
     @Override
     public void delete(final User userToDelete) throws DotDataException {
-        userCache.remove(userToDelete.getUserId());
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL("delete from user_ where userid = ?");
         dotConnect.addParam(userToDelete.getUserId());
         dotConnect.loadResult();
+        userCache.get().remove(userToDelete.getUserId());
     }
 }

@@ -54,7 +54,7 @@ public interface CacheTransport {
 
     
     default boolean requiresAutowiring() {
-        return true;
+        return false;
     }
     
 

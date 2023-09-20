@@ -22,12 +22,14 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.FileUtil;
+import io.vavr.Lazy;
 
 public class ServerAPIImpl implements ServerAPI {
 
@@ -97,7 +99,7 @@ public class ServerAPIImpl implements ServerAPI {
         }
     }
 
-    private File serverIdFile() {
+    private static File serverIdFile() {
 
         String realPath = ConfigUtils.getDynamicContentPath() + File.separator + "license" + File.separator + "server_id.dat";
 
@@ -106,40 +108,41 @@ public class ServerAPIImpl implements ServerAPI {
         return new File(realPath);
     }
 
+
+    final static Lazy<String> serverId = Lazy.of(() -> {
+
+
+                try {
+
+                    final File serverFile = serverIdFile();
+                    if (!serverFile.exists()) {
+                        writeServerIdToDisk(UUIDUtil.uuid());
+                    }
+
+                    try (BufferedReader br = Files.newBufferedReader(serverFile.toPath())) {
+                        String serverId = br.readLine();
+                        Logger.debug(ServerAPIImpl.class, "ServerID: " + serverId);
+                        return serverId;
+
+                    }
+                } catch (Exception ioe) {
+                    throw new DotRuntimeException("Unable to read server id at " + serverIdFile()
+                            + " please make sure that the directory exists and is readable and writeable. If problems"
+                            + " persist, try deleting the file.  The system will recreate a new one on startup", ioe);
+                }
+
+            }
+
+    );
+
+
+
     @Override
     public String readServerId() {
-        // once set this should never change
-
-        if (SERVER_ID == null) {
-
-            synchronized (this) {
-
-                if (SERVER_ID == null) {
-
-                    try {
-
-                        final File serverFile = serverIdFile();
-                        if (!serverFile.exists()) {
-                            writeServerIdToDisk(UUIDUtil.uuid());
-                        }
-
-                        try (BufferedReader br = Files.newBufferedReader(serverFile.toPath())) {
-                            SERVER_ID = br.readLine();
-                            Logger.debug(ServerAPIImpl.class, "ServerID: " + SERVER_ID);
-                        }
-                    } catch (IOException ioe) {
-                        throw new DotStateException("Unable to read server id at " + serverIdFile()
-                                + " please make sure that the directory exists and is readable and writeable. If problems"
-                                + " persist, try deleting the file.  The system will recreate a new one on startup", ioe);
-                    }
-                }
-            }
-        }
-
-        return SERVER_ID;
+        return serverId.get();
     }
 
-    private void writeServerIdToDisk(String serverId) throws IOException {
+    private static void writeServerIdToDisk(String serverId) throws IOException {
 
         File serverFile = serverIdFile();
         serverFile.mkdirs();

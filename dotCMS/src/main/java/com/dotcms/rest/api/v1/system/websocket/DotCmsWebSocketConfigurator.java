@@ -4,6 +4,7 @@ import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.business.LazyUserAPIWrapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import io.vavr.Lazy;
 import org.glassfish.jersey.server.ContainerRequest;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -32,108 +33,109 @@ import java.util.List;
  */
 public class DotCmsWebSocketConfigurator extends Configurator {
 
-	private final WebSocketContainerAPI webSocketContainerAPI;
-	private final JsonWebTokenAuthCredentialProcessor authCredentialProcessor;
-	private final UserAPI userAPI;
+    private final Lazy<WebSocketContainerAPI> webSocketContainerAPI;
+    private final Lazy<JsonWebTokenAuthCredentialProcessor> authCredentialProcessor;
+    private final Lazy<UserAPI> userAPI;
 
-	public DotCmsWebSocketConfigurator() {
+    public DotCmsWebSocketConfigurator() {
 
-		this(APILocator.getWebSocketContainerAPI(),
-				JsonWebTokenAuthCredentialProcessorImpl.getInstance(),
-				new LazyUserAPIWrapper());
-	}
+        this.webSocketContainerAPI = Lazy.of(() -> APILocator.getWebSocketContainerAPI());
+        this.authCredentialProcessor = Lazy.of(() -> JsonWebTokenAuthCredentialProcessorImpl.getInstance());
+        this.userAPI = Lazy.of(() -> new LazyUserAPIWrapper());
 
-	@VisibleForTesting
-	protected DotCmsWebSocketConfigurator(final WebSocketContainerAPI webSocketContainerAPI,
-			 							  final JsonWebTokenAuthCredentialProcessor authCredentialProcessor,
-										  final UserAPI userAPI) {
+    }
 
-		this.webSocketContainerAPI   = webSocketContainerAPI;
-		this.authCredentialProcessor = authCredentialProcessor;
-		this.userAPI				 = userAPI;
-	}
+    @VisibleForTesting
+    protected DotCmsWebSocketConfigurator(final WebSocketContainerAPI webSocketContainerAPI,
+                                          final JsonWebTokenAuthCredentialProcessor authCredentialProcessor,
+                                          final UserAPI userAPI) {
 
-	@Override
-	public <T> T getEndpointInstance(final Class<T> endpointClass) throws InstantiationException {
-		return this.webSocketContainerAPI.getEndpointInstance(endpointClass);
-	}
+        this.webSocketContainerAPI = Lazy.of(() -> webSocketContainerAPI);
+        this.authCredentialProcessor = Lazy.of(() -> authCredentialProcessor);
+        this.userAPI = Lazy.of(() -> userAPI);
+    }
 
-	@Override
-	public void modifyHandshake(final ServerEndpointConfig serverEndpointConfig,
-								final HandshakeRequest request,
-								final HandshakeResponse response) {
+    @Override
+    public <T> T getEndpointInstance(final Class<T> endpointClass) throws InstantiationException {
+        return this.webSocketContainerAPI.get().getEndpointInstance(endpointClass);
+    }
 
-		super.modifyHandshake(serverEndpointConfig, request, response);
+    @Override
+    public void modifyHandshake(final ServerEndpointConfig serverEndpointConfig,
+                                final HandshakeRequest request,
+                                final HandshakeResponse response) {
 
-		String sessionId		   = null;
-		User user      			   = null;
-		String authorizationHeader = null;
-		final List<String> headers = request.getHeaders().get(ContainerRequest.AUTHORIZATION);
-		final Object session 	   = request.getHttpSession();
-		HttpSession  httpSession   = null;
+        super.modifyHandshake(serverEndpointConfig, request, response);
 
-		if (UtilMethods.isSet(session) && session instanceof HttpSession) {
+        String sessionId = null;
+        User user = null;
+        String authorizationHeader = null;
+        final List<String> headers = request.getHeaders().get(ContainerRequest.AUTHORIZATION);
+        final Object session = request.getHttpSession();
+        HttpSession httpSession = null;
 
-			try {
+        if (UtilMethods.isSet(session) && session instanceof HttpSession) {
 
-				httpSession = HttpSession.class.cast(session);
-				sessionId   = httpSession.getId();
-				user = (User) PortalUtil.getUser(httpSession);
+            try {
 
-				if (!UtilMethods.isSet(user)) {
+                httpSession = HttpSession.class.cast(session);
+                sessionId = httpSession.getId();
+                user = (User) PortalUtil.getUser(httpSession);
 
-					user = this.getUserFromId(httpSession);
-				}
-			} catch (Exception e) {
+                if (!UtilMethods.isSet(user)) {
 
-				if (Logger.isErrorEnabled(this.getClass())) {
+                    user = this.getUserFromId(httpSession);
+                }
+            } catch (Exception e) {
 
-					Logger.error(this.getClass(), e.getMessage(), e);
-				}
-			}
-		}
+                if (Logger.isErrorEnabled(this.getClass())) {
 
-		try {
+                    Logger.error(this.getClass(), e.getMessage(), e);
+                }
+            }
+        }
 
-			if (!UtilMethods.isSet(user) && ((null != headers) && (headers.size() > 0))) {
+        try {
 
-				authorizationHeader = headers.get(0);
-				user = this.authCredentialProcessor.processAuthHeaderFromJWT
-						(authorizationHeader, httpSession, "websocket");
-			}
+            if (!UtilMethods.isSet(user) && ((null != headers) && (headers.size() > 0))) {
 
-			if (UtilMethods.isSet(user)) {
+                authorizationHeader = headers.get(0);
+                user = this.authCredentialProcessor.get().processAuthHeaderFromJWT
+                        (authorizationHeader, httpSession, "websocket");
+            }
 
-				serverEndpointConfig.getUserProperties().put
-						(SystemEventsWebSocketEndPoint.USER, user);
-			}
+            if (UtilMethods.isSet(user)) {
 
-			if (UtilMethods.isSet(sessionId)) {
+                serverEndpointConfig.getUserProperties().put
+                        (SystemEventsWebSocketEndPoint.USER, user);
+            }
 
-				serverEndpointConfig.getUserProperties().put
-						(SystemEventsWebSocketEndPoint.USER_SESSION_ID, sessionId);
-			}
-		} catch (Exception e) {
+            if (UtilMethods.isSet(sessionId)) {
 
-			if (Logger.isErrorEnabled(this.getClass())) {
+                serverEndpointConfig.getUserProperties().put
+                        (SystemEventsWebSocketEndPoint.USER_SESSION_ID, sessionId);
+            }
+        } catch (Exception e) {
 
-				Logger.error(this.getClass(), e.getMessage(), e);
-			}
-		}
-	} // modifyHandshake.
+            if (Logger.isErrorEnabled(this.getClass())) {
 
-	private User getUserFromId(final HttpSession httpSession) throws DotSecurityException, DotDataException {
+                Logger.error(this.getClass(), e.getMessage(), e);
+            }
+        }
+    } // modifyHandshake.
 
-		User user = null;
-		final String userId = (String) httpSession.getAttribute
-				(com.liferay.portal.util.WebKeys.USER_ID);
+    private User getUserFromId(final HttpSession httpSession) throws DotSecurityException, DotDataException {
 
-		if (UtilMethods.isSet(userId)) {
+        User user = null;
+        final String userId = (String) httpSession.getAttribute
+                (com.liferay.portal.util.WebKeys.USER_ID);
 
-			user = this.userAPI.loadUserById(userId);
-		}
+        if (UtilMethods.isSet(userId)) {
 
-		return user;
-	} // getUserFromId.
+            user = this.userAPI.get().loadUserById(userId);
+        }
+
+        return user;
+    } // getUserFromId.
 
 } // DotCmsWebSocketConfigurator.

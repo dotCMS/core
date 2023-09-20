@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import io.vavr.Lazy;
 import org.apache.logging.log4j.util.Strings;
 
 /**
@@ -44,13 +46,13 @@ import org.apache.logging.log4j.util.Strings;
 @Deprecated
 public class UserFactoryLiferayImpl extends UserFactoryLiferay {
 
-	private UserCache uc;
+	private Lazy<UserCache> uc;
 
 	/**
 	 * Default class constructor.
 	 */
 	public UserFactoryLiferayImpl() {
-		uc = CacheLocator.getUserCache();
+		uc = Lazy.of(()->CacheLocator.getUserCache());
 	}
 	
 	@Override
@@ -114,7 +116,7 @@ public class UserFactoryLiferayImpl extends UserFactoryLiferay {
 	
 	@Override
 	public User loadUserById(String userId) throws DotDataException, NoSuchUserException {
-		User u = uc.get(userId);
+		User u = uc.get().get(userId);
 		if(!UtilMethods.isSet(u)){
 			try{
 				u = UserLocalManagerUtil.getUserById(userId);
@@ -123,7 +125,7 @@ public class UserFactoryLiferayImpl extends UserFactoryLiferay {
 			}catch (Exception e) {
 				throw new DotDataException(e.getMessage(), e);
 			}
-			uc.add(userId, u);
+			uc.get().add(userId, u);
 		}
 		return u;
 	}
@@ -257,7 +259,7 @@ public class UserFactoryLiferayImpl extends UserFactoryLiferay {
 			final String userId = (String) hash.get("userid");
 			final User u = loadUserById(userId);
 			users.add(u);
-			uc.add(u.getUserId(), u);
+			uc.get().add(u.getUserId(), u);
 		}
 
 		return users;
@@ -313,7 +315,7 @@ public class UserFactoryLiferayImpl extends UserFactoryLiferay {
 			throw new DotDataException(e.getMessage(), e);
 		}
 		if(UtilMethods.isSet(u)){
-			uc.add(u.getUserId(), u);
+			uc.get().add(u.getUserId(), u);
 			return true;
 		}
 		return false;
@@ -625,7 +627,7 @@ public class UserFactoryLiferayImpl extends UserFactoryLiferay {
 
 	@Override
 	public void delete(User userToDelete) throws DotDataException {
-		uc.remove(userToDelete.getUserId());
+		uc.get().remove(userToDelete.getUserId());
 		try {
 			UserLocalManagerUtil.deleteUser(userToDelete.getUserId());
 		} catch (Exception e) {

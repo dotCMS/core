@@ -117,7 +117,7 @@ public class DataSourceStrategyProvider {
     @VisibleForTesting
     String getCustomDataSourceProvider() {
         return Config
-                .getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", null);
+                .getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", SystemEnvDataSourceStrategy.class.getCanonicalName());
     }
 
     @VisibleForTesting

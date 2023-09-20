@@ -18,6 +18,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+
+import io.vavr.Lazy;
 import org.apache.commons.collections.map.LRUMap;
 import org.apache.commons.lang.StringUtils;
 import org.postgresql.util.PGobject;
@@ -68,8 +70,8 @@ public class DotConnect {
 
     private static final Map<Class<?>, StatementObjectSetter> statementSetterHandlerMap = customStatementObjectSetterMap();
 
-    final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
-            .getDefaultObjectMapper();
+    final Lazy<ObjectMapper> mapper = Lazy.of(()->DotObjectMapperProvider.getInstance()
+            .getDefaultObjectMapper());
 
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
@@ -544,7 +546,7 @@ public class DotConnect {
         final String jsonStr;
         if (!(json instanceof String)) {
             jsonStr = Try.of(() ->
-                            mapper.writeValueAsString(json))
+                            mapper.get().writeValueAsString(json))
                     .getOrNull();
         } else {
             jsonStr = (String) json;

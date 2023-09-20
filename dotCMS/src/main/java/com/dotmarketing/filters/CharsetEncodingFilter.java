@@ -40,7 +40,7 @@ import javax.servlet.http.HttpSession;
 
 public class CharsetEncodingFilter implements Filter {
 	
-	private static LanguageAPI langAPI =  APILocator.getLanguageAPI();
+
 	private String CHARSET = null;
 	
 	public void init(FilterConfig arg0) throws ServletException {

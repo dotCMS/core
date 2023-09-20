@@ -58,9 +58,8 @@ public class UserAPIImpl implements UserAPI {
 
     private final UserFactory userFactory;
     private final UserFactoryLiferay userFactoryLiferay;
-    private final PermissionAPI permissionAPI;
-    private final UserProxyAPI userProxyAPI;
-    private final BundleAPI bundleAPI;
+
+
     static User systemUser, anonUser=null;
     /**
      * Creates an instance of the class.
@@ -68,9 +67,7 @@ public class UserAPIImpl implements UserAPI {
     public UserAPIImpl() {
         userFactory = FactoryLocator.getUserFactory();
         userFactoryLiferay = FactoryLocator.getUserFactoryLiferay();
-        permissionAPI = APILocator.getPermissionAPI();
-        userProxyAPI = APILocator.getUserProxyAPI();
-        bundleAPI = APILocator.getBundleAPI();
+
     }
 
     @CloseDBIfOpened
@@ -89,7 +86,7 @@ public class UserAPIImpl implements UserAPI {
         if(user!=null && user.getUserId().equals(u.getUserId())) {
             return user;
         }
-        if(permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
+        if(APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getUserProxyAPI().getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
             return u;
         }else{
             throw new DotSecurityException("The User being passed in doesn't have permission to requested User");
@@ -123,7 +120,7 @@ public class UserAPIImpl implements UserAPI {
         if(!UtilMethods.isSet(u)){
             throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
         }
-        if(permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
+        if(APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getUserProxyAPI().getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
             return u;
         }else{
             throw new DotSecurityException("The User being passed in doesn't have permission to requested User");
@@ -421,7 +418,7 @@ public class UserAPIImpl implements UserAPI {
         if (userId == null) {
             throw new DotDataException("Can't save a user without a userId");
         }
-        if (!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToSave,
+        if (!APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getUserProxyAPI().getUserProxy(userToSave,
                 APILocator.getUserAPI().getSystemUser(), false),
                 PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)) {
             throw new DotSecurityException(
@@ -478,7 +475,7 @@ public class UserAPIImpl implements UserAPI {
         if (userToDelete.getUserId() == null) {
             throw new DotDataException("Can't delete a user without a userId");
         }
-        if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
+        if(!APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getUserProxyAPI().getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
             throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
         }
         delete(userToDelete,user, user, respectFrontEndRoles);
@@ -499,7 +496,7 @@ public class UserAPIImpl implements UserAPI {
         if (getAnonymousUser().getUserId() == userToDelete.getUserId()){
             throw new DotDataException("Anonymous user can not be deleted.");
         }
-        if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
+        if(!APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getUserProxyAPI().getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
             throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
         }
 
@@ -572,12 +569,12 @@ public class UserAPIImpl implements UserAPI {
         //replace the user reference in publishing bundles
         logDelete(DeletionStage.BEGINNING, userToDelete, user, "Publishing Bundles");
 
-        bundleAPI.updateOwnerReferences(userToDelete.getUserId(), replacementUser.getUserId());
+        APILocator.getBundleAPI().updateOwnerReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
         logDelete(DeletionStage.END, userToDelete, user, "Publishing Bundles");
 
         //removing user roles
-        permissionAPI.removePermissionsByRole(userRole.getId());
+        APILocator.getPermissionAPI().removePermissionsByRole(userRole.getId());
         roleAPI.removeAllRolesFromUser(userToDelete);
 
         /**
