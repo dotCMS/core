@@ -3,13 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>dotCMS-cli</artifactId>
+        <artifactId>dotcms-cli-parent</artifactId>
         <groupId>com.dotcms</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>cli</artifactId>
+    <artifactId>dotcms-cli</artifactId>
     <packaging>jar</packaging>
 
     <properties>
@@ -24,6 +24,9 @@
         <testcontainers.version>1.17.6</testcontainers.version>
         <failsafe-plugin.version>3.0.0-M5</failsafe-plugin.version>
         <test.failure.ignore>false</test.failure.ignore>
+        <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
+        <docker.version.tag>${project.version}</docker.version.tag>
+        <testcontainers.docker.image>${docker.output.image.name}/${docker.version.tag}</testcontainers.docker.image>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -39,13 +42,13 @@
     <dependencies>
         <dependency>
             <groupId>com.dotcms</groupId>
-            <artifactId>api-data-model</artifactId>
+            <artifactId>dotcms-api-data-model</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>com.dotcms</groupId>
-            <artifactId>api-data-model</artifactId>
+            <artifactId>dotcms-api-data-model</artifactId>
             <version>1.0.0-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -118,6 +121,11 @@
                             <goal>generate-code</goal>
                             <goal>generate-code-tests</goal>
                         </goals>
+                        <configuration>
+                            <systemProperties>
+                                <testcontainers.docker.image>${testcontainers.docker.image}</testcontainers.docker.image>
+                            </systemProperties>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -138,7 +146,7 @@
                 <configuration>
                     <testFailureIgnore>${test.failure.ignore}</testFailureIgnore>
                     <includes>
-                        <include>**/*Test.java</include>
+                        <include>**/*IT.java</include>
                     </includes>
                 </configuration>
                 <executions>
