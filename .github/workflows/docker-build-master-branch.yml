@@ -10,11 +10,13 @@ on:
 
 jobs:
   docker:
-    runs-on: dot-xl-runner
+    runs-on: ubuntu-20.04
     steps:
       -
         name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       -
         name: Docker meta
         id: meta
@@ -39,9 +41,11 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      - name: Pre Build
-        run: "docker system prune --volumes -af"
       -
+        name: Pre build
+        run: |
+          docker system prune --volumes -af
+      - 
         name: Build and push
         uses: docker/build-push-action@v5.0.0
         with:
@@ -51,7 +55,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           pull: true
           no-cache: true
-          version: v0.7.0
           build-args: |
             BUILD_ID=${{ github.sha }}
             BUILD_FROM=COMMIT 
