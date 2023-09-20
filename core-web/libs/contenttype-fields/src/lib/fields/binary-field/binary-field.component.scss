@@ -15,14 +15,14 @@
     width: 100%;
     gap: $spacing-3;
     border-radius: $border-radius-md;
-    border: 1px solid $color-palette-gray-300;
+    border: $boder-width-md solid $color-palette-gray-300;
     padding: $spacing-1;
     margin-bottom: $spacing-1;
     height: 10rem;
 }
 
 .binary-field__container--uploading {
-    border: 1.5px dashed $color-palette-gray-300;
+    border: $boder-width-lg dashed $color-palette-gray-300;
 }
 
 .binary-field__helper-icon {
@@ -67,7 +67,7 @@
 }
 
 .binary-field__drop-zone {
-    border: 1.5px dashed $input-border-color;
+    border: $boder-width-lg dashed $input-border-color;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -90,7 +90,7 @@
 
 .binary-field__drop-zone--active {
     border-radius: $border-radius-md;
-    border: 1.5px dashed $color-palette-secondary-500;
+    border-color: $color-palette-secondary-500;
     background: $white;
     box-shadow: $md-shadow-6;
 }

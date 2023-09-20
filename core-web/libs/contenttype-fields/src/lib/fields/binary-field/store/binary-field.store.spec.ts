@@ -22,7 +22,9 @@ const INITIAL_STATE: BinaryFieldState = {
         accept: [],
         maxFileSize: 0
     },
-    UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT)
+    UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
+    dialogOpen: false,
+    dropZoneActive: false
 };
 
 const TEMP_FILE_MOCK: DotCMSTempFile = {
@@ -100,6 +102,18 @@ describe('DotBinaryFieldStore', () => {
             store.setStatus(BINARY_FIELD_STATUS.PREVIEW);
 
             store.vm$.subscribe((state) => expect(state.status).toBe(BINARY_FIELD_STATUS.PREVIEW));
+        });
+
+        it('should set DialogOpen', () => {
+            store.setDialogOpen(true);
+
+            store.vm$.subscribe((state) => expect(state.dialogOpen).toBe(true));
+        });
+
+        it('should set DropZoneActive', () => {
+            store.setDropZoneActive(true);
+
+            store.vm$.subscribe((state) => expect(state.dropZoneActive).toBe(true));
         });
     });
 

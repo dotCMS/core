@@ -18,7 +18,7 @@ import { DotBinaryFieldStore } from './store/binary-field.store';
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
 
 export default {
-    title: 'Library / Contenttype Fields / Fields / DotBinaryFieldComponent',
+    title: 'Library / Contenttype Fields / DotBinaryFieldComponent',
     component: DotBinaryFieldComponent,
     decorators: [
         moduleMetadata({
@@ -90,11 +90,11 @@ export default {
 
 const Template: Story<DotBinaryFieldComponent> = (args: DotBinaryFieldComponent) => ({
     props: args,
-    template: `<dotcms-binary-field
+    template: `<dot-binary-field
         [accept]="accept"
         [maxFileSize]="maxFileSize"
         [helperText]="helperText"
-    ></dotcms-binary-field>`
+    ></dot-binary-field>`
 });
 
 export const Primary = Template.bind({});

@@ -21,6 +21,8 @@ export interface BinaryFieldState {
         accept: string[];
         maxFileSize: number;
     };
+    dialogOpen: boolean;
+    dropZoneActive: boolean;
 }
 
 export enum BINARY_FIELD_MODE {
@@ -41,6 +43,8 @@ const initialState: BinaryFieldState = {
     tempFile: null,
     mode: BINARY_FIELD_MODE.DROPZONE,
     status: BINARY_FIELD_STATUS.INIT,
+    dialogOpen: false,
+    dropZoneActive: false,
     rules: {
         accept: [],
         maxFileSize: 0
@@ -70,6 +74,16 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly setFile = this.updater<File>((state, file) => ({
         ...state,
         file
+    }));
+
+    readonly setDialogOpen = this.updater<boolean>((state, dialogOpen) => ({
+        ...state,
+        dialogOpen
+    }));
+
+    readonly setDropZoneActive = this.updater<boolean>((state, dropZoneActive) => ({
+        ...state,
+        dropZoneActive
     }));
 
     readonly setTempFile = this.updater<DotCMSTempFile>((state, tempFile) => ({

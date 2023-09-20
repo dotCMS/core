@@ -10,7 +10,7 @@
         data-testId="binary-field__drop-zone-container">
         <div
             class="binary-field__drop-zone"
-            [ngClass]="{ 'binary-field__drop-zone--active': dropZoneActive }">
+            [ngClass]="{ 'binary-field__drop-zone--active': vm.dropZoneActive }">
             <dot-drop-zone
                 [accept]="vm.rules.accept"
                 [maxFileSize]="vm.rules.maxFileSize"
@@ -75,11 +75,12 @@
     </div>
 
     <p-dialog
-        [(visible)]="dialogOpen"
+        [visible]="vm.dialogOpen"
         [modal]="true"
         [header]="dialogHeaderMap[vm.mode] | dm"
         [draggable]="false"
-        [resizable]="false">
+        [resizable]="false"
+        (visibleChange)="visibleChange($event)">
         <div [ngSwitch]="vm.mode">
             <div *ngSwitchCase="BINARY_FIELD_MODE.URL" data-testId="url">
                 TODO: Implement Import from URL

@@ -1,6 +1,6 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { AsyncPipe, NgClass, NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -33,14 +33,10 @@ import {
 } from './store/binary-field.store';
 
 @Component({
-    selector: 'dotcms-binary-field',
+    selector: 'dot-binary-field',
     standalone: true,
     imports: [
-        NgIf,
-        NgClass,
-        NgSwitch,
-        NgSwitchCase,
-        AsyncPipe,
+        CommonModule,
         ButtonModule,
         DialogModule,
         DotDropZoneComponent,
@@ -76,9 +72,6 @@ export class DotBinaryFieldComponent implements OnInit {
     readonly BINARY_FIELD_MODE = BINARY_FIELD_MODE;
     readonly vm$ = this.dotBinaryFieldStore.vm$;
 
-    dialogOpen = false;
-    dropZoneActive = false;
-
     constructor(private readonly dotBinaryFieldStore: DotBinaryFieldStore) {}
 
     ngOnInit() {
@@ -101,7 +94,7 @@ export class DotBinaryFieldComponent implements OnInit {
      * @memberof DotBinaryFieldComponent
      */
     setDropZoneActiveState(value: boolean) {
-        this.dropZoneActive = value;
+        this.dotBinaryFieldStore.setDropZoneActive(value);
     }
 
     /**
@@ -124,7 +117,21 @@ export class DotBinaryFieldComponent implements OnInit {
      */
     openDialog(mode: BINARY_FIELD_MODE) {
         this.dotBinaryFieldStore.setMode(mode);
-        this.dialogOpen = true;
+        this.dotBinaryFieldStore.setDialogOpen(true);
+    }
+
+    /**
+     * Listen to dialog visibility change
+     * and set mode to dropzone when dialog is closed
+     *
+     * @param {boolean} visibily
+     * @memberof DotBinaryFieldComponent
+     */
+    visibleChange(visibily: boolean) {
+        if (!visibily) {
+            this.dotBinaryFieldStore.setMode(BINARY_FIELD_MODE.DROPZONE);
+            this.dotBinaryFieldStore.setDialogOpen(false);
+        }
     }
 
     /**

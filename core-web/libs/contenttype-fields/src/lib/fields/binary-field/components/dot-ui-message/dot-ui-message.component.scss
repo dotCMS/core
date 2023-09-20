@@ -1,6 +1,6 @@
 @use "variables" as *;
 
-.ui-message__container {
+:host {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -8,30 +8,24 @@
     gap: $spacing-3;
     height: 100%;
     padding: $spacing-3;
-}
 
-.ui-message__icon-container {
-    border-radius: 50%;
-    padding: $spacing-3;
+    .icon-container {
+        border-radius: 50%;
+        padding: $spacing-3;
 
-    &.ui-message__icon-container--info {
-        color: $color-palette-secondary-500;
-        background: $color-palette-secondary-200;
+        &.info {
+            color: $color-palette-secondary-500;
+            background: $color-palette-secondary-200;
+        }
+
+        &.error {
+            color: $color-alert-yellow;
+            background: $color-alert-yellow-light;
+        }
     }
 
-    &.ui-message__icon-container--error {
-        color: $color-alert-yellow;
-        background: $color-alert-yellow-light;
-    }
-}
-
-.ui-message__text {
-    text-align: center;
-    line-height: 140%;
-
-    ::ng-deep a {
-        text-decoration: underline;
-        cursor: pointer;
-        color: $color-palette-primary-500;
+    .text {
+        text-align: center;
+        line-height: 140%;
     }
 }

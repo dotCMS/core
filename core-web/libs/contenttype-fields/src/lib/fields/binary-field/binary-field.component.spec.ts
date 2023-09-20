@@ -94,11 +94,6 @@ describe('DotBinaryFieldComponent', () => {
         store = spectator.inject(DotBinaryFieldStore, true);
     });
 
-    it('should exist', () => {
-        spectator.detectChanges();
-        expect(spectator.component).toBeTruthy();
-    });
-
     it('should set rules on init', () => {
         const spyRules = jest.spyOn(store, 'setRules');
         spectator.detectChanges();
@@ -128,23 +123,29 @@ describe('DotBinaryFieldComponent', () => {
 
         it('should handle file drop', () => {
             const spyFileDrop = jest.spyOn(store, 'handleFileDrop');
+            const spyDropZoneActive = jest.spyOn(store, 'setDropZoneActive');
             const dropZone = spectator.fixture.debugElement.query(By.css('dot-drop-zone'));
+
             dropZone.triggerEventHandler('fileDropped', DROP_ZONE_FILE_EVENT);
 
             expect(spyFileDrop).toHaveBeenCalledWith(DROP_ZONE_FILE_EVENT);
-            expect(spectator.component.dropZoneActive).toBe(false);
+            expect(spyDropZoneActive).toHaveBeenCalledWith(false);
         });
 
         it('should handle file dragover', () => {
             const dropZone = spectator.fixture.debugElement.query(By.css('dot-drop-zone'));
+            const spyDropZoneActive = jest.spyOn(store, 'setDropZoneActive');
             dropZone.triggerEventHandler('fileDragOver', {});
-            expect(spectator.component.dropZoneActive).toBe(true);
+
+            expect(spyDropZoneActive).toHaveBeenCalledWith(true);
         });
 
         it('should handle file dragleave', () => {
             const dropZone = spectator.fixture.debugElement.query(By.css('dot-drop-zone'));
+            const spyDropZoneActive = jest.spyOn(store, 'setDropZoneActive');
             dropZone.triggerEventHandler('fileDragLeave', {});
-            expect(spectator.component.dropZoneActive).toBe(false);
+
+            expect(spyDropZoneActive).toHaveBeenCalledWith(false);
         });
 
         it('should open file picker when click on choose file button', () => {
@@ -236,6 +237,7 @@ describe('DotBinaryFieldComponent', () => {
 
         it('should open dialog with code component when click on edit button', async () => {
             const spyMode = jest.spyOn(store, 'setMode');
+            const spyOpenDialog = jest.spyOn(store, 'setDialogOpen');
             const editorBtn = spectator.query(byTestId('action-editor-btn')) as HTMLButtonElement;
             editorBtn.click();
 
@@ -246,10 +248,12 @@ describe('DotBinaryFieldComponent', () => {
 
             expect(editorElement).toBeTruthy();
             expect(spyMode).toHaveBeenCalledWith(BINARY_FIELD_MODE.EDITOR);
+            expect(spyOpenDialog).toHaveBeenCalledWith(true);
         });
 
         it('should open dialog with url componet component when click on url button', async () => {
             const spyMode = jest.spyOn(store, 'setMode');
+            const spyOpenDialog = jest.spyOn(store, 'setDialogOpen');
             const urlBtn = spectator.query(byTestId('action-url-btn')) as HTMLButtonElement;
             urlBtn.click();
 
@@ -260,6 +264,7 @@ describe('DotBinaryFieldComponent', () => {
 
             expect(urlElement).toBeTruthy();
             expect(spyMode).toHaveBeenCalledWith(BINARY_FIELD_MODE.URL);
+            expect(spyOpenDialog).toHaveBeenCalledWith(true);
         });
     });
 

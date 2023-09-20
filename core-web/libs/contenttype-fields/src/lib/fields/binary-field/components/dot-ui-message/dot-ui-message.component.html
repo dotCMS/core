@@ -1,11 +1,6 @@
-<div class="ui-message__container">
-    <div
-        class="ui-message__icon-container ui-message__icon-container--{{ severity }}"
-        data-testId="ui-message-icon-container">
-        <i [ngClass]="icon" data-testId="ui-message-icon" style="font-size: 2rem"></i>
-    </div>
-    <div class="ui-message__text">
-        <span [innerHTML]="message" data-testId="ui-message-span"></span>&nbsp;<ng-content
-        ></ng-content>
-    </div>
+<div class="icon-container" [ngClass]="severity" data-testId="ui-message-icon-container">
+    <i [ngClass]="icon" data-testId="ui-message-icon" style="font-size: 2rem"></i>
+</div>
+<div class="text">
+    <span [innerHTML]="message" data-testId="ui-message-span"></span><ng-content></ng-content>
 </div>
