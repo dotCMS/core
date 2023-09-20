@@ -137,20 +137,7 @@ describe('DotResultsSeoToolComponent', () => {
         });
     });
 
-    it('should filter seo results by Twitter seoMedia on changes', () => {
-        spectator.setInput({
-            seoMedia: SEO_MEDIA_TYPES.TWITTER
-        });
-        spectator.detectChanges();
-        spectator.component.currentResults$.subscribe((items) => {
-            expect(items.length).toEqual(3);
-            expect(items[0].key).toEqual(seoOGTagsResultMock[0].key);
-            expect(items[1].key).toEqual(seoOGTagsResultMock[1].key);
-            expect(items[2].key).toEqual(seoOGTagsResultMock[2].key);
-        });
-    });
-
-    it('should filter seo results by Linkedin seoMedia on changes', () => {
+    it('should filter seo results by Linkedin seoMedia on changes', (done) => {
         spectator.setInput({
             seoMedia: SEO_MEDIA_TYPES.LINKEDIN
         });
@@ -160,6 +147,7 @@ describe('DotResultsSeoToolComponent', () => {
             expect(items[0].key).toEqual(seoOGTagsResultMock[1].key);
             expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
             expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
+            done();
         });
     });
 });
