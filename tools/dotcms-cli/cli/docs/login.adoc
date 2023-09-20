@@ -1,0 +1,64 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Login Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= login(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+login - *Use this command to login to a dotCMS instance.*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*login* [*-h*] *-p*[=_<password>_] *-u*=_<user>_
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ Once an instance is selected. Use this command to open a session
+ Expects a user in --user -u and a password --password -p
+ *Both parameters are mandatory.*
+ If the password is not provided, the command will prompt for it.
+ if you're not sure which instance is active, use the status command.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-h*, *--help*::
+  Display this help message.
+
+*-p*, *--password*[=_<password>_]::
+  Passphrase
+
+*-u*, *--user*=_<user>_::
+  User name
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]
