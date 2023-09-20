@@ -11,7 +11,7 @@
                 [disabled]="item.disabled"
                 [pTooltip]="'editpage.toolbar.' + item.label.toLowerCase() + '.page.clipboard' | dm"
                 (click)="onClickOption($event, item.value.id)"
-                data-testId="dot-tab-button"
+                data-testId="dot-tab-button-text"
                 tooltipPosition="bottom">
                 {{ item.label }}
             </button>
@@ -21,7 +21,7 @@
                 *ngIf="item.value.showDropdownButton"
                 [ngClass]="{ 'dot-tab-dropdown--active': activeId === item.value.id }"
                 (click)="onClickDropdown($event, item.value.id)"
-                data-testId="dot-tab-button">
+                data-testId="dot-tab-button-dropdown">
                 <i
                     class="dot-tab-dropdown__icon pi"
                     [class]="item.value.toggle ? dropDownOpenIcon : dropDownCloseIcon"

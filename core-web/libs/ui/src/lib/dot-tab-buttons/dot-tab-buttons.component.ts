@@ -74,6 +74,9 @@ export class DotTabButtonsComponent implements OnChanges {
     onClickDropdown(event: PointerEvent, menuId: string) {
         event.stopPropagation();
 
+        // This method is public so you can easily break everything if you force this to open.
+        if (!this.shouldOpenMenu(menuId)) return;
+
         this._options = this._options.map((option) => {
             if (menuId.includes(option.value.id)) {
                 option.value.toggle = !option.value.toggle;
@@ -98,11 +101,33 @@ export class DotTabButtonsComponent implements OnChanges {
         });
     }
 
+    /**
+     * Resets the dropdown with the given id to closed state.
+     *
+     * @param {string} id
+     * @memberof DotTabButtonsComponent
+     */
     resetDropdownById(id: string) {
         this._options = this._options.map((option) => {
             if (option.value.id === id) option.value.toggle = false;
 
             return option;
         });
+    }
+
+    /**
+     * Checks if the dropdown you clicked is showed in the dom
+     *
+     * @private
+     * @param {string} menuId
+     * @return {*}  {boolean}
+     * @memberof DotTabButtonsComponent
+     */
+    private shouldOpenMenu(menuId: string): boolean {
+        return Boolean(
+            this._options.find(
+                (option) => option.value.id === menuId && option.value.showDropdownButton
+            )
+        );
     }
 }
