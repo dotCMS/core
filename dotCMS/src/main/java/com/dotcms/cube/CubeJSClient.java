@@ -8,18 +8,14 @@ import com.dotcms.exception.AnalyticsException;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
-import com.dotcms.jitsu.EventLogRunnable;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 
 import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -105,18 +101,17 @@ public class CubeJSClient {
         final CircuitBreakerUrl cubeJSClient;
         try {
             cubeJSClient = CircuitBreakerUrl.builder()
-                    .setMethod(Method.GET)
-                    .setHeaders(cubeJsHeaders(accessToken))
-                    .setUrl(String.format("%s/cubejs-api/v1/load", url))
-                    .setParams(map("query", query.toString()))
-                    .setTimeout(4000)
-                    .build();
+                .setMethod(Method.GET)
+                .setHeaders(cubeJsHeaders(accessToken))
+                .setUrl(String.format("%s/cubejs-api/v1/load", url))
+                .setParams(map("query", query.toString()))
+                .setTimeout(4000)
+                .build();
         } catch (AnalyticsException e) {
             throw new RuntimeException(e);
         }
 
         final Response<String> response = cubeJSClient.doResponse();
-
         if (response.getStatusCode() == -1) {
             throw new RuntimeException("CubeJS Server is not available");
         }

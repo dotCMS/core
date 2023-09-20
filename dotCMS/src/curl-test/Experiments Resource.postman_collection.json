@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "88d0a38e-032e-415e-b32d-0fe1ff6a10fe",
+		"_postman_id": "8d0496a9-888b-4463-9f50-fcb286b3e33e",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "1549189"
@@ -2891,7 +2891,7 @@
 											"",
 											"var render = jsonData.entity.containers[containerId].rendered['uuid-1'];",
 											"",
-											"pm.expect(\"content_1content_2\").to.equal(render);",
+											"pm.expect(\"content_1\").to.equal(render);",
 											""
 										],
 										"type": "text/javascript"

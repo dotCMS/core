@@ -11,7 +11,6 @@ import com.dotcms.cube.CubeJSQuery.Builder;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
-import com.dotcms.regex.MatcherTimeoutFactory;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
 
@@ -102,17 +101,6 @@ public class CubeJSClientTest {
         }
     }
 
-    private static AccessToken getAccessToken() {
-            return AnalyticsTestUtils.createAccessToken(
-                "a1b2c3d4e5f6",
-                "some-client",
-                null,
-                "some-scope",
-                "some-token-type",
-                TokenStatus.OK,
-                Instant.now());
-    }
-
     /**
      * Method to test: {@link CubeJSClient#send(CubeJSQuery)}
      * When: Send a request to Cube JS but the CubeJS Server is down
@@ -121,7 +109,7 @@ public class CubeJSClientTest {
      * Connection attempts failed Connect to 127.0.0.1:8000 [/127.0.0.1] failed: Connection refused (Connection refused)
      * </pre>
      */
-    @Test
+    @Test(expected = RuntimeException.class)
     public void http404() {
 
         final String cubeServerIp = "127.0.0.1";
@@ -129,7 +117,7 @@ public class CubeJSClientTest {
 
         try {
             IPUtils.disabledIpPrivateSubnet(true);
-            
+
             final CubeJSQuery cubeJSQuery = new Builder()
                     .dimensions("Events.experiment", "Events.variant")
                     .build();
@@ -137,18 +125,7 @@ public class CubeJSClientTest {
             final CubeJSClient cubeClient = new CubeJSClient(
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort),
                     getAccessToken());
-            CubeJSResultSet cubeJSResultSet = new CubeJSResultSetImpl(List.of());
-            // this should throw a timeout and add pattern to quarantine
-           try {
-               cubeJSResultSet = cubeClient.send(cubeJSQuery);
-               assertTrue(false);
-           }
-           catch(Exception e){
-               assertTrue(e instanceof RuntimeException);
-           }
-
-
-            assertEquals(0, cubeJSResultSet.size());
+            cubeClient.send(cubeJSQuery);
         } finally {
             IPUtils.disabledIpPrivateSubnet(false);
         }
@@ -201,5 +178,15 @@ public class CubeJSClientTest {
         }
     }
 
+    private static AccessToken getAccessToken() {
+        return AnalyticsTestUtils.createAccessToken(
+            "a1b2c3d4e5f6",
+            "some-client",
+            null,
+            "some-scope",
+            "some-token-type",
+            TokenStatus.OK,
+            Instant.now());
+    }
 
 }
