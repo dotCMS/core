@@ -18,7 +18,8 @@ import {
     DotLicenseService,
     DotMessageService,
     DotPersonalizeService,
-    DotPersonasService
+    DotPersonasService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotDevice, DotLanguage, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
@@ -43,8 +44,7 @@ import { DotPageStateService } from '../../../content/services/dot-page-state/do
 @Component({
     selector: 'dot-test-host',
     template: `<dot-edit-page-view-as-controller-seo
-        [pageState]="pageState"
-    ></dot-edit-page-view-as-controller-seo>`
+        [pageState]="pageState"></dot-edit-page-view-as-controller-seo>`
 })
 class DotTestHostComponent {
     @Input()
@@ -123,6 +123,7 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
                 DotPipesModule
             ],
             providers: [
+                DotSessionStorageService,
                 DotLicenseService,
                 {
                     provide: DotMessageService,

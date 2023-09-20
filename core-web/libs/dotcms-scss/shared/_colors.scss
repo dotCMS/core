@@ -84,8 +84,6 @@ $color-palette-gray-op-70: rgba($color-palette-gray, 0.7);
 $color-palette-gray-op-80: rgba($color-palette-gray, 0.8);
 $color-palette-gray-op-90: rgba($color-palette-gray, 0.9);
 
-$color-alert-blue: $color-palette-primary-500;
-$color-alert-blue-light: $color-palette-primary-100;
 $color-alert-yellow: #ffb444;
 $color-alert-yellow-light: #fff8ec;
 $color-alert-green: #3ed97a;
@@ -104,8 +102,8 @@ $color-accessible-text-green-bg: $color-alert-green-light;
 $color-accessible-text-purple: $color-palette-secondary-600;
 $color-accessible-text-purple-bg: $color-palette-secondary-100;
 
-$color-accessible-text-blue: $color-palette-primary-500;
-$color-accessible-text-blue-bg: $color-palette-primary-200;
+$color-accessible-text-blue: $color-palette-primary-600;
+$color-accessible-text-blue-bg: $color-palette-primary-op-10;
 
 $color-accessible-text-yellow: #bc5b0d; // TODO: why?
 $color-accessible-text-yellow-bg: $color-alert-yellow-light;
