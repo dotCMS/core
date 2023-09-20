@@ -4,7 +4,7 @@
     [apiLink]="apiLink"
     (selected)="changeDeviceHandler($event)"
     (changeSeoMedia)="changeSeoMedia($event)"
-    (hideOverlayPanel)="tabButtons.resetDropdownById('PREVIEW_MODE')"
+    (hideOverlayPanel)="tabButtons.resetDropdownById(dotPageMode.PREVIEW)"
     appendTo="body"
     tooltipPosition="bottom"
     tooltipStyleClass="dot-device-selector__dialog"
@@ -14,7 +14,7 @@
     *ngIf="this.featureFlagEditURLContentMapIsOn"
     [model]="menuItems"
     [popup]="true"
-    (onHide)="tabButtons.resetDropdownById('EDIT_MODE')"
+    (onHide)="tabButtons.resetDropdownById(dotPageMode.EDIT)"
     appendTo="body">
 </p-menu>
 <dot-tab-buttons

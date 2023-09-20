@@ -89,6 +89,8 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
     options: SelectItem[] = [];
     menuItems: MenuItem[];
 
+    readonly dotPageMode = DotPageMode;
+
     private readonly menuOpenActions: Record<DotPageMode, (event: PointerEvent) => void> = {
         [DotPageMode.EDIT]: (event: PointerEvent) => {
             this.menu.toggle(event);
@@ -130,7 +132,6 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
         this.dotPropertiesService
             .getKey(this.featureFlagEditURLContentMap)
             .pipe(take(1))
-
             .subscribe((result) => {
                 this.featureFlagEditURLContentMapIsOn = result && result === 'true';
 
