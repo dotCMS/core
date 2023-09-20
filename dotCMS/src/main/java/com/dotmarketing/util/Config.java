@@ -313,7 +313,7 @@ public class Config {
         final Configuration configuration = interpolator.interpolate(props);
 
         if(configuration instanceof PropertiesConfiguration){
-            props.append(configuration);
+            props.copy(configuration);
         }
 
     }
