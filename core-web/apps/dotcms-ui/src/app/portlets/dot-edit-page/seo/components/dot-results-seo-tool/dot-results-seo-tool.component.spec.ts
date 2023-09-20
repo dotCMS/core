@@ -136,4 +136,17 @@ describe('DotResultsSeoToolComponent', () => {
             done();
         });
     });
+
+    it('should filter seo results by seoMedia on changes', () => {
+        spectator.setInput({
+            seoMedia: SEO_MEDIA_TYPES.TWITTER
+        });
+        spectator.detectChanges();
+        spectator.component.currentResults$.subscribe((items) => {
+            expect(items.length).toEqual(3);
+            expect(items[0].key).toEqual(seoOGTagsResultMock[0].key);
+            expect(items[1].key).toEqual(seoOGTagsResultMock[1].key);
+            expect(items[2].key).toEqual(seoOGTagsResultMock[2].key);
+        });
+    });
 });
