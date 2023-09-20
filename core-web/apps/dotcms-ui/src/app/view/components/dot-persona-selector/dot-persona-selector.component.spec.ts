@@ -28,7 +28,8 @@ import {
     DotAlertConfirmService,
     DotEventsService,
     DotMessageService,
-    PaginatorService
+    PaginatorService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPersona } from '@dotcms/dotcms-models';
@@ -119,6 +120,7 @@ describe('DotPersonaSelectorComponent', () => {
                 TooltipModule
             ],
             providers: [
+                DotSessionStorageService,
                 IframeOverlayService,
                 {
                     provide: DotMessageService,
