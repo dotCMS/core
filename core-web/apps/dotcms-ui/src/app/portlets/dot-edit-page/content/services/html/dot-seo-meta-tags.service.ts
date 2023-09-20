@@ -251,31 +251,19 @@ export class DotSeoMetaTagsService {
         }
 
         if (ogDescription?.length === 0) {
-            result.push(
-                this.getErrorItem(this.dotMessageService.get('seo.rules.description.found.empty'))
-            );
+            result.push({
+                message: this.dotMessageService.get('seo.rules.description.found.empty'),
+                color: SEO_RULES_COLORS.ERROR,
+                itemIcon: SEO_RULES_ICONS.TIMES
+            });
         }
 
-        if (ogDescription?.length < SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
-            result.push(
-                this.getWarningItem(this.dotMessageService.get('seo.rules.og-description.less'))
-            );
-        }
-
-        if (ogDescription?.length > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
-            result.push(
-                this.getWarningItem(this.dotMessageService.get('seo.rules.og-description.greater'))
-            );
-        }
-
-        if (
-            ogDescription &&
-            ogDescription?.length > SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
-            ogDescription?.length < SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
-        ) {
-            result.push(
-                this.getDoneItem(this.dotMessageService.get('seo.rules.og-description.found'))
-            );
+        if (ogDescription && ogDescription?.length > 0) {
+            result.push({
+                message: this.dotMessageService.get('seo.rules.description.found'),
+                color: SEO_RULES_COLORS.DONE,
+                itemIcon: SEO_RULES_ICONS.CHECK
+            });
         }
 
         return result;
