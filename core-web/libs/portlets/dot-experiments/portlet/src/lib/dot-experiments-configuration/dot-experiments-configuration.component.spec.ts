@@ -74,7 +74,9 @@ const defaultVmMock: ConfigurationViewModel = {
     experimentStatus: null,
     isDescriptionSaving: false,
     menuItems: null,
-    addToBundleContentId: null
+    addToBundleContentId: null,
+    isPageLocked: null,
+    dotPageRenderState: null
 };
 
 @Component({
