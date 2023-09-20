@@ -3,6 +3,8 @@ package com.dotmarketing.factories;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
+import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.transform.TransformerLocator;
@@ -544,6 +546,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertEquals(0, multiTrees.size());
     }
 
+    /**
+     * Method to test: {@link MultiTreeAPI#copyPersonalizationForPage(String, String, String)}
+     * When: A Page has Personalizations for the DEFAULT Variant and default Persona
+     * and try to copy the Personalizations to the Default Variant but another Persona
+     * Should: Copy from the DEFAULT VARIANT and default Persona to the Specific Persona and Default Variant
+     */
     @Test
     public void testGetMultiTreesByPersonalizedPage() throws Exception {
 
@@ -559,24 +567,28 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content2, UUIDGenerator.generateUuid(), 1)); // dot:default
         multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content1, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
 
-        List<MultiTree> multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, DOT_PERSONALIZATION_DEFAULT);
+        List<MultiTree> multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage,
+                DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name());
 
         org.junit.Assert.assertNotNull(multiTrees);
         org.junit.Assert.assertEquals(2, multiTrees.size());
 
-        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, personalization);
+        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, personalization,
+                VariantAPI.DEFAULT_VARIANT.name());
 
         org.junit.Assert.assertNotNull(multiTrees);
         org.junit.Assert.assertEquals(1, multiTrees.size());
 
-        multiTrees = multiTreeAPI.copyPersonalizationForPage(htmlPage, DOT_PERSONALIZATION_DEFAULT, newPersonalization);
+        multiTrees = multiTreeAPI.copyPersonalizationForPage(htmlPage, DOT_PERSONALIZATION_DEFAULT,
+                newPersonalization, VariantAPI.DEFAULT_VARIANT.name());
         org.junit.Assert.assertNotNull(multiTrees);
         org.junit.Assert.assertEquals(2, multiTrees.size());
         org.junit.Assert.assertEquals(newPersonalization, multiTrees.get(0).getPersonalization());
         org.junit.Assert.assertEquals(newPersonalization, multiTrees.get(1).getPersonalization());
 
-        multiTreeAPI.deletePersonalizationForPage(htmlPage, newPersonalization);
-        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, newPersonalization);
+        multiTreeAPI.deletePersonalizationForPage(htmlPage, newPersonalization, VariantAPI.DEFAULT_VARIANT.name());
+        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, newPersonalization,
+                VariantAPI.DEFAULT_VARIANT.name());
 
         org.junit.Assert.assertNotNull(multiTrees);
         org.junit.Assert.assertEquals(0, multiTrees.size());
@@ -2138,4 +2150,767 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         return results.isEmpty() ? 0 : Integer.parseInt(results.get(0).get("count"));
     }
 
+    /**
+     * Method to test: {@link MultiTreeAPI#getPersonalizationsForPage(IHTMLPage, String)}
+     * When: A Page has Personalizations for a Specific Variant and does not have a Default Variant
+     * Personalization
+     * Should: Return the Personalizations for the Specific Variant
+     */
+    @Test
+    public void getPersonalizationsForPageForSpecificVariantWhenNoDefault()
+            throws DotDataException {
+
+        final Persona persona_1 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+        final Persona persona_2 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container, "1").nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String noDefaultVariantName = experiment.trafficProportion().variants()
+                .stream()
+                .filter(variant -> !variant.id().equals(VariantAPI.DEFAULT_VARIANT.name()))
+                .map(experimentVariant -> experimentVariant.id())
+                .findFirst()
+                .orElseThrow();
+
+        final Variant noDefaultVariant = APILocator.getVariantAPI().get(noDefaultVariantName).orElseThrow();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(experimentPage)
+                .setContainer(container)
+                .setContentlet(contentlet_1)
+                .setPersonalization(persona_1.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(noDefaultVariant)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(experimentPage)
+                .setContainer(container)
+                .setContentlet(contentlet_2)
+                .setPersonalization(persona_2.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(noDefaultVariant)
+                .nextPersisted();
+
+        final Set<String> personalizationsForPage = APILocator.getMultiTreeAPI()
+                .getPersonalizationsForPage(experimentPage, noDefaultVariant.name());
+
+        assertEquals(2, personalizationsForPage.size());
+        assertTrue(personalizationsForPage.contains(persona_1.getKeyTag()));
+        assertTrue(personalizationsForPage.contains(persona_2.getKeyTag()));
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPI#getPersonalizationsForPage(IHTMLPage, String)}
+     * When: A Page has Personalizations for a Specific Variant and also have others Personalization to
+     * Default Variant
+     * Should: Return the Personalizations for the Specific and DEFAULT Variants
+     */
+    @Test
+    public void getPersonalizationsForPageForSpecificVariantAndDefault() throws DotDataException {
+        final Persona persona_1 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+        final Persona persona_2 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+        final Persona persona_3 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container, "1").nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String noDefaultVariantName = experiment.trafficProportion().variants()
+                .stream()
+                .filter(variant -> !variant.id().equals(VariantAPI.DEFAULT_VARIANT.name()))
+                .map(experimentVariant -> experimentVariant.id())
+                .findFirst()
+                .orElseThrow();
+
+        final Variant noDefaultVariant = APILocator.getVariantAPI().get(noDefaultVariantName).orElseThrow();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(experimentPage)
+                .setContainer(container)
+                .setContentlet(contentlet_1)
+                .setPersonalization(persona_1.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(noDefaultVariant)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(experimentPage)
+                .setContainer(container)
+                .setContentlet(contentlet_2)
+                .setPersonalization(persona_2.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(noDefaultVariant)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(experimentPage)
+                .setContainer(container)
+                .setContentlet(contentlet_1)
+                .setPersonalization(persona_1.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(experimentPage)
+                .setContainer(container)
+                .setContentlet(contentlet_2)
+                .setPersonalization(persona_3.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        final Set<String> personalizationsForPageNoDefaultVariant = APILocator.getMultiTreeAPI()
+                .getPersonalizationsForPage(experimentPage, noDefaultVariant.name());
+
+        assertEquals(2, personalizationsForPageNoDefaultVariant.size());
+        assertTrue(personalizationsForPageNoDefaultVariant.contains(persona_1.getKeyTag()));
+        assertTrue(personalizationsForPageNoDefaultVariant.contains(persona_2.getKeyTag()));
+
+        final Set<String> personalizationsForPageDefaultVariant = APILocator.getMultiTreeAPI()
+                .getPersonalizationsForPage(experimentPage, VariantAPI.DEFAULT_VARIANT.name());
+
+        assertEquals(2, personalizationsForPageDefaultVariant.size());
+        assertTrue(personalizationsForPageDefaultVariant.contains(persona_1.getKeyTag()));
+        assertTrue(personalizationsForPageDefaultVariant.contains(persona_3.getKeyTag()));
+
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPI#getPersonalizationsForPage(IHTMLPage, String)}
+     * When: A Page has Personalizations for the DEFAULT Variant and does not have for a Specific Variant
+     * Personalization
+     * Should: Return the Personalizations for the Default Variant
+     */
+    @Test
+    public void getPersonalizationsForPageForDefaultVariantWhenNoSpecific()
+            throws DotDataException {
+        final Persona persona_1 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+        final Persona persona_2 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+        final Persona persona_3 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container, "1").nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String noDefaultVariantName = experiment.trafficProportion().variants()
+                .stream()
+                .filter(variant -> !variant.id().equals(VariantAPI.DEFAULT_VARIANT.name()))
+                .map(experimentVariant -> experimentVariant.id())
+                .findFirst()
+                .orElseThrow();
+
+        final Variant noDefaultVariant = APILocator.getVariantAPI().get(noDefaultVariantName).orElseThrow();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(experimentPage)
+                .setContainer(container)
+                .setContentlet(contentlet_1)
+                .setPersonalization(persona_1.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(experimentPage)
+                .setContainer(container)
+                .setContentlet(contentlet_2)
+                .setPersonalization(persona_3.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        final Set<String> personalizationsForPageNoDefaultVariant = APILocator.getMultiTreeAPI()
+                .getPersonalizationsForPage(experimentPage, noDefaultVariant.name());
+
+        assertEquals(2, personalizationsForPageNoDefaultVariant.size());
+        assertTrue(personalizationsForPageNoDefaultVariant.contains(persona_1.getKeyTag()));
+        assertTrue(personalizationsForPageNoDefaultVariant.contains(persona_3.getKeyTag()));
+
+        final Set<String> personalizationsForPageDefaultVariant = APILocator.getMultiTreeAPI()
+                .getPersonalizationsForPage(experimentPage, VariantAPI.DEFAULT_VARIANT.name());
+
+        assertEquals(2, personalizationsForPageDefaultVariant.size());
+        assertTrue(personalizationsForPageDefaultVariant.contains(persona_1.getKeyTag()));
+        assertTrue(personalizationsForPageDefaultVariant.contains(persona_3.getKeyTag()));
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPI#getPersonalizationsForPage(IHTMLPage, String)}
+     * When: A Page don't have any Personalizations
+     * Should: Return the default Persona
+     */
+    @Test
+    public void getPersonalizationsForPageWithoutPersonalization() throws DotDataException {
+        final Persona persona_1 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+        final Persona persona_2 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+        final Persona persona_3 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container, "1").nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final String noDefaultVariantName = experiment.trafficProportion().variants()
+                .stream()
+                .filter(variant -> !variant.id().equals(VariantAPI.DEFAULT_VARIANT.name()))
+                .map(experimentVariant -> experimentVariant.id())
+                .findFirst()
+                .orElseThrow();
+
+        final Variant noDefaultVariant = APILocator.getVariantAPI().get(noDefaultVariantName).orElseThrow();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        final Set<String> personalizationsForPageNoDefaultVariant = APILocator.getMultiTreeAPI()
+                .getPersonalizationsForPage(experimentPage, noDefaultVariant.name());
+
+        assertTrue(personalizationsForPageNoDefaultVariant.isEmpty());
+
+        final Set<String> personalizationsForPageDefaultVariant = APILocator.getMultiTreeAPI()
+                .getPersonalizationsForPage(experimentPage, VariantAPI.DEFAULT_VARIANT.name());
+
+        assertTrue(personalizationsForPageDefaultVariant.isEmpty());
+
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPI#copyPersonalizationForPage(String, String, String)}
+     * When: A Page has
+     * - Personalizations for the Specific Variant for the default Persona
+     * - and Personalizations for the Default Variant for the default Persona
+     * and  try to copy the Personalizations to the same Specific Variant for a different Persona
+     * Should: Copy from the Specific VARIANT and default Persona to the Specific Variant and Persona
+     */
+    @Test
+    public void copyFromDefaultToSpecificVariant() throws DotDataException {
+        final Persona persona_1 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+        final Persona persona_2 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container, "1").nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_1)
+                .setPersonalization(persona_1.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_2)
+                .setPersonalization(persona_2.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_3)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_4)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_1.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_2.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_3.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_4.getIdentifier()));
+
+
+        APILocator.getMultiTreeAPI().copyPersonalizationForPage(page.getIdentifier(),
+                persona_1.getKeyTag(), variant.name());
+
+        final List<String> contentsVariantPersona1 = getContentsId(persona_1.getKeyTag(), page, variant);
+
+        assertEquals(2, contentsVariantPersona1.size());
+
+        assertTrue(contentsVariantPersona1.contains(contentlet_3.getIdentifier()));
+        assertTrue(contentsVariantPersona1.contains(contentlet_4.getIdentifier()));
+
+        final List<String> contentsDefaultVariantPersona1 = getContentsId(persona_1.getKeyTag(), page,
+                VariantAPI.DEFAULT_VARIANT);
+
+        assertEquals(1, contentsDefaultVariantPersona1.size());
+        assertTrue(contentsDefaultVariantPersona1.contains(contentlet_1.getIdentifier()));
+
+        final List<String> contentsDefaultVariantPersona2 = getContentsId(persona_2.getKeyTag(), page,
+                VariantAPI.DEFAULT_VARIANT);
+
+        assertEquals(1, contentsDefaultVariantPersona2.size());
+        assertTrue(contentsDefaultVariantPersona2.contains(contentlet_2.getIdentifier()));
+
+        final List<String> contentsDefaultVariantDefaultPersona = getContentsId(DOT_PERSONALIZATION_DEFAULT, page,
+                VariantAPI.DEFAULT_VARIANT);
+
+        assertEquals(2, contentsDefaultVariantDefaultPersona.size());
+        assertTrue(contentsDefaultVariantDefaultPersona.contains(contentlet_3.getIdentifier()));
+        assertTrue(contentsDefaultVariantDefaultPersona.contains(contentlet_4.getIdentifier()));
+
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_1.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_2.getIdentifier()));
+        assertEquals(2, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_3.getIdentifier()));
+        assertEquals(2, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_4.getIdentifier()));
+
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPI#copyPersonalizationForPage(String, String, String)}
+     * When: A Page has Personalizations for the Specific Variant for the default Persona and try
+     * to copy the Personalizations to the same Specific Variant for a different Persona
+     * Should: Copy from the Specific VARIANT and default Persona to the Specific Variant and Persona
+     */
+    @Test
+    public void copyFromSpecificVariantToSpecificVariant() throws DotDataException {
+        final Persona persona_1 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+        final Persona persona_2 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container, "1").nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_1)
+                .setPersonalization(persona_1.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_4)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_2)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(variant)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_3)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(variant)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_5)
+                .setPersonalization(persona_2.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(variant)
+                .nextPersisted();
+
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_1.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_2.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_3.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_4.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_5.getIdentifier()));
+
+
+        APILocator.getMultiTreeAPI().copyPersonalizationForPage(page.getIdentifier(),
+                persona_1.getKeyTag(), variant.name());
+
+        final List<String> contentsVariantPersona1 = getContentsId(persona_1.getKeyTag(), page, variant);
+
+        assertEquals(2, contentsVariantPersona1.size());
+        assertTrue(contentsVariantPersona1.contains(contentlet_2.getIdentifier()));
+        assertTrue(contentsVariantPersona1.contains(contentlet_3.getIdentifier()));
+
+        final List<String> contentsDefaultVariantPersona1 = getContentsId(persona_1.getKeyTag(), page,
+                VariantAPI.DEFAULT_VARIANT);
+
+        assertEquals(1, contentsDefaultVariantPersona1.size());
+        assertTrue(contentsDefaultVariantPersona1.contains(contentlet_1.getIdentifier()));
+
+        final List<String> contentsDefaultVariantDefaultPersona = getContentsId(DOT_PERSONALIZATION_DEFAULT, page,
+                VariantAPI.DEFAULT_VARIANT);
+
+        assertEquals(1, contentsDefaultVariantDefaultPersona.size());
+        assertTrue(contentsDefaultVariantDefaultPersona.contains(contentlet_4.getIdentifier()));
+
+        final List<String> contentsVariantDefaultPersona = getContentsId(DOT_PERSONALIZATION_DEFAULT, page,
+                variant);
+
+        assertEquals(2, contentsVariantDefaultPersona.size());
+        assertTrue(contentsVariantDefaultPersona.contains(contentlet_2.getIdentifier()));
+        assertTrue(contentsVariantDefaultPersona.contains(contentlet_3.getIdentifier()));
+
+        final List<String> contentsVariantPersona2 = getContentsId(persona_2.getKeyTag(), page,
+                variant);
+
+        assertEquals(1, contentsVariantPersona2.size());
+        assertTrue(contentsVariantPersona2.contains(contentlet_5.getIdentifier()));
+
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_1.getIdentifier()));
+        assertEquals(2, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_2.getIdentifier()));
+        assertEquals(2, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_3.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_4.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_5.getIdentifier()));
+
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPI#copyPersonalizationForPage(String, String, String)}
+     * When: A Page has:
+     * - Personalizations for the Specific Variant for the default Persona.
+     * - Don't have any Personalizations for the DEFAULT Variant
+     * and try to copy the Personalizations to the same Specific Variant for a different Persona
+     * Should: Copy from the Specific VARIANT and default Persona to the Specific Variant and Persona
+     */
+    @Test
+    public void copyFromSpecificVariantToSpecificVariantNotDefaultPeronalizations() throws DotDataException {
+        final Persona persona_1 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container, "1").nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_1)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(variant)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_2)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(variant)
+                .nextPersisted();
+
+
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_1.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_2.getIdentifier()));
+
+        APILocator.getMultiTreeAPI().copyPersonalizationForPage(page.getIdentifier(),
+                persona_1.getKeyTag(), variant.name());
+
+        final List<String> contentsVariantDefaultPersona = getContentsId(DOT_PERSONALIZATION_DEFAULT, page,
+                variant);
+
+        assertEquals(2, contentsVariantDefaultPersona.size());
+        assertTrue(contentsVariantDefaultPersona.contains(contentlet_1.getIdentifier()));
+        assertTrue(contentsVariantDefaultPersona.contains(contentlet_2.getIdentifier()));
+
+        final List<String> contentsVariantDefaultPersona1 = getContentsId(persona_1.getKeyTag(), page,
+                variant);
+
+        assertEquals(2, contentsVariantDefaultPersona1.size());
+        assertTrue(contentsVariantDefaultPersona1.contains(contentlet_1.getIdentifier()));
+        assertTrue(contentsVariantDefaultPersona1.contains(contentlet_2.getIdentifier()));
+
+        assertEquals(2, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_1.getIdentifier()));
+        assertEquals(2, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_2.getIdentifier()));
+
+    }
+
+    @NotNull
+    private static List<String> getContentsId(final String personaKey, final HTMLPageAsset page,
+            final Variant variant) throws DotDataException {
+        final List<String> contents = new DotConnect().setSQL(
+                        "SELECT child FROM multi_tree WHERE variant_id = ? AND parent1 = ? AND personalization = ?")
+                .addParam(variant.name())
+                .addParam(page.getIdentifier())
+                .addParam(personaKey)
+                .loadObjectResults()
+                .stream().map(row -> row.get("child").toString())
+                .collect(Collectors.toList());
+        return contents;
+    }
+
+
+    /**
+     * Method to test: {@link MultiTreeAPI#deletePersonalizationForPage(String, String, String)}
+     * When: A Page has Personalizations for the Default Variant for a specific Persona and try
+     * to delete it.
+     * Should: Delete All the MultiTree for the Default Variant and specific Persona
+     */
+    @Test
+    public void deletePersonalizationDefaultVariant() throws DotDataException {
+        final Persona persona_1 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container, "1").nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_1)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_2)
+                .setPersonalization(persona_1.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_3)
+                .setPersonalization(persona_1.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_4)
+                .setPersonalization(persona_1.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(variant)
+                .nextPersisted();
+
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_1.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_2.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_3.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_4.getIdentifier()));
+
+
+        APILocator.getMultiTreeAPI().deletePersonalizationForPage(page.getIdentifier(), persona_1.getKeyTag(),
+                VariantAPI.DEFAULT_VARIANT.name());
+
+        final List<String> contentsDefaultVariantPersona1 = getContentsId(persona_1.getKeyTag(), page,
+                VariantAPI.DEFAULT_VARIANT);
+        assertTrue(contentsDefaultVariantPersona1.isEmpty());
+
+        final List<String> contentsDefaultVariantDefaultPersona = getContentsId(DOT_PERSONALIZATION_DEFAULT,
+                page, VariantAPI.DEFAULT_VARIANT);
+
+        assertEquals(1, contentsDefaultVariantDefaultPersona.size());
+        assertTrue(contentsDefaultVariantDefaultPersona.contains(contentlet_1.getIdentifier()));
+
+        final List<String> contentsVariantPersona1 = getContentsId(persona_1.getKeyTag(),
+                page, variant);
+
+        assertEquals(1, contentsVariantPersona1.size());
+        assertTrue(contentsVariantPersona1.contains(contentlet_4.getIdentifier()));
+
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_1.getIdentifier()));
+        assertEquals(0, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_2.getIdentifier()));
+        assertEquals(0, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_3.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_4.getIdentifier()));
+
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPI#deletePersonalizationForPage(String, String, String)}
+     * When: A Page has Personalizations for the Specific Variant for a specific Persona and try
+     * to delete it.
+     * Should: Delete All the MultiTree for the Specific Variant and Persona
+     */
+    @Test
+    public void deletePersonalizationSpecificVariant() throws DotDataException {
+        final Persona persona_1 = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container, "1").nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_1)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_5)
+                .setPersonalization(persona_1.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_2)
+                .setPersonalization(persona_1.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(variant)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_3)
+                .setPersonalization(persona_1.getKeyTag())
+                .setTreeOrder(1)
+                .setVariant(variant)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_4)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(variant)
+                .nextPersisted();
+
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_1.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_2.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_3.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_4.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_5.getIdentifier()));
+
+        APILocator.getMultiTreeAPI().deletePersonalizationForPage(page.getIdentifier(), persona_1.getKeyTag(),
+                variant.name());
+
+        final List<String> contentsVariantPersona1 = getContentsId(persona_1.getKeyTag(), page,
+                variant);
+        assertTrue(contentsVariantPersona1.isEmpty());
+
+        final List<String> contentsDefaultVariantDefaultPersona = getContentsId(DOT_PERSONALIZATION_DEFAULT,
+                page, VariantAPI.DEFAULT_VARIANT);
+
+        assertEquals(1, contentsDefaultVariantDefaultPersona.size());
+        assertTrue(contentsDefaultVariantDefaultPersona.contains(contentlet_1.getIdentifier()));
+
+        final List<String> contentsDefaultVariantPersona1 = getContentsId(persona_1.getKeyTag(),
+                page, VariantAPI.DEFAULT_VARIANT);
+
+        assertEquals(1, contentsDefaultVariantPersona1.size());
+        assertTrue(contentsDefaultVariantPersona1.contains(contentlet_5.getIdentifier()));
+
+        final List<String> contentsVariantDefaultPersona = getContentsId(DOT_PERSONALIZATION_DEFAULT,
+                page, variant);
+
+        assertEquals(1, contentsVariantDefaultPersona.size());
+        assertTrue(contentsVariantDefaultPersona.contains(contentlet_4.getIdentifier()));
+
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_1.getIdentifier()));
+        assertEquals(0, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_2.getIdentifier()));
+        assertEquals(0, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_3.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_4.getIdentifier()));
+        assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_5.getIdentifier()));
+    }
 }

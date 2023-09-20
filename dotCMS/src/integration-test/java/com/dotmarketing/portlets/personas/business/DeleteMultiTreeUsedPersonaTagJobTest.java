@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.personas.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.factories.MultiTreeAPI;
@@ -41,29 +42,35 @@ public class DeleteMultiTreeUsedPersonaTagJobTest extends IntegrationTestBase {
         multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content1, UUIDGenerator.generateUuid(), 3, newPersonalization)); // dot:newpersona
         multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content2, UUIDGenerator.generateUuid(), 3, newPersonalization)); // dot:newpersona
 
-        List<MultiTree> multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, MultiTree.DOT_PERSONALIZATION_DEFAULT);
+        List<MultiTree> multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage,
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name());
         org.junit.Assert.assertNotNull(multiTrees);
         org.junit.Assert.assertEquals(2, multiTrees.size());
 
-        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, personalization);
+        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, personalization,
+                VariantAPI.DEFAULT_VARIANT.name());
         org.junit.Assert.assertNotNull(multiTrees);
         org.junit.Assert.assertEquals(2, multiTrees.size());
 
-        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, newPersonalization);
+        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, newPersonalization,
+                VariantAPI.DEFAULT_VARIANT.name());
         org.junit.Assert.assertNotNull(multiTrees);
         org.junit.Assert.assertEquals(2, multiTrees.size());
 
         //////////
         personaTagJob.execute(APILocator.systemUser(), false);
 
-        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, MultiTree.DOT_PERSONALIZATION_DEFAULT);
+        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage,
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name());
         org.junit.Assert.assertNotNull(multiTrees);
         org.junit.Assert.assertEquals(2, multiTrees.size());
 
-        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, personalization);
+        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, personalization,
+                VariantAPI.DEFAULT_VARIANT.name());
         org.junit.Assert.assertFalse(UtilMethods.isSet(multiTrees));
 
-        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, newPersonalization);
+        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, newPersonalization,
+                VariantAPI.DEFAULT_VARIANT.name());
         org.junit.Assert.assertFalse(UtilMethods.isSet(multiTrees));
     }
 
