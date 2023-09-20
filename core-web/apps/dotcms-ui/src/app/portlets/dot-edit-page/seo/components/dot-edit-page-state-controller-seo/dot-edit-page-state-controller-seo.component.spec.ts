@@ -343,10 +343,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         it('should without confirmation dialog emit modeChange and update pageState service', async () => {
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(
-                By.css('[data-testId="dot-tab-button"]')
-            ).componentInstance;
-
             dotTabButtons.clickOption.emit({
                 event: pointerEvent,
                 optionId: DotPageMode.EDIT
@@ -381,10 +377,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(
-                By.css('[data-testId="dot-tab-button"]')
-            ).componentInstance;
-
             dotTabButtons.clickOption.emit({
                 event: pointerEvent,
                 optionId: DotPageMode.EDIT
@@ -407,10 +399,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             });
 
             fixtureHost.detectChanges();
-
-            const dotTabButtons = de.query(
-                By.css('[data-testId="dot-tab-button"]')
-            ).componentInstance;
 
             dotTabButtons.clickOption.emit({
                 event: pointerEvent,
@@ -451,10 +439,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(
-                By.css('[data-testId="dot-tab-button"]')
-            ).componentInstance;
-
             dotTabButtons.clickOption.emit({
                 event: pointerEvent,
                 optionId: DotPageMode.EDIT
@@ -491,10 +475,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 conf.accept();
             });
             fixtureHost.detectChanges();
-
-            const dotTabButtons = de.query(
-                By.css('[data-testId="dot-tab-button"]')
-            ).componentInstance;
 
             dotTabButtons.clickOption.emit({
                 event: pointerEvent,
@@ -603,10 +583,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         });
 
         it('should trigger resetDropdownById when menu hides', () => {
-            const dotTabButtons = de.query(
-                By.css('[data-testId="dot-tabs-buttons"]')
-            ).componentInstance;
-
             spyOn(dotTabButtons, 'resetDropdownById');
 
             component.menu.onHide.emit();
@@ -615,10 +591,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         });
 
         it('should trigger resetDropdownById when device selector hides', () => {
-            const dotTabButtons = de.query(
-                By.css('[data-testId="dot-tabs-buttons"]')
-            ).componentInstance;
-
             spyOn(dotTabButtons, 'resetDropdownById');
 
             component.deviceSelector.hideOverlayPanel.emit();
