@@ -13,7 +13,7 @@ env:
 jobs:
   build-dotcms-jdk11:
     name: "Initial dotCMS Build"
-    runs-on: dot-xl-runner
+    #runs-on: dot-xl-runner
     env:
       MAVEN_OPTS: -Xmx2048m
     steps:
