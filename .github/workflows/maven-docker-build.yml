@@ -116,6 +116,7 @@ jobs:
         run: |
           cd docker/dotcms-mvn/ROOT/srv/ && unzip dotcms-war-1.0.0-SNAPSHOT.zip && rm dotcms-war-1.0.0-SNAPSHOT.zip
           mkdir -p docker/dotcms-mvn/ROOT/srv/dotserver/tomcat-9.0.53/webapps/ROOT
+          rm -rf /srv/dotserver/tomcat-9.0.53/conf/Catalina
 
       - name: Download dotCMS WAR from Cache
         uses: actions/download-artifact@v3

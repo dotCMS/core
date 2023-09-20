@@ -7,3 +7,4 @@ export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.transform.TransformerFactory=co
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.parsers.DocumentBuilderFactory=com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl"
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.parsers.SAXParserFactory=com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl"
 export CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+export CATALINA_OPTS="$CATALINA_OPTS -Djava.io.tmpdir=/tmp"
