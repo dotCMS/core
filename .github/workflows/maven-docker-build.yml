@@ -57,14 +57,14 @@ jobs:
         with:
           name: dotcms-tomcat-${SHORT_SHA}
           path: dotcms-war/target/dotcms-war-1.0.0-SNAPSHOT.zip
-        retention-days: 2
+
 
       - name: Persist dotCMS WAR
         uses: actions/upload-artifact@v3
         with:
           name: dotcms-war-${SHORT_SHA}
           path: dotcms-war/target/dotcms-war-1.0.0-SNAPSHOT.war
-        retention-days: 2
+
   docker:
     runs-on: dot-xl-runner
     steps:
