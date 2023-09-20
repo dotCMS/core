@@ -67,7 +67,6 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -455,7 +454,7 @@ public class ExportStarterUtil {
         return starterFiles;
     }
 
-    final String[] directories=new String[]{"0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"};
+    final String[] assetDirs =new String[]{"0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"};
     /**
      * Traverses the complete list of assets in the current dotCMS instance in order to retrieve their respective file
      * reference. This will allow dotCMS to add their contents to the final Starter ZIP file without copying them to
@@ -465,11 +464,12 @@ public class ExportStarterUtil {
      * @param fileFilter The {@link FileFilter} being used to get the appropriate asset data.
      */
     private void getAssets(final ZipOutputStream zip, final FileFilter fileFilter) {
+
         Logger.info(this, "Adding all Assets into compressed file:");
         // add all our b-tree directories
-        for (int i = 0; i < directories.length; i++) {
-            for (int j = 0; j < directories.length; j++) {
-                final File source = Paths.get(ConfigUtils.getAssetPath() , directories[i] , directories[j]).toFile();
+        for (int i = 0; i < assetDirs.length; i++) {
+            for (int j = 0; j < assetDirs.length; j++) {
+                final File source = Paths.get(ConfigUtils.getAssetPath() , assetDirs[i] , assetDirs[j]).toFile();
                 addFolderToZip(zip, fileFilter, source);
             }
         }
