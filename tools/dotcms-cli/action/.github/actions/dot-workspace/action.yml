@@ -1,0 +1,23 @@
+# dot-workspace.yml
+name: 'dot-workspace'
+description: 'creates an empty workspace if needed'
+inputs:
+  path:
+    description: ' workspace'
+    required: true
+    default: 'true'
+  create-workspace:
+    description: 'create empty workspace'
+    required: true
+    default: 'true'
+
+outputs:
+  return-code: # id of output.
+    description: 'Command return code'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.path }}
+    - ${{ inputs.create-workspace }}

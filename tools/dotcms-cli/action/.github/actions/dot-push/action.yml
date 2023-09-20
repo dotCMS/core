@@ -1,0 +1,42 @@
+# dot-push.yml
+name: 'dot-push'
+description: 'Fire dotCMS cli'
+inputs:
+  command:
+    description: 'super push command'
+    required: true
+    default: 'push'
+  path:
+    description: 'directory or file to push'
+    required: true
+    default: '/github/workspace/'
+  removeAssetsOption:
+    description: 'remove assets option'
+    required: false
+    default: '--removeAssets'
+  removeFoldersOption:
+    description: 'remove folders option'
+    required: false
+    default: '--removeFolders'
+  dotTokenOption:
+    description: 'dotCMS access token option'
+    required: true
+    default: '--token'
+  dotToken:
+    description: 'dotCMS access token'
+    required: true
+
+outputs:
+  return-code: # id of output.
+    description: 'Command return code'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:  # ' push  /github/workspace/contents --removeAssets --removeFolders --token 1234567890'
+    - ${{ inputs.command }}
+    - ${{ inputs.path }}
+    - ${{ inputs.removeAssetsOption }}
+    - ${{ inputs.removeFoldersOption }}
+    - ${{ inputs.dotTokenOption }}
+    - ${{ inputs.dotToken }}

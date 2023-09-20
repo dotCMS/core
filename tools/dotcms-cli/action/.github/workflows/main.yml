@@ -1,0 +1,64 @@
+name: dotCMS sync
+
+on: [push]
+
+jobs:
+  sync-with-dotcms:
+    runs-on: ubuntu-latest
+    env:
+      # Global environment expected by dotCMS CLI
+      # This is how we instruct the cli the target server
+      DOT_API_URL: ${{ vars.DOT_API_URL }}
+      # This is how we instruct the cli the target folder in the repo
+      # By default it must be the root of the repo which is represented by /github/workspace
+      DOT_REPO_BASE_PATH: ${{ vars.DOT_REPO_BASE_PATH || '/github/workspace/' }}
+      # This is how we instruct the cli to create the workspace if it does not exist
+      DOT_CREATE_WORKSPACE: ${{ vars.DOT_CREATE_WORKSPACE || 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        id: checkout
+        with:
+          fetch-depth: 0
+
+      - name: Get changes
+        id: changed-files
+        run: |
+          echo "changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | xargs)" >> $GITHUB_OUTPUT
+
+      - name: List changed files
+        run: |
+          for file in ${{ steps.changed-files.outputs.changed_files }}; do
+              echo "$file was changed"
+          done    
+
+      - name: Github Event Context properties
+        run: |
+          echo "Event: ${{ github.event }}"
+          echo "Event Name: ${{ github.event_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "Commit Ref: ${{ github.ref }}"
+          echo "Head Ref: ${{ github.head_ref }}"
+          echo "Base Ref: ${{ github.base_ref }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "PR: ${{ github.pull_request }}"
+
+      - name: Create workspace if not exists
+        uses: ./.github/actions/dot-workspace
+        id: dot-workspace
+        with:
+          path: ${{ env.DOT_REPO_BASE_PATH }}
+          create-workspace: ${{ env.DOT_CREATE_WORKSPACE }}
+
+      - name: Trigger dot-push
+        uses: ./.github/actions/dot-push
+        id: dot-push
+        with:
+          command: 'push'
+          path: ${{ env.DOT_REPO_BASE_PATH }}
+          removeAssetsOption: '--removeAssets'
+          removeFoldersOption: '--removeFolders'
+          dotTokenOption: '--token'
+          dotToken: ${{ secrets.DOT_TOKEN }}
