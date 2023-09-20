@@ -59,3 +59,11 @@ jobs:
           echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
           echo "NEXT=$NEXT" >> "$GITHUB_OUTPUT"
           echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: [ precheck ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: vars
+        run: |
+          echo "HEAD=${{ needs.precheck.outputs.HEAD }}"
