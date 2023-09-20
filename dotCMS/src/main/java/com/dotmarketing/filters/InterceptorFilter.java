@@ -7,6 +7,7 @@ import com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor;
 import com.dotcms.graphql.GraphqlCacheWebInterceptor;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
+import com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptor;
 
 /**
  * This empty filter is useful to attach {@link com.dotcms.filters.interceptor.WebInterceptor}, it is the first one on the
@@ -27,6 +28,7 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         final WebInterceptorDelegate delegate =
                 this.getDelegate(config.getServletContext());
 
+        delegate.add(new MultiPartRequestSecurityWebInterceptor());
         delegate.add(new EMAWebInterceptor());
         delegate.add(new GraphqlCacheWebInterceptor());
         delegate.add(new ResponseMetaDataWebInterceptor());

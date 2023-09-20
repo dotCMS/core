@@ -7,6 +7,9 @@ import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.security.multipart.IllegalFileExtensionsValidator;
+import com.dotcms.security.multipart.IllegalTraversalFilePathValidator;
+import com.dotcms.security.multipart.SecureFileValidator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
@@ -22,13 +25,16 @@ import io.vavr.control.Try;
 /**
  * This class exposes utility routines related to security aspects of dotCMS that can be used by
  * several pieces of the system.
- * 
+ *
  * @author Jorge Urdaneta
  * @version 2.5.4, 3.7
  * @since Feb 24, 2014
  *
  */
 public class SecurityUtils {
+
+  private static final List<SecureFileValidator> secureFileValidatorList = new ImmutableList.Builder<SecureFileValidator>()
+          .add(new IllegalTraversalFilePathValidator()).add(new IllegalFileExtensionsValidator()).build(); // todo: could be good to have the ability to add more SecureFileValidator by OSGI
 
   /**
    * Contains the different delay strategies that can be used to halt the normal flow of a request or
@@ -43,7 +49,7 @@ public class SecurityUtils {
    * <li>{@code TIME_MILLS}: Causes the thread to sleep for the <b>milliseconds</b> specified in the
    * seed value.</li>
    * </ul>
-   * 
+   *
    * @author Jose Castro
    * @version 3.7
    * @since Aug 11, 2016
@@ -54,7 +60,7 @@ public class SecurityUtils {
   }
 
   /**
-   * 
+   *
    * @param request
    * @param referer
    * @return
@@ -87,7 +93,7 @@ public class SecurityUtils {
    * example, during a failed authentication, the {@code seed} can be the number of failed login
    * attempts. This way, the more times hackers fail to authenticate, the more time they will have to
    * wait to try it again.
-   * 
+   *
    * @param seed - The number of times that a user has tried to log in and failed.
    * @param delayStrategy - The delay strategy used after a failed login.
    */
@@ -147,39 +153,39 @@ public class SecurityUtils {
    * This method takes a request and makes sure that it is coming the same origin as
    * the referer or origin headers, e.g. a known source. It is
    * intended to help mitigate agsinst XSS and CSRF attacks
-   * 
+   *
    * @param request
    * @return
    */
   public boolean validateReferer(HttpServletRequest request) {
-    
+
     final String uri = request.getRequestURI() ==null ? "/" : request.getRequestURI().toLowerCase();
     final String url = request.getServerName() + uri;
     final String urlHost = hostFromUrl(url);
 
     final String incomingReferer = (request.getHeader("Origin")!=null) ? request.getHeader("Origin") :  request.getHeader("referer");
     final String refererHost = hostFromUrl(incomingReferer);
-    
+
     // good: we allow CSS because css @import statements do not send referers
     if(refererHost == null && uri.endsWith(".css")) {
       return true;
     }
-    
+
     // good: the url host == the refererHost
     if (urlHost.equalsIgnoreCase(refererHost)) {
-        return true;
-    }
-    
-    // good: uri is on the ignore list
-    if(this.loadIgnorePaths()
-        .stream()
-        .anyMatch(
-            path->(path.endsWith("*") && uri.startsWith(path.substring(0, path.lastIndexOf('*'))) || 
-            uri.equals(path)))) {
       return true;
     }
 
-    
+    // good: uri is on the ignore list
+    if(this.loadIgnorePaths()
+            .stream()
+            .anyMatch(
+                    path->(path.endsWith("*") && uri.startsWith(path.substring(0, path.lastIndexOf('*'))) ||
+                            uri.equals(path)))) {
+      return true;
+    }
+
+
     // good: the referer is a host that is being served from dotCMS
     if(isRefererOneOfOurHosts(refererHost)) {
       return true;
@@ -194,12 +200,12 @@ public class SecurityUtils {
     Try.run(()-> Logger.info(SecurityUtils.class, "InvalidReferer, ip:" + request.getRemoteAddr() +", url:" + request.getRequestURL() + ", referer:" + incomingReferer));
     return false;
   }
-  
+
   @VisibleForTesting
   protected String getPortalHost() {
     return hostFromUrl(APILocator.getCompanyAPI().getDefaultCompany().getPortalURL());
   }
-  
+
   @VisibleForTesting
   protected boolean resolveHost(String refererHost) {
     Host foundHost = Try.of(()->APILocator.getHostAPI().findByName(refererHost, APILocator.getUserAPI().getSystemUser(), false)).getOrNull();
@@ -208,9 +214,9 @@ public class SecurityUtils {
     }
     return UtilMethods.isSet(foundHost);
   }
-  
+
   /**
-   * Checks if the referer matches a hostname that is being served by dotCMS. 
+   * Checks if the referer matches a hostname that is being served by dotCMS.
    * As a security precaution, this will return false for the default host shipped
    * with dotCMS : demo.dotcms.com
    * @param refererHost
@@ -221,15 +227,15 @@ public class SecurityUtils {
     if(refererHost==null) {
       return false;
     }
-    // allow referers 
+    // allow referers
     if (refererHost.equalsIgnoreCase(hostFromUrl(getPortalHost()))) {
       return true;
     }
 
     return resolveHost(refererHost) ;
   }
-  
-  
+
+
   /**
    * get the hostname portion of a url string
    * @param url
@@ -241,8 +247,8 @@ public class SecurityUtils {
       return (url.contains("://")) ? new URL(url.trim()).getHost().toLowerCase() : new URL("http://" + url.trim()).getHost().toLowerCase();
     }).getOrNull();
   }
-  
-  
+
+
   private static List<String> IGNORE_REFERER_FOR_HOSTS = null;
 
   private static List<String> IGNORE_REFERER_FOR_PATHS = null;
@@ -264,7 +270,7 @@ public class SecurityUtils {
     }
     return IGNORE_REFERER_FOR_PATHS;
   }
-  
+
   /**
    * Load Ignore hosts
    * @return
@@ -283,5 +289,18 @@ public class SecurityUtils {
     }
     return IGNORE_REFERER_FOR_HOSTS;
   }
-  
+
+
+  /**
+   * Validate if the fileName and path are secure and valid
+   * @param fileName  {@link String}
+   */
+  public void validateFile (final String fileName) {
+
+    for (final SecureFileValidator secureFileValidator : secureFileValidatorList) {
+
+      secureFileValidator.validate(fileName);
+    }
+  }
+
 }
