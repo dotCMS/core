@@ -78,16 +78,21 @@ public class PushServiceImpl implements PushService {
             outputBuilder.append(String.format(" Push Data: " +
                             "@|bold [%d]|@ %s to push: " +
                             "(@|bold," + COLOR_NEW + " %d|@ New " +
-                            "- @|bold," + COLOR_MODIFIED + " %d|@ Modified) " +
-                            "- @|bold," + COLOR_DELETED + " %d|@ to Delete%n%n",
+                            "- @|bold," + COLOR_MODIFIED + " %d|@ Modified)",
                     (summary.total - summary.noActions),
                     pushHandler.title(),
                     summary.adds,
-                    summary.updates,
-                    summary.removes));
+                    summary.updates));
+
+            if (options.allowRemove()) {
+                outputBuilder.append(
+                        String.format(" - @|bold," + COLOR_DELETED + " %d|@ to Delete%n%n",
+                                summary.removes));
+            } else {
+                outputBuilder.append(String.format("%n%n"));
+            }
 
             if (options.dryRun()) {
-                //outputBuilder.append(pushHandler.dryRunOutput(analysisResults));
                 outputBuilder.append(formatStatus.format(analysisResults, pushHandler));
             }
 
