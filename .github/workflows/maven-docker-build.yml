@@ -67,6 +67,14 @@ jobs:
           name: dotcms-war-${{ steps.vars.outputs.SHORT_SHA }}
           path: dotcms-war/target/dotcms-war-1.0.0-SNAPSHOT.war
 
+      - name: Cache Maven Repo
+        uses: actions/upload-artifact@v3
+        with:
+          name: maven-repo
+          path: maven-repo.tgz
+
+
+
       - name: Docker Tags
         id: meta
         uses: docker/metadata-action@v4
@@ -104,7 +112,7 @@ jobs:
         shell: bash
         run: |
           cd docker/dotcms-mvn/ROOT/srv/ && unzip dotcms-war-1.0.0-SNAPSHOT.zip && rm dotcms-war-1.0.0-SNAPSHOT.zip
-          mkdir -f docker/dotcms-mvn/ROOT/srv/dotserver/tomcat-9.0.53/webapps/ROOT
+          mkdir -p docker/dotcms-mvn/ROOT/srv/dotserver/tomcat-9.0.53/webapps/ROOT
 
       - name: Download dotCMS WAR from Cache
         uses: actions/download-artifact@v3
