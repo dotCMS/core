@@ -17,7 +17,6 @@
     .p-button-icon,
     .pi {
         color: inherit;
-        font-size: $icon-md;
     }
 
     // Shared but not icon only
@@ -98,18 +97,9 @@ a.p-button.p-button-text {
     width: $field-height-md;
     border: none;
 
-    .p-button-icon,
-    .pi {
-        font-size: $icon-lg;
-    }
-
     &.p-button-sm {
         height: $field-height-sm;
         width: $field-height-sm;
-
-        .p-button-icon {
-            font-size: $icon-md;
-        }
     }
 }
 
