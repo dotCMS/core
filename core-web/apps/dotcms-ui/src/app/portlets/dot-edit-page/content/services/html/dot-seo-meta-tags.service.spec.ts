@@ -194,14 +194,15 @@ describe('DotSetMetaTagsService', () => {
         });
     });
 
-    it('should get the result found for ogTags with the async call', () => {
+    it('should get the result found for ogTags with the async call', (done) => {
         service.getMetaTagsResults(testDoc).subscribe((value) => {
             expect(value.length).toEqual(10);
             expect(value).toEqual(seoOGTagsResultOgMock);
+            done();
         });
     });
 
-    it('should that got more than one og-description error', () => {
+    it('should that got more than one og-description error', (done) => {
         const ogMetaDescription = document.createElement('meta');
         ogMetaDescription.setAttribute('property', 'og:description');
         ogMetaDescription.setAttribute('content', 'BE');
@@ -218,10 +219,11 @@ describe('DotSetMetaTagsService', () => {
             expect(value[0].items[1].message).toEqual(
                 'og:description meta tag found, but has fewer than 55 characters of content.'
             );
+            done();
         });
     });
 
-    it('should that got more than one og:title error', () => {
+    it('should that got more than one og:title error', (done) => {
         const ogMetaTitle = document.createElement('meta');
         ogMetaTitle.setAttribute('property', 'og:title');
         ogMetaTitle.setAttribute('content', 'Costa Rica Special Offer');
@@ -238,6 +240,7 @@ describe('DotSetMetaTagsService', () => {
             expect(value[2].items[1].message).toEqual(
                 'title metatag found, but has fewer than 30 characters of content.'
             );
+            done();
         });
     });
 });

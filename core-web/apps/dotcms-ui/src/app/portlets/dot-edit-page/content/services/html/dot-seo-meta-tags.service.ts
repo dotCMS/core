@@ -345,7 +345,7 @@ export class DotSeoMetaTagsService {
             titleOg?.length < SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
             titleOg?.length > SEO_LIMITS.MIN_OG_TITLE_LENGTH
         ) {
-            result.push(this.getDoneItem(this.dotMessageService.get('seo.rules.og-image.found')));
+            result.push(this.getDoneItem(this.dotMessageService.get('seo.rules.og-title.found')));
         }
 
         return result;
