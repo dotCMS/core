@@ -52,8 +52,8 @@ jobs:
             core-web/installs
           key: node-${{ steps.get-date.outputs.date }}
 
-      - name: echo PWD
-        run: echo $PWD
+      - name: echo PWD / HOME
+        run: echo $PWD / $HOME
 
       - name: Build WAR with Maven
         run: ./mvnw --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
