@@ -1,0 +1,75 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Content-type Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= content-type-push(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+content-type-push - *Use this command to push a Content-type from a file.*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*content-type push* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_] _<file>_
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ This command will push a content-type to the current active
+ remote instance of dotCMS from a given file.
+ When pulling a content-type from a remote dotCMS instance
+ the content-type is saved to a file.
+ The file name will be the content-type's variable name.
+ To make changes to the a Content-type
+ modify the file and push it back to the remote instance.
+ The file can also be used as a base to create a brand new content-type.
+ The format can be changed using the --format option.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-fmt, --format*=_<inputOutputFormat>_::
+  Enum values: JSON, YAML, YML
+
+*-h*, *--help*::
+  Display this help message.
+
+*--workspace*=_<file>_::
+  The workspace directory.
++
+Current directory is used if not specified
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+== Arguments
+
+_<file>_::
+  The json/yml formatted content-type descriptor file to be pushed. 
+
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

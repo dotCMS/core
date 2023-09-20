@@ -157,6 +157,67 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>generateManPages</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includeProjectDependencies>true</includeProjectDependencies>
+                    <includePluginDependencies>true</includePluginDependencies>
+                    <mainClass>picocli.codegen.docgen.manpage.ManPageGenerator</mainClass>
+                    <arguments>
+                        <argument>--outdir=${project.basedir}/docs</argument>
+                        <argument>com.dotcms.cli.command.InstanceCommand</argument>
+                        <argument>com.dotcms.cli.command.LoginCommand</argument>
+                        <!--<argument>com.dotcms.cli.command.PushCommand</argument>-->
+                        <argument>com.dotcms.cli.command.StatusCommand</argument>
+                        <argument>com.dotcms.cli.command.contenttype.ContentTypeCommand</argument>
+                        <argument>com.dotcms.cli.command.contenttype.ContentTypeFind</argument>
+                        <argument>com.dotcms.cli.command.contenttype.ContentTypePull</argument>
+                        <argument>com.dotcms.cli.command.contenttype.ContentTypePush</argument>
+                        <argument>com.dotcms.cli.command.contenttype.ContentTypeRemove</argument>
+                        <argument>com.dotcms.cli.command.files.FilesCommand</argument>
+                        <argument>com.dotcms.cli.command.files.FilesLs</argument>
+                        <argument>com.dotcms.cli.command.files.FilesPull</argument>
+                        <argument>com.dotcms.cli.command.files.FilesPush</argument>
+                        <argument>com.dotcms.cli.command.files.FilesTree</argument>
+                        <argument>com.dotcms.cli.command.language.LanguageCommand</argument>
+                        <argument>com.dotcms.cli.command.language.LanguageFind</argument>
+                        <argument>com.dotcms.cli.command.language.LanguagePull</argument>
+                        <argument>com.dotcms.cli.command.language.LanguagePush</argument>
+                        <argument>com.dotcms.cli.command.language.LanguageRemove</argument>
+                        <argument>com.dotcms.cli.command.site.SiteCommand</argument>
+                        <argument>com.dotcms.cli.command.site.SiteArchive</argument>
+                        <argument>com.dotcms.cli.command.site.SiteCopy</argument>
+                        <argument>com.dotcms.cli.command.site.SiteCreate</argument>
+                        <argument>com.dotcms.cli.command.site.SiteCurrent</argument>
+                        <argument>com.dotcms.cli.command.site.SiteFind</argument>
+                        <argument>com.dotcms.cli.command.site.SitePull</argument>
+                        <argument>com.dotcms.cli.command.site.SitePush</argument>
+                        <argument>com.dotcms.cli.command.site.SiteRemove</argument>
+                        <argument>com.dotcms.cli.command.site.SiteStart</argument>
+                        <argument>com.dotcms.cli.command.site.SiteStop</argument>
+                        <argument>com.dotcms.cli.command.site.SiteUnarchive</argument>
+                    </arguments>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>info.picocli</groupId>
+                        <artifactId>picocli-codegen</artifactId>
+                        <version>4.7.5</version>
+                        <type>jar</type>
+                    </dependency>
+                </dependencies>
+            </plugin>
         </plugins>
     </build>
 
