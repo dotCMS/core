@@ -189,7 +189,7 @@ public class FileBundlerTestUtil {
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
 
 
-        String assetName = contentlet.isFileAsset() ? contentlet.getInode() : identifier.getURI().replace("/", File.separator);
+        String assetName = contentlet.isFileAsset() ? contentlet.getInode() : identifier.getURI().replace("/", StringPool.BLANK);
         assetName = assetName.indexOf("content.") != -1 ? assetName.substring(assetName.indexOf("content.")) : assetName;
 
         final int countOrder = getCountOrder(bundleRoot, assetName, contentlet.isLive());
