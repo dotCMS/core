@@ -1,11 +1,9 @@
-import { HttpClientModule } from '@angular/common/http';
 import { DoBootstrap, Injector, NgModule, Type } from '@angular/core';
 import { createCustomElement } from '@angular/elements';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotBinaryFieldComponent } from '@dotcms/contenttype-fields';
-import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 
 import { AppComponent } from './app.component';
 
@@ -23,17 +21,10 @@ const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
 
 @NgModule({
     declarations: [AppComponent],
-    imports: [BrowserModule, BrowserAnimationsModule, HttpClientModule, DotBinaryFieldComponent],
-    providers: [DotMessageService, DotUploadService]
+    imports: [BrowserModule, BrowserAnimationsModule, DotBinaryFieldComponent]
 })
 export class AppModule implements DoBootstrap {
-    constructor(
-        private readonly injector: Injector,
-        private readonly dotMessageService: DotMessageService
-    ) {
-        // Need it, so all the contenttype fields caan access to the dotMessageService
-        this.dotMessageService.init();
-    }
+    constructor(private readonly injector: Injector) {}
 
     ngDoBootstrap(): void {
         try {

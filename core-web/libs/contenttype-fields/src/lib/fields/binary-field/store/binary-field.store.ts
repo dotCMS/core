@@ -111,6 +111,25 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         rules
     }));
 
+    readonly openDialog = this.updater<BINARY_FIELD_MODE>((state, mode) => ({
+        ...state,
+        dialogOpen: true,
+        mode
+    }));
+
+    readonly closeDialog = this.updater((state) => ({
+        ...state,
+        dialogOpen: false,
+        mode: BINARY_FIELD_MODE.DROPZONE
+    }));
+
+    readonly removeFile = this.updater((state) => ({
+        ...state,
+        file: null,
+        tempFile: null,
+        status: BINARY_FIELD_STATUS.INIT
+    }));
+
     //  Effects
     readonly handleFileDrop = this.effect<DropZoneFileEvent>((event$) => {
         return event$.pipe(

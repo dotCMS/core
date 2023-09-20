@@ -1,6 +1,7 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -17,6 +18,7 @@ import { DialogModule } from 'primeng/dialog';
 
 import { skip } from 'rxjs/operators';
 
+import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
@@ -43,9 +45,10 @@ import {
         MonacoEditorModule,
         DotMessagePipe,
         DotUiMessageComponent,
-        DotSpinnerModule
+        DotSpinnerModule,
+        HttpClientModule
     ],
-    providers: [DotBinaryFieldStore],
+    providers: [DotBinaryFieldStore, DotMessageService, DotUploadService],
     templateUrl: './binary-field.component.html',
     styleUrls: ['./binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -72,7 +75,12 @@ export class DotBinaryFieldComponent implements OnInit {
     readonly BINARY_FIELD_MODE = BINARY_FIELD_MODE;
     readonly vm$ = this.dotBinaryFieldStore.vm$;
 
-    constructor(private readonly dotBinaryFieldStore: DotBinaryFieldStore) {}
+    constructor(
+        private readonly dotBinaryFieldStore: DotBinaryFieldStore,
+        private readonly dotMessageService: DotMessageService
+    ) {
+        this.dotMessageService.init();
+    }
 
     ngOnInit() {
         this.dotBinaryFieldStore.tempFile$
@@ -116,8 +124,7 @@ export class DotBinaryFieldComponent implements OnInit {
      * @memberof DotBinaryFieldComponent
      */
     openDialog(mode: BINARY_FIELD_MODE) {
-        this.dotBinaryFieldStore.setMode(mode);
-        this.dotBinaryFieldStore.setDialogOpen(true);
+        this.dotBinaryFieldStore.openDialog(mode);
     }
 
     /**
@@ -129,8 +136,7 @@ export class DotBinaryFieldComponent implements OnInit {
      */
     visibleChange(visibily: boolean) {
         if (!visibily) {
-            this.dotBinaryFieldStore.setMode(BINARY_FIELD_MODE.DROPZONE);
-            this.dotBinaryFieldStore.setDialogOpen(false);
+            this.dotBinaryFieldStore.closeDialog();
         }
     }
 
@@ -161,9 +167,7 @@ export class DotBinaryFieldComponent implements OnInit {
      * @memberof DotBinaryFieldComponent
      */
     removeFile() {
-        this.dotBinaryFieldStore.setFile(null);
-        this.dotBinaryFieldStore.setTempFile(null);
-        this.dotBinaryFieldStore.setStatus(this.BINARY_FIELD_STATUS.INIT);
+        this.dotBinaryFieldStore.removeFile();
     }
 
     handleCreateFile(_event) {
