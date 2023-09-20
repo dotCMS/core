@@ -539,7 +539,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
     });
     describe('page does not have URLContentMap and feature flag is on', () => {
         beforeEach(() => {
-            getKeyMock.and.callThrough(); // Reset the mock
             getKeyMock.and.returnValue(of('true'));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
@@ -558,7 +557,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
     describe('feature flag edit URLContentMap is on', () => {
         beforeEach(() => {
-            getKeyMock.and.callThrough(); // Reset the mock
             getKeyMock.and.returnValue(of('true'));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
@@ -600,6 +598,30 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     inode: '123'
                 }
             });
+        });
+
+        it('should trigger resetDropdownById when menu hides', () => {
+            const dotTabButtons = de.query(
+                By.css('[data-testId="dot-tabs-buttons"]')
+            ).componentInstance;
+
+            spyOn(dotTabButtons, 'resetDropdownById');
+
+            component.menu.onHide.emit();
+
+            expect(dotTabButtons.resetDropdownById).toHaveBeenCalledWith(DotPageMode.EDIT);
+        });
+
+        it('should trigger resetDropdownById when device selector hides', () => {
+            const dotTabButtons = de.query(
+                By.css('[data-testId="dot-tabs-buttons"]')
+            ).componentInstance;
+
+            spyOn(dotTabButtons, 'resetDropdownById');
+
+            component.deviceSelector.hideOverlayPanel.emit();
+
+            expect(dotTabButtons.resetDropdownById).toHaveBeenCalledWith(DotPageMode.PREVIEW);
         });
     });
 });
