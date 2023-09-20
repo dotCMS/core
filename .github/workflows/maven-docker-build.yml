@@ -12,7 +12,7 @@ env:
   JVM_TEST_MAVEN_OPTS: "-e -B"
 jobs:
   build-dotcms-jdk11:
-    name: "Initial JDK 11 Build"
+    name: "Initial dotCMS Build"
     runs-on: ubuntu-latest
     env:
       MAVEN_OPTS: -Xmx2048m
@@ -29,9 +29,10 @@ jobs:
           echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
         shell: bash
       - name: Add SHORT_SHA env property with commit short sha
-        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+        id: vars
+        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_OUTPUT
       - name: Check SHORT_SHA
-        run: echo ${SHORT_SHA}
+        run: echo ${${{ steps.vars.outputs.SHORT_SHA }}}
 
       - name: Cache Maven Repository
         id: cache-maven
@@ -66,6 +67,7 @@ jobs:
           path: dotcms-war/target/dotcms-war-1.0.0-SNAPSHOT.war
 
   docker:
+    name: Copy build into docker
     runs-on: dot-xl-runner
     steps:
       - name: Checkout
