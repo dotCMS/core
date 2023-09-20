@@ -32,7 +32,7 @@ RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 
 # Copy our build
 COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
-RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat \
+RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat 
 
 # Make scripts runable
  RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
