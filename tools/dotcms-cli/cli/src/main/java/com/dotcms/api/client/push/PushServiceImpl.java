@@ -93,7 +93,7 @@ public class PushServiceImpl implements PushService {
             }
 
             if (options.dryRun()) {
-                outputBuilder.append(formatStatus.format(analysisResults, pushHandler));
+                outputBuilder.append(formatStatus.format(analysisResults, pushHandler, true));
             }
 
             output.info(outputBuilder.toString());

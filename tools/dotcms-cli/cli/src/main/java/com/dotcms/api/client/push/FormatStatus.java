@@ -1,9 +1,12 @@
 package com.dotcms.api.client.push;
 
+import static com.dotcms.model.push.PushAction.NO_ACTION;
+
 import com.dotcms.api.client.push.exception.PushException;
 import com.dotcms.model.push.PushAnalysisResult;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.enterprise.context.Dependent;
 
 /**
@@ -31,19 +34,28 @@ public class FormatStatus {
     /**
      * Formats the push analysis results using the specified push handler.
      *
-     * @param results     the list of push analysis results
-     * @param pushHandler the push handler to use for formatting
+     * @param results        the list of push analysis results
+     * @param pushHandler    the push handler to use for formatting
+     * @param ignoreNoAction indicates whether to ignore results with no action
      * @return a StringBuilder containing the formatted push analysis results
      */
     public <T> StringBuilder format(final List<PushAnalysisResult<T>> results,
-            PushHandler<T> pushHandler) {
+            PushHandler<T> pushHandler, final boolean ignoreNoAction) {
 
         var outputBuilder = new StringBuilder();
 
         outputBuilder.append(String.format(" %s:", pushHandler.title())).append("\n");
 
-        Iterator<PushAnalysisResult<T>> iterator = results.iterator();
+        List<PushAnalysisResult<T>> filteredResults = results;
+        if (ignoreNoAction) {
+            filteredResults = results.stream()
+                    .filter(result -> result.action() != NO_ACTION)
+                    .collect(Collectors.toList());
+        }
+
+        Iterator<PushAnalysisResult<T>> iterator = filteredResults.iterator();
         while (iterator.hasNext()) {
+
             PushAnalysisResult<T> result = iterator.next();
             boolean isLast = !iterator.hasNext();
             outputBuilder.append(formatResult("     ", result, pushHandler, isLast));
