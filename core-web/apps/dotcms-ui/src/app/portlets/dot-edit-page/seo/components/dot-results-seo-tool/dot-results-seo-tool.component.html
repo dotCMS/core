@@ -2,31 +2,23 @@
     <p-card>
         <div class="results-seo-tool__main-card-content">
             <div [ngSwitch]="seoMedia">
-                <div *ngSwitchCase="'Facebook'">
-                    <img [src]="mainPreview[0].image" width="100%" alt="preview image" />
-                    <div class="results-seo-tool__facebook">
-                        <span>{{ mainPreview[0].hostName }}</span>
-                        <h5>{{ mainPreview[0].title }}</h5>
-                        <p>{{ mainPreview[0].description }}</p>
-                    </div>
-                </div>
-                <div *ngSwitchDefault>
-                    <div *ngFor="let preview of mainPreview">
+                <div *ngSwitchCase="seoMediaTypes.GOOGLE">
+                    <div *ngFor="let preview of allPreview">
                         <span class="results-seo-tool__main-card-title"
                             >{{ preview.type }} Version</span
                         >
                         <div
                             class="results-seo-tool__card"
                             [class.results-seo-tool__version--small]="preview.isMobile"
-                            data-testId="seo-preview">
+                            data-testId="seo-preview-mobile">
                             <div class="results-seo-tool__card-title">
                                 <img
                                     class="results-seo-tool__card-favicon"
                                     [src]="seoOGTags.favicon"
                                     alt="favicon" />
-                                <span>{{ preview.hostName }}</span>
+                                <span data-testId="page-hostName">{{ preview.hostName }}</span>
                             </div>
-                            <a class="results-seo-tool__search-title" data-testId="page-title">
+                            <a class="results-seo-tool__search-title">
                                 {{ preview.title }}
                             </a>
                             <p class="results-seo-tool__search-description">
@@ -35,12 +27,34 @@
                         </div>
                     </div>
                 </div>
+                <div *ngSwitchCase="seoMediaTypes.TWITTER">
+                    <img
+                        class="results-seo-tool__preview-image"
+                        [src]="mainPreview.image"
+                        alt="preview image" />
+                    <div class="results-seo-tool__preview">
+                        <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
+                        <h5>{{ mainPreview.twitterTitle }}</h5>
+                        <p>{{ mainPreview.twitterDescription }}</p>
+                    </div>
+                </div>
+                <div *ngSwitchDefault>
+                    <img
+                        class="results-seo-tool__preview-image"
+                        [src]="mainPreview.image"
+                        alt="preview image" />
+                    <div class="results-seo-tool__preview">
+                        <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
+                        <h5>{{ mainPreview.title }}</h5>
+                        <p>{{ mainPreview.description }}</p>
+                    </div>
+                </div>
             </div>
         </div>
     </p-card>
 </div>
 
-<p-card class="results-seo-tool__result-card" *ngFor="let result of currentResults | async">
+<p-card class="results-seo-tool__result-card" *ngFor="let result of currentResults$ | async">
     <ng-template class="results-seo-tool__result-card-header" pTemplate="header">
         <div class="results-seo-tool__result-card-title">
             <i
