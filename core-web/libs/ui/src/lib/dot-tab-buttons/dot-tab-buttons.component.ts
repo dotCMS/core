@@ -72,8 +72,6 @@ export class DotTabButtonsComponent implements OnChanges {
      * @param event
      */
     onClickDropdown(event: PointerEvent, menuId: string) {
-        event.stopPropagation();
-
         // This method is public so you can easily break everything if you force this to open.
         if (!this.shouldOpenMenu(menuId)) return;
 
