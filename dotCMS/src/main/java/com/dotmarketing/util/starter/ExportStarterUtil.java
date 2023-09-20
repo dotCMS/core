@@ -67,6 +67,8 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -453,6 +455,7 @@ public class ExportStarterUtil {
         return starterFiles;
     }
 
+    final String[] directories=new String[]{"0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"};
     /**
      * Traverses the complete list of assets in the current dotCMS instance in order to retrieve their respective file
      * reference. This will allow dotCMS to add their contents to the final Starter ZIP file without copying them to
@@ -462,18 +465,36 @@ public class ExportStarterUtil {
      * @param fileFilter The {@link FileFilter} being used to get the appropriate asset data.
      */
     private void getAssets(final ZipOutputStream zip, final FileFilter fileFilter) {
-        final String assetsRootPath = ConfigUtils.getAbsoluteAssetsRootPath();
-        final File source = new File(assetsRootPath);
         Logger.info(this, "Adding all Assets into compressed file:");
-        FileUtil.listFilesRecursively(source, fileFilter).stream().filter(File::isFile).forEach(file -> {
+        // add all our b-tree directories
+        for (int i = 0; i < directories.length; i++) {
+            for (int j = 0; j < directories.length; j++) {
+                final File source = Paths.get(ConfigUtils.getAssetPath() , directories[i] , directories[j]).toFile();
+                addFolderToZip(zip, fileFilter, source);
+            }
+        }
+        // finally add the messages folder
+        final File source = Paths.get(ConfigUtils.getAssetPath() , "messages").toFile();
+        addFolderToZip(zip, fileFilter, source);
+    }
 
-            final String filePath = file.getPath().replace(assetsRootPath, ZIP_FILE_ASSETS_FOLDER.get());
+    private void addFolderToZip(final ZipOutputStream zip, final FileFilter fileFilter, final File source){
+        if(!source.exists() || ! source.isDirectory() || Files.isSymbolicLink(source.toPath())){
+            Logger.warn(this, String.format("-> Not a directory: %s", source));
+            return;
+        }
+        FileUtil.listFilesRecursively(source, fileFilter).stream().filter(File::isFile).forEach(file -> {
+            final String filePath = file.getPath().replace(ConfigUtils.getAssetPath(), ZIP_FILE_ASSETS_FOLDER.get());
             Logger.debug(this, String.format("-> File path: %s", filePath));
             final FileEntry entry = new FileEntry(filePath, file);
             this.addFileToZip(entry, zip);
-
         });
+
+
     }
+
+
+
 
     /**
      * Generates all the contents that go into the compressed dotCMS Starter file. It's very
@@ -524,6 +545,10 @@ public class ExportStarterUtil {
      */
     private void streamCompressedData(final OutputStream output, boolean includeStarterData,
                                      final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean includeOldAssets) {
+
+
+
+
         try (final ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(output))) {
             if (includeStarterData) {
                 Logger.debug(this, "Including Starter Data");
