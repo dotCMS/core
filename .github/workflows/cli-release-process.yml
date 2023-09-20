@@ -72,3 +72,5 @@ jobs:
       - name: vars
         run: |
           echo "HEAD=${{ needs.precheck.outputs.HEAD }}"
+          echo "REF=${{ github.ref }}"
+          echo "REF_NAME=${{ github.ref_name }}"
