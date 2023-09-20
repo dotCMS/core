@@ -60,6 +60,7 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
     featureFlagEditURLContentMapIsOn = false;
     menuItems: MenuItem[];
 
+    readonly dotPageMode = DotPageMode;
     readonly featureFlagEditURLContentMap = FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP;
 
     private readonly menuOpenActions: Record<DotPageMode.EDIT, (event: PointerEvent) => void> = {
@@ -103,7 +104,7 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
                         {
                             label: this.dotMessageService.get('modes.Page'),
                             command: () => {
-                                this.stateSelectorHandler(DotPageMode.EDIT);
+                                this.stateSelectorHandler({ optionId: DotPageMode.EDIT });
                             }
                         },
                         {
@@ -157,7 +158,9 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
      * @param {DotPageMode} mode
      * @memberof DotEditPageStateControllerComponent
      */
-    stateSelectorHandler(mode: DotPageMode): void {
+    stateSelectorHandler({ optionId }: { optionId: string }): void {
+        const mode = optionId as DotPageMode;
+
         this.modeChange.emit(mode);
 
         if (this.shouldShowConfirmation(mode)) {
