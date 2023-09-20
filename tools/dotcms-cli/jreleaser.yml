@@ -51,8 +51,8 @@ distributions:
 #    continueOnError: false
 #    multiPlatform: true
 
-announce:
-  slack:
-    active: ALWAYS
-    channel: '#jreleaser'
-    message: '🚀 {{projectNameCapitalized}} {{projectVersion}} has been released!'
+#announce:
+#  slack:
+#    active: ALWAYS
+#    channel: '#jreleaser'
+#    message: '🚀 {{projectNameCapitalized}} {{projectVersion}} has been released!'

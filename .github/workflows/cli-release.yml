@@ -5,6 +5,10 @@ on:
       version:
         description: 'Release version'
         required: true
+      next:
+        description: 'Next version'
+        required: false
+        default: '1.0.0-SNAPSHOT'
       branch:
         description: 'Branch to cut from'
         required: true
@@ -14,42 +18,53 @@ on:
   push:
     branches:
       - '25951-implement-gha-generate-cli-release'
+
+defaults:
+  run:
+    shell: bash
+
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
-  
+
 jobs:         
   precheck:
     name: Pre-check
     runs-on: ubuntu-latest
     outputs:
-      VERSION: ${{ steps.vars.outputs.version }}
-      BRANCH: ${{ steps.vars.outputs.branch }}
-      DRY_RUN: ${{ github.event.inputs.dry_run }}
+      VERSION: ${{ steps.version.outputs.VERSION }}
+      NEXT: ${{ steps.version.outputs.NEXT }}
+      BRANCH: ${{ steps.version.outputs.BRANCH }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Version
-        id: vars
+      - name: Set release version
+        id: version
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         shell: bash
         run: |
-          VERSION=${{ github.event.inputs.version || '1.1.2' }}
+          VERSION=${{ github.event.inputs.version || '1.3.0' }}
+          NEXT=${{ github.event.inputs.next }}
           BRANCH=${{ github.event.inputs.branch || '25951-implement-gha-generate-cli-release' }}
           DRY_RUN=${{ github.event.inputs.dry_run || false }}
           
           echo "VERSION=$VERSION"
+          echo "NEXT=$NEXT"
           echo "BRANCH=$BRANCH"
           echo "DRY_RUN=$DRY_RUN"
 
-          ./mvnw -B versions:set versions:commit -DnewVersion=$VERSION
+          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$VERSION
           
           git config --global user.name "dcolina"
           git config --global user.email "daniel.colina@dotcms.com"
           
-          git commit -a -m "Releasing version $VERSION"
+          git commit -a -m "🏁 Releasing version $VERSION"
           git push origin "$BRANCH"
+          
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "NEXT=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "BRANCH=$BRANCH" >> "$GITHUB_OUTPUT"
 
   release:
     needs: [ precheck ]
@@ -84,10 +99,10 @@ jobs:
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
 
-      - name: Build
+      - name: Build distribution
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
-          ./mvnw -U clean install -DskipTests
+          ./mvnw -U clean install -Dtest.failure.ignore=true -DskipTests
           ./mvnw package -Dquarkus.package.type=uber-jar -DskipTests
 
       - name: Releaser
@@ -99,4 +114,10 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           tools/dotcms-cli/mvnw -Prelease jreleaser:full-release -Djreleaser.dry.run=${{ needs.precheck.outputs.DRY_RUN }} -Djreleaser.git.root.search=true -pl :dotCMS-cli
-          
+
+      - name: Set next version
+        run: |
+          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=${{ needs.precheck.outputs.NEXT }}
+
+          git commit -a -m "⬆️  Next version $NEXT"
+          git push origin "$BRANCH"
