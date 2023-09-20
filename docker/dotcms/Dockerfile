@@ -2,7 +2,7 @@
 # ----------------------------------------------
 # Stage 1:  Build dotCMS from our builder image
 # ----------------------------------------------
-FROM dotcms/dotcms-seed:22.09 as build-cms
+FROM dotcms/dotcms-seed:2023.09.19 as build-cms
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -24,6 +24,8 @@ ENV GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx2g"
 COPY build-src/ /build/
 RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID}
 
+# delete mvn local repo
+RUN rm -rf /root/.m2
 RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
 RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 
@@ -51,7 +53,8 @@ RUN apt update \
     && apt upgrade -y
 
 # Cleanup
-RUN apt purge --allow-remove-essential -y \
+RUN apt remove chromium-browser make gcc g++ && \
+    apt purge --allow-remove-essential -y \
     && apt autoremove -y \
     && apt clean \
     && rm -rf /var/lib/apt/lists/*
@@ -80,7 +83,6 @@ COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
     mkdir -p /data/shared/felix/load && \
     mkdir -p /data/shared/felix/undeployed && \
     mkdir -p /data/local/dotsecure/license && \
-
     chown -R $USER_NAME:$USER_NAME /data
 
 

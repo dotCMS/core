@@ -22,6 +22,7 @@ build_by_commit() {
       git checkout tags/${build_id} -b ${build_id}
     elif [[ "${build_id}" != 'master' ]]; then
       echo "Executing: git checkout ${build_id}"
+      git reset --hard master
       git checkout ${build_id}
       git pull origin ${build_id}
     fi
