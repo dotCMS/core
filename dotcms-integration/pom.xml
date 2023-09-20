@@ -72,7 +72,19 @@
         <test.felix.undeployed.folder>felix/core/undeployed</test.felix.undeployed.folder>
         <test.felix.system.undeployed.folder>felix/system/undeployed</test.felix.system.undeployed.folder>
         <cleanup.before.tests>true</cleanup.before.tests>
-
+        <test.db.host>localhost</test.db.host>
+        <test.db.port>5437</test.db.port>
+        <test.db.db>dotcms${surefire.forkNumber}</test.db.db>
+        <test.db.url>jdbc:postgresql://${test.db.host}:${test.db.port}/${test.db.db}?autosave=conservative</test.db.url>
+        <test.db.username>postgres${surefire.forkNumber}</test.db.username>
+        <test.db.password>postgres</test.db.password>
+        <test.es.scheme>http</test.es.scheme>
+        <test.es.host>localhost</test.es.host>
+        <test.es.port>9207</test.es.port>
+        <test.es.endpoints>${test.es.scheme}://${test.es.host}:${test.es.port}</test.es.endpoints>
+        <it.debug.port>5005</it.debug.port>
+        <it.debug.suspend>n</it.debug.suspend>
+        <maven.failsafe.debugArgs/>
     </properties>
     <dependencies>
         <dependency>
@@ -87,6 +99,7 @@
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-core</artifactId>
             <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
@@ -205,8 +218,8 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>unpack2</id>
-                        <phase>generate-resources</phase>
+                        <id>unpack-webapp</id>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
@@ -254,6 +267,29 @@
                 <version>${version.compiler.plugin}</version>
             </plugin>
             <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-resource-one</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>target/test-classes</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${webapp.extract.dir}/WEB-INF/classes</directory>
+                                    <excludes>
+                                        <exclude>**/*.class</exclude>
+                                    </excludes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <executions>
@@ -284,12 +320,7 @@
                                     <!-- This is the old directory where the integration tests are located.  These will be moved to this project-->
                                     <directory>${maven.multiModuleProjectDirectory}/dotCMS/src/integration-test/resources</directory>
                                 </resource>
-                                <resource>
-                                    <directory>${test.webapp.root}/WEB-INF/classes</directory>
-                                    <excludes>
-                                        <exclude>**/*.class</exclude>
-                                    </excludes>
-                                </resource>
+
                             </resources>
                         </configuration>
                     </execution>
@@ -325,59 +356,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                   <skip>true</skip>
-                    <excludes>
-                        <exclude>**/*</exclude>
-                    </excludes>
-                    <environmentVariables>
-                    </environmentVariables>
-                    <systemPropertyVariables>
-                        <user.timezone>UTC</user.timezone>
-
-
-                        <!--
-
-                        <DOT_CACHE_BINDPORT>78${surefire.forkNumber}1</DOT_CACHE_BINDPORT>
-
-                        -->
-                        <DOTCMS_LOGGING_HOME>${it.test.fork-folder}${surefire.forkNumber}/${test.logs.folder}</DOTCMS_LOGGING_HOME>
-                        <DOTCMS_FORK_NUMBER>f${surefire.forkNumber}</DOTCMS_FORK_NUMBER>
-
-
-                        <DOT_ORG_OSGI_FRAMEWORK_STORAGE>${it.test.fork-folder}${surefire.forkNumber}/${test.felix.cache.folder}</DOT_ORG_OSGI_FRAMEWORK_STORAGE>
-                        <DOT_SYSTEM_ORG_OSGI_FRAMEWORK_STORAGE>${it.test.fork-folder}${surefire.forkNumber}/${test.felix.system.cache.folder}</DOT_SYSTEM_ORG_OSGI_FRAMEWORK_STORAGE>
-                        <DOT_FELIX_BASE_DIR>${felix.base.dir}</DOT_FELIX_BASE_DIR>
-                        <DOT_SYSTEM_FELIX_BASE_DIR>${felix.system.base.dir}</DOT_SYSTEM_FELIX_BASE_DIR>
-                        <DOT_FELIX_FILEINSTALL_DIR>${it.test.fork-folder}${surefire.forkNumber}/${test.felix.load.folder}</DOT_FELIX_FILEINSTALL_DIR>
-                        <DOT_FELIX_UNDEPLOYED_DIR>${it.test.fork-folder}${surefire.forkNumber}/${test.felix.undeployed.folder}</DOT_FELIX_UNDEPLOYED_DIR>
-                        <DOT_SYSTEM_FELIX_FILEINSTALL_DIR>${it.test.fork-folder}${surefire.forkNumber}/${test.felix.system.load.folder}</DOT_SYSTEM_FELIX_FILEINSTALL_DIR>
-                        <DOT_SYSTEM_FELIX_UNDEPLOYED_DIR>${it.test.fork-folder}${surefire.forkNumber}/${test.felix.system.undeployed.folder}</DOT_SYSTEM_FELIX_UNDEPLOYED_DIR>
-
-                        <DOT_TEST_WEBAPP_ROOT>${test.webapp.root}</DOT_TEST_WEBAPP_ROOT>
-                        <DOT_ASSET_REAL_PATH>${it.test.fork-folder}${surefire.forkNumber}/${test.assets.folder}</DOT_ASSET_REAL_PATH>
-                        <DOT_DYNAMIC_CONTENT_PATH>${it.test.fork-folder}${surefire.forkNumber}/${test.dynamic.folder}</DOT_DYNAMIC_CONTENT_PATH>
-                        <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
-                        <DOT_DB_DRIVER>org.postgresql.Driver</DOT_DB_DRIVER>
-                        <DOT_DB_BASE_URL>jdbc:postgresql://localhost:5437/dotcms${surefire.forkNumber}?autosave=conservative</DOT_DB_BASE_URL>
-                        <DOT_DB_USERNAME>postgres${surefire.forkNumber}</DOT_DB_USERNAME>
-                        <DOT_DB_PASSWORD>postgres</DOT_DB_PASSWORD>
-                        <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
-
-                        <!-- from cicd/docker/dotcms-compose.yml -->
-                        <DOT_INDEX_POLICY_SINGLE_CONTEN>FORCE</DOT_INDEX_POLICY_SINGLE_CONTEN>
-                        <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
-                        <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
-                        <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
-
-                        <DOT_ES_ENDPOINTS>http://localhost:9207</DOT_ES_ENDPOINTS>
-                        <DOT_STARTER_DATA_LOAD>${starter.full.path}</DOT_STARTER_DATA_LOAD>
-                        <DOT_VELOCITY_ROOT>${test.webapp.root}/WEB-INF/velocity</DOT_VELOCITY_ROOT>
-                        <DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>${test.webapp.root}/WEB-INF/geoip2/GeoLite2-City.mmdb</DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>
-                        <DOT_DARTSASS_COMPILER_LOCATION>${test.webapp.root}/WEB-INF/bin</DOT_DARTSASS_COMPILER_LOCATION>
-                        <java.io.tmpdir>${it.test.fork-folder}${surefire.forkNumber}/${test.temp.folder}</java.io.tmpdir>
-                        <workingDirectory>${it.test.fork-folder}${surefire.forkNumber}/${test.working.folder}</workingDirectory>
-                        <buildDirectory>${project.build.directory}</buildDirectory>
-
-                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 
@@ -386,6 +364,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
+                    <argLine>${maven.failsafe.debugArgs}</argLine>
                     <forkCount>${it.test.forkcount}</forkCount>
                     <reuseForks>true</reuseForks>
                     <rerunFailingTestsCount>3</rerunFailingTestsCount>
@@ -393,6 +372,13 @@
                     <environmentVariables>
                    </environmentVariables>
                     <systemPropertyVariables>
+                        <!-- Following is a hack to make Intellij pick up the fork number in systemProperites
+                            for tests correctly
+                            it thinks it users failsafe.formNumber but it is same as surefire.
+                            When maven runs this surefire.forkNumber overrides this property value.  In intellij
+                            it updates this property that sets surefire.forkNumber=failsafe.forkNumber in other properties.
+                        -->
+                        <surefire.forkNumber>${failsafe.forkNumber}</surefire.forkNumber>
                         <user.timezone>UTC</user.timezone>
                         <integrationTestCoverageAgent>${integrationTestCoverageAgent}</integrationTestCoverageAgent>
                         <!--
@@ -417,18 +403,19 @@
                         <DOT_DYNAMIC_CONTENT_PATH>${it.test.fork-folder}${surefire.forkNumber}/${test.dynamic.folder}</DOT_DYNAMIC_CONTENT_PATH>
                         <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
                         <DOT_DB_DRIVER>org.postgresql.Driver</DOT_DB_DRIVER>
-                        <DOT_DB_BASE_URL>jdbc:postgresql://localhost:5437/dotcms${surefire.forkNumber}?autosave=conservative</DOT_DB_BASE_URL>
-                        <DOT_DB_USERNAME>postgres${surefire.forkNumber}</DOT_DB_USERNAME>
-                        <DOT_DB_PASSWORD>postgres</DOT_DB_PASSWORD>
+                        <DOT_DB_INIT_FAIL_WAIT>30000</DOT_DB_INIT_FAIL_WAIT>
+                        <DOT_DB_BASE_URL>${test.db.url}</DOT_DB_BASE_URL>
+                        <DOT_DB_USERNAME>${test.db.username}</DOT_DB_USERNAME>
+                        <DOT_DB_PASSWORD>${test.db.password}</DOT_DB_PASSWORD>
                         <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
 
                         <!-- from cicd/docker/dotcms-compose.yml -->
-                        <DOT_INDEX_POLICY_SINGLE_CONTEN>FORCE</DOT_INDEX_POLICY_SINGLE_CONTEN>
+                        <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
                         <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
                         <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
                         <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
 
-                        <DOT_ES_ENDPOINTS>http://localhost:9207</DOT_ES_ENDPOINTS>
+                        <DOT_ES_ENDPOINTS>${test.es.endpoints}</DOT_ES_ENDPOINTS>
                         <DOT_STARTER_DATA_LOAD>${starter.full.path}</DOT_STARTER_DATA_LOAD>
                         <DOT_VELOCITY_ROOT>${test.webapp.root}/WEB-INF/velocity</DOT_VELOCITY_ROOT>
                         <DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>${test.webapp.root}/WEB-INF/geoip2/GeoLite2-City.mmdb</DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>
@@ -449,6 +436,7 @@
                             <includes>
                                 <include>**/MainSuite1*.java</include>
                                 <include>**/MainSuite2*.java</include>
+                                <!--<include>**/QuickSuite.java</include>-->
                             </includes>
                         </configuration>
                     </execution>
@@ -520,7 +508,38 @@
         </plugins>
     </build>
     <profiles>
+        <profile>
+            <id>external-testdb</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <skipDockerEnv>true</skipDockerEnv>
+                <it.test.forkcount>1</it.test.forkcount>
+                <surefire.forkNumber>1</surefire.forkNumber>
+                <!--suppress UnresolvedMavenProperty -->
+                <test.db.host>${env.TEST_DB_HOST}</test.db.host>
+                <!--suppress UnresolvedMavenProperty -->
+                <test.db.port>${env.TEST_DB_PORT}</test.db.port>
+                <test.db.db>dotcms</test.db.db>
+                <test.db.url>jdbc:postgresql://${test.db.host}:${test.db.port}/${test.db.db}?autosave=conservative</test.db.url>
+                <test.db.username>postgres${surefire.forkNumber}</test.db.username>
+                <test.db.password>postgres</test.db.password>
+                <test.es.scheme>https</test.es.scheme>
+                <test.es.host>localhost</test.es.host>
+                <test.es.port>9207</test.es.port>
+                <test.es.endpoints>${test.es.scheme}://${test.es.host}:${test.es.port}</test.es.endpoints>
+            </properties>
+        </profile>
 
+
+        <profile>
+            <id>debug-it</id>
+            <properties>
+                <maven.failsafe.debugArgs>-agentlib:jdwp=transport=dt_socket,address=localhost:${it.debug.port},server=y,suspend=${it.debug.suspend}</maven.failsafe.debugArgs>
+                <it.test.forkcount>1</it.test.forkcount>
+            </properties>
+        </profile>
 
     </profiles>
     <repositories>
