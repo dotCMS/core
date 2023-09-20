@@ -15,6 +15,7 @@ import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+import { DotValidators } from '@shared/validators/dotValidators';
 
 import {
     DotExperimentsListStore,
@@ -93,10 +94,14 @@ export class DotExperimentsCreateComponent implements OnInit {
             }),
             name: new FormControl<string>('', {
                 nonNullable: true,
-                validators: [Validators.required, Validators.maxLength(this.maxNameLength)]
+                validators: [
+                    Validators.required,
+                    Validators.maxLength(this.maxNameLength),
+                    DotValidators.noWhitespace
+                ]
             }),
             description: new FormControl<string>('', {
-                validators: [Validators.maxLength(255)]
+                validators: [Validators.maxLength(255), DotValidators.noWhitespace]
             })
         });
     }
