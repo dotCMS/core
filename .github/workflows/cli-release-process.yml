@@ -7,6 +7,7 @@ on:
         required: true
       next:
         description: 'Next version'
+        default: '1.0.0-SNAPSHOT'
         required: false
 
 defaults:
@@ -20,11 +21,37 @@ jobs:
     outputs:
       RELEASE_VERSION: ${{ steps.vars.outputs.RELEASE_VERSION }}
       NEXT_VERSION: ${{ steps.vars.outputs.NEXT_VERSION }}
+      HEAD: ${{ steps.vars.outputs.HEAD }}
     steps:
-      - name: Print inputs
-        id: vars
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRO }}
+
+      - name: Cache Maven
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Setup git config
         run: |
-          RELEASE_VERSION=${{ github.event.inputs.version }}
-          NEXT_VERSION=${{ github.event.inputs.next }}
-          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
-          echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          git config --global user.name "dcolina"
+          git config --global user.email "daniel.colina@dotcms.com"
+
+      - name: Set release version
+        id: version
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          NEXT=${{ github.event.inputs.next }}
+          HEAD=$(git rev-parse HEAD)
+          
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "NEXT=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
