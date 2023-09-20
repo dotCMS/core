@@ -12,6 +12,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -131,4 +133,35 @@ public class ESSiteSearchAPITest {
         }
     }
 
+    /**
+     * Method to test: {@link SiteSearchAPI#listIndices()}
+     * Given Scenario: Create a default site search index, Attempt to load the list.
+     * ExpectedResult: The default index should be the first in the list.
+     */
+    @Test
+    public void test_listIndices_defaultIndicesShouldFirst() throws IOException, DotDataException {
+        String timeStamp, indexName, aliasName;
+        String defIndex = "";
+
+        final int indicesAmount = 3;
+        for (int i = 0; i < indicesAmount; i++) {
+            timeStamp = String.valueOf(new Date().getTime());
+            indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
+            aliasName = "indexAlias" + "_" + timeStamp;
+
+            siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
+
+            if (i == 2){
+                //sets as default
+                siteSearchAPI.activateIndex(indexName);
+                defIndex = indexName;
+            }
+        }
+
+        //get the list of indices
+        final List<String> indices =siteSearchAPI.listIndices();
+        //validate if the new default index is the first in list
+        assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(defIndex));
+        assertEquals(defIndex, indices.get(0));
+    }
 }
