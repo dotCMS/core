@@ -61,7 +61,7 @@ public class PushServiceImpl implements PushService {
 
         // ---
         // Analyzing what push operations need to be performed
-        var results = analyze(localFileOrFolder, output, provider, comparator);
+        var results = analyze(localFileOrFolder, options, output, provider, comparator);
         var analysisResults = results.getLeft();
         var summary = results.getRight();
 
