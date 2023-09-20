@@ -6,7 +6,6 @@
             name="${name}FileUpload"
             type="file"
             accept="${accept}"
-            (fileChange)=""
             dojoAttachEvent="onchange:_doFileUpload"
             dojoAttachPoint="fileInputField"
             class="form-text"

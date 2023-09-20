@@ -72,12 +72,10 @@ export class DotBinaryFieldComponent implements OnInit {
         [BINARY_FIELD_MODE.URL]: 'dot.binary.field.dialog.import.from.url.header',
         [BINARY_FIELD_MODE.EDITOR]: 'dot.binary.field.dialog.create.new.file.header'
     };
-    readonly BINARY_FIEL_STATUS = BINARY_FIELD_STATUS;
+    readonly BINARY_FIELD_STATUS = BINARY_FIELD_STATUS;
     readonly BINARY_FIELD_MODE = BINARY_FIELD_MODE;
-    readonly mode$ = this.dotBinaryFieldStore.mode$;
     readonly vm$ = this.dotBinaryFieldStore.vm$;
 
-    dotTempFile: DotCMSTempFile;
     dialogOpen = false;
     dropZoneActive = false;
 
@@ -87,7 +85,6 @@ export class DotBinaryFieldComponent implements OnInit {
         this.dotBinaryFieldStore.tempFile$
             .pipe(skip(1)) // Skip initial state
             .subscribe((tempFile) => {
-                this.dotTempFile = tempFile;
                 this.tempFile.emit(tempFile);
             });
 
@@ -159,7 +156,7 @@ export class DotBinaryFieldComponent implements OnInit {
     removeFile() {
         this.dotBinaryFieldStore.setFile(null);
         this.dotBinaryFieldStore.setTempFile(null);
-        this.dotBinaryFieldStore.setStatus(this.BINARY_FIEL_STATUS.INIT);
+        this.dotBinaryFieldStore.setStatus(this.BINARY_FIELD_STATUS.INIT);
     }
 
     handleCreateFile(_event) {

@@ -2,11 +2,11 @@
     class="binary-field__container"
     *ngIf="vm$ | async as vm"
     [ngClass]="{
-        'binary-field__container--uploading': vm.status === BINARY_FIEL_STATUS.UPLOADING
+        'binary-field__container--uploading': vm.status === BINARY_FIELD_STATUS.UPLOADING
     }">
     <div
         class="binary-field__drop-zone-container"
-        *ngIf="vm.status === BINARY_FIEL_STATUS.INIT || vm.status === BINARY_FIEL_STATUS.ERROR"
+        *ngIf="vm.status === BINARY_FIELD_STATUS.INIT || vm.status === BINARY_FIELD_STATUS.ERROR"
         data-testId="binary-field__drop-zone-container">
         <div
             class="binary-field__drop-zone"
@@ -57,13 +57,13 @@
     </div>
 
     <dot-spinner
-        *ngIf="vm.status === BINARY_FIEL_STATUS.UPLOADING"
+        *ngIf="vm.status === BINARY_FIELD_STATUS.UPLOADING"
         data-testId="loading"></dot-spinner>
 
     <!-- This component is another ticket -->
-    <div *ngIf="vm.status === BINARY_FIEL_STATUS.PREVIEW" data-testId="preview">
+    <div *ngIf="vm.status === BINARY_FIELD_STATUS.PREVIEW" data-testId="preview">
         <span>
-            {{ dotTempFile.fileName }}
+            {{ vm.tempFile.fileName }}
         </span>
         <br />
         <p-button
@@ -73,23 +73,23 @@
             data-testId="action-remove-btn"
             icon="pi pi-trash"></p-button>
     </div>
-</div>
 
-<p-dialog
-    *ngIf="mode$ | async as mode"
-    [(visible)]="dialogOpen"
-    [header]="dialogHeaderMap[mode] | dm"
-    [draggable]="false"
-    [resizable]="false">
-    <div [ngSwitch]="mode">
-        <div *ngSwitchCase="BINARY_FIELD_MODE.URL" data-testId="url">
-            TODO: Implement Import from URL
+    <p-dialog
+        [(visible)]="dialogOpen"
+        [modal]="true"
+        [header]="dialogHeaderMap[vm.mode] | dm"
+        [draggable]="false"
+        [resizable]="false">
+        <div [ngSwitch]="vm.mode">
+            <div *ngSwitchCase="BINARY_FIELD_MODE.URL" data-testId="url">
+                TODO: Implement Import from URL
+            </div>
+            <div *ngSwitchCase="BINARY_FIELD_MODE.EDITOR" data-testId="editor">
+                TODO: Implement Write Code
+            </div>
         </div>
-        <div *ngSwitchCase="BINARY_FIELD_MODE.EDITOR" data-testId="editor">
-            TODO: Implement Write Code
-        </div>
-    </div>
-</p-dialog>
+    </p-dialog>
+</div>
 
 <div class="binary-field__helper" *ngIf="helperText">
     <i class="pi pi-info-circle binary-field__helper-icon"></i>

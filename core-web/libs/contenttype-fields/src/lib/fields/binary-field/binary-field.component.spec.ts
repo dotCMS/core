@@ -61,8 +61,8 @@ describe('DotBinaryFieldComponent', () => {
             DotUiMessageComponent,
             HttpClientTestingModule
         ],
+        componentProviders: [DotBinaryFieldStore],
         providers: [
-            DotBinaryFieldStore,
             {
                 provide: DotUploadService,
                 useValue: {
@@ -84,6 +84,7 @@ describe('DotBinaryFieldComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
+            detectChanges: false,
             props: {
                 accept: 'image/*',
                 maxFileSize: 1000,
@@ -91,18 +92,16 @@ describe('DotBinaryFieldComponent', () => {
             }
         });
         store = spectator.inject(DotBinaryFieldStore, true);
-        spectator.detectChanges();
     });
 
     it('should exist', () => {
+        spectator.detectChanges();
         expect(spectator.component).toBeTruthy();
     });
 
     it('should set rules on init', () => {
         const spyRules = jest.spyOn(store, 'setRules');
-
-        spectator.component.ngOnInit();
-
+        spectator.detectChanges();
         expect(spyRules).toHaveBeenCalledWith({
             accept: ['image/*'],
             maxFileSize: 1000
@@ -111,6 +110,7 @@ describe('DotBinaryFieldComponent', () => {
 
     it('should emit temp file', () => {
         const spyEmit = jest.spyOn(spectator.component.tempFile, 'emit');
+        spectator.detectChanges();
         store.setTempFile(TEMP_FILE_MOCK);
         expect(spyEmit).toHaveBeenCalledWith(TEMP_FILE_MOCK);
     });
@@ -196,6 +196,10 @@ describe('DotBinaryFieldComponent', () => {
     });
 
     describe('Template', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
         it('should show dropzone when status is INIT', async () => {
             store.setStatus(BINARY_FIELD_STATUS.INIT);
             spectator.detectChanges();
@@ -226,6 +230,10 @@ describe('DotBinaryFieldComponent', () => {
     });
 
     describe('Dialog', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
         it('should open dialog with code component when click on edit button', async () => {
             const spyMode = jest.spyOn(store, 'setMode');
             const editorBtn = spectator.query(byTestId('action-editor-btn')) as HTMLButtonElement;
