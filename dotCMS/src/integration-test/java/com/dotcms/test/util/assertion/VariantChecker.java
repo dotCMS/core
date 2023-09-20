@@ -8,6 +8,9 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * {@link AssertionChecker} concrete class for {@link Variant}
+ */
 public class VariantChecker implements AssertionChecker<Variant> {
 
     @Override
