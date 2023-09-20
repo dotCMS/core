@@ -66,10 +66,6 @@ jobs:
           name: dotcms-war-${{ steps.vars.outputs.SHORT_SHA }}
           path: dotcms-war/target/dotcms-war-1.0.0-SNAPSHOT.war
 
-  docker:
-    name: Copy build into docker
-    runs-on: dot-xl-runner
-    steps:
       - name: Checkout
         uses: actions/checkout@v3
 
