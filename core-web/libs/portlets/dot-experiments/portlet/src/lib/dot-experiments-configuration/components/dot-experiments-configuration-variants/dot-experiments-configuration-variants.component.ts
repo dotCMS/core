@@ -69,6 +69,7 @@ export class DotExperimentsConfigurationVariantsComponent {
         trafficProportion: TrafficProportion;
         status: StepStatus;
         isExperimentADraft: boolean;
+        isPageLocked: boolean;
     }> = this.dotExperimentsConfigurationStore.variantsStepVm$.pipe(
         tap(({ status }) => this.handleSidebar(status))
     );

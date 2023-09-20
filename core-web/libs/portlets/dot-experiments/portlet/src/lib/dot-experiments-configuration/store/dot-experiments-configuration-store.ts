@@ -18,6 +18,7 @@ import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatus,
+    DotPageRenderState,
     ExperimentSteps,
     Goal,
     Goals,
@@ -44,6 +45,7 @@ export interface DotExperimentsConfigurationState {
     hasEnterpriseLicense: boolean;
     addToBundleContentId: string;
     pushPublishEnvironments: DotEnvironment[];
+    dotPageRenderState: DotPageRenderState;
 }
 
 const initialState: DotExperimentsConfigurationState = {
@@ -57,7 +59,8 @@ const initialState: DotExperimentsConfigurationState = {
     configProps: null,
     hasEnterpriseLicense: false,
     addToBundleContentId: null,
-    pushPublishEnvironments: null
+    pushPublishEnvironments: null,
+    dotPageRenderState: null
 };
 
 export interface ConfigurationViewModel {
@@ -72,6 +75,8 @@ export interface ConfigurationViewModel {
     isDescriptionSaving: boolean;
     menuItems: MenuItem[];
     addToBundleContentId: string;
+    isPageLocked: boolean;
+    dotPageRenderState: DotPageRenderState;
 }
 
 @Injectable()
@@ -117,6 +122,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.state$,
         ({ experiment, hasEnterpriseLicense, pushPublishEnvironments }) =>
             this.getMenuItems(experiment, hasEnterpriseLicense, pushPublishEnvironments)
+    );
+
+    readonly isPageLocked$: Observable<boolean> = this.select(
+        this.state$,
+        ({ dotPageRenderState }) => this.isLocked(dotPageRenderState)
     );
 
     // Goals Step //
@@ -766,8 +776,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.getExperimentStatus$,
         this.getIsDescriptionSaving$,
         this.getMenuItems$,
+        this.isPageLocked$,
         (
-            { experiment, stepStatusSidebar, addToBundleContentId },
+            { experiment, stepStatusSidebar, addToBundleContentId, dotPageRenderState },
             isExperimentADraft,
             isLoading,
             disabledStartExperiment,
@@ -775,7 +786,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             isSaving,
             experimentStatus,
             isDescriptionSaving,
-            menuItems
+            menuItems,
+            isPageLocked
         ) => ({
             experiment,
             stepStatusSidebar,
@@ -787,7 +799,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             isSaving,
             experimentStatus,
             isDescriptionSaving,
-            menuItems
+            menuItems,
+            isPageLocked,
+            dotPageRenderState
         })
     );
 
@@ -796,16 +810,19 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         trafficProportion: TrafficProportion;
         status: StepStatus;
         isExperimentADraft: boolean;
+        isPageLocked: boolean;
     }> = this.select(
         this.getExperimentId$,
         this.trafficProportion$,
         this.variantsStatus$,
         this.isExperimentADraft$,
-        (experimentId, trafficProportion, status, isExperimentADraft) => ({
+        this.isPageLocked$,
+        (experimentId, trafficProportion, status, isExperimentADraft, isPageLocked) => ({
             experimentId,
             trafficProportion,
             status,
-            isExperimentADraft
+            isExperimentADraft,
+            isPageLocked
         })
     );
 
@@ -902,10 +919,17 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly confirmationService: ConfirmationService,
         private readonly dotPushPublishDialogService: DotPushPublishDialogService
     ) {
+        const dotPageRenderState = route.parent.parent.parent.snapshot.data['content'];
         const configProps = route.snapshot.data['config'];
         const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
         const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
-        super({ ...initialState, hasEnterpriseLicense, configProps, pushPublishEnvironments });
+        super({
+            ...initialState,
+            hasEnterpriseLicense,
+            configProps,
+            pushPublishEnvironments,
+            dotPageRenderState
+        });
     }
 
     private updateTabTitle(experiment: DotExperiment) {
@@ -927,6 +951,14 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     private disableStartExperiment(experiment: DotExperiment): boolean {
         return experiment?.trafficProportion.variants.length < 2 || !experiment?.goals;
+    }
+
+    private canTakeLock(pageState: DotPageRenderState): boolean {
+        return pageState.page.canLock && pageState.state.lockedByAnotherUser;
+    }
+
+    private isLocked(pageState: DotPageRenderState): boolean {
+        return pageState.state.locked && !this.canTakeLock(pageState);
     }
 
     private getMenuItems(
