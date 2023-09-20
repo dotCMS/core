@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
+import { map } from 'rxjs/operators';
+
 import { DotAddVariableStore } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
 
 @Component({
@@ -11,7 +13,15 @@ import { DotAddVariableStore } from '@dotcms/app/portlets/dot-containers/dot-con
     providers: [DotAddVariableStore]
 })
 export class DotAddVariableComponent implements OnInit {
-    vm$ = this.store.vm$;
+    vm$ = this.store.vm$.pipe(
+        map((res) => {
+            const variables = res.variables.filter(
+                (variable) => variable.fieldType !== 'Column' && variable.fieldType !== 'Row'
+            );
+
+            return { variables: variables };
+        })
+    );
 
     constructor(
         private store: DotAddVariableStore,
