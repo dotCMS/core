@@ -3,6 +3,7 @@ package com.dotcms.config;
 import com.dotcms.business.SystemTable;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
+import io.vavr.Lazy;
 
 import java.util.Optional;
 import java.util.Set;
@@ -19,7 +20,7 @@ public class SystemTableConfigSource {
 
     // there are some keys that can not be configured on the system table, all which includes concurrent are not
     private static final Set<String> SKIP_KEYS_LOWER_SET = Set.of("concurrent", "scheduler");
-    private final SystemTable systemTable = APILocator.getSystemAPI().getSystemTable();
+    private final Lazy<SystemTable> systemTable = Lazy.of(()->APILocator.getSystemAPI().getSystemTable());
 
     public SystemTableConfigSource() {
         Logger.info(this.getClass(), "Creating SystemTableConfigSource");
@@ -33,7 +34,7 @@ public class SystemTableConfigSource {
     //@Override
     public Set<String> getPropertyNames() {
 
-        return this.systemTable.all().keySet();
+        return this.systemTable.get().all().keySet();
     }
 
     // @Override
@@ -42,7 +43,7 @@ public class SystemTableConfigSource {
         Optional<String> valueOpt = Optional.empty();
         if (null != propertyName) {
             if(this.isAllowed(propertyName)) {
-                valueOpt = this.systemTable.get(propertyName);
+                valueOpt = this.systemTable.get().get(propertyName);
             }
         }
         return valueOpt.isPresent() ? valueOpt.get() : null;
@@ -55,17 +56,17 @@ public class SystemTableConfigSource {
 
     public String put(final String propertyName, final String value) {
 
-        this.systemTable.set(propertyName, value);
+        this.systemTable.get().set(propertyName, value);
         return value;
     }
 
     public void remove(final String propertyName) {
-        this.systemTable.delete(propertyName);
+        this.systemTable.get().delete(propertyName);
     }
 
     public void clear() {
-        this.systemTable.all().keySet().stream()
-                .forEach(key -> this.systemTable.delete(key));
+        this.systemTable.get().all().keySet().stream()
+                .forEach(key -> this.systemTable.get().delete(key));
     }
 
     //@Override
