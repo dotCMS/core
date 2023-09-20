@@ -2,7 +2,7 @@ package com.dotcms.cube;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.model.AccessToken;
@@ -101,17 +101,6 @@ public class CubeJSClientTest {
         }
     }
 
-    private static AccessToken getAccessToken() {
-            return AnalyticsTestUtils.createAccessToken(
-                "a1b2c3d4e5f6",
-                "some-client",
-                null,
-                "some-scope",
-                "some-token-type",
-                TokenStatus.OK,
-                Instant.now());
-    }
-
     /**
      * Method to test: {@link CubeJSClient#send(CubeJSQuery)}
      * When: Send a request to Cube JS but the CubeJS Server is down
@@ -120,7 +109,7 @@ public class CubeJSClientTest {
      * Connection attempts failed Connect to 127.0.0.1:8000 [/127.0.0.1] failed: Connection refused (Connection refused)
      * </pre>
      */
-    @Test
+    @Test(expected = RuntimeException.class)
     public void http404() {
 
         final String cubeServerIp = "127.0.0.1";
@@ -128,7 +117,7 @@ public class CubeJSClientTest {
 
         try {
             IPUtils.disabledIpPrivateSubnet(true);
-            
+
             final CubeJSQuery cubeJSQuery = new Builder()
                     .dimensions("Events.experiment", "Events.variant")
                     .build();
@@ -136,9 +125,7 @@ public class CubeJSClientTest {
             final CubeJSClient cubeClient = new CubeJSClient(
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort),
                     getAccessToken());
-            final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
-
-            assertEquals(0, cubeJSResultSet.size());
+            cubeClient.send(cubeJSQuery);
         } finally {
             IPUtils.disabledIpPrivateSubnet(false);
         }
@@ -191,5 +178,15 @@ public class CubeJSClientTest {
         }
     }
 
+    private static AccessToken getAccessToken() {
+        return AnalyticsTestUtils.createAccessToken(
+            "a1b2c3d4e5f6",
+            "some-client",
+            null,
+            "some-scope",
+            "some-token-type",
+            TokenStatus.OK,
+            Instant.now());
+    }
 
 }

@@ -65,6 +65,7 @@ import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -912,7 +913,23 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment updatedExperiment = persistedExperiment
                 .withTrafficProportion(weightedTrafficProportion);
 
+        if (!DEFAULT_VARIANT.name().equals(experimentVariant.id())) {
+            copyMultiTrees(persistedExperiment, experimentVariant);
+        }
+
         return save(updatedExperiment, user);
+    }
+
+    private void copyMultiTrees(final Experiment persistedExperiment,
+            final ExperimentVariant experimentVariant)
+                throws DotDataException {
+
+        final HTMLPageAsset experimentPage = getHtmlPageAsset(persistedExperiment);
+        final List<MultiTree> multiTreesByVariant = multiTreeAPI.getMultiTreesByVariant(
+                experimentPage.getIdentifier(), DEFAULT_VARIANT.name());
+
+        multiTreeAPI.copyMultiTree(experimentPage.getIdentifier(), multiTreesByVariant,
+                experimentVariant.id());
     }
 
     private ExperimentVariant createExperimentVariant(final Experiment experiment,

@@ -5,8 +5,9 @@ import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
-import { seoOGTagsMock, seoOGTagsResultMock } from './mocks';
+import { seoOGTagsMock, seoOGTagsResultMock, seoOGTagsResultOgMockTwitter } from './mocks';
 
+import { SEO_MEDIA_TYPES } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
 
 describe('DotResultsSeoToolComponent', () => {
@@ -15,15 +16,12 @@ describe('DotResultsSeoToolComponent', () => {
         component: DotResultsSeoToolComponent,
         providers: [
             DotSeoMetaTagsService,
-
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'seo.rules.favicon.not.found': 'FavIcon not found!',
-                    'seo.rules.favicon.more.one.found': 'More than 1 FavIcon found!',
-                    'seo.rules.favicon.found': 'FavIcon found!',
-                    'seo.rules.description.not.found':
-                        'Meta Description not found! Showing Description instead.',
+                    'seo.rules.favicon.more.one.found': 'More than 1 Favicon found!',
+                    'seo.rules.favicon.found': 'Favicon found!',
                     'seo.rules.description.found.empty': 'Meta Description found, but is empty!',
                     'seo.rules.description.found': 'Meta Description found!',
                     'seo.rules.title.not.found': 'HTML Title not found!',
@@ -65,22 +63,22 @@ describe('DotResultsSeoToolComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                hostName: 'A title',
+                hostName: 'dotcms.com',
                 seoOGTags: seoOGTagsMock,
                 seoOGTagsResults: of(seoOGTagsResultMock),
-                seoMedia: 'google'
+                seoMedia: SEO_MEDIA_TYPES.GOOGLE
             }
         });
     });
 
-    it('should display title', () => {
-        const title = spectator.query(byTestId('page-title'));
-        expect(title).toHaveText(spectator.component.hostName);
+    it('should display host Name', () => {
+        const hostName = spectator.query(byTestId('page-hostName'));
+        expect(hostName).toHaveText(spectator.component.hostName);
     });
 
     it('should display SEO Tags', () => {
         const tags = spectator.queryAll(byTestId('seo-tag'));
-        expect(tags[0]).toContainText('FavIcon found!');
+        expect(tags[0]).toContainText('Favicon found!');
         expect(tags[1]).toContainText('Meta Description not found! Showing Description instead');
         expect(tags[2]).toContainText(
             'HTML Title found, but has fewer than 30 characters of content.'
@@ -102,18 +100,40 @@ describe('DotResultsSeoToolComponent', () => {
     });
 
     it('should display mobile size for the preview', () => {
-        const previews = spectator.queryAll(byTestId('seo-preview'));
+        spectator.setInput({
+            seoMedia: SEO_MEDIA_TYPES.GOOGLE
+        });
+        spectator.detectChanges();
+        const previews = spectator.queryAll(byTestId('seo-preview-mobile'));
         expect(previews[1]).toHaveClass('results-seo-tool__version--small');
     });
 
-    it('should filter seo results by seoMedia on changes', () => {
-        spectator.fixture.componentInstance.seoMedia = 'facebook';
-        spectator.component.ngOnChanges();
-        spectator.component.currentResults.subscribe((items) => {
+    it('should filter seo results by Facebook, seoMedia on changes', (done) => {
+        spectator.setInput({
+            seoMedia: SEO_MEDIA_TYPES.FACEBOOK
+        });
+        spectator.detectChanges();
+        spectator.component.currentResults$.subscribe((items) => {
             expect(items.length).toEqual(3);
             expect(items[0].key).toEqual(seoOGTagsResultMock[1].key);
             expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
             expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
+            done();
+        });
+    });
+
+    it('should filter seo results by Twitter, seoMedia on changes', (done) => {
+        spectator.setInput({
+            seoMedia: SEO_MEDIA_TYPES.TWITTER
+        });
+        spectator.detectChanges();
+        spectator.component.currentResults$.subscribe((items) => {
+            expect(items.length).toEqual(4);
+            expect(items[0].key).toEqual(seoOGTagsResultOgMockTwitter[0].key);
+            expect(items[1].key).toEqual(seoOGTagsResultOgMockTwitter[1].key);
+            expect(items[2].key).toEqual(seoOGTagsResultOgMockTwitter[2].key);
+            expect(items[3].key).toEqual(seoOGTagsResultOgMockTwitter[3].key);
+            done();
         });
     });
 });

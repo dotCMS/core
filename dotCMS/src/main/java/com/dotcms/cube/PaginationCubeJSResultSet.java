@@ -12,22 +12,20 @@ public class PaginationCubeJSResultSet implements CubeJSResultSet {
 
     private CubeJSClient cubeJSClient;
     private CubeJSQuery query;
-    private Long totalItems;
     private int pageSize;
 
     public PaginationCubeJSResultSet(final CubeJSClient cubeJSClient,
             final CubeJSQuery query,
-            final Long totalItems, int pageSize) {
+            int pageSize) {
         this.cubeJSClient = cubeJSClient;
         this.query = query;
-        this.totalItems = totalItems;
         this.pageSize = pageSize;
     }
 
 
     @Override
     public long size() {
-        return totalItems;
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override
@@ -39,22 +37,25 @@ public class PaginationCubeJSResultSet implements CubeJSResultSet {
 
         private long nextItem = 0;
         private Iterator<ResultSetItem> currentIterator;
+        private boolean lastPage;
 
         public CubeIterator() {}
 
         @Override
         public boolean hasNext() {
-            while ((currentIterator == null || !currentIterator.hasNext()) && nextItem < totalItems) {
+            if ((currentIterator == null || !currentIterator.hasNext()) && !lastPage) {
                 final CubeJSQuery cubeJSQuery = query.builder()
-                        .limit(pageSize)
-                        .offset(nextItem)
-                        .build();
+                    .limit(pageSize)
+                    .offset(nextItem)
+                    .build();
 
-                currentIterator = cubeJSClient.send(cubeJSQuery).iterator();
+                final CubeJSResultSet cubeJSResultSet = cubeJSClient.send(cubeJSQuery);
 
-                if (!currentIterator.hasNext()) {
-                    throw new PaginationException("It is not possible to get all the Events from the CubeJS Server");
+                if (cubeJSResultSet.size() < pageSize) {
+                    lastPage = true;
                 }
+
+                currentIterator = cubeJSResultSet.iterator();
             }
 
             return currentIterator.hasNext();
