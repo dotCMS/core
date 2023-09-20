@@ -1,6 +1,7 @@
 package com.dotcms.cli.common;
 
 import java.io.File;
+import java.nio.file.Path;
 import picocli.CommandLine;
 
 /**
@@ -42,12 +43,15 @@ public class PushMixin {
     public boolean noValidateUnmatchedArguments;
 
     /**
-     * Returns the path of the file. (Useful for mocking)
+     * Returns the path of the file. If no path is provided, it will return current working directory.
      *
      * @return The path of the file.
      */
-    public File path() {
-        return path;
+    public Path path() {
+        if (null == path) {
+            return Path.of("");
+        }
+        return path.toPath();
     }
 
 }

@@ -8,7 +8,6 @@ import com.dotcms.model.config.Workspace;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 import javax.inject.Inject;
@@ -67,23 +66,13 @@ public abstract class AbstractFilesCommand {
     }
 
     /**
-     * Returns the directory where the workspace is.
      *
-     * @param fromFile the file object representing a directory within the workspace, or null if not specified
+     * @param path represents a directory within the workspace
      * @return the workspace files directory
      * @throws IllegalArgumentException if a valid workspace is not found from the provided path
      */
-    protected File getWorkspaceDirectory(final File fromFile) {
+    protected File getWorkspaceDirectory(final Path path) {
 
-        String fromPath;
-        if (fromFile == null) {
-            // If the workspace is not specified, we use the current directory
-            fromPath = Paths.get("").toAbsolutePath().normalize().toString();
-        } else {
-            fromPath = fromFile.getAbsolutePath();
-        }
-
-        final Path path = Paths.get(fromPath);
         final var workspace = workspaceManager.findWorkspace(path);
 
         if (workspace.isPresent()) {
@@ -91,7 +80,7 @@ public abstract class AbstractFilesCommand {
         }
 
         throw new IllegalArgumentException(
-                String.format("No valid workspace found at path: [%s]", fromPath));
+                String.format("No valid workspace found at path: [%s]", path.toAbsolutePath()));
     }
 
 
