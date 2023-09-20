@@ -340,7 +340,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         it('should without confirmation dialog emit modeChange and update pageState service', async () => {
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
+            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-button"]'));
             dotTabButtons.triggerEventHandler('click', {
                 target: { value: 'EDIT_MODE' },
                 value: DotPageMode.EDIT
@@ -375,7 +375,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
+            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-button"]'));
             dotTabButtons.triggerEventHandler('click', {
                 target: { value: 'EDIT_MODE' },
                 value: DotPageMode.EDIT
@@ -398,7 +398,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
+            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-button"]'));
             dotTabButtons.triggerEventHandler('click', {
                 target: { value: 'EDIT_MODE' },
                 value: DotPageMode.EDIT
@@ -438,7 +438,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
+            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-button"]'));
             dotTabButtons.triggerEventHandler('click', {
                 target: { value: 'EDIT_MODE' },
                 value: DotPageMode.EDIT
@@ -476,7 +476,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             });
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
+            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-button"]'));
             dotTabButtons.triggerEventHandler('click', {
                 target: { value: 'EDIT_MODE' },
                 value: DotPageMode.EDIT
