@@ -32,7 +32,7 @@ jobs:
         id: vars
         run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_OUTPUT
       - name: Check SHORT_SHA
-        run: echo ${${{ steps.vars.outputs.SHORT_SHA }}}
+        run: echo ${{ steps.vars.outputs.SHORT_SHA }}
 
       - name: Cache Maven Repository
         id: cache-maven
@@ -56,14 +56,14 @@ jobs:
       - name: Persist dotCMS TOMCAT
         uses: actions/upload-artifact@v3
         with:
-          name: dotcms-tomcat-${SHORT_SHA}
+          name: dotcms-tomcat-${{ steps.vars.outputs.SHORT_SHA }}
           path: dotcms-war/target/dotcms-war-1.0.0-SNAPSHOT.zip
 
 
       - name: Persist dotCMS WAR
         uses: actions/upload-artifact@v3
         with:
-          name: dotcms-war-${SHORT_SHA}
+          name: dotcms-war-${{ steps.vars.outputs.SHORT_SHA }}
           path: dotcms-war/target/dotcms-war-1.0.0-SNAPSHOT.war
 
   docker:
@@ -103,7 +103,7 @@ jobs:
       - name: Download Tomcat
         uses: actions/download-artifact@v3
         with:
-          name: dotcms-tomcat-${SHORT_SHA}
+          name: dotcms-tomcat-${{ steps.vars.outputs.SHORT_SHA }}
           path: docker/dotcms-mvn/ROOT/srv/
 
       - name: Extract Tomcat
@@ -113,7 +113,7 @@ jobs:
       - name: Download dotCMS
         uses: actions/download-artifact@v3
         with:
-          name: dotcms-war-${SHORT_SHA}
+          name: dotcms-war-${{ steps.vars.outputs.SHORT_SHA }}
           path: docker/dotcms-mvn/ROOT/srv/dotserver/tomcat-9.0.53/webapps/
 
       - name: Extract dotCMS
