@@ -52,8 +52,8 @@ jobs:
             core-web/installs
           key: node-${{ steps.get-date.outputs.date }}
 
-      - name: echo PWD / HOME
-        run: echo $PWD / $HOME
+      - name: echo PWD
+        run: echo $PWD
 
       - name: Build WAR with Maven
         run: ./mvnw --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
@@ -105,18 +105,28 @@ jobs:
       - name: Prune Docker Volumes
         run: "docker system prune --volumes -af"
 
-      - name: mv Tomcat into place
-        shell: bash
-        run: |
-          mv /home/runner/work/core/dotcms-war/target/dotcms-war-1.0.0-SNAPSHOT.zip /home/runner/work/core/docker/dotcms-mvn/ROOT/srv/
-          cd /home/runner/work/core/docker/dotcms-mvn/ROOT/srv/ && unzip dotcms-war-1.0.0-SNAPSHOT.zip && rm dotcms-war-1.0.0-SNAPSHOT.zip
-          mkdir -p /home/runner/work/core/docker/dotcms-mvn/ROOT/srv/dotserver/tomcat-9.0.53/webapps/ROOT
+      - name: Download Tomcat from Cache
+        uses: actions/download-artifact@v3
+        with:
+          name: dotcms-tomcat-${{ steps.vars.outputs.SHORT_SHA }}
+          path: docker/dotcms-mvn/ROOT/srv/
 
-      - name: mv dotCMS WAR into place
+      - name: Extract Tomcat
         shell: bash
         run: |
-          mv /home/runner/work/core/dotcms-war/target/dotcms-war-1.0.0-SNAPSHOT.war /home/runner/work/core/docker/dotcms-mvn/ROOT/srv/dotserver/tomcat-9.0.53/webapps/ROOT/
-          cd /home/runner/work/core/docker/dotcms-mvn/ROOT/srv/dotserver/tomcat-9.0.53/webapps/ROOT/ && unzip dotcms-war-1.0.0-SNAPSHOT.war && rm dotcms-war-1.0.0-SNAPSHOT.war
+          cd docker/dotcms-mvn/ROOT/srv/ && unzip dotcms-war-1.0.0-SNAPSHOT.zip && rm dotcms-war-1.0.0-SNAPSHOT.zip
+          mkdir -p docker/dotcms-mvn/ROOT/srv/dotserver/tomcat-9.0.53/webapps/ROOT
+
+      - name: Download dotCMS WAR from Cache
+        uses: actions/download-artifact@v3
+        with:
+          name: dotcms-war-${{ steps.vars.outputs.SHORT_SHA }}
+          path: docker/dotcms-mvn/ROOT/srv/dotserver/tomcat-9.0.53/webapps/ROOT
+
+      - name: Extract dotCMS WAR
+        shell: bash
+        run: cd docker/dotcms-mvn/ROOT/srv/dotserver/tomcat-9.0.53/webapps/ROOT && unzip dotcms-war-1.0.0-SNAPSHOT.war && rm dotcms-war-1.0.0-SNAPSHOT.war
+
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v4
