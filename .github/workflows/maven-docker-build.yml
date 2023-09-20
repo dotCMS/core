@@ -33,7 +33,7 @@ jobs:
       - name: Add SHORT_SHA env property with commit short sha
         id: vars
         run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_OUTPUT
-      - name: Check SHORT_SHA
+      - name: echo SHORT_SHA
         run: echo ${{ steps.vars.outputs.SHORT_SHA }}
 
       - name: Read Cached Maven Repository
@@ -51,6 +51,9 @@ jobs:
             core-web/node_modules
             core-web/installs
           key: node-${{ steps.get-date.outputs.date }}
+
+      - name: echo PWD
+        run: echo $PWD
 
       - name: Build WAR with Maven
         run: ./mvnw --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
