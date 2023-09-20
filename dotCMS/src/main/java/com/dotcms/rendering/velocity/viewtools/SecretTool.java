@@ -4,8 +4,8 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -17,135 +17,155 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
 import java.util.Optional;
 
 /**
  * This view tool expose the dot velocity secrets app to velocity
  * This allows to get configuration from the dotVelocitySecretApp
+ *
  * @author jsanca
  */
 public class SecretTool implements ViewTool {
 
     private InternalContextAdapterImpl internalContextAdapter;
-    private Context context;
-	private HttpServletRequest request;
+    private Object initData;
 
-	@Override
-	public void init(final Object initData) {
+    private HttpServletRequest getRequest() {
 
-        final ViewContext context = (ViewContext) initData;
-		this.request = context.getRequest();
-        this.context = context.getVelocityContext();
-	}
+        if (null != initData && initData instanceof ViewContext) {
+            return ((ViewContext) initData).getRequest();
+        } else {
+            return HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        }
 
-	/**
-	 * Gets a secret as an object|string, based on the current host (if configured)
-	 * @param key String
-	 * @return Object
-	 */
-	public Object get(final String key) {
+    }
 
-		canUserEvaluate();
+    private Context getContext() {
 
-		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(request);
-		return config.isPresent()? config.get().getStringOrNull(key) : null;
-	}
+        if (null != initData && initData instanceof ViewContext) {
+            return ((ViewContext) initData).getVelocityContext();
+        } else {
+            throw new DotRuntimeException("Unable to find VelocityContext");
+        }
 
-	/**
-	 * Gets a secret as an object|string, based on the system host (if configured)
-	 * @param key String
-	 * @return Object
-	 */
-	public Object getSystemSecret (final String key) {
+    }
 
-		return getSystemSecret(key, null);
-	}
+    @Override
+    public void init(final Object initData) {
+        this.initData = initData;
+    }
 
-	/**
-	 * Gets a secret as an object|string, based on the system host (if configured)
-	 * If not present, returns the default value
-	 * @param key String
-	 * @param defaultValue Object
-	 * @return Object
-	 */
-	public Object getSystemSecret (final String key,
-								   final Object defaultValue) {
+    /**
+     * Gets a secret as an object|string, based on the current host (if configured)
+     *
+     * @param key String
+     * @return Object
+     */
+    public Object get(final String key) {
 
-		canUserEvaluate();
-		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(APILocator.systemHost());
-		return config.isPresent()? config.get().getStringOrNull(key, null!= defaultValue? defaultValue.toString():null) : defaultValue;
-	}
+        canUserEvaluate();
 
-	public char[] getCharArray(final String key) {
 
-		canUserEvaluate();
-		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(request);
-		return config.isPresent()? config.get().getCharArrayOrNull(key) : null;
-	}
+        final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(getRequest());
+        return config.isPresent() ? config.get().getStringOrNull(key) : null;
+    }
 
-	public char[] getCharArraySystemSecret (final String key) {
+    /**
+     * Gets a secret as an object|string, based on the system host (if configured)
+     *
+     * @param key String
+     * @return Object
+     */
+    public Object getSystemSecret(final String key) {
 
-		return getCharArraySystemSecret(key, null);
-	}
+        return getSystemSecret(key, null);
+    }
 
-	public char[] getCharArraySystemSecret (final String key,
-								   final char[] defaultValue) {
+    /**
+     * Gets a secret as an object|string, based on the system host (if configured)
+     * If not present, returns the default value
+     *
+     * @param key          String
+     * @param defaultValue Object
+     * @return Object
+     */
+    public Object getSystemSecret(final String key,
+                                  final Object defaultValue) {
 
-		canUserEvaluate();
-		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(APILocator.systemHost());
-		return config.isPresent()? config.get().getCharArrayOrNull(key, defaultValue) : defaultValue;
-	}
+        canUserEvaluate();
+        final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(APILocator.systemHost());
+        return config.isPresent() ? config.get().getStringOrNull(key, null != defaultValue ? defaultValue.toString() : null) : defaultValue;
+    }
+
+    public char[] getCharArray(final String key) {
+
+        canUserEvaluate();
+
+        final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(getRequest());
+        return config.isPresent() ? config.get().getCharArrayOrNull(key) : null;
+    }
+
+    public char[] getCharArraySystemSecret(final String key) {
+
+        return getCharArraySystemSecret(key, null);
+    }
+
+    public char[] getCharArraySystemSecret(final String key,
+                                           final char[] defaultValue) {
+
+        canUserEvaluate();
+        final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(APILocator.systemHost());
+        return config.isPresent() ? config.get().getCharArrayOrNull(key, defaultValue) : defaultValue;
+    }
 
     private static final boolean ENABLE_SCRIPTING = Config.getBooleanProperty("ENABLE_SCRIPTING", false);
 
     /**
      * Test 2 things.
-	 * 1) see if the user has the scripting role
-	 * 2) otherwise check if the last modified user has the scripting role
+     * 1) see if the user has the scripting role
+     * 2) otherwise check if the last modified user has the scripting role
+     *
      * @return boolean
      */
     protected void canUserEvaluate() {
 
-        if(!ENABLE_SCRIPTING) {
+        if (!ENABLE_SCRIPTING) {
 
             Logger.warn(this.getClass(), "Scripting called and ENABLE_SCRIPTING set to false");
-			throw new SecurityException("External scripting is disabled in your dotcms instance.");
+            throw new SecurityException("External scripting is disabled in your dotcms instance.");
         }
 
         try {
 
-			boolean hasScriptingRole = false;
-			final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+            boolean hasScriptingRole = false;
+            final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
 
-			this.internalContextAdapter    = new InternalContextAdapterImpl(context);
-			final String fieldResourceName = this.internalContextAdapter.getCurrentTemplateName();
-			if (UtilMethods.isSet(fieldResourceName)) {
-				final String contentletFileAssetInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
-				final Contentlet contentlet = APILocator.getContentletAPI().find(contentletFileAssetInode, APILocator.systemUser(), true);
-				final User lastModifiedUser = APILocator.getUserAPI().loadUserById(contentlet.getModUser(), APILocator.systemUser(), true);
-				hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, scripting);
-			}
+            this.internalContextAdapter = new InternalContextAdapterImpl(getContext());
+            final String fieldResourceName = this.internalContextAdapter.getCurrentTemplateName();
+            if (UtilMethods.isSet(fieldResourceName)) {
+                final String contentletFileAssetInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
+                final Contentlet contentlet = APILocator.getContentletAPI().find(contentletFileAssetInode, APILocator.systemUser(), true);
+                final User lastModifiedUser = APILocator.getUserAPI().loadUserById(contentlet.getModUser(), APILocator.systemUser(), true);
+                hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, scripting);
+            }
 
-			if (!hasScriptingRole) {
-				final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
-				// try with the current user
-				if (null != user) {
+            if (!hasScriptingRole) {
+                final User user = WebAPILocator.getUserWebAPI().getUser(getRequest());
+                // try with the current user
+                if (null != user) {
 
-					hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(user, scripting);
-				}
-			}
+                    hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(user, scripting);
+                }
+            }
 
-			if (!hasScriptingRole) {
+            if (!hasScriptingRole) {
 
-				throw new SecurityException("External scripting is disabled in your dotcms instance.");
-			}
-        } catch(Exception e) {
+                throw new SecurityException("External scripting is disabled in your dotcms instance.");
+            }
+        } catch (Exception e) {
 
             Logger.warn(this.getClass(), "Scripting called with error" + e);
-			throw new SecurityException("External scripting is disabled in your dotcms instance.", e);
+            throw new SecurityException("External scripting is disabled in your dotcms instance.", e);
         }
     } // canUserEvaluate.
 }
