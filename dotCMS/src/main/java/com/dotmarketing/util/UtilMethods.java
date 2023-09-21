@@ -976,7 +976,8 @@ public class UtilMethods {
     	String r = "";
         try {
             if (x.lastIndexOf(".") != -1) {
-                return x.substring(x.lastIndexOf(".") + 1).toLowerCase();
+                final String ext = x.substring(x.lastIndexOf(".") + 1);
+                return toLowerCase ? ext.toLowerCase(): ext;
             } else {
                 return r;
             }
