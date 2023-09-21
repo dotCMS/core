@@ -154,7 +154,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
     @Test
     public void test_default_olist_render_to_html() throws  JSONException {
 
-        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final String velocityRoot   = VelocityUtil.getVelocityRootPath();
         final File velocityRootFile = new File(velocityRoot);
 
         Assert.assertTrue("the " + velocityRoot + "/static/storyblock/bulletList.vtl" + " should exists",
@@ -178,7 +178,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
     @Test
     public void test_default_ulist_render_to_html() throws  JSONException {
 
-        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final String velocityRoot   = VelocityUtil.getVelocityRootPath();
         final File velocityRootFile = new File(velocityRoot);
 
         Assert.assertTrue("the " + velocityRoot + "/static/storyblock/orderedList.vtl" + " should exists",
@@ -204,7 +204,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
     @Test
     public void test_default_paragraph_render_to_html() throws  JSONException {
 
-        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final String velocityRoot   = VelocityUtil.getVelocityRootPath();
         final File velocityRootFile = new File(velocityRoot);
 
         Assert.assertTrue("the " + velocityRoot + "/static/storyblock/paragraph.vtl" + " should exists",
@@ -240,7 +240,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
     @Test
     public void test_default_render_to_html() throws  JSONException {
 
-        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final String velocityRoot   = VelocityUtil.getVelocityRootPath();;
         final File velocityRootFile = new File(velocityRoot);
 
         Assert.assertTrue("the " + velocityRoot + "/static/storyblock/default.vtl" + " should exists",
