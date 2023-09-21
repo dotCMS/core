@@ -313,6 +313,13 @@ jobs:
 
       - name: Prepare workflow data
         run: |
+          PR_TITLE=$(jq --arg title "${{ github.event.pull_request.title }}" -n '$title')
+          echo "{\"pr_title\": $PR_TITLE}"
+          
+          echo "\"pr_id2\": \"${{ github.event.pull_request.id }}\","
+          
+          echo "\"pr_title2\": \"${{ github.event.pull_request.title  }}\","
+          
           AGGREGATE_STATUS="SUCCESS"
           jobs_status="${{ toJson(needs) }}"
           echo "job status2=${jobs_status}"
@@ -353,8 +360,15 @@ jobs:
           
           echo '"pr_id": "'${{ github.event.pull_request.id }}'",'
           echo '"pr_number": "'${{ github.event.pull_request.number }}'",'
+          
           PR_TITLE=$(jq --arg title "${{ github.event.pull_request.title }}" -n '$title')
           echo "{\"pr_title\": $PR_TITLE}"
+          
+          echo "\"pr_id2\": \"${{ github.event.pull_request.id }}\","
+          
+          echo "\"pr_title2\": \"${{ github.event.pull_request.title  }}\","
+          
+          
           echo '"pr_author": "'${{ github.event.pull_request.user.login }}'",'
           echo '"pr_merge_state": "'${{ github.event.pull_request.mergeable_state }}'",'
           
@@ -380,6 +394,13 @@ jobs:
           echo '"pr_number": "'${{ github.event.pull_request.number }}'",' >> workflow-data.json
           PR_TITLE=$(jq --arg title "${{ github.event.pull_request.title }}" -n '$title')
           echo "{\"pr_title\": $PR_TITLE}" >> workflow-data.json
+          
+          echo '"pr_id1": "'${{ github.event.pull_request.id }}'",'
+          echo "\"pr_id2\": \"${{ github.event.pull_request.id }}\","
+          
+          echo "\"pr_title2\": \"${{ github.event.pull_request.title  }}\","
+          
+          echo '"pr_title": "'${{ github.event.pull_request.title }}'",'
           
           echo '"pr_author": "'${{ github.event.pull_request.user.login }}'",' >> workflow-data.json
           echo '"pr_merge_state": "'${{ github.event.pull_request.mergeable_state }}'",' >> workflow-data.json
