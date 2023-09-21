@@ -73,7 +73,7 @@ export default {
         accept: {
             defaultValue: 'image/*',
             control: 'string',
-            description: 'Array of accepted file types'
+            description: 'Accepted file types'
         },
         maxFileSize: {
             defaultValue: 1000000,

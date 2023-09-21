@@ -24,7 +24,8 @@ import {
     DotDropZoneComponent,
     DotMessagePipe,
     DotSpinnerModule,
-    DropZoneFileEvent
+    DropZoneFileEvent,
+    DropZoneFileValidity
 } from '@dotcms/ui';
 
 import { DotUiMessageComponent } from './components/dot-ui-message/dot-ui-message.component';
@@ -33,6 +34,8 @@ import {
     BINARY_FIELD_STATUS,
     DotBinaryFieldStore
 } from './store/binary-field.store';
+
+import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../utils/binary-field-utils';
 
 @Component({
     selector: 'dot-binary-field',
@@ -48,16 +51,16 @@ import {
         DotSpinnerModule,
         HttpClientModule
     ],
-    providers: [DotBinaryFieldStore, DotMessageService, DotUploadService],
+    providers: [DotBinaryFieldStore, DotUploadService],
     templateUrl: './binary-field.component.html',
     styleUrls: ['./binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldComponent implements OnInit {
     //Inputs
-    private _accept: string[] = [];
+    acceptedTypes: string[] = [];
     @Input() set accept(accept: string) {
-        this._accept = accept.split(',').map((type) => type.trim());
+        this.acceptedTypes = accept.split(',').map((type) => type.trim());
     }
 
     @Input() maxFileSize: number;
@@ -89,10 +92,7 @@ export class DotBinaryFieldComponent implements OnInit {
                 this.tempFile.emit(tempFile);
             });
 
-        this.dotBinaryFieldStore.setRules({
-            accept: this._accept,
-            maxFileSize: this.maxFileSize
-        });
+        this.dotBinaryFieldStore.setMaxFileSize(this.maxFileSize);
     }
 
     /**
@@ -114,6 +114,14 @@ export class DotBinaryFieldComponent implements OnInit {
      */
     handleFileDrop(event: DropZoneFileEvent) {
         this.setDropZoneActiveState(false);
+
+        if (!event.validity.valid) {
+            const uiMessage = this.handleFileDropError(event.validity);
+            this.dotBinaryFieldStore.invalidFile(uiMessage);
+
+            return;
+        }
+
         this.dotBinaryFieldStore.handleFileDrop(event);
     }
 
@@ -176,5 +184,29 @@ export class DotBinaryFieldComponent implements OnInit {
 
     handleExternalSourceFile(_event) {
         // TODO: Implement - FROM URL
+    }
+
+    /**
+     *  Handle file drop error
+     *
+     * @private
+     * @param {DropZoneFileValidity} { fileTypeMismatch, maxFileSizeExceeded }
+     * @memberof DotBinaryFieldStore
+     */
+    private handleFileDropError({
+        fileTypeMismatch,
+        maxFileSizeExceeded
+    }: DropZoneFileValidity): UiMessageI {
+        const acceptedTypes = this.acceptedTypes.join(', ');
+        const maxSize = `${this.maxFileSize} bytes`;
+        let uiMessage: UiMessageI;
+
+        if (fileTypeMismatch) {
+            uiMessage = getUiMessage(UI_MESSAGE_KEYS.FILE_TYPE_MISMATCH, acceptedTypes);
+        } else if (maxFileSizeExceeded) {
+            uiMessage = getUiMessage(UI_MESSAGE_KEYS.MAX_FILE_SIZE_EXCEEDED, maxSize);
+        }
+
+        return uiMessage;
     }
 }

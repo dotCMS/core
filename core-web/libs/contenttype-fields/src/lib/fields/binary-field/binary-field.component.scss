@@ -3,8 +3,8 @@
 @import "libs/block-editor/src/fonts"; // Import PrimeNG Icon
 
 :host ::ng-deep {
-    @import "libs/dotcms-scss/angular/styles";
-    @import "node_modules/primeng/resources/primeng.min";
+    @import "libs/dotcms-scss/angular/dotcms-theme/components/buttons/button";
+    @import "libs/dotcms-scss/angular/dotcms-theme/components/dialog";
     @import "node_modules/primeicons/primeicons";
 }
 
@@ -44,6 +44,14 @@
     gap: $spacing-3;
     justify-content: center;
     align-items: flex-start;
+
+    ::ng-deep .p-button {
+        display: inline-flex;
+        user-select: none;
+        align-items: center;
+        vertical-align: bottom;
+        text-align: center;
+    }
 }
 
 .binary-field__actions ::ng-deep {
@@ -85,6 +93,7 @@
         text-decoration: underline;
         font-size: $font-size-md;
         font-family: $font-default;
+        padding: revert;
     }
 }
 

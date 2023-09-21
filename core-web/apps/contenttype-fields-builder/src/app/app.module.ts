@@ -4,6 +4,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotBinaryFieldComponent } from '@dotcms/contenttype-fields';
+import { DotMessageService } from '@dotcms/data-access';
 
 import { AppComponent } from './app.component';
 
@@ -21,7 +22,8 @@ const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
 
 @NgModule({
     declarations: [AppComponent],
-    imports: [BrowserModule, BrowserAnimationsModule, DotBinaryFieldComponent]
+    imports: [BrowserModule, BrowserAnimationsModule, DotBinaryFieldComponent],
+    providers: [DotMessageService]
 })
 export class AppModule implements DoBootstrap {
     constructor(private readonly injector: Injector) {}

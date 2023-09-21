@@ -94,15 +94,6 @@ describe('DotBinaryFieldComponent', () => {
         store = spectator.inject(DotBinaryFieldStore, true);
     });
 
-    it('should set rules on init', () => {
-        const spyRules = jest.spyOn(store, 'setRules');
-        spectator.detectChanges();
-        expect(spyRules).toHaveBeenCalledWith({
-            accept: ['image/*'],
-            maxFileSize: 1000
-        });
-    });
-
     it('should emit temp file', () => {
         const spyEmit = jest.spyOn(spectator.component.tempFile, 'emit');
         spectator.detectChanges();

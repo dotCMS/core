@@ -3,11 +3,11 @@ import { Observable, from } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { filter, switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 
 import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DropZoneFileEvent, DropZoneFileValidity } from '@dotcms/ui';
+import { DropZoneFileEvent } from '@dotcms/ui';
 
 import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../../utils/binary-field-utils';
 
@@ -17,10 +17,6 @@ export interface BinaryFieldState {
     mode: BINARY_FIELD_MODE;
     status: BINARY_FIELD_STATUS;
     UiMessage: UiMessageI;
-    rules: {
-        accept: string[];
-        maxFileSize: number;
-    };
     dialogOpen: boolean;
     dropZoneActive: boolean;
 }
@@ -45,15 +41,13 @@ const initialState: BinaryFieldState = {
     status: BINARY_FIELD_STATUS.INIT,
     dialogOpen: false,
     dropZoneActive: false,
-    rules: {
-        accept: [],
-        maxFileSize: 0
-    },
     UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT)
 };
 
 @Injectable()
 export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
+    private _maxFileSize: number;
+
     // Selectors
     readonly vm$ = this.select((state) => state);
 
@@ -106,9 +100,10 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         status
     }));
 
-    readonly setRules = this.updater<{ accept: string[]; maxFileSize: number }>((state, rules) => ({
+    readonly invalidFile = this.updater<UiMessageI>((state, UiMessage) => ({
         ...state,
-        rules
+        UiMessage,
+        status: BINARY_FIELD_STATUS.ERROR
     }));
 
     readonly openDialog = this.updater<BINARY_FIELD_MODE>((state, mode) => ({
@@ -133,18 +128,10 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     //  Effects
     readonly handleFileDrop = this.effect<DropZoneFileEvent>((event$) => {
         return event$.pipe(
-            filter(({ validity }) => {
-                if (!validity.valid) {
-                    this.handleFileDropError(validity);
-                    this.setStatus(BINARY_FIELD_STATUS.ERROR);
-                }
-
-                return validity.valid;
-            }),
             tap(({ file }) => {
-                this.setUiMessage(getUiMessage(UI_MESSAGE_KEYS.DEFAULT));
                 this.setFile(file);
                 this.setStatus(BINARY_FIELD_STATUS.UPLOADING);
+                this.setUiMessage(getUiMessage(UI_MESSAGE_KEYS.DEFAULT));
             }),
             switchMap(({ file }) => this.uploadTempFile(file))
         );
@@ -171,14 +158,16 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         return url$.pipe();
     });
 
-    private uploadTempFile(file: File): Observable<DotCMSTempFile> {
-        const { maxFileSize } = this.get().rules;
+    setMaxFileSize(maxFileSize: number) {
+        this._maxFileSize = maxFileSize;
+    }
 
+    private uploadTempFile(file: File): Observable<DotCMSTempFile> {
         /* To be implemented */
         return from(
             this.dotUploadService.uploadFile({
                 file,
-                maxSize: `${maxFileSize}`,
+                maxSize: `${this._maxFileSize}`,
                 signal: null
             })
         ).pipe(
@@ -194,30 +183,5 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                 }
             )
         );
-    }
-
-    /**
-     *  Handle file drop error
-     *
-     * @private
-     * @param {DropZoneFileValidity} { fileTypeMismatch, maxFileSizeExceeded }
-     * @memberof DotBinaryFieldStore
-     */
-    private handleFileDropError({
-        fileTypeMismatch,
-        maxFileSizeExceeded
-    }: DropZoneFileValidity): void {
-        const { accept, maxFileSize } = this.get().rules;
-        const acceptedTypes = accept.join(', ');
-        const maxSize = `${maxFileSize} bytes`;
-        let uiMessage: UiMessageI;
-
-        if (fileTypeMismatch) {
-            uiMessage = getUiMessage(UI_MESSAGE_KEYS.FILE_TYPE_MISMATCH, acceptedTypes);
-        } else if (maxFileSizeExceeded) {
-            uiMessage = getUiMessage(UI_MESSAGE_KEYS.MAX_FILE_SIZE_EXCEEDED, maxSize);
-        }
-
-        this.setUiMessage(uiMessage);
     }
 }
