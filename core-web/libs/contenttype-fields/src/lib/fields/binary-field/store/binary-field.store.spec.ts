@@ -1,6 +1,8 @@
 import { expect, describe } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
 
+import { skip } from 'rxjs/operators';
+
 import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
@@ -18,16 +20,12 @@ const INITIAL_STATE: BinaryFieldState = {
     tempFile: null,
     mode: BINARY_FIELD_MODE.DROPZONE,
     status: BINARY_FIELD_STATUS.INIT,
-    rules: {
-        accept: [],
-        maxFileSize: 0
-    },
     UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
     dialogOpen: false,
     dropZoneActive: false
 };
 
-const TEMP_FILE_MOCK: DotCMSTempFile = {
+export const TEMP_FILE_MOCK: DotCMSTempFile = {
     fileName: 'image.png',
     folder: '/images',
     id: '12345',
@@ -66,6 +64,7 @@ describe('DotBinaryFieldStore', () => {
         spectator = createStoreService();
         store = spectator.inject(DotBinaryFieldStore);
 
+        store.setState(INITIAL_STATE);
         store.state$.subscribe((state) => {
             initialState = state;
         });
@@ -76,137 +75,83 @@ describe('DotBinaryFieldStore', () => {
     });
 
     describe('Updaters', () => {
-        it('should set File', () => {
-            const file = new File([''], 'filename');
-            store.setFile(file);
+        it('should set File', (done) => {
+            const mockFile = new File([''], 'filename');
+            store.setFile(mockFile);
 
-            store.vm$.subscribe((state) => expect(state.file).toEqual(file));
+            store.file$.subscribe((file) => {
+                expect(file).toEqual(mockFile);
+                done();
+            });
         });
-        it('should set TempFile', () => {
+        it('should set TempFile', (done) => {
             store.setTempFile(TEMP_FILE_MOCK);
 
-            store.vm$.subscribe((state) => expect(state.tempFile).toEqual(TEMP_FILE_MOCK));
+            store.tempFile$.subscribe((tempFile) => {
+                expect(tempFile).toEqual(TEMP_FILE_MOCK);
+                done();
+            });
         });
-        it('should set UiMessage', () => {
+        it('should set UiMessage', (done) => {
             const uiMessage = getUiMessage(UI_MESSAGE_KEYS.FILE_TYPE_MISMATCH);
             store.setUiMessage(uiMessage);
 
-            store.vm$.subscribe((state) => expect(state.UiMessage).toEqual(uiMessage));
+            store.vm$.subscribe((state) => {
+                expect(state.UiMessage).toEqual(uiMessage);
+                done();
+            });
         });
-        it('should set Mode', () => {
+        it('should set Mode', (done) => {
             store.setMode(BINARY_FIELD_MODE.EDITOR);
 
-            store.vm$.subscribe((state) => expect(state.mode).toBe(BINARY_FIELD_MODE.EDITOR));
+            store.vm$.subscribe((state) => {
+                expect(state.mode).toBe(BINARY_FIELD_MODE.EDITOR);
+                done();
+            });
         });
-        it('should set Status', () => {
+        it('should set Status', (done) => {
             store.setStatus(BINARY_FIELD_STATUS.PREVIEW);
 
-            store.vm$.subscribe((state) => expect(state.status).toBe(BINARY_FIELD_STATUS.PREVIEW));
+            store.vm$.subscribe((state) => {
+                expect(state.status).toBe(BINARY_FIELD_STATUS.PREVIEW);
+                done();
+            });
         });
 
-        it('should set DialogOpen', () => {
+        it('should set DialogOpen', (done) => {
             store.setDialogOpen(true);
 
-            store.vm$.subscribe((state) => expect(state.dialogOpen).toBe(true));
+            store.vm$.subscribe((state) => {
+                expect(state.dialogOpen).toBe(true);
+                done();
+            });
         });
 
-        it('should set DropZoneActive', () => {
+        it('should set DropZoneActive', (done) => {
             store.setDropZoneActive(true);
 
-            store.vm$.subscribe((state) => expect(state.dropZoneActive).toBe(true));
+            store.vm$.subscribe((state) => {
+                expect(state.dropZoneActive).toBe(true);
+                done();
+            });
         });
     });
 
     describe('Actions', () => {
-        describe('handleFileDrop', () => {
-            it('should set tempFile and status to PREVIEW when dropping a valid', () => {
+        describe('handleUploadFile', () => {
+            it('should set tempFile and status to PREVIEW when dropping a valid', (done) => {
                 const file = new File([''], 'filename');
-                const validity = {
-                    valid: true,
-                    fileTypeMismatch: false,
-                    maxFileSizeExceeded: false,
-                    multipleFilesDropped: false
-                };
+                const spyUploading = jest.spyOn(store, 'setUploading');
 
-                const spyStatus = jest.spyOn(store, 'setStatus');
-                const message = getUiMessage(UI_MESSAGE_KEYS.DEFAULT);
+                store.handleUploadFile(file);
 
-                store.vm$.subscribe((state) => {
-                    expect(state.status).toBe(BINARY_FIELD_STATUS.PREVIEW);
-                    expect(state.tempFile).toBe(TEMP_FILE_MOCK);
-                    expect(state.UiMessage).toEqual(message);
+                // Skip initial state
+                store.tempFile$.pipe(skip(1)).subscribe((tempFile) => {
+                    expect(tempFile).toBe(TEMP_FILE_MOCK);
+                    done();
                 });
 
-                store.handleFileDrop({ file, validity });
-                // Should be called twice, one for PREVIEW and one for UPLOADING
-                expect(spyStatus).toHaveBeenCalledWith(BINARY_FIELD_STATUS.UPLOADING);
-            });
-
-            it('should not set tempFile, set status to ERROR, and set MAX_FILE_SIZE_EXCEEDED messsage when drop a file that exceed the max size', () => {
-                const file = new File([''], 'filename');
-                const validity = {
-                    valid: false,
-                    fileTypeMismatch: false,
-                    maxFileSizeExceeded: true,
-                    multipleFilesDropped: false
-                };
-
-                const spyStatus = jest.spyOn(store, 'setStatus');
-                const spyTemp = jest.spyOn(store, 'setTempFile');
-                const message = getUiMessage(UI_MESSAGE_KEYS.MAX_FILE_SIZE_EXCEEDED);
-
-                store.vm$.subscribe((state) => {
-                    expect(state.status).toBe(BINARY_FIELD_STATUS.ERROR);
-                    expect(state.tempFile).toBe(null);
-                    expect(state.UiMessage).toEqual(message);
-                });
-
-                store.handleFileDrop({ file, validity });
-                expect(spyStatus).toHaveBeenCalledWith(BINARY_FIELD_STATUS.ERROR);
-                expect(spyTemp).not.toHaveBeenCalled();
-            });
-
-            it('should not set tempFile, set status to ERROR, and set FILE_TYPE_MISMATCH messsage when drop a file which extension is not allowed', () => {
-                const file = new File([''], 'filename');
-                const validity = {
-                    valid: false,
-                    fileTypeMismatch: false,
-                    maxFileSizeExceeded: true,
-                    multipleFilesDropped: false
-                };
-
-                const spyStatus = jest.spyOn(store, 'setStatus');
-                const spyTemp = jest.spyOn(store, 'setTempFile');
-                const message = getUiMessage(UI_MESSAGE_KEYS.FILE_TYPE_MISMATCH);
-
-                store.vm$.subscribe((state) => {
-                    expect(state.status).toBe(BINARY_FIELD_STATUS.ERROR);
-                    expect(state.tempFile).toBe(null);
-                    expect(state.UiMessage).toEqual(message);
-                });
-
-                store.handleFileDrop({ file, validity });
-                expect(spyStatus).toHaveBeenCalledWith(BINARY_FIELD_STATUS.ERROR);
-                expect(spyTemp).not.toHaveBeenCalled();
-            });
-        });
-
-        describe('handleFileSelection', () => {
-            it('should set tempFile and status to PREVIEW when select valid file', () => {
-                const file = new File([''], 'filename');
-
-                const spyStatus = jest.spyOn(store, 'setStatus');
-                const message = getUiMessage(UI_MESSAGE_KEYS.DEFAULT);
-
-                store.vm$.subscribe((state) => {
-                    expect(state.status).toBe(BINARY_FIELD_STATUS.PREVIEW);
-                    expect(state.tempFile).toBe(TEMP_FILE_MOCK);
-                    expect(state.UiMessage).toEqual(message);
-                });
-
-                store.handleFileSelection(file);
-                // Should be called twice, one for PREVIEW and one for UPLOADING
-                expect(spyStatus).toHaveBeenCalledWith(BINARY_FIELD_STATUS.UPLOADING);
+                expect(spyUploading).toHaveBeenCalled();
             });
         });
     });

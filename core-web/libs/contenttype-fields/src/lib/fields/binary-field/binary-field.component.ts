@@ -18,7 +18,7 @@ import { DialogModule } from 'primeng/dialog';
 
 import { skip } from 'rxjs/operators';
 
-import { DotMessageService, DotUploadService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
@@ -32,7 +32,8 @@ import { DotUiMessageComponent } from './components/dot-ui-message/dot-ui-messag
 import {
     BINARY_FIELD_MODE,
     BINARY_FIELD_STATUS,
-    DotBinaryFieldStore
+    DotBinaryFieldStore,
+    initialState
 } from './store/binary-field.store';
 
 import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../utils/binary-field-utils';
@@ -51,7 +52,7 @@ import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../utils/binary-fi
         DotSpinnerModule,
         HttpClientModule
     ],
-    providers: [DotBinaryFieldStore, DotUploadService],
+    providers: [DotBinaryFieldStore],
     templateUrl: './binary-field.component.html',
     styleUrls: ['./binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -82,6 +83,7 @@ export class DotBinaryFieldComponent implements OnInit {
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
         private readonly dotMessageService: DotMessageService
     ) {
+        this.dotBinaryFieldStore.setState(initialState);
         this.dotMessageService.init();
     }
 
@@ -112,17 +114,15 @@ export class DotBinaryFieldComponent implements OnInit {
      * @return {*}
      * @memberof BinaryFieldComponent
      */
-    handleFileDrop(event: DropZoneFileEvent) {
-        this.setDropZoneActiveState(false);
-
-        if (!event.validity.valid) {
-            const uiMessage = this.handleFileDropError(event.validity);
+    handleFileDrop({ validity, file }: DropZoneFileEvent) {
+        if (!validity.valid) {
+            const uiMessage = this.handleFileDropError(validity);
             this.dotBinaryFieldStore.invalidFile(uiMessage);
 
             return;
         }
 
-        this.dotBinaryFieldStore.handleFileDrop(event);
+        this.dotBinaryFieldStore.handleUploadFile(file);
     }
 
     /**
@@ -166,7 +166,7 @@ export class DotBinaryFieldComponent implements OnInit {
     handleFileSelection(event: Event) {
         const input = event.target as HTMLInputElement;
         const file = input.files[0];
-        this.dotBinaryFieldStore.handleFileSelection(file);
+        this.dotBinaryFieldStore.handleUploadFile(file);
     }
 
     /**

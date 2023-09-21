@@ -7,7 +7,6 @@ import { switchMap, tap } from 'rxjs/operators';
 
 import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DropZoneFileEvent } from '@dotcms/ui';
 
 import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../../utils/binary-field-utils';
 
@@ -34,7 +33,7 @@ export enum BINARY_FIELD_STATUS {
     ERROR = 'ERROR'
 }
 
-const initialState: BinaryFieldState = {
+export const initialState: BinaryFieldState = {
     file: null,
     tempFile: null,
     mode: BINARY_FIELD_MODE.DROPZONE,
@@ -61,7 +60,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly mode$ = this.select((state) => state.mode);
 
     constructor(private readonly dotUploadService: DotUploadService) {
-        super(initialState);
+        super();
     }
 
     // Updaters
@@ -82,6 +81,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     readonly setTempFile = this.updater<DotCMSTempFile>((state, tempFile) => ({
         ...state,
+        status: BINARY_FIELD_STATUS.PREVIEW,
         tempFile
     }));
 
@@ -100,8 +100,23 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         status
     }));
 
+    readonly setUploading = this.updater((state) => ({
+        ...state,
+        dropZoneActive: false,
+        uiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
+        status: BINARY_FIELD_STATUS.UPLOADING
+    }));
+
+    readonly setError = this.updater<UiMessageI>((state, UiMessage) => ({
+        ...state,
+        UiMessage,
+        status: BINARY_FIELD_STATUS.ERROR,
+        tempFile: null
+    }));
+
     readonly invalidFile = this.updater<UiMessageI>((state, UiMessage) => ({
         ...state,
+        dropZoneActive: false,
         UiMessage,
         status: BINARY_FIELD_STATUS.ERROR
     }));
@@ -126,24 +141,9 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     }));
 
     //  Effects
-    readonly handleFileDrop = this.effect<DropZoneFileEvent>((event$) => {
+    readonly handleUploadFile = this.effect<File>((event$) => {
         return event$.pipe(
-            tap(({ file }) => {
-                this.setFile(file);
-                this.setStatus(BINARY_FIELD_STATUS.UPLOADING);
-                this.setUiMessage(getUiMessage(UI_MESSAGE_KEYS.DEFAULT));
-            }),
-            switchMap(({ file }) => this.uploadTempFile(file))
-        );
-    });
-
-    readonly handleFileSelection = this.effect<File>((file$) => {
-        return file$.pipe(
-            tap((file: File) => {
-                this.setUiMessage(getUiMessage(UI_MESSAGE_KEYS.DEFAULT));
-                this.setFile(file);
-                this.setStatus(BINARY_FIELD_STATUS.UPLOADING);
-            }),
+            tap(() => this.setUploading()),
             switchMap((file) => this.uploadTempFile(file))
         );
     });
@@ -163,7 +163,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     }
 
     private uploadTempFile(file: File): Observable<DotCMSTempFile> {
-        /* To be implemented */
         return from(
             this.dotUploadService.uploadFile({
                 file,
@@ -173,13 +172,10 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         ).pipe(
             tapResponse(
                 (tempFile) => {
-                    this.setStatus(BINARY_FIELD_STATUS.PREVIEW);
                     this.setTempFile(tempFile);
                 },
                 () => {
-                    this.setUiMessage(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR));
-                    this.setStatus(BINARY_FIELD_STATUS.ERROR);
-                    this.setTempFile(null);
+                    this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR));
                 }
             )
         );

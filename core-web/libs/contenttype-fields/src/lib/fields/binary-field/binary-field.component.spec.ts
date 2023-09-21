@@ -21,6 +21,7 @@ import {
     DotBinaryFieldStore
 } from './store/binary-field.store';
 
+import { getUiMessage } from '../../utils/binary-field-utils';
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
 
 const TEMP_FILE_MOCK: DotCMSTempFile = {
@@ -113,14 +114,34 @@ describe('DotBinaryFieldComponent', () => {
         });
 
         it('should handle file drop', () => {
-            const spyFileDrop = jest.spyOn(store, 'handleFileDrop');
-            const spyDropZoneActive = jest.spyOn(store, 'setDropZoneActive');
+            const spyUploadFile = jest.spyOn(store, 'handleUploadFile');
+            const spyInvalidFile = jest.spyOn(store, 'invalidFile');
             const dropZone = spectator.fixture.debugElement.query(By.css('dot-drop-zone'));
 
             dropZone.triggerEventHandler('fileDropped', DROP_ZONE_FILE_EVENT);
 
-            expect(spyFileDrop).toHaveBeenCalledWith(DROP_ZONE_FILE_EVENT);
-            expect(spyDropZoneActive).toHaveBeenCalledWith(false);
+            expect(spyUploadFile).toHaveBeenCalledWith(DROP_ZONE_FILE_EVENT.file);
+            expect(spyInvalidFile).not.toHaveBeenCalled();
+        });
+
+        it('should handle file drop error', () => {
+            const spyUploadFile = jest.spyOn(store, 'handleUploadFile');
+            const spyInvalidFile = jest.spyOn(store, 'invalidFile');
+            const dropZone = spectator.fixture.debugElement.query(By.css('dot-drop-zone'));
+
+            dropZone.triggerEventHandler('fileDropped', {
+                ...DROP_ZONE_FILE_EVENT,
+                validity: {
+                    ...DROP_ZONE_FILE_EVENT.validity,
+                    fileTypeMismatch: true,
+                    valid: false
+                }
+            });
+
+            expect(spyInvalidFile).toHaveBeenCalledWith(
+                getUiMessage('FILE_TYPE_MISMATCH', 'image/*')
+            );
+            expect(spyUploadFile).not.toHaveBeenCalled();
         });
 
         it('should handle file dragover', () => {
@@ -149,7 +170,7 @@ describe('DotBinaryFieldComponent', () => {
         });
 
         it('should handle file selection', () => {
-            const spyFileSelection = jest.spyOn(store, 'handleFileSelection');
+            const spyUploadFile = jest.spyOn(store, 'handleUploadFile');
             const inputElement = spectator.fixture.debugElement.query(
                 By.css('[data-testId="binary-field__file-input"]')
             ).nativeElement;
@@ -158,7 +179,7 @@ describe('DotBinaryFieldComponent', () => {
             Object.defineProperty(event, 'target', { value: { files: [file] } });
             inputElement.dispatchEvent(event);
 
-            expect(spyFileSelection).toHaveBeenCalledWith(file);
+            expect(spyUploadFile).toHaveBeenCalledWith(file);
         });
     });
 
@@ -171,10 +192,18 @@ describe('DotBinaryFieldComponent', () => {
         });
 
         it('should remove file and set INIT status when clickin on remove button', async () => {
-            const spyStatus = jest.spyOn(store, 'setStatus');
-            const spyTempFile = jest.spyOn(store, 'setTempFile');
+            const spyRemoveFile = jest.spyOn(store, 'removeFile');
             const remove = spectator.query(byTestId('action-remove-btn')) as HTMLButtonElement;
             remove.click();
+
+            store.vm$.subscribe((state) => {
+                expect(state).toEqual({
+                    ...state,
+                    status: BINARY_FIELD_STATUS.INIT,
+                    tempFile: null,
+                    file: null
+                });
+            });
 
             spectator.detectChanges();
             await spectator.fixture.whenStable();
@@ -182,8 +211,7 @@ describe('DotBinaryFieldComponent', () => {
             const dropZone = spectator.fixture.debugElement.query(By.css('dot-drop-zone'));
 
             expect(dropZone).toBeTruthy();
-            expect(spyStatus).toHaveBeenCalledWith(BINARY_FIELD_STATUS.INIT);
-            expect(spyTempFile).toHaveBeenCalledWith(null);
+            expect(spyRemoveFile).toHaveBeenCalled();
         });
     });
 
@@ -227,8 +255,7 @@ describe('DotBinaryFieldComponent', () => {
         });
 
         it('should open dialog with code component when click on edit button', async () => {
-            const spyMode = jest.spyOn(store, 'setMode');
-            const spyOpenDialog = jest.spyOn(store, 'setDialogOpen');
+            const spyOpenDialog = jest.spyOn(store, 'openDialog');
             const editorBtn = spectator.query(byTestId('action-editor-btn')) as HTMLButtonElement;
             editorBtn.click();
 
@@ -238,13 +265,11 @@ describe('DotBinaryFieldComponent', () => {
             const editorElement = spectator.query(byTestId('editor'));
 
             expect(editorElement).toBeTruthy();
-            expect(spyMode).toHaveBeenCalledWith(BINARY_FIELD_MODE.EDITOR);
-            expect(spyOpenDialog).toHaveBeenCalledWith(true);
+            expect(spyOpenDialog).toHaveBeenCalledWith(BINARY_FIELD_MODE.EDITOR);
         });
 
         it('should open dialog with url componet component when click on url button', async () => {
-            const spyMode = jest.spyOn(store, 'setMode');
-            const spyOpenDialog = jest.spyOn(store, 'setDialogOpen');
+            const spyOpenDialog = jest.spyOn(store, 'openDialog');
             const urlBtn = spectator.query(byTestId('action-url-btn')) as HTMLButtonElement;
             urlBtn.click();
 
@@ -254,8 +279,7 @@ describe('DotBinaryFieldComponent', () => {
             const urlElement = spectator.query(byTestId('url'));
 
             expect(urlElement).toBeTruthy();
-            expect(spyMode).toHaveBeenCalledWith(BINARY_FIELD_MODE.URL);
-            expect(spyOpenDialog).toHaveBeenCalledWith(true);
+            expect(spyOpenDialog).toHaveBeenCalledWith(BINARY_FIELD_MODE.URL);
         });
     });
 

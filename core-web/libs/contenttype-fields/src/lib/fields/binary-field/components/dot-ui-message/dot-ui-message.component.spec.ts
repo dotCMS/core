@@ -39,9 +39,7 @@ describe('DotUiMessageComponent', () => {
 
         expect(messageText).toBe('Drag and Drop File');
         expect(messageIconClass).toBe('pi pi-upload');
-        expect(messageIconContainer).toBe(
-            'ui-message__icon-container ui-message__icon-container--info'
-        );
+        expect(messageIconContainer).toBe('icon-container info');
     });
 
     it('should have a button', () => {
