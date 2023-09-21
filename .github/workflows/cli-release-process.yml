@@ -58,9 +58,8 @@ jobs:
         run: |
           VERSION=${{ github.event.inputs.version }}
           NEXT=${{ github.event.inputs.next }}
-          HEAD=${{ github.ref_name }}
           
-          GIT_HEAD=`git rev-parse HEAD`
+          HEAD=`git rev-parse HEAD`
           echo "GIT_HEAD=$GIT_HEAD"
           
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$VERSION
@@ -70,12 +69,36 @@ jobs:
           
           echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
           echo "NEXT=$NEXT" >> "$GITHUB_OUTPUT"
-
+          echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
   release:
     needs: [ precheck ]
     runs-on: ubuntu-latest
     steps:
-      - name: vars
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRO }}
+
+      - name: Cache Maven
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Set next version
         run: |
-          echo "REF=${{ github.ref }}"
-          echo "REF_NAME=${{ github.ref_name }}"
+          VERSION=${{ needs.precheck.outputs.VERSION }}
+          NEXT=${{ needs.precheck.outputs.NEXT }}
+          HEAD=${{ needs.precheck.outputs.HEAD }}
+          
+          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT
+
+          git commit -a -m "⬆️  Next version $NEXT"
+          git push origin "$HEAD"
