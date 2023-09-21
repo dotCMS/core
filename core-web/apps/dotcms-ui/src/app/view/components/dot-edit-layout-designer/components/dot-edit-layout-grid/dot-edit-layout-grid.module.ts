@@ -9,8 +9,9 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { NgGridModule } from '@dotcms/dot-layout-grid';
-import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
@@ -28,7 +29,7 @@ import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
         FormsModule,
         ReactiveFormsModule,
         TooltipModule,
-        DotAutofocusDirective,
+        DotAutofocusModule,
         DotPipesModule,
         DotFieldRequiredDirective,
         DotMessagePipe

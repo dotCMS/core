@@ -7,7 +7,8 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusDirective, DotFieldRequiredDirective } from '@dotcms/ui';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { ResetPasswordComponent } from './reset-password.component';
 
@@ -26,7 +27,7 @@ const routes: Routes = [
         ButtonModule,
         ReactiveFormsModule,
         DotFieldValidationMessageModule,
-        DotAutofocusDirective,
+        DotAutofocusModule,
         RouterModule.forChild(routes),
         DotFieldRequiredDirective
     ],

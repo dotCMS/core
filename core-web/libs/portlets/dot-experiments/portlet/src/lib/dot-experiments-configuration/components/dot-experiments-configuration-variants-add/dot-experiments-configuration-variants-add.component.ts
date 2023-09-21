@@ -10,13 +10,14 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import {
     ComponentStatus,
     MAX_INPUT_TITLE_LENGTH,
     StepStatus,
     TrafficProportion
 } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 import { DotValidators } from '@shared/validators/dotValidators';
@@ -40,7 +41,7 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         ButtonModule,
         InputTextModule,
         AutoFocusModule,
-        DotAutofocusDirective
+        DotAutofocusModule
     ],
     templateUrl: './dot-experiments-configuration-variants-add.component.html',
     styleUrls: ['./dot-experiments-configuration-variants-add.component.scss'],
