@@ -76,6 +76,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
+          ref: ${{ needs.precheck.outputs.HEAD }}
           fetch-depth: 0
 
       - name: Setup Java
