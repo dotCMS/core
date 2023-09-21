@@ -29,9 +29,10 @@
 
         <dependency>
             <groupId>com.dotcms</groupId>
-            <artifactId>dotcms-war</artifactId>
+            <artifactId>dotcms-core</artifactId>
             <version>${project.version}</version>
             <type>war</type>
+            <classifier>war</classifier>
             <scope>compile</scope>
         </dependency>
 

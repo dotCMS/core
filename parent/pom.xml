@@ -429,6 +429,7 @@
                             <manifest>
                                 <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                                 <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                                <addBuildEnvironmentEntries>true</addBuildEnvironmentEntries>
                             </manifest>
                             <manifestEntries>
                                 <Implementation-URL>${project.url}</Implementation-URL>
@@ -438,8 +439,9 @@
                                 <Os-Name>${os.name}</Os-Name>
                                 <Os-Version>${os.version}</Os-Version>
                                 <Scm-Connection>${project.scm.connection}</Scm-Connection>
-                                <Scm-Revision>${buildNumber}</Scm-Revision>
                                 <Scm-Url>${project.scm.url}</Scm-Url>
+                                <Scm-Revision>${buildNumber}</Scm-Revision>
+                                <SCM-Build>${scmBranch}</SCM-Build>
                             </manifestEntries>
                         </archive>
                     </configuration>
@@ -762,6 +764,12 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>buildnumber-maven-plugin</artifactId>
+                <configuration>
+                    <attach>true</attach>
+                    <!--make it available for jar/war classpath resource -->
+                    <addOutputDirectoryToResources>true</addOutputDirectoryToResources>
+                    <scmBranchPropertyName>scmBranch</scmBranchPropertyName>
+                </configuration>
                 <executions>
                     <execution>
                         <id>get-scm-revision</id>
@@ -774,7 +782,15 @@
                             <doUpdate>false</doUpdate>
                             <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
                             <revisionOnScmFailure>UNKNOWN</revisionOnScmFailure>
+                            <shortRevisionLength>7</shortRevisionLength>
+
                         </configuration>
+                    </execution>
+                    <execution>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>create-metadata</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

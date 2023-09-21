@@ -68,11 +68,14 @@ RUN groupadd -f -g $USER_GID $USER_GROUP
 RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 
 # Copy our build
-COPY --from=build-cms --chown=$USER_NAME:$USER_GROUP /srv/ /srv/
+#COPY --from=build-cms --chown=$USER_NAME:$USER_GROUP /srv/ /srv/
+COPY --chown=$USER_NAME:$USER_GROUP /srv/ /srv/
 COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
 
+RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
+
 # Make scripts runable
- RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
+RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
     # Make plugin merging directories writable
     find /srv/templates -type d -exec chmod 770 {} \;  && \
     # Make dotcms user owner
@@ -80,7 +83,6 @@ COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
     mkdir -p /data/shared/felix/load && \
     mkdir -p /data/shared/felix/undeployed && \
     mkdir -p /data/local/dotsecure/license && \
-
     chown -R $USER_NAME:$USER_NAME /data
 
 

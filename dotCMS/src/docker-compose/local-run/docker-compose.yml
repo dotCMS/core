@@ -23,7 +23,7 @@ services:
         ports:
             - ${ES_HOST_PORT:-9200}:9200
         volumes:
-            - ${ES_DATA_VOLUME:-esdata}:/usr/share/elasticsearch/data
+            - esdata:/usr/share/elasticsearch/data
         networks:
             - es_net
 
@@ -68,7 +68,7 @@ services:
             'POSTGRES_PASSWORD': ${DB_PWD:-postgres}
             'POSTGRES_DB': ${DB_DB:-dotcms}
         volumes:
-            - ${DB_DATA_VOLUME:-dbdata}:/var/lib/postgresql/data
+            - dbdata:/var/lib/postgresql/data
         networks:
             - db_net
         ports:

@@ -50,6 +50,8 @@
                 <exclude>**/work/**</exclude>
                 <exclude>**/temp/**</exclude>
                 <exclude>**/logs/**</exclude>
+                <exclude>**/lib/**</exclude>
+                <exclude>**/shared/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>

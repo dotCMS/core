@@ -33,7 +33,6 @@
         <module>plugins-core</module>
         <module>build-parent</module>
         <module>dotCMS</module>
-        <module>dotcms-war</module>
     </modules>
     <distributionManagement>
         <site>
