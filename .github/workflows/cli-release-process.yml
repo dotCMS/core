@@ -23,8 +23,9 @@ jobs:
     name: Pre-check
     runs-on: ubuntu-latest
     outputs:
-      RELEASE_VERSION: ${{ steps.vars.outputs.RELEASE_VERSION }}
-      NEXT_VERSION: ${{ steps.vars.outputs.NEXT_VERSION }}
+      RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
+      NEXT_VERSION: ${{ steps.version.outputs.NEXT_VERSION }}
+      HEAD: ${{ steps.vars.outputs.HEAD }}
     steps:
       - name: Log GitHub context
         env:
@@ -56,17 +57,17 @@ jobs:
         id: version
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
-          VERSION=${{ github.event.inputs.version }}
-          NEXT=${{ github.event.inputs.next }}          
+          RELEASE_VERSION=${{ github.event.inputs.version }}
+          NEXT_VERSION=${{ github.event.inputs.next }}          
           HEAD=${{ github.ref_name }}
           
-          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$VERSION
+          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
           
-          git commit -a -m "🏁 Releasing version $VERSION"
+          git commit -a -m "🏁 Releasing version $RELEASE_VERSION"
           git push origin "$HEAD"
           
-          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "NEXT=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "NEXT_VERSION=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
           echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
   release:
     needs: [ precheck ]
@@ -93,11 +94,11 @@ jobs:
       - name: Set next version
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
-          VERSION=${{ needs.precheck.outputs.VERSION }}
-          NEXT=${{ needs.precheck.outputs.NEXT }}
+          RELEASE_VERSION=${{ needs.precheck.outputs.RELEASE_VERSION }}
+          NEXT_VERSION=${{ needs.precheck.outputs.NEXT_VERSION }}
           HEAD=$${{ needs.precheck.outputs.HEAD }}
           
-          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT
+          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
 
-          git commit -a -m "⬆️  Next version $NEXT"
+          git commit -a -m "⬆️  Next version $NEXT_VERSION"
           git push origin "$HEAD"
