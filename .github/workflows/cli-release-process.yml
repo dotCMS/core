@@ -58,7 +58,11 @@ jobs:
         run: |
           VERSION=${{ github.event.inputs.version }}
           NEXT=${{ github.event.inputs.next }}
-          HEAD=${{ github.ref }}
+          HEAD=${{ github.ref_name }}
+          
+          GIT_HEAD=`git rev-parse HEAD`
+          
+          echo "GIT_HEAD=$GIT_HEAD"
           
           git commit -a -m "🏁 Releasing version $VERSION"
           git push origin "$HEAD"
