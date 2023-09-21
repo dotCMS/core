@@ -61,8 +61,9 @@ jobs:
           HEAD=${{ github.ref_name }}
           
           GIT_HEAD=`git rev-parse HEAD`
-          
           echo "GIT_HEAD=$GIT_HEAD"
+          
+          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$VERSION
           
           git commit -a -m "🏁 Releasing version $VERSION"
           git push origin "$HEAD"
