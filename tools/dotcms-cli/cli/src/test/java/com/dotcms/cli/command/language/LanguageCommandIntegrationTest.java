@@ -474,7 +474,7 @@ class LanguageCommandIntegrationTest extends CommandTest {
                     language("Italian").
                     country("Italy").
                     build();
-            final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
+            var mapper = new ClientObjectMapper().getContext(null);
             var targetItalianFilePath = Path.of(workspace.languages().toString(), "it-it.json");
             mapper.writeValue(targetItalianFilePath.toFile(), italian);
 
@@ -522,35 +522,66 @@ class LanguageCommandIntegrationTest extends CommandTest {
             // ---
             // Now we remove a file and test the removal is working properly
             Files.delete(targetFrenchFilePath);
+
+            // Editing the italian file to validate the update works
+            final Language updatedItalian = Language.builder().
+                    isoCode("it-va").
+                    id(italianResponse.entity().id().get()).
+                    languageCode("it-va").
+                    countryCode("VA").
+                    language("Italian").
+                    country("Vatican City").
+                    build();
+            mapper = new ClientObjectMapper().getContext(null);
+            targetItalianFilePath = Path.of(workspace.languages().toString(), "it-it.json");
+            mapper.writeValue(targetItalianFilePath.toFile(), updatedItalian);
+
             // Pushing the languages with the remove language flag
             status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
                     workspace.languages().toString(), "-ff", "-rl");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             // ---
-            // Make sure Italian is still there and French is not
-            // Italian
+            // Make sure Italian-VA is there and Italian-IT and French is not
+
+            // Italian-Vatican city - Should be there
             italianResponse = clientFactory.getClient(LanguageAPI.class).
-                    getFromLanguageIsoCode("it-IT");
+                    getFromLanguageIsoCode("it-VA");
             Assertions.assertNotNull(italianResponse);
             Assertions.assertNotNull(italianResponse.entity());
             Assertions.assertTrue(italianResponse.entity().language().isPresent());
             Assertions.assertEquals("Italian", italianResponse.entity().language().get());
+            Assertions.assertEquals("Vatican City", italianResponse.entity().country().get());
 
-            // French - Should not be there
-            try {
-                clientFactory.getClient(LanguageAPI.class).
-                        getFromLanguageIsoCode("fr");
-                Assertions.fail(" 404 Exception should have been thrown here.");
-            } catch (Exception e) {
-                Assertions.assertTrue(e instanceof NotFoundException);
-            }
+            var allLanguages = clientFactory.getClient(LanguageAPI.class).list();
+            Assertions.assertNotNull(allLanguages);
+            Assertions.assertEquals(2, allLanguages.entity().size());
+            Assertions.assertTrue(
+                    allLanguages.entity().stream()
+                            .anyMatch(l -> l.isoCode().equalsIgnoreCase("it-VA"))
+            );
+            Assertions.assertTrue(
+                    allLanguages.entity().stream()
+                            .anyMatch(l -> l.isoCode().equalsIgnoreCase("en-US"))
+            );
+
         } finally {
 
             // Cleaning up
             try {
                 var foundItalian = clientFactory.getClient(LanguageAPI.class).
                         getFromLanguageIsoCode("it-IT");
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundItalian.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
+
+            // Cleaning up
+            try {
+                var foundItalian = clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("it-VA");
                 clientFactory.getClient(LanguageAPI.class).delete(
                         String.valueOf(foundItalian.entity().id().get())
                 );
