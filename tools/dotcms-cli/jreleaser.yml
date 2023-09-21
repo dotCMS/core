@@ -52,7 +52,7 @@ deploy:
         active: ALWAYS
         url: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/tools/dotcms-cli/cli
         stagingRepositories:
-         - tools/dotcms-cli/cli/target/cli-{{projectVersion}}-runner.jar
+          - tools/dotcms-cli/cli/target/cli-{{projectVersion}}-runner.jar
 
 #upload:
 #  artifactory:
