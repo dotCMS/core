@@ -4,7 +4,7 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotAutofocusDirective } from '@dotcms/ui';
+import { DotAutofocusDirective } from './dot-autofocus.directive';
 
 @Component({
     template: `
@@ -29,8 +29,7 @@ describe('Directive: DotAutofocus', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent],
-            imports: [DotAutofocusDirective]
+            declarations: [TestHostComponent, DotAutofocusDirective]
         }).compileComponents();
         fixture = TestBed.createComponent(TestHostComponent);
         component = fixture.componentInstance;

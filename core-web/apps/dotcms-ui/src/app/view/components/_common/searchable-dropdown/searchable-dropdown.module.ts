@@ -7,7 +7,8 @@ import { DataViewModule } from 'primeng/dataview';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DotAutofocusDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
 import { SearchableDropdownComponent } from './component';
 
@@ -26,7 +27,7 @@ export const SEARCHABLE_NGFACES_MODULES = [
     imports: [
         CommonModule,
         FormsModule,
-        DotAutofocusDirective,
+        DotAutofocusModule,
         ...SEARCHABLE_NGFACES_MODULES,
         DotIconModule,
         DotMessagePipe
