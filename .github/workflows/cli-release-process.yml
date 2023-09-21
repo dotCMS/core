@@ -112,6 +112,8 @@ jobs:
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
+          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
           JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
           JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         working-directory: ${{ github.workspace }}
