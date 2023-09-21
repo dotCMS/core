@@ -32,7 +32,8 @@ import {
     DotEventsService,
     DotLicenseService,
     DotMessageService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -176,6 +177,7 @@ describe('DotEditPageToolbarComponent', () => {
                 ])
             ],
             providers: [
+                DotSessionStorageService,
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
                 {
                     provide: DotMessageService,

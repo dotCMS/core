@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotmarketing.util.VelocityUtil;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -51,7 +52,7 @@ public class ConfigTestHelper extends Config {
 
             final String topPath = Files.createTempDirectory("config_test_helper").toAbsolutePath().toString();
 
-            final String velocityPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+            final String velocityPath = VelocityUtil.getVelocityRootPath();
             copyVelocityFolder(topPath, velocityPath);
 
             Path testRoot = Paths.get(Config.getStringProperty("TEST_WEBAPP_ROOT","src/main/webapp")).normalize().toAbsolutePath();
@@ -79,14 +80,14 @@ public class ConfigTestHelper extends Config {
                         return null;
                 }
             });
-            
-           
+
+
             Config.CONTEXT = context;
             Config.CONTEXT_PATH = context.getRealPath("/");
 
         }
 
-        props = null;
+        props.clear();
         dotmarketingPropertiesUrl = getUrlToTestResource("it-dotmarketing-config.properties");
         clusterPropertiesUrl = getUrlToTestResource("it-dotcms-config-cluster.properties");
         setToolboxPath();

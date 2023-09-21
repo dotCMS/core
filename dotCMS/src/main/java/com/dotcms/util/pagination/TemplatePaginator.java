@@ -33,13 +33,6 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
     private final TemplateAPI templateAPI;
     private final TemplateHelper templateHelper;
 
-    public TemplatePaginator() {
-        this(APILocator.getTemplateAPI(),
-                new TemplateHelper(APILocator.getPermissionAPI(),
-                        APILocator.getRoleAPI(),
-                        APILocator.getContainerAPI()));
-    }
-
     @VisibleForTesting
     public TemplatePaginator(final TemplateAPI templateAPI, final TemplateHelper templateHelper) {
 
@@ -63,9 +56,7 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
 
         String orderByDirection = orderby;
         if (UtilMethods.isSet(direction) && UtilMethods.isSet(orderby)) {
-            orderByDirection = new StringBuffer(this.mapOrderBy(orderByDirection))
-                    .append(" ")
-                    .append(direction.toString().toLowerCase()).toString();
+            orderByDirection = this.mapOrderBy(orderByDirection) + " " + direction.toString().toLowerCase();
         }
 
         try {

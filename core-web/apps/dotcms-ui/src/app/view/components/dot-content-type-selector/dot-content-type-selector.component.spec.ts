@@ -78,6 +78,6 @@ describe('DotContentTypeSelectorComponent', () => {
         expect(pDropDown.filterBy).toBeDefined();
         expect(pDropDown.showClear).toBeDefined();
         expect(pDropDown.resetFilterOnHide).toBeDefined();
-        expect(pDropDown.style).toEqual({ width: '155px' });
+        expect(pDropDown.style).toEqual({ width: '215px' });
     });
 });

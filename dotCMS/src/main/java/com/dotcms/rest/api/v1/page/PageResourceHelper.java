@@ -331,9 +331,6 @@ public class PageResourceHelper implements Serializable {
         final Contentlet checkin = APILocator.getContentletAPI()
                 .checkin(checkout, user, false);
 
-        final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(checkout.getIdentifier());
-        multiTreeAPI.copyMultiTree(checkin.getIdentifier(), multiTrees, currentVariantId);
-
         return APILocator.getHTMLPageAssetAPI().fromContentlet(checkin);
     }
 
