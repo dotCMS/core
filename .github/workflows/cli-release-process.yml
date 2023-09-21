@@ -91,6 +91,7 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Set next version
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
           VERSION=${{ needs.precheck.outputs.VERSION }}
           NEXT=${{ needs.precheck.outputs.NEXT }}
