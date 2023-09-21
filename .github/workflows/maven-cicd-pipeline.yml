@@ -315,7 +315,7 @@ jobs:
         run: |
           AGGREGATE_STATUS="SUCCESS"
           jobs_status="${{ toJson(needs) }}"
-          echo "job status=${jobs_status}"
+          echo "job status2=${jobs_status}"
           while IFS=" " read -r key result; do
             key=$(echo $key | tr -d ' {')
             result=$(echo $result | tr -d ',')
@@ -330,13 +330,35 @@ jobs:
             fi
           done < <(echo "$jobs_status" | awk -F': ' '/result:/ {print $1,$2}')
                                           
+          echo "after status"
                                           
-                                          
-                                          
-                                          FIRST_FAIL_STEP=""
+          FIRST_FAIL_STEP=""
           FIRST_FAIL_MODULE=""
           
           echo '{' > workflow-data.json
+          
+          echo '"branch": "'${{ github.head_ref }}'",'
+          echo '"run_id": "'${{ github.run_id }}'",'
+          echo '"trigger_event_name": "'$GITHUB_EVENT_NAME'",'
+          echo '"source_repository": "'$GITHUB_REPOSITORY'",'
+
+          echo '"merge_sha": "'${{ github.sha }}'",'
+          echo '"base_sha": "'${{ github.event.pull_request.base.sha }}'",'
+          echo '"base_branch": "'${{ github.event.pull_request.base.sha }}'",'
+          echo '"base_author": "'${{ github.event.pull_request.base.user.login }}'",'
+          
+          echo '"head_author": "'${{ github.event.pull_request.head.user.login }}'",'
+          echo '"head_name": "'${{ github.event.pull_request.head.ref }}'",'
+          echo '"head_sha": "'${{ github.event.pull_request.head.sha }}'",'
+          
+          echo '"pr_id": "'${{ github.event.pull_request.id }}'",'
+          echo '"pr_number": "'${{ github.event.pull_request.number }}'",'
+          echo '"pr_title": "'${{ github.event.pull_request.title }}'",'
+          echo '"pr_author": "'${{ github.event.pull_request.user.login }}'",'
+          echo '"pr_merge_state": "'${{ github.event.pull_request.mergeable_state }}'",'
+          
+          echo "after output"
+          
           
           echo '"branch": "'${{ github.head_ref }}'",' >> workflow-data.json
           echo '"run_id": "'${{ github.run_id }}'",' >> workflow-data.json
