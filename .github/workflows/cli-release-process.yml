@@ -25,7 +25,7 @@ jobs:
     outputs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
       NEXT_VERSION: ${{ steps.version.outputs.NEXT_VERSION }}
-      HEAD: ${{ steps.vars.outputs.HEAD }}
+      HEAD: ${{ steps.version.outputs.HEAD }}
     steps:
       - name: Log GitHub context
         env:
