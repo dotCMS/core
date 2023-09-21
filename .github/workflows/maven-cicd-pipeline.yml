@@ -315,10 +315,9 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          echo "TITLE = ${PR_TITLE}
-          PR_TITLE_RAW="PR_TITLE"
-          PR_TITLE_ESCAPED_FOR_JQ="${PR_TITLE_RAW//\"/\\\"}"
-          PR_TITLE_JQ=$(jq --arg title "$PR_TITLE_ESCAPED_FOR_JQ" -n '$title')
+          echo "TITLE = ${PR_TITLE}"
+          
+          PR_TITLE_JQ=$(jq --arg title "PR_TITLE" -n '$title')
           echo "{\"pr_title\": PR_TITLE_JQ}"
           
           echo "\"pr_id2\": \"${{ github.event.pull_request.id }}\","
