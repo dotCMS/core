@@ -313,8 +313,9 @@ jobs:
 
       - name: Prepare workflow data
         run: |
-          PR_TITLE=$(jq --arg title "${{ github.event.pull_request.title }}" -n '$title')
-          echo "tester"
+          PR_TITLE_RAW="${{ github.event.pull_request.title }}"
+          PR_TITLE_ESCAPED_FOR_JQ="${PR_TITLE_RAW//\"/\\\"}"
+          PR_TITLE=$(jq --arg title "$PR_TITLE_ESCAPED_FOR_JQ" -n '$title')
           echo "{\"pr_title\": $PR_TITLE}"
           
           echo "\"pr_id2\": \"${{ github.event.pull_request.id }}\","
