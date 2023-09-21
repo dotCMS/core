@@ -101,7 +101,7 @@ jobs:
         run: |
           RELEASE_VERSION=${{ needs.precheck.outputs.RELEASE_VERSION }}
           NEXT_VERSION=${{ needs.precheck.outputs.NEXT_VERSION }}
-          HEAD=$${{ needs.precheck.outputs.HEAD }}
+          HEAD=${{ needs.precheck.outputs.HEAD }}
           
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
 
