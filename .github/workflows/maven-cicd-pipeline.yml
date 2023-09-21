@@ -361,6 +361,10 @@ jobs:
           
           
           echo '"build_reports": [' >> workflow-data.json
+          
+          echo "finding reports"
+          find /tmp/build-step-reports/build-reports-*/target -name build-report.json
+          
           total_reports=$(find /tmp/build-step-reports/build-reports-*/target -name build-report.json 2>/dev/null | wc -l)
           
           report_index=0
@@ -369,14 +373,19 @@ jobs:
           else
             for build_report in "/tmp/build-step-reports/build-reports-"*/target/build-report.json; do
               ((report_index=report_index+1))
+              echo "report index=${report_index}"
               step_name=$(basename "$(dirname "$(dirname "$build_report")")" | sed 's/build-reports-//')
+              echo "step name=${step_name}"
               cat "$build_report" | jq ".step_name = \"$step_name\"" >> workflow-data.json
               # If the aggregate status is still SUCCESS, check if this module failed
               if [[ "$AGGREGATE_STATUS" == "SUCCESS" ]]; then
+                echo "aggregate success"
                 # Loop over each projectReport
                 length=$(jq '.projectReports | length' "$build_report")
+                echo "length = ${length}"
                 for (( i=0; i<$length; i++ )); do
                 status=$(jq -r ".projectReports[$i].status" "$build_report")
+                echo "status ${i}=${status}"
                 if [[ "$status" == "FAILURE" ]]; then
                   AGGREGATE_STATUS="FAILURE"
                   FIRST_FAIL_STEP="$step_name"
@@ -388,6 +397,7 @@ jobs:
               
               # If not the last file, append a comma
               if (( report_index != total_reports )); then
+                echo "adding comma"
                 echo ',' >> workflow-data.json
               fi
             done
@@ -402,6 +412,8 @@ jobs:
             echo '"first_fail_error": "'$FIRST_FAIL_ERROR'"' >> workflow-data.json
           fi
           echo '}' >> workflow-data.json
+          echo "workflow data created"
+          cat workflow-data.json
 
       - name: Upload workflow data
         uses: actions/upload-artifact@v3
