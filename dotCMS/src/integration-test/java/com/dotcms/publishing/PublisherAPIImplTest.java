@@ -225,11 +225,12 @@ public class PublisherAPIImplTest {
         final Contentlet pageNewVersion = ContentletDataGen.createNewVersion(experimentPage, variant,
                 map(HTMLPageAssetAPI.TEMPLATE_FIELD,
                         variantTemplate.getIdentifier()));
+        ContentletDataGen.publish(pageNewVersion);
 
         return new TestAsset(experiment,
                 map(
-                        experiment, list(variant, experimentPage),
-                        variant, list(pageNewVersion, variantTemplate),
+                        experiment, list(variant, experimentPage, pageNewVersion),
+                        variant, list(variantTemplate),
                         experimentPage, list(host, template, pageContentType, language)
                 ),
                 "/bundlers-test/experiment/experiment.json", true);
