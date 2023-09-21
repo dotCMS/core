@@ -91,6 +91,11 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
+      - name: Setup git config
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "daniel.colina@dotcms.com"          
+
       - name: Set next version
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
