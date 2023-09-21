@@ -458,7 +458,7 @@
                     fsSteps.set('value', 'catchall');
                     reloadSchemeStoreFromStructureInode(fsSchemes);
                     structureChanged(true);
-                    doSearch(null, "<%=orderBy%>");
+                    doSearch(1, "<%=orderBy%>");
                 }
             },
             dojo.byId("structSelectBox"));
@@ -478,7 +478,7 @@
                     fsSteps.set('value', 'catchall');
                     reloadStepStoreFromSchemeId (fsSteps)
                     structureChanged(true);
-                    doSearch(null, "<%=orderBy%>");
+                    doSearch(1, "<%=orderBy%>");
                 }
             },
             dojo.byId("schemeSelectBox"));
@@ -497,7 +497,7 @@
 
                     // todo: recargar con step_id
                     structureChanged(true);
-                    doSearch(null, "<%=orderBy%>");
+                    doSearch(1, "<%=orderBy%>");
                 }
             },
             dojo.byId("stepSelectBox"));
@@ -699,7 +699,7 @@
 
                     <dl class="vertical">
                         <dd>
-                            <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();doSearch();" iconClass="resetIcon" class="dijitButtonFlat">
+                            <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();" iconClass="resetIcon" class="dijitButtonFlat">
                                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
                             </button>
                         </dd>
