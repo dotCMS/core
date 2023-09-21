@@ -24,6 +24,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
 import java.util.stream.Stream;
 import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -227,10 +228,26 @@ class LanguageCommandIntegrationTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "fr");
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
+                    "--byIso", "fr");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-            final String output = writer.toString();
-            Assertions.assertTrue(output.contains("French"));
+
+            // Checking we pushed the language correctly
+            var foundLanguage = clientFactory.getClient(LanguageAPI.class).
+                    getFromLanguageIsoCode("fr");
+            Assertions.assertNotNull(foundLanguage);
+            Assertions.assertNotNull(foundLanguage.entity());
+            Assertions.assertTrue(foundLanguage.entity().language().isPresent());
+            Assertions.assertEquals("French", foundLanguage.entity().language().get());
+
+            // Cleaning up
+            try {
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundLanguage.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
         }
     }
 
@@ -420,6 +437,136 @@ class LanguageCommandIntegrationTest extends CommandTest {
 
         } finally {
             workspaceManager.destroy(workspace);
+        }
+    }
+
+    /**
+     * This tests will test the functionality of the language push command when pushing a folder,
+     * checking that the languages are properly add, updated and removed on the remote server.
+     */
+    @Test
+    void Test_Command_Language_Folder_Push() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            // Pulling the en us language
+            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US",
+                    "-fmt", InputOutputFormat.YAML.toString(), "--workspace",
+                    workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Make sure the language it is really there
+            final var languageUSPath = Path.of(workspace.languages().toString(), "en-us.yml");
+            var json = Files.readString(languageUSPath);
+            Assertions.assertTrue(json.contains("countryCode: \"US\""));
+
+            //Now, create a couple of file with a new languages to push
+            final Language italian = Language.builder().
+                    isoCode("it-it").
+                    languageCode("it-IT").
+                    countryCode("IT").
+                    language("Italian").
+                    country("Italy").
+                    build();
+            final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
+            var targetItalianFilePath = Path.of(workspace.languages().toString(), "it-it.json");
+            mapper.writeValue(targetItalianFilePath.toFile(), italian);
+
+            // ---
+            //Create a couple of file with a new languages to push
+            final Language french = Language.builder().
+                    isoCode("fr").
+                    language("French").
+                    build();
+            var targetFrenchFilePath = Path.of(workspace.languages().toString(), "fr.json");
+            mapper.writeValue(targetFrenchFilePath.toFile(), french);
+
+            // ---
+            // Pushing the languages
+            commandLine.setOut(out);
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
+                    workspace.languages().toString(), "-ff");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ---
+            // Checking we pushed the languages correctly
+            // Italian
+            var italianResponse = clientFactory.getClient(LanguageAPI.class).
+                    getFromLanguageIsoCode("it-IT");
+            Assertions.assertNotNull(italianResponse);
+            Assertions.assertNotNull(italianResponse.entity());
+            Assertions.assertTrue(italianResponse.entity().language().isPresent());
+            Assertions.assertEquals("Italian", italianResponse.entity().language().get());
+
+            // French
+            var frenchResponse = clientFactory.getClient(LanguageAPI.class).
+                    getFromLanguageIsoCode("fr");
+            Assertions.assertNotNull(frenchResponse);
+            Assertions.assertNotNull(frenchResponse.entity());
+            Assertions.assertTrue(frenchResponse.entity().language().isPresent());
+            Assertions.assertEquals("French", frenchResponse.entity().language().get());
+
+            // ---
+            // Pulling italian, we need the file with the updated id
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "it-IT",
+                    "-fmt", InputOutputFormat.JSON.toString().toUpperCase(),
+                    "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ---
+            // Now we remove a file and test the removal is working properly
+            Files.delete(targetFrenchFilePath);
+            // Pushing the languages with the remove language flag
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
+                    workspace.languages().toString(), "-ff", "-rl");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ---
+            // Make sure Italian is still there and French is not
+            // Italian
+            italianResponse = clientFactory.getClient(LanguageAPI.class).
+                    getFromLanguageIsoCode("it-IT");
+            Assertions.assertNotNull(italianResponse);
+            Assertions.assertNotNull(italianResponse.entity());
+            Assertions.assertTrue(italianResponse.entity().language().isPresent());
+            Assertions.assertEquals("Italian", italianResponse.entity().language().get());
+
+            // French - Should not be there
+            try {
+                clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("fr");
+                Assertions.fail(" 404 Exception should have been thrown here.");
+            } catch (Exception e) {
+                Assertions.assertTrue(e instanceof NotFoundException);
+            }
+        } finally {
+
+            // Cleaning up
+            try {
+                var foundItalian = clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("it-IT");
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundItalian.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
+
+            try {
+                var foundFrench = clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("fr");
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundFrench.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
         }
     }
 

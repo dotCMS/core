@@ -1,6 +1,7 @@
 package com.dotcms.api.client.push;
 
 import com.dotcms.api.client.push.exception.MappingException;
+import com.dotcms.cli.common.InputOutputFormat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 
@@ -19,9 +20,18 @@ public interface MapperService {
     ObjectMapper objectMapper(final File file);
 
     /**
-     * Returns an instance of ObjectMapper for general processing.
+     * Returns an instance of ObjectMapper based on the specified input/output format.
      *
-     * @return an instance of ObjectMapper for general processing
+     * @param inputOutputFormat The input/output format for which the ObjectMapper will be
+     *                          returned.
+     * @return An instance of ObjectMapper for the given input/output format.
+     */
+    ObjectMapper objectMapper(final InputOutputFormat inputOutputFormat);
+
+    /**
+     * Returns an instance of ObjectMapper with default input/output format YAML.
+     *
+     * @return An instance of ObjectMapper with default input/output format YAML.
      */
     ObjectMapper objectMapper();
 

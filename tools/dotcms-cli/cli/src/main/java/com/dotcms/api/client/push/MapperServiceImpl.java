@@ -37,35 +37,47 @@ public class MapperServiceImpl implements MapperService {
     @ActivateRequestContext
     public ObjectMapper objectMapper(final File file) {
 
-        ObjectMapper objectMapper;
-        InputOutputFormat inputOutputFormat = null;
-
-        if (null != file) {
-            if (isJSONFile(file)) {
-                inputOutputFormat = InputOutputFormat.JSON;
-            } else {
-                inputOutputFormat = InputOutputFormat.YML;
-            }
+        if (null == file) {
+            var message = "Trying to obtain ObjectMapper with null file";
+            logger.error(message);
+            throw new MappingException(message);
         }
 
-        if (inputOutputFormat == InputOutputFormat.JSON) {
-            objectMapper = new ClientObjectMapper().getContext(null);
+        InputOutputFormat inputOutputFormat;
+        if (isJSONFile(file)) {
+            inputOutputFormat = InputOutputFormat.JSON;
         } else {
-            objectMapper = new YAMLMapperSupplier().get();
+            inputOutputFormat = InputOutputFormat.YML;
         }
 
-        return objectMapper;
+        return objectMapper(inputOutputFormat);
     }
 
     /**
-     * Returns a default instance of ObjectMapper. This method can be used when no input file is
-     * provided.
+     * Returns an instance of ObjectMapper based on the specified input/output format.
      *
-     * @return An instance of ObjectMapper.
+     * @param inputOutputFormat The input/output format for which the ObjectMapper will be
+     *                          returned.
+     * @return An instance of ObjectMapper for the given input/output format.
+     */
+    @ActivateRequestContext
+    public ObjectMapper objectMapper(final InputOutputFormat inputOutputFormat) {
+
+        if (inputOutputFormat == InputOutputFormat.JSON) {
+            return new ClientObjectMapper().getContext(null);
+        }
+
+        return new YAMLMapperSupplier().get();
+    }
+
+    /**
+     * Returns an instance of ObjectMapper with default input/output format YAML.
+     *
+     * @return An instance of ObjectMapper with default input/output format YAML.
      */
     @ActivateRequestContext
     public ObjectMapper objectMapper() {
-        return objectMapper(null);
+        return objectMapper(InputOutputFormat.YAML);
     }
 
     /**
