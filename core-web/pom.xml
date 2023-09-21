@@ -18,7 +18,7 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <node.js.version>v16.13.2</node.js.version>
+        <node.js.version>v16.14.2</node.js.version>
         <npm.version>8.5.1</npm.version>
         <maven.plugin.cargo.version>1.9.0</maven.plugin.cargo.version>
         <cargo.tomcat.major.version>9</cargo.tomcat.major.version>
@@ -39,6 +39,12 @@
                     <filesets>
                         <fileset>
                             <directory>dist</directory>
+                            <includes>
+                                <include>*</include>
+                            </includes>
+                        </fileset>
+                        <fileset>
+                            <directory>node_modules/.cache/nx</directory>
                             <includes>
                                 <include>*</include>
                             </includes>
