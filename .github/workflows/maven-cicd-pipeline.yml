@@ -312,7 +312,11 @@ jobs:
           path: /tmp/build-step-reports
 
       - name: Prepare workflow data
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
+         
+          
           AGGREGATE_STATUS="SUCCESS"
           jobs_status="${{ toJson(needs) }}"
           echo "job status=${jobs_status}"
@@ -333,10 +337,30 @@ jobs:
                                           
                                           
                                           
-                                          FIRST_FAIL_STEP=""
+          FIRST_FAIL_STEP=""
           FIRST_FAIL_MODULE=""
           
+          
+          
+          
           echo '{' > workflow-data.json
+          
+          EVENT_TYPE="${{ github.event_name }}"
+          
+          if [[ "$EVENT_TYPE" == "pull_request" ]]; then
+            PR_TITLE_JQ=$(jq --arg title "$PR_TITLE" -n '$title') # result includes wrapping quotes
+            echo "Creating workflow data for pull request ${PR_TITLE_JQ}"
+          else
+              PR_TITLE="N/A"
+              BRANCH="${{ github.ref }}"
+              BRANCH="${BRANCH##*/}"
+              echo "Creating workflow data for branch ${BRANCH}"
+          fi
+        
+          PR_TITLE_JQ=$(jq --arg title "PR_TITLE" -n '$title')
+          
+  
+          
           
           echo '"branch": "'${{ github.head_ref }}'",' >> workflow-data.json
           echo '"run_id": "'${{ github.run_id }}'",' >> workflow-data.json
@@ -355,7 +379,7 @@ jobs:
           
           echo '"pr_id": "'${{ github.event.pull_request.id }}'",' >> workflow-data.json
           echo '"pr_number": "'${{ github.event.pull_request.number }}'",' >> workflow-data.json
-          echo '"pr_title": "'${{ github.event.pull_request.title }}'",' >> workflow-data.json
+          echo "\"pr_title\": $PR_TITLE_JQ," >> workflow-data.json
           echo '"pr_author": "'${{ github.event.pull_request.user.login }}'",' >> workflow-data.json
           echo '"pr_merge_state": "'${{ github.event.pull_request.mergeable_state }}'",' >> workflow-data.json
           
