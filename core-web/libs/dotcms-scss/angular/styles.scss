@@ -11,6 +11,10 @@
 @include assistant-font-face(500, "SemiBold");
 @include assistant-font-face(700, "Bold");
 
+@include redhatmono-font-face(400, "Regular");
+@include redhatmono-font-face(500, "SemiBold");
+@include redhatmono-font-face(700, "Bold");
+
 // MATERIAL DESIGN ICONS
 @font-face {
     font-family: "Material Icons";
