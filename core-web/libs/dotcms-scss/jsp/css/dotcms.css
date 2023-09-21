@@ -6397,7 +6397,6 @@ hr {
 .dijitTextBox,
 .dijitSelect {
     width: 100%;
-    max-width: 1100px;
 }
 
 .dijitComboBox {
@@ -9272,7 +9271,6 @@ Styles for commons fields along the backend
 }
 
 .editor-toolbar {
-    max-width: 1100px;
     width: 100%;
 }
 
@@ -9287,7 +9285,6 @@ Styles for commons fields along the backend
 
 .wysiwyg-wrapper {
     width: 100%;
-    max-width: 1100px;
 }
 
 .key-value-form {
@@ -10184,7 +10181,6 @@ a.tag_higlighted {
 
 .aceText {
     border: 1px solid #afb3c0;
-    max-width: 1100px;
     width: 100%;
     height: 100%;
     min-height: 200px;
@@ -10203,7 +10199,6 @@ a.tag_higlighted {
     border: 1px solid #afb3c0;
     max-height: 600px;
     min-height: 300px;
-    max-width: 900px;
     width: 100%;
     text-overflow: clip;
     white-space: nowrap;

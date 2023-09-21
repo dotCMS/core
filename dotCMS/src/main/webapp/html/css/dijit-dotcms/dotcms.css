@@ -5942,7 +5942,6 @@ hr {
 .dijitTextBox,
 .dijitSelect {
   width: 100%;
-  max-width: 1100px;
 }
 
 .dijitComboBox {
@@ -8795,7 +8794,6 @@ Styles for commons fields along the backend
 }
 
 .editor-toolbar {
-  max-width: 1100px;
   width: 100%;
 }
 
@@ -8810,7 +8808,6 @@ Styles for commons fields along the backend
 
 .wysiwyg-wrapper {
   width: 100%;
-  max-width: 1100px;
 }
 
 .key-value-form {
@@ -9655,7 +9652,6 @@ a.category_higlighted, a.tag_higlighted {
 
 .aceText {
   border: 1px solid #afb3c0;
-  max-width: 1100px;
   width: 100%;
   height: 100%;
   min-height: 200px;
@@ -11182,4 +11178,13 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.edit-content-full-screen{
+
+  width:100% !important;
+  max-width:100% !important;
+  margin:0px;
+  border:1px solid red;
+  min-height: fit-content;
 }

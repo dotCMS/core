@@ -59,8 +59,18 @@
 
     String counter = (String) request.getAttribute("counter");
 
+    boolean fullScreenField = Try.of(()->(boolean)request.getAttribute("DOT_FULL_SCREEN_FIELD")).getOrElse(false);
+    String fullScreenClass=fullScreenField ? "edit-content-full-screen": "";
+
+
 %>
-<div class="fieldWrapper">
+
+<div class="fieldWrapper" >
+
+
+    fullscreen: <%=fullScreenField%>
+
+
 
     <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
         <% if (hint != null) {%>
@@ -329,8 +339,8 @@
                 <%} %>
             });
         </script>
-        <div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
-        <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;min-height:100px;max-height: 600px\""%>
+        <div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce" style="width:100%"></div>
+        <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> style="width:100%" dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;min-height:100px;max-height: 600px\""%>
                                                                                                    name="<%=field.getFieldContentlet()%>"
                                                                                                    id="<%=field.getVelocityVarName()%>" class="editTextAreaField" onchange="emmitFieldDataChange(true)"><%= UtilMethods.htmlifyString(textValue) %></textarea>
         <%
@@ -409,6 +419,8 @@
                 }
             }
         %>
+
+
         <div class="wysiwyg-wrapper">
             <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
 
