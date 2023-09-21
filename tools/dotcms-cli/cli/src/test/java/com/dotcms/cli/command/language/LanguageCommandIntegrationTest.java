@@ -131,7 +131,7 @@ class LanguageCommandIntegrationTest extends CommandTest {
 
             // And now pushing the language back to dotCMS to make sure the structure is still correct
             status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
-                    languageFilePath.toAbsolutePath().toString());
+                    languageFilePath.toAbsolutePath().toString(), "-ff");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
@@ -172,7 +172,7 @@ class LanguageCommandIntegrationTest extends CommandTest {
 
             // And now pushing the language back to dotCMS to make sure the structure is still correct
             status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
-                    languageFilePath.toAbsolutePath().toString());
+                    languageFilePath.toAbsolutePath().toString(), "-ff");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
@@ -258,7 +258,7 @@ class LanguageCommandIntegrationTest extends CommandTest {
             mapper.writeValue(targetFilePath.toFile(), language);
             commandLine.setOut(out);
             final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
-                    targetFilePath.toAbsolutePath().toString());
+                    targetFilePath.toAbsolutePath().toString(), "-ff");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             // Checking we pushed the language correctly
@@ -268,6 +268,15 @@ class LanguageCommandIntegrationTest extends CommandTest {
             Assertions.assertNotNull(foundLanguage.entity());
             Assertions.assertTrue(foundLanguage.entity().language().isPresent());
             Assertions.assertEquals("Italian", foundLanguage.entity().language().get());
+
+            // Cleaning up
+            try {
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundLanguage.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
         }
     }
 
@@ -296,7 +305,7 @@ class LanguageCommandIntegrationTest extends CommandTest {
             mapper.writeValue(targetFilePath.toFile(), language);
             commandLine.setOut(out);
             int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
-                    targetFilePath.toAbsolutePath().toString());
+                    targetFilePath.toAbsolutePath().toString(), "-ff");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             // Checking we pushed the language correctly
@@ -306,6 +315,15 @@ class LanguageCommandIntegrationTest extends CommandTest {
             Assertions.assertNotNull(foundLanguage.entity());
             Assertions.assertTrue(foundLanguage.entity().language().isPresent());
             Assertions.assertEquals("Italian", foundLanguage.entity().language().get());
+
+            // Cleaning up
+            try {
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundLanguage.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
         }
     }
 
