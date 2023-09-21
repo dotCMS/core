@@ -12,8 +12,8 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.component';
 

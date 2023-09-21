@@ -7,15 +7,15 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule } from 'primeng/paginator';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     GoalsConditionsOperatorsListByType,
     GoalsConditionsParametersListByType
 } from '@dotcms/dotcms-models';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
-
 import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
+
+import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 /**
  * Component with all the inputs of the conditions of Goal Type REACH_PAGE

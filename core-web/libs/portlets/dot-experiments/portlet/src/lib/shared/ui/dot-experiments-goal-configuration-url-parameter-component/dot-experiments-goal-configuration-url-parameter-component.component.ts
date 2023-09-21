@@ -14,11 +14,12 @@ import { InputTextModule } from 'primeng/inputtext';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { GOAL_OPERATORS, GoalsConditionsOperatorsListByType } from '@dotcms/dotcms-models';
+
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
 import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
+import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 const PARAMETER_QUERY_PARAMETER = 'queryParameter';
 
