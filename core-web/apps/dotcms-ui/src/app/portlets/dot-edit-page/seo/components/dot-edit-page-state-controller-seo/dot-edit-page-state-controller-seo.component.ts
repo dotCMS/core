@@ -136,26 +136,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
                 this.featureFlagEditURLContentMapIsOn = result && result === 'true';
 
                 if (this.featureFlagEditURLContentMapIsOn && this.pageState.params.urlContentMap) {
-                    this.menuItems = [
-                        {
-                            label: this.dotMessageService.get('modes.Page'),
-                            command: () => {
-                                this.stateSelectorHandler({ optionId: DotPageMode.EDIT });
-                            }
-                        },
-                        {
-                            label: `${
-                                this.pageState.params.urlContentMap.contentType
-                            } ${this.dotMessageService.get('Content')}`,
-                            command: () => {
-                                this.dotContentletEditor.edit({
-                                    data: {
-                                        inode: this.pageState.params.urlContentMap.inode
-                                    }
-                                });
-                            }
-                        }
-                    ];
+                    this.menuItems = this.getMenuItems();
                 }
 
                 this.options = this.getStateModeOptions(this.pageState);
@@ -267,6 +248,36 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
      */
     handleMenuOpen({ event, menuId }: { event: PointerEvent; menuId: string }): void {
         this.menuOpenActions[menuId as DotPageMode](event);
+    }
+
+    /**
+     * Get the menu items for the dropdown
+     *
+     * @private
+     * @return {*}  {MenuItem[]}
+     * @memberof DotEditPageStateControllerComponent
+     */
+    private getMenuItems(): MenuItem[] {
+        return [
+            {
+                label: this.dotMessageService.get('modes.Page'),
+                command: () => {
+                    this.stateSelectorHandler({ optionId: DotPageMode.EDIT });
+                }
+            },
+            {
+                label: `${
+                    this.pageState.params.urlContentMap.contentType
+                } ${this.dotMessageService.get('Content')}`,
+                command: () => {
+                    this.dotContentletEditor.edit({
+                        data: {
+                            inode: this.pageState.params.urlContentMap.inode
+                        }
+                    });
+                }
+            }
+        ];
     }
 
     private canTakeLock(pageState: DotPageRenderState): boolean {

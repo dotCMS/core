@@ -100,26 +100,7 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
                 this.featureFlagEditURLContentMapIsOn = result && result === 'true';
 
                 if (this.featureFlagEditURLContentMapIsOn && this.pageState.params.urlContentMap) {
-                    this.menuItems = [
-                        {
-                            label: this.dotMessageService.get('modes.Page'),
-                            command: () => {
-                                this.stateSelectorHandler({ optionId: DotPageMode.EDIT });
-                            }
-                        },
-                        {
-                            label: `${
-                                this.pageState.params.urlContentMap.contentType
-                            } ${this.dotMessageService.get('Content')}`,
-                            command: () => {
-                                this.dotContentletEditor.edit({
-                                    data: {
-                                        inode: this.pageState.params.urlContentMap.inode
-                                    }
-                                });
-                            }
-                        }
-                    ];
+                    this.menuItems = this.getMenuItems();
                 }
 
                 this.options = this.getStateModeOptions(this.pageState);
@@ -216,6 +197,36 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
     }
 
     /**
+     * Get the menu items for the dropdown
+     *
+     * @private
+     * @return {*}  {MenuItem[]}
+     * @memberof DotEditPageStateControllerComponent
+     */
+    private getMenuItems(): MenuItem[] {
+        return [
+            {
+                label: this.dotMessageService.get('modes.Page'),
+                command: () => {
+                    this.stateSelectorHandler({ optionId: DotPageMode.EDIT });
+                }
+            },
+            {
+                label: `${
+                    this.pageState.params.urlContentMap.contentType
+                } ${this.dotMessageService.get('Content')}`,
+                command: () => {
+                    this.dotContentletEditor.edit({
+                        data: {
+                            inode: this.pageState.params.urlContentMap.inode
+                        }
+                    });
+                }
+            }
+        ];
+    }
+
+    /**
      * Check if the dropdown button should be shown
      *
      * @private
@@ -225,14 +236,14 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
      * @memberof DotEditPageStateControllerSeoComponent
      */
     private shouldShowDropdownButton(mode: DotPageMode, pageState: DotPageRenderState): boolean {
-        const shouldModeShowDropdown: Record<DotPageMode, boolean> = {
-            [DotPageMode.EDIT]:
-                this.featureFlagEditURLContentMapIsOn && Boolean(pageState.params.urlContentMap),
-            [DotPageMode.PREVIEW]: false, // Don't show for preview
-            [DotPageMode.LIVE]: false // Don't show for live
-        };
+        if (
+            mode === DotPageMode.EDIT &&
+            this.featureFlagEditURLContentMapIsOn &&
+            Boolean(pageState.params.urlContentMap)
+        )
+            return true;
 
-        return shouldModeShowDropdown[mode];
+        return false;
     }
 
     private canTakeLock(pageState: DotPageRenderState): boolean {

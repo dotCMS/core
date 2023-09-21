@@ -118,7 +118,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
     let editContentletService: DotContentletEditorService;
     let dotTabButtons: DotTabButtonsComponent;
 
-    let getKeyMock: jasmine.Spy;
+    let featFlagMock: jasmine.Spy;
 
     let pointerEvent: PointerEvent;
 
@@ -191,7 +191,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         spyOn(component.modeChange, 'emit');
         spyOn(dotPageStateService, 'setLock');
         spyOn(personalizeService, 'personalized').and.returnValue(of(null));
-        getKeyMock = spyOn(propertiesService, 'getKey').and.returnValue(of('false'));
+        featFlagMock = spyOn(propertiesService, 'getKey').and.returnValue(of('false'));
 
         dotTabButtons = de.query(By.css('[data-testId="dot-tabs-buttons"]')).componentInstance;
     });
@@ -521,7 +521,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
     });
     describe('page does not have URLContentMap and feature flag is on', () => {
         beforeEach(() => {
-            getKeyMock.and.returnValue(of('true'));
+            featFlagMock.and.returnValue(of('true'));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
                 { ...mockUser(), userId: '486' },
@@ -539,7 +539,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
     describe('feature flag edit URLContentMap is on', () => {
         beforeEach(() => {
-            getKeyMock.and.returnValue(of('true'));
+            featFlagMock.and.returnValue(of('true'));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
                 { ...mockUser(), userId: '457' },

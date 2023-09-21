@@ -109,7 +109,7 @@ describe('DotEditPageStateControllerComponent', () => {
     let personalizeService: DotPersonalizeService;
     let propertiesService: DotPropertiesService;
     let editContentletService: DotContentletEditorService;
-    let getKeyMock: jasmine.Spy;
+    let featFlagMock: jasmine.Spy;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -174,7 +174,7 @@ describe('DotEditPageStateControllerComponent', () => {
         spyOn(component.modeChange, 'emit');
         spyOn(dotPageStateService, 'setLock');
         spyOn(personalizeService, 'personalized').and.returnValue(of(null));
-        getKeyMock = spyOn(propertiesService, 'getKey').and.returnValue(of('false'));
+        featFlagMock = spyOn(propertiesService, 'getKey').and.returnValue(of('false'));
     });
 
     describe('elements', () => {
@@ -513,7 +513,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
     describe('feature flag edit URLContentMap is on', () => {
         beforeEach(() => {
-            getKeyMock.and.returnValue(of('true'));
+            featFlagMock.and.returnValue(of('true'));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
                 { ...mockUser(), userId: '457' },
