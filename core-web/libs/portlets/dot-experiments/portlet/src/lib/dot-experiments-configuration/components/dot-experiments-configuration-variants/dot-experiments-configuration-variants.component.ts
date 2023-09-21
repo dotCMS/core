@@ -70,6 +70,7 @@ export class DotExperimentsConfigurationVariantsComponent {
         status: StepStatus;
         isExperimentADraft: boolean;
         isPageLocked: boolean;
+        disabledTooltipLabel: string | null;
     }> = this.dotExperimentsConfigurationStore.variantsStepVm$.pipe(
         tap(({ status }) => this.handleSidebar(status))
     );

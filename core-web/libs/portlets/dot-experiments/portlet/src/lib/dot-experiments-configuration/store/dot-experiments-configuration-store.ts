@@ -129,6 +129,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ({ dotPageRenderState }) => this.isLocked(dotPageRenderState)
     );
 
+    readonly disabledTooltipLabel$: Observable<string | null> = this.select(
+        this.state$,
+        ({ experiment, dotPageRenderState }) =>
+            this.getDisabledTooltipLabel(experiment, dotPageRenderState)
+    );
+
     // Goals Step //
     readonly goals$: Observable<Goals> = this.select(({ experiment }) => {
         return experiment.goals
@@ -811,18 +817,28 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         status: StepStatus;
         isExperimentADraft: boolean;
         isPageLocked: boolean;
+        disabledTooltipLabel: string | null;
     }> = this.select(
         this.getExperimentId$,
         this.trafficProportion$,
         this.variantsStatus$,
         this.isExperimentADraft$,
         this.isPageLocked$,
-        (experimentId, trafficProportion, status, isExperimentADraft, isPageLocked) => ({
+        this.disabledTooltipLabel$,
+        (
             experimentId,
             trafficProportion,
             status,
             isExperimentADraft,
-            isPageLocked
+            isPageLocked,
+            disabledTooltipLabel
+        ) => ({
+            experimentId,
+            trafficProportion,
+            status,
+            isExperimentADraft,
+            isPageLocked,
+            disabledTooltipLabel
         })
     );
 
@@ -869,14 +885,17 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         experimentId: string;
         status: StepStatus;
         isExperimentADraft: boolean;
+        disabledTooltipLabel: string | null;
     }> = this.select(
         this.getExperimentId$,
         this.trafficLoadStatus$,
         this.isExperimentADraft$,
-        (experimentId, status, isExperimentADraft) => ({
+        this.disabledTooltipLabel$,
+        (experimentId, status, isExperimentADraft, disabledTooltipLabel) => ({
             experimentId,
             status,
-            isExperimentADraft
+            isExperimentADraft,
+            disabledTooltipLabel
         })
     );
 
@@ -959,6 +978,17 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     private isLocked(pageState: DotPageRenderState): boolean {
         return pageState.state.locked && !this.canTakeLock(pageState);
+    }
+
+    private getDisabledTooltipLabel(
+        experiment: DotExperiment,
+        dotPageRenderState: DotPageRenderState
+    ): string | null {
+        return experiment?.status === DotExperimentStatus.RUNNING
+            ? 'experiment.configure.edit.only.draft.status'
+            : this.isLocked(dotPageRenderState)
+            ? 'experiment.configure.edit.page.blocked'
+            : null;
     }
 
     private getMenuItems(
