@@ -10,3 +10,4 @@ export * from './lib/dot-site-selector/dot-site-selector.directive';
 export * from './lib/components/dot-empty-container/dot-empty-container.component';
 export * from './lib/dot-tab-buttons/dot-tab-buttons.component';
 export * from './lib/dot-remove-confirm-popup/dot-remove-confirm-popup.directive';
+export * from './lib/directives/dot-autofocus/dot-autofocus.directive';
