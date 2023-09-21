@@ -18,7 +18,7 @@
                 (fileDragLeave)="setDropZoneActiveState(false)"
                 (fileDropped)="handleFileDrop($event)"
                 data-testId="dropzone">
-                <dot-ui-message
+                <dot-binary-field-ui-message
                     [message]="vm.UiMessage.message | dm : vm.UiMessage.args"
                     [icon]="vm.UiMessage.icon"
                     [severity]="vm.UiMessage.severity">
@@ -28,7 +28,7 @@
                         data-testId="choose-file-btn">
                         {{ 'dot.binary.field.action.choose.file' | dm }}
                     </button>
-                </dot-ui-message>
+                </dot-binary-field-ui-message>
             </dot-drop-zone>
             <input
                 class="binary-field__input"

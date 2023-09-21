@@ -46,10 +46,10 @@
 
 </style>
 
-
-<!-- Uncomment this when we are ready to use the new content fields -->
-<script src="/html/contenttype-fields.js"></script>
-
+<!-- 
+	Uncomment this when we are ready to use the new content fields
+	<script src="/html/contenttype-fields.js"></script>
+-->
 
 <script type="text/javascript">
 

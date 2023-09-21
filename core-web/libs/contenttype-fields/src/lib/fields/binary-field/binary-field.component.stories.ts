@@ -12,7 +12,7 @@ import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotDropZoneComponent, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
-import { DotUiMessageComponent } from './components/dot-ui-message/dot-ui-message.component';
+import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
@@ -30,7 +30,7 @@ export default {
                 DialogModule,
                 MonacoEditorModule,
                 DotDropZoneComponent,
-                DotUiMessageComponent,
+                DotBinaryFieldUiMessageComponent,
                 DotMessagePipe,
                 DotSpinnerModule
             ],

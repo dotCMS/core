@@ -766,46 +766,23 @@
     <%
        String maxFileLength="-1";
        String accept="*/*";
-       String maxFileLengthBinary="0";
-       String helperText="";
-
        List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
        for(FieldVariable fv : acceptTypes){
            if("accept".equalsIgnoreCase(fv.getKey())){
                accept = fv.getValue();
+
            }
            if("maxFileLength".equalsIgnoreCase(fv.getKey())){
              maxFileLength=fv.getValue();
-             maxFileLengthBinary=fv.getValue();
-           }
 
-           if("helperText".equalsIgnoreCase(fv.getKey())){
-            helperText=fv.getValue();
-          }
+           }
        }
 
     %>
 
 
     <%-- File uploader --%>
-    <!-- TODO: Create a Feature Flag for this -->
-        <!-- <dotcms-binary-field max-file-size="<%= maxFileLengthBinary%>" accept="<%=accept%>" helper-text="<%= helperText%>" id="binary-field-<%=field.getVelocityVarName()%>"></dotcms-binary-field>
-        <input name="<%=field.getFieldContentlet()%>" id="binary-field-input-<%=field.getFieldContentlet()%>ValueField" type="hidden" />
 
-        <script>
-
-            // Create a new scope so that variables defined here can have the same name without being overwritten.
-            (function autoexecute() {
-                const binaryField = document.getElementById("binary-field-<%=field.getVelocityVarName()%>");
-                const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
-                binaryField.addEventListener('tempFile', (event) => {
-                    const tempFile = event.detail;
-                    field.value = tempFile.id;
-                });
-            })();
-
-        </script> -->
-   
     <div
             assetName="<%= contentlet.isFileAsset() ? resourceLink.getAssetName() : "" %>"
             resourceLink="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkAsString() : "" %>"

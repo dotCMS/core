@@ -2,14 +2,14 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 @Component({
-    selector: 'dot-ui-message',
+    selector: 'dot-binary-field-ui-message',
     standalone: true,
     imports: [CommonModule],
-    templateUrl: './dot-ui-message.component.html',
-    styleUrls: ['./dot-ui-message.component.scss'],
+    templateUrl: './dot-binary-field-ui-message.component.html',
+    styleUrls: ['./dot-binary-field-ui-message.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUiMessageComponent {
+export class DotBinaryFieldUiMessageComponent {
     @Input() message: string;
     @Input() icon: string;
     @Input() severity: string;

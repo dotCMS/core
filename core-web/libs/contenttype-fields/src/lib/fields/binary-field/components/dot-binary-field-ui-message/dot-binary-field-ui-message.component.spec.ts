@@ -2,22 +2,22 @@ import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
 
-import { DotUiMessageComponent } from './dot-ui-message.component';
+import { DotBinaryFieldUiMessageComponent } from './dot-binary-field-ui-message.component';
 
-describe('DotUiMessageComponent', () => {
-    let spectator: SpectatorHost<DotUiMessageComponent>;
+describe('DotBinaryFieldUiMessageComponent', () => {
+    let spectator: SpectatorHost<DotBinaryFieldUiMessageComponent>;
 
     const createHost = createHostFactory({
-        component: DotUiMessageComponent,
+        component: DotBinaryFieldUiMessageComponent,
         imports: [CommonModule],
         providers: []
     });
 
     beforeEach(async () => {
         spectator = createHost(
-            `<dot-ui-message [message]="message" [icon]="icon" [severity]="severity">
+            `<dot-binary-field-ui-message [message]="message" [icon]="icon" [severity]="severity">
                 <button data-testId="choose-file-btn">Choose File</button>
-            </dot-ui-message>`,
+            </dot-binary-field-ui-message>`,
             {
                 hostProps: {
                     message: 'Drag and Drop File',

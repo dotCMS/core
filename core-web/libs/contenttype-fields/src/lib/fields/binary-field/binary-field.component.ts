@@ -28,15 +28,25 @@ import {
     DropZoneFileValidity
 } from '@dotcms/ui';
 
-import { DotUiMessageComponent } from './components/dot-ui-message/dot-ui-message.component';
+import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import {
     BINARY_FIELD_MODE,
     BINARY_FIELD_STATUS,
-    DotBinaryFieldStore,
-    initialState
+    BinaryFieldState,
+    DotBinaryFieldStore
 } from './store/binary-field.store';
 
 import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../utils/binary-field-utils';
+
+const initialState: BinaryFieldState = {
+    file: null,
+    tempFile: null,
+    mode: BINARY_FIELD_MODE.DROPZONE,
+    status: BINARY_FIELD_STATUS.INIT,
+    dialogOpen: false,
+    dropZoneActive: false,
+    UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT)
+};
 
 @Component({
     selector: 'dot-binary-field',
@@ -48,7 +58,7 @@ import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../utils/binary-fi
         DotDropZoneComponent,
         MonacoEditorModule,
         DotMessagePipe,
-        DotUiMessageComponent,
+        DotBinaryFieldUiMessageComponent,
         DotSpinnerModule,
         HttpClientModule
     ],
@@ -71,6 +81,8 @@ export class DotBinaryFieldComponent implements OnInit {
 
     @Output() tempFile = new EventEmitter<DotCMSTempFile>();
 
+    @Input() contentlet;
+
     readonly dialogHeaderMap = {
         [BINARY_FIELD_MODE.URL]: 'dot.binary.field.dialog.import.from.url.header',
         [BINARY_FIELD_MODE.EDITOR]: 'dot.binary.field.dialog.create.new.file.header'
@@ -83,6 +95,7 @@ export class DotBinaryFieldComponent implements OnInit {
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
         private readonly dotMessageService: DotMessageService
     ) {
+        // WIP - This will receive the contentlet from the parent component (PREVIEW MODE)
         this.dotBinaryFieldStore.setState(initialState);
         this.dotMessageService.init();
     }

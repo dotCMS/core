@@ -14,7 +14,7 @@ import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DropZoneFileEvent } from '@dotcms/ui';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
-import { DotUiMessageComponent } from './components/dot-ui-message/dot-ui-message.component';
+import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import {
     BINARY_FIELD_MODE,
     BINARY_FIELD_STATUS,
@@ -59,7 +59,7 @@ describe('DotBinaryFieldComponent', () => {
             ButtonModule,
             DialogModule,
             MonacoEditorModule,
-            DotUiMessageComponent,
+            DotBinaryFieldUiMessageComponent,
             HttpClientTestingModule
         ],
         componentProviders: [DotBinaryFieldStore],

@@ -33,16 +33,6 @@ export enum BINARY_FIELD_STATUS {
     ERROR = 'ERROR'
 }
 
-export const initialState: BinaryFieldState = {
-    file: null,
-    tempFile: null,
-    mode: BINARY_FIELD_MODE.DROPZONE,
-    status: BINARY_FIELD_STATUS.INIT,
-    dialogOpen: false,
-    dropZoneActive: false,
-    UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT)
-};
-
 @Injectable()
 export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     private _maxFileSize: number;
