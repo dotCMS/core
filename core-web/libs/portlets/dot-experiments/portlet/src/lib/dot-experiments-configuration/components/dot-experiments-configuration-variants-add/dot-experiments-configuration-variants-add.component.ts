@@ -11,18 +11,16 @@ import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import {
-    ComponentStatus,
-    MAX_INPUT_TITLE_LENGTH,
-    StepStatus,
-    TrafficProportion
-} from '@dotcms/dotcms-models';
+import { ComponentStatus, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 import { DotValidators } from '@shared/validators/dotValidators';
 
-import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
+import {
+    ConfigurationVariantStepViewModel,
+    DotExperimentsConfigurationStore
+} from '../../store/dot-experiments-configuration-store';
 
 @Component({
     selector: 'dot-experiments-configuration-variants-add',
@@ -50,12 +48,8 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
     stepStatus = ComponentStatus;
     form: FormGroup;
-    vm$: Observable<{
-        experimentId: string;
-        trafficProportion: TrafficProportion;
-        status: StepStatus;
-        isExperimentADraft: boolean;
-    }> = this.dotExperimentsConfigurationStore.variantsStepVm$;
+    vm$: Observable<ConfigurationVariantStepViewModel> =
+        this.dotExperimentsConfigurationStore.variantsStepVm$;
     protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
 
     constructor(

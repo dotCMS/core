@@ -52,7 +52,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA = PARENT_RESOLVERS_ACTIVE_ROUTE_DATA;
-LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA.parent.parent.snapshot.data.content.state.locked = false;
+LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA.parent.parent.snapshot.data.content.page.canLock = true;
 
 const ActivatedRouteMock = {
     snapshot: {

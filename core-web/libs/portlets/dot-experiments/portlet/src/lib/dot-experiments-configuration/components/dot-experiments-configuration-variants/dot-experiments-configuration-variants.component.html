@@ -67,7 +67,7 @@
                         *ngIf="
                             variant.name === defaultVariantName ||
                                 !vm.isExperimentADraft ||
-                                vm.isPageLocked;
+                                !vm.canLockPage;
                             else editableButtonTpl
                         ">
                         <button

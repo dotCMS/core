@@ -75,8 +75,14 @@ export interface ConfigurationViewModel {
     isDescriptionSaving: boolean;
     menuItems: MenuItem[];
     addToBundleContentId: string;
-    isPageLocked: boolean;
-    dotPageRenderState: DotPageRenderState;
+}
+
+export interface ConfigurationVariantStepViewModel {
+    experimentId: string;
+    trafficProportion: TrafficProportion;
+    status: StepStatus;
+    isExperimentADraft: boolean;
+    canLockPage: boolean;
 }
 
 @Injectable()
@@ -122,11 +128,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.state$,
         ({ experiment, hasEnterpriseLicense, pushPublishEnvironments }) =>
             this.getMenuItems(experiment, hasEnterpriseLicense, pushPublishEnvironments)
-    );
-
-    readonly isPageLocked$: Observable<boolean> = this.select(
-        this.state$,
-        ({ dotPageRenderState }) => this.isLocked(dotPageRenderState)
     );
 
     // Goals Step //
@@ -776,9 +777,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.getExperimentStatus$,
         this.getIsDescriptionSaving$,
         this.getMenuItems$,
-        this.isPageLocked$,
         (
-            { experiment, stepStatusSidebar, addToBundleContentId, dotPageRenderState },
+            { experiment, stepStatusSidebar, addToBundleContentId },
             isExperimentADraft,
             isLoading,
             disabledStartExperiment,
@@ -786,8 +786,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             isSaving,
             experimentStatus,
             isDescriptionSaving,
-            menuItems,
-            isPageLocked
+            menuItems
         ) => ({
             experiment,
             stepStatusSidebar,
@@ -799,30 +798,22 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             isSaving,
             experimentStatus,
             isDescriptionSaving,
-            menuItems,
-            isPageLocked,
-            dotPageRenderState
+            menuItems
         })
     );
 
-    readonly variantsStepVm$: Observable<{
-        experimentId: string;
-        trafficProportion: TrafficProportion;
-        status: StepStatus;
-        isExperimentADraft: boolean;
-        isPageLocked: boolean;
-    }> = this.select(
+    readonly variantsStepVm$: Observable<ConfigurationVariantStepViewModel> = this.select(
+        this.state$,
         this.getExperimentId$,
         this.trafficProportion$,
         this.variantsStatus$,
         this.isExperimentADraft$,
-        this.isPageLocked$,
-        (experimentId, trafficProportion, status, isExperimentADraft, isPageLocked) => ({
+        ({ dotPageRenderState }, experimentId, trafficProportion, status, isExperimentADraft) => ({
             experimentId,
             trafficProportion,
             status,
             isExperimentADraft,
-            isPageLocked
+            canLockPage: dotPageRenderState.page.canLock
         })
     );
 
@@ -951,14 +942,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     private disableStartExperiment(experiment: DotExperiment): boolean {
         return experiment?.trafficProportion.variants.length < 2 || !experiment?.goals;
-    }
-
-    private canTakeLock(pageState: DotPageRenderState): boolean {
-        return pageState.page.canLock && pageState.state.lockedByAnotherUser;
-    }
-
-    private isLocked(pageState: DotPageRenderState): boolean {
-        return pageState.state.locked && !this.canTakeLock(pageState);
     }
 
     private getMenuItems(
