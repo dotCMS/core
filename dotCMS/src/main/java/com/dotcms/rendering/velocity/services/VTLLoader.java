@@ -8,6 +8,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 
+import com.dotmarketing.util.VelocityUtil;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -41,12 +42,7 @@ public class VTLLoader implements DotLoader {
     }
 
     private void init() {
-        String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
-        if (velocityRootPath.startsWith("/WEB-INF")) {
-            String startPath = velocityRootPath.substring(0, 8);
-            String endPath = velocityRootPath.substring(9, velocityRootPath.length());
-            velocityRootPath = FileUtil.getRealPath(startPath) + File.separator + endPath;
-        } 
+        String velocityRootPath = VelocityUtil.getVelocityRootPath();
 
         VELOCITY_ROOT = velocityRootPath + File.separator;
 
