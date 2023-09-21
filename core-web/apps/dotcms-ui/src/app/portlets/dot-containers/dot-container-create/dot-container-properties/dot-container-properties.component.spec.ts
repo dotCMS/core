@@ -54,6 +54,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -66,7 +67,6 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-container-code',

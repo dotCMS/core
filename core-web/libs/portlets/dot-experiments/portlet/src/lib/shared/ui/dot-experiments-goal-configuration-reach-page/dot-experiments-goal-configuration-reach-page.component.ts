@@ -11,11 +11,11 @@ import {
     GoalsConditionsOperatorsListByType,
     GoalsConditionsParametersListByType
 } from '@dotcms/dotcms-models';
+import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
-import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
 
-import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
 
 /**
  * Component with all the inputs of the conditions of Goal Type REACH_PAGE

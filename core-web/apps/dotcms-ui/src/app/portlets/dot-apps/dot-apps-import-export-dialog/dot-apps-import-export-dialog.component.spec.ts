@@ -12,13 +12,13 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     DotApps,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
     DotAppsSites
 } from '@dotcms/dotcms-models';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 

@@ -16,12 +16,12 @@ import {
     StepStatus,
     TrafficProportion
 } from '@dotcms/dotcms-models';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 import { DotValidators } from '@shared/validators/dotValidators';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-experiments-configuration-variants-add',
