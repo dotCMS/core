@@ -25,7 +25,7 @@ jobs:
     outputs:
       RELEASE_VERSION: ${{ steps.vars.outputs.RELEASE_VERSION }}
       NEXT_VERSION: ${{ steps.vars.outputs.NEXT_VERSION }}
-      HEAD: ${{ steps.vars.outputs.HEAD }}
+#      HEAD: ${{ steps.vars.outputs.HEAD }}
     steps:
       - name: Log GitHub context
         env:
@@ -50,7 +50,7 @@ jobs:
 
       - name: Setup git config
         run: |
-          git config --global user.name "dcolina"
+          git config --global user.name "${{ github.actor }}"
           git config --global user.email "daniel.colina@dotcms.com"
 
       - name: Set release version
@@ -59,11 +59,14 @@ jobs:
         run: |
           VERSION=${{ github.event.inputs.version }}
           NEXT=${{ github.event.inputs.next }}
-          HEAD=$(git rev-parse HEAD)
+          HEAD=${{ github.ref }}"
+          
+          git commit -a -m "🏁 Releasing version $VERSION"
+          git push origin "$HEAD"
           
           echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
           echo "NEXT=$NEXT" >> "$GITHUB_OUTPUT"
-          echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
+#          echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
 
   release:
     needs: [ precheck ]
@@ -71,6 +74,6 @@ jobs:
     steps:
       - name: vars
         run: |
-          echo "HEAD=${{ needs.precheck.outputs.HEAD }}"
+#          echo "HEAD=${{ needs.precheck.outputs.HEAD }}"
           echo "REF=${{ github.ref }}"
           echo "REF_NAME=${{ github.ref_name }}"
