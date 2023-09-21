@@ -19,6 +19,7 @@ import {
     DotExperiment,
     DotExperimentStatus,
     DotPageRenderState,
+    DotPageState,
     ExperimentSteps,
     Goal,
     Goals,
@@ -83,6 +84,7 @@ export interface ConfigurationVariantStepViewModel {
     status: StepStatus;
     isExperimentADraft: boolean;
     canLockPage: boolean;
+    pageSate: DotPageState;
 }
 
 @Injectable()
@@ -813,7 +815,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             trafficProportion,
             status,
             isExperimentADraft,
-            canLockPage: dotPageRenderState.page.canLock
+            canLockPage: dotPageRenderState.page.canLock,
+            pageSate: dotPageRenderState.state
         })
     );
 
