@@ -58,7 +58,7 @@ jobs:
         run: |
           VERSION=${{ github.event.inputs.version }}
           NEXT=${{ github.event.inputs.next }}
-          HEAD=${{ github.ref }}"
+          HEAD=${{ github.ref }}
           
           git commit -a -m "🏁 Releasing version $VERSION"
           git push origin "$HEAD"
