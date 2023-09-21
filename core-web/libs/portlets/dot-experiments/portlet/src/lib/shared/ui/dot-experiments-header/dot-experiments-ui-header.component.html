@@ -12,8 +12,9 @@
 
     <ng-container *ngIf="!!experiment?.status">
         <div class="flex flex-grow-1 align-items-center justify-content-end">
-            <p-tag
-                [value]="
+            <p-chip
+                [icon]="this.statusIcon"
+                [label]="
                     (experiment?.status | titlecase | dm) +
                     (experiment?.status === experimentStatus.RUNNING
                         ? ' ' +
@@ -23,8 +24,7 @@
                         : '')
                 "
                 data-testId="status-tag"
-                styleClass="{{ experiment?.status | lowercase }}">
-            </p-tag>
+                styleClass="{{ experiment?.status | lowercase }}"></p-chip>
         </div>
     </ng-container>
 
