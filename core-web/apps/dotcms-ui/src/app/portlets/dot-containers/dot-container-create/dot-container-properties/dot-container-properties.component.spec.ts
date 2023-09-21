@@ -36,7 +36,6 @@ import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -67,6 +66,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-container-code',

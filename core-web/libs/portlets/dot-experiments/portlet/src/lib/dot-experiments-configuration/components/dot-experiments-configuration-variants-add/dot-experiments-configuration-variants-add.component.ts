@@ -10,7 +10,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     ComponentStatus,
     MAX_INPUT_TITLE_LENGTH,
@@ -22,6 +21,7 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
 import { DotValidators } from '@shared/validators/dotValidators';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-experiments-configuration-variants-add',

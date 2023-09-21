@@ -14,7 +14,6 @@ import { SidebarModule } from 'primeng/sidebar';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -37,6 +36,7 @@ import { DotExperimentsGoalConfigurationReachPageComponent } from '../../../shar
 import { DotExperimentsGoalConfigurationUrlParameterComponentComponent } from '../../../shared/ui/dot-experiments-goal-configuration-url-parameter-component/dot-experiments-goal-configuration-url-parameter-component.component';
 import { DotExperimentsGoalsComingSoonComponent } from '../../../shared/ui/dot-experiments-goals-coming-soon/dot-experiments-goals-coming-soon.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-experiments-configuration-goal-select',

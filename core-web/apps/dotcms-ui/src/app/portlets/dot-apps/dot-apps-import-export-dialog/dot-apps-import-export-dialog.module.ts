@@ -6,11 +6,12 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
+
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
+import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 @NgModule({
     imports: [

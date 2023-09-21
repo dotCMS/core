@@ -22,9 +22,10 @@ import { Inplace, InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { MAX_INPUT_DESCRIPTIVE_LENGTH } from '@dotcms/dotcms-models';
+
 import { DotValidators } from '@shared/validators/dotValidators';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 
 type InplaceInputSize = 'small' | 'large';
 const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; input: string }> = {
