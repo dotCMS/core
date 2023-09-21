@@ -184,6 +184,11 @@ public class FileBundlerTestUtil {
     }
 
     public static File getContentletPath(final Contentlet contentlet, final File bundleRoot) throws DotSecurityException, DotDataException {
+        return getContentletPath(contentlet, bundleRoot, 0);
+    }
+
+    public static File getContentletPath(final Contentlet contentlet, final File bundleRoot,
+            final int startCounter) throws DotSecurityException, DotDataException {
 
         final String liveWorking = contentlet.isLive() ? "live" : "working";
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
@@ -192,7 +197,7 @@ public class FileBundlerTestUtil {
         String assetName = contentlet.isFileAsset() ? contentlet.getInode() : identifier.getURI().replace("/", StringPool.BLANK);
         assetName = assetName.indexOf("content.") != -1 ? assetName.substring(assetName.indexOf("content.")) : assetName;
 
-        final int countOrder = getCountOrder(bundleRoot, assetName, contentlet.isLive());
+        final int countOrder = getCountOrder(bundleRoot, assetName, contentlet.isLive()) + startCounter;
         final Host host = getHost(contentlet.getIdentifier());
 
         String contentletFilePath = bundleRoot.getPath() + File.separator
