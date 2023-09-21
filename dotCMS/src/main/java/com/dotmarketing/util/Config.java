@@ -53,13 +53,13 @@ public class Config {
 
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
 
-    private static SystemTableConfigSource SYSTEM_TABLE_CONFIG_SOURCE = null;
+    private static Lazy<SystemTableConfigSource> SYSTEM_TABLE_CONFIG_SOURCE = null;
 
     @VisibleForTesting
     public static boolean ENABLE_SYSTEM_TABLE_CONFIG_SOURCE = "true".equalsIgnoreCase(EnvironmentVariablesService.getInstance().getenv().getOrDefault("DOT_ENABLE_SYSTEM_TABLE_CONFIG_SOURCE", "false"));
 
     public static void initSystemTableConfigSource() {
-        SYSTEM_TABLE_CONFIG_SOURCE = new SystemTableConfigSource();
+        SYSTEM_TABLE_CONFIG_SOURCE = Lazy.of(()->new SystemTableConfigSource()) ;
     }
 
 
@@ -385,7 +385,7 @@ public class Config {
                 ThreadContextUtil.getOrCreateContext().setTag("ConfigSystemTable");
 
                 for (final String name : names) {
-                    final String value = Try.of(()->SYSTEM_TABLE_CONFIG_SOURCE.getValue(name)).getOrNull();
+                    final String value = Try.of(()->SYSTEM_TABLE_CONFIG_SOURCE.get().getValue(name)).getOrNull();
                     if (null != value) {
                         return value;
                     }
