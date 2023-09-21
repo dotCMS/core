@@ -312,15 +312,18 @@ jobs:
           path: /tmp/build-step-reports
 
       - name: Prepare workflow data
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          PR_TITLE_RAW="${{ github.event.pull_request.title }}"
+          echo "TITLE = ${PR_TITLE}
+          PR_TITLE_RAW="PR_TITLE"
           PR_TITLE_ESCAPED_FOR_JQ="${PR_TITLE_RAW//\"/\\\"}"
-          PR_TITLE=$(jq --arg title "$PR_TITLE_ESCAPED_FOR_JQ" -n '$title')
-          echo "{\"pr_title\": $PR_TITLE}"
+          PR_TITLE_JQ=$(jq --arg title "$PR_TITLE_ESCAPED_FOR_JQ" -n '$title')
+          echo "{\"pr_title\": PR_TITLE_JQ}"
           
           echo "\"pr_id2\": \"${{ github.event.pull_request.id }}\","
           
-          echo "\"pr_title2\": \"${{ github.event.pull_request.title  }}\","
+          echo "\"pr_title2\": \"${PR_TITLE}\","
           
           AGGREGATE_STATUS="SUCCESS"
           jobs_status="${{ toJson(needs) }}"
