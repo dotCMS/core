@@ -89,7 +89,8 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
                 experimentStep: ExperimentSteps.VARIANTS
             },
             isExperimentADraft: true,
-            canLockPage: true
+            canLockPage: true,
+            pageSate: null
         });
 
         spectator.detectChanges();
