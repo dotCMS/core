@@ -247,7 +247,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
      * @memberof DotEditPageStateControllerSeoComponent
      */
     handleMenuOpen({ event, menuId }: { event: PointerEvent; menuId: string }): void {
-        this.menuOpenActions[menuId as DotPageMode](event);
+        this.menuOpenActions[menuId as DotPageMode]?.(event);
     }
 
     /**
@@ -313,14 +313,12 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
      * @memberof DotEditPageStateControllerSeoComponent
      */
     private shouldShowDropdownButton(mode: DotPageMode, pageState: DotPageRenderState): boolean {
-        const shouldModeShowDropdown: Record<DotPageMode, boolean> = {
+        return {
             [DotPageMode.EDIT]:
                 this.featureFlagEditURLContentMapIsOn && Boolean(pageState.params.urlContentMap),
             [DotPageMode.PREVIEW]: true, // No logic involved, always show,
             [DotPageMode.LIVE]: false // Don't show for live
-        };
-
-        return shouldModeShowDropdown[mode];
+        }[mode]; // We get the value from the object using the mode as key
     }
 
     private getStateModeOptions(pageState: DotPageRenderState): SelectItem[] {

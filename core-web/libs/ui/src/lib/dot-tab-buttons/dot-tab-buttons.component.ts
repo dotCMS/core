@@ -41,15 +41,13 @@ export class DotTabButtonsComponent implements OnChanges {
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes.options) {
-            this._options = this.options.map((option) => {
-                // We don't want reference issues with the options, so we clone it.
-                const clonedOption = structuredClone(option);
-                if (clonedOption.value.showDropdownButton) {
-                    clonedOption.value.toggle = false;
+            this._options = this.options.map((option) => ({
+                ...option,
+                value: {
+                    ...option.value,
+                    toggle: option.value.showDropdownButton ? false : undefined
                 }
-
-                return clonedOption;
-            });
+            })); // We don't want reference issues with the options, so we create a new object.
         }
     }
 

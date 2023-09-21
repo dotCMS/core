@@ -117,6 +117,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
     let propertiesService: DotPropertiesService;
     let editContentletService: DotContentletEditorService;
     let dotTabButtons: DotTabButtonsComponent;
+    let deDotTabButtons: DebugElement;
 
     let featFlagMock: jasmine.Spy;
 
@@ -193,7 +194,8 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         spyOn(personalizeService, 'personalized').and.returnValue(of(null));
         featFlagMock = spyOn(propertiesService, 'getKey').and.returnValue(of('false'));
 
-        dotTabButtons = de.query(By.css('[data-testId="dot-tabs-buttons"]')).componentInstance;
+        deDotTabButtons = de.query(By.css('[data-testId="dot-tabs-buttons"]'));
+        dotTabButtons = deDotTabButtons.componentInstance;
     });
 
     describe('elements', () => {
@@ -343,7 +345,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         it('should without confirmation dialog emit modeChange and update pageState service', async () => {
             fixtureHost.detectChanges();
 
-            dotTabButtons.clickOption.emit({
+            deDotTabButtons.triggerEventHandler('clickOption', {
                 event: pointerEvent,
                 optionId: DotPageMode.EDIT
             });
@@ -377,7 +379,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            dotTabButtons.clickOption.emit({
+            deDotTabButtons.triggerEventHandler('clickOption', {
                 event: pointerEvent,
                 optionId: DotPageMode.EDIT
             });
@@ -400,7 +402,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            dotTabButtons.clickOption.emit({
+            deDotTabButtons.triggerEventHandler('clickOption', {
                 event: pointerEvent,
                 optionId: DotPageMode.EDIT
             });
@@ -439,7 +441,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            dotTabButtons.clickOption.emit({
+            deDotTabButtons.triggerEventHandler('clickOption', {
                 event: pointerEvent,
                 optionId: DotPageMode.EDIT
             });
@@ -476,7 +478,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             });
             fixtureHost.detectChanges();
 
-            dotTabButtons.clickOption.emit({
+            deDotTabButtons.triggerEventHandler('clickOption', {
                 event: pointerEvent,
                 optionId: DotPageMode.EDIT
             });

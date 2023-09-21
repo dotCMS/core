@@ -2,6 +2,7 @@ import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { By } from '@angular/platform-browser';
 
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -72,7 +73,13 @@ describe('DotTabButtonsComponent', () => {
 
     it('should emit openMenu event when showMenu is called', () => {
         const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
-        spectator.component.onClickDropdown(pointerEvent, previewID);
+
+        spectator.triggerEventHandler(
+            '[data-testId="dot-tab-button-dropdown"]',
+            'click',
+            pointerEvent
+        );
+
         expect(openMenuSpy).toHaveBeenCalledWith({
             event: pointerEvent,
             menuId: previewID
@@ -93,9 +100,11 @@ describe('DotTabButtonsComponent', () => {
         const clickOptionSpy = spyOn(spectator.component.clickOption, 'emit');
         spectator.component.activeId = DotPageMode.EDIT;
 
-        const button = spectator.queryAll(byTestId('dot-tab-button-text'))[1];
+        const button = spectator.fixture.debugElement.queryAll(
+            By.css('[data-testId="dot-tab-button-text"]')
+        )[1];
 
-        button.dispatchEvent(new PointerEvent('click'));
+        spectator.triggerEventHandler(button, 'click', pointerEvent);
 
         expect(clickOptionSpy).toHaveBeenCalledWith({
             event: pointerEvent,
