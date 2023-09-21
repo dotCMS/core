@@ -57,10 +57,8 @@ jobs:
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
           VERSION=${{ github.event.inputs.version }}
-          NEXT=${{ github.event.inputs.next }}
-          
-          HEAD=`git rev-parse HEAD`
-          echo "GIT_HEAD=$GIT_HEAD"
+          NEXT=${{ github.event.inputs.next }}          
+          HEAD=${{ github.ref_name }}
           
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$VERSION
           
@@ -96,7 +94,7 @@ jobs:
         run: |
           VERSION=${{ needs.precheck.outputs.VERSION }}
           NEXT=${{ needs.precheck.outputs.NEXT }}
-          HEAD=${{ needs.precheck.outputs.HEAD }}
+          HEAD=$${{ needs.precheck.outputs.HEAD }}
           
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT
 
