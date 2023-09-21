@@ -45,9 +45,9 @@ public class PaginationCubeJSResultSet implements CubeJSResultSet {
         public boolean hasNext() {
             if ((currentIterator == null || !currentIterator.hasNext()) && !lastPage) {
                 final CubeJSQuery cubeJSQuery = query.builder()
-                        .limit(pageSize)
-                        .offset(nextItem)
-                        .build();
+                    .limit(pageSize)
+                    .offset(nextItem)
+                    .build();
 
                 final CubeJSResultSet cubeJSResultSet = cubeJSClient.send(cubeJSQuery);
 
