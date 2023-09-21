@@ -2,7 +2,7 @@
 #  every night.  For more information about this docker image, see
 #  https://github.com/dotCMS/core/tree/master/docker/dev-env
 
-name: Build dotCMS Dev Docker Image
+name: Build/Push dotCMS docker image (nightly)
 on:
   schedule:
     - cron: "18 2 * * *"
