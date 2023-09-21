@@ -10,7 +10,8 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotLoginComponent } from '@components/login/dot-login-component/dot-login.component';
-import { DotAutofocusDirective, DotFieldRequiredDirective } from '@dotcms/ui';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 import { SharedModule } from '@shared/shared.module';
 
@@ -37,7 +38,7 @@ const routes: Routes = [
         DotDirectivesModule,
         ReactiveFormsModule,
         DotFieldValidationMessageModule,
-        DotAutofocusDirective,
+        DotAutofocusModule,
         DotFieldRequiredDirective
     ],
     declarations: [DotLoginComponent]

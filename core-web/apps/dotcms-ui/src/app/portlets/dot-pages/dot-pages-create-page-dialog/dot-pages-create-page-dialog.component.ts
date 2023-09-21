@@ -8,6 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators';
 
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import {
     DotESContentService,
@@ -16,12 +17,12 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-pages-create-page-dialog',
     standalone: true,
-    imports: [CommonModule, DotAutofocusDirective, DotIconModule, DotMessagePipe, InputTextModule],
+    imports: [CommonModule, DotAutofocusModule, DotIconModule, DotMessagePipe, InputTextModule],
     providers: [
         DotESContentService,
         DotLanguagesService,

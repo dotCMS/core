@@ -10,6 +10,7 @@ import { By } from '@angular/platform-browser';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -18,7 +19,7 @@ import {
     DotAppsImportConfiguration,
     DotAppsSites
 } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -42,7 +43,8 @@ export class DotAppsServiceMock {
             [app]="app"
             [site]="site"
             [show]="true"
-            (resolved)="resolveHandler($event)"></dot-apps-import-export-dialog>
+            (resolved)="resolveHandler($event)"
+        ></dot-apps-import-export-dialog>
     `
 })
 class HostTestComponent {
@@ -77,7 +79,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             declarations: [DotAppsImportExportDialogComponent, HostTestComponent],
             imports: [
                 InputTextModule,
-                DotAutofocusDirective,
+                DotAutofocusModule,
                 DotDialogModule,
                 CommonModule,
                 ReactiveFormsModule,
