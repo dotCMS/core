@@ -353,7 +353,8 @@ jobs:
           
           echo '"pr_id": "'${{ github.event.pull_request.id }}'",'
           echo '"pr_number": "'${{ github.event.pull_request.number }}'",'
-          echo '"pr_title": "'${{ github.event.pull_request.title }}'",'
+          PR_TITLE=$(jq --arg title "${{ github.event.pull_request.title }}" -n '$title')
+          echo "{\"pr_title\": $PR_TITLE}"
           echo '"pr_author": "'${{ github.event.pull_request.user.login }}'",'
           echo '"pr_merge_state": "'${{ github.event.pull_request.mergeable_state }}'",'
           
@@ -377,7 +378,9 @@ jobs:
           
           echo '"pr_id": "'${{ github.event.pull_request.id }}'",' >> workflow-data.json
           echo '"pr_number": "'${{ github.event.pull_request.number }}'",' >> workflow-data.json
-          echo '"pr_title": "'${{ github.event.pull_request.title }}'",' >> workflow-data.json
+          PR_TITLE=$(jq --arg title "${{ github.event.pull_request.title }}" -n '$title')
+          echo "{\"pr_title\": $PR_TITLE}" >> workflow-data.json
+          
           echo '"pr_author": "'${{ github.event.pull_request.user.login }}'",' >> workflow-data.json
           echo '"pr_merge_state": "'${{ github.event.pull_request.mergeable_state }}'",' >> workflow-data.json
           
