@@ -1,6 +1,7 @@
 package com.dotcms.api.client.push;
 
 import com.dotcms.api.client.push.exception.MappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 
 /**
@@ -8,6 +9,21 @@ import java.io.File;
  * class.
  */
 public interface MapperService {
+
+    /**
+     * Returns an instance of ObjectMapper based on the input file format.
+     *
+     * @param file the file to be processed
+     * @return an instance of ObjectMapper for processing the given file
+     */
+    ObjectMapper objectMapper(final File file);
+
+    /**
+     * Returns an instance of ObjectMapper for general processing.
+     *
+     * @return an instance of ObjectMapper for general processing
+     */
+    ObjectMapper objectMapper();
 
     /**
      * Maps the contents of a file to an instance of the given class.

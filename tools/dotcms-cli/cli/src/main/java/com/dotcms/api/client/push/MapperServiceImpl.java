@@ -29,6 +29,46 @@ public class MapperServiceImpl implements MapperService {
     Logger logger;
 
     /**
+     * Returns an instance of ObjectMapper based on the input file format.
+     *
+     * @param file The file from which the input will be read.
+     * @return An instance of ObjectMapper for the given input file format.
+     */
+    @ActivateRequestContext
+    public ObjectMapper objectMapper(final File file) {
+
+        ObjectMapper objectMapper;
+        InputOutputFormat inputOutputFormat = null;
+
+        if (null != file) {
+            if (isJSONFile(file)) {
+                inputOutputFormat = InputOutputFormat.JSON;
+            } else {
+                inputOutputFormat = InputOutputFormat.YML;
+            }
+        }
+
+        if (inputOutputFormat == InputOutputFormat.JSON) {
+            objectMapper = new ClientObjectMapper().getContext(null);
+        } else {
+            objectMapper = new YAMLMapperSupplier().get();
+        }
+
+        return objectMapper;
+    }
+
+    /**
+     * Returns a default instance of ObjectMapper. This method can be used when no input file is
+     * provided.
+     *
+     * @return An instance of ObjectMapper.
+     */
+    @ActivateRequestContext
+    public ObjectMapper objectMapper() {
+        return objectMapper(null);
+    }
+
+    /**
      * Maps the given file to an object of the specified class.
      *
      * @param file  The file to be mapped.
@@ -46,21 +86,7 @@ public class MapperServiceImpl implements MapperService {
         }
 
         try {
-            ObjectMapper objectMapper;
-            InputOutputFormat inputOutputFormat;
-
-            if (isJSONFile(file)) {
-                inputOutputFormat = InputOutputFormat.JSON;
-            } else {
-                inputOutputFormat = InputOutputFormat.YML;
-            }
-
-            if (inputOutputFormat == InputOutputFormat.JSON) {
-                objectMapper = new ClientObjectMapper().getContext(null);
-            } else {
-                objectMapper = new YAMLMapperSupplier().get();
-            }
-
+            ObjectMapper objectMapper = objectMapper(file);
             return objectMapper.readValue(file, clazz);
         } catch (IOException e) {
 

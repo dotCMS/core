@@ -1,13 +1,13 @@
 package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
+import com.dotcms.api.client.push.MapperService;
 import com.dotcms.api.client.push.PushService;
 import com.dotcms.api.client.push.language.LanguageComparator;
 import com.dotcms.api.client.push.language.LanguageFetcher;
 import com.dotcms.api.client.push.language.LanguagePushHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
-import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -57,9 +57,6 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     @CommandLine.Mixin(name = LANGUAGES_PUSH_MIXIN)
     LanguagesPushMixin languagesPushMixin;
 
-    @CommandLine.Mixin(name = "format")
-    FormatOptionMixin formatOption;
-
     @CommandLine.Option(names = {"--byIso"}, description =
             "Code to be used to create a new language. "
                     + "Used when no file is specified. For example: en-us")
@@ -80,6 +77,9 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     @Inject
     LanguagePushHandler languagePushHandler;
 
+    @Inject
+    MapperService mapperService;
+
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -93,26 +93,24 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
             output.throwIfUnmatchedArguments(spec.commandLine());
         }
 
-        // Make sure the path is within a workspace
-        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
-                this.getPushMixin().path.toPath());
-        if (workspace.isEmpty()) {
-            throw new IllegalArgumentException(
-                    String.format("No valid workspace found at path: [%s]",
-                            this.getPushMixin().path.toPath()));
-        }
-
-        final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
-
-        File inputFile = this.getPushMixin().path;
-
-        if (null == inputFile && StringUtils.isEmpty(languageIso)) {
+        if (null == this.getPushMixin().path && StringUtils.isEmpty(languageIso)) {
             output.error("You must specify an iso code or file or folder to push a languages.");
             return ExitCode.USAGE;
         }
 
-        if (null != inputFile) {
+        if (StringUtils.isEmpty(languageIso)) {
 
+            // Make sure the path is within a workspace
+            final Optional<Workspace> workspace = workspaceManager.findWorkspace(
+                    this.getPushMixin().path()
+            );
+            if (workspace.isEmpty()) {
+                throw new IllegalArgumentException(
+                        String.format("No valid workspace found at path: [%s]",
+                                this.getPushMixin().path.toPath()));
+            }
+
+            File inputFile = this.getPushMixin().path().toFile();
             if (!inputFile.isAbsolute()) {
                 inputFile = Path.of(workspace.get().languages().toString(), inputFile.getName()).toFile();
             }
@@ -144,10 +142,13 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
             );
 
         } else {
+
+            final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
+
             var responseEntityView = pushLanguageByIsoCode(languageAPI);
             final Language response = responseEntityView.entity();
 
-            final ObjectMapper objectMapper = formatOption.objectMapper();
+            final ObjectMapper objectMapper = mapperService.objectMapper();
             output.info(objectMapper.writeValueAsString(response));
         }
 
