@@ -66,6 +66,7 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
                 results.add(tables.getString("TABLE_NAME"));
             }
         }
+        Logger.info(this,"All Tables Returned... " + results.toString());
         return results;
 
     }
@@ -84,7 +85,7 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
      */
     boolean updateTable(final String tableName) throws Exception {
         boolean tableUpdated = false;
-
+        Logger.info(this,"Getting Conn to update table: " + tableName);
         try (Connection conn = this.getDbConnection()) {
             final ResultSet results = DotDatabaseMetaData.getColumnsMetaData(conn, tableName);
             while (results.next()) {
@@ -119,8 +120,11 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         tablesCount = 0;
         try {
+            Logger.info(this,"Getting TZ Default...");
             final TimeZone defaultTz = TimeZone.getDefault();
+            Logger.info(this,"TZ Default:" + defaultTz.toString());
             TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+            Logger.info(this,"Set UTC TZ to Default...");
             for (final String table : findAllTables()) {
                 if(this.updateTable(table)){
                     tablesCount++;
