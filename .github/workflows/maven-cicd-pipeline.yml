@@ -39,6 +39,7 @@ on:
       - '*.adoc'
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
+  merge_group:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
   cancel-in-progress: true
@@ -347,22 +348,26 @@ jobs:
           
           EVENT_TYPE="${{ github.event_name }}"
           
+          
+          
           if [[ "$EVENT_TYPE" == "pull_request" ]]; then
-            PR_TITLE_JQ=$(jq --arg title "$PR_TITLE" -n '$title') # result includes wrapping quotes
-            echo "Creating workflow data for pull request ${PR_TITLE_JQ}"
+            echo "Creating workflow data for pull request ${PR_TITLE}"
+            BRANCH="${{ github.head_ref }}"
           else
               PR_TITLE="N/A"
               BRANCH="${{ github.ref }}"
-              BRANCH="${BRANCH##*/}"
+             
               echo "Creating workflow data for branch ${BRANCH}"
           fi
+          
+          BRANCH="${BRANCH##*/}"
         
-          PR_TITLE_JQ=$(jq --arg title "PR_TITLE" -n '$title')
+          PR_TITLE_JQ=$(jq --arg title "$PR_TITLE" -n '$title')
           
   
           
           
-          echo '"branch": "'${{ github.head_ref }}'",' >> workflow-data.json
+          echo '"branch": "'$BRANCH'",' >> workflow-data.json
           echo '"run_id": "'${{ github.run_id }}'",' >> workflow-data.json
           echo '"trigger_event_name": "'$GITHUB_EVENT_NAME'",' >> workflow-data.json
           echo '"source_repository": "'$GITHUB_REPOSITORY'",' >> workflow-data.json
