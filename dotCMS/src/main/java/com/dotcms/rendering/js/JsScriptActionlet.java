@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public class JsScriptActionlet  extends WorkFlowActionlet {
 
-    private final static String ENGINE = "Velocity";
+    private final static String ENGINE = ScriptEngineFactory.JAVASCRIPT_ENGINE;
     private static List<WorkflowActionletParameter> parameterList = createParamList();
     private boolean stop = false;
 
