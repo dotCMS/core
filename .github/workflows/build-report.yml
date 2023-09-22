@@ -217,13 +217,13 @@ jobs:
           channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
           payload: |
             {
-              "text": "Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.pr_number }}",
+              "text": "Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.branch }}",
               "blocks": [
                 {
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "${{ steps.workflow-data.outputs.status_icon }} Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.pr_number }}",
+                    "text": "${{ steps.workflow-data.outputs.status_icon }} Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.branch }}",
                     "emoji": true
                   }
                 },
