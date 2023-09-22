@@ -50,6 +50,8 @@ public class ConfigTestHelper extends Config {
             WebAppPool.put("dotcms.org", Globals.MESSAGES_KEY, messages);
             Mockito.when(context.getAttribute(Globals.MESSAGES_KEY)).thenReturn(messages);
 
+            // make sure the tmp dir is there before running
+            new File(System.getProperty("java.io.tmpdir")).mkdirs();
             final String topPath = Files.createTempDirectory("config_test_helper").toAbsolutePath().toString();
 
             final String velocityPath = VelocityUtil.getVelocityRootPath();

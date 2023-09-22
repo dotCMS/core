@@ -29,24 +29,10 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.contenttype.business.FieldAPITest.UniqueConstraintTestCase.DuplicateType;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableBinaryField;
-import com.dotcms.contenttype.model.field.ImmutableCategoryField;
-import com.dotcms.contenttype.model.field.ImmutableDateField;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
-import com.dotcms.contenttype.model.field.ImmutableTagField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TagField;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -72,6 +58,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -1630,6 +1617,119 @@ public class FieldAPITest extends IntegrationTestBase {
 
         return null;
     }
+
+
+    @Test
+    public void test_textarea_fullscreen_field()
+            throws DotSecurityException, DotDataException, IOException {
+        final long time = System.currentTimeMillis();
+        ContentType type = createAndSaveSimpleContentType("fieldTest" + UUIDGenerator.shorty());
+        contentTypeAPI.save(type);
+        List<Field> fields = new ArrayList<>(type.fields());
+
+        int i = type.fields().size();
+        final Field tab = ImmutableTabDividerField.builder().variable("tabField1").name("tabField1").contentTypeId(type.id()).build();
+        final Field row = ImmutableRowField.builder().variable("rowField1").name("rowField1").contentTypeId(type.id()).build();
+        final Field column = ImmutableColumnField.builder().variable("columnField1").name("columnField1").contentTypeId(type.id()).build();
+        final Field textArea = ImmutableTextAreaField.builder().variable("testfield").name("testfield").contentTypeId(type.id()).build();
+
+        fields.add(tab);
+        fields.add(row);
+        fields.add(column);
+        fields.add(textArea);
+        type = contentTypeAPI.save(type, fields);
+
+        Field rowField = type.fieldMap().get("testfield");
+
+        assertTrue(fieldAPI.isFullScreenField(rowField));
+
+    }
+
+
+    @Test
+    public void test_block_fullscreen_field()
+            throws DotSecurityException, DotDataException, IOException {
+        final long time = System.currentTimeMillis();
+        ContentType type = createAndSaveSimpleContentType("fieldTest" + UUIDGenerator.shorty());
+        contentTypeAPI.save(type);
+        List<Field> fields = new ArrayList<>(type.fields());
+
+        int i = type.fields().size();
+        final Field tab = ImmutableTabDividerField.builder().variable("tabField1").name("tabField1").contentTypeId(type.id()).build();
+        final Field row = ImmutableRowField.builder().variable("rowField1").name("rowField1").contentTypeId(type.id()).build();
+        final Field column = ImmutableColumnField.builder().variable("columnField1").name("columnField1").contentTypeId(type.id()).build();
+        final Field storyblock = ImmutableStoryBlockField.builder().variable("testfield").name("testfield").contentTypeId(type.id()).build();
+
+        fields.add(tab);
+        fields.add(row);
+        fields.add(column);
+        fields.add(storyblock);
+        type = contentTypeAPI.save(type, fields);
+
+        Field rowField = type.fieldMap().get("testfield");
+
+        assertTrue(fieldAPI.isFullScreenField(rowField));
+
+    }
+
+
+
+    @Test
+    public void test_multicolumn_row_is_not_full_screen_field()
+            throws DotSecurityException, DotDataException, IOException {
+        final long time = System.currentTimeMillis();
+        ContentType type = createAndSaveSimpleContentType("fieldTest" + UUIDGenerator.shorty());
+        contentTypeAPI.save(type);
+        List<Field> fields = new ArrayList<>(type.fields());
+
+        int i = type.fields().size();
+        final Field tab = ImmutableTabDividerField.builder().variable("tabField1").name("tabField1").contentTypeId(type.id()).build();
+        final Field row = ImmutableRowField.builder().variable("rowField1").name("rowField1").contentTypeId(type.id()).build();
+
+        final Field column = ImmutableColumnField.builder().variable("columnField1").name("columnField1").contentTypeId(type.id()).build();
+        final Field column2 = ImmutableColumnField.builder().variable("columnField2").name("columnField2").contentTypeId(type.id()).build();
+
+        final Field storyblock = ImmutableStoryBlockField.builder().variable("testfield").name("testfield").contentTypeId(type.id()).build();
+
+        fields.add(tab);
+        fields.add(row);
+        fields.add(column);
+        fields.add(column2);
+        fields.add(storyblock);
+        type = contentTypeAPI.save(type, fields);
+
+        Field rowField = type.fieldMap().get("testfield");
+
+        assertFalse(fieldAPI.isFullScreenField(rowField));
+
+    }
+
+
+    @Test
+    public void first_field_is_full_screen_field_if_no_tab()
+            throws DotSecurityException, DotDataException, IOException {
+        final long time = System.currentTimeMillis();
+        ContentType type = createAndSaveSimpleContentType("fieldTest" + UUIDGenerator.shorty());
+        contentTypeAPI.save(type);
+        List<Field> fields = new ArrayList<>(type.fields());
+
+        int i = type.fields().size();
+        final Field row = ImmutableRowField.builder().variable("rowField1").name("rowField1").contentTypeId(type.id()).build();
+        final Field column = ImmutableColumnField.builder().variable("columnField1").name("columnField1").contentTypeId(type.id()).build();
+        final Field storyblock = ImmutableStoryBlockField.builder().variable("testfield").name("testfield").contentTypeId(type.id()).build();
+
+
+        fields.add(row);
+        fields.add(column);
+        fields.add(storyblock);
+        type = contentTypeAPI.save(type, fields);
+
+        Field rowField = type.fieldMap().get("testfield");
+
+        assertTrue(fieldAPI.isFullScreenField(rowField));
+
+    }
+
 
 
 }
