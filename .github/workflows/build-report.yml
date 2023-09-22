@@ -90,9 +90,9 @@ jobs:
           
             if [[ "$trigger_event_name" == "pull_request" ]]; then
               echo "report_type=PR" >> $GITHUB_OUTPUT
-            else if [[ "$trigger_event_name" == "merge_group" ]]; then
+            elif [[ "$trigger_event_name" == "merge_group" ]]; then
               echo "report_type=Merge Queue" >> $GITHUB_OUTPUT
-            else if [[ "$trigger_event_name" == "push" ]]; then
+            elif [[ "$trigger_event_name" == "push" ]]; then
               echo "report_type=Branch Merge" >> $GITHUB_OUTPUT
             else 
                echo "report_type=$trigger_event_name" >> $GITHUB_OUTPUT
@@ -130,7 +130,7 @@ jobs:
           
       - name: Post to a Slack channel
         if: steps.workflow-data.outputs.has-json == 'true' && steps.workflow-data.outputs.report_type == 'PR'
-        id: slack
+        id: slack-pr
         uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
@@ -211,7 +211,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       - name: Post to a Slack channel non PR
         if: steps.workflow-data.outputs.has-json == 'true' && steps.workflow-data.outputs.report_type != 'PR'
-        id: slack
+        id: slack-non-pr
         uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
