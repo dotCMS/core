@@ -90,9 +90,9 @@ jobs:
           
             if [[ "$trigger_event_name" == "pull_request" ]]; then
               echo "report_type=PR" >> $GITHUB_OUTPUT
-            else if [[ "$trigger_event_name" == "merge_group" ]]; then
+            elif [[ "$trigger_event_name" == "merge_group" ]]; then
               echo "report_type=Merge Queue" >> $GITHUB_OUTPUT
-            else if [[ "$trigger_event_name" == "push" ]]; then
+            elif [[ "$trigger_event_name" == "push" ]]; then
               echo "report_type=Branch Merge" >> $GITHUB_OUTPUT
             else 
                echo "report_type=$trigger_event_name" >> $GITHUB_OUTPUT
