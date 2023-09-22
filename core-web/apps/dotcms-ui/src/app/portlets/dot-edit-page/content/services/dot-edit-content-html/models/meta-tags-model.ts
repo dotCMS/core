@@ -92,7 +92,7 @@ export const SeoMediaKeys = {
         SEO_OPTIONS.TWITTER_DESCRIPTION,
         SEO_OPTIONS.TWITTER_IMAGE
     ],
-    linkedin: [],
+    linkedin: [SEO_OPTIONS.DESCRIPTION, SEO_OPTIONS.OG_IMAGE, SEO_OPTIONS.OG_TITLE],
     all: [
         SEO_OPTIONS.DESCRIPTION,
         SEO_OPTIONS.OG_IMAGE,

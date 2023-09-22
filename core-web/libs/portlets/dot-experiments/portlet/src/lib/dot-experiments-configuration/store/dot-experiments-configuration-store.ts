@@ -19,6 +19,7 @@ import {
     DotExperiment,
     DotExperimentStatus,
     DotPageRenderState,
+    DotPageState,
     ExperimentSteps,
     Goal,
     Goals,
@@ -75,8 +76,15 @@ export interface ConfigurationViewModel {
     isDescriptionSaving: boolean;
     menuItems: MenuItem[];
     addToBundleContentId: string;
-    isPageLocked: boolean;
-    dotPageRenderState: DotPageRenderState;
+}
+
+export interface ConfigurationVariantStepViewModel {
+    experimentId: string;
+    trafficProportion: TrafficProportion;
+    status: StepStatus;
+    isExperimentADraft: boolean;
+    canLockPage: boolean;
+    pageSate: DotPageState;
 }
 
 @Injectable()
@@ -122,11 +130,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.state$,
         ({ experiment, hasEnterpriseLicense, pushPublishEnvironments }) =>
             this.getMenuItems(experiment, hasEnterpriseLicense, pushPublishEnvironments)
-    );
-
-    readonly isPageLocked$: Observable<boolean> = this.select(
-        this.state$,
-        ({ dotPageRenderState }) => this.isLocked(dotPageRenderState)
     );
 
     readonly disabledTooltipLabel$: Observable<string | null> = this.select(
@@ -782,9 +785,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.getExperimentStatus$,
         this.getIsDescriptionSaving$,
         this.getMenuItems$,
-        this.isPageLocked$,
         (
-            { experiment, stepStatusSidebar, addToBundleContentId, dotPageRenderState },
+            { experiment, stepStatusSidebar, addToBundleContentId },
             isExperimentADraft,
             isLoading,
             disabledStartExperiment,
@@ -792,8 +794,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             isSaving,
             experimentStatus,
             isDescriptionSaving,
-            menuItems,
-            isPageLocked
+            menuItems
         ) => ({
             experiment,
             stepStatusSidebar,
@@ -805,40 +806,23 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             isSaving,
             experimentStatus,
             isDescriptionSaving,
-            menuItems,
-            isPageLocked,
-            dotPageRenderState
+            menuItems
         })
     );
 
-    readonly variantsStepVm$: Observable<{
-        experimentId: string;
-        trafficProportion: TrafficProportion;
-        status: StepStatus;
-        isExperimentADraft: boolean;
-        isPageLocked: boolean;
-        disabledTooltipLabel: string | null;
-    }> = this.select(
+    readonly variantsStepVm$: Observable<ConfigurationVariantStepViewModel> = this.select(
+        this.state$,
         this.getExperimentId$,
         this.trafficProportion$,
         this.variantsStatus$,
         this.isExperimentADraft$,
-        this.isPageLocked$,
-        this.disabledTooltipLabel$,
-        (
+        ({ dotPageRenderState }, experimentId, trafficProportion, status, isExperimentADraft) => ({
             experimentId,
             trafficProportion,
             status,
             isExperimentADraft,
-            isPageLocked,
-            disabledTooltipLabel
-        ) => ({
-            experimentId,
-            trafficProportion,
-            status,
-            isExperimentADraft,
-            isPageLocked,
-            disabledTooltipLabel
+            canLockPage: dotPageRenderState.page.canLock,
+            pageSate: dotPageRenderState.state
         })
     );
 
@@ -972,21 +956,13 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         return experiment?.trafficProportion.variants.length < 2 || !experiment?.goals;
     }
 
-    private canTakeLock(pageState: DotPageRenderState): boolean {
-        return pageState.page.canLock && pageState.state.lockedByAnotherUser;
-    }
-
-    private isLocked(pageState: DotPageRenderState): boolean {
-        return pageState.state.locked && !this.canTakeLock(pageState);
-    }
-
     private getDisabledTooltipLabel(
         experiment: DotExperiment,
         dotPageRenderState: DotPageRenderState
     ): string | null {
         return experiment?.status === DotExperimentStatus.RUNNING
             ? 'experiment.configure.edit.only.draft.status'
-            : this.isLocked(dotPageRenderState)
+            : dotPageRenderState.state.lockedByAnotherUser
             ? 'experiment.configure.edit.page.blocked'
             : null;
     }
