@@ -13,6 +13,7 @@ import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
+import { EditContentGuard } from './api/services/guards/edit-content.guard';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
@@ -95,8 +96,15 @@ const PORTLETS_ANGULAR = [
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
     },
     {
+        canActivate: [EditContentGuard],
         path: 'edit-content',
         loadChildren: () => import('@dotcms/edit-content').then((m) => m.DotEditContentRoutes)
+    },
+    {
+        canActivate: [MenuGuardService, PagesGuardService],
+        path: 'pages',
+        loadChildren: () =>
+            import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
     },
     {
         path: '',
@@ -140,12 +148,6 @@ const PORTLETS_IFRAME = [
                 children: []
             }
         ]
-    },
-    {
-        canActivate: [MenuGuardService, PagesGuardService],
-        path: 'pages',
-        loadChildren: () =>
-            import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
     },
     {
         canActivateChild: [ContentletGuardService],
