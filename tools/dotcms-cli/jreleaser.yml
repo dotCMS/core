@@ -50,9 +50,11 @@ deploy:
     artifactory:
       dotcms-cli:
         active: ALWAYS
-        url: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/tools/dotcms-cli/cli
+        authorization: BASIC
+        url: https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/cli
+#        url: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/cli
         stagingRepositories:
-          - tools/dotcms-cli/cli/target/cli-{{projectVersion}}-runner.jar
+          - tools/dotcms-cli/cli/target
 
 #upload:
 #  artifactory:
