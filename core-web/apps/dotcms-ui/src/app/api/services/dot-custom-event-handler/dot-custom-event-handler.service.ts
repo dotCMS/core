@@ -1,4 +1,7 @@
 import { Injectable } from '@angular/core';
+import { Router } from '@angular/router';
+
+import { map, take } from 'rxjs/operators';
 
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
@@ -7,9 +10,11 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import {
     DotEventsService,
     DotGenerateSecurePasswordService,
-    DotLicenseService
+    DotLicenseService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
@@ -27,7 +32,7 @@ export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
  */
 @Injectable()
 export class DotCustomEventHandlerService {
-    private readonly handlers;
+    private handlers: Record<string, ($event: CustomEvent) => void>;
 
     constructor(
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
@@ -41,23 +46,37 @@ export class DotCustomEventHandlerService {
         private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService,
         private dotGenerateSecurePasswordService: DotGenerateSecurePasswordService,
         private dotEventsService: DotEventsService,
-        private dotLicenseService: DotLicenseService
+        private dotLicenseService: DotLicenseService,
+        private router: Router,
+        private dotPropertiesService: DotPropertiesService
     ) {
-        if (!this.handlers) {
-            this.handlers = {
-                'edit-page': this.goToEditPage.bind(this),
-                'edit-contentlet': this.editContentlet.bind(this),
-                'edit-task': this.editTask.bind(this),
-                'create-contentlet': this.createContentlet.bind(this),
-                'company-info-updated': this.setPersonalization.bind(this),
-                'push-publish': this.pushPublishDialog.bind(this),
-                'download-bundle': this.downloadBundleDialog.bind(this),
-                'workflow-wizard': this.executeWorkflowWizard.bind(this),
-                'generate-secure-password': this.generateSecurePassword.bind(this),
-                'compare-contentlet': this.openCompareDialog.bind(this),
-                'license-changed': this.updateLicense.bind(this)
-            };
-        }
+        this.dotPropertiesService
+            .getKey(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE)
+            .pipe(
+                take(1),
+                map((value) => value === 'true')
+            )
+            .subscribe((contentEditorFeatureFlag) => {
+                if (!this.handlers) {
+                    this.handlers = {
+                        'edit-page': this.goToEditPage.bind(this),
+                        'edit-contentlet': contentEditorFeatureFlag
+                            ? this.editContentlet.bind(this)
+                            : this.editContentletLegacy.bind(this),
+                        'edit-task': this.editTask.bind(this),
+                        'create-contentlet': contentEditorFeatureFlag
+                            ? this.createContentlet.bind(this)
+                            : this.createContentletLegacy.bind(this),
+                        'company-info-updated': this.setPersonalization.bind(this),
+                        'push-publish': this.pushPublishDialog.bind(this),
+                        'download-bundle': this.downloadBundleDialog.bind(this),
+                        'workflow-wizard': this.executeWorkflowWizard.bind(this),
+                        'generate-secure-password': this.generateSecurePassword.bind(this),
+                        'compare-contentlet': this.openCompareDialog.bind(this),
+                        'license-changed': this.updateLicense.bind(this)
+                    };
+                }
+            });
     }
 
     /**
@@ -76,12 +95,18 @@ export class DotCustomEventHandlerService {
         this.dotGenerateSecurePasswordService.open($event.detail.data);
     }
 
-    private createContentlet($event: CustomEvent): void {
+    private createContentletLegacy($event: CustomEvent): void {
         this.dotContentletEditorService.create({
             data: $event.detail.data
         });
         // TODO: Enabled this and remove previous 3 lines of code when endpoint gets updated
         // this.dotRouterService.goToCreateContent($event.detail.data);
+    }
+
+    private createContentlet(_: CustomEvent): void {
+        //TODO: We need to get the content type variable from the event data, this is returning the url to open the legacy iframe
+        //console.log('createContentlet', $event.detail.data);
+        // this.router.navigate([`edit-content/new/${$event.detail.data}`]);
     }
 
     private goToEditPage($event: CustomEvent<DotCMSEditPageEvent>): void {
@@ -93,8 +118,12 @@ export class DotCustomEventHandlerService {
         });
     }
 
-    private editContentlet($event: CustomEvent): void {
+    private editContentletLegacy($event: CustomEvent): void {
         this.dotRouterService.goToEditContentlet($event.detail.data.inode);
+    }
+
+    private editContentlet($event: CustomEvent): void {
+        this.router.navigate([`edit-content/${$event.detail.data.inode}`]);
     }
 
     private editTask($event: CustomEvent): void {
