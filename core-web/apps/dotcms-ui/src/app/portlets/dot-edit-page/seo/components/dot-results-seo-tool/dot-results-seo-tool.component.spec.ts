@@ -115,7 +115,7 @@ describe('DotResultsSeoToolComponent', () => {
         spectator.detectChanges();
         spectator.component.currentResults$.subscribe((items) => {
             expect(items.length).toEqual(3);
-            expect(items[0].key).toEqual(seoOGTagsResultMock[1].key);
+            expect(items[0].key).toEqual(seoOGTagsResultMock[5].key);
             expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
             expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
             done();

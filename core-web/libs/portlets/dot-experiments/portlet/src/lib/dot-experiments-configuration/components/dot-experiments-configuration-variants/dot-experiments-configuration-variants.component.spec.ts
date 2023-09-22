@@ -51,6 +51,9 @@ const messageServiceMock = new MockDotMessageService({
     'dot.common.dialog.reject': 'Cancel'
 });
 
+const LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA = PARENT_RESOLVERS_ACTIVE_ROUTE_DATA;
+LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA.parent.parent.snapshot.data.content.page.canLock = true;
+
 const ActivatedRouteMock = {
     snapshot: {
         params: {
@@ -59,7 +62,7 @@ const ActivatedRouteMock = {
         data: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data
     },
     parent: {
-        ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
+        ...LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
     }
 };
 

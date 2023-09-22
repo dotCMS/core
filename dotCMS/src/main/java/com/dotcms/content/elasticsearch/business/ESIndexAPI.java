@@ -857,31 +857,57 @@ public class ESIndexAPI {
         return getIndexAlias(indexNames.toArray(new String[indexNames.size()]));
     }
 
-    public Map<String,String> getIndexAlias(String[] indexNames) {
+	public Map<String,String> getIndexAlias(String[] indexNames) {
 
-        String[] indexNamesWithPrefix = new String[indexNames.length];
-        for (int i = 0; i < indexNames.length; i++){
-            indexNamesWithPrefix[i] = getNameWithClusterIDPrefix(indexNames[i]);
-        }
+		final String[] indexNamesWithPrefix = new String[indexNames.length];
+		for (int i = 0; i < indexNames.length; i++){
+			indexNamesWithPrefix[i] = getNameWithClusterIDPrefix(indexNames[i]);
+		}
+		final int batchSize = 40;
+		int limit = 0;
 
-    	GetAliasesRequest request = new GetAliasesRequest();
-		request.indices(indexNamesWithPrefix);
+		//stores the offset to iterate
+		int currentOffset = 0;
+		//stores arrays of 50 elements or less
+		final ArrayList<String[]> partitionLists = new ArrayList<String[]>();
 
-		GetAliasesResponse response = Sneaky.sneak(()->
-				RestHighLevelClientProvider.getInstance().getClient()
-						.indices().getAlias(request, RequestOptions.DEFAULT));
-
-		Map<String,String> alias=new HashMap<>();
-
-		response.getAliases().forEach((indexName, value) -> {
-			if(UtilMethods.isSet(value)) {
-				final String aliasName = value.iterator().next().alias();
-				alias.put(removeClusterIdFromName(indexName), removeClusterIdFromName(aliasName));
+		//fill the partition list
+		while (currentOffset < indexNamesWithPrefix.length) {
+			//update the limit to the next iteration
+			limit = Math.min(batchSize, indexNamesWithPrefix.length - currentOffset);
+			final String[] partition = new String[limit];
+			//loop to fill the partition
+			for (int i = 0; i < limit; i++) {
+				partition[i] = indexNamesWithPrefix[currentOffset];
+				currentOffset++;
 			}
-		});
+			partitionLists.add(partition);
+		}
+
+		final Map<String,String> alias=new HashMap<>();
+
+		//iterates the partition list
+		for (final String[] portionElement : partitionLists ) {
+
+			final GetAliasesRequest request = new GetAliasesRequest();
+
+			//set the limited values
+			request.indices(portionElement);
+
+			final GetAliasesResponse response = Sneaky.sneak(()->
+					RestHighLevelClientProvider.getInstance().getClient()
+							.indices().getAlias(request, RequestOptions.DEFAULT));
+
+			response.getAliases().forEach((indexName, value) -> {
+				if(UtilMethods.isSet(value)) {
+					final String aliasName = value.iterator().next().alias();
+					alias.put(removeClusterIdFromName(indexName), removeClusterIdFromName(aliasName));
+				}
+			});
+		}
 
 		return alias;
-    }
+	}
 
     public String getIndexAlias(String indexName) {
         return getIndexAlias(new String[]{indexName}).get(indexName);
