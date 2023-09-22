@@ -216,10 +216,10 @@ describe('DotSetMetaTagsService', () => {
 
         service.getMetaTagsResults(testDoc).subscribe((value) => {
             expect(value[0].items[0].message).toEqual(
-                'more than 1 <span class="results-seo-tool__result-tag">og:description</span> meta tag found!'
+                'more than 1 <code>og:description</code> meta tag found!'
             );
             expect(value[0].items[1].message).toEqual(
-                '<span class="results-seo-tool__result-tag">og:description</span> meta tag found, but has fewer than 55 characters of content.'
+                '<code>og:description</code> meta tag found, but has fewer than 55 characters of content.'
             );
             done();
         });
@@ -239,7 +239,7 @@ describe('DotSetMetaTagsService', () => {
 
         service.getMetaTagsResults(testDoc).subscribe((value) => {
             expect(value[2].items[0].message).toEqual(
-                'more than 1 <span class="results-seo-tool__result-tag">og:title</span> metatag found!'
+                'more than 1 <code>og:title</code> metatag found!'
             );
             expect(value[2].items[1].message).toEqual(
                 'title metatag found, but has fewer than 30 characters of content.'

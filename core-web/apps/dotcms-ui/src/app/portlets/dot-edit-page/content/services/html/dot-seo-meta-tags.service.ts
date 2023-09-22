@@ -587,10 +587,7 @@ export class DotSeoMetaTagsService {
     private addHTMLTag(message: string): string {
         const regexPattern = new RegExp(SEO_TAGS.map((option) => `\\b${option}\\b`).join('|'), 'g');
 
-        return message.replace(
-            regexPattern,
-            '<span class="results-seo-tool__result-tag">$&</span>'
-        );
+        return message.replace(regexPattern, '<code>$&</code>');
     }
 
     /**
