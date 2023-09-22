@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -11,14 +12,20 @@ import { By } from '@angular/platform-browser';
 
 import { ConfirmationService } from 'primeng/api';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { MenuModule } from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
     DotAlertConfirmService,
     DotMessageService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotPropertiesService
 } from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_NAME,
     DotExperimentStatus,
@@ -27,8 +34,9 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
 import {
+    CoreWebServiceMock,
     dotcmsContentletMock,
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
@@ -99,6 +107,9 @@ describe('DotEditPageStateControllerComponent', () => {
     let dotPageStateService: DotPageStateService;
     let dialogService: DotAlertConfirmService;
     let personalizeService: DotPersonalizeService;
+    let propertiesService: DotPropertiesService;
+    let editContentletService: DotContentletEditorService;
+    let featFlagMock: jasmine.Spy;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -120,8 +131,18 @@ describe('DotEditPageStateControllerComponent', () => {
                     provide: DotPersonalizeService,
                     useClass: DotPersonalizeServiceMock
                 },
+                {
+                    provide: CoreWebService,
+                    useClass: CoreWebServiceMock
+                },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useClass: MockDotHttpErrorManagerService
+                },
                 DotAlertConfirmService,
-                ConfirmationService
+                ConfirmationService,
+                DotContentletEditorService,
+                DotPropertiesService
             ],
             imports: [
                 InputSwitchModule,
@@ -130,7 +151,10 @@ describe('DotEditPageStateControllerComponent', () => {
                 DotPipesModule,
                 DotMessagePipe,
                 CommonModule,
-                FormsModule
+                FormsModule,
+                HttpClientTestingModule,
+                DotTabButtonsComponent,
+                MenuModule
             ]
         });
     }));
@@ -144,10 +168,13 @@ describe('DotEditPageStateControllerComponent', () => {
         dotPageStateService = de.injector.get(DotPageStateService);
         dialogService = de.injector.get(DotAlertConfirmService);
         personalizeService = de.injector.get(DotPersonalizeService);
+        propertiesService = de.injector.get(DotPropertiesService);
+        editContentletService = de.injector.get(DotContentletEditorService);
 
         spyOn(component.modeChange, 'emit');
         spyOn(dotPageStateService, 'setLock');
         spyOn(personalizeService, 'personalized').and.returnValue(of(null));
+        featFlagMock = spyOn(propertiesService, 'getKey').and.returnValue(of('false'));
     });
 
     describe('elements', () => {
@@ -162,9 +189,21 @@ describe('DotEditPageStateControllerComponent', () => {
 
                 expect(selectButton).toBeDefined();
                 expect(selectButton.options).toEqual([
-                    { label: 'Edit', value: 'EDIT_MODE', disabled: false },
-                    { label: 'Preview', value: 'PREVIEW_MODE', disabled: false },
-                    { label: 'Live', value: 'ADMIN_MODE', disabled: false }
+                    {
+                        label: 'Edit',
+                        value: { id: 'EDIT_MODE', showDropdownButton: false },
+                        disabled: false
+                    },
+                    {
+                        label: 'Preview',
+                        value: { id: 'PREVIEW_MODE', showDropdownButton: false },
+                        disabled: false
+                    },
+                    {
+                        label: 'Live',
+                        value: { id: 'ADMIN_MODE', showDropdownButton: false },
+                        disabled: false
+                    }
                 ]);
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);
             });
@@ -211,7 +250,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 await expect(selectButton).toBeDefined();
                 expect(selectButton.options[1]).toEqual({
                     label: 'Preview',
-                    value: 'PREVIEW_MODE',
+                    value: { id: 'PREVIEW_MODE', showDropdownButton: false },
                     disabled: true
                 });
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);
@@ -231,7 +270,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 expect(selectButton).toBeDefined();
                 expect(selectButton.options[0]).toEqual({
                     label: 'Edit',
-                    value: 'EDIT_MODE',
+                    value: { id: 'EDIT_MODE', showDropdownButton: false },
                     disabled: true
                 });
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);
@@ -250,7 +289,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 expect(selectButton).toBeDefined();
                 expect(selectButton.options[2]).toEqual({
                     label: 'Live',
-                    value: 'ADMIN_MODE',
+                    value: { id: 'ADMIN_MODE', showDropdownButton: false },
                     disabled: true
                 });
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);
@@ -350,7 +389,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                value: DotPageMode.EDIT
+                optionId: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -381,7 +420,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                value: DotPageMode.EDIT
+                optionId: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -404,7 +443,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                value: DotPageMode.EDIT
+                optionId: DotPageMode.EDIT
             });
 
             fixtureHost.whenStable();
@@ -443,7 +482,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                value: DotPageMode.EDIT
+                optionId: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -479,7 +518,7 @@ describe('DotEditPageStateControllerComponent', () => {
             fixtureHost.detectChanges();
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                value: DotPageMode.EDIT
+                optionId: DotPageMode.EDIT
             });
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
@@ -489,6 +528,62 @@ describe('DotEditPageStateControllerComponent', () => {
                 { mode: DotPageMode.EDIT },
                 true
             );
+        });
+    });
+
+    describe('feature flag edit URLContentMap is on', () => {
+        beforeEach(() => {
+            featFlagMock.and.returnValue(of('true'));
+
+            const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                { ...mockUser(), userId: '457' },
+                {
+                    ...mockDotRenderedPage(),
+                    urlContentMap: {
+                        title: 'Title',
+                        inode: '123',
+                        contentType: 'test'
+                    }
+                }
+            );
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.detectChanges();
+        });
+
+        it('should have menuItems if page has URLContentMap', async () => {
+            await fixtureHost.whenStable();
+            expect(component.menuItems.length).toBe(2);
+        });
+
+        it('should edit options with showDropdownButton setted to true', () => {
+            expect(component.options[0].value.showDropdownButton).toBe(true);
+        });
+
+        it("should change the mode when the user clicks on the 'Edit' option", () => {
+            component.menuItems[0].command();
+
+            expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+        });
+
+        it("should call editContentlet when clicking on the 'ContentType Content' option", () => {
+            spyOn(editContentletService, 'edit');
+            component.menuItems[1].command();
+            expect(editContentletService.edit).toHaveBeenCalledWith({
+                data: {
+                    inode: '123'
+                }
+            });
+        });
+
+        it('should resetDropdown on menu hide', () => {
+            const dotTabButtons = deHost.query(
+                By.css('[data-testId="dot-tabs-buttons"]')
+            ).componentInstance;
+
+            const resetMock = spyOn(dotTabButtons, 'resetDropdownById');
+
+            component.menu.onHide.emit();
+            expect(resetMock).toHaveBeenCalledWith(DotPageMode.EDIT);
         });
     });
 });
