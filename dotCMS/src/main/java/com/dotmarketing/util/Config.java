@@ -609,8 +609,18 @@ public class Config {
     /**
      *
      */
+    @VisibleForTesting
     public static void forceRefresh() {
-        lastRefreshTime = new Date(0);
+
+        // rebuilds props
+        props.clear();
+        _refreshProperties();
+        getOverrides().forEach((k,v)->{
+            if(v!=null && !"[remove]".equals(v)) {
+                props.setProperty(k, v);
+            }
+
+        });
     }
 
 }
