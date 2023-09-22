@@ -146,6 +146,20 @@ const seoOGTagsResultMock = [
         sort: 5,
         info: 'HTML Title content should be between 30 and 60 characters.'
     },
+    {
+        key: 'Og:description',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message: 'Meta Description not found! Showing Description instead.',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 2,
+        info: "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed."
+    },
     ...seoOGTagsResultOgMockTwitter
 ];
 
