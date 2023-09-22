@@ -17,8 +17,9 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
  */
 @Injectable()
 export class EditContentGuard implements CanActivate {
+    private dotPropertiesService: DotPropertiesService = inject(DotPropertiesService);
     canActivate(): Observable<boolean> {
-        return inject(DotPropertiesService)
+        return this.dotPropertiesService
             .getKey(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE)
             .pipe(
                 take(1),
