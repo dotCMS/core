@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
+import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -18,6 +21,7 @@ import {
     DotEventsService,
     DotGenerateSecurePasswordService,
     DotLicenseService,
+    DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -100,7 +104,9 @@ describe('DotCustomEventHandlerService', () => {
                 DotDownloadBundleDialogService,
                 DotGenerateSecurePasswordService,
                 LoginService,
-                DotLicenseService
+                DotLicenseService,
+                { provide: DotPropertiesService, useValue: { getKey: () => of('NOT_FOUND') } },
+                HttpClient
             ],
             imports: [RouterTestingModule, HttpClientTestingModule]
         });

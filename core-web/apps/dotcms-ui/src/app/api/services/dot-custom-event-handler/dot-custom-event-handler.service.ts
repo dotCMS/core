@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { map, take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
@@ -52,10 +52,7 @@ export class DotCustomEventHandlerService {
     ) {
         this.dotPropertiesService
             .getKey(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE)
-            .pipe(
-                take(1),
-                map((value) => value === 'true')
-            )
+            .pipe(map((value) => value === 'true'))
             .subscribe((contentEditorFeatureFlag) => {
                 if (!this.handlers) {
                     this.handlers = {

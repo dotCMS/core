@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { Injectable, inject } from '@angular/core';
 import { CanActivate } from '@angular/router';
 
-import { map, take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
@@ -21,9 +21,6 @@ export class EditContentGuard implements CanActivate {
     canActivate(): Observable<boolean> {
         return this.dotPropertiesService
             .getKey(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE)
-            .pipe(
-                take(1),
-                map((enabled: string) => enabled === 'true')
-            );
+            .pipe(map((enabled: string) => enabled === 'true'));
     }
 }

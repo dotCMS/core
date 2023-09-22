@@ -1,5 +1,7 @@
 import { of } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotPropertiesService } from '@dotcms/data-access';
@@ -13,7 +15,8 @@ describe('EditContentGuard', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [DotPropertiesService]
+            providers: [DotPropertiesService, EditContentGuard, HttpClient],
+            imports: [HttpClientTestingModule]
         });
         editContentGuardService = TestBed.inject(EditContentGuard);
 
@@ -45,7 +48,7 @@ describe('EditContentGuard', () => {
         editContentGuardService.canActivate().subscribe((res) => (result = res));
 
         expect(dotPropertiesService.getKey).toHaveBeenCalledWith(
-            FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE
+            FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE
         );
 
         expect(result).toBe(false);
