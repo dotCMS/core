@@ -432,7 +432,9 @@ export class DotSeoMetaTagsService {
 
         if (titleCardElements.length === 0) {
             result.push(
-                this.getErrorItem(this.dotMessageService.get('seo.rules.twitter-card-title.found'))
+                this.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-title.not.found')
+                )
             );
         }
 
