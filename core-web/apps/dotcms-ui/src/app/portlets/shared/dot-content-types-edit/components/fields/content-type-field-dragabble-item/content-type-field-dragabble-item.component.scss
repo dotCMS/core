@@ -126,3 +126,9 @@
         }
     }
 }
+
+::ng-deep {
+    .p-button .p-button-label {
+        text-transform: none;
+    }
+}
