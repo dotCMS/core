@@ -268,4 +268,16 @@ public interface FieldAPI {
 	 * @throws DotDataException when SQL error happens
 	 */
 	List<FieldVariable> loadVariables(Field field) throws DotDataException;
+
+
+	/**
+	 * This method takes a field and returns if the field is a "fullScreen" field
+	 * A field is a fullScreen field if
+	 * - it is a multiline field
+	 * - the only field on its tab
+	 * - does not have the field variable fullScreenField=false
+	 * @param fieldIn
+	 * @return
+	 */
+	boolean isFullScreenField(Field fieldIn);
 }

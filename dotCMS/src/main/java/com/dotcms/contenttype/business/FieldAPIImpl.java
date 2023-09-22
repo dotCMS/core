@@ -12,35 +12,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.StoryBlockField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.CheckboxField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.CustomField;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.DateTimeField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.FileField;
-import com.dotcms.contenttype.model.field.HiddenField;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImageField;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.field.KeyValueField;
-import com.dotcms.contenttype.model.field.LineDividerField;
-import com.dotcms.contenttype.model.field.MultiSelectField;
-import com.dotcms.contenttype.model.field.PermissionTabField;
-import com.dotcms.contenttype.model.field.RadioField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.RelationshipsTabField;
-import com.dotcms.contenttype.model.field.SelectField;
-import com.dotcms.contenttype.model.field.TabDividerField;
-import com.dotcms.contenttype.model.field.TagField;
-import com.dotcms.contenttype.model.field.TextAreaField;
-import com.dotcms.contenttype.model.field.TimeField;
-import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.field.event.FieldDeletedEvent;
 import com.dotcms.contenttype.model.field.event.FieldSavedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -84,6 +56,7 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.net.ConnectException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -896,5 +869,59 @@ public class FieldAPIImpl implements FieldAPI {
 
 
     }
+
+    @Override
+    public boolean isFullScreenField(com.dotcms.contenttype.model.field.Field field) {
+        try {
+
+            ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(field.contentTypeId());
+
+            if (!(field instanceof WysiwygField ||
+                    field instanceof StoryBlockField ||
+                    field instanceof TextAreaField ||
+                    field instanceof CustomField ||
+                    field instanceof JSONField
+            )) {
+                return false;
+            }
+
+            boolean showFullScreen = Try.of(() -> Boolean.parseBoolean(field.fieldVariablesMap().get("showFullScreen").value())).getOrElse(true);
+            if (!showFullScreen) {
+                return false;
+            }
+
+
+            List<com.dotcms.contenttype.model.field.Field> fields = type.fields();
+            com.dotcms.contenttype.model.field.Field pppField = Try.of(() -> fields.get(fields.indexOf(field) - 3)).getOrNull();
+            com.dotcms.contenttype.model.field.Field ppField = Try.of(() -> fields.get(fields.indexOf(field) - 2)).getOrNull();
+            com.dotcms.contenttype.model.field.Field pField = Try.of(() -> fields.get(fields.indexOf(field) - 1)).getOrNull();
+            com.dotcms.contenttype.model.field.Field nextField = Try.of(() -> fields.get(fields.indexOf(field) + 1)).getOrNull();
+
+            // we are either in a tab or the first field
+            if (pppField != null && !(pppField instanceof TabDividerField)) {
+                return false;
+            }
+            // we are the last field in the type or there is a column next
+            if (nextField != null && !(nextField instanceof TabDividerField)) {
+                return false;
+            }
+            // there is a row > column before us
+            if (!(ppField instanceof RowField) || !(pField instanceof ColumnField)) {
+                return false;
+            }
+
+            return true;
+
+        } catch (Exception e) {
+            Logger.warnAndDebug(this.getClass(), "isFullScreenField failed:" + e.getMessage() + " field:" + field, e);
+
+        }
+
+        return false;
+
+    }
+
+
+
   
 }

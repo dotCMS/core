@@ -1,80 +1,18 @@
 <%!
 
-	public boolean isFullScreenField(ContentType type, com.dotcms.contenttype.model.field.Field fieldIn) {
-		try {
 
 
-			com.dotcms.contenttype.model.field.Field field = fieldIn;
-
-			if (!(field instanceof WysiwygField ||
-					field instanceof StoryBlockField ||
-					field instanceof TextAreaField ||
-					field instanceof CustomField ||
-					field instanceof JSONField
-			)) {
-				return false;
-			}
-
-
-			boolean showFullScreen = Try.of(() -> Boolean.parseBoolean(field.fieldVariablesMap().get("showFullScreen").value())).getOrElse(true);
-			if (!showFullScreen) {
-				return false;
-			}
-
-
-			List<com.dotcms.contenttype.model.field.Field> fieldsWithColumns = type.fields().stream().filter(f -> {
-				return !(f instanceof RowField || f instanceof LineDividerField);
-			}).collect(Collectors.toList());
-
-
-			com.dotcms.contenttype.model.field.Field previousField = Try.of(() -> fieldsWithColumns.get(fieldsWithColumns.indexOf(field) - 1)).getOrNull();
-			com.dotcms.contenttype.model.field.Field nextField = Try.of(() -> fieldsWithColumns.get(fieldsWithColumns.indexOf(field) + 1)).getOrNull();
-
-			// we are in a multi column field
-			if (previousField instanceof ColumnField && nextField instanceof ColumnField) {
-				return false;
-			}
-
-			List<com.dotcms.contenttype.model.field.Field> fields = fieldsWithColumns.stream().filter(f -> {
-				return !(f instanceof ColumnField);
-			}).collect(Collectors.toList());
-
-
-
-
-			int fieldOrder = fields.indexOf(field);
-			previousField = Try.of(() -> fields.get(fieldOrder - 1)).getOrNull();
-			nextField = Try.of(() -> fields.get(fieldOrder + 1)).getOrNull();
-
-			// is first field and then nextField is TabDividerField or no other field
-			if (fieldOrder == 0
-					&& (nextField instanceof TabDividerField || nextField == null)) {
-				return true;
-			}
-
-			// Previous field a TabDividerField and nextField a TabDividerField or no other field
-			if (fieldOrder > 0 && previousField instanceof TabDividerField
-					&& (nextField instanceof TabDividerField || nextField == null)) {
-				return true;
-			}
-
-
-		} catch (Exception e) {
-			return false;
-		}
-
-
-		return false;
-
+	public boolean isFullScreenField(com.dotcms.contenttype.model.field.Field field) {
+		return APILocator.getContentTypeFieldAPI().isFullScreenField(field);
 	}
 
-	public boolean isFullScreenField(Structure structure, Field oldField) {
 
-		try{
+	public boolean isFullScreenField(Field oldField) {
 
-			return isFullScreenField(new StructureTransformer(structure).from(),LegacyFieldTransformer.from(oldField));
-		}
-		catch(Exception e){
+		try {
+
+			return isFullScreenField(LegacyFieldTransformer.from(oldField));
+		} catch (Exception e) {
 			return false;
 		}
 
@@ -86,7 +24,7 @@
 			ContentType type = new StructureTransformer(structure).from();
 			com.dotcms.contenttype.model.field.Field fieldIn = LegacyFieldTransformer.from(oldField);
 			com.dotcms.contenttype.model.field.Field field = type.fields().subList(type.fields().indexOf(fieldIn), type.fields().size()).stream().filter(f->!(f instanceof RowField || f instanceof ColumnField || f instanceof TabDividerField)).findFirst().get();
-			return isFullScreenField(type,field);
+			return isFullScreenField(field);
 		}
 		catch(Exception e){
 			return false;
@@ -135,6 +73,7 @@
 <%@ page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer" %>
 <%@ page import="org.apache.poi.ss.usermodel.Row" %>
 <%@ page import="com.dotcms.contenttype.transform.field.FieldTransformer" %>
+<%@ page import="com.dotmarketing.util.Logger" %>
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
@@ -419,7 +358,7 @@
 
                     Field f = fields.get(i);
                     com.dotcms.contenttype.model.field.Field newField = new LegacyFieldTransformer(f).from();
-					fullScreenField = isFullScreenField(structure,f);
+					fullScreenField = isFullScreenField(f);
 					fullScreenNextField = isNextFieldFullScreen(structure, f);
 
 					fullScreenClass=fullScreenField ? "edit-content-full-screen": "";
