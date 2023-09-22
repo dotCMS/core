@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
@@ -10,6 +11,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -17,6 +19,7 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Optional;
 
@@ -34,9 +37,15 @@ public class SecretTool implements ViewTool {
 	@Override
 	public void init(final Object initData) {
 
-        final ViewContext context = (ViewContext) initData;
-		this.request = context.getRequest();
-        this.context = context.getVelocityContext();
+		if (null != initData && initData instanceof ViewContext) {
+			final ViewContext context = (ViewContext) initData;
+			this.request = context.getRequest();
+			this.context = context.getVelocityContext();
+		} else {
+
+			this.request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+			this.context = VelocityUtil.getInstance().getContext(request, HttpServletResponseThreadLocal.INSTANCE.getResponse());
+		}
 	}
 
 	/**
