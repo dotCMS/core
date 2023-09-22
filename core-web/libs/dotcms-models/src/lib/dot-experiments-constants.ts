@@ -45,7 +45,7 @@ export const ExperimentsStatusIcons: Record<DotExperimentStatus, string> = {
     [DotExperimentStatus.SCHEDULED]: 'pi pi-calendar',
     [DotExperimentStatus.RUNNING]: 'pi pi-play',
     [DotExperimentStatus.ENDED]: 'pi pi-check',
-    [DotExperimentStatus.ARCHIVED]: 'pi pi-briefcase'
+    [DotExperimentStatus.ARCHIVED]: 'pi pi-inbox'
 };
 
 export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [

@@ -372,7 +372,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 }
 
                 ref+=  "<td valign='top'>"
-                ref+=   "<a  href=\"javascript: " + editRef + "\">";
+                ref+=   "<a draggable='false' href=\"javascript: " + editRef + "\">";
                 ref+=   text;
                 ref+=   "</a>";
                 ref+=   "</td>";
