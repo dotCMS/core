@@ -95,6 +95,10 @@ const PORTLETS_ANGULAR = [
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
     },
     {
+        path: 'edit-content',
+        loadChildren: () => import('@dotcms/edit-content').then((m) => m.editContentRoutes)
+    },
+    {
         path: '',
         canActivate: [MenuGuardService],
         children: []
