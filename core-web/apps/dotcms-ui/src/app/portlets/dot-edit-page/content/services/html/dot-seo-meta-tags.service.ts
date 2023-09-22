@@ -432,27 +432,27 @@ export class DotSeoMetaTagsService {
 
         if (titleCardElements.length === 0) {
             result.push(
-                this.getErrorItem(this.dotMessageService.get('seo.rules.twitter-title.not.found'))
+                this.getErrorItem(this.dotMessageService.get('seo.rules.twitter-card-title.found'))
             );
         }
 
         if (titleCardElements?.length > 1) {
             result.push(
                 this.getErrorItem(
-                    this.dotMessageService.get('seo.rules.twitter-title.more.one.found')
+                    this.dotMessageService.get('seo.rules.twitter-card-title.more.one.found')
                 )
             );
         }
 
         if (titleCard && titleCard.length === 0) {
             result.push(
-                this.getErrorItem(this.dotMessageService.get('seo.rules.twitter-title.empty'))
+                this.getErrorItem(this.dotMessageService.get('seo.rules.twitter-card-title.empty'))
             );
         }
 
         if (titleCard) {
             result.push(
-                this.getDoneItem(this.dotMessageService.get('seo.rules.twitter-title.found'))
+                this.getDoneItem(this.dotMessageService.get('seo.rules.twitter-card-title.found'))
             );
         }
 
@@ -466,7 +466,9 @@ export class DotSeoMetaTagsService {
 
         if (twitterDescriptionElements.length === 0) {
             result.push(
-                this.getErrorItem(this.dotMessageService.get('seo.rules.twitter-card.not.found'))
+                this.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-description.not.found')
+                )
             );
         }
 
