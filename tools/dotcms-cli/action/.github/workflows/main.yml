@@ -62,3 +62,10 @@ jobs:
           removeFoldersOption: '--removeFolders'
           dotTokenOption: '--token'
           dotToken: ${{ secrets.DOT_TOKEN }}
+
+      - name: Check dot-push exit code
+        run: |                    
+          if [ ${{ steps.dot-push.outputs.exit_code }} -ne 0 ]; then
+            echo "dot CLI tool has failed with exit code: ${{ steps.dot-push.outputs.exit_code }}"
+            exit 1
+          fi

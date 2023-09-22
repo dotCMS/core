@@ -80,10 +80,4 @@ RUN echo "DOT_CLI_HOME IS: ${DOT_CLI_HOME}"
 RUN echo "DOTCMS_CLIENT_SERVERS_DEFAULT IS: ${DOTCMS_CLIENT_SERVERS_DEFAULT}"
 RUN echo "LOG FILE IS: ${QUARKUS_LOG_FILE_PATH}"
 
-RUN if [ -z "$secrets.DOT_TOKEN" ]; then \
-        echo " No Access token has been provided!!"; \
-    else \
-        echo "A Token was found"; \
-    fi
-
 ENTRYPOINT ["/dot-cli/entrypoint.sh"]

@@ -27,13 +27,13 @@ inputs:
     required: true
 
 outputs:
-  return-code: # id of output.
+  exit_code: # id of output.
     description: 'Command return code'
 
 runs:
   using: 'docker'
   image: 'Dockerfile'
-  args:  # ' push  /github/workspace/contents --removeAssets --removeFolders --token 1234567890'
+  args:  # ' push  /github/workspace/contents --removeAssets --removeFolders --token REQ$RTr23GR#$'
     - ${{ inputs.command }}
     - ${{ inputs.path }}
     - ${{ inputs.removeAssetsOption }}

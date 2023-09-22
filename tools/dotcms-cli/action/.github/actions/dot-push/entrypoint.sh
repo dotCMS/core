@@ -1,9 +1,10 @@
 #!/bin/sh
+  echo "Running dot-push action entrypoint.sh"
 
- ls -la /github/workspace/
+  bash /dot-cli/run-java.sh "$@"
+  exit_code=$?
 
-  var=$(bash /dot-cli/run-java.sh "$@" )
-  #echo "var: $var"
-  echo "exit code: $?"
-  echo "Quarkus log file"
+  echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+
+  echo "Quarkus log file contents:"
   cat "${QUARKUS_LOG_FILE_PATH}"
