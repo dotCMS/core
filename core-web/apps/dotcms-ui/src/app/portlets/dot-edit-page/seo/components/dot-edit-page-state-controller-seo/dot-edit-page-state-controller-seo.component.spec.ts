@@ -345,10 +345,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 componentHost.pageState.state.lockedByAnotherUser = true;
                 fixtureHost.detectChanges();
 
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
-
                 await fixtureHost.whenRenderingDone();
 
                 const previewOption = dotTabButtons.options[0];
@@ -356,7 +352,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons.options.length).toEqual(1);
                 expect(previewOption.disabled).toEqual(false);
 
-                expect(dotTabButtons.mode).toBe(DotPageMode.PREVIEW);
+                expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
             });
         });
     });
