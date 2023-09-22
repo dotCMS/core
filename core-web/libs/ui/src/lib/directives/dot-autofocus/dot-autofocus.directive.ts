@@ -1,7 +1,8 @@
 import { Directive, ElementRef, OnInit } from '@angular/core';
 
 @Directive({
-    selector: '[dotAutofocus]'
+    selector: '[dotAutofocus]',
+    standalone: true
 })
 export class DotAutofocusDirective implements OnInit {
     constructor(private el: ElementRef) {}

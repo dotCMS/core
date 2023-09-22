@@ -40,6 +40,14 @@ export enum DotExperimentStatus {
     ARCHIVED = 'ARCHIVED'
 }
 
+export const ExperimentsStatusIcons: Record<DotExperimentStatus, string> = {
+    [DotExperimentStatus.DRAFT]: 'pi pi-pencil',
+    [DotExperimentStatus.SCHEDULED]: 'pi pi-calendar',
+    [DotExperimentStatus.RUNNING]: 'pi pi-play',
+    [DotExperimentStatus.ENDED]: 'pi pi-check',
+    [DotExperimentStatus.ARCHIVED]: 'pi pi-inbox'
+};
+
 export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
         label: 'draft',
