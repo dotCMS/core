@@ -96,9 +96,9 @@ jobs:
       - name: Tar Node Modules
         shell: bash
         run: tar -czf node-modules.tgz -C core-web node_modules
-      - name: Tar Angular cache
-        shell: bash
-        run: tar -czf angular-cache.tgz -C core-web .angular
+      #- name: Tar Angular cache
+      #  shell: bash
+      #  run: tar -czf angular-cache.tgz -C core-web .angular
       - name: Tar Maven Repo
         shell: bash
         run: tar -czf maven-repo.tgz -C ~ .m2/repository
@@ -115,11 +115,11 @@ jobs:
           name: maven-repo
           path: maven-repo.tgz
 
-      - name: Persist Angular Cache
-        uses: actions/upload-artifact@v3
-        with:
-          name: angular-cache
-          path: angular-cache.tgz
+      #- name: Persist Angular Cache
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: angular-cache
+      #    path: angular-cache.tgz
 
       - name: Delete Local Artifacts From Cache
         shell: bash
@@ -233,9 +233,9 @@ jobs:
       - name: Extract Node Modules
         shell: bash
         run: tar -xzf node-modules.tgz -C core-web
-      - name: Extract angular cache
-        shell: bash
-        run: tar -xzf angular-cache.tgz -C .angular
+      #- name: Extract angular cache
+      #  shell: bash
+      #  run: tar -xzf angular-cache.tgz -C .angular
       - name: Cache Node Binary
         id: cache-node-binary
         uses: actions/cache@v3

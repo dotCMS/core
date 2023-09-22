@@ -123,7 +123,7 @@
                         <phase>generate-resources</phase>
 
                         <configuration>
-                            <arguments>install --registry=https://dotcms-npm.b-cdn.net</arguments>
+                            <arguments>install --no-progress --registry=https://dotcms-npm.b-cdn.net</arguments>
                         </configuration>
                     </execution>
                     <execution>
