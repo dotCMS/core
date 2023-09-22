@@ -13,10 +13,13 @@ export interface DropZoneFileEvent {
     validity: DropZoneFileValidity;
 }
 
+export type DropZoneErrorType = 'fileTypeMismatch' | 'maxFileSizeExceeded';
+
 export interface DropZoneFileValidity {
     fileTypeMismatch: boolean;
     maxFileSizeExceeded: boolean;
     multipleFilesDropped: boolean;
+    errorType?: DropZoneErrorType;
     valid: boolean;
 }
 
@@ -31,15 +34,18 @@ export interface DropZoneFileValidity {
 export class DotDropZoneComponent {
     @Output() fileDropped = new EventEmitter<DropZoneFileEvent>();
     @Output() fileDragEnter = new EventEmitter<boolean>();
+    @Output() fileDragOver = new EventEmitter<boolean>();
     @Output() fileDragLeave = new EventEmitter<boolean>();
 
     @Input() maxFileSize: number;
 
     @Input() set accept(types: string[]) {
-        this._accept = types.map((type) => {
-            // Remove the wildcard character
-            return type.toLowerCase().replace(/\*/g, '');
-        });
+        this._accept = types
+            ?.filter((value) => value !== '*/*')
+            .map((type) => {
+                // Remove the wildcard character
+                return type.toLowerCase().replace(/\*/g, '');
+            });
     }
 
     private _accept: string[] = [];
@@ -87,6 +93,7 @@ export class DotDropZoneComponent {
         // Prevent the default behavior to allow drop
         event.stopPropagation();
         event.preventDefault();
+        this.fileDragOver.emit(true);
     }
 
     @HostListener('dragleave', ['$event'])
