@@ -1,16 +1,21 @@
 package com.dotcms.rendering.engine;
 
+import com.dotcms.rendering.js.JsScriptEngine;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ScriptEngineFactory {
 
     public static final String VELOCITY_ENGINE = "velocity";
+    public static final String JAVASCRIPT_ENGINE = "javascript";
     private final Map<String, ScriptEngine> instanceMap   = new ConcurrentHashMap<>();
     private final VelocityScriptEngine      defaultEngine = new VelocityScriptEngine();
+    private final JsScriptEngine jsScriptEngine = new JsScriptEngine();
 
     {
         instanceMap.put(VELOCITY_ENGINE, defaultEngine);
+        instanceMap.put(JAVASCRIPT_ENGINE, jsScriptEngine);
     }
 
     private static class SingletonHolder {
