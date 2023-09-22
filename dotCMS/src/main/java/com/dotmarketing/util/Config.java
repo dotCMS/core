@@ -611,16 +611,15 @@ public class Config {
      */
     @VisibleForTesting
     public static void forceRefresh() {
-
+        boolean reapplyTestKeys = props.getBoolean(USE_CONFIG_TEST_OVERRIDE_TRACKER, false);
         // rebuilds props
         props.clear();
         _refreshProperties();
-        getOverrides().forEach((k,v)->{
-            if(v!=null && !"[remove]".equals(v)) {
-                props.setProperty(k, v);
-            }
+        if(reapplyTestKeys){
+            props.setProperty(USE_CONFIG_TEST_OVERRIDE_TRACKER,true);
+            reapplyTestOverrides();
+        }
 
-        });
     }
 
 }
