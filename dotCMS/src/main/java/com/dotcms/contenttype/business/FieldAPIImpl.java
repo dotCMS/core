@@ -25,6 +25,7 @@ import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
@@ -870,8 +871,17 @@ public class FieldAPIImpl implements FieldAPI {
 
     }
 
+
+
+
     @Override
     public boolean isFullScreenField(com.dotcms.contenttype.model.field.Field field) {
+
+        if(!Config.getBooleanProperty(FieldAPI.FULLSCREEN_FIELD_FEATURE_FLAG, false)){
+            return false;
+        }
+
+
         try {
 
             ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(field.contentTypeId());

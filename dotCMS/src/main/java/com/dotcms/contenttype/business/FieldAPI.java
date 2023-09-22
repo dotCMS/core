@@ -41,7 +41,7 @@ import com.liferay.portal.model.User;
  *
  */
 public interface FieldAPI {
-	
+	public final static String FULLSCREEN_FIELD_FEATURE_FLAG="content.edit.ui.fullscreen";
 	/**
 	 * Retrieves the list of the base Fields Types
 	 * 

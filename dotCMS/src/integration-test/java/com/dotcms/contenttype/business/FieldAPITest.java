@@ -46,6 +46,7 @@ import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -87,6 +88,11 @@ public class FieldAPITest extends IntegrationTestBase {
 
         contentTypeAPI  = APILocator.getContentTypeAPI(user);
         relationshipAPI = APILocator.getRelationshipAPI();
+        Config.setProperty(FieldAPI.FULLSCREEN_FIELD_FEATURE_FLAG, true);
+
+
+
+
     }
 
     public static class TestCase {
