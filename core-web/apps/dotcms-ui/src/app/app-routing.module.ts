@@ -96,7 +96,7 @@ const PORTLETS_ANGULAR = [
     },
     {
         path: 'edit-content',
-        loadChildren: () => import('@dotcms/edit-content').then((m) => m.editContentRoutes)
+        loadChildren: () => import('@dotcms/edit-content').then((m) => m.DotEditContentRoutes)
     },
     {
         path: '',
