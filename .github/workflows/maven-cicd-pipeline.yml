@@ -26,6 +26,7 @@ on:
       - '*.adoc'
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/build-report.yml'
   pull_request:
     paths-ignore:
       - '.gitignore'
@@ -39,6 +40,7 @@ on:
       - '*.adoc'
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/build-report.yml'
   merge_group:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
@@ -68,20 +70,41 @@ jobs:
         with:
           path: ~/.m2/repository
           key: mavencore-${{ steps.get-date.outputs.date }}
-      - name: Cache Node
-        id: cache-node
+      - name: Cache Node Binary
+        id: cache-node-binary
         uses: actions/cache@v3
         with:
           path: |
-            core-web/node_modules
             core-web/installs
-          key: node-${{ steps.get-date.outputs.date }}
+          key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+      - name: Cache Node
+        id: cache-npm
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+          key: npm-${{ hashFiles('core-web/package-lock.json') }}
+          restore-keys: npm-
+      #- name: Cache dependencies
+      #  id: cache
+      #  uses: actions/cache@v3
+      #  with:
+      #    path: core-web/node_modules
+      #    key: node-modules-${{ hashFiles('core-web/package-lock.json') }}
       - name: Build and Test with Maven
         run: ./mvnw --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
-
+      - name: Tar Node Modules
+        shell: bash
+        run: tar -czf node-modules.tgz -C core-web node_modules
       - name: Tar Maven Repo
         shell: bash
         run: tar -czf maven-repo.tgz -C ~ .m2/repository
+
+      - name: Persist Node Modules
+        uses: actions/upload-artifact@v3
+        with:
+          name: node-modules
+          path: node-modules.tgz
 
       - name: Persist Maven Repo
         uses: actions/upload-artifact@v3
@@ -91,7 +114,7 @@ jobs:
 
       - name: Delete Local Artifacts From Cache
         shell: bash
-        run: rm -r ~/.m2/repository/com/dotcms
+        run: rm -r ~/.m2/repository/com/dotcms/dotcms-* ~/.m2/repository/com/dotcms/com.dotcms.tika*
 
       - name: Upload build reports
         uses: actions/upload-artifact@v3
@@ -190,9 +213,38 @@ jobs:
         with:
           name: maven-repo
           path: .
+      - name: Download Node Modules
+        uses: actions/download-artifact@v3
+        with:
+          name: node-modules
+          path: .
       - name: Extract Maven Repo
         shell: bash
         run: tar -xzf maven-repo.tgz -C ~
+      - name: Extract Node Modules
+        shell: bash
+        run: tar -xzf node-modules.tgz -C core-web
+      - name: Cache Node Binary
+        id: cache-node-binary
+        uses: actions/cache@v3
+        with:
+          path: |
+            core-web/installs
+          key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+      - name: Cache Node
+        id: cache-npm
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+          key: npm-${{ hashFiles('core-web/package-lock.json') }}
+          restore-keys: npm-
+      #- name: Cache dependencies
+      #  id: cache
+      #  uses: actions/cache@v3
+      #  with:
+      #    path: core-web/node_modules
+      #    key: node-modules-${{ hashFiles('core-web/package-lock.json') }}
       - name: Build
         run: eval ./mvnw $JVM_TEST_MAVEN_OPTS -pl :core-web test
       - name: Prepare failure archive (if maven failed)

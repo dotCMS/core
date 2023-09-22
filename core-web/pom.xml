@@ -10,7 +10,7 @@
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
-    <artifactId>core-web</artifactId>
+    <artifactId>dotcms-core-web</artifactId>
     <packaging>war</packaging>
 
     <properties>

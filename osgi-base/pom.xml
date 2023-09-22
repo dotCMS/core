@@ -12,7 +12,7 @@
     <groupId>com.dotcms.plugins</groupId>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
-    <artifactId>osgi-base</artifactId>
+    <artifactId>dotcms-osgi-base</artifactId>
 
     <modules>
         <module>core-bundles</module>
