@@ -24,6 +24,8 @@
         <jackson.version>2.13.4</jackson.version>
         <jersey.version>2.22.1</jersey.version>
         <dotcms.tika-api.version>1.0.0-SNAPSHOT</dotcms.tika-api.version>
+        <graalvm.version>0.31</graalvm.version>
+
     </properties>
     <dependencyManagement>
 
@@ -1511,6 +1513,34 @@
                 <version>2.6</version>
             </dependency>
 
+            <!-- Graalvm Js Engine -->
+            <!--dependency>
+                <groupId>org.graalvm.polyglot</groupId>
+                <artifactId>polyglot</artifactId>
+                <version>${graalvm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.polyglot</groupId>
+                <artifactId>js</artifactId>
+                <version>${graalvm.version}</version>
+                <type>pom</type>
+            </dependency-->
+            <dependency>
+                <groupId>org.graalvm.sdk</groupId>
+                <artifactId>graal-sdk</artifactId>
+                <version>${graalvm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.js</groupId>
+                <artifactId>js</artifactId>
+                <version>${graalvm.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.js</groupId>
+                <artifactId>js-scriptengine</artifactId>
+                <version>${graalvm.version}</version>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>
