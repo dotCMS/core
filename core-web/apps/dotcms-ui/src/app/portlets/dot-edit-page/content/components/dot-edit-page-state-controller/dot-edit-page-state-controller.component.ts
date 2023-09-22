@@ -169,19 +169,22 @@ export class DotEditPageStateControllerComponent implements OnChanges {
     }
 
     private getStateModeOptions(pageState: DotPageRenderState): SelectItem[] {
-        const items = this.variant ? this.getModesBasedOnVariant() : ['edit', 'preview', 'live'];
+        const items = this.variant
+            ? this.getModesBasedOnVariant(pageState)
+            : ['edit', 'preview', 'live'];
 
         return items.map((mode: string) => this.getModeOption(mode, pageState));
     }
 
-    private getModesBasedOnVariant(): string[] {
-        return [...(this.canEditVariant() ? ['edit'] : []), 'preview'];
+    private getModesBasedOnVariant(pageState: DotPageRenderState): string[] {
+        return [...(this.canEditVariant(pageState) ? ['edit'] : []), 'preview'];
     }
 
-    private canEditVariant(): boolean {
+    private canEditVariant(pageState: DotPageRenderState): boolean {
         return (
             !this.variant.variant.isOriginal &&
-            this.variant.experimentStatus === DotExperimentStatus.DRAFT
+            this.variant.experimentStatus === DotExperimentStatus.DRAFT &&
+            !pageState.state.lockedByAnotherUser
         );
     }
 

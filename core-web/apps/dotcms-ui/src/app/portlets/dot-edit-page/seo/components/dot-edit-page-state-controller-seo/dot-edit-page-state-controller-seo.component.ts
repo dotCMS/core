@@ -247,7 +247,7 @@ export class DotEditPageStateControllerSeoComponent implements OnChanges {
         return (
             !this.variant.variant.isOriginal &&
             this.variant.experimentStatus === DotExperimentStatus.DRAFT &&
-            pageState.page.canLock
+            !pageState.state.lockedByAnotherUser
         );
     }
 
