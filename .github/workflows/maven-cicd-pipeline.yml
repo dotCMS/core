@@ -69,9 +69,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}=${{ github.run_id }}-${{ github.run_attempt }}
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            mavencore-${{ steps.get-date.outputs.date }}=${{ github.run_id }}
+            mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
             mavencore-${{ steps.get-date.outputs.date }}
       - name: Cache Node Binary
         id: cache-node-binary
@@ -170,12 +170,17 @@ jobs:
       #- name: Extract Maven Repo
       #  shell: bash
       #  run: tar -xzf maven-repo.tgz -C ~
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+        shell: bash
       - name: Restore Maven Repository
         id: cache-maven
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}=${{ github.run_id }}-${{ github.run_attempt }}
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Build
         run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS test -pl :dotcms-core ${{ matrix.java.maven_args}}
       - name: Prepare reports archive (if maven failed)
@@ -236,12 +241,17 @@ jobs:
       #- name: Extract Maven Repo
       #  shell: bash
       #  run: tar -xzf maven-repo.tgz -C ~
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+        shell: bash
       - name: Restore Maven Repository
         id: cache-maven
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}=${{ github.run_id }}-${{ github.run_attempt }}
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       #- name: Extract Node Modules
       #  shell: bash
@@ -355,12 +365,17 @@ jobs:
       #- name: Extract Maven Repo
       #  shell: bash
       #  run: tar -xzf maven-repo.tgz -C ~
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+        shell: bash
       - name: Restore Maven Repository
         id: cache-maven
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}=${{ github.run_id }}-${{ github.run_attempt }}
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Build
         env:
