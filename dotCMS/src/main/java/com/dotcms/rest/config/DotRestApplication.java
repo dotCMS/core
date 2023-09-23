@@ -1,6 +1,7 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.contenttype.model.field.FieldTypeResource;
+import com.dotcms.rendering.js.JsResource;
 import com.dotcms.rest.AuditPublishingResource;
 import com.dotcms.rest.BundlePublisherResource;
 import com.dotcms.rest.BundleResource;
@@ -227,6 +228,7 @@ public class DotRestApplication extends Application {
 			.add(NavResource.class)
 			.add(RelationshipsResource.class)
 			.add(VTLResource.class)
+			.add(JsResource.class)
 			.add(ContentVersionResource.class)
 			.add(FileAssetsResource.class)
 			.add(PersonalizationResource.class)
