@@ -95,18 +95,18 @@ jobs:
           key: node-modules-${{ hashFiles('core-web/package-lock.json') }}
       - name: Build and Test with Maven
         run: ./mvnw -Dprod=true -Dskip.npm.install=${{ steps.cache-node-modules.outputs.cache-hit }} --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
-      - name: Tar Node Modules
-        shell: bash
-        run: tar -czf node-modules.tgz -C core-web node_modules
+      #- name: Tar Node Modules
+      #  shell: bash
+      #  run: tar -czf node-modules.tgz -C core-web node_modules
       - name: Tar Maven Repo
         shell: bash
         run: tar -czf maven-repo.tgz -C ~ .m2/repository
 
-      - name: Persist Node Modules
-        uses: actions/upload-artifact@v3
-        with:
-          name: node-modules
-          path: node-modules.tgz
+      #- name: Persist Node Modules
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: node-modules
+      #    path: node-modules.tgz
 
       - name: Persist Maven Repo
         uses: actions/upload-artifact@v3
@@ -215,17 +215,17 @@ jobs:
         with:
           name: maven-repo
           path: .
-      - name: Download Node Modules
-        uses: actions/download-artifact@v3
-        with:
-          name: node-modules
-          path: .
+      #- name: Download Node Modules
+      #  uses: actions/download-artifact@v3
+      #  with:
+      #    name: node-modules
+      #    path: .
       - name: Extract Maven Repo
         shell: bash
         run: tar -xzf maven-repo.tgz -C ~
-      - name: Extract Node Modules
-        shell: bash
-        run: tar -xzf node-modules.tgz -C core-web
+      #- name: Extract Node Modules
+      #  shell: bash
+      #  run: tar -xzf node-modules.tgz -C core-web
       - name: Cache Node Binary
         id: cache-node-binary
         uses: actions/cache@v3
