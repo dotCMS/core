@@ -703,8 +703,8 @@ public class JsResource {
         try {
             bodyMap = new ObjectMapper().readValue(bodyMapString, HashMap.class);
 
-            if(bodyMap.containsKey("velocity")){
-                bodyMap.put("velocity", unescapeValue((String)bodyMap.get("velocity"), "\n"));
+            if(bodyMap.containsKey("javascript")){
+                bodyMap.put("javascript", unescapeValue((String)bodyMap.get("javascript"), "\n"));
             }
         } catch (IOException e) {
             // 2) let's try escaping then parsing
@@ -713,11 +713,11 @@ public class JsResource {
             try {
                 bodyMap = new ObjectMapper().readValue(escapedJsonValues, HashMap.class);
 
-                if(bodyMap.containsKey("velocity")){
-                    bodyMap.put("velocity", unescapeValue((String)bodyMap.get("velocity"), "\n"));
+                if(bodyMap.containsKey("javascript")){
+                    bodyMap.put("javascript", unescapeValue((String)bodyMap.get("javascript"), "\n"));
                 }
             } catch (IOException e1) {
-                bodyMap.put("velocity", bodyMapString);
+                bodyMap.put("javascript", bodyMapString);
             }
         }
 

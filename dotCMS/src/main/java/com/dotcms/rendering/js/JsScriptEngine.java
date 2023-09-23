@@ -37,9 +37,11 @@ public class JsScriptEngine implements ScriptEngine {
             bindings.putMember("dotJSON", dotJSON);
             bindings.putMember("request", request);
             bindings.putMember("response", response);
-            final Value eval   = context.eval(source);
-            final Value result = eval.execute();
-            return CollectionsUtils.map("output", result.asString(), "dotJSON", dotJSON);
+            Value eval   = context.eval(source);
+            if (eval.canExecute()) {
+                 eval = eval.execute();
+            }
+            return CollectionsUtils.map("output", eval.asString(), "dotJSON", dotJSON);
         } catch (final IOException e) {
 
             Logger.error(this, e.getMessage(), e);
