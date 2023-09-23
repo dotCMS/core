@@ -5,7 +5,6 @@ import com.dotcms.cache.DotJSONCache;
 import com.dotcms.cache.DotJSONCacheFactory;
 import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.rendering.engine.ScriptEngineFactory;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
@@ -15,7 +14,6 @@ import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.vtl.VelocityReader;
-import com.dotcms.rest.api.v1.vtl.VelocityReaderFactory;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -67,7 +65,7 @@ public class JsResource {
     private final MultiPartUtils multiPartUtils;
     private final WebResource webResource;
     @VisibleForTesting
-    static final String VTL_PATH = "/application/jstl";
+    static final String JS_PATH = "/application/jstl";
 
     public JsResource() {
         this(new WebResource(), new MultiPartUtils());
@@ -531,7 +529,7 @@ public class JsResource {
                     .build();
 
             // todo: here should be use graalvm
-            final VelocityReader velocityReader = VelocityReaderFactory.getVelocityReader(UtilMethods.isSet(folderName));
+            final JavascriptReader javascriptReader = JavascriptReaderFactory.getJavascriptReader(UtilMethods.isSet(folderName));
 
             final Map<String, Object> contextParams = CollectionsUtils.map(
                     "pathParam", pathParam,
@@ -539,7 +537,7 @@ public class JsResource {
                     "bodyMap", bodyMap,
                     "binaries", Arrays.asList(binaries));
 
-            try(Reader reader = velocityReader.getVelocity(javascriptReaderParams)){
+            try(Reader reader = javascriptReader.getJavaScriptReader(javascriptReaderParams)){
                 return evalJavascript(request, response, reader, contextParams,
                         initDataObject.getUser(), cache);
             }
@@ -568,6 +566,7 @@ public class JsResource {
             final Object result = scriptEngine.eval(request, response, javascriptReader, context);
 
             if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
+
                 final HttpServletResponse wrapperResponse = (HttpServletResponse) context.get("response");
 
                 final String contentType = (wrapperResponse!=null && wrapperResponse.getContentType()!=null) ?
