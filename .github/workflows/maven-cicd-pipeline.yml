@@ -94,7 +94,9 @@ jobs:
           # only pull for exact version of package-lock
           key: node-modules-${{ hashFiles('core-web/package-lock.json') }}
       - name: Build and Test with Maven
-        run: ./mvnw -Dprod=true -Dskip.npm.install=${{ steps.cache-node-modules.outputs.cache-hit }} --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
+        env:
+          NODE_CACHE_HIT: ${{steps.cache-node-modules.outputs.cache-hit}}
+        run: ./mvnw -Dprod=true -Dskip.npm.install=${NODE_CACHE_HIT} --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
       #- name: Tar Node Modules
       #  shell: bash
       #  run: tar -czf node-modules.tgz -C core-web node_modules
@@ -249,6 +251,8 @@ jobs:
           # only pull for exact version of package-lock
           key: node-modules-${{ hashFiles('core-web/package-lock.json') }}
       - name: Build # expect node cache to exist from
+        env:
+          NODE_CACHE_HIT: ${{steps.cache-node-modules.outputs.cache-hit}}
         run: eval ./mvnw -Dprod -Dskip.npm.install=${{ steps.cache-node-modules.outputs.cache-hit }} $JVM_TEST_MAVEN_OPTS -pl :dotcms-core-web test
       - name: Prepare failure archive (if maven failed)
         if: failure()
