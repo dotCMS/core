@@ -69,10 +69,6 @@
     margin-bottom: $spacing-4;
 }
 
-.results-seo-tool__result-card-header {
-    border-bottom: 1px solid $color-palette-gray-400;
-}
-
 .results-seo-tool__result-card-title {
     display: flex;
     gap: $spacing-3;
@@ -83,7 +79,7 @@
 
 .results-seo-tool__result-card-list {
     list-style: none;
-    padding: $spacing-4 $spacing-7;
+    padding: $spacing-4;
     margin: 0;
 }
 
@@ -97,22 +93,7 @@
     margin-bottom: $spacing-3;
 }
 
-.results-seo-tool__result-card-info {
-    width: 100%;
-    background: $color-palette-primary-100;
-    padding: $spacing-1 $spacing-3;
-    border-bottom-left-radius: $border-radius-xl;
-    border-bottom-right-radius: $border-radius-xl;
-    display: flex;
-    align-items: flex-start;
-    gap: $spacing-1;
-    line-height: 1.3rem;
-    color: $color-palette-gray-900;
-    font-size: $font-size-sm;
-}
-
 .results-seo-tool__result-icon {
-    font-size: $font-size-xl;
     color: $color-palette-primary-500;
 }
 
@@ -128,6 +109,27 @@
     color: $color-alert-green;
 }
 
+.results-seo-tool__preview-image {
+    width: 100%;
+}
+
+.results-seo-tool__preview {
+    margin-top: $spacing-1;
+
+    h5 {
+        padding: 0;
+        margin: $spacing-1 0;
+        font-size: $font-size-md;
+        font-weight: $font-weight-bold;
+        color: $black;
+    }
+
+    p {
+        padding: 0;
+        margin: 0;
+    }
+}
+
 :host ::ng-deep {
     .results-seo-tool__result-card .p-card {
         border: 1px solid $color-palette-gray-400;
@@ -136,7 +138,7 @@
 
     .results-seo-tool__result-card .p-card .p-card-header {
         border-bottom: 1px solid $color-palette-gray-400;
-        padding: $spacing-3;
+        padding: $spacing-3 $spacing-4;
     }
 
     .results-seo-tool__result-card .p-card .p-card-body {
@@ -152,6 +154,10 @@
     }
 
     .results-seo-tool__result-card-list .pi-external-link {
-        color: $color-palette-primary-500;
+        color: $color-palette-gray-700;
+    }
+
+    .results-seo-tool__main-card .p-card .p-card-body {
+        padding: $spacing-3;
     }
 }

@@ -180,7 +180,6 @@ describe('DotDeviceSelectorSeoComponent', () => {
 
     it('should not have a link to add device', async () => {
         spyOn(dotCurrentUserService, 'getCurrentUser').and.returnValue(of(CurrentUserDataMock));
-        component.ngOnInit();
 
         const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
         expect(link).toBeNull();
@@ -206,5 +205,11 @@ describe('DotDeviceSelectorSeoComponent', () => {
         buttonMedia.triggerEventHandler('click', 'Google');
 
         expect(component.changeSeoMediaEvent).toHaveBeenCalled();
+    });
+
+    it('should emit hideOverlayPanel event when onHideDeviceSelector is called', () => {
+        spyOn(component.hideOverlayPanel, 'emit');
+        component.onHideDeviceSelector();
+        expect(component.hideOverlayPanel.emit).toHaveBeenCalled();
     });
 });

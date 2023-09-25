@@ -15,7 +15,7 @@ on:
     paths-ignore:
       - '.gitignore'
       - '.dockerignore'
-      - 'dotCMS/src/main/webapp/html'
+      - 'dotCMS/src/main/webapp/html/**'
       - '!docker/**'
       - 'cicd/**'
       - '.cicd/**'
@@ -23,11 +23,12 @@ on:
       - '*.adoc'
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
+      - 'core-web/**'
   pull_request:
     paths-ignore:
       - '.gitignore'
       - '.dockerignore'
-      - 'dotCMS/src/main/webapp/html'
+      - 'dotCMS/src/main/webapp/html/**'
       - '!docker/**'
       - 'cicd/**'
       - '.cicd/**'
@@ -35,6 +36,7 @@ on:
       - '*.adoc'
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
+      - 'core-web/**'
 jobs:
   cli_tests:
     name: CLI tests
@@ -77,7 +79,7 @@ jobs:
         with:
           push: ${{ github.event.inputs.docker_build_push || 'false' }}
           context: docker/dotcms
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
           pull: true
           no-cache: ${{ github.event.inputs.docker_build_cache || 'false' }}
@@ -153,10 +155,10 @@ jobs:
           
           cat ${CICD_RES_PATH}/cli/cli-results-footer.html >> ${INDEX_FILE}
 
-          echo "BUILD_ID=${BUILD_ID}" >> "$GITHUB_ENV"
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
           echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
-          echo "results_location=${XML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
-          echo "results_report_location=${HTML_REPORTS_PATH}" >> "$GITHUB_OUTPUT"
+          echo "results_location=${XML_REPORTS_PATH}" >> $GITHUB_OUTPUT
+          echo "results_report_location=${HTML_REPORTS_PATH}" >> $GITHUB_OUTPUT
           
           tree ${RESULTS_PATH}
 

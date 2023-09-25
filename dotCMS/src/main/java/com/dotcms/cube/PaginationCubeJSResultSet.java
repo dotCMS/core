@@ -12,22 +12,20 @@ public class PaginationCubeJSResultSet implements CubeJSResultSet {
 
     private CubeJSClient cubeJSClient;
     private CubeJSQuery query;
-    private Long totalItems;
     private int pageSize;
 
     public PaginationCubeJSResultSet(final CubeJSClient cubeJSClient,
             final CubeJSQuery query,
-            final Long totalItems, int pageSize) {
+            int pageSize) {
         this.cubeJSClient = cubeJSClient;
         this.query = query;
-        this.totalItems = totalItems;
         this.pageSize = pageSize;
     }
 
 
     @Override
     public long size() {
-        return totalItems;
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override
@@ -39,38 +37,47 @@ public class PaginationCubeJSResultSet implements CubeJSResultSet {
 
         private long nextItem = 0;
         private Iterator<ResultSetItem> currentIterator;
+        private boolean lastPage;
 
-        public CubeIterator() {
-
-        }
+        public CubeIterator() {}
 
         @Override
         public boolean hasNext() {
-            return nextItem < totalItems;
+            if ((currentIterator == null || !currentIterator.hasNext()) && !lastPage) {
+                final CubeJSQuery cubeJSQuery = query.builder()
+                    .limit(pageSize)
+                    .offset(nextItem)
+                    .build();
+
+                final CubeJSResultSet cubeJSResultSet = cubeJSClient.send(cubeJSQuery);
+
+                if (cubeJSResultSet.size() < pageSize) {
+                    lastPage = true;
+                }
+
+                currentIterator = cubeJSResultSet.iterator();
+            }
+
+            return currentIterator.hasNext();
         }
 
         @Override
         public ResultSetItem next() {
-
-            DotPreconditions.isTrue(hasNext(),
-                    NoSuchElementException.class, () -> "There are no more items to iterate");
-
-            if (currentIterator == null || !currentIterator.hasNext()) {
-                final CubeJSQuery cubeJSQuery = query.builder()
-                        .limit(pageSize)
-                        .offset(nextItem)
-                        .build();
-                currentIterator = cubeJSClient.send(cubeJSQuery).iterator();
+            if (!hasNext()) {
+                throw new PaginationException("There are no more items to iterate");
             }
 
             nextItem++;
+            return currentIterator.next();
+        }
+    }
 
-            try {
-                return currentIterator.next();
-
-            } catch (NoSuchElementException e) {
-                throw new RuntimeException(e);
-            }
+    /**
+     * Exception to be thrown when it is not possible to get all the items from the CubeJS Server.
+     */
+    static class PaginationException extends RuntimeException {
+        public PaginationException(String message) {
+            super(message);
         }
     }
 

@@ -40,6 +40,14 @@ export enum DotExperimentStatus {
     ARCHIVED = 'ARCHIVED'
 }
 
+export const ExperimentsStatusIcons: Record<DotExperimentStatus, string> = {
+    [DotExperimentStatus.DRAFT]: 'pi pi-pencil',
+    [DotExperimentStatus.SCHEDULED]: 'pi pi-calendar',
+    [DotExperimentStatus.RUNNING]: 'pi pi-play',
+    [DotExperimentStatus.ENDED]: 'pi pi-check',
+    [DotExperimentStatus.ARCHIVED]: 'pi pi-inbox'
+};
+
 export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
         label: 'draft',
@@ -286,4 +294,4 @@ export enum HealthStatusTypes {
     CONFIGURATION_ERROR = 'CONFIGURATION_ERROR'
 }
 
-export const RUNNING_UNTIL_DATE_FORMAT = 'EEE, LLL dd, Y';
+export const RUNNING_UNTIL_DATE_FORMAT = 'EEE, LLL dd';

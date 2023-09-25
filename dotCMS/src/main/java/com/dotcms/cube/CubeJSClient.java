@@ -8,18 +8,14 @@ import com.dotcms.exception.AnalyticsException;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
-import com.dotcms.jitsu.EventLogRunnable;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 
 import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -86,27 +82,7 @@ public class CubeJSClient {
 
         DotPreconditions.notNull(query, "Query not must be NULL");
 
-        final CubeJSQuery countQuery = query.builder()
-                .measures("Events.count")
-                .filters(Arrays.asList(query.filters()))
-                .orders(Arrays.asList(query.orders()))
-                .dimensions(null)
-                .build();
-
-        final CubeJSResultSet countResultSet = this.send(countQuery);
-
-        final long totalItems = countResultSet.iterator().next()
-                .get("Events.count")
-                .map(value -> Long.parseLong(value.toString()))
-                .orElseThrow();
-
-        if (totalItems == 0) {
-            return new CubeJSResultSetImpl(Collections.emptyList());
-        }
-
-        return totalItems > PAGE_SIZE ?
-                new PaginationCubeJSResultSet(this, query, totalItems, PAGE_SIZE) :
-                this.send(query);
+        return new PaginationCubeJSResultSet(this, query, PAGE_SIZE);
     }
 
 
@@ -125,24 +101,25 @@ public class CubeJSClient {
         final CircuitBreakerUrl cubeJSClient;
         try {
             cubeJSClient = CircuitBreakerUrl.builder()
-                    .setMethod(Method.GET)
-                    .setHeaders(cubeJsHeaders(accessToken))
-                    .setUrl(String.format("%s/cubejs-api/v1/load", url))
-                    .setParams(map("query", query.toString()))
-                    .setTimeout(4000)
-                    .build();
+                .setMethod(Method.GET)
+                .setHeaders(cubeJsHeaders(accessToken))
+                .setUrl(String.format("%s/cubejs-api/v1/load", url))
+                .setParams(map("query", query.toString()))
+                .setTimeout(4000)
+                .build();
         } catch (AnalyticsException e) {
             throw new RuntimeException(e);
         }
 
-        final Response<String> response = Try.of(cubeJSClient::doResponse)
-                .onFailure(e -> Logger.warnAndDebug(EventLogRunnable.class, e.getMessage(), e))
-                .getOrElse(CircuitBreakerUrl.EMPTY_RESPONSE);
+        final Response<String> response = cubeJSClient.doResponse();
+        if (response.getStatusCode() == -1) {
+            throw new RuntimeException("CubeJS Server is not available");
+        }
 
         try {
             final String responseAsString = UtilMethods.isSet(response) ? response.getResponse() :
                     StringPool.BLANK;
-            final Map<String, Object> responseAsMap = UtilMethods.isSet(responseAsString) ?
+            final Map<String, Object> responseAsMap = UtilMethods.isSet(responseAsString) && !responseAsString.equals("[]") ?
                    JsonUtil.getJsonFromString(responseAsString) : new HashMap<>();
             final List<Map<String, Object>> data = (List<Map<String, Object>>) responseAsMap.get("data");
 

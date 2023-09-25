@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "88d0a38e-032e-415e-b32d-0fe1ff6a10fe",
+		"_postman_id": "913d9c0c-2c6a-41f9-950b-c921cda22875",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "1549189"
@@ -2891,7 +2891,7 @@
 											"",
 											"var render = jsonData.entity.containers[containerId].rendered['uuid-1'];",
 											"",
-											"pm.expect(\"content_1content_2\").to.equal(render);",
+											"pm.expect(\"content_1\").to.equal(render);",
 											""
 										],
 										"type": "text/javascript"
@@ -11222,8 +11222,8 @@
 											"pm.test(\"Ended Experiment with expected values\", function () {",
 											"    pm.response.to.have.status(200);",
 											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
-											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
-											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.null;",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.null;",
 											"});",
 											"",
 											"",
@@ -11574,8 +11574,8 @@
 											"pm.test(\"Ended Experiment with expected values\", function () {",
 											"    pm.response.to.have.status(200);",
 											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
-											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
-											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.null;",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.null;",
 											"});",
 											"",
 											"",

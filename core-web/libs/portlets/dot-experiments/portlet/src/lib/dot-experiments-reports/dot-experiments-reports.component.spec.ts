@@ -193,6 +193,19 @@ describe('DotExperimentsReportsComponent', () => {
         expect(spectator.queryLast(DotExperimentsReportsChartComponent).isLinearAxis).toEqual(true);
     });
 
+    it('should reload results', () => {
+        spectator.detectChanges();
+        jest.spyOn(store, 'loadExperimentAndResults');
+
+        const summaryComponent = spectator.query(DotExperimentsExperimentSummaryComponent);
+
+        summaryComponent.updateResults.emit();
+
+        expect(store.loadExperimentAndResults).toHaveBeenCalledWith(
+            ActivatedRouteMock.snapshot.params.experimentId
+        );
+    });
+
     it('should show the SummaryComponent', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,

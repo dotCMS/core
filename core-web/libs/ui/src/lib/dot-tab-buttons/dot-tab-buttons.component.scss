@@ -8,6 +8,7 @@ $dot-tab-height: 2.5rem;
     flex-direction: row;
     gap: $spacing-1;
     margin-right: $spacing-5;
+    font-size: $spacing-3;
 }
 
 .dot-tab-buttons__container {
@@ -17,6 +18,10 @@ $dot-tab-height: 2.5rem;
 .dot-tab {
     display: flex;
     position: relative;
+
+    button {
+        font-size: $spacing-3;
+    }
 }
 
 .dot-tab__button {
@@ -26,6 +31,8 @@ $dot-tab-height: 2.5rem;
     padding: $spacing-1 $spacing-3;
     border-radius: $border-radius-md;
     height: $dot-tab-height;
+    font-family: $font-default;
+
     &:hover {
         background: $color-palette-primary-100;
     }
@@ -37,7 +44,7 @@ $dot-tab-height: 2.5rem;
     border-right: 0;
 }
 
-.dot-tab__dropdow {
+.dot-tab__dropdown {
     background-color: transparent;
     border: $field-border-size solid $color-palette-gray-200;
     height: $dot-tab-height;

@@ -65,6 +65,7 @@ import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -912,7 +913,23 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment updatedExperiment = persistedExperiment
                 .withTrafficProportion(weightedTrafficProportion);
 
+        if (!DEFAULT_VARIANT.name().equals(experimentVariant.id())) {
+            copyMultiTrees(persistedExperiment, experimentVariant);
+        }
+
         return save(updatedExperiment, user);
+    }
+
+    private void copyMultiTrees(final Experiment persistedExperiment,
+            final ExperimentVariant experimentVariant)
+                throws DotDataException {
+
+        final HTMLPageAsset experimentPage = getHtmlPageAsset(persistedExperiment);
+        final List<MultiTree> multiTreesByVariant = multiTreeAPI.getMultiTreesByVariant(
+                experimentPage.getIdentifier(), DEFAULT_VARIANT.name());
+
+        multiTreeAPI.copyMultiTree(experimentPage.getIdentifier(), multiTreesByVariant,
+                experimentVariant.id());
     }
 
     private ExperimentVariant createExperimentVariant(final Experiment experiment,
@@ -1205,32 +1222,42 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final List<Event> currentEvents = new ArrayList<>();
         final List<BrowserSession> sessions = new ArrayList<>();
 
-        for (final ResultSetItem resultSetItem : cubeJSResultSet) {
-            final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
-                    .map(Object::toString)
-                    .orElse(StringPool.BLANK);
+        try {
+            for (final ResultSetItem resultSetItem : cubeJSResultSet) {
+                final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
+                        .map(Object::toString)
+                        .orElse(StringPool.BLANK);
 
-            if (!currentLookBackWindow.equals(previousLookBackWindow)) {
-                if (!currentEvents.isEmpty()) {
-                    sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-                    currentEvents.clear();
+                if (!currentLookBackWindow.equals(previousLookBackWindow)) {
+                    if (!currentEvents.isEmpty()) {
+                        sessions.add(new BrowserSession(previousLookBackWindow,
+                                new ArrayList<>(currentEvents)));
+                        currentEvents.clear();
+                    }
                 }
-            }
 
-            currentEvents.add(new Event(resultSetItem.getAll(),
+                currentEvents.add(new Event(resultSetItem.getAll(),
                         EventType.get(resultSetItem.get("Events.eventType")
                                 .map(Object::toString)
-                                .orElseThrow(() -> new IllegalStateException("Type into Event is expected")))
-            ));
+                                .orElseThrow(() -> new IllegalStateException(
+                                        "Type into Event is expected")))
+                ));
 
-            previousLookBackWindow = currentLookBackWindow;
+                previousLookBackWindow = currentLookBackWindow;
+            }
+
+            if (!currentEvents.isEmpty()) {
+                sessions.add(
+                        new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
+            }
+
+            return sessions;
+        } catch (final Exception e) {
+            final String message = String.format("Error getting result for Experiment %s: %s", experiment.name(),
+                    e.getMessage());
+            Logger.error(this, message, e);
+            throw new DotDataException(message, e);
         }
-
-        if (!currentEvents.isEmpty()) {
-            sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-        }
-
-        return sessions;
     }
 
     @Override
@@ -1379,7 +1406,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
                 ()-> "Scheduling not valid.", DotStateException.class);
 
-        return save(experimentFromFactory.withStatus(DRAFT), user);
+        final Experiment experimentCanceled = experimentFromFactory
+                .withStatus(DRAFT)
+                .withScheduling(Scheduling.builder().build());
+
+        return save(experimentCanceled, user);
     }
 
     private static boolean canBeCanceled(final Experiment experimentFromFactory) {

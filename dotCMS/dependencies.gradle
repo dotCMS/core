@@ -157,7 +157,7 @@ dependencies {
     implementation (group: 'com.tdunning', name: 't-digest', version: '3.2') {
         transitive=false
     }
-    implementation (group: 'com.thoughtworks.xstream', name: 'xstream', version: '1.4.8') {
+    implementation (group: 'com.thoughtworks.xstream', name: 'xstream', version: '1.4.17') {
         exclude group: 'xpp3', module: 'xpp3_min'
     }
     testImplementation (group: 'com.tngtech.junit.dataprovider', name: 'junit-dataprovider-core', version: '2.6'){}
@@ -204,6 +204,7 @@ dependencies {
     }
     implementation (group: 'fop', name: 'fop', version: '0.20.3'){}
     implementation (group: 'io.github.classgraph', name: 'classgraph', version: '4.8.138'){}
+    implementation (group: 'io.github.x-stream', name: 'mxparser', version: '1.2.1'){}
     implementation (group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'){}
     implementation (group: 'io.lettuce', name: 'lettuce-core', version: '6.1.1.RELEASE'){}
     implementation (group: 'io.netty', name: 'netty-buffer', version: '4.1.63.Final'){}

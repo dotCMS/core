@@ -42,14 +42,14 @@ p-inputSwitch {
             left: 4px;
             position: absolute;
             text-rendering: auto;
-            top: 0;
+            top: 1px;
             transition: transform $basic-speed ease-in, color $basic-speed ease-in;
         }
 
         .p-inputswitch-checked .p-inputswitch-slider:after {
             color: $white;
             content: "lock";
-            transform: translateX(1.5rem);
+            transform: translateX(24px);
         }
 
         .p-state-disabled .p-inputswitch-slider:after {
@@ -73,5 +73,9 @@ p-inputSwitch {
 
     dot-edit-page-lock-info {
         display: none;
+    }
+
+    ::ng-deep .edit-page-variant-mode dot-edit-page-lock-info {
+        display: block;
     }
 }
