@@ -1,15 +1,15 @@
 <dot-secondary-toolbar>
     <!-- Header title and actions-->
-    <div class="main-toolbar-left flex align-items-center">
+    <div class="main-toolbar-left flex align-items-center gap-2">
         <ng-container *ngIf="variant; else defaultHeaderLeftTpl">
-            <a
-                class="flex align-items-center cursor-pointer"
+            <button
+                class="p-button-rounded p-button-text"
                 [pTooltip]="'editpage.header.back.to.experiment' | dm"
                 (click)="backToExperiment.emit(true)"
                 data-testId="goto-experiment"
-                tooltipPosition="bottom">
-                <dot-icon name="arrow_back_ios" size="22"></dot-icon>
-            </a>
+                icon="pi pi-arrow-left"
+                pButton
+                tooltipPosition="bottom"></button>
 
             <dot-edit-page-info-seo
                 class="dot-variant-header flex gap-3"
