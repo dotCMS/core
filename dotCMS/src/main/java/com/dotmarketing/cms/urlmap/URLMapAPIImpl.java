@@ -47,7 +47,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         String[] patterns = Config.getStringArrayProperty("urlmap.ignore.glob.patterns", new String[]{"/application/**", "/api/**", "/dA/**", "/dotAdmin/**", "/html/**"});
         PathMatcher[] paths = new PathMatcher[patterns.length];
         for (int i = 0; i < paths.length; i++) {
-            paths[i] = FileSystems.getDefault().getPathMatcher(patterns[i]);
+            paths[i] = FileSystems.getDefault().getPathMatcher("glob:" + patterns[i]);
         }
         return paths;
     });
