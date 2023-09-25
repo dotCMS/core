@@ -70,6 +70,89 @@ describe('DotPropertiesService', () => {
         req.flush(apiResponse);
     });
 
+    describe('getKey', () => {
+        it('should return the value of a key if it exists in featureConfig', () => {
+            const key = 'existingKey';
+            const value = 'existingValue';
+            service.featureConfig = { [key]: value };
+            service.getKey(key).subscribe((result) => {
+                expect(result).toEqual(value);
+            });
+        });
+
+        it('should make an HTTP request if the key does not exist in featureConfig', () => {
+            const key = 'nonExistingKey';
+            const value = 'nonExistingValue';
+            service.getKey(key).subscribe((result) => {
+                expect(result).toEqual(value);
+            });
+            const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${key}`);
+            expect(req.request.method).toEqual('GET');
+            req.flush({ entity: { [key]: value } });
+        });
+    });
+
+    describe('getKeys', () => {
+        it('should return the values of all keys if they exist in featureConfig', () => {
+            const keys = ['existingKey1', 'existingKey2'];
+            const values = { [keys[0]]: 'existingValue1', [keys[1]]: 'existingValue2' };
+            service.featureConfig = values;
+            service.getKeys(keys).subscribe((result) => {
+                expect(result).toEqual(values);
+            });
+        });
+
+        it('should make an HTTP request if any key does not exist in featureConfig', () => {
+            const keys = ['existingKey', 'nonExistingKey'];
+            const values = { [keys[0]]: 'existingValue', [keys[1]]: 'nonExistingValue' };
+            service.getKeys(keys).subscribe((result) => {
+                expect(result).toEqual(values);
+            });
+            const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${keys.join()}`);
+            expect(req.request.method).toEqual('GET');
+            req.flush({ entity: values });
+        });
+    });
+
+    describe('getKeyAsList', () => {
+        it('should make an HTTP request and return the value of a key as a list', () => {
+            const key = 'listKey';
+            const value = ['value1', 'value2'];
+            service.getKeyAsList(key).subscribe((result) => {
+                expect(result).toEqual(value);
+            });
+            const req = httpMock.expectOne(`/api/v1/configuration/config?keys=list:${key}`);
+            expect(req.request.method).toEqual('GET');
+            req.flush({ entity: { [key]: value } });
+        });
+    });
+
+    describe('loadConfig', () => {
+        it('should set featureConfig to the values returned by getKeys', () => {
+            const keys = [
+                'LOAD_FRONTEND_EXPERIMENTS',
+                'DOTFAVORITEPAGE_FEATURE_ENABLE',
+                'FEATURE_FLAG_TEMPLATE_BUILDER',
+                'FEATURE_FLAG_SEO_IMPROVEMENTS',
+                'FEATURE_FLAG_SEO_PAGE_TOOLS',
+                'FEATURE_FLAG_EDIT_URL_CONTENT_MAP'
+            ];
+            const expectedValues = {
+                [keys[0]]: 'value1',
+                [keys[1]]: 'value2',
+                [keys[2]]: 'value3',
+                [keys[3]]: 'value4',
+                [keys[4]]: 'value5',
+                [keys[5]]: 'value6'
+            };
+            service.loadConfig();
+            const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${keys.join()}`);
+            expect(req.request.method).toBe('GET');
+            req.flush({ entity: expectedValues });
+            expect(service.featureConfig).toEqual(expectedValues);
+        });
+    });
+
     afterEach(() => {
         httpMock.verify();
     });
