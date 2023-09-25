@@ -429,7 +429,10 @@ describe('DotPageStore', () => {
         expect(dialogService.open).toHaveBeenCalledWith(DotPagesCreatePageDialogComponent, {
             header: 'create.page',
             width: '58rem',
-            data: expectedInputArray
+            data: {
+                pageTypes: expectedInputArray,
+                isContentEditor2Enabled: false
+            }
         });
     });
 
