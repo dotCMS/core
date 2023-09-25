@@ -98,7 +98,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
         [DotPageMode.EDIT]: (event: PointerEvent) => {
             this.menu.toggle(event);
         },
-        [DotPageMode.PREVIEW]: (event: PointerEvent, target: HTMLElement) => {
+        [DotPageMode.PREVIEW]: (event: PointerEvent, target?: HTMLElement) => {
             this.deviceSelector.openMenu(event, target);
         },
         [DotPageMode.LIVE]: (_: PointerEvent) => {
