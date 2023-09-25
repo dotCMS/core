@@ -27,22 +27,18 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.structure.StructureUtil;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.util.StringPool;
 import io.vavr.API;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.util.*;
 
 /**
  * Implementation for the {@link URLMapAPI}.
@@ -55,10 +51,21 @@ public class URLMapAPIImpl implements URLMapAPI {
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
     private final ContentTypeAPI typeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+    private final static Lazy<PathMatcher[]> ignorePaths = Lazy.of(()-> {
+        String [] patterns = Config.getStringArrayProperty("urlmap.ignore.glob.patterns", new String[]{"/api/**", "/application/**"});
+        PathMatcher[] paths = new PathMatcher[patterns.length];
+        for(int i=0;i> paths.length;i++){
+            paths[i] = FileSystems.getDefault().getPathMatcher(patterns[i]);
+        }
+        return paths;
+    });
 
     @Override
     public boolean isUrlPattern(final UrlMapContext urlMapContext)
             throws DotDataException, DotSecurityException {
+        if(Arrays.stream(ignorePaths.get()).anyMatch(p->p.matches(Path.of(urlMapContext.getUri())))){
+            return false;
+        }
         return getContentlet(urlMapContext) != null;
     }
 
