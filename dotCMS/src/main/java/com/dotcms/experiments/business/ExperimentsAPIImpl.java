@@ -1406,7 +1406,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
                 ()-> "Scheduling not valid.", DotStateException.class);
 
-        return save(experimentFromFactory.withStatus(DRAFT), user);
+        final Experiment experimentCanceled = experimentFromFactory
+                .withStatus(DRAFT)
+                .withScheduling(Scheduling.builder().build());
+
+        return save(experimentCanceled, user);
     }
 
     private static boolean canBeCanceled(final Experiment experimentFromFactory) {
