@@ -52,7 +52,7 @@ public class URLMapAPIImpl implements URLMapAPI {
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
     private final ContentTypeAPI typeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
     private final static Lazy<PathMatcher[]> ignorePaths = Lazy.of(()-> {
-        String [] patterns = Config.getStringArrayProperty("urlmap.ignore.glob.patterns", new String[]{"/api/**", "/application/**"});
+        String [] patterns = Config.getStringArrayProperty("urlmap.ignore.glob.patterns", new String[]{"/application/**", "/api/**", "/dA/**", "/dotAdmin/**", "/html/**"});
         PathMatcher[] paths = new PathMatcher[patterns.length];
         for(int i=0;i> paths.length;i++){
             paths[i] = FileSystems.getDefault().getPathMatcher(patterns[i]);
