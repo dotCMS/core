@@ -654,7 +654,10 @@
 
 
 
-        <% if(Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD").equalsIgnoreCase("true")) {%>
+        <%
+            String featureFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+            if (featureFlag != null && featureFlag.equalsIgnoreCase("true")) {
+        %>
             
             <%
                 String accept="*/*";
@@ -677,7 +680,7 @@
 
             
                 %>
-            <dotcms-binary-field max-file-size="<%= maxFileLength%>"  accept="<%=accept%>" helper-text="<%= helperText%>" id="binary-field-<%=field.getVelocityVarName()%>"  fieldName="<%=field.getVelocityVarName()%>"></dotcms-binary-field>
+            <dotcms-binary-field id="binary-field-<%=field.getVelocityVarName()%>"  fieldName="<%=field.getVelocityVarName()%>"></dotcms-binary-field>
             <input name="<%=field.getFieldContentlet()%>" id="binary-field-input-<%=field.getFieldContentlet()%>ValueField" type="hidden" />
 
             <script>
@@ -686,6 +689,11 @@
                 (function autoexecute() {
                     const binaryField = document.getElementById("binary-field-<%=field.getVelocityVarName()%>");
                     const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
+                    // Set the initial value.
+                    binaryField.maxFileSize=Number("<%= maxFileLength%>");
+                    binaryField.accept="<%= accept%>";
+                    binaryField.helperText="<%= helperText%>";
+
                     binaryField.addEventListener('tempFile', (event) => {
                         const tempFile = event.detail;
                         field.value = tempFile.id;

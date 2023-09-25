@@ -46,7 +46,10 @@
 
 </style>
 
-<% if(Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD").equalsIgnoreCase("true")) {%>
+<%
+	String featureFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+	if (featureFlag != null && featureFlag.equalsIgnoreCase("true")) {
+%>
 	<script src="/html/contenttype-fields.js"></script>
 <% } %>
 
