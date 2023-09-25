@@ -77,11 +77,7 @@
             </div>
         </ng-container>
         <ng-template pTemplate="footer">
-            <div
-                [pTooltip]="vm.disabledTooltipLabel | dm"
-                [tooltipDisabled]="!!vm.goals || !vm.disabledTooltipLabel"
-                data-testId="tooltip-on-disabled"
-                tooltipPosition="bottom">
+            <div>
                 <button
                     class="p-button-sm p-button-outlined"
                     [disabled]="!!vm.goals || !vm.isExperimentADraft || vm.disabledTooltipLabel"
@@ -113,11 +109,12 @@
                     <button
                         class="p-button-rounded p-button-text p-button-danger"
                         [disabled]="vm.disabledTooltipLabel"
+                        [pTooltip]="'experiments.configure.variants.delete' | dm"
+                        [tooltipDisabled]="!!vm.disabledTooltipLabel"
                         (click)="deleteGoal($event, 'primary', vm.experimentId)"
                         data-testId="goal-delete-button"
                         icon="pi pi-trash"
-                        pButton
-                        pTooltip="Delete"></button>
+                        pButton></button>
                 </div>
             </div>
         </div>
