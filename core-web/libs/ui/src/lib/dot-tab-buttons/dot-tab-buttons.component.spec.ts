@@ -17,7 +17,6 @@ import { DotTabButtonsComponent } from './dot-tab-buttons.component';
 
 describe('DotTabButtonsComponent', () => {
     let spectator: Spectator<DotTabButtonsComponent>;
-
     const pointerEvent = new PointerEvent('click');
     let editID: string;
     let previewID: string;
