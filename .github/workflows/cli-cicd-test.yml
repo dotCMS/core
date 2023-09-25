@@ -12,31 +12,29 @@ on:
     branches:
       - master
       - release-*
-    paths-ignore:
-      - '.gitignore'
-      - '.dockerignore'
-      - '!dotCMS/src/main/webapp/html'
-      - '!docker/**'
-      - 'cicd/**'
+    paths:
       - '.cicd/**'
-      - '*.md'
-      - '*.adoc'
-      - '*.txt'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '!core-web/**'
+      - '.github/**'
+      - 'cicd/**'
+      - 'docker/**'
+      - '!docker/dotcms-compose-examples/**'
+      - 'dotCMS/**'
+      - '!dotCMS/src/main/webapp/html'
+      - 'pom.xml'
+      - 'tools/**'
+      - '!core-web'
   pull_request:
-    paths-ignore:
-      - '.gitignore'
-      - '.dockerignore'
-      - '!dotCMS/src/main/webapp/html'
-      - '!docker/**'
-      - 'cicd/**'
+    paths:
       - '.cicd/**'
-      - '*.md'
-      - '*.adoc'
-      - '*.txt'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '!core-web/**'
+      - '.github/**'
+      - 'cicd/**'
+      - 'docker/**'
+      - '!docker/dotcms-compose-examples/**'
+      - 'dotCMS/**'
+      - '!dotCMS/src/main/webapp/html'
+      - 'pom.xml'
+      - 'tools/**'
+      - '!core-web'
 jobs:
   cli_tests:
     name: CLI tests
