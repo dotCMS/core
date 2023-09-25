@@ -8697,6 +8697,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     .orElseThrow();
 
             assertEquals(Status.DRAFT, experimentAfterCancel.status());
+
+            final Scheduling scheduling = experimentAfterCancel.scheduling().orElseThrow();
+
+            assertFalse(scheduling.endDate().isPresent());
+            assertFalse(scheduling.startDate().isPresent());
         } finally {
             final Experiment experimentFromDB = APILocator.getExperimentsAPI()
                     .find(experiment.getIdentifier(), APILocator.systemUser())

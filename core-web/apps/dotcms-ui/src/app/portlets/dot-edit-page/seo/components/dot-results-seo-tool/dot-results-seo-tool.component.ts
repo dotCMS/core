@@ -17,6 +17,9 @@ import { CardModule } from 'primeng/card';
 
 import { map } from 'rxjs/operators';
 
+import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
+import { DotMessagePipe } from '@dotcms/ui';
+
 import {
     MetaTagsPreview,
     SeoMetaTags,
@@ -38,7 +41,9 @@ import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-me
         NgSwitch,
         NgSwitchCase,
         NgSwitchDefault,
-        AsyncPipe
+        AsyncPipe,
+        DotMessagePipe,
+        DotPipesModule
     ],
     providers: [DotSeoMetaTagsService],
     templateUrl: './dot-results-seo-tool.component.html',
