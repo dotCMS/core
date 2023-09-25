@@ -10,12 +10,12 @@
             <div
                 class="inline-block"
                 [pTooltip]="vm.disabledTooltipLabel | dm"
-                [tooltipDisabled]="vm.isExperimentADraft"
+                [tooltipDisabled]="!vm.disabledTooltipLabel"
                 data-testId="tooltip-on-disabled"
                 tooltipPosition="bottom">
                 <button
                     class="p-button-sm p-button-text"
-                    [disabled]="!vm.disabledTooltipLabel"
+                    [disabled]="vm.disabledTooltipLabel"
                     (click)="setupTargeting()"
                     data-testId="targeting-add-button"
                     label="{{ 'experiments.configure.targeting.add' | dm }}"

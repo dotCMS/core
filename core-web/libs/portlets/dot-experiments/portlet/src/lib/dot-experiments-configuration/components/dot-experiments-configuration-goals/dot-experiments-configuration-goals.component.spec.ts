@@ -46,11 +46,15 @@ const messageServiceMock = new MockDotMessageService({
 const EXPERIMENT_MOCK = getExperimentMock(0);
 const EXPERIMENT_MOCK_WITH_GOAL = getExperimentMock(2);
 
-function getVmMock(goals = GoalsMock): {
+function getVmMock(
+    goals = GoalsMock,
+    disabledTooltipLabel = null
+): {
     experimentId: string;
     goals: Goals;
     status: StepStatus;
     isExperimentADraft: boolean;
+    disabledTooltipLabel: null | string;
 } {
     return {
         experimentId: EXPERIMENT_MOCK.id,
@@ -60,7 +64,8 @@ function getVmMock(goals = GoalsMock): {
             isOpen: false,
             experimentStep: null
         },
-        isExperimentADraft: true
+        isExperimentADraft: true,
+        disabledTooltipLabel
     };
 }
 
