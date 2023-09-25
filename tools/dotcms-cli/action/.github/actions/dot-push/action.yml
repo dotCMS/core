@@ -25,6 +25,10 @@ inputs:
   dotToken:
     description: 'dotCMS access token'
     required: true
+  showError:
+    description: 'show Error details'
+    required: false
+    default: '-e'
 
 outputs:
   exit_code: # id of output.
@@ -40,3 +44,4 @@ runs:
     - ${{ inputs.removeFoldersOption }}
     - ${{ inputs.dotTokenOption }}
     - ${{ inputs.dotToken }}
+    - ${{ inputs.showError }}

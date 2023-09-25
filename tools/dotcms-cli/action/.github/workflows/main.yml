@@ -52,6 +52,19 @@ jobs:
           path: ${{ env.DOT_REPO_BASE_PATH }}
           create-workspace: ${{ env.DOT_CREATE_WORKSPACE }}
 
+      # This step requires permission to push to the repo
+      # you need to grant read/write permission for workflows in the repo settings
+      - name: Persist updated workspace
+        run: |
+          if [ ${{ steps.dot-workspace.outputs.workspace-updated }} = true ]; then
+            echo "Workspace has been updated and needs to be committed"
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            git add .
+            git commit -m "pushing workspace changes"
+            git push
+          fi     
+
       - name: Trigger dot-push
         uses: ./.github/actions/dot-push
         id: dot-push
@@ -62,6 +75,7 @@ jobs:
           removeFoldersOption: '--removeFolders'
           dotTokenOption: '--token'
           dotToken: ${{ secrets.DOT_TOKEN }}
+          showError: '-e'
 
       - name: Check dot-push exit code
         run: |                    

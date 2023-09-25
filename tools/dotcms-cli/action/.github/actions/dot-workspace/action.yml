@@ -12,8 +12,8 @@ inputs:
     default: 'true'
 
 outputs:
-  return-code: # id of output.
-    description: 'Command return code'
+  workspace-updated:
+    description: 'The Workspace was created/updated and needs to be persisted'
 
 runs:
   using: 'docker'
