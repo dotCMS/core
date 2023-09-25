@@ -76,12 +76,13 @@
         document.dispatchEvent(customEvent);
     }
 
-    function createContentlet(url) {
+    function createContentlet(url, contentType) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",
             data: {
-                url: url
+                url: url,
+                contentType
             }
         });
         document.dispatchEvent(customEvent);
@@ -312,7 +313,7 @@
 
 			if(dijit.byId('startBlankHostRadio').attr('value')) {
 				url += "&referer=" + escape(this.viewHostsReferer);
-				createContentlet(url);
+				createContentlet(url, "HOST");
 			} else {
 
 				var copyHostOptions = escape(dojo.replace(this.copyHostOptions,
@@ -326,9 +327,9 @@
 						copyLinks: dijit.byId('copyLinks').attr('value'),
 						copyHostVariables: dijit.byId('copyHostVariables').attr('value'),
 						copyTagStorage: document.getElementById('copyTagStorage').value
-					}));				
+					}));
 				url += "&_copyOptions=" + copyHostOptions + "&referer=" + escape(this.viewHostsReferer);
-				createContentlet(url);
+				createContentlet(url, "HOST");
 			}
         },
         hostChanged: function(){
@@ -619,8 +620,8 @@
             var showDeleted = dijit.byId('showDeleted').attr('checked');
             var offset = (this.currentPage - 1) * this.RESULTS_PER_PAGE;
             var count = this.RESULTS_PER_PAGE;
-            var callMetaData = { 
-            		  callback:dojo.hitch(this, this.refreshAfterDeleteCallback), 
+            var callMetaData = {
+            		  callback:dojo.hitch(this, this.refreshAfterDeleteCallback),
             		  arg: identifier
             		};
             HostAjax.findHostsPaginated(filter, showDeleted, offset, count, callMetaData);

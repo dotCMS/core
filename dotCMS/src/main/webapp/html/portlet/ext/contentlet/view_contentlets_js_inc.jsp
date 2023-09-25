@@ -831,14 +831,16 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 			addNewContentlet(structureInode);
 		}
 
-        function dispatchCreateContentletEvent(url) {
+        function dispatchCreateContentletEvent(url, contentType) {
             var customEvent = document.createEvent("CustomEvent");
             customEvent.initCustomEvent("ng-event", false, false,  {
                 name: "create-contentlet",
                 data: {
-                    url: url
+                    url: url,
+                    contentType
                 }
             });
+
             document.dispatchEvent(customEvent);
             dijit.byId("selectStructureDiv").hide();
         }
@@ -861,7 +863,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 href += "</portlet:actionURL>";
                 href += "&selectedStructure=" + structureInode ;
                 href += "&lang=" + getSelectedLanguageId();
-                dispatchCreateContentletEvent(href);
+                dispatchCreateContentletEvent(href, structureInode);
           }else{
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
                 href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
@@ -871,7 +873,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 href += "</portlet:actionURL>";
                 href += "&selectedStructure=" + structureInode ;
                 href += "&lang=" + getSelectedLanguageId();
-                dispatchCreateContentletEvent(href)
+                dispatchCreateContentletEvent(href, structureInode);
           }
         }
 

@@ -100,10 +100,8 @@ export class DotCustomEventHandlerService {
         // this.dotRouterService.goToCreateContent($event.detail.data);
     }
 
-    private createContentlet(_: CustomEvent): void {
-        //TODO: We need to get the content type variable from the event data, this is returning the url to open the legacy iframe
-        //console.log('createContentlet', $event.detail.data);
-        // this.router.navigate([`edit-content/new/${$event.detail.data}`]);
+    private createContentlet(event: CustomEvent): void {
+        this.router.navigate([`edit-content/new/${event.detail.data.contentType}`]);
     }
 
     private goToEditPage($event: CustomEvent<DotCMSEditPageEvent>): void {

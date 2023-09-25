@@ -1688,12 +1688,13 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             "</div>";
     }
 
-    function createContentlet(url) {
+    function createContentlet(url, contentType) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",
             data: {
-                url: url
+                url: url,
+                contentType
             }
         });
         document.dispatchEvent(customEvent);
@@ -1706,12 +1707,13 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
     function getSelectedpageAsset(folderInode) {
         var selected = dijit.byId('defaultPageType');
+
         if(!selected){
             showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-htmlpage-asset-type")) %>');
         }
 
         var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-        createContentlet(loc);
+        createContentlet(loc, selected.item.velocityVarName);
     }
 
 
@@ -1725,8 +1727,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
         if(!isMultiple){
             var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-
-            createContentlet(loc);
+            createContentlet(loc, selected.item.velocityVarName);
         } else {
             addMultipleFile(folderInode, selected, escape(refererVar));
         }
