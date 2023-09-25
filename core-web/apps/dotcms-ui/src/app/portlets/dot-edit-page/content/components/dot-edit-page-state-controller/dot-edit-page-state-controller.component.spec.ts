@@ -360,6 +360,26 @@ describe('DotEditPageStateControllerComponent', () => {
 
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);
             });
+            it('should show only the preview tab when the page si blocked by another user', async () => {
+                componentHost.variant = {
+                    ...dotVariantDataMock
+                };
+                componentHost.pageState.state.lockedByAnotherUser = true;
+                fixtureHost.detectChanges();
+
+                const selectButton = de.query(
+                    By.css('[data-testId="selectButton"]')
+                ).componentInstance;
+
+                await fixtureHost.whenRenderingDone();
+
+                const previewOption = selectButton.options[0];
+
+                expect(selectButton.options.length).toEqual(1);
+                expect(previewOption.disabled).toEqual(false);
+
+                expect(selectButton.value).toBe(DotPageMode.PREVIEW);
+            });
         });
     });
 

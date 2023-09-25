@@ -70,4 +70,8 @@ p-inputSwitch {
     dot-edit-page-lock-info {
         display: none;
     }
+
+    .edit-page-variant-mode dot-edit-page-lock-info {
+        display: block;
+    }
 }

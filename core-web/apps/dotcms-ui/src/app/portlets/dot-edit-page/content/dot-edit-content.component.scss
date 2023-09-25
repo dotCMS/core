@@ -25,10 +25,6 @@ dot-whats-changed,
     padding: $spacing-5;
     width: 100%;
     overflow: auto;
-
-    &.dot-edit__page-wrapper--deviced {
-        padding: $spacing-9;
-    }
 }
 
 .device-info {
@@ -44,7 +40,6 @@ dot-whats-changed,
     flex-direction: row;
     flex-grow: 1;
     z-index: 1;
-
     padding-right: 80px;
 }
 
@@ -64,39 +59,8 @@ dot-whats-changed,
         background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
         margin: 0 auto;
-        padding: 0 10px;
         width: fit-content;
         height: fit-content;
-        &:before {
-            content: "";
-            display: block;
-            height: 5px;
-            width: 70px;
-            border: 1px solid #ddd;
-            background-color: #e6e6e6;
-            border-radius: 3px;
-            margin: 35px auto;
-        }
-
-        &:after {
-            content: "";
-            display: block;
-            height: 45px;
-            width: 45px;
-            border: 1px solid #ddd;
-            background-color: #e6e6e6;
-            border-radius: 45px;
-            margin: 15px auto 20px auto;
-            background: rgba(242, 239, 242, 1);
-            background: linear-gradient(
-                135deg,
-                rgba(242, 239, 242, 1) 0%,
-                rgba(242, 239, 242, 1) 9%,
-                $white 76%,
-                $white 100%
-            );
-            filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#f2eff2', endColorstr='#ffffff', GradientType=1);
-        }
     }
 
     .dot-edit__iframe-wrapper {

@@ -9,6 +9,8 @@ import {
     DotExperiment,
     DotExperimentResults,
     DotExperimentStatus,
+    DotPageRender,
+    DotPageRenderState,
     ExperimentLineChartDatasetDefaultProperties,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
@@ -18,6 +20,9 @@ import {
     SummaryLegend,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
+
+import { mockDotRenderedPage } from './dot-page-render.mock';
+import { mockUser } from './login-service.mock';
 
 export const GoalsMock: Goals = {
     primary: {
@@ -756,6 +761,18 @@ export const PARENT_RESOLVERS_ACTIVE_ROUTE_DATA = {
         data: {
             isEnterprise: true,
             pushPublishEnvironments: [{ id: '01', name: 'test' }]
+        }
+    },
+    parent: {
+        parent: {
+            snapshot: {
+                data: {
+                    content: new DotPageRenderState(
+                        mockUser(),
+                        new DotPageRender(mockDotRenderedPage())
+                    )
+                }
+            }
         }
     }
 };
