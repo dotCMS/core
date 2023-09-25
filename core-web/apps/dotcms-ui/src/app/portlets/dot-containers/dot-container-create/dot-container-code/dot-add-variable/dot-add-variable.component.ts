@@ -6,6 +6,8 @@ import { map } from 'rxjs/operators';
 
 import { DotAddVariableStore } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
 
+import { FilteredFieldTypes } from './dot-add-variable.models';
+
 @Component({
     selector: 'dot-add-variable',
     templateUrl: './dot-add-variable.component.html',
@@ -16,10 +18,12 @@ export class DotAddVariableComponent implements OnInit {
     vm$ = this.store.vm$.pipe(
         map((res) => {
             const variables = res.variables.filter(
-                (variable) => variable.fieldType !== 'Column' && variable.fieldType !== 'Row'
+                (variable) =>
+                    variable.fieldType !== FilteredFieldTypes.Column &&
+                    variable.fieldType !== FilteredFieldTypes.Row
             );
 
-            return { variables: variables };
+            return { variables };
         })
     );
 
