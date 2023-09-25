@@ -109,7 +109,10 @@ describe('DotPagesCreatePageDialogComponent', () => {
                 {
                     provide: DynamicDialogConfig,
                     useValue: {
-                        data: [{ ...mockContentType }]
+                        data: {
+                            pageTypes: [{ ...mockContentType }],
+                            isContentEditor2Enabled: false
+                        }
                     }
                 },
                 { provide: DotPageStore, useClass: storeMock },
@@ -181,6 +184,22 @@ describe('DotPagesCreatePageDialogComponent', () => {
         input.nativeElement.dispatchEvent(new Event('keyup'));
         fixture.componentInstance.pageTypes$.subscribe((data) => {
             expect(data).toEqual([{ ...mockContentType }]);
+        });
+    });
+
+    describe("when it's content editor 2 enabled", () => {
+        beforeEach(() => {
+            // Couldn't override the value in the provider
+            fixture.componentInstance.config.data.isContentEditor2Enabled = true;
+        });
+
+        it('should redirect url when click on page', () => {
+            const pageType = de.query(By.css(`.dot-pages-create-page-dialog__page-item`));
+            pageType.triggerEventHandler('click', mockContentType.variable);
+            expect(dotRouterService.goToURL).toHaveBeenCalledWith(
+                `edit-content/${mockContentType.variable}`
+            );
+            expect(dialogRef.close).toHaveBeenCalled();
         });
     });
 });

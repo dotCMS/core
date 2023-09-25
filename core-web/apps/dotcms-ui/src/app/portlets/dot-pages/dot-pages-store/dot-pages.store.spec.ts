@@ -28,6 +28,7 @@ import {
     DotLocalstorageService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
+    DotPropertiesService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -112,6 +113,7 @@ describe('DotPageStore', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotFavoritePageService: DotFavoritePageService;
     let dotLocalstorageService: DotLocalstorageService;
+    let dotPropertiesService: DotPropertiesService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -131,6 +133,7 @@ describe('DotPageStore', () => {
                 StringUtils,
                 DotFavoritePageService,
                 DotLocalstorageService,
+                DotPropertiesService,
                 { provide: DialogService, useClass: DialogServiceMock },
                 { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -157,10 +160,12 @@ describe('DotPageStore', () => {
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotFavoritePageService = TestBed.inject(DotFavoritePageService);
         dotLocalstorageService = TestBed.inject(DotLocalstorageService);
+        dotPropertiesService = TestBed.inject(DotPropertiesService);
 
         spyOn(dialogService, 'open').and.callThrough();
         spyOn(dotHttpErrorManagerService, 'handle');
         spyOn(dotLocalstorageService, 'getItem').and.returnValue(`true`);
+        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('NOT_FOUND'));
 
         dotPageStore.setInitialStateData(5);
         dotPageStore.setKeyword('test');

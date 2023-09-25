@@ -52,7 +52,11 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
      */
     goToCreatePage(variableName: string): void {
         this.ref.close();
-        this.dotRouterService.goToURL(`/pages/new/${variableName}`);
+
+        // Get the feature flag from the store and change the routing
+        this.config.data.isContentEditor2Enabled
+            ? this.dotRouterService.goToURL(`edit-content/${variableName}`)
+            : this.dotRouterService.goToURL(`/pages/new/${variableName}`);
     }
 
     ngOnInit(): void {
@@ -63,17 +67,17 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
             switchMap((searchValue: string) => {
                 if (searchValue.length) {
                     return of(
-                        this.config.data.filter((pageType: DotCMSContentType) =>
+                        this.config.data.pageTypes.filter((pageType: DotCMSContentType) =>
                             pageType.name
                                 .toLocaleLowerCase()
                                 .includes(searchValue.toLocaleLowerCase())
                         )
                     );
                 } else {
-                    return of(this.config.data);
+                    return of(this.config.data.pageTypes);
                 }
             }),
-            startWith(this.config.data)
+            startWith(this.config.data.pageTypes)
         );
     }
 
