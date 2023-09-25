@@ -14,7 +14,6 @@ import { SidebarModule } from 'primeng/sidebar';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -24,13 +23,14 @@ import {
     MAX_INPUT_DESCRIPTIVE_LENGTH,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import {
     DotSidebarDirective,
     SIDEBAR_SIZES
 } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+import { DotValidators } from '@shared/validators/dotValidators';
 
 import { DotExperimentsOptionsModule } from '../../../shared/ui/dot-experiment-options/dot-experiments-options.module';
 import { DotExperimentsGoalConfigurationReachPageComponent } from '../../../shared/ui/dot-experiments-goal-configuration-reach-page/dot-experiments-goal-configuration-reach-page.component';
@@ -50,7 +50,7 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         DotSidebarDirective,
         DotExperimentsOptionsModule,
         DotDropdownDirective,
-        DotAutofocusModule,
+        DotAutofocusDirective,
         SidebarModule,
         ButtonModule,
         SelectButtonModule,
@@ -139,7 +139,11 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
             primary: new FormGroup({
                 name: new FormControl('', {
                     nonNullable: true,
-                    validators: [Validators.required, Validators.maxLength(this.maxNameLength)]
+                    validators: [
+                        Validators.required,
+                        Validators.maxLength(this.maxNameLength),
+                        DotValidators.noWhitespace
+                    ]
                 }),
                 type: new FormControl('', {
                     nonNullable: true,

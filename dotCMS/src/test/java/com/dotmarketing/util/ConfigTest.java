@@ -58,7 +58,7 @@ public class ConfigTest {
         .put(UNABLE_TO_READ_VAR, "NOPE");
 
         //This forces a re-load.
-        Config.props = null;
+        Config.props.clear();
         Config.initializeConfig();
     }
 
@@ -114,7 +114,7 @@ public class ConfigTest {
         final String fictionalProperty = Config.getStringProperty(propertyName);
         assertEquals("var",fictionalProperty);
         EnvironmentVariablesService.getInstance().put("DOT_FICTIONAL_PROPERTY", "foo");
-        Config.props = null; //force props reload
+        Config.props.clear(); //force props reload
 
         final String fictionalPropertyOverride = Config.getStringProperty(propertyName);
         assertEquals("foo",fictionalPropertyOverride);
