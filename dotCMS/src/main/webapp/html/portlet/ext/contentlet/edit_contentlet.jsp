@@ -46,10 +46,9 @@
 
 </style>
 
-<!-- 
-	Uncomment this when we are ready to use the new content fields
+<% if(Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD").equalsIgnoreCase("true")) {%>
 	<script src="/html/contenttype-fields.js"></script>
--->
+<% } %>
 
 <script type="text/javascript">
 
