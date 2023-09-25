@@ -18,7 +18,7 @@ const seoOGTagsResultOgMockTwitter = [
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'seo.rules.twitter-card.not.found',
+                message: '<code>twitter:card</code> meta tag not found!',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
@@ -32,7 +32,8 @@ const seoOGTagsResultOgMockTwitter = [
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'seo.rules.twitter-card.not.found',
+                message:
+                    '<code>twitter:title</code> meta tag not found! Showing HTML Title instead.',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
@@ -46,7 +47,8 @@ const seoOGTagsResultOgMockTwitter = [
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'seo.rules.twitter-card.not.found',
+                message:
+                    '<code>twitter:description</code> meta tag not found! Showing Description instead.',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
@@ -60,7 +62,7 @@ const seoOGTagsResultOgMockTwitter = [
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'og:image metatag not found!',
+                message: '<code>og:image</code> metatag not found!',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
@@ -118,7 +120,8 @@ const seoOGTagsResultMock = [
         keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
             {
-                message: 'og:title metatag found, with an appropriate amount of content!',
+                message:
+                    '<code>og:title</code> metatag found, with an appropriate amount of content!',
                 color: 'results-seo-tool__result-icon--alert-green',
                 itemIcon: 'pi-exclamation-circle'
             }
@@ -132,13 +135,27 @@ const seoOGTagsResultMock = [
         keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
             {
-                message: 'og:image metatag found, with an appropriate sized image!',
+                message: '<code>og:image</code> metatag found, with an appropriate sized image!',
                 color: 'results-seo-tool__result-icon--alert-green',
                 itemIcon: 'pi-exclamation-circle'
             }
         ],
         sort: 5,
         info: 'HTML Title content should be between 30 and 60 characters.'
+    },
+    {
+        key: 'Og:description',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message: 'Meta Description not found! Showing Description instead.',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 2,
+        info: "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed."
     },
     ...seoOGTagsResultOgMockTwitter
 ];
@@ -150,7 +167,8 @@ const seoOGTagsResultOgMock = [
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'og:description meta tag not found! Showing Meta Description instead.',
+                message:
+                    '<code>og:description</code> meta tag not found! Showing Meta Description instead.',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
@@ -164,7 +182,7 @@ const seoOGTagsResultOgMock = [
         keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
             {
-                message: 'og:image metatag found, with an appropriate sized image!',
+                message: '<code>og:image</code> metatag found, with an appropriate sized image!',
                 color: 'results-seo-tool__result-icon--alert-green',
                 itemIcon: 'pi-check'
             }
@@ -220,7 +238,8 @@ const seoOGTagsResultOgMock = [
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'og:description meta tag not found! Showing Meta Description instead.',
+                message:
+                    '<code>og:description</code> meta tag not found! Showing Meta Description instead.',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
@@ -234,7 +253,7 @@ const seoOGTagsResultOgMock = [
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'twitter:card meta tag not found!',
+                message: '<code>twitter:card</code> meta tag not found!',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
@@ -248,7 +267,8 @@ const seoOGTagsResultOgMock = [
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'twitter:card meta tag not found!',
+                message:
+                    '<code>twitter:title</code> meta tag not found! Showing HTML Title instead.',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
@@ -262,7 +282,8 @@ const seoOGTagsResultOgMock = [
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'twitter:card meta tag not found!',
+                message:
+                    '<code>twitter:description</code> meta tag not found! Showing Description instead.',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
@@ -276,12 +297,12 @@ const seoOGTagsResultOgMock = [
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'seo.rules.image.not.found',
+                message: '<code>twitter:image</code> meta tag not found!',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             },
             {
-                message: 'twitter:image meta tag found, but image is over 5 MB.',
+                message: '<code>twitter:image</code> meta tag found, but image is over 5 MB.',
                 color: 'results-seo-tool__result-icon--alert-green',
                 itemIcon: 'pi-check'
             }
