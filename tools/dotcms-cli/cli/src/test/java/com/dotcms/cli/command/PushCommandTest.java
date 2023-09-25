@@ -185,7 +185,7 @@ class PushCommandTest extends CommandTest {
             when(parseResult.expandedArgs()).
                     thenReturn(new ArrayList<>());
 
-            when(pushMixin.path()).thenReturn(tempFolder.toFile());
+            when(pushMixin.path()).thenReturn(tempFolder.toAbsolutePath());
 
             pushCommand.workspaceManager = workspaceManager;
             pushCommand.call();
