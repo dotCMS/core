@@ -147,28 +147,31 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
         Collections.sort(indices);
         Collections.reverse(indices);
-        setDefaultToSomePosition(indices, 0);
+        setDefaultToSpecificPosition(indices, 0);
         return indices;
     }
 
     /**
      * Set the default site search index to the specified position of the arraylist
      */
-    private void setDefaultToSomePosition(final List<String> list, final int indexPosition) {
+    private void setDefaultToSpecificPosition(final List<String> list, final int indexPosition) {
 
-        try {
-            //search the default site search index
-            final String defaultIndice = indiciesAPI.loadIndicies().getSiteSearch();
-            if (defaultIndice != null && !defaultIndice.isEmpty() && !list.isEmpty() ){
-                final int index = list.indexOf(defaultIndice);
-                //change the element defaultIndex to the first position of the arraylist if it is not yet
-                if (index != 0) {
-                    list.remove(index);
-                    list.add(indexPosition, defaultIndice);
+        if (list != null && list.size() > 1){
+
+            try {
+                //search the default site search index
+                final String defaultIndice = indiciesAPI.loadIndicies().getSiteSearch();
+                if (defaultIndice != null && !defaultIndice.isEmpty() && !list.isEmpty() ){
+                    final int index = list.indexOf(defaultIndice);
+                    //change the element defaultIndex to the first position of the arraylist if it is not yet
+                    if (index != 0) {
+                        list.remove(index);
+                        list.add(indexPosition, defaultIndice);
+                    }
                 }
+            } catch (DotDataException e) {
+                throw new RuntimeException(e);
             }
-        } catch (DotDataException e) {
-            throw new RuntimeException(e);
         }
     }
 
