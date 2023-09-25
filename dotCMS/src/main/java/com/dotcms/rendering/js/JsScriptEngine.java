@@ -5,6 +5,7 @@ import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.util.Logger;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 
@@ -19,6 +20,8 @@ import java.util.Map;
  * @author jsanca
  */
 public class JsScriptEngine implements ScriptEngine {
+
+    private static final String ENGINE_JS = "js";
     @Override
     public Object eval(final HttpServletRequest request,
                        final HttpServletResponse response,
@@ -26,11 +29,15 @@ public class JsScriptEngine implements ScriptEngine {
                        final Map<String, Object> contextParams) {
 
         final DotJSON dotJSON = (DotJSON)contextParams.getOrDefault("dotJSON", new DotJSON());
-        try (Context context = Context.create()) {
+        try (Context context = Context.newBuilder(ENGINE_JS)
+                //.allowHostAccess(HostAccess.ALL) // todo: ask if we want all access to the classpath
+                //allows access to all Java classes
+                //.allowHostClassLookup(className -> true)
+                .build()) {
 
             final Object fileName = contextParams.getOrDefault("dot:jsfilename", "sample.js");
-            final Source source   = Source.newBuilder("js", scriptReader, fileName.toString()).build();
-            final Value bindings  = context.getBindings("js");
+            final Source source   = Source.newBuilder(ENGINE_JS, scriptReader, fileName.toString()).build();
+            final Value bindings  = context.getBindings(ENGINE_JS);
             contextParams.entrySet().forEach(entry -> bindings.putMember(entry.getKey(), entry.getValue()));
             this.addTools(request, response, bindings, contextParams);
 
@@ -39,7 +46,7 @@ public class JsScriptEngine implements ScriptEngine {
             bindings.putMember("response", response);
             Value eval   = context.eval(source);
             if (eval.canExecute()) {
-                 eval = eval.execute();
+                eval = contextParams.containsKey("dot:arguments")?eval.execute((Object[])contextParams.get("dot:arguments")): eval.execute();
             }
             return CollectionsUtils.map("output", eval.asString(), "dotJSON", dotJSON);
         } catch (final IOException e) {

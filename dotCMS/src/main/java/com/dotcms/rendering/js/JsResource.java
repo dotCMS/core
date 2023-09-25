@@ -528,7 +528,7 @@ public class JsResource {
                     .setPageMode(PageMode.get(request))
                     .build();
 
-            // todo: here should be use graalvm
+
             final JavascriptReader javascriptReader = JavascriptReaderFactory.getJavascriptReader(UtilMethods.isSet(folderName));
 
             final Map<String, Object> contextParams = CollectionsUtils.map(
@@ -579,8 +579,8 @@ public class JsResource {
                 }
 
                 return UtilMethods.isSet(contentType)
-                        ? Response.ok(result.toString()).type(contentType).build()
-                        : Response.ok(result.toString()).type(MediaType.TEXT_PLAIN_TYPE).build();
+                        ? Response.ok(resultToString(result)).type(contentType).build()
+                        : Response.ok(resultToString(result)).type(MediaType.TEXT_PLAIN_TYPE).build();
 
             }
         } catch(MethodInvocationException e) {
@@ -598,6 +598,17 @@ public class JsResource {
         // let's add it to cache
         cache.add(request, user, dotJSON);
         return Response.ok(dotJSON.getMap()).build();
+    }
+
+    private String resultToString(final Object result) {
+        if (result instanceof Map) {
+
+            final Map map = Map.class.cast(result);
+            if (map.containsKey("output")) {
+                return map.get("output").toString();
+            }
+        }
+        return result.toString();
     }
 
     private Map<String, Object> getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
