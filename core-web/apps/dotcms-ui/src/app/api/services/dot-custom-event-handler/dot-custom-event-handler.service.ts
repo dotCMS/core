@@ -60,7 +60,9 @@ export class DotCustomEventHandlerService {
                         'edit-contentlet': contentEditorFeatureFlag
                             ? this.editContentlet.bind(this)
                             : this.editContentletLegacy.bind(this),
-                        'edit-task': this.editTask.bind(this),
+                        'edit-task': contentEditorFeatureFlag
+                            ? this.editTask.bind(this)
+                            : this.editTaskLegacy.bind(this),
                         'create-contentlet': contentEditorFeatureFlag
                             ? this.createContentlet.bind(this)
                             : this.createContentletLegacy.bind(this),
@@ -121,8 +123,12 @@ export class DotCustomEventHandlerService {
         this.router.navigate([`edit-content/${$event.detail.data.inode}`]);
     }
 
-    private editTask($event: CustomEvent): void {
+    private editTaskLegacy($event: CustomEvent): void {
         this.dotRouterService.goToEditTask($event.detail.data.inode);
+    }
+
+    private editTask($event: CustomEvent): void {
+        this.router.navigate([`edit-content/${$event.detail.data.inode}`]);
     }
 
     private setPersonalization($event: CustomEvent): void {
