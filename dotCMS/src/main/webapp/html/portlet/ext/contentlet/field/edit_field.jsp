@@ -655,8 +655,8 @@
 
 
         <%
-            String featureFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
-            if (featureFlag != null && featureFlag.equalsIgnoreCase("true")) {
+            String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+            if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
         %>
             
             <%
