@@ -14,8 +14,8 @@
         <dot-edit-page-toolbar-seo
             class="dot-edit__toolbar"
             [pageState]="pageState"
-            [variant]="variantData | async"
             [runningExperiment]="pageState.state.runningExperiment"
+            [variant]="variantData | async"
             (actionFired)="reload($event)"
             (backToExperiment)="backToExperiment()"
             (cancel)="onCancelToolbar()"
@@ -27,8 +27,8 @@
         <dot-edit-page-toolbar
             class="dot-edit__toolbar"
             [pageState]="pageState"
-            [variant]="variantData | async"
             [runningExperiment]="pageState.state.runningExperiment"
+            [variant]="variantData | async"
             (actionFired)="reload($event)"
             (backToExperiment)="backToExperiment()"
             (cancel)="onCancelToolbar()"
@@ -44,10 +44,10 @@
         <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
         <dot-results-seo-tool
             *ngIf="pageState.seoMedia; else dotEditIframe"
-            [seoOGTagsResults]="seoOGTagsResults"
-            [seoOGTags]="seoOGTags"
             [hostName]="pageState.page.hostName"
-            [seoMedia]="pageState.seoMedia"></dot-results-seo-tool>
+            [seoMedia]="pageState.seoMedia"
+            [seoOGTagsResults]="seoOGTagsResults"
+            [seoOGTags]="seoOGTags"></dot-results-seo-tool>
         <ng-template #dotEditIframe>
             <div
                 class="dot-edit__page-wrapper"

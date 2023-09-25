@@ -18,6 +18,8 @@ import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatus,
+    DotPageRenderState,
+    DotPageState,
     ExperimentSteps,
     Goal,
     Goals,
@@ -44,6 +46,7 @@ export interface DotExperimentsConfigurationState {
     hasEnterpriseLicense: boolean;
     addToBundleContentId: string;
     pushPublishEnvironments: DotEnvironment[];
+    dotPageRenderState: DotPageRenderState;
 }
 
 const initialState: DotExperimentsConfigurationState = {
@@ -57,7 +60,8 @@ const initialState: DotExperimentsConfigurationState = {
     configProps: null,
     hasEnterpriseLicense: false,
     addToBundleContentId: null,
-    pushPublishEnvironments: null
+    pushPublishEnvironments: null,
+    dotPageRenderState: null
 };
 
 export interface ConfigurationViewModel {
@@ -72,6 +76,15 @@ export interface ConfigurationViewModel {
     isDescriptionSaving: boolean;
     menuItems: MenuItem[];
     addToBundleContentId: string;
+}
+
+export interface ConfigurationVariantStepViewModel {
+    experimentId: string;
+    trafficProportion: TrafficProportion;
+    status: StepStatus;
+    isExperimentADraft: boolean;
+    canLockPage: boolean;
+    pageSate: DotPageState;
 }
 
 @Injectable()
@@ -791,21 +804,19 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         })
     );
 
-    readonly variantsStepVm$: Observable<{
-        experimentId: string;
-        trafficProportion: TrafficProportion;
-        status: StepStatus;
-        isExperimentADraft: boolean;
-    }> = this.select(
+    readonly variantsStepVm$: Observable<ConfigurationVariantStepViewModel> = this.select(
+        this.state$,
         this.getExperimentId$,
         this.trafficProportion$,
         this.variantsStatus$,
         this.isExperimentADraft$,
-        (experimentId, trafficProportion, status, isExperimentADraft) => ({
+        ({ dotPageRenderState }, experimentId, trafficProportion, status, isExperimentADraft) => ({
             experimentId,
             trafficProportion,
             status,
-            isExperimentADraft
+            isExperimentADraft,
+            canLockPage: dotPageRenderState.page.canLock,
+            pageSate: dotPageRenderState.state
         })
     );
 
@@ -902,10 +913,17 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly confirmationService: ConfirmationService,
         private readonly dotPushPublishDialogService: DotPushPublishDialogService
     ) {
+        const dotPageRenderState = route.parent.parent.parent.snapshot.data['content'];
         const configProps = route.snapshot.data['config'];
         const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
         const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
-        super({ ...initialState, hasEnterpriseLicense, configProps, pushPublishEnvironments });
+        super({
+            ...initialState,
+            hasEnterpriseLicense,
+            configProps,
+            pushPublishEnvironments,
+            dotPageRenderState
+        });
     }
 
     private updateTabTitle(experiment: DotExperiment) {
