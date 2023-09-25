@@ -90,6 +90,7 @@ public class FormatStatus {
         String contentName;
         switch (result.action()) {
             case ADD:
+
                 contentFormat = PUSH_NEW_FORMAT;
 
                 if (result.localFile().isPresent()) {
@@ -101,6 +102,7 @@ public class FormatStatus {
                 }
                 break;
             case UPDATE:
+
                 contentFormat = PUSH_MODIFIED_FORMAT;
 
                 if (result.localFile().isPresent()) {
@@ -112,6 +114,7 @@ public class FormatStatus {
                 }
                 break;
             case REMOVE:
+
                 contentFormat = PUSH_DELETE_FORMAT;
 
                 if (result.serverContent().isPresent()) {
@@ -123,6 +126,7 @@ public class FormatStatus {
                 }
                 break;
             case NO_ACTION:
+
                 contentFormat = REGULAR_FORMAT;
 
                 if (result.localFile().isPresent()) {

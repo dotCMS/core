@@ -127,12 +127,13 @@ public class ProcessResultTask<T> extends RecursiveAction {
             }
         } catch (Exception e) {
 
-            String message;
+            var message = String.format("Error pushing content for operation [%s]",
+                    result.action());
             if (result.localFile().isPresent()) {
                 message = String.format("Error pushing file [%s] for operation [%s] - [%s]",
                         result.localFile().get().getAbsolutePath(), result.action(),
                         e.getMessage());
-            } else {
+            } else if (result.serverContent().isPresent()) {
                 message = String.format("Error pushing [%s] for operation [%s] - [%s]",
                         this.pushHandler.contentSimpleDisplay(result.serverContent().get()),
                         result.action(), e.getMessage());
