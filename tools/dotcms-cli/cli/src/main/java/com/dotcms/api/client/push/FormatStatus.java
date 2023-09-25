@@ -8,6 +8,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.enterprise.context.Dependent;
+import javax.inject.Inject;
+import org.jboss.logging.Logger;
 
 /**
  * The {@code FormatStatus} class is responsible for formatting the status of a push operation. It
@@ -30,6 +32,9 @@ public class FormatStatus {
     private final String PUSH_NEW_FORMAT = "@|bold," + COLOR_NEW + " %s \u2795|@";
     private final String PUSH_MODIFIED_FORMAT = "@|bold," + COLOR_MODIFIED + " %s \u270E|@";
     private final String PUSH_DELETE_FORMAT = "@|bold," + COLOR_DELETED + " %s \u2716|@";
+
+    @Inject
+    Logger logger;
 
     /**
      * Formats the push analysis results using the specified push handler.
@@ -86,19 +91,47 @@ public class FormatStatus {
         switch (result.action()) {
             case ADD:
                 contentFormat = PUSH_NEW_FORMAT;
-                contentName = result.localFile().get().getName();
+
+                if (result.localFile().isPresent()) {
+                    contentName = result.localFile().get().getName();
+                } else {
+                    var message = "Local file is missing for add action";
+                    logger.error(message);
+                    throw new PushException(message);
+                }
                 break;
             case UPDATE:
                 contentFormat = PUSH_MODIFIED_FORMAT;
-                contentName = result.localFile().get().getName();
+
+                if (result.localFile().isPresent()) {
+                    contentName = result.localFile().get().getName();
+                } else {
+                    var message = "Local file is missing for update action";
+                    logger.error(message);
+                    throw new PushException(message);
+                }
                 break;
             case REMOVE:
                 contentFormat = PUSH_DELETE_FORMAT;
-                contentName = pushHandler.contentSimpleDisplay(result.serverContent().get());
+
+                if (result.serverContent().isPresent()) {
+                    contentName = pushHandler.contentSimpleDisplay(result.serverContent().get());
+                } else {
+                    var message = "Server content is missing for remove action";
+                    logger.error(message);
+                    throw new PushException(message);
+                }
                 break;
             case NO_ACTION:
                 contentFormat = REGULAR_FORMAT;
-                contentName = result.localFile().get().getName();
+
+                if (result.localFile().isPresent()) {
+                    contentName = result.localFile().get().getName();
+                } else {
+                    var message = "Local file is missing";
+                    logger.error(message);
+                    throw new PushException(message);
+                }
                 break;
             default:
                 throw new PushException("Unknown action: " + result.action());

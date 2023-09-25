@@ -28,11 +28,19 @@ public class LanguagePushHandler implements PushHandler<Language> {
 
     @Override
     public String contentSimpleDisplay(Language language) {
-        return String.format(
-                "id: [%s] code: [%s]",
-                language.id().get(),
-                language.isoCode()
-        );
+        
+        if (language.id().isPresent()) {
+            return String.format(
+                    "id: [%s] code: [%s]",
+                    language.id().get(),
+                    language.isoCode()
+            );
+        } else {
+            return String.format(
+                    "code: [%s]",
+                    language.isoCode()
+            );
+        }
     }
 
     @ActivateRequestContext

@@ -25,7 +25,7 @@ public class ProcessResultTask<T> extends RecursiveAction {
 
     final boolean allowRemove;
 
-    private Logger logger;
+    private final Logger logger;
 
     public ProcessResultTask(final PushAnalysisResult<T> result, final boolean allowRemove,
             final PushHandler<T> pushHandler, final MapperService mapperService,
@@ -61,15 +61,27 @@ public class ProcessResultTask<T> extends RecursiveAction {
                     logger.debug(String.format("Pushing file [%s] for [%s] operation",
                             result.localFile().get().getAbsolutePath(), result.action()));
 
-                    this.pushHandler.add(result.localFile().get(), localContent);
+                    if (result.localFile().isPresent()) {
+                        this.pushHandler.add(result.localFile().get(), localContent);
+                    } else {
+                        var message = "Local file is missing for add action";
+                        logger.error(message);
+                        throw new PushException(message);
+                    }
                     break;
                 case UPDATE:
 
                     logger.debug(String.format("Pushing file [%s] for [%s] operation",
                             result.localFile().get().getAbsolutePath(), result.action()));
 
-                    this.pushHandler.edit(result.localFile().get(), localContent,
-                            result.serverContent().get());
+                    if (result.localFile().isPresent() && result.serverContent().isPresent()) {
+                        this.pushHandler.edit(result.localFile().get(), localContent,
+                                result.serverContent().get());
+                    } else {
+                        String message = "Local file or server content is missing for update action";
+                        logger.error(message);
+                        throw new PushException(message);
+                    }
                     break;
                 case REMOVE:
 
@@ -82,13 +94,30 @@ public class ProcessResultTask<T> extends RecursiveAction {
                                 )
                         );
 
-                        this.pushHandler.remove(result.serverContent().get());
+                        if (result.serverContent().isPresent()) {
+
+                            logger.debug(
+                                    String.format("Pushing [%s] operation for [%s]",
+                                            result.action(),
+                                            this.pushHandler.contentSimpleDisplay(
+                                                    result.serverContent().get())
+                                    )
+                            );
+
+                            this.pushHandler.remove(result.serverContent().get());
+                        } else {
+                            var message = "Server content is missing for remove action";
+                            logger.error(message);
+                            throw new PushException(message);
+                        }
                     }
                     break;
                 case NO_ACTION:
 
-                    logger.debug(String.format("File [%s] requires no action",
-                            result.localFile().get().getAbsolutePath()));
+                    if (result.localFile().isPresent()) {
+                        logger.debug(String.format("File [%s] requires no action",
+                                result.localFile().get().getAbsolutePath()));
+                    }
 
                     // Do nothing for now
                     break;
