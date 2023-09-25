@@ -32,6 +32,7 @@ import {
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 import { DotValidators } from '@shared/validators/dotValidators';
 
+import { DotExperimentsTrimInputDirective } from '../../../shared/ui/directives/dot-experiment-trim-input/dot-experiments-trim-input.directive';
 import { DotExperimentsOptionsModule } from '../../../shared/ui/dot-experiment-options/dot-experiments-options.module';
 import { DotExperimentsGoalConfigurationReachPageComponent } from '../../../shared/ui/dot-experiments-goal-configuration-reach-page/dot-experiments-goal-configuration-reach-page.component';
 import { DotExperimentsGoalConfigurationUrlParameterComponentComponent } from '../../../shared/ui/dot-experiments-goal-configuration-url-parameter-component/dot-experiments-goal-configuration-url-parameter-component.component';
@@ -59,7 +60,8 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         DropdownModule,
         DotExperimentsGoalConfigurationReachPageComponent,
         DotExperimentsGoalConfigurationUrlParameterComponentComponent,
-        DotExperimentsGoalsComingSoonComponent
+        DotExperimentsGoalsComingSoonComponent,
+        DotExperimentsTrimInputDirective
     ],
     templateUrl: './dot-experiments-configuration-goal-select.component.html',
     styleUrls: ['./dot-experiments-configuration-goal-select.component.scss'],

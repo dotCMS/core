@@ -16,6 +16,7 @@ import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.dir
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 import { DotValidators } from '@shared/validators/dotValidators';
 
+import { DotExperimentsTrimInputDirective } from '../../../shared/ui/directives/dot-experiment-trim-input/dot-experiments-trim-input.directive';
 import {
     DotExperimentsListStore,
     VmCreateExperiments
@@ -44,7 +45,8 @@ interface CreateForm {
         InputTextModule,
         SidebarModule,
         ButtonModule,
-        DotFieldRequiredDirective
+        DotFieldRequiredDirective,
+        DotExperimentsTrimInputDirective
     ],
     templateUrl: './dot-experiments-create.component.html',
     styleUrls: ['./dot-experiments-create.component.scss'],
