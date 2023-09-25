@@ -25,7 +25,7 @@ public class JsScriptEngine implements ScriptEngine {
                        final Reader scriptReader,
                        final Map<String, Object> contextParams) {
 
-        final DotJSON dotJSON = new DotJSON();
+        final DotJSON dotJSON = (DotJSON)contextParams.getOrDefault("dotJSON", new DotJSON());
         try (Context context = Context.create()) {
 
             final Object fileName = contextParams.getOrDefault("dot:jsfilename", "sample.js");
