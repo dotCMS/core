@@ -10,7 +10,10 @@ import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Map;
@@ -42,8 +45,8 @@ public class JsScriptEngine implements ScriptEngine {
             this.addTools(request, response, bindings, contextParams);
 
             bindings.putMember("dotJSON", dotJSON);
-            bindings.putMember("request", request);
-            bindings.putMember("response", response);
+            bindings.putMember("request",  wrapRequest(request));
+            bindings.putMember("response", wrapResponse(response));
             Value eval   = context.eval(source);
             if (eval.canExecute()) {
                 eval = contextParams.containsKey("dot:arguments")?eval.execute((Object[])contextParams.get("dot:arguments")): eval.execute();
@@ -55,6 +58,15 @@ public class JsScriptEngine implements ScriptEngine {
             throw new RuntimeException(e);
         }
     }
+
+     Object wrapResponse(final HttpServletResponse response) {
+        return new HttpServletResponseWrapper(response) {
+         };
+    }
+
+     Object wrapRequest(final HttpServletRequest request) {
+        return new JsHttpRequest(request);
+     }
 
     private void addTools(final HttpServletRequest request,
                           final HttpServletResponse response,
