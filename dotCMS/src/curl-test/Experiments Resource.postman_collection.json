@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8d0496a9-888b-4463-9f50-fcb286b3e33e",
+		"_postman_id": "913d9c0c-2c6a-41f9-950b-c921cda22875",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "1549189"
@@ -11222,8 +11222,8 @@
 											"pm.test(\"Ended Experiment with expected values\", function () {",
 											"    pm.response.to.have.status(200);",
 											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
-											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
-											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.null;",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.null;",
 											"});",
 											"",
 											"",
@@ -11574,8 +11574,8 @@
 											"pm.test(\"Ended Experiment with expected values\", function () {",
 											"    pm.response.to.have.status(200);",
 											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
-											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
-											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.null;",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.null;",
 											"});",
 											"",
 											"",

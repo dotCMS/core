@@ -10,7 +10,7 @@
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
-    <artifactId>core-web</artifactId>
+    <artifactId>dotcms-core-web</artifactId>
     <packaging>war</packaging>
 
     <properties>
@@ -22,8 +22,10 @@
         <npm.version>8.5.1</npm.version>
         <maven.plugin.cargo.version>1.9.0</maven.plugin.cargo.version>
         <cargo.tomcat.major.version>9</cargo.tomcat.major.version>
-        <nx.build.options>--prod</nx.build.options>
+        <nx.build.options></nx.build.options>
         <cargo.server.port>8084</cargo.server.port>
+        <npm.install.cmd>install</npm.install.cmd>
+        <skip.npm.install>false</skip.npm.install>
     </properties>
 
     <dependencies>
@@ -123,7 +125,8 @@
                         <phase>generate-resources</phase>
 
                         <configuration>
-                            <arguments>install --registry=https://dotcms-npm.b-cdn.net</arguments>
+                            <skip>${skip.npm.install}</skip>
+                            <arguments>${npm.install.cmd} --registry=https://dotcms-npm.b-cdn.net</arguments>
                         </configuration>
                     </execution>
                     <execution>
@@ -224,14 +227,15 @@
 
     <profiles>
         <profile>
-            <id>dev</id>
+            <id>prod</id>
             <activation>
                 <property>
-                    <name>dev</name>
+                    <name>prod</name>
                 </property>
             </activation>
             <properties>
-                <nx.build.options>-dev</nx.build.options>
+                <nx.build.options>--prod</nx.build.options>
+                <npm.install.cmd>ci --no-progress</npm.install.cmd>
             </properties>
             <build>
             </build>

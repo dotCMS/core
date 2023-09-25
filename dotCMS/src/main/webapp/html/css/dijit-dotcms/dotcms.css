@@ -8896,6 +8896,7 @@ Styles for commons fields along the backend
   justify-content: center;
   gap: 0.25rem;
   text-decoration: none;
+  border:1px solid rgba(0,0,0,0.1);
 }
 .tagLink.persona:before {
   content: "\f007";
