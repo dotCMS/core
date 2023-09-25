@@ -10,7 +10,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>maven-plugins</artifactId>
+    <artifactId>dotcms-maven-plugins</artifactId>
     <packaging>pom</packaging>
     <modules>
         <module>generate-gradle-dependencies</module>
