@@ -38,6 +38,10 @@ import {
     processExperimentConfigProps
 } from '../../shared/dot-experiment.utils';
 
+export const EXP_CONFIG_ERROR_LABEL_CANT_EDIT = 'experiment.configure.edit.only.draft.status';
+
+export const EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED = 'experiment.configure.edit.page.blocked';
+
 export interface DotExperimentsConfigurationState {
     experiment: DotExperiment;
     status: ComponentStatus;
@@ -993,10 +997,10 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         experiment: DotExperiment,
         dotPageRenderState: DotPageRenderState
     ): string | null {
-        return experiment?.status === DotExperimentStatus.RUNNING
-            ? 'experiment.configure.edit.only.draft.status'
+        return experiment?.status !== DotExperimentStatus.DRAFT
+            ? EXP_CONFIG_ERROR_LABEL_CANT_EDIT
             : dotPageRenderState.state.lockedByAnotherUser
-            ? 'experiment.configure.edit.page.blocked'
+            ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED
             : null;
     }
 

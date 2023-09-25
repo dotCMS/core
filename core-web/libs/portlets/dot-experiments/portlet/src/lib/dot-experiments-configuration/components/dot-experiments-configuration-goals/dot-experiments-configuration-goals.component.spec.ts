@@ -11,6 +11,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { Card } from 'primeng/card';
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -138,6 +139,15 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
             expect(addButton.disabled).toBe(true);
             expect(spectator.query(DotExperimentsDetailsTableComponent)).toExist();
+        });
+
+        test('should disable the button of add goal if there is an error', () => {
+            spectator.component.vm$ = of(getVmMock(null, 'error'));
+            spectator.detectComponentChanges();
+
+            const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
+            expect(addButton.disabled).toBe(true);
+            expect(spectator.query(Tooltip).disabled).toEqual(false);
         });
 
         test('should call openSelectGoalSidebar if you click the add goal button', () => {

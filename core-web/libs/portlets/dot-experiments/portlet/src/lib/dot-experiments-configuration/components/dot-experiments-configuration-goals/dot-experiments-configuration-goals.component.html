@@ -79,7 +79,7 @@
         <ng-template pTemplate="footer">
             <div
                 [pTooltip]="vm.disabledTooltipLabel | dm"
-                [tooltipDisabled]="vm.isExperimentADraft || !!vm.goals || !vm.disabledTooltipLabel"
+                [tooltipDisabled]="!!vm.goals || !vm.disabledTooltipLabel"
                 data-testId="tooltip-on-disabled"
                 tooltipPosition="bottom">
                 <button

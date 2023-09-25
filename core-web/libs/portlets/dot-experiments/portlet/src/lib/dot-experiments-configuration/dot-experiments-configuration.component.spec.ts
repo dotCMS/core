@@ -160,6 +160,18 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
     });
 
+    it('shouldn disable edit the name if there is an error label', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            isExperimentADraft: true,
+            disabledTooltipLabel: 'error'
+        });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
+        expect(spectator.query(DotExperimentsInlineEditTextComponent).disabled).toEqual(true);
+    });
+
     it('should show End Experiment after confirmation', () => {
         jest.spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
         dotExperimentsService.stop.mockReturnValue(of());
