@@ -91,12 +91,15 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
 
     readonly dotPageMode = DotPageMode;
 
-    private readonly menuOpenActions: Record<DotPageMode, (event: PointerEvent) => void> = {
+    private readonly menuOpenActions: Record<
+        DotPageMode,
+        (event: PointerEvent, target?: HTMLElement) => void
+    > = {
         [DotPageMode.EDIT]: (event: PointerEvent) => {
             this.menu.toggle(event);
         },
-        [DotPageMode.PREVIEW]: (event: PointerEvent) => {
-            this.deviceSelector.openMenu(event);
+        [DotPageMode.PREVIEW]: (event: PointerEvent, target: HTMLElement) => {
+            this.deviceSelector.openMenu(event, target);
         },
         [DotPageMode.LIVE]: (_: PointerEvent) => {
             // No logic
@@ -246,8 +249,16 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
      * @param {{ event: PointerEvent; menuId: string }} { event, menuId }
      * @memberof DotEditPageStateControllerSeoComponent
      */
-    handleMenuOpen({ event, menuId }: { event: PointerEvent; menuId: string }): void {
-        this.menuOpenActions[menuId as DotPageMode]?.(event);
+    handleMenuOpen({
+        event,
+        menuId,
+        target
+    }: {
+        event: PointerEvent;
+        menuId: string;
+        target: HTMLElement;
+    }): void {
+        this.menuOpenActions[menuId as DotPageMode]?.(event, target);
     }
 
     /**
