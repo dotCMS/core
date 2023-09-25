@@ -565,7 +565,7 @@ if (project.gradle.startParameter.taskNames.contains("generateDependenciesFromMa
 }
 
 task unpackMavenUI(type: Copy) {
-       from(zipTree("${project.projectDir}/../core-web/target/core-web-${mavenUiVersion}.war")) {
+       from(zipTree("${project.projectDir}/../core-web/target/dotcms-core-web-${mavenUiVersion}.war")) {
                 include "dotAdmin/**"
                 include "dotcms-webcomponents/**"
                 includeEmptyDirs = true
