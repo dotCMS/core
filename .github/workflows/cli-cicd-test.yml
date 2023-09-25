@@ -22,7 +22,7 @@ on:
       - '!dotCMS/src/main/webapp/html'
       - 'pom.xml'
       - 'tools/**'
-      - '!core-web'
+
   pull_request:
     paths:
       - '.cicd/**'
@@ -34,7 +34,7 @@ on:
       - '!dotCMS/src/main/webapp/html'
       - 'pom.xml'
       - 'tools/**'
-      - '!core-web'
+
 jobs:
   cli_tests:
     name: CLI tests
