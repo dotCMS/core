@@ -31,7 +31,7 @@
                     <div class="flex flex-grow-1 flex-row align-items-center gap-2">
                         <ng-container
                             *ngIf="
-                                variant.name === defaultVariantName || !vm.isExperimentADraft;
+                                variant.name === defaultVariantName || vm.disabledTooltipLabel;
                                 else editVariantNameTpl
                             ">
                             <span data-testId="variant-name-original"> {{ variant.name }} </span>
