@@ -202,29 +202,40 @@ class SiteCommandIntegrationTest extends CommandTest {
     @Test
     @Order(6)
     void Test_Create_From_File_via_Push() throws IOException {
-        final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
-        String siteDescriptor = String.format("{\n"
-                + "  \"siteName\" : \"%s\",\n"
-                + "  \"languageId\" : 1,\n"
-                + "  \"modDate\" : \"2023-05-05T00:13:25.242+00:00\",\n"
-                + "  \"modUser\" : \"dotcms.org.1\",\n"
-                + "  \"live\" : true,\n"
-                + "  \"working\" : true\n"
-                + "}", newSiteName);
 
-        final Path path = Files.createTempFile("test", "json");
-        Files.write(path, siteDescriptor.getBytes());
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            commandLine.setErr(out);
-            int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                    path.toFile().getAbsolutePath());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
 
-            status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+        try {
+            final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+            final String newSiteName = String.format("new.dotcms.site%d",
+                    System.currentTimeMillis());
+            String siteDescriptor = String.format("{\n"
+                    + "  \"siteName\" : \"%s\",\n"
+                    + "  \"languageId\" : 1,\n"
+                    + "  \"modDate\" : \"2023-05-05T00:13:25.242+00:00\",\n"
+                    + "  \"modUser\" : \"dotcms.org.1\",\n"
+                    + "  \"live\" : true,\n"
+                    + "  \"working\" : true\n"
+                    + "}", newSiteName);
+
+            final var path = Path.of(workspace.sites().toString(), "test.json");
+            Files.write(path, siteDescriptor.getBytes());
+            final CommandLine commandLine = createCommand();
+            final StringWriter writer = new StringWriter();
+            try (PrintWriter out = new PrintWriter(writer)) {
+                commandLine.setOut(out);
+                commandLine.setErr(out);
+                int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                        path.toFile().getAbsolutePath());
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
+                Assertions.assertEquals(ExitCode.OK, status);
+            }
+        } finally {
+            deleteTempDirectory(tempFolder);
         }
     }
 
@@ -359,8 +370,7 @@ class SiteCommandIntegrationTest extends CommandTest {
 
             // And now pushing the site back to the server to make sure the structure is still correct
             status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                    siteFilePath.toAbsolutePath().toString(), "-fmt",
-                    InputOutputFormat.YAML.toString());
+                    siteFilePath.toAbsolutePath().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
         } finally {
