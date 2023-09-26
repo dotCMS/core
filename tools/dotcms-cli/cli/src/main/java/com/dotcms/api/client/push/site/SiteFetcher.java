@@ -7,6 +7,7 @@ import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.Site;
 import com.dotcms.model.site.SiteView;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.enterprise.context.Dependent;
@@ -79,6 +80,14 @@ public class SiteFetcher implements ContentFetcher<SiteView> {
      */
     private SiteView toView(final Site site) {
 
+        // The `getSites` method does not return certain fields. Hence, we are setting them here.
+        // The Sites API inconsistently returns a mix of "SiteView" and "Site" objects.
+        // To streamline this, we are using "SiteView" as much as possible, which requires setting
+        // some placeholders. These placeholders are not used by the push command and are safe to set.
+        var dummyLanguage = 1L;
+        var dummyUser = "dummyUser";
+        var dummyDate = new Date();
+
         return SiteView.builder()
                 .identifier(site.identifier())
                 .inode(site.inode())
@@ -89,6 +98,9 @@ public class SiteFetcher implements ContentFetcher<SiteView> {
                 .isArchived(site.isArchived())
                 .isLive(site.isLive())
                 .isWorking(site.isWorking())
+                .languageId(dummyLanguage)
+                .modUser(dummyUser)
+                .modDate(dummyDate)
                 .build();
     }
 

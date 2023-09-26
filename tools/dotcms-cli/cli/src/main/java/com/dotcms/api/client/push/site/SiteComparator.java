@@ -43,6 +43,9 @@ public class SiteComparator implements ContentComparator<SiteView> {
     @Override
     public boolean contentEquals(SiteView localSite, SiteView serverContent) {
 
+        // Validation to make sure the equals method works as expected
+        localSite = setDefaultsForNoValue(localSite);
+
         // Looking for the site in the server by identifier, this call is necessary because the
         // serverContent comes from the `getSites` call which doesn't return all the fields.
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
@@ -72,6 +75,43 @@ public class SiteComparator implements ContentComparator<SiteView> {
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Sets default empty values for a SiteView object.
+     *
+     * @param site the SiteView object for which the default empty values need to be set
+     * @return the SiteView object with default empty values set
+     */
+    private SiteView setDefaultsForNoValue(SiteView site) {
+
+        // Validation to make sure the equals method works as expected
+        if (site.systemHost() == null) {
+            site = site.withSystemHost(false);
+        }
+        if (site.siteThumbnail() == null) {
+            site = site.withSiteThumbnail("");
+        }
+        if (site.runDashboard() == null) {
+            site = site.withRunDashboard(false);
+        }
+        if (site.isDefault() == null) {
+            site = site.withIsDefault(false);
+        }
+        if (site.isArchived() == null) {
+            site = site.withIsArchived(false);
+        }
+        if (site.isLive() == null) {
+            site = site.withIsLive(false);
+        }
+        if (site.isWorking() == null) {
+            site = site.withIsWorking(false);
+        }
+        if (site.isLocked() == null) {
+            site = site.withIsLocked(false);
+        }
+
+        return site;
     }
 
 }
