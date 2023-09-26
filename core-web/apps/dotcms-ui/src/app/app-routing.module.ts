@@ -97,7 +97,7 @@ const PORTLETS_ANGULAR = [
     },
     {
         canActivate: [EditContentGuard],
-        path: 'edit-content',
+        path: 'content',
         loadChildren: () => import('@dotcms/edit-content').then((m) => m.DotEditContentRoutes)
     },
     {

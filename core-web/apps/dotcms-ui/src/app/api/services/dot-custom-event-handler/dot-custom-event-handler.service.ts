@@ -104,7 +104,7 @@ export class DotCustomEventHandlerService {
     }
 
     private createContentlet(event: CustomEvent): void {
-        this.router.navigate([`edit-content/new/${event.detail.data.contentType}`]);
+        this.router.navigate([`content/new/${event.detail.data.contentType}`]);
     }
 
     private goToEditPage($event: CustomEvent<DotCMSEditPageEvent>): void {
@@ -121,7 +121,7 @@ export class DotCustomEventHandlerService {
     }
 
     private editContentlet($event: CustomEvent): void {
-        this.router.navigate([`edit-content/${$event.detail.data.inode}`]);
+        this.router.navigate([`content/${$event.detail.data.inode}`]);
     }
 
     private editTaskLegacy($event: CustomEvent): void {
@@ -129,7 +129,7 @@ export class DotCustomEventHandlerService {
     }
 
     private editTask($event: CustomEvent): void {
-        this.router.navigate([`edit-content/${$event.detail.data.inode}`]);
+        this.router.navigate([`content/${$event.detail.data.inode}`]);
     }
 
     private setPersonalization($event: CustomEvent): void {

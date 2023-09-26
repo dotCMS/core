@@ -772,7 +772,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         : this.dotMessageService.get('View'),
                 command: () => {
                     this.get().isContentEditor2Enabled
-                        ? this.dotRouterService.goToURL(`edit-content/${item.inode}`)
+                        ? this.dotRouterService.goToURL(`content/${item.inode}`)
                         : this.dotRouterService.goToEditContentlet(item.inode);
                 }
             });
