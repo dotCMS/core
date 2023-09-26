@@ -2,7 +2,7 @@ import { Observable, of as observableOf } from 'rxjs';
 
 import { DOCUMENT } from '@angular/common';
 import { Component, Inject, Input, OnChanges } from '@angular/core';
-import { ActivatedRoute, Params, Router } from '@angular/router';
+import { ActivatedRoute, Params } from '@angular/router';
 
 import { map } from 'rxjs/operators';
 
@@ -47,7 +47,6 @@ export class DotEditPageNavComponent implements OnChanges {
         private dotContentletEditorService: DotContentletEditorService,
         private dotMessageService: DotMessageService,
         private readonly route: ActivatedRoute,
-        private router: Router,
         @Inject(DOCUMENT) private document: Document
     ) {}
 
@@ -95,15 +94,11 @@ export class DotEditPageNavComponent implements OnChanges {
                 icon: 'more_horiz',
                 label: this.dotMessageService.get('editpage.toolbar.nav.properties'),
                 action: (inode: string) => {
-                    this.route.snapshot.data?.featuredFlags[
-                        FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE
-                    ]
-                        ? this.router.navigate([`edit-content/${inode}`])
-                        : this.dotContentletEditorService.edit({
-                              data: {
-                                  inode: inode
-                              }
-                          });
+                    this.dotContentletEditorService.edit({
+                        data: {
+                            inode: inode
+                        }
+                    });
                 }
             }
         ];
