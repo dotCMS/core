@@ -121,3 +121,4 @@ This maintenance release includes the following code fixes:
 97. https://github.com/dotCMS/core/issues/24294 : Implement Redisson Session sharing #24294
 98. https://github.com/dotCMS/core/issues/24990 : Punch List : Redis Session Manager #24990
 99. https://github.com/dotCMS/core/issues/25570 : Redis / Session-less testing and improvements #25570
+100.    https://github.com/dotCMS/core/issues/21855 : Unable to save content of a Widget with WYSIWYG Code view #21855

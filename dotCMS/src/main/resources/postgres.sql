@@ -777,7 +777,7 @@ create table permission (
 	sort_order int4,
 	friendly_name varchar(255),
 	structure_inode varchar(36),
-	disabled_wysiwyg varchar(255),
+	disabled_wysiwyg varchar(1000),
 	identifier varchar(36),
 	language_id int8,
 	contentlet_as_json jsonb,

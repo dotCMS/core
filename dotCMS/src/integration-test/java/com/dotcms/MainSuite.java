@@ -578,7 +578,8 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
         PopulateContentletAsJSONJobTest.class,
-        Task230426AlterVarcharLengthOfLockedByColTest.class
+        Task230426AlterVarcharLengthOfLockedByColTest.class,
+        Task230713IncreaseDisabledWysiwygColumnSizeTest.class
 
 })
 public class MainSuite {
