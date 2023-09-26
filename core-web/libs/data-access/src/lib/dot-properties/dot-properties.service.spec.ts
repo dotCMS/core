@@ -2,10 +2,10 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { ENABLED_FEATURE_FLAGS } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotPropertiesService } from './dot-properties.service';
-import { ENABLED_FEATURE_FLAGS } from '@dotcms/dotcms-models';
 
 const fakeResponse = {
     entity: {
