@@ -261,8 +261,8 @@ public class WebAssetHelper {
     }
 
     /**
-     * This is here to prevent breakage of the API in case a hidden file for some reason makes it into a folder
-     * We do not support them, but we do not want deal with an exception either
+     * This Predicate is used to deal with a very rare situation on which a file might not have binary metadata associated
+     * for example hidden files. In the rare event of a hidden file being uploaded to the system, we need to make sure they don't break the API response
      */
     Predicate<Contentlet> nonNullMetadata = c -> {
         try {
