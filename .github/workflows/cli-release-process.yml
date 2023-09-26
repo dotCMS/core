@@ -134,5 +134,5 @@ jobs:
           
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
 
-          git commit -a -m "⬆️  Next version $NEXT_VERSION"
+          git commit --allow-empty -a -m "⬆️  Next version $NEXT_VERSION"
           git push origin "$HEAD"
