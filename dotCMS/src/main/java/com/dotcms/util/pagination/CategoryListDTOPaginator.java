@@ -15,6 +15,9 @@ import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
 
+import static com.dotmarketing.common.util.SQLUtil._ASC;
+import static com.dotmarketing.common.util.SQLUtil._DESC;
+
 /**
  * Category paginator
  */
@@ -52,7 +55,8 @@ public class CategoryListDTOPaginator implements PaginatorOrdered<CategoryListDT
                     CategoryListDTO categoryListDTO = new CategoryListDTO(category.getCategoryName(),category.getCategoryVelocityVarName(), category.getKey(),
                             category.getKeywords(), category.getSortOrder(), category.getDescription(),category.isActive(),category.getModDate(),
                             category.getIDate(),category.getType(),category.getOwner(),category.getInode(),category.getIdentifier(),
-                            this.categoryAPI.findChildren(user, category.getInode(), false, offset, limit,filter, direction.toString()).getTotalCount());
+                            this.categoryAPI.findChildren(user, category.getInode(), false, offset, limit,filter,
+                                    direction.toString().toLowerCase().equals("asc") ? _ASC : _DESC).getTotalCount());
 
                     result.add(categoryListDTO);
                 }

@@ -4221,6 +4221,200 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Get children categories by inode - showChildrenCount true - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch childrenCount successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"    ",
+							"    for(var i=0; i < jsonData.entity.length; i++){",
+							"        pm.expect(jsonData.entity[i]).to.have.property('childrenCount');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&inode={{categoryINodeId}}&showChildrenCount=true",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"children"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "ordeby",
+							"value": "category_name"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "inode",
+							"value": "{{categoryINodeId}}"
+						},
+						{
+							"key": "showChildrenCount",
+							"value": "true"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get children categories by inode - showChildrenCount false - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch childrenCount successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"    ",
+							"    for(var i=0; i < jsonData.entity.length; i++){",
+							"        pm.expect(jsonData.entity[i]).to.not.have.property('childrenCount');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&inode={{categoryINodeId}}&showChildrenCount=false",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"children"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "ordeby",
+							"value": "category_name"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "inode",
+							"value": "{{categoryINodeId}}"
+						},
+						{
+							"key": "showChildrenCount",
+							"value": "false"
+						}
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"variable": [

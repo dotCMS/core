@@ -9,7 +9,9 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
@@ -31,17 +33,19 @@ public class CategoriesPaginatorTest {
         final int offset = 2;
         final int limit = 10;
         final String filter = "filter";
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put("childrenCategories", false);
         final PaginatedCategories topLevelCategories = mock(PaginatedCategories.class);
         final List<Category> categories = list(mock(Category.class), mock(Category.class));
 
         when(topLevelCategories.getTotalCount()).thenReturn(categories.size());
         when(topLevelCategories.getCategories()).thenReturn(categories);
-        when(categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, null))
+        when(categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, "sort_order"))
                 .thenReturn(topLevelCategories);
 
         final CategoriesPaginator categoriesPaginator = new CategoriesPaginator(categoryAPI);
         final PaginatedArrayList<Category> items =
-                categoriesPaginator.getItems(user, filter, limit, offset, null, null, null);
+                categoriesPaginator.getItems(user, filter, limit, offset, "sort_order", OrderDirection.ASC, extraParams);
 
         assertEquals(categories.size(), items.getTotalResults());
         assertEquals(categories.size(), items.size());
@@ -62,12 +66,15 @@ public class CategoriesPaginatorTest {
 
         when(topLevelCategories.getTotalCount()).thenReturn(0);
         when(topLevelCategories.getCategories()).thenReturn(null);
-        when(categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, null))
+        when(categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, "sort_order"))
                 .thenReturn(topLevelCategories);
+
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put("childrenCategories", false);
 
         final CategoriesPaginator categoriesPaginator = new CategoriesPaginator(categoryAPI);
         final PaginatedArrayList<Category> items =
-                categoriesPaginator.getItems(user, filter, limit, offset, null, null, null);
+                categoriesPaginator.getItems(user, filter, limit, offset, "sort_order", OrderDirection.ASC, extraParams);
 
         assertEquals(0, items.getTotalResults());
         assertTrue(items.isEmpty());

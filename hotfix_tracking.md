@@ -123,3 +123,4 @@ This maintenance release includes the following code fixes:
 99. https://github.com/dotCMS/core/issues/25570 : Redis / Session-less testing and improvements #25570
 100.    https://github.com/dotCMS/core/issues/21855 : Unable to save content of a Widget with WYSIWYG Code view #21855
 101.    https://github.com/dotCMS/core/issues/22507 : Make instance restart function capable of restarting the cluster #22507
+102.    https://github.com/dotCMS/core/issues/23254 : Categories: Add child count to the categories list response #23254

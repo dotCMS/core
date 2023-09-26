@@ -17,6 +17,8 @@ import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.CategoriesPaginator;
 import com.dotcms.util.pagination.CategoryListDTOPaginator;
+import com.dotcms.util.pagination.ChildrenCategoryListDTOPaginator;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -83,6 +85,7 @@ public class CategoriesResource {
     private final WebResource webResource;
     private final PaginationUtil paginationUtil;
     private final PaginationUtil extendedPaginationUtil;
+    private final PaginationUtil childrenCategoriesPaginationUtil;
 
     private final CategoryAPI categoryAPI;
     private final VersionableAPI versionableAPI;
@@ -95,6 +98,7 @@ public class CategoriesResource {
     public CategoriesResource() {
         this(new WebResource(), new PaginationUtil(new CategoriesPaginator()),
                 new PaginationUtil(new CategoryListDTOPaginator()),
+                new PaginationUtil(new ChildrenCategoryListDTOPaginator()),
                 APILocator.getCategoryAPI(),
                 APILocator.getVersionableAPI(),
                 WebAPILocator.getHostWebAPI(),
@@ -104,13 +108,14 @@ public class CategoriesResource {
 
     @VisibleForTesting
     public CategoriesResource(final WebResource webresource, final PaginationUtil paginationUtil,
-            final PaginationUtil extendedPaginationUtil,
+            final PaginationUtil extendedPaginationUtil,final PaginationUtil childrenCategoriesPaginationUtil,
             final CategoryAPI categoryAPI, final VersionableAPI versionableAPI,
             final HostWebAPI hostWebAPI, final PermissionAPI permissionAPI,
             final CategoryHelper categoryHelper) {
         this.webResource = webresource;
         this.paginationUtil = paginationUtil;
         this.extendedPaginationUtil = extendedPaginationUtil;
+        this.childrenCategoriesPaginationUtil = childrenCategoriesPaginationUtil;
         this.categoryAPI = categoryAPI;
         this.versionableAPI = versionableAPI;
         this.hostWebAPI = hostWebAPI;
@@ -170,9 +175,12 @@ public class CategoriesResource {
         Logger.debug(this, () -> "Getting the List of categories. " + String.format(
                 "Request query parameters are : {filter : %s, page : %s, perPage : %s}", filter,
                 page, perPage));
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put("childrenCategories", false);
 
         try {
-           response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, direction)
+            response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+                    direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams)
                    : this.extendedPaginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, direction);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
@@ -228,7 +236,8 @@ public class CategoriesResource {
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
             @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
-            @QueryParam("inode") final String inode) throws DotDataException, DotSecurityException {
+                                      @QueryParam("inode") final String inode,
+                                      @QueryParam("showChildrenCount") final boolean showChildrenCount) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -244,11 +253,24 @@ public class CategoriesResource {
         DotPreconditions.checkArgument(UtilMethods.isSet(inode),
                 "The inode is required");
 
-        PaginatedCategories list = this.categoryAPI.findChildren(user, inode,
-                pageMode.respectAnonPerms, page, perPage,
-                filter, direction.toLowerCase().equals("asc") ? orderBy : "-" + orderBy);
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put("inode", inode);
+        extraParams.put("childrenCategories", true);
 
-        return getPage(list.getCategories(), list.getTotalCount(), page, perPage);
+        try {
+            response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+                    direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams)
+                    : this.childrenCategoriesPaginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+                    direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams);
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
     }
 
     /**
@@ -437,7 +459,7 @@ public class CategoriesResource {
                 : this.getChildren(httpRequest, httpResponse, categoryEditForm.getFilter(),
                         categoryEditForm.getPage(),
                         categoryEditForm.getPerPage(), "", categoryEditForm.getDirection(),
-                        categoryEditForm.getParentInode());
+                categoryEditForm.getParentInode(), true);
     }
 
     /**
@@ -810,17 +832,6 @@ public class CategoriesResource {
                         host.getTitle() != null ? host.getTitle() : "default");
             }
         }
-    }
-
-    private Response getPage(final List<Category> list, final int totalCount, final int page,
-            final int perPage) {
-
-        return Response.
-                ok(new ResponseEntityView((Object) list))
-                .header("X-Pagination-Per-Page", perPage)
-                .header("X-Pagination-Current-Page", page)
-                .header("X-Pagination-Total-Entries", totalCount)
-                .build();
     }
 
     private String getObjectToJsonString(final Object object) {

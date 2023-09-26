@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 /**
  * Category paginator
@@ -35,6 +36,8 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
     @Override
     public PaginatedArrayList<Category> getItems(final User user, final String filter, final int limit, final int offset,
                                                  final String orderby, final OrderDirection direction, final Map<String, Object> extraParams) {
+
+        boolean childrenCategories = extraParams.containsKey("childrenCategories") ? (Boolean)extraParams.get("childrenCategories") : false;
         try {
             String categoriesSort = null;
 
@@ -43,13 +46,15 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
             }
 
             final PaginatedArrayList<Category> result = new PaginatedArrayList<>();
-            final PaginatedCategories topLevelCategories = categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, categoriesSort);
-            result.setTotalResults(topLevelCategories.getTotalCount());
+            final PaginatedCategories categories = childrenCategories == false ?
+                    categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, categoriesSort)
+                    : categoryAPI.findChildren(user, extraParams.containsKey("inode") ? String.valueOf(extraParams.get("inode")) : StringPool.BLANK,
+                    false, offset, limit, filter, categoriesSort);
 
-            final List<Category> categories = topLevelCategories.getCategories();
+            result.setTotalResults(categories.getTotalCount());
 
-            if (categories != null) {
-                result.addAll(categories);
+            if (categories.getCategories()!= null) {
+                result.addAll(categories.getCategories());
             }
 
             return result;
