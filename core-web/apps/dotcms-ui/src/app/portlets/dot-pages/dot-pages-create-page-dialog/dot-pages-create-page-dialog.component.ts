@@ -55,7 +55,7 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
 
         // Get the feature flag from the store and change the routing
         this.config.data.isContentEditor2Enabled
-            ? this.dotRouterService.goToURL(`edit-content/${variableName}`)
+            ? this.dotRouterService.goToURL(`edit-content/new/${variableName}`)
             : this.dotRouterService.goToURL(`/pages/new/${variableName}`);
     }
 

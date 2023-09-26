@@ -197,7 +197,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
             const pageType = de.query(By.css(`.dot-pages-create-page-dialog__page-item`));
             pageType.triggerEventHandler('click', mockContentType.variable);
             expect(dotRouterService.goToURL).toHaveBeenCalledWith(
-                `edit-content/${mockContentType.variable}`
+                `edit-content/new/${mockContentType.variable}`
             );
             expect(dialogRef.close).toHaveBeenCalled();
         });
