@@ -17,7 +17,7 @@ on:
     paths-ignore:
       - '.gitignore'
       - '.dockerignore'
-      - 'dotCMS/src/main/webapp/html'
+      - 'dotCMS/src/main/webapp/html/**'
       - '!docker/**'
       - 'tools/**'
       - 'cicd/**'
@@ -26,11 +26,12 @@ on:
       - '*.adoc'
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/build-report.yml'
   pull_request:
     paths-ignore:
       - '.gitignore'
       - '.dockerignore'
-      - 'dotCMS/src/main/webapp/html'
+      - 'dotCMS/src/main/webapp/html/**'
       - '!docker/**'
       - 'tools/**'
       - 'cicd/**'
@@ -39,12 +40,13 @@ on:
       - '*.adoc'
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/build-report.yml'
   merge_group:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
   cancel-in-progress: true
 env:
-  JVM_TEST_MAVEN_OPTS: "-e -B"
+  JVM_TEST_MAVEN_OPTS: "-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 jobs:
   build-jdk11:
     name: "Initial JDK 11 Build"
@@ -67,31 +69,61 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}
-      - name: Cache Node
-        id: cache-node
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+            mavencore-${{ steps.get-date.outputs.date }}
+      - name: Cache Node Binary
+        id: cache-node-binary
         uses: actions/cache@v3
         with:
           path: |
-            core-web/node_modules
             core-web/installs
-          key: node-${{ steps.get-date.outputs.date }}
-      - name: Build and Test with Maven
-        run: ./mvnw --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
-
-      - name: Tar Maven Repo
-        shell: bash
-        run: tar -czf maven-repo.tgz -C ~ .m2/repository
-
-      - name: Persist Maven Repo
-        uses: actions/upload-artifact@v3
+          key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+      - name: Cache NPM
+        id: cache-npm
+        uses: actions/cache@v3
         with:
-          name: maven-repo
-          path: maven-repo.tgz
-
-      - name: Delete Local Artifacts From Cache
+          path: |
+            ~/.npm
+          # if specific cache does not exist then can base upon latest version
+          key: npm-${{ hashFiles('core-web/package-lock.json') }}
+          restore-keys: npm-
+      - name: Cache Node Modules
+        id: cache-node-modules
+        uses: actions/cache@v3
+        with:
+          path: core-web/node_modules
+          # only pull for exact version of package-lock
+          key: node-modules-${{ hashFiles('core-web/package-lock.json') }}
+      - name: Maven Build No Test
         shell: bash
-        run: rm -r ~/.m2/repository/com/dotcms
+        env:
+          NODE_CACHE_HIT: ${{ steps.cache-node-modules.outputs.cache-hit }}
+        run: ./mvnw -Dprod=true -Dskip.npm.install=${NODE_CACHE_HIT} --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
+      #- name: Tar Node Modules
+      #  shell: bash
+      #  run: tar -czf node-modules.tgz -C core-web node_modules
+
+      #- name: Tar Maven Repo
+      #  shell: bash
+      #  run: tar -czf maven-repo.tgz -C ~ .m2/repository
+
+      #- name: Persist Node Modules
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: node-modules
+      #    path: node-modules.tgz
+
+      #- name: Persist Maven Repo
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: maven-repo
+      #    path: maven-repo.tgz
+
+      #- name: Delete Local Artifacts From Cache
+      #  shell: bash
+      #  run: rm -rf ~/.m2/repository/com/dotcms/dotcms-* ~/.m2/repository/com/dotcms/core
 
       - name: Upload build reports
         uses: actions/upload-artifact@v3
@@ -130,16 +162,27 @@ jobs:
           java-version: ${{ matrix.java.java-version }}
           distribution: ${{ matrix.java.distribution }}
 
-      - name: Download Maven Repo
-        uses: actions/download-artifact@v3
-        with:
-          name: maven-repo
-          path: .
-      - name: Extract Maven Repo
+      #- name: Download Maven Repo
+      #  uses: actions/download-artifact@v3
+      #  with:
+      #    name: maven-repo
+      #    path: .
+      #- name: Extract Maven Repo
+      #  shell: bash
+      #  run: tar -xzf maven-repo.tgz -C ~
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
         shell: bash
-        run: tar -xzf maven-repo.tgz -C ~
+      - name: Restore Maven Repository
+        id: cache-maven
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Build
-        run: eval ./mvnw $JVM_TEST_MAVEN_OPTS test -pl :dotcms-core ${{ matrix.java.maven_args}}
+        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS test -pl :dotcms-core ${{ matrix.java.maven_args}}
       - name: Prepare reports archive (if maven failed)
         if: failure()
         shell: bash
@@ -185,16 +228,61 @@ jobs:
           java-version: 11
           distribution: 'temurin'
 
-      - name: Download Maven Repo
-        uses: actions/download-artifact@v3
-        with:
-          name: maven-repo
-          path: .
-      - name: Extract Maven Repo
+      #- name: Download Maven Repo
+      #  uses: actions/download-artifact@v3
+      #  with:
+      #    name: maven-repo
+      #    path: .
+      #- name: Download Node Modules
+      #  uses: actions/download-artifact@v3
+      #  with:
+      #    name: node-modules
+      #    path: .
+      #- name: Extract Maven Repo
+      #  shell: bash
+      #  run: tar -xzf maven-repo.tgz -C ~
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
         shell: bash
-        run: tar -xzf maven-repo.tgz -C ~
-      - name: Build
-        run: eval ./mvnw $JVM_TEST_MAVEN_OPTS -pl :core-web test
+      - name: Restore Maven Repository
+        id: cache-maven
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      #- name: Extract Node Modules
+      #  shell: bash
+      #  run: tar -xzf node-modules.tgz -C core-web
+      - name: Restore Node Binary
+        id: cache-node-binary
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            core-web/installs
+          key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+      - name: Restore Node
+        id: cache-npm
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            ~/.npm
+          key: npm-${{ hashFiles('core-web/package-lock.json') }}
+          restore-keys: npm-
+      - name: Restore Node Modules
+        id: cache-node-modules
+        uses: actions/cache/restore@v3
+        with:
+          path: core-web/node_modules
+          # only pull for exact version of package-lock
+          key: node-modules-${{ hashFiles('core-web/package-lock.json') }}
+      - name: Build # expect node cache to exist from
+        shell: bash
+        env:
+          NODE_CACHE_HIT: ${{ steps.cache-node-modules.outputs.cache-hit }}
+        run: eval ./mvnw -Dprod -Dskip.npm.install=${NODE_CACHE_HIT} $JVM_TEST_MAVEN_OPTS -pl :dotcms-core-web test
       - name: Prepare failure archive (if maven failed)
         if: failure()
         shell: bash
@@ -269,18 +357,30 @@ jobs:
           java-version: ${{ matrix.java.java-version }}
           distribution: ${{ matrix.java.distribution }}
 
-      - name: Download Maven Repo
-        uses: actions/download-artifact@v3
-        with:
-          name: maven-repo
-          path: .
-      - name: Extract Maven Repo
+      #- name: Download Maven Repo
+      #  uses: actions/download-artifact@v3
+      #  with:
+      #    name: maven-repo
+      #    path: .
+      #- name: Extract Maven Repo
+      #  shell: bash
+      #  run: tar -xzf maven-repo.tgz -C ~
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
         shell: bash
-        run: tar -xzf maven-repo.tgz -C ~
+      - name: Restore Maven Repository
+        id: cache-maven
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
+
       - name: Build
         env:
           DOT_DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
-        run: eval ./mvnw $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-integration ${{ matrix.suites.maven_args}} ${{ matrix.java.maven_args}}
+        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-integration ${{ matrix.suites.maven_args}} ${{ matrix.java.maven_args}}
       - name: Prepare reports archive (if maven failed)
         if: failure()
         shell: bash
@@ -437,4 +537,3 @@ jobs:
         with:
           name: workflow-data
           path: ./workflow-data.json
-

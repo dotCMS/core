@@ -59,6 +59,7 @@ export class DotExperimentsConfigurationGoalsComponent {
         goals: Goals | null;
         status: StepStatus;
         isExperimentADraft: boolean;
+        disabledTooltipLabel: null | string;
     }> = this.dotExperimentsConfigurationStore.goalsStepVm$.pipe(
         tap(({ status }) => this.handleSidebar(status))
     );

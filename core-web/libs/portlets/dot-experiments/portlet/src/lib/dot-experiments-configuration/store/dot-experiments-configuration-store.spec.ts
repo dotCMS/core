@@ -21,6 +21,8 @@ import {
     DEFAULT_VARIANT_NAME,
     DotExperiment,
     DotExperimentStatus,
+    EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
+    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     ExperimentSteps,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
@@ -845,6 +847,52 @@ describe('DotExperimentsConfigurationStore', () => {
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
                 'error' as unknown as HttpErrorResponse
             );
+        });
+
+        it('should set EXP_CONFIG_ERROR_LABEL_CANT_EDIT when page is not Draft and locked by other user', (done) => {
+            dotExperimentsService.getById.mockReturnValue(
+                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.RUNNING })
+            );
+
+            ActivatedRouteMock.parent.parent.parent.snapshot.data.content.state.lockedByAnotherUser =
+                true;
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.vm$.subscribe(({ disabledTooltipLabel }) => {
+                // Start Experiment
+                expect(disabledTooltipLabel).toEqual(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+                done();
+            });
+        });
+
+        it('should set EXP_CONFIG_ERROR_LABEL_CANT_EDIT when page is not Draft', (done) => {
+            dotExperimentsService.getById.mockReturnValue(
+                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.RUNNING })
+            );
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.vm$.subscribe(({ disabledTooltipLabel }) => {
+                // Start Experiment
+                expect(disabledTooltipLabel).toEqual(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+                done();
+            });
+        });
+
+        it('should set EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED when page is locked by other user', (done) => {
+            dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_2));
+
+            ActivatedRouteMock.parent.parent.parent.snapshot.data.content.state.lockedByAnotherUser =
+                true;
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.vm$.subscribe(({ disabledTooltipLabel }) => {
+                // Start Experiment
+                expect(disabledTooltipLabel).toEqual(EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED);
+                done();
+            });
         });
     });
 });

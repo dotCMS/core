@@ -8,7 +8,7 @@ on:
       - 'docker/**'
       - '!docker/dotcms-compose-examples/**'
       - 'dotCMS/**'
-      - '!dotCMS/src/main/webapp/html'
+      - '!dotCMS/src/main/webapp/html/**'
       - 'pom.xml'
       - 'tools/**'
   push:
