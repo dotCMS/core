@@ -6,6 +6,9 @@ if [ ! "$CREATE_WORKSPACE" = "true" ]; then
      exit 0;
 fi
 
+## This file forces git to keep empty folders
+PLACEHOLDER_FILE=.dot-ignore
+
 normalize() {
     in=$1
     normalized=$(echo "$in" | sed -E 's#/+#/#g')
@@ -47,12 +50,12 @@ if [ ! -d "$FILES_PATH" ]; then
       WORKING_EN=$(normalize "$FILES_PATH"/working/en-us/ )
       echo "Working en-us path: $WORKING_EN";
       mkdir -p "$WORKING_EN";
-      echo "$placeholder_file_content" >> "$WORKING_EN".placeholder
+      echo "$placeholder_file_content" >> "$WORKING_EN""$PLACEHOLDER_FILE"
 
       LIVE_EN=$(normalize "$FILES_PATH"/live/en-us/ )
       echo "Live en-us path: $LIVE_EN";
       mkdir -p "$LIVE_EN";
-      echo "$placeholder_file_content" >> "$LIVE_EN".placeholder
+      echo "$placeholder_file_content" >> "$LIVE_EN""$PLACEHOLDER_FILE"
 
       workspace_updated=true
 fi
@@ -64,7 +67,7 @@ echo "Content types path: $CONTENT_TYPES_PATH"
 if [ ! -d "$CONTENT_TYPES_PATH" ]; then
       echo "Creating content types path: $CONTENT_TYPES_PATH";
       mkdir -p "$CONTENT_TYPES_PATH";
-      echo "$placeholder_file_content" >> "$CONTENT_TYPES_PATH".placeholder
+      echo "$placeholder_file_content" >> "$CONTENT_TYPES_PATH""$PLACEHOLDER_FILE"
       workspace_updated=true
 fi
 
@@ -74,7 +77,7 @@ echo "Languages path: $LANGUAGE_PATH"
 if [ ! -d "$LANGUAGE_PATH" ]; then
       echo "Creating languages path: $LANGUAGE_PATH";
       mkdir -p "$LANGUAGE_PATH";
-      echo "$placeholder_file_content" >> "$LANGUAGE_PATH".placeholder
+      echo "$placeholder_file_content" >> "$LANGUAGE_PATH""$PLACEHOLDER_FILE"
       workspace_updated=true
 fi
 
@@ -84,7 +87,7 @@ echo "Sites path: $SITES_PATH"
 if [ ! -d "$SITES_PATH" ]; then
       echo "Creating sites path: $SITES_PATH";
       mkdir -p "$SITES_PATH";
-      echo "$placeholder_file_content" >> "$SITES_PATH".placeholder
+      echo "$placeholder_file_content" >> "$SITES_PATH""$PLACEHOLDER_FILE"
       workspace_updated=true
 fi
 
