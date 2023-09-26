@@ -51,6 +51,9 @@ const messageServiceMock = new MockDotMessageService({
     'dot.common.dialog.reject': 'Cancel'
 });
 
+const LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA = PARENT_RESOLVERS_ACTIVE_ROUTE_DATA;
+LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA.parent.parent.snapshot.data.content.page.canLock = true;
+
 const ActivatedRouteMock = {
     snapshot: {
         params: {
@@ -59,7 +62,7 @@ const ActivatedRouteMock = {
         data: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data
     },
     parent: {
-        ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
+        ...LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
     }
 };
 
@@ -276,7 +279,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(confirmationService.confirm).toHaveBeenCalled();
         });
 
-        it('should disable tooltip if is on draft', () => {
+        it('should disable tooltip if not have a valid error label', () => {
             spectator.detectChanges();
 
             spectator
@@ -287,7 +290,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 });
         });
 
-        it('should disable button and show tooltip when experiment is nos on draft', () => {
+        it('should disable button and show tooltip when experiment have an error label', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,

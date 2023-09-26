@@ -10,8 +10,7 @@ import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-f
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
@@ -28,7 +27,7 @@ import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialo
         DotDialogModule,
         DotMdIconSelectorModule,
         SiteSelectorFieldModule,
-        DotAutofocusModule,
+        DotAutofocusDirective,
         DotFieldRequiredDirective,
         DotMessagePipe
     ],

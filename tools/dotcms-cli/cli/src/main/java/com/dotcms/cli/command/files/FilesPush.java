@@ -9,11 +9,9 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
-import com.dotcms.cli.common.FilesPushMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.AssetsUtils;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -61,18 +59,14 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         }
 
         // Getting the workspace
-        var workspace = getWorkspaceDirectory(pushMixin.path);
-
-        // If the source is not specified, we use the current directory
-        if (pushMixin.path == null) {
-            pushMixin.path = Paths.get("").toAbsolutePath().normalize().toFile();
-        }
+        var workspace = getWorkspaceDirectory(pushMixin.path());
 
         CompletableFuture<List<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>>>
                 folderTraversalFuture = CompletableFuture.supplyAsync(
                 () -> {
                     // Service to handle the traversal of the folder
-                    return pushService.traverseLocalFolders(output, workspace, pushMixin.path,
+                    return pushService.traverseLocalFolders(output, workspace,
+                            pushMixin.path().toFile(),
                             filesPushMixin.removeAssets, filesPushMixin.removeFolders,
                             true, true);
                 });
@@ -95,7 +89,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
         if (result == null) {
             output.error(String.format(
-                    "Error occurred while pushing folder info: [%s].", pushMixin.path));
+                    "Error occurred while pushing folder info: [%s].",
+                    pushMixin.path().toAbsolutePath()));
             return CommandLine.ExitCode.SOFTWARE;
         }
 

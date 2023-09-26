@@ -83,7 +83,9 @@ describe('DotAddToMenuComponent', () => {
         'contenttypes.content.add_to_menu.show_under': 'Show under',
         'contenttypes.content.add_to_menu.default_view': 'Default view',
         'custom.content.portlet.dataViewMode.card': 'card',
-        'custom.content.portlet.dataViewMode.list': 'list'
+        'custom.content.portlet.dataViewMode.list': 'list',
+        add: 'Add',
+        cancel: 'Cancel'
     });
 
     beforeEach(() => {

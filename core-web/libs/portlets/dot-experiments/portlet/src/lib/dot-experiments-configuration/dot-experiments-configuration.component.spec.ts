@@ -74,7 +74,8 @@ const defaultVmMock: ConfigurationViewModel = {
     experimentStatus: null,
     isDescriptionSaving: false,
     menuItems: null,
-    addToBundleContentId: null
+    addToBundleContentId: null,
+    disabledTooltipLabel: null
 };
 
 @Component({
@@ -157,6 +158,18 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
+    });
+
+    it('shouldn disable edit the name if there is an error label', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            isExperimentADraft: true,
+            disabledTooltipLabel: 'error'
+        });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
+        expect(spectator.query(DotExperimentsInlineEditTextComponent).disabled).toEqual(true);
     });
 
     it('should show End Experiment after confirmation', () => {

@@ -3,7 +3,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>build-parent</artifactId>
+        <artifactId>dotcms-build-parent</artifactId>
         <groupId>com.dotcms</groupId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../build-parent/pom.xml</relativePath>
@@ -63,7 +63,7 @@
 
         <dependency>
             <groupId>com.dotcms.plugins</groupId>
-            <artifactId>core-bundles</artifactId>
+            <artifactId>dotcms-core-bundles</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
             <scope>provided</scope>
@@ -71,7 +71,7 @@
 
         <dependency>
             <groupId>com.dotcms.plugins</groupId>
-            <artifactId>system-bundles</artifactId>
+            <artifactId>dotcms-system-bundles</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
             <scope>provided</scope>
@@ -84,7 +84,7 @@
 
         <dependency>
             <groupId>com.dotcms</groupId>
-            <artifactId>core-web</artifactId>
+            <artifactId>dotcms-core-web</artifactId>
             <version>${project.version}</version>
             <type>war</type>
         </dependency>
@@ -107,7 +107,7 @@
         <dependencies>
             <dependency>
                 <groupId>com.dotcms</groupId>
-                <artifactId>application-bom</artifactId>
+                <artifactId>dotcms-application-bom</artifactId>
                 <version>1.0.0-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -154,7 +154,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>com.dotcms</groupId>
-                                    <artifactId>core-web</artifactId>
+                                    <artifactId>dotcms-core-web</artifactId>
                                     <version>${project.version}</version>
                                     <type>war</type>
                                     <overWrite>true</overWrite>
@@ -162,7 +162,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>com.dotcms.plugins</groupId>
-                                    <artifactId>core-bundles</artifactId>
+                                    <artifactId>dotcms-core-bundles</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
@@ -170,7 +170,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>com.dotcms.plugins</groupId>
-                                    <artifactId>system-bundles</artifactId>
+                                    <artifactId>dotcms-system-bundles</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
@@ -310,7 +310,7 @@
                     <overlays>
                         <overlay>
                             <groupId>com.dotcms</groupId>
-                            <artifactId>core-web</artifactId>
+                            <artifactId>dotcms-core-web</artifactId>
                             <type>war</type>
                             <excludes>
                                 <exclude>**/META-INF/**</exclude>

@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
-    <artifactId>application-bom</artifactId>
+    <artifactId>dotcms-application-bom</artifactId>
 
     <properties>
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
@@ -61,7 +61,7 @@
 
             <dependency>
                 <groupId>com.dotcms</groupId>
-                <artifactId>logging-bom</artifactId>
+                <artifactId>dotcms-logging-bom</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
