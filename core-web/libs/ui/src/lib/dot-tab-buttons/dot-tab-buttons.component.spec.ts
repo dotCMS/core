@@ -64,35 +64,54 @@ describe('DotTabButtonsComponent', () => {
 
     it('should emit openMenu event when showMenu is called', () => {
         const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
-        spectator.component.onClickDropdown(pointerEvent, previewID);
+        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1];
+        const button = spectator.fixture.debugElement.queryAll(
+            By.css('[data-testId="dot-tab-button-text"]')
+        )[1];
+
+        spectator.component.onClickDropdown(
+            { ...pointerEvent, target: button.nativeElement },
+            previewID
+        );
         expect(openMenuSpy).toHaveBeenCalledWith({
-            event: pointerEvent,
-            menuId: previewID
+            event: { ...pointerEvent, target: button.nativeElement },
+            menuId: previewID,
+            target: tab
         });
     });
 
     it('should emit openMenu event when showMenu is called', () => {
         const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
+        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1];
 
-        spectator.triggerEventHandler(
-            '[data-testId="dot-tab-button-dropdown"]',
-            'click',
-            pointerEvent
-        );
+        const button = spectator.fixture.debugElement.queryAll(
+            By.css('[data-testId="dot-tab-button-text"]')
+        )[1];
+
+        spectator.triggerEventHandler('[data-testId="dot-tab-button-dropdown"]', 'click', {
+            ...pointerEvent,
+            target: button.nativeElement
+        });
 
         expect(openMenuSpy).toHaveBeenCalledWith({
-            event: pointerEvent,
-            menuId: previewID
+            event: {
+                ...pointerEvent,
+                target: button.nativeElement
+            },
+            menuId: previewID,
+            target: tab
         });
     });
 
     it('should not emit openMenu event when showMenu is called and the option does not have showDropdownButton setted to true', () => {
         const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
         spectator.component.onClickDropdown(pointerEvent, editID);
+        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1];
 
         expect(openMenuSpy).not.toHaveBeenCalledWith({
             event: pointerEvent,
-            menuId: editID
+            menuId: editID,
+            target: tab
         });
     });
 
@@ -126,12 +145,14 @@ describe('DotTabButtonsComponent', () => {
         const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
 
         const button = spectator.queryAll(byTestId('dot-tab-button-dropdown'))[0];
+        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1];
 
-        button.dispatchEvent(new PointerEvent('click'));
+        button.dispatchEvent(pointerEvent);
 
         expect(openMenuSpy).toHaveBeenCalledWith({
             event: pointerEvent,
-            menuId: previewID
+            menuId: previewID,
+            target: tab
         });
     });
 
