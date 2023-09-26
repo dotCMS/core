@@ -9,6 +9,10 @@ on:
         description: 'Next version'
         default: '1.0.0-SNAPSHOT'
         required: false
+      skipTests:
+        description: 'Skip tests'
+        default: true
+        required: false
 
 defaults:
   run:
@@ -105,7 +109,7 @@ jobs:
       - name: Build distribution
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
-          ./mvnw -U clean install -Dtest.failure.ignore=true -DskipTests
+          ./mvnw -U clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }}
           ./mvnw package -Dquarkus.package.type=uber-jar -DskipTests
 
       - name: Releaser
