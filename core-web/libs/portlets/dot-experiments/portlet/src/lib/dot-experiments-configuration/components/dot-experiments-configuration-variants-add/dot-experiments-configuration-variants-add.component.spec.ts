@@ -90,7 +90,8 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
             },
             isExperimentADraft: true,
             canLockPage: true,
-            pageSate: null
+            pageSate: null,
+            disabledTooltipLabel: null
         });
 
         spectator.detectChanges();
