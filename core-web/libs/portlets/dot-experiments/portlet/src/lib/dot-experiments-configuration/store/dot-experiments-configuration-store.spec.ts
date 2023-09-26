@@ -81,7 +81,8 @@ const EXPECTED_INITIAL_STATE: DotExperimentsConfigurationState = {
     configProps: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data.config,
     hasEnterpriseLicense: ActivatedRouteMock.parent.snapshot.data.isEnterprise,
     addToBundleContentId: null,
-    pushPublishEnvironments: ActivatedRouteMock.parent.snapshot.data.pushPublishEnvironments
+    pushPublishEnvironments: ActivatedRouteMock.parent.snapshot.data.pushPublishEnvironments,
+    dotPageRenderState: ActivatedRouteMock.parent.parent.parent.snapshot.data.content
 };
 
 const messageServiceMock = new MockDotMessageService({
