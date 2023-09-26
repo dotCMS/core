@@ -27,7 +27,7 @@ TODO: include here the command to be executed
 | [status](cli/docs/status.adoc)             | Provides information about the current logged-in user and dotCMS instance status |
 
 
-You can find more details about how to use the dotCMS CLI in the Examples section.
+You can find more details about how to use the dotCMS CLI in the [Examples](#examples) section.
 
 
 
