@@ -53,10 +53,13 @@ upload:
       host: 'https://repo.dotcms.com/artifactory'
       repositories:
         - path: 'libs-snapshot-local/com/dotcms/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
-          active: ALWAYS
+          active: SNAPSHOT
           fileTypes:
             - JAR
-
+        - path: 'libs-release-local/com/dotcms/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
+          active: RELEASE
+          fileTypes:
+            - JAR
 #announce:
 #  slack:
 #    active: ALWAYS
