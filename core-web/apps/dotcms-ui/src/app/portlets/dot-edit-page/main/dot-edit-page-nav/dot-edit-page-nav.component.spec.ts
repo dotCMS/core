@@ -3,7 +3,7 @@ import { Observable, of as observableOf } from 'rxjs';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { TooltipModule } from 'primeng/tooltip';
@@ -35,7 +35,8 @@ class ActivatedRouteMock {
             data: {
                 featuredFlags: {
                     [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: false,
-                    [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: false
+                    [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: false,
+                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE]: false
                 }
             },
             queryParams: { experimentId: EXPERIMENT_MOCK.id }
@@ -80,6 +81,7 @@ describe('DotEditPageNavComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let route: ActivatedRoute;
+    let router: Router;
 
     const messageServiceMock = new MockDotMessageService({
         'editpage.toolbar.nav.content': 'Content',
@@ -127,6 +129,7 @@ describe('DotEditPageNavComponent', () => {
         );
         dotContentletEditorService = TestBed.inject(DotContentletEditorService);
         route = TestBed.inject(ActivatedRoute);
+        router = TestBed.inject(Router);
     }));
 
     describe('basic setup', () => {
@@ -438,6 +441,42 @@ describe('DotEditPageNavComponent', () => {
 
             const menuListItems = de.queryAll(By.css('.edit-page-nav__item'));
             expect(menuListItems.length).toEqual(4);
+        });
+    });
+
+    describe('content editor 2 feature flag true', () => {
+        it('should has Experiments nav item', () => {
+            // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+            spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
+                firstChild: {
+                    url: [
+                        {
+                            path: 'content'
+                        }
+                    ]
+                },
+                data: {
+                    featuredFlags: {
+                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE]: true
+                    }
+                }
+            });
+            fixture.detectChanges();
+
+            spyOn(router, 'navigate');
+
+            const menuListItems = fixture.debugElement.queryAll(
+                By.css('[data-testId="menuListItems"]')
+            );
+
+            const propertiesItem = menuListItems[3].query(
+                By.css('[data-testId="menuListItemLink"]')
+            );
+            propertiesItem.nativeElement.click();
+
+            expect(router.navigate).toHaveBeenCalledWith([
+                `edit-content/${mockDotRenderedPage().page.inode}`
+            ]);
         });
     });
 });

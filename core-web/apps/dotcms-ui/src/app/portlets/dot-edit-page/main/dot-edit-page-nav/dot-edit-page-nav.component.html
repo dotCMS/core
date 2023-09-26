@@ -14,7 +14,7 @@
                 [routerLink]="!item.disabled && item.link ? ['./' + item.link] : null"
                 (click)="item.action ? item.action(pageState.page.inode) : ''"
                 pTooltip="{{ item.tooltip }}"
-            >
+                data-testId="menuListItemLink">
                 <dot-icon [name]="item.icon" size="32"></dot-icon>
                 <span class="edit-page-nav__item-text" data-testId="menuListItemText"
                     >{{ item.label }}
@@ -25,8 +25,7 @@
             <span
                 class="edit-page-nav__item edit-page-nav__item--disabled"
                 [pTooltip]="'editpage.toolbar.nav.license.enterprise.only' | dm"
-                tooltipPosition="left"
-            >
+                tooltipPosition="left">
                 <dot-icon [name]="item.icon" size="32"></dot-icon>
                 <span class="edit-page-nav__item-text" data-testId="menuListItemText">{{
                     item.label
@@ -37,5 +36,4 @@
 </ul>
 <dot-page-tools-seo
     [visible]="togglePageTools"
-    [currentPageUrlParams]="currentUrlParams"
-></dot-page-tools-seo>
+    [currentPageUrlParams]="currentUrlParams"></dot-page-tools-seo>
