@@ -1,4 +1,4 @@
-package com.dotcms.cli.common;
+package com.dotcms.cli.command.files;
 
 import picocli.CommandLine;
 

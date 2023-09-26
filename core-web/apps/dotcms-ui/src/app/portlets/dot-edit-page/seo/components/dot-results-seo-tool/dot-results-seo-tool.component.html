@@ -55,37 +55,30 @@
 </div>
 
 <p-card class="results-seo-tool__result-card" *ngFor="let result of currentResults$ | async">
-    <ng-template class="results-seo-tool__result-card-header" pTemplate="header">
+    <ng-template pTemplate="header">
         <div class="results-seo-tool__result-card-title">
-            <i
-                class="results-seo-tool__result-icon pi"
-                [ngClass]="[result.keyColor, result.keyIcon]"></i>
             <span data-testId="result-key"> {{ result.key | titlecase }}</span>
         </div>
     </ng-template>
     <ul class="results-seo-tool__result-card-list">
         <li *ngFor="let item of result.items" data-testId="seo-tag">
-            <i class="pi" [ngClass]="[result.keyColor, result.keyIcon]"> </i>
-            <span>{{ item.message }}</span>
+            <i class="pi" [ngClass]="[item.color, item.itemIcon]"> </i>
+            <span [innerHTML]="item.message | safeHtml"></span>
         </li>
     </ul>
-    <div class="results-seo-tool__result-card-info" *ngIf="result.info">
-        <i class="pi pi-info-circle"> </i>
-        <span>{{ result.info }}</span>
-    </div>
 </p-card>
 
 <p-card class="results-seo-tool__result-card">
-    <ng-template class="results-seo-tool__result-card-header" pTemplate="header">
+    <ng-template pTemplate="header">
         <div class="results-seo-tool__result-card-title">
-            <i class="results-seo-tool__result-icon pi pi-info-circle"></i>
-            <span>Read More</span>
+            <span>{{ 'seo.rules.read-more.title' | dm }}</span>
         </div>
     </ng-template>
     <ul class="results-seo-tool__result-card-list">
         <li *ngFor="let item of readMore">
-            <i class="pi pi-external-link"></i>
+            <i class="results-seo-tool__result-icon pi pi-info-circle"></i>
             <a [href]="item.url" target="_blank">{{ item.label }}</a>
+            <i class="pi pi-external-link"></i>
         </li>
     </ul>
 </p-card>
