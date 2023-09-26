@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 import { Component, OnInit } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -6,7 +8,7 @@ import { map } from 'rxjs/operators';
 
 import { DotAddVariableStore } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
 
-import { FilteredFieldTypes } from './dot-add-variable.models';
+import { DotVariableContent, DotVariableList, FilteredFieldTypes } from './dot-add-variable.models';
 
 @Component({
     selector: 'dot-add-variable',
@@ -15,13 +17,23 @@ import { FilteredFieldTypes } from './dot-add-variable.models';
     providers: [DotAddVariableStore]
 })
 export class DotAddVariableComponent implements OnInit {
-    vm$ = this.store.vm$.pipe(
+    vm$: Observable<DotVariableList> = this.store.vm$.pipe(
         map((res) => {
-            const variables = res.variables.filter(
-                (variable) =>
-                    variable.fieldType !== FilteredFieldTypes.Column &&
-                    variable.fieldType !== FilteredFieldTypes.Row
-            );
+            const variables: DotVariableContent[] = res.variables
+                .filter(
+                    (variable) =>
+                        variable.fieldType !== FilteredFieldTypes.Column &&
+                        variable.fieldType !== FilteredFieldTypes.Row
+                )
+                .map((variable) => ({
+                    name: variable.name,
+                    variable: variable.variable,
+                    fieldTypeLabel: variable.fieldTypeLabel
+                }));
+            variables.push({
+                name: 'Content Identifier Value',
+                variable: 'ContentIdentifier'
+            });
 
             return { variables };
         })
