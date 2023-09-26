@@ -754,7 +754,7 @@
 				</portlet:actionURL>&date1=' + startDate + '&date2=' + endDate;
 
 
-		createContentlet(addURL, eventStructure.getInode());
+		createContentlet(addURL, eventStructure.getVelocityVarName());
 	}
 
 	function transformTimeZone(date,offset)

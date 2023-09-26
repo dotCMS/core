@@ -846,8 +846,9 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
         }
 
 
-        function addNewContentlet(structureInode){
+        function addNewContentlet(structureInode, contentType){
 			if(structureInode == undefined || structureInode==""){
+                        // This gets the catchall and opens the dialog to select a contentType, and also retrieves the content type when is a custom portlet
         		structureInode = dijit.byId('structure_inode').value;
         	}
 			if(structureInode == undefined || structureInode=="" || structureInode == "catchall"){
@@ -863,7 +864,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 href += "</portlet:actionURL>";
                 href += "&selectedStructure=" + structureInode ;
                 href += "&lang=" + getSelectedLanguageId();
-                dispatchCreateContentletEvent(href, structureInode);
+                dispatchCreateContentletEvent(href, contentType);
           }else{
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
                 href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
@@ -873,7 +874,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 href += "</portlet:actionURL>";
                 href += "&selectedStructure=" + structureInode ;
                 href += "&lang=" + getSelectedLanguageId();
-                dispatchCreateContentletEvent(href, structureInode);
+                dispatchCreateContentletEvent(href, contentType);
           }
         }
 
