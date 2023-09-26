@@ -50,8 +50,8 @@ jobs:
 
       - name: Setup git config
         run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "daniel.colina@dotcms.com"
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com" 
 
       - name: Set release version
         id: version
@@ -63,7 +63,7 @@ jobs:
           
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
           
-          git commit -a -m "🏁 Releasing version $RELEASE_VERSION"
+          git commit --allow-empty -a -m "🏁 Releasing version $RELEASE_VERSION"
           git push origin "$HEAD"
           
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
