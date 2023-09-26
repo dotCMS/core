@@ -103,7 +103,7 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
         expect(spectator.query(Tooltip).disabled).toEqual(true);
     });
 
-    it('should disable button and show tooltip when experiment is nos on draft', () => {
+    it('should disable button and show tooltip when there is an error', () => {
         dotExperimentsService.getById.mockReturnValue(
             of({
                 ...EXPERIMENT_MOCK,

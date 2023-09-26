@@ -20,6 +20,8 @@ import {
     DotExperimentStatus,
     DotPageRenderState,
     DotPageState,
+    EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
+    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     ExperimentSteps,
     Goal,
     Goals,
@@ -76,6 +78,7 @@ export interface ConfigurationViewModel {
     isDescriptionSaving: boolean;
     menuItems: MenuItem[];
     addToBundleContentId: string;
+    disabledTooltipLabel: string | null;
 }
 
 export interface ConfigurationVariantStepViewModel {
@@ -85,6 +88,16 @@ export interface ConfigurationVariantStepViewModel {
     isExperimentADraft: boolean;
     canLockPage: boolean;
     pageSate: DotPageState;
+    disabledTooltipLabel: string | null;
+}
+
+export interface ConfigurationTrafficStepViewModel {
+    experimentId: string;
+    trafficProportion: TrafficProportion;
+    trafficAllocation: number;
+    status: StepStatus;
+    isExperimentADraft: boolean;
+    disabledTooltipLabel: string | null;
 }
 
 @Injectable()
@@ -130,6 +143,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.state$,
         ({ experiment, hasEnterpriseLicense, pushPublishEnvironments }) =>
             this.getMenuItems(experiment, hasEnterpriseLicense, pushPublishEnvironments)
+    );
+
+    readonly disabledTooltipLabel$: Observable<string | null> = this.select(
+        this.state$,
+        ({ experiment, dotPageRenderState }) =>
+            this.getDisabledTooltipLabel(experiment, dotPageRenderState)
     );
 
     // Goals Step //
@@ -779,6 +798,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.getExperimentStatus$,
         this.getIsDescriptionSaving$,
         this.getMenuItems$,
+        this.disabledTooltipLabel$,
         (
             { experiment, stepStatusSidebar, addToBundleContentId },
             isExperimentADraft,
@@ -788,7 +808,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             isSaving,
             experimentStatus,
             isDescriptionSaving,
-            menuItems
+            menuItems,
+            disabledTooltipLabel
         ) => ({
             experiment,
             stepStatusSidebar,
@@ -800,7 +821,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             isSaving,
             experimentStatus,
             isDescriptionSaving,
-            menuItems
+            menuItems,
+            disabledTooltipLabel
         })
     );
 
@@ -810,13 +832,22 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.trafficProportion$,
         this.variantsStatus$,
         this.isExperimentADraft$,
-        ({ dotPageRenderState }, experimentId, trafficProportion, status, isExperimentADraft) => ({
+        this.disabledTooltipLabel$,
+        (
+            { dotPageRenderState },
+            experimentId,
+            trafficProportion,
+            status,
+            isExperimentADraft,
+            disabledTooltipLabel
+        ) => ({
             experimentId,
             trafficProportion,
             status,
             isExperimentADraft,
             canLockPage: dotPageRenderState.page.canLock,
-            pageSate: dotPageRenderState.state
+            pageSate: dotPageRenderState.state,
+            disabledTooltipLabel
         })
     );
 
@@ -825,16 +856,19 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         goals: Goals;
         status: StepStatus;
         isExperimentADraft: boolean;
+        disabledTooltipLabel: string | null;
     }> = this.select(
         this.getExperimentId$,
         this.goals$,
         this.goalsStatus$,
         this.isExperimentADraft$,
-        (experimentId, goals, status, isExperimentADraft) => ({
+        this.disabledTooltipLabel$,
+        (experimentId, goals, status, isExperimentADraft, disabledTooltipLabel) => ({
             experimentId,
             goals,
             status,
-            isExperimentADraft
+            isExperimentADraft,
+            disabledTooltipLabel
         })
     );
 
@@ -844,18 +878,28 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         status: StepStatus;
         schedulingBoundaries: Record<string, number>;
         isExperimentADraft: boolean;
+        disabledTooltipLabel: string | null;
     }> = this.select(
         this.getExperimentId$,
         this.scheduling$,
         this.schedulingStatus$,
         this.schedulingBoundaries$,
         this.isExperimentADraft$,
-        (experimentId, scheduling, status, schedulingBoundaries, isExperimentADraft) => ({
+        this.disabledTooltipLabel$,
+        (
             experimentId,
             scheduling,
             status,
             schedulingBoundaries,
-            isExperimentADraft
+            isExperimentADraft,
+            disabledTooltipLabel
+        ) => ({
+            experimentId,
+            scheduling,
+            status,
+            schedulingBoundaries,
+            isExperimentADraft,
+            disabledTooltipLabel
         })
     );
 
@@ -863,43 +907,43 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         experimentId: string;
         status: StepStatus;
         isExperimentADraft: boolean;
+        disabledTooltipLabel: string | null;
     }> = this.select(
         this.getExperimentId$,
         this.trafficLoadStatus$,
         this.isExperimentADraft$,
-        (experimentId, status, isExperimentADraft) => ({
+        this.disabledTooltipLabel$,
+        (experimentId, status, isExperimentADraft, disabledTooltipLabel) => ({
             experimentId,
             status,
-            isExperimentADraft
+            isExperimentADraft,
+            disabledTooltipLabel
         })
     );
 
-    readonly trafficStepVm$: Observable<{
-        experimentId: string;
-        trafficProportion: TrafficProportion;
-        trafficAllocation: number;
-        status: StepStatus;
-        isExperimentADraft: boolean;
-    }> = this.select(
+    readonly trafficStepVm$: Observable<ConfigurationTrafficStepViewModel> = this.select(
         this.getExperimentId$,
         this.trafficProportion$,
         this.trafficAllocation$,
         this.trafficLoadStatus$,
         this.trafficSplitStatus$,
         this.isExperimentADraft$,
+        this.disabledTooltipLabel$,
         (
             experimentId,
             trafficProportion,
             trafficAllocation,
             statusLoad,
             statusSplit,
-            isExperimentADraft
+            isExperimentADraft,
+            disabledTooltipLabel
         ) => ({
             experimentId,
             trafficProportion,
             trafficAllocation,
             status: statusSplit ? statusSplit : statusLoad,
-            isExperimentADraft
+            isExperimentADraft,
+            disabledTooltipLabel
         })
     );
 
@@ -945,6 +989,17 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     private disableStartExperiment(experiment: DotExperiment): boolean {
         return experiment?.trafficProportion.variants.length < 2 || !experiment?.goals;
+    }
+
+    private getDisabledTooltipLabel(
+        experiment: DotExperiment,
+        dotPageRenderState: DotPageRenderState
+    ): string | null {
+        return experiment?.status !== DotExperimentStatus.DRAFT
+            ? EXP_CONFIG_ERROR_LABEL_CANT_EDIT
+            : dotPageRenderState.state.lockedByAnotherUser
+            ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED
+            : null;
     }
 
     private getMenuItems(
