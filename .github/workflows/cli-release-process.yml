@@ -122,8 +122,8 @@ jobs:
 
       - name: Setup git config
         run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "daniel.colina@dotcms.com"          
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com" 
 
       - name: Set next version
         working-directory: ${{ github.workspace }}/tools/dotcms-cli

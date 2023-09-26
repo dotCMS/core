@@ -45,24 +45,16 @@ distributions:
       - path: tools/dotcms-cli/cli/target/cli-{{projectVersion}}-runner.jar
         transform: tools/dotcms-cli/cli/target/dotcli-{{projectVersion}}.jar
 
-deploy:
-  maven:
-    artifactory:
-      dotcms-cli:
-        active: ALWAYS
-        authorization: BASIC
-        url: https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/cli
-#        url: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/cli
-        stagingRepositories:
-          - tools/dotcms-cli/cli/target
-
-#upload:
-#  artifactory:
-#    dotcms-cli:
-#      active: ALWAYS
-#      host: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/tools/dotcms-cli/cli'
-#      repository:
-#        - path: 'binaries/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
+upload:
+  artifactory:
+    dotcms-cli:
+      active: ALWAYS
+      host: 'https://repo.dotcms.com/artifactory'
+      repositories:
+        - path: 'libs-snapshot-local/com/dotcms/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
+          active: ALWAYS
+          fileTypes:
+            - JAR
 
 #announce:
 #  slack:
