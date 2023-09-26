@@ -684,7 +684,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
     private static class HiddenFileFilter implements FileFilter {
         @Override
         public boolean accept(File file) {
-            return !file.getName().equalsIgnoreCase(".DS_Store");
+            return !file.getName().startsWith(".");// Ignore hidden files and folders
         }
     }
 

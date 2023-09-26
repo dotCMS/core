@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.BooleanUtils;
@@ -260,6 +261,18 @@ public class WebAssetHelper {
     }
 
     /**
+     * This is here to prevent breakage of the API in case a hidden file for some reason makes it into a folder
+     * We do not support them, but we do not want deal with an exception either
+     */
+    Predicate<Contentlet> nonNullMetadata = c -> {
+        try {
+            return null != c.getBinaryMetadata(FileAssetAPI.BINARY_FIELD);
+        } catch (DotDataException e) {
+            return false;
+        }
+    };
+
+    /**
      * Converts a list of folders to a list of {@link FolderView}
      * @param assets folders to convert
      * @return list of {@link FolderView}
@@ -268,6 +281,7 @@ public class WebAssetHelper {
 
         return assets.stream().filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
                 .filter(Contentlet::isFileAsset)
+                .filter(nonNullMetadata)
                 .map(contentlet -> fileAssetAPI.fromContentlet(contentlet)).map(this::toAsset)
                 .collect(Collectors.toList());
     }
