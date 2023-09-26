@@ -66,6 +66,7 @@ export class DotCustomEventHandlerService {
                         'create-contentlet': contentEditorFeatureFlag
                             ? this.createContentlet.bind(this)
                             : this.createContentletLegacy.bind(this),
+                        'create-contentlet-from-edit-page': this.createContentletLegacy.bind(this),
                         'company-info-updated': this.setPersonalization.bind(this),
                         'push-publish': this.pushPublishDialog.bind(this),
                         'download-bundle': this.downloadBundleDialog.bind(this),

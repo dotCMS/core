@@ -166,6 +166,24 @@ describe('DotCustomEventHandlerService', () => {
         });
     });
 
+    it('should create a contentlet from edit page', () => {
+        spyOn(dotContentletEditorService, 'create');
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'create-contentlet-from-edit-page',
+                    data: { url: 'hello.world.com' }
+                }
+            })
+        );
+
+        expect(dotContentletEditorService.create).toHaveBeenCalledWith({
+            data: {
+                url: 'hello.world.com'
+            }
+        });
+    });
+
     it('should edit a contentlet', () => {
         service.handle(
             new CustomEvent('ng-event', {
