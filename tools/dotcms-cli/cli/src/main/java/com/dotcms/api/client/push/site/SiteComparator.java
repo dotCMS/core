@@ -27,16 +27,32 @@ public class SiteComparator implements ContentComparator<SiteView> {
     public Optional<SiteView> findMatchingServerContent(SiteView localSite,
             List<SiteView> serverContents) {
 
-        // Compare by identifier
-        return findByIdentifier(localSite.identifier(), serverContents);
+        // Compare by identifier first.
+        var result = findByIdentifier(localSite.identifier(), serverContents);
+
+        if (result.isEmpty()) {
+
+            // If not found by id, compare by name.
+            result = findBySiteName(localSite.siteName(), serverContents);
+        }
+
+        return result;
     }
 
     @ActivateRequestContext
     @Override
     public Optional<SiteView> localContains(SiteView serverContent, List<SiteView> localSites) {
 
-        // Compare by identifier
-        return findByIdentifier(serverContent.identifier(), localSites);
+        // Compare by identifier first.
+        var result = findByIdentifier(serverContent.identifier(), localSites);
+
+        if (result.isEmpty()) {
+
+            // If not found by id, compare by name.
+            result = findBySiteName(serverContent.siteName(), localSites);
+        }
+
+        return result;
     }
 
     @ActivateRequestContext
@@ -69,6 +85,27 @@ public class SiteComparator implements ContentComparator<SiteView> {
         if (identifier != null && !identifier.isEmpty()) {
             for (var site : sites) {
                 if (site.identifier() != null && site.identifier().equals(identifier)) {
+                    return Optional.of(site);
+                }
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Finds a SiteView object in the given list based on the specified site name.
+     *
+     * @param siteName the site name of the SiteView object to be found
+     * @param sites    the list of SiteView objects to search in
+     * @return an Optional containing the found SiteView object, or an empty Optional if no match is
+     * found
+     */
+    private Optional<SiteView> findBySiteName(String siteName, List<SiteView> sites) {
+
+        if (siteName != null && !siteName.isEmpty()) {
+            for (var site : sites) {
+                if (site.siteName() != null && site.siteName().equalsIgnoreCase(siteName)) {
                     return Optional.of(site);
                 }
             }
