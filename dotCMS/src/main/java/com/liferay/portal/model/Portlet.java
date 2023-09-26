@@ -20,6 +20,7 @@ public class Portlet extends PortletModel {
   private final String portletClass, portletSource;
 
     public static final String DATA_VIEW_MODE_KEY = "dataViewMode";
+  public static final String MAINTENANCE = "maintenance";
 
   @Deprecated
   public Portlet(PortletPK pk) {

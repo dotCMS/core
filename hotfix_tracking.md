@@ -122,3 +122,4 @@ This maintenance release includes the following code fixes:
 98. https://github.com/dotCMS/core/issues/24990 : Punch List : Redis Session Manager #24990
 99. https://github.com/dotCMS/core/issues/25570 : Redis / Session-less testing and improvements #25570
 100.    https://github.com/dotCMS/core/issues/21855 : Unable to save content of a Widget with WYSIWYG Code view #21855
+101.    https://github.com/dotCMS/core/issues/22507 : Make instance restart function capable of restarting the cluster #22507

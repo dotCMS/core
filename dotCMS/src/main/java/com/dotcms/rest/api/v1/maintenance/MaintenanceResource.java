@@ -17,6 +17,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
+
+import com.dotmarketing.exception.DotRuntimeException;
+import com.liferay.portal.model.Portlet;
+import io.vavr.Lazy;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -49,6 +53,8 @@ import io.vavr.control.Try;
 public class MaintenanceResource implements Serializable {
 
     private final WebResource webResource;
+    protected static final Lazy<Boolean> ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE =
+            Lazy.of(() -> Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true));
 
     /**
      * Default class constructor.
@@ -82,15 +88,15 @@ public class MaintenanceResource implements Serializable {
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("maintenance")
+                .requiredPortlet(Portlet.MAINTENANCE)
                 .init();
 
-        Logger.info(this.getClass(), "User:" + initData.getUser() + " is shutting down dotCMS!"); 
+        Logger.info(this.getClass(), String.format("User '%s' is shutting down dotCMS!", initData.getUser()));
         SecurityLogger.logInfo(
                 this.getClass(),
-                "User:" + initData.getUser() + " is shutting down dotCMS from ip:" + request.getRemoteAddr());
+                String.format("User '%s' is shutting down dotCMS from ip: %s", initData.getUser(), request.getRemoteAddr()));
 
-        if (!Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true)) {
+        if (!ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE.get()) {
             return Response.status(Status.FORBIDDEN).build();
         }
 
@@ -102,6 +108,40 @@ public class MaintenanceResource implements Serializable {
                         TimeUnit.SECONDS
                 );
 
+        return Response.ok(new ResponseEntityView("Shutdown")).build();
+    }
+
+    /**
+     * This method is meant to shut down the current DotCMS instance.
+     * It will pass the control to catalina.sh (Tomcat) script to deal with any exit code.
+     *
+     * @param request http request
+     * @param response http response
+     * @return string response
+     */
+    @DELETE
+    @Path("/_shutdownCluster")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response shutdownCluster(@Context final HttpServletRequest request,
+                                          @Context final HttpServletResponse response,
+                                          @DefaultValue("60") @QueryParam("rollingDelay") int rollingDelay) {
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(Portlet.MAINTENANCE)
+                .init();
+        final String statusMsg = String.format("User '%s' is shutting down dotCMS Cluster with a rolling delay of %s"
+                , initData.getUser(), rollingDelay);
+        Logger.info(this.getClass(), statusMsg);
+        SecurityLogger.logInfo(this.getClass(), statusMsg);
+        if (!ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE.get()) {
+            return Response.status(Status.FORBIDDEN).build();
+        }
+        ClusterManagementTopic.getInstance().restartCluster(rollingDelay);
         return Response.ok(new ResponseEntityView("Shutdown")).build();
     }
 
@@ -197,7 +237,7 @@ public class MaintenanceResource implements Serializable {
                     IOUtils.copy(input, output);
 
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new DotRuntimeException(e);
                 }
             }
 
@@ -319,7 +359,7 @@ public class MaintenanceResource implements Serializable {
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("maintenance")
+                .requiredPortlet(Portlet.MAINTENANCE)
                 .init();
     }
 
