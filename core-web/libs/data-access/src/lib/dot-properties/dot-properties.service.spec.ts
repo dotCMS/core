@@ -5,6 +5,7 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotPropertiesService } from './dot-properties.service';
+import { ENABLED_FEATURE_FLAGS } from '@dotcms/dotcms-models';
 
 const fakeResponse = {
     entity: {
@@ -128,28 +129,17 @@ describe('DotPropertiesService', () => {
     });
 
     describe('loadConfig', () => {
-        it('should set featureConfig to the values returned by getKeys', () => {
-            const keys = [
-                'LOAD_FRONTEND_EXPERIMENTS',
-                'DOTFAVORITEPAGE_FEATURE_ENABLE',
-                'FEATURE_FLAG_TEMPLATE_BUILDER',
-                'FEATURE_FLAG_SEO_IMPROVEMENTS',
-                'FEATURE_FLAG_SEO_PAGE_TOOLS',
-                'FEATURE_FLAG_EDIT_URL_CONTENT_MAP'
-            ];
-            const expectedValues = {
-                [keys[0]]: 'value1',
-                [keys[1]]: 'value2',
-                [keys[2]]: 'value3',
-                [keys[3]]: 'value4',
-                [keys[4]]: 'value5',
-                [keys[5]]: 'value6'
-            };
+        it('should load the configuration for the feature flags', () => {
+            const keys = ENABLED_FEATURE_FLAGS;
+            const values = { key1: 'value1', key2: 'value2' };
+
             service.loadConfig();
+
             const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${keys.join()}`);
             expect(req.request.method).toBe('GET');
-            req.flush({ entity: expectedValues });
-            expect(service.featureConfig).toEqual(expectedValues);
+            req.flush({ entity: values });
+
+            expect(service.featureConfig).toEqual(values);
         });
     });
 
