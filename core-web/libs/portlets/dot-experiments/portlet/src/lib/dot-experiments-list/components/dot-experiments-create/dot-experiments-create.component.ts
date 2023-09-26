@@ -11,12 +11,16 @@ import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotMessagePipe,
+    DotTrimInputDirective
+} from '@dotcms/ui';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 import { DotValidators } from '@shared/validators/dotValidators';
 
-import { DotExperimentsTrimInputDirective } from '../../../shared/ui/directives/dot-experiment-trim-input/dot-experiments-trim-input.directive';
 import {
     DotExperimentsListStore,
     VmCreateExperiments
@@ -46,7 +50,7 @@ interface CreateForm {
         SidebarModule,
         ButtonModule,
         DotFieldRequiredDirective,
-        DotExperimentsTrimInputDirective
+        DotTrimInputDirective
     ],
     templateUrl: './dot-experiments-create.component.html',
     styleUrls: ['./dot-experiments-create.component.scss'],

@@ -23,10 +23,8 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { MAX_INPUT_DESCRIPTIVE_LENGTH } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotMessagePipe, DotTrimInputDirective } from '@dotcms/ui';
 import { DotValidators } from '@shared/validators/dotValidators';
-
-import { DotExperimentsTrimInputDirective } from '../directives/dot-experiment-trim-input/dot-experiments-trim-input.directive';
 
 type InplaceInputSize = 'small' | 'large';
 const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; input: string }> = {
@@ -53,7 +51,7 @@ const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; inp
         InplaceModule,
         InputTextModule,
         SharedModule,
-        DotExperimentsTrimInputDirective
+        DotTrimInputDirective
     ],
     templateUrl: './dot-experiments-inline-edit-text.component.html',
     styleUrls: ['./dot-experiments-inline-edit-text.component.scss'],
