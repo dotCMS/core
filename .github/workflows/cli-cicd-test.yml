@@ -15,7 +15,7 @@ on:
     paths-ignore:
       - '.gitignore'
       - '.dockerignore'
-      - 'dotCMS/src/main/webapp/html'
+      - 'dotCMS/src/main/webapp/html/**'
       - '!docker/**'
       - 'cicd/**'
       - '.cicd/**'
@@ -28,7 +28,7 @@ on:
     paths-ignore:
       - '.gitignore'
       - '.dockerignore'
-      - 'dotCMS/src/main/webapp/html'
+      - 'dotCMS/src/main/webapp/html/**'
       - '!docker/**'
       - 'cicd/**'
       - '.cicd/**'
