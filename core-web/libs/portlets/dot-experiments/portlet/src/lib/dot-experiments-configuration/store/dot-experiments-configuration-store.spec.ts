@@ -21,6 +21,8 @@ import {
     DEFAULT_VARIANT_NAME,
     DotExperiment,
     DotExperimentStatus,
+    EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
+    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     ExperimentSteps,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
@@ -44,9 +46,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 
 import {
     DotExperimentsConfigurationState,
-    DotExperimentsConfigurationStore,
-    EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
-    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED
+    DotExperimentsConfigurationStore
 } from './dot-experiments-configuration-store';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);

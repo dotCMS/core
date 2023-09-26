@@ -20,6 +20,8 @@ import {
     DotExperimentStatus,
     DotPageRenderState,
     DotPageState,
+    EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
+    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     ExperimentSteps,
     Goal,
     Goals,
@@ -37,10 +39,6 @@ import {
     checkIfExperimentDescriptionIsSaving,
     processExperimentConfigProps
 } from '../../shared/dot-experiment.utils';
-
-export const EXP_CONFIG_ERROR_LABEL_CANT_EDIT = 'experiment.configure.edit.only.draft.status';
-
-export const EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED = 'experiment.configure.edit.page.blocked';
 
 export interface DotExperimentsConfigurationState {
     experiment: DotExperiment;
