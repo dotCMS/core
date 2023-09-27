@@ -13,7 +13,6 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.rest.api.v1.vtl.VelocityReader;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -58,14 +57,14 @@ import java.util.Optional;
  * Implements a rest endpoints the allows to run javascript code (jstl).
  * @author jsanca
  */
-@Path("/jstl")
+@Path("/js")
 public class JsResource {
 
     public static final String IDENTIFIER = "identifier";
     private final MultiPartUtils multiPartUtils;
     private final WebResource webResource;
     @VisibleForTesting
-    static final String JS_PATH = "/application/jstl";
+    static final String JS_PATH = "/application/apijs";
 
     public JsResource() {
         this(new WebResource(), new MultiPartUtils());
