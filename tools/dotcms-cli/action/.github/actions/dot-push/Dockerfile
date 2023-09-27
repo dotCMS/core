@@ -1,11 +1,11 @@
 FROM openjdk:11
 LABEL authors="fabrizzioaraya"
 
-ARG CLI_RELEASE_DOWNLOAD_BASE_URL="https://github.com/dotCMS/core/releases/download/"
+ARG CLI_RELEASE_DOWNLOAD_BASE_URL="https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/"
 ARG RUN_JAVA_VERSION=1.3.8
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
-ARG RUN_DOT_CLI_VERSION='1.2.0'
-ARG CLI_RELEASE_DOWNLOAD_URL="${CLI_RELEASE_DOWNLOAD_BASE_URL}dotcli${RUN_DOT_CLI_VERSION}/dotcli-${RUN_DOT_CLI_VERSION}.jar"
+ARG RUN_DOT_CLI_VERSION='1.0.0-SNAPSHOT'
+ARG CLI_RELEASE_DOWNLOAD_URL="${CLI_RELEASE_DOWNLOAD_BASE_URL}${RUN_DOT_CLI_VERSION}/dotcli-${RUN_DOT_CLI_VERSION}.jar"
 ENV DOT_CLI_JAR="dot-cli.jar"
 ENV DEMO_API_URL="https://demo.dotcms.com/api"
 ENV DOT_SERVICES_YML="dot-service.yml"
