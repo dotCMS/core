@@ -7,7 +7,7 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { map } from 'rxjs/operators';
 
 import { DotAddVariableStore } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessageService } from '@dotcms/data-access';
 
 import { DotVariableContent, DotVariableList, FilteredFieldTypes } from './dot-add-variable.models';
 
@@ -15,10 +15,10 @@ import { DotVariableContent, DotVariableList, FilteredFieldTypes } from './dot-a
     selector: 'dot-add-variable',
     templateUrl: './dot-add-variable.component.html',
     styleUrls: ['./dot-add-variable.component.scss'],
-    providers: [DotAddVariableStore, DotMessagePipe]
+    providers: [DotAddVariableStore]
 })
 export class DotAddVariableComponent implements OnInit {
-    private readonly dotMessage = inject(DotMessagePipe);
+    private readonly dotMessage = inject(DotMessageService);
     private readonly store = inject(DotAddVariableStore);
     private readonly config = inject(DynamicDialogConfig);
     private readonly ref = inject(DynamicDialogRef);
@@ -37,7 +37,7 @@ export class DotAddVariableComponent implements OnInit {
                     fieldTypeLabel: variable.fieldTypeLabel
                 }));
             variables.push({
-                name: this.dotMessage.transform('Content-Identifier-value'),
+                name: this.dotMessage.get('Content-Identifier-value'),
                 variable: 'ContentIdentifier'
             });
 
