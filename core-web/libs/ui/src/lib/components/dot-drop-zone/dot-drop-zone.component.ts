@@ -37,6 +37,10 @@ export class DotDropZoneComponent {
     @Output() fileDragOver = new EventEmitter<boolean>();
     @Output() fileDragLeave = new EventEmitter<boolean>();
 
+    /*
+     * Max file size in bytes.
+     * See Docs: https://www.dotcms.com/docs/latest/binary-field#FieldVariables
+     */
     @Input() maxFileSize: number;
 
     @Input() set accept(types: string[]) {

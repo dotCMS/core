@@ -9,19 +9,17 @@
         <ng-template pTemplate="footer">
             <div
                 class="inline-block"
-                [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
-                [tooltipDisabled]="vm.isExperimentADraft"
+                [pTooltip]="vm.disabledTooltipLabel | dm"
+                [tooltipDisabled]="!vm.disabledTooltipLabel"
                 data-testId="tooltip-on-disabled"
-                tooltipPosition="bottom"
-            >
+                tooltipPosition="bottom">
                 <button
                     class="p-button-sm p-button-text"
-                    [disabled]="!vm.isExperimentADraft"
+                    [disabled]="vm.disabledTooltipLabel"
                     (click)="setupTargeting()"
                     data-testId="targeting-add-button"
                     label="{{ 'experiments.configure.targeting.add' | dm }}"
-                    pButton
-                ></button>
+                    pButton></button>
             </div>
         </ng-template>
     </p-card>

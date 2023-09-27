@@ -57,7 +57,7 @@
 <p-card class="results-seo-tool__result-card" *ngFor="let result of currentResults$ | async">
     <ng-template pTemplate="header">
         <div class="results-seo-tool__result-card-title">
-            <span data-testId="result-key"> {{ result.key | titlecase }}</span>
+            <span data-testId="result-key"> {{ result.title | titlecase }}</span>
         </div>
     </ng-template>
     <ul class="results-seo-tool__result-card-list">

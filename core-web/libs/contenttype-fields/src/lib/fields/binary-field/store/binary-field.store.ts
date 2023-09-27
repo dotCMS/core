@@ -35,7 +35,7 @@ export enum BINARY_FIELD_STATUS {
 
 @Injectable()
 export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
-    private _maxFileSize: number;
+    private _maxFileSizeInMB: number;
 
     // Selectors
     readonly vm$ = this.select((state) => state);
@@ -148,15 +148,21 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         return url$.pipe();
     });
 
-    setMaxFileSize(maxFileSize: number) {
-        this._maxFileSize = maxFileSize;
+    /**
+     * Set the max file size in Bytes
+     *
+     * @param {number} bytes
+     * @memberof DotBinaryFieldStore
+     */
+    setMaxFileSize(bytes: number) {
+        this._maxFileSizeInMB = bytes / (1024 * 1024);
     }
 
     private uploadTempFile(file: File): Observable<DotCMSTempFile> {
         return from(
             this.dotUploadService.uploadFile({
                 file,
-                maxSize: `${this._maxFileSize}`,
+                maxSize: this._maxFileSizeInMB ? `${this._maxFileSizeInMB}MB` : '',
                 signal: null
             })
         ).pipe(
