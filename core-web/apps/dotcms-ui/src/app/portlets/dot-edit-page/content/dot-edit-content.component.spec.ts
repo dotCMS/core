@@ -381,6 +381,8 @@ describe('DotEditContentComponent', () => {
         spyOn(dotPageStateService, 'reload');
 
         spyOn(dotEditContentHtmlService, 'renderAddedForm');
+
+        spyOn(component, 'reload').and.callThrough();
     });
 
     describe('elements', () => {
@@ -545,6 +547,18 @@ describe('DotEditContentComponent', () => {
                 expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
                     data: 'test'
                 });
+            });
+
+            it('should reload page when triggering save-page', () => {
+                dotEditContentlet.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'save-page',
+                        payload: {}
+                    }
+                });
+                dotContentletEditorService.close$.next(true);
+
+                expect(component.reload).toHaveBeenCalledWith(null);
             });
         });
 
