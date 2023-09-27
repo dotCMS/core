@@ -125,3 +125,5 @@ This maintenance release includes the following code fixes:
 101.    https://github.com/dotCMS/core/issues/22507 : Make instance restart function capable of restarting the cluster #22507
 102.    https://github.com/dotCMS/core/issues/23254 : Categories: Add child count to the categories list response #23254
 103.    https://github.com/dotCMS/core/issues/23554 : Can't close query dialog on content search screen #23554
+104.    https://github.com/dotCMS/core/issues/23669 : properties from ENV vars do not need XML encoding #23669
+105.
