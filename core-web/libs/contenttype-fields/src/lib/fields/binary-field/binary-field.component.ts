@@ -28,6 +28,8 @@ import {
     DropZoneFileValidity
 } from '@dotcms/ui';
 
+import { InputTextModule } from 'primeng/inputtext';
+
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import {
     BINARY_FIELD_MODE,
@@ -60,7 +62,8 @@ const initialState: BinaryFieldState = {
         DotMessagePipe,
         DotBinaryFieldUiMessageComponent,
         DotSpinnerModule,
-        HttpClientModule
+        HttpClientModule,
+        InputTextModule
     ],
     providers: [DotBinaryFieldStore],
     templateUrl: './binary-field.component.html',
@@ -195,8 +198,8 @@ export class DotBinaryFieldComponent implements OnInit {
         // TODO: Implement - Write Code
     }
 
-    handleExternalSourceFile(_event) {
-        // TODO: Implement - FROM URL
+    handleExternalSourceFile(event: string) {
+        this.dotBinaryFieldStore.handleUploadFile(event);
     }
 
     /**

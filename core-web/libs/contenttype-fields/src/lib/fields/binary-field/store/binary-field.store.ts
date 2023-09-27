@@ -92,6 +92,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     readonly setUploading = this.updater((state) => ({
         ...state,
+        dialogOpen: false,
         dropZoneActive: false,
         uiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
         status: BINARY_FIELD_STATUS.UPLOADING
@@ -119,8 +120,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     readonly closeDialog = this.updater((state) => ({
         ...state,
-        dialogOpen: false,
-        mode: BINARY_FIELD_MODE.DROPZONE
+        dialogOpen: false
     }));
 
     readonly removeFile = this.updater((state) => ({
@@ -131,7 +131,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     }));
 
     //  Effects
-    readonly handleUploadFile = this.effect<File>((event$) => {
+    readonly handleUploadFile = this.effect<File | string>((event$) => {
         return event$.pipe(
             tap(() => this.setUploading()),
             switchMap((file) => this.uploadTempFile(file))
@@ -141,11 +141,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly handleCreateFile = this.effect<{ name: string; code: string }>((fileDetails$) => {
         /* To be implemented */
         return fileDetails$.pipe();
-    });
-
-    readonly handleExternalSourceFile = this.effect<string>((url$) => {
-        /* To be implemented */
-        return url$.pipe();
     });
 
     /**
@@ -158,7 +153,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         this._maxFileSizeInMB = bytes / (1024 * 1024);
     }
 
-    private uploadTempFile(file: File): Observable<DotCMSTempFile> {
+    private uploadTempFile(file: File | string): Observable<DotCMSTempFile> {
         return from(
             this.dotUploadService.uploadFile({
                 file,
@@ -167,12 +162,8 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             })
         ).pipe(
             tapResponse(
-                (tempFile) => {
-                    this.setTempFile(tempFile);
-                },
-                () => {
-                    this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR));
-                }
+                (tempFile) => this.setTempFile(tempFile),
+                () => this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR))
             )
         );
     }

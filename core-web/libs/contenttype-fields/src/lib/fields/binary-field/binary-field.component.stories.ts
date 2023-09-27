@@ -7,6 +7,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotDropZoneComponent, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
@@ -32,7 +33,8 @@ export default {
                 DotDropZoneComponent,
                 DotBinaryFieldUiMessageComponent,
                 DotMessagePipe,
-                DotSpinnerModule
+                DotSpinnerModule,
+                InputTextModule
             ],
             providers: [
                 DotBinaryFieldStore,

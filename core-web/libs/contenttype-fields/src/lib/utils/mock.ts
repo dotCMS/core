@@ -15,7 +15,9 @@ const MESSAGES_MOCK = {
     'dot.binary.field.drag.and.drop.error.file.maxsize.exceeded.message':
         'The file weight <strong>exceeds the limits of {0}</strong>, please  <br /> reduce size before uploading.',
     'dot.binary.field.drag.and.drop.error.server.error.message':
-        '<strong>Something went wrong</strong>, please try again or <br/> contact our support team.'
+        '<strong>Something went wrong</strong>, please try again or <br/> contact our support team.',
+    'dot.binary.field.action.cancel': 'Cancel',
+    'dot.binary.field.action.import': 'Import'
 };
 
 export const CONTENTTYPE_FIELDS_MESSAGE_MOCK = new MockDotMessageService(MESSAGES_MOCK);
