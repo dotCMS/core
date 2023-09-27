@@ -87,10 +87,11 @@
     display: flex;
     gap: $spacing-3;
     color: $black;
+    align-items: center;
 }
 
 .results-seo-tool__result-card-list li:not(:last-child) {
-    margin-bottom: $spacing-3;
+    margin-bottom: $spacing-4;
 }
 
 .results-seo-tool__result-icon {
@@ -155,6 +156,7 @@
 
     .results-seo-tool__result-card-list .pi-external-link {
         color: $color-palette-gray-700;
+        font-size: 12px;
     }
 
     .results-seo-tool__main-card .p-card .p-card-body {
