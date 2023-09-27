@@ -135,7 +135,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
             this.deactivateInplace();
         }
 
-        isLoading && isLoading.currentValue === true
+        isLoading && isLoading.currentValue
             ? this.textControl.disable()
             : this.textControl.enable();
 

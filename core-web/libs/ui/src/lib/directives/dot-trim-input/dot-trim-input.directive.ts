@@ -20,7 +20,7 @@ export class DotTrimInputDirective implements AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-        if (this.el.nativeElement.tagName.toLowerCase() != 'input') {
+        if (this.el.nativeElement.tagName.toLowerCase() !== 'input') {
             console.warn('DotTrimInputDirective is for use with Inputs');
         }
     }
