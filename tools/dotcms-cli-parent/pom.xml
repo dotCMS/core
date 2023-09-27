@@ -3,12 +3,12 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.dotcms</groupId>
-  <artifactId>dotCMS-cli</artifactId>
+  <artifactId>dotcms-cli-parent</artifactId>
   <packaging>pom</packaging>
   <version>1.0.0-SNAPSHOT</version>
   <modules>
-    <module>api-data-model</module>
-    <module>cli</module>
+    <module>dotcms-api-data-model</module>
+    <module>dotcms-cli</module>
   </modules>
   <properties>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>

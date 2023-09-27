@@ -42,8 +42,8 @@ distributions:
     active: ALWAYS
     stereotype: CLI
     artifacts:
-      - path: tools/dotcms-cli/cli/target/cli-{{projectVersion}}-runner.jar
-        transform: tools/dotcms-cli/cli/target/dotcli-{{projectVersion}}.jar
+      - path: tools/dotcms-cli-parent/dotcms-cli/target/dotcms-cli-{{projectVersion}}-runner.jar
+        transform: tools/dotcms-cli-parent/dotcms-cli/target/dotcli-{{projectVersion}}.jar
 
 packagers:
   brew:

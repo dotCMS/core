@@ -43,7 +43,7 @@ First Start a dotCMS instance locally
 To run example API in dev mode
 ```shell script
 # From top level to build all.
-cd cli
+cd dotcms-cli
 ../mvnw quarkus:dev
 ```
 **NOTE:**  To reduce duplication in the multi-module project mvnw is not included in each submodule. 
@@ -55,26 +55,26 @@ if running from the submodule folder all dependencies will need to be up to date
 Alternatively you can specify the sub project from the parent folder
 ```shell script
 # from top level to build all
-cd cli
+cd dotcms-cli
 # The command is same as the following to run the quarkus build plugin
 # ../mvnw quarkus:dev 
-../mvnw -pl cli quarkus:dev
+../mvnw -pl dotcms-cli quarkus:dev
 ```
 
 quarkus:dev can only run a single project, but for other maven options you can choose to work out the dependencies to build and skip unrelated submodules
-this uses the --am (also make) option.  In this way with the cli module will build the api-data-model but not build the rest-api module
+this uses the --am (also make) option.  In this way with the dotcms-cli module will build the dotcms-api-data-model but not build the rest-api module
 
 ```shell script
 # From top level to build all
 # The command is same as the following to run the quarkus build plugin
 # ../mvnw quarkus:dev 
-./mvnw -pl cli --am install
+./mvnw -pl dotcms-cli --am install
 ```
 
 
 ## Project outline
 
-### api-data-model
+### dotcms-api-data-model
 This module implements the base API defined in api-data-model using JAX-RS to
 provide a Rest interface for calling the api.   We make the rest classes call a delegate implementation
 of the service interface,  we could make the resource class implement the service interface itself
@@ -86,7 +86,7 @@ can be done in here that are not concerns of the underlying java interface.
 If the project using this allows for CDI it would be easy to add the API and inject the service implementations
 Otherwise the owner will need to manage the annotation processing itself and methods will need to be created to allow manual injection of the implementation
 
-### cli
+### dotcms-cli
 
 This module uses picocli to easily create a client application
 
@@ -240,7 +240,7 @@ Example:
 
 ```shell
 export QUARKUS_LOG_FILE_PATH=/Users/my-user/CLI/dotcms-cli.log
-java -jar cli-1.0.0-SNAPSHOT-runner.jar login -u admin@dotcms.com -p admin
+java -jar dotcms-cli-1.0.0-SNAPSHOT-runner.jar login -u admin@dotcms.com -p admin
 ```
 
 ##### 2. Set the system property

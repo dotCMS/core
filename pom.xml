@@ -29,6 +29,7 @@
         <module>dotcms-integration</module>
         <module>plugins-core</module>
         <module>reports</module>
+        <module>tools/dotcms-cli-parent</module>
     </modules>
     <distributionManagement>
         <repository>
