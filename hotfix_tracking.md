@@ -128,3 +128,4 @@ This maintenance release includes the following code fixes:
 104.    https://github.com/dotCMS/core/issues/23669 : properties from ENV vars do not need XML encoding #23669
 105.    https://github.com/dotCMS/core/issues/25789 : Tighten up MultiPartSecurityRequestWrapper #25789
 106.    https://github.com/dotCMS/core/issues/26019 : PubSubListener with vanilla postgres #26019
+107.    https://github.com/dotCMS/core/issues/26046 : Radio Button no longer accept 1/0 as valid when searching in ES #26046
