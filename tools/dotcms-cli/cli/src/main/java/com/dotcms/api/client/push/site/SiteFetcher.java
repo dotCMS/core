@@ -54,14 +54,6 @@ public class SiteFetcher implements ContentFetcher<SiteView> {
 
                 // Increment the page number
                 page++;
-
-                // Check if all records have been fetched
-                long totalEntries = sitesResponse.pagination() != null ?
-                        sitesResponse.pagination().totalEntries() : 0;
-                if (allSites.size() >= totalEntries) {
-                    // All records have been fetched, break the loop
-                    break;
-                }
             } else {
                 // Handle the case where the response doesn't contain sites or an error occurred
                 break;

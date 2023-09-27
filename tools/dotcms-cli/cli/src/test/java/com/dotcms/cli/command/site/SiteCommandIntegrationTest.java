@@ -240,7 +240,7 @@ class SiteCommandIntegrationTest extends CommandTest {
                 commandLine.setOut(out);
                 commandLine.setErr(out);
                 int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                        path.toFile().getAbsolutePath(), "--fail-fast");
+                        path.toFile().getAbsolutePath(), "--fail-fast", "-e");
                 Assertions.assertEquals(ExitCode.OK, status);
 
                 status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
@@ -331,7 +331,7 @@ class SiteCommandIntegrationTest extends CommandTest {
 
             // And now pushing the site back to the server to make sure the structure is still correct
             status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                    siteFilePath.toAbsolutePath().toString(), "--fail-fast");
+                    siteFilePath.toAbsolutePath().toString(), "--fail-fast", "-e");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
@@ -382,7 +382,7 @@ class SiteCommandIntegrationTest extends CommandTest {
 
             // And now pushing the site back to the server to make sure the structure is still correct
             status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                    siteFilePath.toAbsolutePath().toString(), "--fail-fast");
+                    siteFilePath.toAbsolutePath().toString(), "--fail-fast", "-e");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
         } finally {
@@ -508,7 +508,7 @@ class SiteCommandIntegrationTest extends CommandTest {
             // ╚═══════════════════════╝
             status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
                     workspace.sites().toAbsolutePath().toString(),
-                    "--removeSites", "--forceSiteExecution", "--fail-fast");
+                    "--removeSites", "--forceSiteExecution", "--fail-fast", "-e");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             // ╔══════════════════════════════╗

@@ -92,13 +92,6 @@ public class ProcessResultTask<T> extends RecursiveAction {
                 case REMOVE:
 
                     if (this.allowRemove) {
-                        logger.debug(
-                                String.format("Pushing [%s] operation for [%s]",
-                                        result.action(),
-                                        this.pushHandler.contentSimpleDisplay(
-                                                result.serverContent().get())
-                                )
-                        );
 
                         if (result.serverContent().isPresent()) {
 
