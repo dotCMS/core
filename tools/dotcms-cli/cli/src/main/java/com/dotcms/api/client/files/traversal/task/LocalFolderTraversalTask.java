@@ -679,12 +679,12 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
     }
 
     /**
-     * FileFilter implementation to block hidden files and filter out system specific elements.
+     * FileFilter implementation to allow hidden files and folders and filter out system specific elements.
      */
     private static class HiddenFileFilter implements FileFilter {
         @Override
         public boolean accept(File file) {
-            return !(file.isFile() && file.isHidden());
+            return !file.getName().equalsIgnoreCase(".DS_Store");
         }
     }
 
