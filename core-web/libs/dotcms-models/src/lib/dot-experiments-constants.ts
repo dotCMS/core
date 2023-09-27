@@ -295,3 +295,7 @@ export enum HealthStatusTypes {
 }
 
 export const RUNNING_UNTIL_DATE_FORMAT = 'EEE, LLL dd';
+
+export const EXP_CONFIG_ERROR_LABEL_CANT_EDIT = 'experiment.configure.edit.only.draft.status';
+
+export const EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED = 'experiment.configure.edit.page.blocked';

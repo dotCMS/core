@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "8d0496a9-888b-4463-9f50-fcb286b3e33e",
+		"_postman_id": "fa7f1178-7881-4372-9780-6b26e949d2f7",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "1549189"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -6552,6 +6552,12 @@
 											"    pm.expect(runningId.id).not.null;",
 											"    pm.expect(runningId.startDate).not.null;",
 											"    pm.expect(runningId.endDate).be.null;",
+											"    ",
+											"    // Experiments needs to last for 14 days",
+											"    var endDate = jsonData.entity.scheduling.endDate;",
+											"    var startDate = jsonData.entity.scheduling.startDate;",
+											"    var length = (endDate - startDate) / 3600 / 1000 / 24;",
+											"    pm.expect(length).equal(14)",
 											"});",
 											"",
 											"",
@@ -11222,8 +11228,8 @@
 											"pm.test(\"Ended Experiment with expected values\", function () {",
 											"    pm.response.to.have.status(200);",
 											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
-											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
-											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.null;",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.null;",
 											"});",
 											"",
 											"",
@@ -11574,8 +11580,8 @@
 											"pm.test(\"Ended Experiment with expected values\", function () {",
 											"    pm.response.to.have.status(200);",
 											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
-											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
-											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.null;",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.null;",
 											"});",
 											"",
 											"",
