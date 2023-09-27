@@ -251,7 +251,7 @@
                             <exclude>**/.angular/**</exclude>
                             <exclude>core-web/installs/**</exclude>
                             <exclude>core-web/dist/**</exclude>
-                            <exclude>plugins-core/**</exclude>
+                            <exclude>dotcms-plugins-core/**</exclude>
                             <exclusion>docker/docker-compose-examples/**</exclusion>
                         </exclusions>
                         <failOnDryRunResults>false</failOnDryRunResults>

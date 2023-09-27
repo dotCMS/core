@@ -115,7 +115,7 @@ describe('DotResultsSeoToolComponent', () => {
         spectator.detectChanges();
         spectator.component.currentResults$.subscribe((items) => {
             expect(items.length).toEqual(3);
-            expect(items[0].key).toEqual(seoOGTagsResultMock[1].key);
+            expect(items[0].key).toEqual(seoOGTagsResultMock[5].key);
             expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
             expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
             done();
@@ -149,5 +149,18 @@ describe('DotResultsSeoToolComponent', () => {
             expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
             done();
         });
+    });
+
+    it('should render the result card title with title case', () => {
+        const expectedTitle = 'Title';
+        const expectedDescription = 'Description';
+
+        const resultKeyTitle = spectator.queryAll(byTestId('result-key'))[2];
+        const resultKeyDescription = spectator.queryAll(byTestId('result-key'))[1];
+
+        expect(resultKeyTitle).toExist();
+        expect(resultKeyDescription).toExist();
+        expect(resultKeyTitle).toContainText(expectedTitle);
+        expect(resultKeyDescription).toContainText(expectedDescription);
     });
 });

@@ -1,11 +1,12 @@
 package com.dotcms.rest;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.WebResource.InitBuilder;
@@ -17,6 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -56,12 +58,12 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         
     }
 
-    private static List<String> tagsKnownNamesSystemHost =
+    private static final List<String> tagsKnownNamesSystemHost =
             list("extreme" + UUIDGenerator.generateUuid(),
                     "external" + UUIDGenerator.generateUuid(),
                     "extension" + UUIDGenerator.generateUuid());
 
-    private static List<String> tagsKnownNamesDemoHost =
+    private static final List<String> tagsKnownNamesDemoHost =
             list("terminal" + UUIDGenerator.generateUuid(),
                     "terminator" + UUIDGenerator.generateUuid(),
                     "termometer" + UUIDGenerator.generateUuid());
@@ -76,12 +78,13 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
             demoHost = new SiteDataGen().nextPersisted();
         }
         APILocator.getPermissionAPI().setDefaultCMSAnonymousPermissions(demoHost);
-        final String DEMO_HOST_IDENTIFIER = demoHost.getIdentifier();
+        final Folder demoFolder = new FolderDataGen().site(demoHost).nextPersisted();
+        final String demoFolderId = demoFolder.getIdentifier();
 
         // tag name provided, demo site id provided, should return tags filtered by name and host
         final TagResourceTestCase case1 = new TagResourceTestCase();
         case1.setTagName("ter");
-        case1.setSiteOrFolderId(DEMO_HOST_IDENTIFIER);
+        case1.setSiteOrFolderId(demoFolderId);
         case1.setExpectedTags(tagsKnownNamesDemoHost);
 
         // tag name provided, NO host id provided, should not return tags created under DEMO
