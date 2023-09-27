@@ -80,35 +80,13 @@
         [header]="dialogHeaderMap[vm.mode] | dm"
         [draggable]="false"
         [resizable]="false"
+        (onHide)="dialogClosed()"
         (visibleChange)="visibleChange($event)">
         <div [ngSwitch]="vm.mode">
             <div *ngSwitchCase="BINARY_FIELD_MODE.URL" data-testId="url">
-                <div class="binary-field__external-source">
-                    <div class="binary-field__external-source--input">
-                        <span>Import from URL</span>
-                        <input
-                            #urlInput
-                            [ngStyle]="{ width: '32rem' }"
-                            pInputText
-                            type="text"
-                            placeholder="https://www.google.com/"
-                            data-testId="url-input" />
-                    </div>
-                    <div class="binary-field__external-source--action">
-                        <p-button
-                            [label]="'dot.binary.field.action.cancel' | dm"
-                            (click)="visibleChange(false)"
-                            data-testId="action-cancel-btn"
-                            styleClass="p-button-outlined"
-                            icon="pi pi-times"></p-button>
-
-                        <p-button
-                            [label]="'dot.binary.field.action.import' | dm"
-                            (click)="handleExternalSourceFile(urlInput.value)"
-                            data-testId="action-import-btn"
-                            icon="pi pi-link"></p-button>
-                    </div>
-                </div>
+                <dot-dot-binary-field-url-mode
+                    (cancel)="visibleChange(false)"
+                    (accept)="handleExternalSourceFile($event)"></dot-dot-binary-field-url-mode>
             </div>
             <div *ngSwitchCase="BINARY_FIELD_MODE.EDITOR" data-testId="editor">
                 TODO: Implement Write Code

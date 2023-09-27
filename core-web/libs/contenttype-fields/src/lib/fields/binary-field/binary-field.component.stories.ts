@@ -14,6 +14,7 @@ import { DotDropZoneComponent, DotMessagePipe, DotSpinnerModule } from '@dotcms/
 
 import { DotBinaryFieldComponent } from './binary-field.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
+import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
@@ -34,7 +35,8 @@ export default {
                 DotBinaryFieldUiMessageComponent,
                 DotMessagePipe,
                 DotSpinnerModule,
-                InputTextModule
+                InputTextModule,
+                DotBinaryFieldUrlModeComponent
             ],
             providers: [
                 DotBinaryFieldStore,

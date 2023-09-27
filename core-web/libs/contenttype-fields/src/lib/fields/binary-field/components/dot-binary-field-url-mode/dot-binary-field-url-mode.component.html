@@ -1,0 +1,27 @@
+<form class="url-mode__form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="url-mode__input-container">
+        <span>Import from URL</span>
+        <input
+            [ngClass]="{ 'p-invalid': isInvalid }"
+            formControlName="url"
+            pInputText
+            type="text"
+            placeholder="https://www.google.com/"
+            data-testId="url-input" />
+        <span class="error-message p-invalid" *ngIf="isInvalid">{{ errorMessage }}</span>
+    </div>
+    <div class="url-mode__actions">
+        <p-button
+            [label]="'dot.binary.field.action.cancel' | dm"
+            (click)="cancel.emit()"
+            data-testId="action-cancel-btn"
+            styleClass="p-button-outlined"
+            icon="pi pi-times"></p-button>
+
+        <p-button
+            [label]="'dot.binary.field.action.import' | dm"
+            type="submit"
+            data-testId="action-import-btn"
+            icon="pi pi-link"></p-button>
+    </div>
+</form>

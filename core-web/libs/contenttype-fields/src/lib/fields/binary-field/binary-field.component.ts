@@ -15,6 +15,7 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { skip } from 'rxjs/operators';
 
@@ -28,9 +29,8 @@ import {
     DropZoneFileValidity
 } from '@dotcms/ui';
 
-import { InputTextModule } from 'primeng/inputtext';
-
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
+import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import {
     BINARY_FIELD_MODE,
     BINARY_FIELD_STATUS,
@@ -63,7 +63,8 @@ const initialState: BinaryFieldState = {
         DotBinaryFieldUiMessageComponent,
         DotSpinnerModule,
         HttpClientModule,
-        InputTextModule
+        InputTextModule,
+        DotBinaryFieldUrlModeComponent
     ],
     providers: [DotBinaryFieldStore],
     templateUrl: './binary-field.component.html',
@@ -162,6 +163,15 @@ export class DotBinaryFieldComponent implements OnInit {
         if (!visibily) {
             this.dotBinaryFieldStore.closeDialog();
         }
+    }
+
+    /**
+     * Listen to dialog close event
+     *
+     * @memberof DotBinaryFieldComponent
+     */
+    dialogClosed() {
+        this.dotBinaryFieldStore.setMode(BINARY_FIELD_MODE.DROPZONE);
     }
 
     /**
