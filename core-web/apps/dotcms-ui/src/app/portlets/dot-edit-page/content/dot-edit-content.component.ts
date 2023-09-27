@@ -301,7 +301,7 @@ browse from the page internal links
      */
     onCustomEvent($event: CustomEvent): void {
         // If we save we trigger a change
-        if ($event.detail.name === 'save-page') return this.pageSaved$.next();
+        if ($event.detail?.name === 'save-page') return this.pageSaved$.next();
 
         this.dotCustomEventHandlerService.handle($event);
     }

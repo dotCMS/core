@@ -579,6 +579,18 @@ describe('DotEditContentComponent', () => {
                 });
             });
 
+            it('should reload page when triggering save-page', () => {
+                dotCreateContentlet.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'save-page',
+                        payload: {}
+                    }
+                });
+                dotContentletEditorService.close$.next(true);
+
+                expect(component.reload).toHaveBeenCalledWith(null);
+            });
+
             it('should remove Contentlet Placeholder on close', () => {
                 spyOn(dotEditContentHtmlService, 'removeContentletPlaceholder');
                 dotCreateContentlet.triggerEventHandler('shutdown', {});
