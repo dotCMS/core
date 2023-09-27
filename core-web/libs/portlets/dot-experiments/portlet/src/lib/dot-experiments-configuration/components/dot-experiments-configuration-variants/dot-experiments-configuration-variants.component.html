@@ -31,7 +31,7 @@
                     <div class="flex flex-grow-1 flex-row align-items-center gap-2">
                         <ng-container
                             *ngIf="
-                                variant.name === defaultVariantName || !vm.isExperimentADraft;
+                                variant.name === defaultVariantName || vm.disabledTooltipLabel;
                                 else editVariantNameTpl
                             ">
                             <span data-testId="variant-name-original"> {{ variant.name }} </span>
@@ -48,13 +48,13 @@
                     <span class="separator">|</span>
 
                     <div
-                        [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
-                        [tooltipDisabled]="vm.isExperimentADraft"
+                        [pTooltip]="vm.disabledTooltipLabel | dm"
+                        [tooltipDisabled]="!vm.disabledTooltipLabel"
                         data-testId="tooltip-on-disabled"
                         tooltipPosition="bottom">
                         <button
                             class="p-button-sm p-button-text"
-                            [disabled]="!vm.isExperimentADraft"
+                            [disabled]="!vm.isExperimentADraft || vm.disabledTooltipLabel"
                             (click)="changeTrafficProportion()"
                             data-testId="variant-weight"
                             label="{{ variant.weight | number : '2.2-2' }}% {{
@@ -80,16 +80,18 @@
                     </ng-container>
 
                     <div
-                        [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
+                        [pTooltip]="vm.disabledTooltipLabel | dm"
                         [tooltipDisabled]="
-                            vm.isExperimentADraft || variant.name === defaultVariantName
+                            !vm.disabledTooltipLabel || variant.name === defaultVariantName
                         "
                         data-testId="tooltip-on-disabled"
                         tooltipPosition="bottom">
                         <button
                             class="p-button-sm p-button-danger p-button-text"
                             [disabled]="
-                                variant.name === defaultVariantName || !vm.isExperimentADraft
+                                variant.name === defaultVariantName ||
+                                !vm.isExperimentADraft ||
+                                vm.disabledTooltipLabel
                             "
                             (click)="deleteVariant({$event, variant}, vm.experimentId)"
                             data-testId="variant-delete-button"
@@ -124,9 +126,9 @@
         <ng-template pTemplate="footer">
             <div
                 class="inline-block"
-                [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
+                [pTooltip]="vm.disabledTooltipLabel | dm"
                 [tooltipDisabled]="
-                    vm.isExperimentADraft ||
+                    !vm.disabledTooltipLabel ||
                     vm.trafficProportion.variants?.length >= maxVariantsAllowed
                 "
                 data-testId="tooltip-on-disabled"
@@ -135,7 +137,8 @@
                     class="p-button-sm p-button-outlined"
                     [disabled]="
                         vm.trafficProportion.variants?.length >= maxVariantsAllowed ||
-                        !vm.isExperimentADraft
+                        !vm.isExperimentADraft ||
+                        vm.disabledTooltipLabel
                     "
                     (click)="addVariant()"
                     data-testId="variant-add-button"
