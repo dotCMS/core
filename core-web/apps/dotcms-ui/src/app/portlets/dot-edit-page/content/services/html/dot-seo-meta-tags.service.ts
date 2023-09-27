@@ -98,6 +98,7 @@ export class DotSeoMetaTagsService {
 
                     return {
                         key,
+                        title: key.replace('og:', '').replace('twitter:', ''),
                         keyIcon: keysValues.keyIcon,
                         keyColor: keysValues.keyColor,
                         items: items,
@@ -121,23 +122,23 @@ export class DotSeoMetaTagsService {
             [SEO_OPTIONS.DESCRIPTION]: {
                 getItems: (metaTagsObject: SeoMetaTags) =>
                     of(this.getDescriptionItems(metaTagsObject)),
-                sort: 2,
+                sort: 3,
                 info: this.dotMessageService.get('seo.rules.description.info')
             },
             [SEO_OPTIONS.OG_DESCRIPTION]: {
                 getItems: (metaTagsObject: SeoMetaTags) =>
                     of(this.getDescriptionItems(metaTagsObject)),
-                sort: 3,
+                sort: 4,
                 info: this.dotMessageService.get('seo.rules.description.info')
             },
             [SEO_OPTIONS.TITLE]: {
                 getItems: (metaTagsObject: SeoMetaTags) => of(this.getTitleItems(metaTagsObject)),
-                sort: 4,
+                sort: 2,
                 info: this.dotMessageService.get('seo.rules.title.info')
             },
             [SEO_OPTIONS.OG_TITLE]: {
                 getItems: (metaTagsObject: SeoMetaTags) => of(this.getOgTitleItems(metaTagsObject)),
-                sort: 5,
+                sort: 2,
                 info: this.dotMessageService.get('seo.rules.title.info')
             },
             [SEO_OPTIONS.OG_IMAGE]: {
@@ -148,13 +149,13 @@ export class DotSeoMetaTagsService {
             [SEO_OPTIONS.TWITTER_CARD]: {
                 getItems: (metaTagsObject: SeoMetaTags) =>
                     of(this.getTwitterCardItems(metaTagsObject)),
-                sort: 1,
+                sort: 2,
                 info: ''
             },
             [SEO_OPTIONS.TWITTER_TITLE]: {
                 getItems: (metaTagsObject: SeoMetaTags) =>
                     of(this.getTwitterTitleItems(metaTagsObject)),
-                sort: 2,
+                sort: 1,
                 info: ''
             },
             [SEO_OPTIONS.TWITTER_DESCRIPTION]: {

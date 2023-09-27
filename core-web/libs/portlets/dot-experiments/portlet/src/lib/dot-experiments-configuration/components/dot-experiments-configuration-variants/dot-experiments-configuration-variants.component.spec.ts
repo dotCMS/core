@@ -279,7 +279,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(confirmationService.confirm).toHaveBeenCalled();
         });
 
-        it('should disable tooltip if is on draft', () => {
+        it('should disable tooltip if not have a valid error label', () => {
             spectator.detectChanges();
 
             spectator
@@ -290,7 +290,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 });
         });
 
-        it('should disable button and show tooltip when experiment is nos on draft', () => {
+        it('should disable button and show tooltip when experiment have an error label', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
