@@ -40,7 +40,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.BooleanUtils;
@@ -261,18 +260,6 @@ public class WebAssetHelper {
     }
 
     /**
-     * This Predicate is used to deal with a very rare situation on which a file might not have binary metadata associated
-     * for example hidden files. In the rare event of a hidden file being uploaded to the system, we need to make sure they don't break the API response
-     */
-    Predicate<Contentlet> nonNullMetadata = c -> {
-        try {
-            return null != c.getBinaryMetadata(FileAssetAPI.BINARY_FIELD);
-        } catch (DotDataException e) {
-            return false;
-        }
-    };
-
-    /**
      * Converts a list of folders to a list of {@link FolderView}
      * @param assets folders to convert
      * @return list of {@link FolderView}
@@ -281,7 +268,6 @@ public class WebAssetHelper {
 
         return assets.stream().filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
                 .filter(Contentlet::isFileAsset)
-                .filter(nonNullMetadata)
                 .map(contentlet -> fileAssetAPI.fromContentlet(contentlet)).map(this::toAsset)
                 .collect(Collectors.toList());
     }
