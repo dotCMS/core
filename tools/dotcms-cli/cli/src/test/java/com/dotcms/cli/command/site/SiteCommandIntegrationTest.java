@@ -9,6 +9,7 @@ import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.site.GetSiteByNameRequest;
+import com.dotcms.model.site.Site;
 import com.dotcms.model.site.SiteView;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
@@ -436,6 +437,27 @@ class SiteCommandIntegrationTest extends CommandTest {
             // ║  Preparing the data  ║
             // ╚══════════════════════╝
 
+            // --
+            // Pulling all the existing sites created in other tests to avoid unwanted deletes
+            var sitesResponse = siteAPI.getSites(
+                    null,
+                    null,
+                    false,
+                    false,
+                    1,
+                    1000
+            );
+            var pullCount = 0;
+            if (sitesResponse != null && sitesResponse.entity() != null) {
+                for (Site site : sitesResponse.entity()) {
+                    var status = commandLine.execute(SiteCommand.NAME, SitePull.NAME,
+                            site.hostName(),
+                            "--workspace", workspace.root().toString());
+                    Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+                    pullCount++;
+                }
+            }
+
             // ---
             // Creating a some test sites
             final String newSiteName1 = String.format("new.dotcms.site1-%d",
@@ -454,12 +476,8 @@ class SiteCommandIntegrationTest extends CommandTest {
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             // ---
-            // Pulling the sites - We need the files in the sites folder
+            // Pulling the just created sites - We need the files in the sites folder
             // - Ignoring 1 site, in that way we can force a remove
-            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, "default",
-                    "--workspace", workspace.root().toString());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-
             status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName1,
                     "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
@@ -497,10 +515,10 @@ class SiteCommandIntegrationTest extends CommandTest {
             final var path = Path.of(workspace.sites().toString(), "test.site4.json");
             Files.write(path, siteDescriptor.getBytes());
 
-            // Make sure we have the proper amount of file in the sites folder
+            // Make sure we have the proper amount of files in the sites folder
             try (Stream<Path> walk = Files.walk(workspace.sites())) {
                 long count = walk.filter(Files::isRegularFile).count();
-                Assertions.assertEquals(4, count);
+                Assertions.assertEquals(3 + pullCount, count);
             }
 
             // ╔═══════════════════════╗
