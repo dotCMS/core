@@ -1,7 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
-import { CanActivate } from '@angular/router';
+import { inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -9,18 +8,10 @@ import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 /**
- * Guard for the new Edit Content form
- *
- * @export
- * @class EditContentGuard
- * @implements {CanActivate}
+ *  Check if the Edit Content new form is enabled
+ * @returns Observable<boolean>
  */
-@Injectable()
-export class EditContentGuard implements CanActivate {
-    private dotPropertiesService: DotPropertiesService = inject(DotPropertiesService);
-    canActivate(): Observable<boolean> {
-        return this.dotPropertiesService
-            .getKey(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE)
-            .pipe(map((enabled: string) => enabled === 'true'));
-    }
-}
+export const editContentGuard = (): Observable<boolean> =>
+    inject(DotPropertiesService)
+        .getKey(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE)
+        .pipe(map((enabled: string) => enabled === 'true'));

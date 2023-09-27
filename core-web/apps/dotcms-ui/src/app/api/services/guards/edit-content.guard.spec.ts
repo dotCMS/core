@@ -7,50 +7,57 @@ import { TestBed } from '@angular/core/testing';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
-import { EditContentGuard } from './edit-content.guard';
+import { editContentGuard } from './edit-content.guard';
 
 describe('EditContentGuard', () => {
-    let editContentGuardService: EditContentGuard;
     let dotPropertiesService: DotPropertiesService;
 
-    beforeEach(() => {
+    const setup = (dotPropertiesServiceMock: unknown) => {
         TestBed.configureTestingModule({
-            providers: [DotPropertiesService, EditContentGuard, HttpClient],
+            providers: [
+                editContentGuard,
+                {
+                    provide: DotPropertiesService,
+                    useValue: dotPropertiesServiceMock
+                },
+                HttpClient
+            ],
             imports: [HttpClientTestingModule]
         });
-        editContentGuardService = TestBed.inject(EditContentGuard);
 
         dotPropertiesService = TestBed.inject(DotPropertiesService);
-    });
+        spyOn(dotPropertiesService, 'getKey').and.callThrough();
 
-    it('should be created', () => {
-        expect(editContentGuardService).toBeTruthy();
-    });
+        return TestBed.runInInjectionContext(editContentGuard);
+    };
 
-    it('should allow access to Edit Content new form', () => {
-        let result: boolean;
-        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
-
-        editContentGuardService.canActivate().subscribe((res) => (result = res));
+    it('should allow access to Edit Content new form', (done) => {
+        const guard = setup({
+            getKey: () => of('true')
+        });
 
         expect(dotPropertiesService.getKey).toHaveBeenCalledWith(
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE
         );
 
-        expect(result).toBe(true);
+        guard.subscribe((result) => {
+            expect(result).toBe(true);
+            done();
+        });
     });
 
-    it('should deny access to Edit Content new form', () => {
-        let result: boolean;
-
-        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('false'));
-
-        editContentGuardService.canActivate().subscribe((res) => (result = res));
+    it('should deny access to Edit Content new form', (done) => {
+        const guard = setup({
+            getKey: () => of('false')
+        });
 
         expect(dotPropertiesService.getKey).toHaveBeenCalledWith(
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE
         );
 
-        expect(result).toBe(false);
+        guard.subscribe((result) => {
+            expect(result).toBe(false);
+            done();
+        });
     });
 });

@@ -30,7 +30,6 @@ import { DotWorkflowEventHandlerService } from './api/services/dot-workflow-even
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
-import { EditContentGuard } from './api/services/guards/edit-content.guard';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
@@ -70,7 +69,6 @@ const PROVIDERS: Provider[] = [
     NotificationsService,
     PaginatorService,
     PagesGuardService,
-    EditContentGuard,
     PublicAuthGuardService,
     StringFormat,
     StringPixels,
