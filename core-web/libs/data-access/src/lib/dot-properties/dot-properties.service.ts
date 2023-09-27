@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { ENABLED_FEATURE_FLAGS } from '@dotcms/dotcms-models';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 @Injectable({
     providedIn: 'root'
@@ -23,7 +23,9 @@ export class DotPropertiesService {
      * @memberof DotPropertiesService
      */
     getKey(key: string): Observable<string> {
-        if (this.featureConfig?.[key]) return of(this.featureConfig[key]);
+        if (this.featureConfig?.[key]) {
+            return of(this.featureConfig[key]);
+        }
 
         return this.http
             .get('/api/v1/configuration/config', { params: { keys: key } })
@@ -70,7 +72,7 @@ export class DotPropertiesService {
      * @returns An observable that emits the feature configuration object.
      */
     loadConfig() {
-        this.getKeys(ENABLED_FEATURE_FLAGS).subscribe({
+        this.getKeys(Object.values(FeaturedFlags)).subscribe({
             next: (res) => {
                 this.featureConfig = res;
             }
