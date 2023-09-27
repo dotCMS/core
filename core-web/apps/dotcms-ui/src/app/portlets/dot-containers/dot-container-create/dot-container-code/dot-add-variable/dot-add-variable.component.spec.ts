@@ -154,7 +154,8 @@ const mockContentTypes: DotCMSContentType = {
 
 const messageServiceMock = new MockDotMessageService({
     'containers.properties.add.variable.title': 'Title',
-    Add: 'Add'
+    Add: 'Add',
+    'Content-Identifier-value': 'Content Identifier Value'
 });
 
 describe('DotAddVariableComponent', () => {

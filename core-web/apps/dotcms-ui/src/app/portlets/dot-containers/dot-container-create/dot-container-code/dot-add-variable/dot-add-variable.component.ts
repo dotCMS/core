@@ -1,12 +1,13 @@
 import { Observable } from 'rxjs';
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { map } from 'rxjs/operators';
 
 import { DotAddVariableStore } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotVariableContent, DotVariableList, FilteredFieldTypes } from './dot-add-variable.models';
 
@@ -14,9 +15,14 @@ import { DotVariableContent, DotVariableList, FilteredFieldTypes } from './dot-a
     selector: 'dot-add-variable',
     templateUrl: './dot-add-variable.component.html',
     styleUrls: ['./dot-add-variable.component.scss'],
-    providers: [DotAddVariableStore]
+    providers: [DotAddVariableStore, DotMessagePipe]
 })
 export class DotAddVariableComponent implements OnInit {
+    private readonly dotMessage = inject(DotMessagePipe);
+    private readonly store = inject(DotAddVariableStore);
+    private readonly config = inject(DynamicDialogConfig);
+    private readonly ref = inject(DynamicDialogRef);
+
     vm$: Observable<DotVariableList> = this.store.vm$.pipe(
         map((res) => {
             const variables: DotVariableContent[] = res.variables
@@ -31,19 +37,13 @@ export class DotAddVariableComponent implements OnInit {
                     fieldTypeLabel: variable.fieldTypeLabel
                 }));
             variables.push({
-                name: 'Content Identifier Value',
+                name: this.dotMessage.transform('Content-Identifier-value'),
                 variable: 'ContentIdentifier'
             });
 
             return { variables };
         })
     );
-
-    constructor(
-        private store: DotAddVariableStore,
-        private config: DynamicDialogConfig,
-        private ref: DynamicDialogRef
-    ) {}
 
     ngOnInit() {
         this.store.getVariables(this.config.data?.contentTypeVariable);
