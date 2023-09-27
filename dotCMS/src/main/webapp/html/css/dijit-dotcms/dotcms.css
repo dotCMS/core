@@ -11048,7 +11048,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .content-search__show-query-dialog .dijitDialogTitleBar {
-  height: 0px;
+  height: 18px !important;
   z-index: 1;
 }
 
