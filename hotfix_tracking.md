@@ -127,4 +127,4 @@ This maintenance release includes the following code fixes:
 103.    https://github.com/dotCMS/core/issues/23554 : Can't close query dialog on content search screen #23554
 104.    https://github.com/dotCMS/core/issues/23669 : properties from ENV vars do not need XML encoding #23669
 105.    https://github.com/dotCMS/core/issues/25789 : Tighten up MultiPartSecurityRequestWrapper #25789
-106.
+106.    https://github.com/dotCMS/core/issues/26019 : PubSubListener with vanilla postgres #26019
