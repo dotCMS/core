@@ -1,10 +1,15 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.AuthenticationContext;
+import com.dotcms.api.SiteAPI;
+import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.push.MapperService;
 import com.dotcms.cli.command.CommandTest;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
+import com.dotcms.model.site.GetSiteByNameRequest;
+import com.dotcms.model.site.SiteView;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -19,6 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +45,12 @@ class SiteCommandIntegrationTest extends CommandTest {
 
     @Inject
     WorkspaceManager workspaceManager;
+
+    @Inject
+    RestClientFactory clientFactory;
+
+    @Inject
+    MapperService mapperService;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -228,7 +240,7 @@ class SiteCommandIntegrationTest extends CommandTest {
                 commandLine.setOut(out);
                 commandLine.setErr(out);
                 int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                        path.toFile().getAbsolutePath());
+                        path.toFile().getAbsolutePath(), "--fail-fast");
                 Assertions.assertEquals(ExitCode.OK, status);
 
                 status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
@@ -319,7 +331,7 @@ class SiteCommandIntegrationTest extends CommandTest {
 
             // And now pushing the site back to the server to make sure the structure is still correct
             status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                    siteFilePath.toAbsolutePath().toString());
+                    siteFilePath.toAbsolutePath().toString(), "--fail-fast");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
@@ -370,7 +382,7 @@ class SiteCommandIntegrationTest extends CommandTest {
 
             // And now pushing the site back to the server to make sure the structure is still correct
             status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                    siteFilePath.toAbsolutePath().toString());
+                    siteFilePath.toAbsolutePath().toString(), "--fail-fast");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
         } finally {
@@ -399,6 +411,149 @@ class SiteCommandIntegrationTest extends CommandTest {
                 Assert.assertFalse(uniqueSiteTest.contains(line));
                 uniqueSiteTest.add(line);
             }
+        }
+    }
+
+    /**
+     * This tests will test the functionality of the site push command when pushing a folder,
+     * checking the sites are properly add, updated and removed on the remote server.
+     */
+    @Test
+    @Order(11)
+    void Test_Command_Site_Folder_Push() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            // ---
+            // Creating a some test sites
+            final String newSiteName1 = String.format("new.dotcms.site1-%d",
+                    System.currentTimeMillis());
+            var status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName1);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            final String newSiteName2 = String.format("new.dotcms.site2-%d",
+                    System.currentTimeMillis());
+            status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName2);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            final String newSiteName3 = String.format("new.dotcms.site3-%d",
+                    System.currentTimeMillis());
+            status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName3);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ---
+            // Pulling the sites - We need the files in the sites folder
+            // - Ignoring 1 site, in that way we can force a remove
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, "default",
+                    "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName1,
+                    "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName2,
+                    "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ---
+            // Renaming the site in order to force an update in the push
+            final var newSiteName2Path = Path.of(workspace.sites().toString(),
+                    newSiteName2 + ".json");
+            var mappedSite2 = this.mapperService.map(
+                    newSiteName2Path.toFile(),
+                    SiteView.class
+            );
+            mappedSite2 = mappedSite2.withHostName(newSiteName2 + "-updated");
+            var jsonContent = this.mapperService.objectMapper(newSiteName2Path.toFile())
+                    .writeValueAsString(mappedSite2);
+            Files.write(newSiteName2Path, jsonContent.getBytes());
+
+            // ---
+            // Creating a new site file
+            final String newSiteName4 = String.format("new.dotcms.site4-%d",
+                    System.currentTimeMillis());
+            String siteDescriptor = String.format("{\n"
+                    + "  \"siteName\" : \"%s\",\n"
+                    + "  \"languageId\" : 1,\n"
+                    + "  \"modDate\" : \"2023-05-05T00:13:25.242+00:00\",\n"
+                    + "  \"modUser\" : \"dotcms.org.1\",\n"
+                    + "  \"live\" : true,\n"
+                    + "  \"working\" : true\n"
+                    + "}", newSiteName4);
+
+            final var path = Path.of(workspace.sites().toString(), "test.site4.json");
+            Files.write(path, siteDescriptor.getBytes());
+
+            // Make sure we have the proper amount of file in the sites folder
+            try (Stream<Path> walk = Files.walk(workspace.sites())) {
+                long count = walk.filter(Files::isRegularFile).count();
+                Assertions.assertEquals(4, count);
+            }
+
+            // ╔═══════════════════════╗
+            // ║  Pushing the changes  ║
+            // ╚═══════════════════════╝
+            status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(),
+                    "--removeSites", "--forceSiteExecution", "--fail-fast");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            var byName = siteAPI.findByName(
+                    GetSiteByNameRequest.builder().siteName("default").build()
+            );
+            Assertions.assertEquals("default", byName.entity().siteName());
+
+            byName = siteAPI.findByName(
+                    GetSiteByNameRequest.builder().siteName(newSiteName1).build()
+            );
+            Assertions.assertEquals(newSiteName1, byName.entity().siteName());
+
+            try {
+                siteAPI.findByName(
+                        GetSiteByNameRequest.builder().siteName(newSiteName2).build()
+                );
+                Assertions.fail(" 404 Exception should have been thrown here.");
+            } catch (Exception e) {
+                Assertions.assertTrue(e instanceof NotFoundException);
+            }
+
+            byName = siteAPI.findByName(
+                    GetSiteByNameRequest.builder().siteName(newSiteName2 + "-updated").build()
+            );
+            Assertions.assertEquals(newSiteName2 + "-updated", byName.entity().siteName());
+
+            try {
+                siteAPI.findByName(
+                        GetSiteByNameRequest.builder().siteName(newSiteName3).build()
+                );
+                Assertions.fail(" 404 Exception should have been thrown here.");
+            } catch (Exception e) {
+                Assertions.assertTrue(e instanceof NotFoundException);
+            }
+
+            byName = siteAPI.findByName(
+                    GetSiteByNameRequest.builder().siteName(newSiteName4).build()
+            );
+            Assertions.assertEquals(newSiteName4, byName.entity().siteName());
+
+        } finally {
+            deleteTempDirectory(tempFolder);
         }
     }
 
