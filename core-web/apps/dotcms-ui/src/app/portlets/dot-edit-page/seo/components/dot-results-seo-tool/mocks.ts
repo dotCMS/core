@@ -14,6 +14,7 @@ const seoOGTagsMock = {
 const seoOGTagsResultOgMockTwitter = [
     {
         key: 'twitter:card',
+        title: 'card',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
@@ -28,6 +29,7 @@ const seoOGTagsResultOgMockTwitter = [
     },
     {
         key: 'twitter:title',
+        title: 'title',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
@@ -43,6 +45,7 @@ const seoOGTagsResultOgMockTwitter = [
     },
     {
         key: 'twitter:description',
+        title: 'description',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
@@ -58,6 +61,7 @@ const seoOGTagsResultOgMockTwitter = [
     },
     {
         key: 'twitter:image',
+        title: 'image',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
@@ -75,6 +79,7 @@ const seoOGTagsResultOgMockTwitter = [
 const seoOGTagsResultMock = [
     {
         key: 'Favicon',
+        title: 'favicon',
         keyIcon: 'pi-check-circle',
         keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
@@ -88,6 +93,7 @@ const seoOGTagsResultMock = [
     },
     {
         key: 'Description',
+        title: 'Description',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
@@ -102,6 +108,7 @@ const seoOGTagsResultMock = [
     },
     {
         key: 'Title',
+        title: 'Title',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-yellow',
         items: [
@@ -116,6 +123,7 @@ const seoOGTagsResultMock = [
     },
     {
         key: 'Og:title',
+        title: 'title',
         keyIcon: 'pi-check-circle',
         keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
@@ -131,6 +139,7 @@ const seoOGTagsResultMock = [
     },
     {
         key: 'Og:image',
+        title: 'image',
         keyIcon: 'pi-check-circle',
         keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
@@ -145,6 +154,7 @@ const seoOGTagsResultMock = [
     },
     {
         key: 'Og:description',
+        title: 'Description',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
@@ -163,77 +173,7 @@ const seoOGTagsResultMock = [
 const seoOGTagsResultOgMock = [
     {
         key: 'description',
-        keyIcon: 'pi-exclamation-triangle',
-        keyColor: 'results-seo-tool__result-icon--alert-red',
-        items: [
-            {
-                message:
-                    '<code>og:description</code> meta tag not found! Showing Meta Description instead.',
-                color: 'results-seo-tool__result-icon--alert-red',
-                itemIcon: 'pi-times'
-            }
-        ],
-        sort: 2,
-        info: "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed."
-    },
-    {
-        key: 'og:image',
-        keyIcon: 'pi-check-circle',
-        keyColor: 'results-seo-tool__result-icon--alert-green',
-        items: [
-            {
-                message: '<code>og:image</code> metatag found, with an appropriate sized image!',
-                color: 'results-seo-tool__result-icon--alert-green',
-                itemIcon: 'pi-check'
-            }
-        ],
-        sort: 6,
-        info: ''
-    },
-    {
-        key: 'og:title',
-        keyIcon: 'pi-exclamation-triangle',
-        keyColor: 'results-seo-tool__result-icon--alert-yellow',
-        items: [
-            {
-                message: 'title metatag found, but has fewer than 30 characters of content.',
-                color: 'results-seo-tool__result-icon--alert-yellow',
-                itemIcon: 'pi-exclamation-circle'
-            }
-        ],
-        sort: 5,
-        info: 'HTML Title content should be between 30 and 60 characters.'
-    },
-    {
-        key: 'favicon',
-        keyIcon: 'pi-check-circle',
-        keyColor: 'results-seo-tool__result-icon--alert-green',
-        items: [
-            {
-                message: 'Favicon found!',
-                color: 'results-seo-tool__result-icon--alert-green',
-                itemIcon: 'pi-check'
-            }
-        ],
-        sort: 1,
-        info: ''
-    },
-    {
-        key: 'title',
-        keyIcon: 'pi-exclamation-triangle',
-        keyColor: 'results-seo-tool__result-icon--alert-yellow',
-        items: [
-            {
-                message: 'HTML Title found, but has fewer than 30 characters of content.',
-                color: 'results-seo-tool__result-icon--alert-yellow',
-                itemIcon: 'pi-exclamation-circle'
-            }
-        ],
-        sort: 4,
-        info: 'HTML Title content should be between 30 and 60 characters.'
-    },
-    {
-        key: 'og:description',
+        title: 'description',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
@@ -248,7 +188,84 @@ const seoOGTagsResultOgMock = [
         info: "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed."
     },
     {
+        key: 'og:image',
+        title: 'image',
+        keyIcon: 'pi-check-circle',
+        keyColor: 'results-seo-tool__result-icon--alert-green',
+        items: [
+            {
+                message: '<code>og:image</code> metatag found, with an appropriate sized image!',
+                color: 'results-seo-tool__result-icon--alert-green',
+                itemIcon: 'pi-check'
+            }
+        ],
+        sort: 6,
+        info: ''
+    },
+    {
+        key: 'og:title',
+        title: 'title',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-yellow',
+        items: [
+            {
+                message: 'title metatag found, but has fewer than 30 characters of content.',
+                color: 'results-seo-tool__result-icon--alert-yellow',
+                itemIcon: 'pi-exclamation-circle'
+            }
+        ],
+        sort: 2,
+        info: 'HTML Title content should be between 30 and 60 characters.'
+    },
+    {
+        key: 'favicon',
+        title: 'favicon',
+        keyIcon: 'pi-check-circle',
+        keyColor: 'results-seo-tool__result-icon--alert-green',
+        items: [
+            {
+                message: 'Favicon found!',
+                color: 'results-seo-tool__result-icon--alert-green',
+                itemIcon: 'pi-check'
+            }
+        ],
+        sort: 1,
+        info: ''
+    },
+    {
+        key: 'title',
+        title: 'title',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-yellow',
+        items: [
+            {
+                message: 'HTML Title found, but has fewer than 30 characters of content.',
+                color: 'results-seo-tool__result-icon--alert-yellow',
+                itemIcon: 'pi-exclamation-circle'
+            }
+        ],
+        sort: 2,
+        info: 'HTML Title content should be between 30 and 60 characters.'
+    },
+    {
+        key: 'og:description',
+        title: 'description',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message:
+                    '<code>og:description</code> meta tag not found! Showing Meta Description instead.',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 4,
+        info: "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed."
+    },
+    {
         key: 'twitter:card',
+        title: 'card',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
@@ -258,11 +275,12 @@ const seoOGTagsResultOgMock = [
                 itemIcon: 'pi-times'
             }
         ],
-        sort: 1,
+        sort: 2,
         info: ''
     },
     {
         key: 'twitter:title',
+        title: 'title',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
@@ -273,11 +291,12 @@ const seoOGTagsResultOgMock = [
                 itemIcon: 'pi-times'
             }
         ],
-        sort: 2,
+        sort: 1,
         info: ''
     },
     {
         key: 'twitter:description',
+        title: 'description',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
@@ -293,6 +312,7 @@ const seoOGTagsResultOgMock = [
     },
     {
         key: 'twitter:image',
+        title: 'image',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
