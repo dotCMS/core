@@ -1,0 +1,109 @@
+package com.dotcms.api.client.push.contenttype;
+
+import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.push.ContentComparator;
+import com.dotcms.contenttype.model.type.ContentType;
+import java.util.List;
+import java.util.Optional;
+import javax.enterprise.context.Dependent;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+
+@Dependent
+public class ContentTypeComparator implements ContentComparator<ContentType> {
+
+    @Inject
+    protected RestClientFactory clientFactory;
+
+    @Override
+    public Class<ContentType> type() {
+        return ContentType.class;
+    }
+
+    @ActivateRequestContext
+    @Override
+    public Optional<ContentType> findMatchingServerContent(ContentType localContentType,
+            List<ContentType> serverContents) {
+
+        // Compare by identifier first.
+        var result = findById(localContentType.id(), serverContents);
+
+        if (result.isEmpty()) {
+
+            // If not found by id, compare by variable name.
+            result = findByVarName(localContentType.variable(), serverContents);
+        }
+
+        return result;
+    }
+
+    @ActivateRequestContext
+    @Override
+    public Optional<ContentType> localContains(ContentType serverContent,
+            List<ContentType> localSites) {
+
+        // Compare by identifier first.
+        var result = findById(serverContent.id(), localSites);
+
+        if (result.isEmpty()) {
+
+            // If not found by id, compare by variable name.
+            result = findByVarName(serverContent.variable(), localSites);
+        }
+
+        return result;
+    }
+
+    @ActivateRequestContext
+    @Override
+    public boolean contentEquals(ContentType localContentType, ContentType serverContent) {
+
+        // Comparing the local and server content in order to determine if we need to update or
+        // not the content
+        return localContentType.equals(serverContent);
+    }
+
+    /**
+     * Finds a ContentType object in the given list based on the specified id.
+     *
+     * @param id           the identifier of the ContentType object to be found
+     * @param contentTypes the list of ContentTypes objects to search in
+     * @return an Optional containing the found ContentType object, or an empty Optional if no match
+     * is found
+     */
+    private Optional<ContentType> findById(String id, List<ContentType> contentTypes) {
+
+        if (id != null && !id.isEmpty()) {
+            for (var contentType : contentTypes) {
+                if (contentType.id() != null && contentType.id().equals(id)) {
+                    return Optional.of(contentType);
+                }
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Finds a ContentType object in the given list based on the specified variable name.
+     *
+     * @param varName      the variable name of the ContentType object to be found
+     * @param contentTypes the list of ContentType objects to search in
+     * @return an Optional containing the found ContentType object, or an empty Optional if no match
+     * is found
+     */
+    private Optional<ContentType> findByVarName(String varName, List<ContentType> contentTypes) {
+
+        if (varName != null && !varName.isEmpty()) {
+            for (var contentType : contentTypes) {
+                if (contentType.variable() != null && contentType.variable()
+                        .equalsIgnoreCase(varName)) {
+                    return Optional.of(contentType);
+                }
+            }
+        }
+
+        return Optional.empty();
+    }
+
+}

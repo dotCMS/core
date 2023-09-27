@@ -35,7 +35,7 @@ import picocli.CommandLine.ExitCode;
 @ActivateRequestContext
 @CommandLine.Command(
         name = LanguagePush.NAME,
-        header = "@|bold,blue Push a language|@",
+        header = "@|bold,blue Push languages|@",
         description = {
                 "This command enables the pushing of languages to the server. It accommodates the "
                         + "specification of either a language file or a folder path. In addition to "

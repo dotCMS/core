@@ -3,6 +3,9 @@ package com.dotcms.cli.command.contenttype;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.dotcms.api.AuthenticationContext;
+import com.dotcms.api.ContentTypeAPI;
+import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.push.MapperService;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
@@ -13,10 +16,12 @@ import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.Workspace;
+import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest;
+import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -26,12 +31,14 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +54,12 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
 
     @Inject
     WorkspaceManager workspaceManager;
+
+    @Inject
+    RestClientFactory clientFactory;
+
+    @Inject
+    MapperService mapperService;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -80,7 +93,11 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
 
     @Test
     void Test_Command_Content_Type_Pull_Then_Push_YML() throws IOException {
-        final Workspace workspace = workspaceManager.getOrCreate();
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -107,7 +124,7 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
                 final ContentType contentType = objectMapper.readValue(bytes, ContentType.class);
                 Assertions.assertNotNull(contentType.variable());
                 status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
-                        fileName, "--format", "YML", "--workspace", workspace.root().toString());
+                        path.toAbsolutePath().toString(), "--fail-fast", "-e");
                 Assertions.assertEquals(ExitCode.OK, status);
             } finally {
                 workspaceManager.destroy(workspace);
@@ -124,7 +141,11 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
      */
     @Test
     void Test_Command_Content_Type_Pull_Then_Push_Json() throws IOException {
-        final Workspace workspace = workspaceManager.getOrCreate();
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -160,8 +181,7 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
                 writer.getBuffer().setLength(0); //Clear output so we can get access to the new results only
 
                 status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
-                        fileName, "--format", "JSON", "--workspace",
-                        workspace.root().toString()
+                        path.toAbsolutePath().toString(), "--fail-fast", "-e"
                 );
                 Assertions.assertEquals(ExitCode.OK, status);
 
@@ -223,7 +243,7 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
 
             // And now pushing the content type back to the server to make sure the structure is still correct
             status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
-                    contentTypeFilePath.toAbsolutePath().toString());
+                    contentTypeFilePath.toAbsolutePath().toString(), "--fail-fast", "-e");
             Assertions.assertEquals(ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
@@ -268,8 +288,7 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
 
             // And now pushing the content type back to the server to make sure the structure is still correct
             status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
-                    contentTypeFilePath.toAbsolutePath().toString(), "-fmt",
-                    InputOutputFormat.YAML.toString());
+                    contentTypeFilePath.toAbsolutePath().toString(), "--fail-fast", "-e");
             Assertions.assertEquals(ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
@@ -317,6 +336,11 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
      */
     @Test
     void Test_Push_New_Content_Type_From_File_Then_Remove() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
         final long identifier = System.currentTimeMillis();
 
         final String varName = "__var__" + identifier;
@@ -349,18 +373,17 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
                 ).build();
         final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
         final String asString = objectMapper.writeValueAsString(contentType);
-        System.out.println(asString);
-        final File jsonFile = File.createTempFile("temp", ".json");
-        Files.writeString(jsonFile.toPath(), asString);
-        final Workspace workspace = workspaceManager.getOrCreate();
+
+        final Path path = Path.of(workspace.contentTypes().toString(), "temp.json");
+        Files.writeString(path, asString);
         try {
             final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
                 final int status = commandLine.execute(ContentTypeCommand.NAME,
-                        ContentTypePush.NAME,
-                        jsonFile.getAbsolutePath(), "--workspace", workspace.root().toString());
+                        ContentTypePush.NAME, path.toAbsolutePath().toString(), "--fail-fast",
+                        "-e");
                 Assertions.assertEquals(ExitCode.OK, status);
                 final String output = writer.toString();
                 System.out.println(output);
@@ -421,6 +444,190 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
         } finally {
             workspaceManager.destroy(workspace);
         }
+    }
+
+    /**
+     * This tests will test the functionality of the content type push command when pushing a
+     * folder, checking the content types are properly add, updated and removed on the remote
+     * server.
+     */
+    @Test
+    void Test_Command_Content_Type_Folder_Push() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            // --
+            // Pulling all the existing content types created in other tests to avoid unwanted deletes
+            var contentTypesResponse = contentTypeAPI.getContentTypes(
+                    null,
+                    1,
+                    1000,
+                    "variable",
+                    null,
+                    null,
+                    null
+            );
+            var pullCount = 0;
+            if (contentTypesResponse != null && contentTypesResponse.entity() != null) {
+                for (ContentType contentType : contentTypesResponse.entity()) {
+                    var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                            contentType.variable(), "--workspace", workspace.root().toString());
+                    Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+                    pullCount++;
+                }
+            }
+
+            // ---
+            // Creating a some test content types in the server
+            var newContentType1 = createContentType(workspace, false);
+            var newContentType2 = createContentType(workspace, false);
+            var newContentType3 = createContentType(workspace, false);
+
+            // ---
+            // Pulling the just created content types - We need the files in the content types folder
+            // - Ignoring 1 content type, in that way we can force a remove
+            int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    newContentType1, "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    newContentType2, "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ---
+            // Renaming the content type in order to force an update in the push
+            final var newNewContentType2Path = Path.of(workspace.contentTypes().toString(),
+                    newContentType2 + ".json");
+            var mappedContentType2 = this.mapperService.map(
+                    newNewContentType2Path.toFile(),
+                    ContentType.class
+            );
+            var jsonContent = this.mapperService.objectMapper(newNewContentType2Path.toFile())
+                    .writeValueAsString(mappedContentType2);
+            jsonContent = jsonContent.replace("name-" + newContentType2,
+                    "name-" + newContentType2 + "-renamed");
+            Files.write(newNewContentType2Path, jsonContent.getBytes());
+
+            // ---
+            // Creating some content types to fire some additions
+            var newContentType4 = createContentType(workspace, true);
+            var newContentType5 = createContentType(workspace, true);
+
+            // Make sure we have the proper amount of files in the content types folder
+            try (Stream<Path> walk = Files.walk(workspace.contentTypes())) {
+                long count = walk.filter(Files::isRegularFile).count();
+                Assertions.assertEquals(4 + pullCount, count);
+            }
+
+            // ╔═══════════════════════╗
+            // ║  Pushing the changes  ║
+            // ╚═══════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--removeContentTypes", "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            var byVarName = contentTypeAPI.getContentType(newContentType1, 1L, false);
+            Assertions.assertEquals(newContentType1, byVarName.entity().variable());
+
+            byVarName = contentTypeAPI.getContentType(newContentType2, 1L, false);
+            Assertions.assertEquals(newContentType2, byVarName.entity().variable());
+            Assertions.assertEquals("name-" + newContentType2 + "-renamed",
+                    byVarName.entity().name());
+
+            try {
+                contentTypeAPI.getContentType(newContentType3, 1L, false);
+                Assertions.fail(" 404 Exception should have been thrown here.");
+            } catch (Exception e) {
+                Assertions.assertTrue(e instanceof NotFoundException);
+            }
+
+            byVarName = contentTypeAPI.getContentType(newContentType4, 1L, false);
+            Assertions.assertEquals(newContentType4, byVarName.entity().variable());
+
+            byVarName = contentTypeAPI.getContentType(newContentType5, 1L, false);
+            Assertions.assertEquals(newContentType5, byVarName.entity().variable());
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * This method creates a content type in the workspace either as a file or by making an API
+     * call
+     *
+     * @param workspace The workspace where the content type should be created
+     * @param asFile    Determines whether the content type should be created as a file or API call
+     * @return The variable name of the created content type
+     * @throws IOException If an I/O error occurs while creating the content type file
+     */
+    private String createContentType(Workspace workspace, boolean asFile) throws IOException {
+
+        final long identifier = System.currentTimeMillis();
+        final String varName = "var_" + identifier;
+
+        final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
+                .baseType(BaseContentType.CONTENT)
+                .description("ct for testing.")
+                .name("name-" + varName)
+                .variable(varName)
+                .modDate(new Date())
+                .fixed(true)
+                .iDate(new Date())
+                .host("SYSTEM_HOST")
+                .folder("SYSTEM_FOLDER")
+                .addFields(
+                        ImmutableBinaryField.builder()
+                                .name("__bin_var__" + identifier)
+                                .fixed(false)
+                                .listed(true)
+                                .searchable(true)
+                                .unique(false)
+                                .indexed(true)
+                                .readOnly(false)
+                                .forceIncludeInApi(false)
+                                .modDate(new Date())
+                                .required(false)
+                                .variable("lol")
+                                .sortOrder(1)
+                                .dataType(DataTypes.SYSTEM).build()
+                ).build();
+
+        if (!asFile) {
+
+            final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
+                    .of(contentType).build();
+
+            final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
+            final ResponseEntityView<List<ContentType>> response = contentTypeAPI.createContentTypes(
+                    List.of(saveRequest));
+        } else {
+
+            final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
+            final String asString = objectMapper.writeValueAsString(contentType);
+
+            final Path path = Path.of(workspace.contentTypes().toString(),
+                    String.format("%s.json", varName));
+            Files.writeString(path, asString);
+        }
+
+        return varName;
     }
 
     /**
