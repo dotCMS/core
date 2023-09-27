@@ -54,6 +54,7 @@ export interface SeoKeyResult {
 
 export interface SeoMetaTagsResult {
     key: string;
+    title: string;
     keyIcon: string;
     keyColor: string;
     items: SeoRulesResult[];
