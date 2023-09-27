@@ -185,6 +185,9 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         }
 
         final String fileName = ContentDispositionFileNameParser.parse(lineToTestLower);
+        if (fileName == null) {
+            return;
+        }
         securityUtils.validateFile(fileName);
     }
 }
