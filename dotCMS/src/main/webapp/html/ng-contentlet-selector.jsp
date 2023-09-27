@@ -127,7 +127,7 @@
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet-from-edit-page",
             data: {
-                url: url,
+                url,
 				contentType
             }
         });

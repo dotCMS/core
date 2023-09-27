@@ -836,7 +836,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
             customEvent.initCustomEvent("ng-event", false, false,  {
                 name: "create-contentlet",
                 data: {
-                    url: url,
+                    url,
                     contentType
                 }
             });

@@ -569,7 +569,7 @@
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-contentlet",
             data: {
-                inode: inode
+                inode
             }
         });
         document.dispatchEvent(customEvent);
@@ -734,7 +734,7 @@
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",
             data: {
-                url: url,
+                url,
 								contentType
             }
         });

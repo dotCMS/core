@@ -1693,7 +1693,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",
             data: {
-                url: url,
+                url,
                 contentType
             }
         });
