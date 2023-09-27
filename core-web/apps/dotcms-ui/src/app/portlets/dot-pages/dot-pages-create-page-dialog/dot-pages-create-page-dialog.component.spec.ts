@@ -86,43 +86,45 @@ describe('DotPagesCreatePageDialogComponent', () => {
     let dotRouterService: DotRouterService;
     let store: DotPageStore;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotPagesCreatePageDialogComponent, HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                {
-                    provide: DynamicDialogRef,
-                    useValue: {
-                        close: jasmine.createSpy()
-                    }
-                },
-                {
-                    provide: DynamicDialogConfig,
-                    useValue: {
-                        data: {
-                            contentTypeVariable: 'contentType',
-                            onSave: jasmine.createSpy()
+    const setupTestingModule = async (isContentEditor2Enabled = false) => {
+        await TestBed.resetTestingModule()
+            .configureTestingModule({
+                imports: [DotPagesCreatePageDialogComponent, HttpClientTestingModule],
+                providers: [
+                    { provide: CoreWebService, useClass: CoreWebServiceMock },
+                    {
+                        provide: DynamicDialogRef,
+                        useValue: {
+                            close: jasmine.createSpy()
                         }
-                    }
-                },
-                {
-                    provide: DynamicDialogConfig,
-                    useValue: {
-                        data: {
-                            pageTypes: [{ ...mockContentType }],
-                            isContentEditor2Enabled: false
+                    },
+                    {
+                        provide: DynamicDialogConfig,
+                        useValue: {
+                            data: {
+                                contentTypeVariable: 'contentType',
+                                onSave: jasmine.createSpy()
+                            }
                         }
-                    }
-                },
-                { provide: DotPageStore, useClass: storeMock },
-                {
-                    provide: ActivatedRoute,
-                    useClass: ActivatedRouteMock
-                },
-                { provide: DotRouterService, useClass: MockDotRouterService }
-            ]
-        }).compileComponents();
+                    },
+                    {
+                        provide: DynamicDialogConfig,
+                        useValue: {
+                            data: {
+                                pageTypes: [{ ...mockContentType }],
+                                isContentEditor2Enabled
+                            }
+                        }
+                    },
+                    { provide: DotPageStore, useClass: storeMock },
+                    {
+                        provide: ActivatedRoute,
+                        useClass: ActivatedRouteMock
+                    },
+                    { provide: DotRouterService, useClass: MockDotRouterService }
+                ]
+            })
+            .compileComponents();
 
         store = TestBed.inject(DotPageStore);
         spyOn(store, 'getPageTypes');
@@ -130,8 +132,11 @@ describe('DotPagesCreatePageDialogComponent', () => {
         de = fixture.debugElement;
         dotRouterService = TestBed.inject(DotRouterService);
         dialogRef = TestBed.inject(DynamicDialogRef);
+
         fixture.detectChanges();
-    });
+    };
+
+    beforeEach(async () => await setupTestingModule());
 
     it('should have html components with attributes', () => {
         expect(
@@ -188,10 +193,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
     });
 
     describe("when it's content editor 2 enabled", () => {
-        beforeEach(() => {
-            // Couldn't override the value in the provider
-            fixture.componentInstance.config.data.isContentEditor2Enabled = true;
-        });
+        beforeEach(async () => await setupTestingModule(true));
 
         it('should redirect url when click on page', () => {
             const pageType = de.query(By.css(`.dot-pages-create-page-dialog__page-item`));
