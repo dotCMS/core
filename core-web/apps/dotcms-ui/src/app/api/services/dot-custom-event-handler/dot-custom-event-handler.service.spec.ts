@@ -2,9 +2,9 @@
 
 import { of } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
@@ -66,9 +66,10 @@ describe('DotCustomEventHandlerService', () => {
     let dotWorkflowEventHandlerService: DotWorkflowEventHandlerService;
     let dotEventsService: DotEventsService;
     let dotLicenseService: DotLicenseService;
+    let router: Router;
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
+    const setup = (dotPropertiesMock: unknown) => {
+        TestBed.resetTestingModule().configureTestingModule({
             providers: [
                 DotCustomEventHandlerService,
                 DotLoadingIndicatorService,
@@ -105,8 +106,8 @@ describe('DotCustomEventHandlerService', () => {
                 DotGenerateSecurePasswordService,
                 LoginService,
                 DotLicenseService,
-                { provide: DotPropertiesService, useValue: { getKey: () => of('NOT_FOUND') } },
-                HttpClient
+                { provide: DotPropertiesService, useValue: dotPropertiesMock },
+                Router
             ],
             imports: [RouterTestingModule, HttpClientTestingModule]
         });
@@ -122,6 +123,13 @@ describe('DotCustomEventHandlerService', () => {
         dotWorkflowEventHandlerService = TestBed.inject(DotWorkflowEventHandlerService);
         dotEventsService = TestBed.inject(DotEventsService);
         dotLicenseService = TestBed.inject(DotLicenseService);
+        router = TestBed.inject(Router);
+    };
+
+    beforeEach(() => {
+        setup({
+            getKey: () => of('NOT_FOUND')
+        });
     });
 
     it('should show loading indicator and go to edit page when event is emited by iframe', () => {
@@ -150,6 +158,7 @@ describe('DotCustomEventHandlerService', () => {
 
     it('should create a contentlet', () => {
         spyOn(dotContentletEditorService, 'create');
+
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -327,5 +336,59 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect(dotLicenseService.updateLicense).toHaveBeenCalled();
+    });
+
+    describe('edit content 2 is enabled', () => {
+        beforeEach(() => {
+            setup({
+                getKey: () => of('true')
+            });
+
+            spyOn(router, 'navigate');
+        });
+
+        it('should create a contentlet', () => {
+            spyOn(dotContentletEditorService, 'create');
+
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'create-contentlet',
+                        data: { contentType: 'test' }
+                    }
+                })
+            );
+
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/test']);
+        });
+
+        it('should edit a a workflow task', () => {
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-task',
+                        data: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+
+            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+        });
+
+        it('should edit a contentlet', () => {
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-contentlet',
+                        data: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+        });
     });
 });

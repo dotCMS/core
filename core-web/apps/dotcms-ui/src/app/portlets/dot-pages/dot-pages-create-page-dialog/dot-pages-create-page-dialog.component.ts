@@ -54,9 +54,11 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
         this.ref.close();
 
         // Get the feature flag from the store and change the routing
-        this.config.data.isContentEditor2Enabled
-            ? this.dotRouterService.goToURL(`content/new/${variableName}`)
-            : this.dotRouterService.goToURL(`/pages/new/${variableName}`);
+        const url = this.config.data.isContentEditor2Enabled
+            ? `content/new/${variableName}`
+            : `/pages/new/${variableName}`;
+
+        this.dotRouterService.goToURL(url);
     }
 
     ngOnInit(): void {
