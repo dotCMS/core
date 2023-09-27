@@ -264,19 +264,11 @@ describe('DotAddVariableComponent', () => {
         });
 
         it('should contain a field with the text "Content Identifier Value"', () => {
-            const fieldTypes = fixture.nativeElement.querySelectorAll('h3');
-            let containsText = false;
+            const contentIdentifier = de.query(By.css(`[data-testId="h3ContentIdentifier"]`));
 
-            fieldTypes.forEach((field) => {
-                const content = field.textContent.trim();
-                if (content === 'Content Identifier Value') {
-                    containsText = true;
-
-                    return;
-                }
-            });
-
-            expect(containsText).toBe(true);
+            expect(contentIdentifier.nativeElement.textContent.trim()).toEqual(
+                'Content Identifier Value'
+            );
         });
     });
 });
