@@ -23,7 +23,7 @@ import {
     MAX_INPUT_DESCRIPTIVE_LENGTH,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotMessagePipe, DotTrimInputDirective } from '@dotcms/ui';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import {
     DotSidebarDirective,
@@ -59,7 +59,8 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         DropdownModule,
         DotExperimentsGoalConfigurationReachPageComponent,
         DotExperimentsGoalConfigurationUrlParameterComponentComponent,
-        DotExperimentsGoalsComingSoonComponent
+        DotExperimentsGoalsComingSoonComponent,
+        DotTrimInputDirective
     ],
     templateUrl: './dot-experiments-configuration-goal-select.component.html',
     styleUrls: ['./dot-experiments-configuration-goal-select.component.scss'],
