@@ -65,10 +65,11 @@
 
 	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
+
     function editContentletEvent(contInode) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
-            name: "edit-contentlet",
+            name: "edit-host",
             data: {
                 inode: contInode
             }
@@ -76,13 +77,12 @@
         document.dispatchEvent(customEvent);
     }
 
-    function createContentlet(url, contentType) {
+    function createContentlet(url) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
-            name: "create-contentlet",
+            name: "create-host",
             data: {
-                url,
-                contentType
+                url
             }
         });
         document.dispatchEvent(customEvent);
@@ -313,7 +313,7 @@
 
 			if(dijit.byId('startBlankHostRadio').attr('value')) {
 				url += "&referer=" + escape(this.viewHostsReferer);
-				createContentlet(url, "HOST");
+				createContentlet(url);
 			} else {
 
 				var copyHostOptions = escape(dojo.replace(this.copyHostOptions,
@@ -329,7 +329,7 @@
 						copyTagStorage: document.getElementById('copyTagStorage').value
 					}));
 				url += "&_copyOptions=" + copyHostOptions + "&referer=" + escape(this.viewHostsReferer);
-				createContentlet(url, "HOST");
+				createContentlet(url);
 			}
         },
         hostChanged: function(){
