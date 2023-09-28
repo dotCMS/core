@@ -6,9 +6,8 @@ import { UntypedFormControl, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-
-import { DotFieldValidationMessageComponent } from './dot-field-validation-message';
 
 @Pipe({
     name: 'dm'
