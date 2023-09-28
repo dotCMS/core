@@ -76,6 +76,7 @@ public abstract class ContentType {
     @Nullable
     public abstract String variable();
 
+    @Value.Auxiliary
     @Nullable
     public abstract Date modDate();
 
@@ -85,9 +86,12 @@ public abstract class ContentType {
     @Nullable
     public abstract String expireDateVar();
 
-    @Nullable
-    public abstract Boolean fixed();
+    @Value.Default
+    public Boolean fixed() {
+        return false;
+    }
 
+    @Value.Auxiliary
     @Nullable
     public abstract Date iDate();
 
@@ -115,14 +119,18 @@ public abstract class ContentType {
     @Nullable
     public abstract String description();
 
-    @Nullable
-    public abstract Boolean defaultType();
+    @Value.Default
+    public Boolean defaultType() {
+        return false;
+    }
 
     @Value.Default
     public BaseContentType baseType() { return BaseContentType.CONTENT; };
 
-    @Nullable
-    public abstract Boolean system();
+    @Value.Default
+    public Boolean system() {
+        return false;
+    }
 
     @Nullable
     public abstract String owner();

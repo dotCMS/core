@@ -462,6 +462,8 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
 
+            commandLine.setOut(out);
+
             final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
 
             // ╔══════════════════════╗
@@ -538,6 +540,12 @@ class ContentTypeCommandIntegrationTest extends CommandTest {
                     workspace.contentTypes().toAbsolutePath().toString(),
                     "--removeContentTypes", "--fail-fast", "-e");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(
+                    output.contains(
+                            "Push Data: [4] ContentTypes to push: (2 New - 1 Modified) - 1 to Delete"
+                    )
+            );
 
             // ╔══════════════════════════════╗
             // ║  Validating the information  ║
