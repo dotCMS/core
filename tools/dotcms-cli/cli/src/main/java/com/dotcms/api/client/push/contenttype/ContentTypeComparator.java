@@ -1,5 +1,6 @@
 package com.dotcms.api.client.push.contenttype;
 
+import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.push.ContentComparator;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -57,6 +58,14 @@ public class ContentTypeComparator implements ContentComparator<ContentType> {
     @ActivateRequestContext
     @Override
     public boolean contentEquals(ContentType localContentType, ContentType serverContent) {
+
+        // Searching for the content type in the server, this extra call is because the
+        // "getContentTypes" api call returns content types without fields, without fields we
+        // can't compare properly the content types
+        final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
+        final var response = contentTypeAPI.getContentType(serverContent.variable(),
+                null, null);
+        serverContent = response.entity();
 
         // Comparing the local and server content in order to determine if we need to update or
         // not the content
