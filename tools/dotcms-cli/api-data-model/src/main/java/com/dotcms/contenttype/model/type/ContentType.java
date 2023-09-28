@@ -77,6 +77,12 @@ public abstract class ContentType {
     @Nullable
     public abstract String variable();
 
+    /**
+     * The modDate attribute is marked as auxiliary to exclude it from the equals, hashCode, and
+     * toString methods. This ensures that two instances of ContentType can be considered equal even
+     * if their modDate values differ. This decision was made because under certain circumstances,
+     * the modDate value is set using the current date.
+     */
     @Value.Auxiliary
     @Nullable
     public abstract Date modDate();
@@ -92,6 +98,12 @@ public abstract class ContentType {
         return false;
     }
 
+    /**
+     * The iDate attribute is marked as auxiliary to exclude it from the equals, hashCode, and
+     * toString methods. This ensures that two instances of ContentType can be considered equal even
+     * if their iDate values differ. This decision was made because under certain circumstances, the
+     * iDate value is set using the current date.
+     */
     @Value.Auxiliary
     @Nullable
     public abstract Date iDate();

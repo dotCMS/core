@@ -97,6 +97,12 @@ public abstract class Field {
     @Nullable
     public abstract String inode();
 
+    /**
+     * The modDate attribute is marked as auxiliary to exclude it from the equals, hashCode, and
+     * toString methods. This ensures that two instances of Field can be considered equal even if
+     * their modDate values differ. This decision was made because under certain circumstances, the
+     * modDate value is set using the current date.
+     */
     @Value.Auxiliary
     @Nullable
     public abstract Date modDate();
@@ -154,6 +160,12 @@ public abstract class Field {
         return Collections.emptyList();
     }
 
+    /**
+     * The iDate attribute is marked as auxiliary to exclude it from the equals, hashCode, and
+     * toString methods. This ensures that two instances of Field can be considered equal even if
+     * their iDate values differ. This decision was made because under certain circumstances, the
+     * iDate value is set using the current date.
+     */
     @Value.Auxiliary
     @Nullable
     public abstract Date iDate();
