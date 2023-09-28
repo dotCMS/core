@@ -21,6 +21,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.partition;
 import static com.dotcms.util.CollectionsUtils.set;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -371,6 +372,6 @@ public class CollectionsUtilsTest extends UnitTestBase {
         Integer [] array1 = {1,2,3};
         Integer [] array2 = {4,5,6};
         Integer [] array3 = CollectionsUtils.concat( array1, array2);
-        assertEquals( array3, new int[]{1,2,3,4,5,6});
+        assertArrayEquals( array3, new Integer[]{1,2,3,4,5,6});
     }
 }
