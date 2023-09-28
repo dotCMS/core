@@ -37,6 +37,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
@@ -67,6 +68,14 @@ describe('DotCustomEventHandlerService', () => {
     let dotEventsService: DotEventsService;
     let dotLicenseService: DotLicenseService;
     let router: Router;
+
+    const createFeatureFlagResponse = (
+        enabled: string = 'NOT_FOUND',
+        contentType: string = '*'
+    ) => ({
+        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE]: enabled,
+        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE]: contentType
+    });
 
     const setup = (dotPropertiesMock: unknown) => {
         TestBed.resetTestingModule().configureTestingModule({
@@ -128,7 +137,7 @@ describe('DotCustomEventHandlerService', () => {
 
     beforeEach(() => {
         setup({
-            getKey: () => of('NOT_FOUND')
+            getKeys: () => of(createFeatureFlagResponse())
         });
     });
 
@@ -175,6 +184,25 @@ describe('DotCustomEventHandlerService', () => {
         });
     });
 
+    it('should create a host', () => {
+        spyOn(dotContentletEditorService, 'create');
+
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'create-host',
+                    data: { url: 'hello.world.com' }
+                }
+            })
+        );
+
+        expect(dotContentletEditorService.create).toHaveBeenCalledWith({
+            data: {
+                url: 'hello.world.com'
+            }
+        });
+    });
+
     it('should create a contentlet from edit page', () => {
         spyOn(dotContentletEditorService, 'create');
         service.handle(
@@ -198,6 +226,20 @@ describe('DotCustomEventHandlerService', () => {
             new CustomEvent('ng-event', {
                 detail: {
                     name: 'edit-contentlet',
+                    data: {
+                        inode: '123'
+                    }
+                }
+            })
+        );
+        expect(dotRouterService.goToEditContentlet).toHaveBeenCalledWith('123');
+    });
+
+    it('should edit a host', () => {
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'edit-host',
                     data: {
                         inode: '123'
                     }
@@ -338,10 +380,10 @@ describe('DotCustomEventHandlerService', () => {
         expect(dotLicenseService.updateLicense).toHaveBeenCalled();
     });
 
-    describe('edit content 2 is enabled', () => {
+    describe('edit content 2 is enabled and contentTypes are catchall', () => {
         beforeEach(() => {
             setup({
-                getKey: () => of('true')
+                getKeys: () => of(createFeatureFlagResponse('true'))
             });
 
             spyOn(router, 'navigate');
@@ -368,7 +410,8 @@ describe('DotCustomEventHandlerService', () => {
                     detail: {
                         name: 'edit-task',
                         data: {
-                            inode: '123'
+                            inode: '123',
+                            contentType: 'test'
                         }
                     }
                 })
@@ -383,12 +426,115 @@ describe('DotCustomEventHandlerService', () => {
                     detail: {
                         name: 'edit-contentlet',
                         data: {
-                            inode: '123'
+                            inode: '123',
+                            contentType: 'test'
                         }
                     }
                 })
             );
             expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+        });
+    });
+
+    describe('edit content 2 is enabled and contentTypes are limited', () => {
+        beforeEach(() => {
+            setup({
+                getKeys: () => of(createFeatureFlagResponse('true', 'test,test2'))
+            });
+
+            spyOn(router, 'navigate');
+        });
+
+        it('should create a contentlet', () => {
+            spyOn(dotContentletEditorService, 'create');
+
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'create-contentlet',
+                        data: { contentType: 'test' }
+                    }
+                })
+            );
+
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/test']);
+        });
+
+        it('should edit a a workflow task', () => {
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-task',
+                        data: {
+                            inode: '123',
+                            contentType: 'test2'
+                        }
+                    }
+                })
+            );
+
+            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+        });
+
+        it('should edit a contentlet', () => {
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-contentlet',
+                        data: {
+                            inode: '123',
+                            contentType: 'test2'
+                        }
+                    }
+                })
+            );
+            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+        });
+
+        it('should not create a contentlet', () => {
+            spyOn(dotContentletEditorService, 'create');
+
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'create-contentlet',
+                        data: { contentType: 'not in the list' }
+                    }
+                })
+            );
+
+            expect(router.navigate).not.toHaveBeenCalledWith(['content/new/test']);
+        });
+
+        it('should not edit a a workflow task', () => {
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-task',
+                        data: {
+                            inode: '123',
+                            contentType: 'not in the list'
+                        }
+                    }
+                })
+            );
+
+            expect(router.navigate).not.toHaveBeenCalledWith(['content/123']);
+        });
+
+        it('should not edit a contentlet', () => {
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-contentlet',
+                        data: {
+                            inode: '123',
+                            contentType: 'not in the list'
+                        }
+                    }
+                })
+            );
+            expect(router.navigate).not.toHaveBeenCalledWith(['content/123']);
         });
     });
 });
