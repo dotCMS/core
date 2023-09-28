@@ -58,11 +58,22 @@ public class TagsResourceHelper {
      * @param request
      * @return
      */
-    public String getSiteId (final String siteId, final HttpServletRequest request) {
-        if (UtilMethods.isSet(siteId)) {
-            final Host host = Try.of(()->hostAPI.find(siteId, APILocator.systemUser(), false)).getOrNull();
+    public String getSiteId (final String siteOrFolderId, final HttpServletRequest request, final User user) {
+        String siteId = siteOrFolderId;
+        if (UtilMethods.isSet(siteOrFolderId)) {
+            final boolean frontEndRequest = user != null && user.isFrontendUser();
+            Host host = Try.of(()->hostAPI.find(siteOrFolderId, user, frontEndRequest)).getOrNull();
+
+            if ((!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode()))
+                    && UtilMethods.isSet(siteOrFolderId)) {
+                host = Try.of(()->folderAPI
+                        .find(siteOrFolderId, user, frontEndRequest).getHost()).getOrNull();
+                if (host != null) {
+                    siteId = host.getIdentifier();
+                }
+            }
             if(null == host || UtilMethods.isNotSet(host.getIdentifier())){
-               throw new BadRequestException(String.format("Given site id `%s` isn't valid.",siteId));
+                throw new BadRequestException(String.format("Given site id `%s` isn't valid.",siteOrFolderId));
             }
         } else {
             final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
@@ -81,22 +92,12 @@ public class TagsResourceHelper {
      * @param user
      * @return
      */
-    public List<Tag> searchTagsInternal(final String tagName, final String siteOrFolderId,
-            final User user) {
+    public List<Tag> searchTagsInternal(final String tagName, final String siteId) {
         List<Tag> tags;
 
         try {
-            final boolean frontEndRequest = user.isFrontendUser();
-            final Host host = hostAPI.find(siteOrFolderId, user, frontEndRequest);
-            String internalSiteOrFolderId = siteOrFolderId;
-            if ((!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode()))
-                    && UtilMethods.isSet(siteOrFolderId)) {
-                internalSiteOrFolderId = folderAPI
-                        .find(siteOrFolderId, user, frontEndRequest).getHostId();
-            }
-
-            tags = tagAPI.getSuggestedTag(tagName, internalSiteOrFolderId);
-        } catch (DotDataException | DotSecurityException e) {
+            tags = tagAPI.getSuggestedTag(tagName, siteId);
+        } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
         }
         return tags;
