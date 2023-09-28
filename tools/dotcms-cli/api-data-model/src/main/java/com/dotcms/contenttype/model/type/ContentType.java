@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -146,8 +147,10 @@ public abstract class ContentType {
     @Nullable
     public abstract String urlMapPattern();
 
-    @Nullable
-    public abstract List<Workflow> workflows();
+    @Value.Default
+    public List<Workflow> workflows() {
+        return Collections.emptyList();
+    }
 
     //System action mappings are rendered quite differently depending on what endpoint gets called
     //if it's coming from an endpoint that returns a list of CT we get a simplified version
