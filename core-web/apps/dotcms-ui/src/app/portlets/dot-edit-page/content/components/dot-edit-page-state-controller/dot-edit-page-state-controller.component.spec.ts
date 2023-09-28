@@ -389,7 +389,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                optionId: DotPageMode.EDIT
+                value: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -420,7 +420,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                optionId: DotPageMode.EDIT
+                value: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -443,7 +443,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                optionId: DotPageMode.EDIT
+                value: DotPageMode.EDIT
             });
 
             fixtureHost.whenStable();
@@ -482,7 +482,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                optionId: DotPageMode.EDIT
+                value: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -518,7 +518,7 @@ describe('DotEditPageStateControllerComponent', () => {
             fixtureHost.detectChanges();
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                optionId: DotPageMode.EDIT
+                value: DotPageMode.EDIT
             });
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);

@@ -1,6 +1,7 @@
 package com.dotcms.api.client.push;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * This interface represents a push handler, which is responsible for handling push operations for a
@@ -35,8 +36,9 @@ public interface PushHandler<T> {
      *
      * @param localFile       the local file representing the content to be added
      * @param mappedLocalFile the mapped local file as a T
+     * @param customOptions   custom options for the push operation
      */
-    void add(File localFile, T mappedLocalFile);
+    void add(File localFile, T mappedLocalFile, Map<String, Object> customOptions);
 
     /**
      * Updates the server content with the local T content.
@@ -44,14 +46,17 @@ public interface PushHandler<T> {
      * @param localFile       the local file representing the content to be updated
      * @param mappedLocalFile the mapped local file as a T
      * @param serverContent   the existing server content to be updated
+     * @param customOptions   custom options for the push operation
      */
-    void edit(File localFile, T mappedLocalFile, T serverContent);
+    void edit(File localFile, T mappedLocalFile, T serverContent,
+            Map<String, Object> customOptions);
 
     /**
      * Removes the given serverContent from the server.
      *
      * @param serverContent the server content to be removed
+     * @param customOptions custom options for the push operation
      */
-    void remove(T serverContent);
+    void remove(T serverContent, Map<String, Object> customOptions);
 
 }
