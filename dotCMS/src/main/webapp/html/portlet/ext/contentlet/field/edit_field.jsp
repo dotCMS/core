@@ -652,6 +652,57 @@
 
         %>
 
+
+
+        <%
+            String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+            if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+        %>
+            
+            <%
+                String accept="*/*";
+                String maxFileLength="0";
+                String helperText="";
+
+                List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+                for(FieldVariable fv : acceptTypes){
+                    if("accept".equalsIgnoreCase(fv.getKey())){
+                        accept = fv.getValue();
+                    }
+                    if("maxFileLength".equalsIgnoreCase(fv.getKey())){
+                        maxFileLength=fv.getValue();
+                    }
+
+                    if("helperText".equalsIgnoreCase(fv.getKey())){
+                        helperText=fv.getValue();
+                    }
+                }
+
+            
+                %>
+            <dotcms-binary-field id="binary-field-<%=field.getVelocityVarName()%>"  fieldName="<%=field.getVelocityVarName()%>"></dotcms-binary-field>
+            <input name="<%=field.getFieldContentlet()%>" id="binary-field-input-<%=field.getFieldContentlet()%>ValueField" type="hidden" />
+
+            <script>
+
+                // Create a new scope so that variables defined here can have the same name without being overwritten.
+                (function autoexecute() {
+                    const binaryField = document.getElementById("binary-field-<%=field.getVelocityVarName()%>");
+                    const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
+                    // Set the initial value.
+                    binaryField.maxFileSize=Number("<%= maxFileLength%>");
+                    binaryField.accept="<%= accept%>";
+                    binaryField.helperText="<%= helperText%>";
+
+                    binaryField.addEventListener('tempFile', (event) => {
+                        const tempFile = event.detail;
+                        field.value = tempFile.id;
+                    });
+                })();
+
+            </script>
+        <%}else{%>
+
         <!--  display -->
         <% if(UtilMethods.isSet(value)){
             String mimeType="application/octet-stream";
@@ -829,7 +880,7 @@
 
     </script>
 
-
+    <%} %>
     <%
 
         if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink)){
