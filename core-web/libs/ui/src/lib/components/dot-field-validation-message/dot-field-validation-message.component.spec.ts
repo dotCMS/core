@@ -31,7 +31,8 @@ describe('FieldValidationComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotFieldValidationMessageComponent, DotMessageMockPipe],
+            imports: [DotFieldValidationMessageComponent],
+            declarations: [DotMessageMockPipe],
             providers: [
                 {
                     provide: DotMessageService,
