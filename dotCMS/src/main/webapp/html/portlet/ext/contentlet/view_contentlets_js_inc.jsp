@@ -337,13 +337,15 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 var write = userHasWritePermission (data, userId)?"1":"0";
                 var publish = userHasPublishPermission (data, userId)?"1":"0";
                 var structure_id = data["structureInode"];
-
+                var typeVariable = data["typeVariable"];
                 var editRef ='';
 
                 if(structure_id == '<%=calendarEventInode %>'){
-              editRef = " editEvent('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
+
+
+                editRef = `editEvent('${inode}','<%=user.getUserId()%>','<%= referer %>','${liveSt}','${workingSt}','${write}','${typeVariable}')`;
             }else{
-              editRef = " editContentlet('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
+                editRef = `editContentlet('${inode}','<%=user.getUserId()%>','<%= referer %>',${liveSt},${workingSt},${write},'${typeVariable}')`;
             }
 
             var ref = "<div class='content-search__result-item'><tr>";
