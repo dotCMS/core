@@ -131,4 +131,4 @@ This maintenance release includes the following code fixes:
 107.    https://github.com/dotCMS/core/issues/26046 : Radio Button no longer accept 1/0 as valid when searching in ES #26046
 108.    https://github.com/dotCMS/core/issues/26131 : Suggested tags don't work when the content is located in a folder #26131
 109.    https://github.com/dotCMS/core/issues/26158 : Remove :persona from tag when doing ES #26158
-110.
+110.    https://github.com/dotCMS/core/issues/26159 : Remove Persona Icon from Tag Field #26159
