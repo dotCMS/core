@@ -68,7 +68,8 @@
 }
 
 // Severity for outlined button
-.p-button.p-button-outlined:enabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
+.p-button.p-button-outlined:enabled,
+.p-button.p-button-outlined:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     @extend #outlined-primary-severity;
 
     &.p-button-sm {

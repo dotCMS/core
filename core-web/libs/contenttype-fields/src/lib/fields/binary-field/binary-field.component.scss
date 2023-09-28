@@ -3,11 +3,12 @@
 @import "libs/block-editor/src/fonts"; // Import PrimeNG Icon
 
 :host ::ng-deep {
-    @import "libs/dotcms-scss/angular/dotcms-theme/components/buttons/index";
-    @import "libs/dotcms-scss/angular/dotcms-theme/components/form/index";
-    @import "libs/dotcms-scss/angular/dotcms-theme/components/dialog";
     @import "node_modules/primeicons/primeicons";
+    @import "node_modules/primeng/resources/primeng.min";
     @import "libs/dotcms-scss/angular/dotcms-theme/_misc";
+    @import "libs/dotcms-scss/angular/dotcms-theme/components/buttons/common";
+    @import "libs/dotcms-scss/angular/dotcms-theme/components/buttons/_button";
+    @import "libs/dotcms-scss/angular/dotcms-theme/components/dialog";
 }
 
 .binary-field__container {

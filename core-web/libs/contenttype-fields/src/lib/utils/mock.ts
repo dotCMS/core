@@ -3,7 +3,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 const MESSAGES_MOCK = {
     'dot.binary.field.action.choose.file': 'Choose File',
     'dot.binary.field.action.create.new.file': 'Create New File',
-    'dot.binary.field.action.import.from.url.label': 'Import from URL',
+    'dot.binary.field.action.import.from.url': 'Import from URL',
     'dot.binary.field.action.import.from.url.error.message':
         'The URL you requested is not valid. Please try again.',
     'dot.binary.field.action.remove': 'Remove',

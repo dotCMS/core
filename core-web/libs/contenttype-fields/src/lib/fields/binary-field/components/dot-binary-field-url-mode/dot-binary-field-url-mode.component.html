@@ -1,6 +1,6 @@
 <form class="url-mode__form" [formGroup]="form" (ngSubmit)="onSubmit()" data-testId="form">
     <div class="url-mode__input-container">
-        <span>{{ 'dot.binary.field.action.import.from.url.label' | dm }}</span>
+        <span>{{ 'dot.binary.field.action.import.from.url' | dm }}</span>
         <input
             [ngClass]="{ 'p-invalid': isInvalid }"
             formControlName="url"
