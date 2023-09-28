@@ -19,7 +19,7 @@
         class="p-button-tabbed"
         [(ngModel)]="mode"
         [options]="options"
-        (onChange)="stateSelectorHandler($event)"
+        (onChange)="stateSelectorHandler({ optionId: $event.value })"
         optionValue="value.id"
         data-testId="selectButton"></p-selectButton>
 </ng-template>
