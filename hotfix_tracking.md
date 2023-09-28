@@ -130,3 +130,5 @@ This maintenance release includes the following code fixes:
 106.    https://github.com/dotCMS/core/issues/26019 : PubSubListener with vanilla postgres #26019
 107.    https://github.com/dotCMS/core/issues/26046 : Radio Button no longer accept 1/0 as valid when searching in ES #26046
 108.    https://github.com/dotCMS/core/issues/26131 : Suggested tags don't work when the content is located in a folder #26131
+109.    https://github.com/dotCMS/core/issues/26158 : Remove :persona from tag when doing ES #26158
+110.

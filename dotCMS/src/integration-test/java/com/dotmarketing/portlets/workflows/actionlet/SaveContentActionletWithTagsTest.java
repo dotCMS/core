@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.TagDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -19,6 +20,7 @@ import com.dotmarketing.portlets.workflows.business.SaveContentActionletTest;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -171,5 +173,39 @@ public class SaveContentActionletWithTagsTest extends BaseWorkflowIntegrationTes
         Assert.assertEquals("Test", contentletSaved4.getStringProperty("txt"));
         contentletSaved4.setTags();
         Assert.assertNull(contentletSaved4.getStringProperty("tag"));
+    }
+
+    /**
+     * Method to test: {@link Contentlet#setTags()}
+     * Given Scenario: Contentlet with persona tag is getting appended :persona
+     * Expected Result: tag should not have :persona, should be the same as the tag name.
+     */
+    @Test
+    public void test_TagsShouldNotIncludePersona() throws DotDataException, DotSecurityException {
+        //Create persona Tag
+        final String tagName = "personaTag" + System.currentTimeMillis();
+        final Tag tag = new TagDataGen().name(tagName).site(APILocator.getHostAPI().findSystemHost()).persona(true).nextPersisted();
+
+        //Add persona Tag to a contentlet
+        final Contentlet contentlet = new Contentlet();
+        contentlet.setContentType(customContentType);
+        contentlet.setProperty("title", tag.getTagName());
+        contentlet.setProperty("txt", tag.getTagName());
+        contentlet.setProperty("tag", tag.getTagName());
+
+        final Contentlet contentletSaved =
+                workflowAPI.fireContentWorkflow(contentlet,
+                        new ContentletDependencies.Builder()
+                                .modUser(APILocator.systemUser())
+                                .workflowActionId(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID)
+                                .build());
+
+        Assert.assertNotNull(contentletSaved);
+        Assert.assertEquals(tag.getTagName(), contentletSaved.getStringProperty("title"));
+        Assert.assertEquals(tag.getTagName(), contentletSaved.getStringProperty("txt"));
+        contentletSaved.setTags();
+        //Check that tag do not include :persona
+        Assert.assertEquals(tag.getTagName(), contentletSaved.getStringProperty("tag"));
+
     }
 }
