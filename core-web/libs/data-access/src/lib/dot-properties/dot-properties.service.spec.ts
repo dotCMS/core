@@ -9,7 +9,8 @@ import { DotPropertiesService } from './dot-properties.service';
 const fakeResponse = {
     entity: {
         key1: 'data',
-        list: ['1', '2']
+        list: ['1', '2'],
+        featureFlag: 'true'
     }
 };
 
@@ -66,6 +67,36 @@ describe('DotPropertiesService', () => {
             expect(response).toEqual(apiResponse.entity);
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${keys.join()}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
+    it('should get feature flag value', () => {
+        const featureFlag = 'featureFlag';
+        expect(service).toBeTruthy();
+
+        service.getFeatureFlagValue(featureFlag).subscribe((response) => {
+            expect(response).toEqual(true);
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(fakeResponse);
+    });
+
+    it('should get feature flag values', () => {
+        const featureFlags = ['featureFlag', 'featureFlag2'];
+        const apiResponse = {
+            entity: {
+                featureFlag: 'true',
+                featureFlag2: 'NOT_FOUND'
+            }
+        };
+
+        service.getFeatureFlagsValues(featureFlags).subscribe((response) => {
+            expect(response['featureFlag']).toBe(true);
+            expect(response['featureFlag2']).toBe(false);
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
         expect(req.request.method).toBe('GET');
         req.flush(apiResponse);
     });
