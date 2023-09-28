@@ -2,7 +2,7 @@ package com.dotcms.cli.command.language;
 
 import picocli.CommandLine;
 
-public class LanguagesPushMixin {
+public class LanguagePushMixin {
 
     @CommandLine.Option(names = {"-rl", "--removeLanguages"}, defaultValue = "false",
             description =
