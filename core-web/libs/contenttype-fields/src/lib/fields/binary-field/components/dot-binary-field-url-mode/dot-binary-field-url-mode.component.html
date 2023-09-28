@@ -1,6 +1,6 @@
 <form class="url-mode__form" [formGroup]="form" (ngSubmit)="onSubmit()" data-testId="form">
     <div class="url-mode__input-container">
-        <span>Import from URL</span>
+        <span>{{ 'dot.binary.field.action.import.from.url.label' | dm }}</span>
         <input
             [ngClass]="{ 'p-invalid': isInvalid }"
             formControlName="url"
@@ -9,19 +9,19 @@
             placeholder="https://www.google.com/"
             data-testId="url-input" />
         <span class="error-message p-invalid" *ngIf="isInvalid" data-testId="error-message">{{
-            errorMessage
+            'dot.binary.field.action.import.from.url.error.message' | dm
         }}</span>
     </div>
     <div class="url-mode__actions">
         <p-button
-            [label]="'dot.binary.field.action.cancel' | dm"
+            [label]="'dot.common.cancel' | dm"
             (click)="cancel.emit()"
             data-testId="action-cancel-btn"
             styleClass="p-button-outlined"
             icon="pi pi-times"></p-button>
 
         <p-button
-            [label]="'dot.binary.field.action.import' | dm"
+            [label]="'dot.common.import' | dm"
             type="submit"
             data-testId="action-import-btn"
             icon="pi pi-link"></p-button>

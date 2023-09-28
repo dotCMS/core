@@ -36,7 +36,6 @@ export class DotBinaryFieldUrlModeComponent {
         Validators.required,
         Validators.pattern(/^(ftp|http|https):\/\/[^ "]+$/)
     ];
-    readonly errorMessage = 'The URL you requested is not valid. Please try again.';
     readonly form = new FormGroup({
         url: new FormControl('', this.validators)
     });
