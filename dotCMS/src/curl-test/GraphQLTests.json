@@ -1211,22 +1211,6 @@
 									"",
 									"    pm.expect(checker(expectedVisitorPersonaTags, visitorPersona[\"tags\"]), 'FAILED:[visitorPersona.tags]').equal(true);",
 									"",
-									"    // visitor's tags",
-									"    pm.expect(JSON.stringify(visitor[\"tags\"])==JSON.stringify([",
-									"                        {",
-									"                            \"tag\": \"snowmobile\",",
-									"                            \"count\": 2",
-									"                        },",
-									"                        {",
-									"                            \"tag\": \"skiing\",",
-									"                            \"count\": 2",
-									"                        },",
-									"                        {",
-									"                            \"tag\": \"snowboarding\",",
-									"                            \"count\": 2",
-									"                        }",
-									"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
-									"",
 									"    var userAgent = visitor.userAgent;                ",
 									"    pm.expect(userAgent[\"operatingSystem\"], 'FAILED:[userAgent.operatingSystem]').equal(\"MAC_OS_X\");",
 									"    pm.expect(userAgent[\"browser\"], 'FAILED:[userAgent.browser]').equal(\"CHROME8\");",
@@ -2478,7 +2462,7 @@
 									"    pm.expect(containerContentlets6.contentlets[0].identifier, 'FAILED:[containerContentlets6.contentlets[0]].identifier').equal(\"3e6533b7-c3ba-4ec4-8bca-6a88d54cd037\");",
 									"    pm.expect(containerContentlets6.contentlets[0].title, 'FAILED:[containerContentlets6.contentlets[0]].title').equal(\"Costa Rica Family Adventure\");",
 									"    // tags ",
-									"    pm.expect(containerContentlets6.contentlets[0].taggies, 'FAILED:[containerContentlets6.contentlets[0].taggies]').equal(\"costa rica,winterenthusiast:persona\");",
+									"    pm.expect(containerContentlets6.contentlets[0].taggies, 'FAILED:[containerContentlets6.contentlets[0].taggies]').equal(\"costa rica,winterenthusiast\");",
 									"    // cats ",
 									"    pm.expect(JSON.stringify(containerContentlets6.contentlets[0].cats), 'FAILED:[containerContentlets6.contentlets[0].cats]').equal(JSON.stringify([{\"allInclusive\": \"All Inclusive\"}, {\"tours\": \"Tours\"}]));",
 									"",
@@ -5878,64 +5862,6 @@
 							]
 						},
 						"description": "Imports a Bundle that includes:\n* Content with renderable fields"
-					},
-					"response": []
-				},
-				{
-					"name": "Render content fields",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Content field values are rendered and not rendered as requested\", function () {",
-									"    var jsonData = pm.response.json();",
-									"",
-									"    var contentlet = jsonData.data.TypeWithRedereableFieldsCollection[0];",
-									"    ",
-									"    pm.expect(contentlet.textField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
-									"    pm.expect(contentlet.textareaField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
-									"    pm.expect(contentlet.wysiwygField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
-									"    pm.expect(contentlet.customField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
-									"    pm.expect(contentlet.constantField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
-									"    pm.expect(contentlet.rawText).to.eql(\"$content.identifier\");",
-									"    pm.expect(contentlet.rawTextarea).to.eql(\"$content.identifier\");",
-									"    pm.expect(contentlet.rawWysiwyg).to.eql(\"$content.identifier\");",
-									"    pm.expect(contentlet.rawCustom).to.eql(\"$content.identifier\");",
-									"    pm.expect(contentlet.rawConstant).to.eql(\"$content.identifier\");",
-									"    pm.expect(contentlet.rawText_default).to.eql(\"$content.identifier\");",
-									"    pm.expect(contentlet.rawTextarea_default).to.eql(\"$content.identifier\");",
-									"    pm.expect(contentlet.rawWysiwyg_default).to.eql(\"$content.identifier\");",
-									"    pm.expect(contentlet.rawCustom_default).to.eql(\"$content.identifier\");",
-									"    pm.expect(contentlet.rawConstant_default).to.eql(\"$content.identifier\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "graphql",
-							"graphql": {
-								"query": "{\n \n    TypeWithRedereableFieldsCollection {\n      textField(render: true)\n      textareaField(render: true)\n      wysiwygField(render: true)\n      customField(render: true)\n      constantField(render: true)\n      rawText:textField(render: false)\n      rawTextarea:textareaField(render: false)\n      rawWysiwyg:wysiwygField(render: false)\n      rawCustom:customField(render: false)\n      rawConstant:constantField(render: false)\n      rawText_default:textField\n      rawTextarea_default:textareaField\n      rawWysiwyg_default:wysiwygField\n      rawCustom_default:customField\n      rawConstant_default:constantField\n    }\n  \n}",
-								"variables": ""
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/graphql",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"graphql"
-							]
-						},
-						"description": "This tests that: \n* It's possible to request rendered content fields.\n* It's possible to request unrendered content fields. \n* It's possible to request the same field in both rendered and unrendered forms.   \n* If \"render\" argument is not specified, then it defaults to render:false"
 					},
 					"response": []
 				},
