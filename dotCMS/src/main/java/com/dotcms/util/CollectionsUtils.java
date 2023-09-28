@@ -7,9 +7,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 /**
  * This utility class provides common use methods for creating and interacting
@@ -995,6 +997,18 @@ public class CollectionsUtils implements Serializable {
             result.addAll(collection);
         }
         return Collections.unmodifiableList(result);
+    }
+
+    /**
+     * Concat two arrays in one
+     * @param array1 array of T
+     * @param array2 array of T
+     * @return array composite by array1 + array2
+     * @param <T>
+     */
+    public static <T> T[] concat(final T[] array1, final T[] array2) {
+        return Stream.concat(Arrays.stream(array1), Arrays.stream(array2))
+                .toArray(size -> (T[]) Array.newInstance(array1.getClass().getComponentType(), size));
     }
 
     private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {

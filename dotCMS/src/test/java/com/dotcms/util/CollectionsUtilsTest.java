@@ -365,4 +365,12 @@ public class CollectionsUtilsTest extends UnitTestBase {
         assertEquals( map.get("key1"), null);
         assertEquals( map.get("key2"), null);
     }
+
+    @Test
+    public void testConcatPrimitive(){
+        Integer [] array1 = {1,2,3};
+        Integer [] array2 = {4,5,6};
+        Integer [] array3 = CollectionsUtils.concat( array1, array2);
+        assertEquals( array3, new int[]{1,2,3,4,5,6});
+    }
 }

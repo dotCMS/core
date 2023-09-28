@@ -6,13 +6,18 @@ import org.graalvm.polyglot.HostAccess;
 
 import javax.servlet.http.Part;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 
-public class JsPart {
+/**
+ * Encapsulates a Blob in a Js context, which is basically a file sent by multipart/form-data
+ * @author jsanca
+ */
+public class JsBlob implements Serializable {
 
     private final Part part;
 
-    public JsPart(final Part part) {
+    public JsBlob(final Part part) {
         this.part = part;
     }
 

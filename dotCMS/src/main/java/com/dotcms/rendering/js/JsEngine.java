@@ -5,15 +5,12 @@ import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.util.Logger;
 import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Map;
@@ -22,9 +19,10 @@ import java.util.Map;
  * Js script engine implementation
  * @author jsanca
  */
-public class JsScriptEngine implements ScriptEngine {
+public class JsEngine implements ScriptEngine {
 
     private static final String ENGINE_JS = "js";
+    private final static JsDotLogger JS_DOT_LOGGER = new JsDotLogger();
     @Override
     public Object eval(final HttpServletRequest request,
                        final HttpServletResponse response,
@@ -44,12 +42,16 @@ public class JsScriptEngine implements ScriptEngine {
             contextParams.entrySet().forEach(entry -> bindings.putMember(entry.getKey(), entry.getValue()));
             this.addTools(request, response, bindings, contextParams);
 
+            final JsRequest jsRequest   = new JsRequest(request);
+            final JsResponse jsResponse = new JsResponse(response);
             bindings.putMember("dotJSON", dotJSON);
-            bindings.putMember("request",  wrapRequest(request));
-            bindings.putMember("response", wrapResponse(response));
+            bindings.putMember("request",  jsRequest);
+            bindings.putMember("response", jsResponse);
             Value eval   = context.eval(source);
             if (eval.canExecute()) {
-                eval = contextParams.containsKey("dot:arguments")?eval.execute((Object[])contextParams.get("dot:arguments")): eval.execute();
+                eval = contextParams.containsKey("dot:arguments")?
+                        eval.execute(buildArgs(jsRequest, jsResponse, (Object[])contextParams.get("dot:arguments"))):
+                        eval.execute(buildArgs(jsRequest, jsResponse));
             }
             return CollectionsUtils.map("output", eval.asString(), "dotJSON", dotJSON);
         } catch (final IOException e) {
@@ -59,14 +61,12 @@ public class JsScriptEngine implements ScriptEngine {
         }
     }
 
-     Object wrapResponse(final HttpServletResponse response) {
-        return new HttpServletResponseWrapper(response) {
-         };
+    private Object[] buildArgs(final JsRequest request,
+                               final JsResponse response, Object... objects) {
+        final Object [] defaultArgsArray = new Object[]{request, response, JS_DOT_LOGGER};
+        return null != objects && objects.length > 0?
+                CollectionsUtils.concat(defaultArgsArray, objects): defaultArgsArray;
     }
-
-     Object wrapRequest(final HttpServletRequest request) {
-        return new JsHttpRequest(request);
-     }
 
     private void addTools(final HttpServletRequest request,
                           final HttpServletResponse response,

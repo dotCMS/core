@@ -1,0 +1,58 @@
+package com.dotcms.rendering.js;
+
+import java.io.Serializable;
+
+/**
+ * Encapsulates the context of the Javascript execution.
+ */
+public class JsContext implements Serializable {
+
+    private final JsRequest request;
+    private final JsResponse response;
+
+    private final JsDotLogger logger;
+
+    public JsContext(final Builder builder) {
+        this.request = builder.request;
+        this.response = builder.response;
+        this.logger = builder.logger;
+    }
+
+    public JsRequest getRequest() {
+        return request;
+    }
+
+    public JsResponse getResponse() {
+        return response;
+    }
+
+    public JsDotLogger getLogger() {
+        return logger;
+    }
+
+    public static final class Builder {
+        private JsRequest request; // not present on create
+        private JsResponse response;
+        private  JsDotLogger logger;
+        public Builder request(final JsRequest request) {
+            this.request = request;
+            return this;
+        }
+
+        public Builder response(final JsResponse response) {
+            this.response = response;
+            return this;
+        }
+
+        public Builder logger(final JsDotLogger logger) {
+            this.logger = logger;
+            return this;
+        }
+
+        public JsContext build() {
+            return new JsContext(this);
+        }
+    }
+
+
+}

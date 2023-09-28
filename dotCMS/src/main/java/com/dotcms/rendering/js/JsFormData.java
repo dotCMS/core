@@ -2,12 +2,18 @@ package com.dotcms.rendering.js;
 
 import org.graalvm.polyglot.HostAccess;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class JsFormData {
+/**
+ * Represents the key value Form Data in a post request, in a Js context
+ * @author jsanca
+ *
+ */
+public class JsFormData  implements Serializable {
 
     private final Map<String, String> entries = new HashMap<>();
 

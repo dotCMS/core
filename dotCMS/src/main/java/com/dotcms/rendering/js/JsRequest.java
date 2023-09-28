@@ -5,7 +5,9 @@ import io.vavr.control.Try;
 import org.graalvm.polyglot.HostAccess;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.Part;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -16,28 +18,45 @@ import java.util.stream.Collectors;
  * Abstraction of the Request for the Javascript engine.
  * @author jsanca
  */
-public class JsHttpRequest {
+public class JsRequest implements Serializable {
 
     private boolean bodyUsed = false;
     private final HttpServletRequest request;
-    public JsHttpRequest(final HttpServletRequest request) {
+    public JsRequest(final HttpServletRequest request) {
         this.request = request;
     }
 
     @HostAccess.Export
     public String getParameter(final String name) {
+
         return request.getParameter(name);
     }
 
     @HostAccess.Export
     public String getBody() {
-        // todo: read the body and returns as a string
-        bodyUsed = true;
-        return null;
+
+        final StringBuilder bodyText = new StringBuilder();
+        // Get the request's input stream and create a BufferedReader
+        try (BufferedReader reader = request.getReader()) {
+
+            // Read the body text from the input stream
+            String line;
+            while ((line = reader.readLine()) != null) {
+                bodyText.append(line);
+            }
+
+            bodyUsed = true;
+        } catch (IOException e) {
+
+            throw new RuntimeException(e);
+        }
+
+        return bodyText.toString();
     }
 
     @HostAccess.Export
     public boolean getBodyUsed() {
+
         return bodyUsed;
     }
 
@@ -45,10 +64,11 @@ public class JsHttpRequest {
     public Map<String, String> getHeaders() {
 
         final Enumeration<String> headerNames = this.request.getHeaderNames();
-        final Map<String, String> headersMap = new HashMap<>();
+        final Map<String, String> headersMap  = new HashMap<>();
         if (headerNames != null) {
             while (headerNames.hasMoreElements()) {
-                final String headerName = headerNames.nextElement();
+
+                final String headerName  = headerNames.nextElement();
                 final String headerValue = request.getHeader(headerName);
                 headersMap.put(headerName, headerValue);
             }
@@ -78,9 +98,9 @@ public class JsHttpRequest {
     }
 
     @HostAccess.Export
-    public Collection<JsPart> getBlob() {
+    public Collection<JsBlob> getBlob() {
 
-        return Try.of(()->this.request.getParts().stream().map(JsPart::new).collect(Collectors.toList())).getOrNull();
+        return Try.of(()->this.request.getParts().stream().map(JsBlob::new).collect(Collectors.toList())).getOrNull();
     }
 
     @HostAccess.Export
@@ -101,14 +121,12 @@ public class JsHttpRequest {
     @HostAccess.Export
     public JSONObject getJson() {
 
-        // todo: implement me
-        return null;
+        return new JSONObject(this.getText());
     }
 
     @HostAccess.Export
     public String getText() {
 
-        // todo: implement me
-        return null;
+        return this.getBody();
     }
 }
