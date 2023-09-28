@@ -103,78 +103,88 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
         var count = 0;
 
-        for (var treeNodeData : result) {
+        if (!result.isEmpty()) {
+            for (var treeNodeData : result) {
 
-            var localPathStructure = treeNodeData.getMiddle();
-            var treeNode = treeNodeData.getRight();
+                var localPathStructure = treeNodeData.getMiddle();
+                var treeNode = treeNodeData.getRight();
 
-            var outputBuilder = new StringBuilder();
+                var outputBuilder = new StringBuilder();
 
-            outputBuilder.append(count++ == 0 ? "\r\n" : "\n\n").
-                    append(" ──────\n").
-                    append(String.format(
-                            " @|bold Folder [%s]|@ --- Site: [%s] - Status [%s] - Language [%s] \n",
-                            localPathStructure.filePath(),
-                            localPathStructure.site(),
-                            localPathStructure.status(),
-                            localPathStructure.language()));
+                outputBuilder.append(count++ == 0 ? "\r\n" : "\n\n").
+                        append(" ──────\n").
+                        append(String.format(
+                                " @|bold Folder [%s]|@ --- Site: [%s] - Status [%s] - Language [%s] \n",
+                                localPathStructure.filePath(),
+                                localPathStructure.site(),
+                                localPathStructure.status(),
+                                localPathStructure.language()));
 
-            var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
+                var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
 
-            if (treeNodePushInfo.hasChanges()) {
+                if (treeNodePushInfo.hasChanges()) {
 
-                var assetsToPushCount = treeNodePushInfo.assetsToPushCount();
-                if (assetsToPushCount > 0) {
-                    outputBuilder.append(String.format(" Push Data: " +
-                                    "@|bold [%s]|@ Assets to push: " +
-                                    "(@|bold," + COLOR_NEW + " %s|@ New " +
-                                    "- @|bold," + COLOR_MODIFIED + " %s|@ Modified) " +
-                                    "- @|bold," + COLOR_DELETED + " [%s]|@ Assets to delete " +
-                                    "- @|bold," + COLOR_NEW + " [%s]|@ Folders to push " +
-                                    "- @|bold," + COLOR_DELETED + " [%s]|@ Folders to delete\n\n",
-                            treeNodePushInfo.assetsToPushCount(),
-                            treeNodePushInfo.assetsNewCount(),
-                            treeNodePushInfo.assetsModifiedCount(),
-                            treeNodePushInfo.assetsToDeleteCount(),
-                            treeNodePushInfo.foldersToPushCount(),
-                            treeNodePushInfo.foldersToDeleteCount()));
+                    var assetsToPushCount = treeNodePushInfo.assetsToPushCount();
+                    if (assetsToPushCount > 0) {
+                        outputBuilder.append(String.format(" Push Data: " +
+                                        "@|bold [%s]|@ Assets to push: " +
+                                        "(@|bold," + COLOR_NEW + " %s|@ New " +
+                                        "- @|bold," + COLOR_MODIFIED + " %s|@ Modified) " +
+                                        "- @|bold," + COLOR_DELETED + " [%s]|@ Assets to delete " +
+                                        "- @|bold," + COLOR_NEW + " [%s]|@ Folders to push " +
+                                        "- @|bold," + COLOR_DELETED + " [%s]|@ Folders to delete\n\n",
+                                treeNodePushInfo.assetsToPushCount(),
+                                treeNodePushInfo.assetsNewCount(),
+                                treeNodePushInfo.assetsModifiedCount(),
+                                treeNodePushInfo.assetsToDeleteCount(),
+                                treeNodePushInfo.foldersToPushCount(),
+                                treeNodePushInfo.foldersToDeleteCount()));
+                    } else {
+                        outputBuilder.append(String.format(" Push Data: " +
+                                        "@|bold," + COLOR_NEW + " [%s]|@ Assets to push " +
+                                        "- @|bold," + COLOR_DELETED + " [%s]|@ Assets to delete " +
+                                        "- @|bold," + COLOR_NEW + " [%s]|@ Folders to push " +
+                                        "- @|bold," + COLOR_DELETED + " [%s]|@ Folders to delete\n\n",
+                                treeNodePushInfo.assetsToPushCount(),
+                                treeNodePushInfo.assetsToDeleteCount(),
+                                treeNodePushInfo.foldersToPushCount(),
+                                treeNodePushInfo.foldersToDeleteCount()));
+                    }
+
+                    if (pushMixin.dryRun) {
+                        TreePrinter.getInstance().formatByStatus(
+                                outputBuilder,
+                                AssetsUtils.statusToBoolean(localPathStructure.status()),
+                                List.of(localPathStructure.language()),
+                                treeNode,
+                                false,
+                                true,
+                                localPathStructure.languageExists());
+                    }
+
+                    output.info(outputBuilder.toString());
+
+                    // ---
+                    // Pushing the tree
+                    if (!pushMixin.dryRun) {
+                        pushService.processTreeNodes(output, workspace.getAbsolutePath(),
+                                localPathStructure, treeNode, treeNodePushInfo, pushMixin.failFast,
+                                pushMixin.retryAttempts);
+                    }
+
                 } else {
-                    outputBuilder.append(String.format(" Push Data: " +
-                                    "@|bold," + COLOR_NEW + " [%s]|@ Assets to push " +
-                                    "- @|bold," + COLOR_DELETED + " [%s]|@ Assets to delete " +
-                                    "- @|bold," + COLOR_NEW + " [%s]|@ Folders to push " +
-                                    "- @|bold," + COLOR_DELETED + " [%s]|@ Folders to delete\n\n",
-                            treeNodePushInfo.assetsToPushCount(),
-                            treeNodePushInfo.assetsToDeleteCount(),
-                            treeNodePushInfo.foldersToPushCount(),
-                            treeNodePushInfo.foldersToDeleteCount()));
+                    outputBuilder.
+                            append("\r\n").
+                            append(" ──────\n").
+                            append(
+                                    String.format(" No changes in %s to push%n%n", "Files"));
+                    output.info(outputBuilder.toString());
                 }
-
-                if (pushMixin.dryRun) {
-                    TreePrinter.getInstance().formatByStatus(
-                            outputBuilder,
-                            AssetsUtils.statusToBoolean(localPathStructure.status()),
-                            List.of(localPathStructure.language()),
-                            treeNode,
-                            false,
-                            true,
-                            localPathStructure.languageExists());
-                }
-
-                output.info(outputBuilder.toString());
-
-                // ---
-                // Pushing the tree
-                if (!pushMixin.dryRun) {
-                    pushService.processTreeNodes(output, workspace.getAbsolutePath(),
-                            localPathStructure, treeNode, treeNodePushInfo, pushMixin.failFast,
-                            pushMixin.retryAttempts);
-                }
-
-            } else {
-                outputBuilder.append(" No changes to push\n\n");
-                output.info(outputBuilder.toString());
             }
+        } else {
+            output.info(String.format("\r%n"
+                    + " ──────%n"
+                    + " No changes in %s to push%n%n", "Files"));
         }
 
         return CommandLine.ExitCode.OK;
