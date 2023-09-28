@@ -1,4 +1,4 @@
-<form class="url-mode__form" [formGroup]="form" (ngSubmit)="onSubmit()">
+<form class="url-mode__form" [formGroup]="form" (ngSubmit)="onSubmit()" data-testId="form">
     <div class="url-mode__input-container">
         <span>Import from URL</span>
         <input
@@ -8,7 +8,9 @@
             type="text"
             placeholder="https://www.google.com/"
             data-testId="url-input" />
-        <span class="error-message p-invalid" *ngIf="isInvalid">{{ errorMessage }}</span>
+        <span class="error-message p-invalid" *ngIf="isInvalid" data-testId="error-message">{{
+            errorMessage
+        }}</span>
     </div>
     <div class="url-mode__actions">
         <p-button
