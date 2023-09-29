@@ -108,6 +108,7 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha,enable=true,priority=100,prefix=sha-,suffix=,format=short
+            type=raw,value=run-${{ github.run_id }}
       - name: Debug docker metdata
         run: |
           echo "${{ fromJSON(steps.meta.outputs.json) }}"
