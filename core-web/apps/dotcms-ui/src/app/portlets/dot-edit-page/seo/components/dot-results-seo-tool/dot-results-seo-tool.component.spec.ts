@@ -150,4 +150,17 @@ describe('DotResultsSeoToolComponent', () => {
             done();
         });
     });
+
+    it('should render the result card title with title case', () => {
+        const expectedTitle = 'Title';
+        const expectedDescription = 'Description';
+
+        const resultKeyTitle = spectator.queryAll(byTestId('result-key'))[2];
+        const resultKeyDescription = spectator.queryAll(byTestId('result-key'))[1];
+
+        expect(resultKeyTitle).toExist();
+        expect(resultKeyDescription).toExist();
+        expect(resultKeyTitle).toContainText(expectedTitle);
+        expect(resultKeyDescription).toContainText(expectedDescription);
+    });
 });

@@ -49,11 +49,10 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     @Inject
     protected WorkspaceManager workspaceManager;
 
-    // Find the instances of all push subcommands
-    Instance<DotPush> pushCommands = CDI.current().select(DotPush.class);
-
     @Override
     public Integer call() throws Exception {
+        // Find the instances of all push subcommands
+        Instance<DotPush> pushCommands = CDI.current().select(DotPush.class);
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());

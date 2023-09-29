@@ -27,6 +27,7 @@ export class DotExperimentsConfigurationTargetingComponent {
         experimentId: string;
         status: StepStatus;
         isExperimentADraft: boolean;
+        disabledTooltipLabel: string | null;
     }> = this.dotExperimentsConfigurationStore.targetStepVm$.pipe(
         tap(({ status }) => this.handleSidebar(status))
     );

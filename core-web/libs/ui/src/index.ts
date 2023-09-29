@@ -12,3 +12,5 @@ export * from './lib/components/dot-empty-container/dot-empty-container.componen
 export * from './lib/dot-tab-buttons/dot-tab-buttons.component';
 export * from './lib/dot-remove-confirm-popup/dot-remove-confirm-popup.directive';
 export * from './lib/directives/dot-autofocus/dot-autofocus.directive';
+export * from './lib/pipes/dot-string-format/dot-string-format.pipe';
+export * from './lib/directives/dot-trim-input/dot-trim-input.directive';
