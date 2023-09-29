@@ -12,29 +12,22 @@
 // tag::picocli-generated-man-section-name[]
 == Name
 
-site-push - *Push a Site from a given file *
+site-push - *Push sites*
 
 // end::picocli-generated-man-section-name[]
 
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site push* [*-fh*] [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_] _<siteFile>_
+*site push* [*-h*] [*--dry-run*] [*-ff*] [*-fse*] [*-rs*]
+          [*--retry-attempts*=_<retryAttempts>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
 
 // tag::picocli-generated-man-section-description[]
 == Description
 
- This command will push a site to the current active
- remote instance of dotCMS from a given file.
- When pulling a site from a remote dotCMS instance
- the site is saved to a file.
- The file name will be the site's name.
- To make changes to the a Site
- modify the file and push it back to the remote instance.
- The file can also be used as a base to create a brand new Site.
- The format can be changed using the --format option.
+This command enables the pushing of sites to the server. It accommodates the specification of either a site file or a folder path.
 
 
 // end::picocli-generated-man-section-description[]
@@ -42,27 +35,31 @@ site-push - *Push a Site from a given file *
 // tag::picocli-generated-man-section-options[]
 == Options
 
-*-f*, *--force*::
-  Force must me set to true to update a site name.
+*--dry-run*::
+  When this option is enabled, the push process displays information about the changes that would be made on the remote server without actually pushing those changes. No modifications will be made to the remote server. By default, this option is disabled, and the changes will be applied to the remote server.
 
-*-fmt, --format*=_<inputOutputFormat>_::
-  Enum values: JSON, YAML, YML
+*-ff, --fail-fast*::
+  Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
+
+*-fse, --forceSiteExecution*::
+  Force must me set to true to update a site name.
 
 *-h*, *--help*::
   Display this help message.
 
-*--workspace*=_<file>_::
-  The workspace directory.
-+
-Current directory is used if not specified
+*--retry-attempts*=_<retryAttempts>_::
+  Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
+
+*-rs, --removeSites*::
+  When this option is enabled, the push process allows the deletion of sites in the remote server. By default, this option is disabled, and sites will not be removed on the remote server.
 
 // end::picocli-generated-man-section-options[]
 
 // tag::picocli-generated-man-section-arguments[]
 == Arguments
 
-_<siteFile>_::
-   The json/yaml formatted Site descriptor file to be pushed. 
+[_path_]::
+  local directory or file to push
 
 // end::picocli-generated-man-section-arguments[]
 

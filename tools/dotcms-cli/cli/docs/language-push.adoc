@@ -12,24 +12,22 @@
 // tag::picocli-generated-man-section-name[]
 == Name
 
-language-push - *Push a language*
+language-push - *Push languages*
 
 // end::picocli-generated-man-section-name[]
 
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*language push* [*-h*] [*--byIso*=_<languageIso>_] [*-f*=_<file>_]
-              [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_]
+*language push* [*-h*] [*--dry-run*] [*-ff*] [*-rl*] [*--byIso*=_<languageIso>_]
+              [*--retry-attempts*=_<retryAttempts>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
 
 // tag::picocli-generated-man-section-description[]
 == Description
 
- Save or update a language given a Language object (in JSON or YML format) or iso (e.g.: en-us)
- Push a language given a Language object (in JSON or YML format) or iso (e.g.: en-us)
- If no file is specified, a new language will be created using the iso provided.
+This command enables the pushing of languages to the server. It accommodates the specification of either a language file or a folder path. In addition to these options, it also facilitates the creation of a new language through the provision of a language iso code (e.g.: en-us).
 
 
 // end::picocli-generated-man-section-description[]
@@ -40,23 +38,29 @@ language-push - *Push a language*
 *--byIso*=_<languageIso>_::
   Code to be used to create a new language. Used when no file is specified. For example: en-us
 
-*-f*, *--file*=_<file>_::
-  The json/yml formatted content-type descriptor file to be pushed. 
+*--dry-run*::
+  When this option is enabled, the push process displays information about the changes that would be made on the remote server without actually pushing those changes. No modifications will be made to the remote server. By default, this option is disabled, and the changes will be applied to the remote server.
 
-*-fmt, --format*=_<inputOutputFormat>_::
-  Enum values: JSON, YAML, YML
+*-ff, --fail-fast*::
+  Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
 
 *-h*, *--help*::
   Display this help message.
 
-*--workspace*=_<file>_::
-  The workspace directory.
-+
-Current directory is used if not specified
+*--retry-attempts*=_<retryAttempts>_::
+  Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
+
+*-rl, --removeLanguages*::
+  When this option is enabled, the push process allows the deletion of languages in the remote server. By default, this option is disabled, and languages will not be removed on the remote server.
 
 // end::picocli-generated-man-section-options[]
 
 // tag::picocli-generated-man-section-arguments[]
+== Arguments
+
+[_path_]::
+  local directory or file to push
+
 // end::picocli-generated-man-section-arguments[]
 
 // tag::picocli-generated-man-section-commands[]

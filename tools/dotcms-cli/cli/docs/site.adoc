@@ -53,7 +53,7 @@ xref:site-pull.adoc[*pull*]::
   *Retrieves a site descriptor from a name or Id.*
 
 xref:site-push.adoc[*push*]::
-  *Push a Site from a given file *
+  *Push sites*
 
 xref:site-create.adoc[*create*]::
   *Quick way to create a Site *

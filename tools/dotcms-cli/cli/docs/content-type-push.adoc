@@ -12,29 +12,22 @@
 // tag::picocli-generated-man-section-name[]
 == Name
 
-content-type-push - *Use this command to push a Content-type from a file.*
+content-type-push - *Push content types*
 
 // end::picocli-generated-man-section-name[]
 
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*content-type push* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_] _<file>_
+*content-type push* [*-h*] [*--dry-run*] [*-ff*] [*-rct*]
+                  [*--retry-attempts*=_<retryAttempts>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
 
 // tag::picocli-generated-man-section-description[]
 == Description
 
- This command will push a content-type to the current active
- remote instance of dotCMS from a given file.
- When pulling a content-type from a remote dotCMS instance
- the content-type is saved to a file.
- The file name will be the content-type's variable name.
- To make changes to the a Content-type
- modify the file and push it back to the remote instance.
- The file can also be used as a base to create a brand new content-type.
- The format can be changed using the --format option.
+This command enables the pushing of content types to the server. It accommodates the specification of either a content type file or a folder path.
 
 
 // end::picocli-generated-man-section-description[]
@@ -42,24 +35,28 @@ content-type-push - *Use this command to push a Content-type from a file.*
 // tag::picocli-generated-man-section-options[]
 == Options
 
-*-fmt, --format*=_<inputOutputFormat>_::
-  Enum values: JSON, YAML, YML
+*--dry-run*::
+  When this option is enabled, the push process displays information about the changes that would be made on the remote server without actually pushing those changes. No modifications will be made to the remote server. By default, this option is disabled, and the changes will be applied to the remote server.
+
+*-ff, --fail-fast*::
+  Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
 
 *-h*, *--help*::
   Display this help message.
 
-*--workspace*=_<file>_::
-  The workspace directory.
-+
-Current directory is used if not specified
+*-rct, --removeContentTypes*::
+  When this option is enabled, the push process allows the deletion of content types in the remote server. By default, this option is disabled, and content types will not be removed on the remote server.
+
+*--retry-attempts*=_<retryAttempts>_::
+  Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
 
 // end::picocli-generated-man-section-options[]
 
 // tag::picocli-generated-man-section-arguments[]
 == Arguments
 
-_<file>_::
-  The json/yml formatted content-type descriptor file to be pushed. 
+[_path_]::
+  local directory or file to push
 
 // end::picocli-generated-man-section-arguments[]
 

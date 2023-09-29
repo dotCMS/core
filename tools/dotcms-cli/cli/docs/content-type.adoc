@@ -53,7 +53,7 @@ xref:content-type-pull.adoc[*pull*]::
   *Retrieves a Content-type descriptor from a given name or Id.*
 
 xref:content-type-push.adoc[*push*]::
-  *Use this command to push a Content-type from a file.*
+  *Push content types*
 
 xref:content-type-remove.adoc[*remove*, *rm*]::
   *Use this command to remove Content-types.*

@@ -55,7 +55,7 @@ xref:language-find.adoc[*find*]::
   *Get all existing languages*
 
 xref:language-push.adoc[*push*]::
-  *Push a language*
+  *Push languages*
 
 xref:language-remove.adoc[*remove*, *rm*]::
   *Remove a language*
