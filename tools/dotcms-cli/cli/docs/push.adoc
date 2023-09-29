@@ -2,35 +2,32 @@
 // tag::picocli-generated-man-section-header[]
 :doctype: manpage
 :revnumber: 
-:manmanual: Login Manual
+:manmanual: Push Manual
 :mansource: 
 :man-linkstyle: pass:[blue R < >]
-= login(1)
+= push(1)
 
 // end::picocli-generated-man-section-header[]
 
 // tag::picocli-generated-man-section-name[]
 == Name
 
-login - *Use this command to login to a dotCMS instance.*
+push - *dotCMS global push*
 
 // end::picocli-generated-man-section-name[]
 
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*login* [*-h*] *-p*[=_<password>_] [*-p*[=_<password>_]]... *-u*=_<user>_
+*push* [*-h*] [*--dry-run*] [*-ff*] [*--retry-attempts*=_<retryAttempts>_]
+     [*--token*=_<token>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
 
 // tag::picocli-generated-man-section-description[]
 == Description
 
- Once an instance is selected. Use this command to open a session
- Expects a user in --user -u and a password --password -p
- *Both parameters are mandatory.*
- If the password is not provided, the command will prompt for it.
- if you're not sure which instance is active, use the status command.
+ This command push Sites, Content Types, Languages and Files to the server.
 
 
 // end::picocli-generated-man-section-description[]
@@ -38,18 +35,29 @@ login - *Use this command to login to a dotCMS instance.*
 // tag::picocli-generated-man-section-options[]
 == Options
 
+*--dry-run*::
+  When this option is enabled, the push process displays information about the changes that would be made on the remote server without actually pushing those changes. No modifications will be made to the remote server. By default, this option is disabled, and the changes will be applied to the remote server.
+
+*-ff, --fail-fast*::
+  Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
+
 *-h*, *--help*::
   Display this help message.
 
-*-p*, *--password*[=_<password>_]::
-  Passphrase
+*--retry-attempts*=_<retryAttempts>_::
+  Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
 
-*-u*, *--user*=_<user>_::
-  User name
+*--token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 
 // tag::picocli-generated-man-section-arguments[]
+== Arguments
+
+[_path_]::
+  local directory or file to push
+
 // end::picocli-generated-man-section-arguments[]
 
 // tag::picocli-generated-man-section-commands[]

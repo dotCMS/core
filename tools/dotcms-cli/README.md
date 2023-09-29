@@ -1,5 +1,5 @@
 # dotCMS CLI 
-
+The dotCMS CLI is a command-line tool that you can use to populate and modify your dotCMS instances from a command shell.
 
 ## Installing the dotCMS CLI
 The dotCMS CLI is delivered as an uber jar that can be downloaded from here.
@@ -41,8 +41,28 @@ login --user=admin@dotCMS.com --password=admin
 ```shell script
 instance --list
 ```
-3. 
+3. Activate a dotCMS instance profile called `demo`
+```shell script
+instance --activate demo
+```
+4. Get info of the current instance running
+```shell script
+#Just run the status command
+status
 
+#You will get an output similar to:
+2023-02-22 11:25:29,499 INFO  [com.dot.api.cli.HybridServiceManagerImpl] (Quarkus Main Thread) Service [default] is missing credentials.
+2023-02-22 11:25:29,500 INFO  [com.dot.api.cli.HybridServiceManagerImpl] (Quarkus Main Thread) Service [demo] is missing credentials.
+Active instance is [demo] API is [https://demo.dotcms.com/api] No active user Use login Command.
+```
+5. Pull a content type
+```shell script
+content-type pull FileAsset
+```
+6. Create a new site
+```shell script
+site create "my.cool.bikes.site.com"
+```
 
 ## Building the CLI (dev mode)
 
