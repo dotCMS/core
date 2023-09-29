@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import {
     FormGroup,
     FormControl,
@@ -29,6 +29,9 @@ import { DotMessagePipe } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldUrlModeComponent {
+    @Input() isLoading = false;
+    @Input() error = '';
+
     @Output() accept: EventEmitter<string> = new EventEmitter<string>();
     @Output() cancel: EventEmitter<void> = new EventEmitter<void>();
 
@@ -40,15 +43,24 @@ export class DotBinaryFieldUrlModeComponent {
         url: new FormControl('', this.validators)
     });
 
-    get isInvalid(): boolean {
-        const ngControl = this.form.get('url');
+    get urlControl(): FormControl {
+        return this.form.get('url') as FormControl;
+    }
 
-        return ngControl.invalid && (ngControl.dirty || ngControl.touched);
+    get isInvalid(): boolean {
+        return this.urlControl.invalid && !this.isPristine;
+    }
+
+    get isPristine(): boolean {
+        return !(this.urlControl.dirty || this.urlControl.touched);
     }
 
     onSubmit(): void {
-        if (this.form.valid) {
-            this.accept.emit(this.form.value.url);
+        if (this.form.invalid) {
+            return;
         }
+
+        this.accept.emit(this.form.value.url);
+        this.form.reset({ url: this.urlControl.value }); // Reset touch and dirty state
     }
 }

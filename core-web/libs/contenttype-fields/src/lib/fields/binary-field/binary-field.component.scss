@@ -5,9 +5,9 @@
 :host ::ng-deep {
     @import "node_modules/primeicons/primeicons";
     @import "node_modules/primeng/resources/primeng.min";
-    @import "libs/dotcms-scss/angular/dotcms-theme/_misc";
+    @import "libs/dotcms-scss/angular/dotcms-theme/misc";
     @import "libs/dotcms-scss/angular/dotcms-theme/components/buttons/common";
-    @import "libs/dotcms-scss/angular/dotcms-theme/components/buttons/_button";
+    @import "libs/dotcms-scss/angular/dotcms-theme/components/buttons/button";
     @import "libs/dotcms-scss/angular/dotcms-theme/components/dialog";
 }
 

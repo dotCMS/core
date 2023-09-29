@@ -2,15 +2,19 @@
     <div class="url-mode__input-container">
         <span>{{ 'dot.binary.field.action.import.from.url' | dm }}</span>
         <input
-            [ngClass]="{ 'p-invalid': isInvalid }"
+            [disabled]="isLoading"
+            type="text"
             formControlName="url"
             pInputText
-            type="text"
             placeholder="https://www.google.com/"
             data-testId="url-input" />
-        <span class="error-message p-invalid" *ngIf="isInvalid" data-testId="error-message">{{
-            'dot.binary.field.action.import.from.url.error.message' | dm
-        }}</span>
+        <div class="error-message p-invalid" data-testId="error-message">
+            <span *ngIf="isInvalid">
+                {{ 'dot.binary.field.action.import.from.url.error.message' | dm }}
+            </span>
+
+            <span *ngIf="error && !isPristine">{{ error | dm }}</span>
+        </div>
     </div>
     <div class="url-mode__actions">
         <p-button
@@ -21,6 +25,7 @@
             icon="pi pi-times"></p-button>
 
         <p-button
+            [disabled]="isLoading"
             [label]="'dot.common.import' | dm"
             type="submit"
             data-testId="action-import-btn"

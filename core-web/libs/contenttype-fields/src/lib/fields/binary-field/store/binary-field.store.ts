@@ -38,7 +38,12 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     private _maxFileSizeInMB: number;
 
     // Selectors
-    readonly vm$ = this.select((state) => state);
+    readonly vm$ = this.select((state) => {
+        return {
+            ...state,
+            isLoading: state.status === BINARY_FIELD_STATUS.UPLOADING
+        };
+    });
 
     // File state
     readonly file$ = this.select((state) => state.file);
@@ -71,6 +76,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     readonly setTempFile = this.updater<DotCMSTempFile>((state, tempFile) => ({
         ...state,
+        dialogOpen: false,
         status: BINARY_FIELD_STATUS.PREVIEW,
         tempFile
     }));
@@ -92,7 +98,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     readonly setUploading = this.updater((state) => ({
         ...state,
-        dialogOpen: false,
         dropZoneActive: false,
         uiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
         status: BINARY_FIELD_STATUS.UPLOADING

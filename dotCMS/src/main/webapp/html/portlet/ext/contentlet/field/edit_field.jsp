@@ -684,15 +684,17 @@
             <input name="<%=field.getFieldContentlet()%>" id="binary-field-input-<%=field.getFieldContentlet()%>ValueField" type="hidden" />
 
             <script>
-
                 // Create a new scope so that variables defined here can have the same name without being overwritten.
                 (function autoexecute() {
                     const binaryField = document.getElementById("binary-field-<%=field.getVelocityVarName()%>");
                     const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
+                    const acceptArr = JSON.parse("<%= accept%>");
+                    const acceptTypes = acceptArr.map((type) => type.trim())
+
                     // Set the initial value.
-                    binaryField.maxFileSize=Number("<%= maxFileLength%>");
-                    binaryField.accept="<%= accept%>";
-                    binaryField.helperText="<%= helperText%>";
+                    binaryField.maxFileSize = Number("<%= maxFileLength%>");
+                    binaryField.accept = acceptTypes;
+                    binaryField.helperText ="<%= helperText%>";
 
                     binaryField.addEventListener('tempFile', (event) => {
                         const tempFile = event.detail;

@@ -73,11 +73,7 @@ const initialState: BinaryFieldState = {
 })
 export class DotBinaryFieldComponent implements OnInit {
     //Inputs
-    acceptedTypes: string[] = [];
-    @Input() set accept(accept: string) {
-        this.acceptedTypes = accept.split(',').map((type) => type.trim());
-    }
-
+    @Input() accept: string[] = [];
     @Input() maxFileSize: number;
     @Input() helperText: string;
 
@@ -223,7 +219,7 @@ export class DotBinaryFieldComponent implements OnInit {
         fileTypeMismatch,
         maxFileSizeExceeded
     }: DropZoneFileValidity): UiMessageI {
-        const acceptedTypes = this.acceptedTypes.join(', ');
+        const acceptedTypes = this.accept.join(', ');
         const maxSize = `${this.maxFileSize} bytes`;
         let uiMessage: UiMessageI;
 

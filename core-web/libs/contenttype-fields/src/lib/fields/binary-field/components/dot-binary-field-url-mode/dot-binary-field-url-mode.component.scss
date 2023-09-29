@@ -1,6 +1,7 @@
 @use "variables" as *;
 
 :host ::ng-deep {
+    @import "libs/dotcms-scss/angular/dotcms-theme/utils/validation";
     @import "libs/dotcms-scss/angular/dotcms-theme/components/form/inputtext";
 }
 
@@ -33,5 +34,9 @@
 }
 
 .error-message {
+    justify-content: flex-start;
+    align-items: flex-start;
+    display: flex;
     font-size: $font-size-sm;
+    color: $color-alert-red;
 }

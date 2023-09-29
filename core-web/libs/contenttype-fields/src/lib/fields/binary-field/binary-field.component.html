@@ -12,7 +12,7 @@
             class="binary-field__drop-zone"
             [ngClass]="{ 'binary-field__drop-zone--active': vm.dropZoneActive }">
             <dot-drop-zone
-                [accept]="acceptedTypes"
+                [accept]="accept"
                 [maxFileSize]="maxFileSize"
                 (fileDragOver)="setDropZoneActiveState(true)"
                 (fileDragLeave)="setDropZoneActiveState(false)"
@@ -33,7 +33,7 @@
             <input
                 class="binary-field__input"
                 #inputFile
-                [accept]="acceptedTypes.join(',')"
+                [accept]="accept.join(',')"
                 (change)="handleFileSelection($event)"
                 data-testId="binary-field__file-input"
                 type="file" />
@@ -85,6 +85,7 @@
         <div [ngSwitch]="vm.mode">
             <div *ngSwitchCase="BINARY_FIELD_MODE.URL" data-testId="url">
                 <dot-dot-binary-field-url-mode
+                    [isLoading]="vm.isLoading"
                     (cancel)="visibleChange(false)"
                     (accept)="handleExternalSourceFile($event)"></dot-dot-binary-field-url-mode>
             </div>

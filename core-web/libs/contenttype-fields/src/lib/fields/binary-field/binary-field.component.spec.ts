@@ -87,7 +87,7 @@ describe('DotBinaryFieldComponent', () => {
         spectator = createComponent({
             detectChanges: false,
             props: {
-                accept: 'image/*',
+                accept: ['image/*'],
                 maxFileSize: 1000,
                 helperText: 'helper text'
             }

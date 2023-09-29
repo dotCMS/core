@@ -69,14 +69,14 @@ export default {
         })
     ],
     args: {
-        accept: 'image/*',
+        accept: ['image/*'],
         maxFileSize: 1000000,
         helperText: 'This field accepts only images with a maximum size of 1MB.'
     },
     argTypes: {
         accept: {
-            defaultValue: 'image/*',
-            control: 'string',
+            defaultValue: ['image/*'],
+            control: 'object',
             description: 'Accepted file types'
         },
         maxFileSize: {
