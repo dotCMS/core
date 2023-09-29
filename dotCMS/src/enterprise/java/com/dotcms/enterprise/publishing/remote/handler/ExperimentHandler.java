@@ -169,11 +169,25 @@ public class ExperimentHandler implements IHandler {
 					if(experiment.status()== Status.RUNNING || experiment.status()== Status.SCHEDULED) {
 						Experiment asDraft = Experiment.builder().from(experiment)
 								.status(Status.DRAFT).build();
+
+						final Optional<Scheduling> schedulingOptional = asDraft.scheduling();
+
 						if(experiment.status()==Status.RUNNING) {
 							asDraft = asDraft.withScheduling(Optional.empty());
 						}
+
 						asDraft = experimentsAPI.save(asDraft, APILocator.systemUser());
-						experimentsAPI.forceStart(asDraft.id().orElseThrow(), APILocator.systemUser());
+
+						if(schedulingOptional.isPresent()) {
+							asDraft = asDraft.withScheduling(schedulingOptional.get());
+						}
+
+						if(experiment.status()==Status.RUNNING) {
+							experimentsAPI.forceStart(asDraft.id().orElseThrow(), APILocator.systemUser());
+						} else {
+							experimentsAPI.forceScheduled(asDraft.id().orElseThrow(), APILocator.systemUser());
+						}
+
 					} else if(experiment.status()==Status.ENDED && localExperiment.isPresent()
 							&& localExperiment.get().status()==Status.RUNNING) {
 						experimentsAPI.end(localExperiment.orElseThrow().id().orElseThrow(),
