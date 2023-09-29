@@ -6,6 +6,7 @@ import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.model.push.PushAnalysisResult;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.RecursiveTask;
 import org.jboss.logging.Logger;
@@ -26,6 +27,8 @@ public class PushTask<T> extends RecursiveTask<List<Exception>> {
 
     private final boolean failFast;
 
+    private final Map<String, Object> customOptions;
+
     private final MapperService mapperService;
 
     private final ConsoleProgressBar progressBar;
@@ -35,6 +38,7 @@ public class PushTask<T> extends RecursiveTask<List<Exception>> {
     public PushTask(
             final List<PushAnalysisResult<T>> analysisResults,
             final boolean allowRemove,
+            final Map<String, Object> customOptions,
             final boolean failFast,
             final PushHandler<T> pushHandler,
             final MapperService mapperService,
@@ -43,6 +47,7 @@ public class PushTask<T> extends RecursiveTask<List<Exception>> {
 
         this.analysisResults = analysisResults;
         this.allowRemove = allowRemove;
+        this.customOptions = customOptions;
         this.failFast = failFast;
         this.pushHandler = pushHandler;
         this.mapperService = mapperService;
@@ -66,6 +71,7 @@ public class PushTask<T> extends RecursiveTask<List<Exception>> {
             var task = new ProcessResultTask<>(
                     result,
                     allowRemove,
+                    customOptions,
                     pushHandler,
                     mapperService,
                     logger
