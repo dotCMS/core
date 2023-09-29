@@ -3,20 +3,17 @@
         [(visible)]="vm.status.isOpen"
         (onHide)="closeSidebar()"
         dotSidebar
-        dotSize="{{ sidebarSizes.LG }}"
-    >
+        dotSize="{{ sidebarSizes.LG }}">
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.goals.sidebar.header' | dm }}"
-        />
+            dotTitle="{{ 'experiments.configure.goals.sidebar.header' | dm }}" />
         <div class="experiment-goal-select__form-wrapper flex flex-column">
             <form
                 class="p-fluid"
                 id="select-goal-form"
                 [formGroup]="form"
                 data-testId="select-goal-form"
-                novalidate
-            >
+                novalidate>
                 <div formGroupName="primary">
                     <div class="field">
                         <dot-experiment-options formControlName="type">
@@ -24,22 +21,19 @@
                                 [icon]="goals.BOUNCE_RATE.icon"
                                 [value]="goalsTypes.BOUNCE_RATE"
                                 detail="{{ goals.BOUNCE_RATE.description | dm }}"
-                                title="{{ goals.BOUNCE_RATE.label | dm }}"
-                            />
+                                title="{{ goals.BOUNCE_RATE.label | dm }}" />
 
                             <dot-experiment-options-item
                                 [icon]="goals.EXIT_RATE.icon"
                                 [value]="goalsTypes.EXIT_RATE"
                                 detail="{{ goals.EXIT_RATE.description | dm }}"
-                                title="{{ goals.EXIT_RATE.label | dm }}"
-                            />
+                                title="{{ goals.EXIT_RATE.label | dm }}" />
 
                             <dot-experiment-options-item
                                 [icon]="goals.REACH_PAGE.icon"
                                 [value]="goalsTypes.REACH_PAGE"
                                 detail="{{ goals.REACH_PAGE.description | dm }}"
-                                title="{{ goals.REACH_PAGE.label | dm }}"
-                            >
+                                title="{{ goals.REACH_PAGE.label | dm }}">
                                 <ng-template dotOptionContent>
                                     <dot-experiments-goal-configuration-reach-page />
                                 </ng-template>
@@ -49,8 +43,7 @@
                                 [icon]="goals.URL_PARAMETER.icon"
                                 [value]="goalsTypes.URL_PARAMETER"
                                 detail="{{ goals.URL_PARAMETER.description | dm }}"
-                                title="{{ goals.URL_PARAMETER.label | dm }}"
-                            >
+                                title="{{ goals.URL_PARAMETER.label | dm }}">
                                 <ng-template dotOptionContent>
                                     <dot-experiments-goal-configuration-url-parameter-component />
                                 </ng-template>
@@ -66,16 +59,15 @@
                             [maxlength]="this.maxNameLength + 1"
                             [placeholder]="'experiments.goal.reach_page.form.name.placeholder' | dm"
                             data-testId="goal-name-input"
+                            dotTrimInput
                             formControlName="name"
                             name="name"
                             pInputText
                             required
-                            type="text"
-                        />
+                            type="text" />
 
                         <dot-field-validation-message
-                            [field]="goalNameControl"
-                        ></dot-field-validation-message>
+                            [field]="goalNameControl"></dot-field-validation-message>
                     </div>
                 </div>
             </form>
@@ -92,7 +84,6 @@
             data-testId="add-goal-button"
             label="{{ 'experiments.configure.goals.sidebar.header.button.apply.label' | dm }}"
             pButton
-            type="submit"
-        ></button>
+            type="submit"></button>
     </ng-template>
 </ng-container>

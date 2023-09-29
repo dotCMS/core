@@ -35,7 +35,7 @@ import picocli.CommandLine.ExitCode;
 @ActivateRequestContext
 @CommandLine.Command(
         name = LanguagePush.NAME,
-        header = "@|bold,blue Push a language|@",
+        header = "@|bold,blue Push languages|@",
         description = {
                 "This command enables the pushing of languages to the server. It accommodates the "
                         + "specification of either a language file or a folder path. In addition to "
@@ -49,13 +49,13 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
 
     static final String NAME = "push";
 
-    static final String LANGUAGES_PUSH_MIXIN = "languagesPushMixin";
+    static final String LANGUAGE_PUSH_MIXIN = "languagePushMixin";
 
     @CommandLine.Mixin
     PushMixin pushMixin;
 
-    @CommandLine.Mixin(name = LANGUAGES_PUSH_MIXIN)
-    LanguagesPushMixin languagesPushMixin;
+    @CommandLine.Mixin(name = LANGUAGE_PUSH_MIXIN)
+    LanguagePushMixin languagePushMixin;
 
     @CommandLine.Option(names = {"--byIso"}, description =
             "Code to be used to create a new language. "
@@ -131,7 +131,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
                     inputFile,
                     PushOptions.builder().
                             failFast(pushMixin.failFast).
-                            allowRemove(languagesPushMixin.removeLanguages).
+                            allowRemove(languagePushMixin.removeLanguages).
                             maxRetryAttempts(pushMixin.retryAttempts).
                             dryRun(pushMixin.dryRun).
                             build(),
@@ -183,7 +183,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
 
     @Override
     public Optional<String> getCustomMixinName() {
-        return Optional.of(LANGUAGES_PUSH_MIXIN);
+        return Optional.of(LANGUAGE_PUSH_MIXIN);
     }
 
 }
