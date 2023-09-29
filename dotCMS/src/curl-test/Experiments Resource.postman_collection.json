@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "fa7f1178-7881-4372-9780-6b26e949d2f7",
+		"_postman_id": "ca6dbd39-8e2a-4e80-bec0-9e78dcefa2e2",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "4500400"
@@ -4749,7 +4749,7 @@
 											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
 											"    pm.expect(jsonData.entity.modDate).is.not.null;",
 											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2608661952000);",
-											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2616437952000);",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2609871552000);",
 											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
 											"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
 											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
@@ -4823,7 +4823,7 @@
 											"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
 											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
 											"    pm.expect(jsonData.entity.modDate).is.not.null;",
-											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2603564352000);",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2610130752000);",
 											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2611340352000);",
 											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
 											"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
