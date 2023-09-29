@@ -431,6 +431,8 @@ class SiteCommandIntegrationTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
 
+            commandLine.setOut(out);
+
             final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
 
             // ╔══════════════════════╗
@@ -528,6 +530,12 @@ class SiteCommandIntegrationTest extends CommandTest {
                     workspace.sites().toAbsolutePath().toString(),
                     "--removeSites", "--forceSiteExecution", "--fail-fast", "-e");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(
+                    output.contains(
+                            "Push Data: [3] Sites to push: (1 New - 1 Modified) - 1 to Delete"
+                    )
+            );
 
             // ╔══════════════════════════════╗
             // ║  Validating the information  ║

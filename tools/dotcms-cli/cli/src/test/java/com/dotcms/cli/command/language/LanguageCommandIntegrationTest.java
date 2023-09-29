@@ -454,6 +454,8 @@ class LanguageCommandIntegrationTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
 
+            commandLine.setOut(out);
+
             // Pulling the en us language
             int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US",
                     "-fmt", InputOutputFormat.YAML.toString(), "--workspace",
@@ -465,7 +467,8 @@ class LanguageCommandIntegrationTest extends CommandTest {
             var json = Files.readString(languageUSPath);
             Assertions.assertTrue(json.contains("countryCode: \"US\""));
 
-            //Now, create a couple of file with a new languages to push
+            //Now, create a couple of files with new languages to push
+            // Italian
             final Language italian = Language.builder().
                     isoCode("it-it").
                     languageCode("it-IT").
@@ -477,8 +480,7 @@ class LanguageCommandIntegrationTest extends CommandTest {
             var targetItalianFilePath = Path.of(workspace.languages().toString(), "it-it.json");
             mapper.writeValue(targetItalianFilePath.toFile(), italian);
 
-            // ---
-            //Create a couple of file with a new languages to push
+            // French
             final Language french = Language.builder().
                     isoCode("fr").
                     language("French").
@@ -492,6 +494,12 @@ class LanguageCommandIntegrationTest extends CommandTest {
             status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
                     workspace.languages().toString(), "-ff");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            String output = writer.toString();
+            Assertions.assertTrue(
+                    output.contains(
+                            "Push Data: [2] Languages to push: (2 New - 0 Modified)"
+                    )
+            );
 
             // ---
             // Checking we pushed the languages correctly
@@ -539,6 +547,12 @@ class LanguageCommandIntegrationTest extends CommandTest {
             status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
                     workspace.languages().toString(), "-ff", "-rl");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            output = writer.toString();
+            Assertions.assertTrue(
+                    output.contains(
+                            "Push Data: [2] Languages to push: (0 New - 1 Modified) - 1 to Delete"
+                    )
+            );
 
             // ---
             // Make sure Italian-VA is there and Italian-IT and French is not

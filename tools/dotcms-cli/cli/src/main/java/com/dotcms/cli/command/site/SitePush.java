@@ -23,19 +23,12 @@ import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SitePush.NAME,
-     header = "@|bold,blue Push a Site from a given file |@",
-     description = {
-             " This command will push a site to the current active",
-             " remote instance of dotCMS from a given file.",
-             " When pulling a site from a remote dotCMS instance",
-             " the site is saved to a file.",
-             " The file name will be the site's name.",
-             " To make changes to the a Site",
-             " modify the file and push it back to the remote instance.",
-             " The file can also be used as a base to create a brand new Site.",
-             " The format can be changed using the @|yellow --format|@ option.",
-             "" // empty line left here on purpose to make room at the end
-     }
+        header = "@|bold,blue Push sites|@",
+        description = {
+                "This command enables the pushing of sites to the server. It accommodates the "
+                        + "specification of either a site file or a folder path.",
+                "" // empty string to add a new line
+        }
 )
 public class SitePush extends AbstractSiteCommand implements Callable<Integer>, DotCommand,
         DotPush {
