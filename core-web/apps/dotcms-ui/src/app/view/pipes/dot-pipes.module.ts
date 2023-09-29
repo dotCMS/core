@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core';
 
-import { DotSafeUrlPipe, DotStringFormatPipe } from '@pipes/index';
+import { DotStringFormatPipe } from '@pipes/index';
 
 import { DotSafeHtmlPipe } from './dot-safe-html/dot-safe-html.pipe';
 
 @NgModule({
-    declarations: [DotStringFormatPipe, DotSafeUrlPipe, DotSafeHtmlPipe],
-    exports: [DotStringFormatPipe, DotSafeUrlPipe, DotSafeHtmlPipe]
+    declarations: [DotStringFormatPipe, DotSafeHtmlPipe],
+    exports: [DotStringFormatPipe, DotSafeHtmlPipe]
 })
 export class DotPipesModule {}
