@@ -14,7 +14,7 @@
         <p-tabPanel headerStyleClass="tab-panel-btn">
             <ng-template pTemplate="header">
                 <i
-                    class="pi pi-plus addTabIcon"
+                    class="pi pi-plus add-tab-icon"
                     *ngIf="contentTypes.length > 0; else contentTypesLoader"
                     (click)="handleTabClick($event); actionsMenu.toggle($event)"></i>
                 <ng-template #contentTypesLoader>
