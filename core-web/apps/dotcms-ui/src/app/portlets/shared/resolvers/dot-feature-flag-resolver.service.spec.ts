@@ -44,20 +44,22 @@ describe('DotFeatureFlagResolver', () => {
             queryParamMap: undefined
         };
 
-        const expectedFlags = {
-            flag1: 'true',
-            flag2: 'false'
-        };
-
-        const expectedFlagsResult = {
+        const expectedFlagsResult: Record<string, boolean> = {
             flag1: true,
             flag2: false
         };
 
-        spyOn(dotConfigurationService, 'getFeatureFlagsValues').and.returnValue(of(expectedFlags));
+        spyOn(dotConfigurationService, 'getFeatureFlagsValues').and.returnValue(
+            of(expectedFlagsResult)
+        );
 
         (resolver.resolve(route) as Observable<Record<string, boolean>>).subscribe(
             (result: Record<string, boolean>) => {
+                expect(dotConfigurationService.getFeatureFlagsValues).toHaveBeenCalledWith([
+                    'flag1',
+                    'flag2'
+                ]);
+
                 expect(result).toEqual(expectedFlagsResult);
                 done();
             }
