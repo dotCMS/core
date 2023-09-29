@@ -123,9 +123,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
           restore-keys: |
-            mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
             mavencore-${{ steps.get-date.outputs.date }}
       - name: Cache Node Binary
         id: cache-node-binary
@@ -215,7 +214,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
       - name: Build
         # exclude core web we aare testing that separately
         run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS test -pl \!:dotcms-core-web ${{ matrix.java.maven_args}}
@@ -274,7 +273,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
       - id: docker-login
         name: Login to GHCR
         uses: docker/login-action@v2
@@ -347,7 +346,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
       - name: Restore Node Binary
         id: cache-node-binary
         uses: actions/cache/restore@v3
@@ -469,7 +468,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
 
       - name: Build
         env:
