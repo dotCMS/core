@@ -1,0 +1,74 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Content-type Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= content-type-pull(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+content-type-pull - *Retrieves a Content-type descriptor from a given name or Id.*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*content-type pull* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_] _idOrName_
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ This gets you a Content-type from a given Id or Name.
+ The content-type descriptor will be retried and saved to a file.
+ The file name will be the content-type's variable name.
+ if a file is pulled more than once
+ the file gets override.
+ By default files are saved to the current directory. in json format.
+ The format can be changed using the --format option.
+ format can be either JSON or YAML.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-fmt, --format*=_<inputOutputFormat>_::
+  Enum values: JSON, YAML, YML
+
+*-h*, *--help*::
+  Display this help message.
+
+*--workspace*=_<file>_::
+  The workspace directory.
++
+Current directory is used if not specified
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+== Arguments
+
+_idOrName_::
+  Identifier or Name.
+
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

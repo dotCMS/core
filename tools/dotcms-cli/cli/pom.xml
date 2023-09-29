@@ -21,6 +21,8 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>2.9.1.Final</quarkus.platform.version>
+        <exec.maven.plugin.version>3.0.0</exec.maven.plugin.version>
+        <picocli.codegen.version>4.6.3</picocli.codegen.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <failsafe-plugin.version>3.0.0-M5</failsafe-plugin.version>
         <test.failure.ignore>false</test.failure.ignore>
@@ -164,6 +166,44 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec.maven.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>generateManPages</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includeProjectDependencies>true</includeProjectDependencies>
+                    <includePluginDependencies>true</includePluginDependencies>
+                    <mainClass>picocli.codegen.docgen.manpage.ManPageGenerator</mainClass>
+                    <arguments>
+                        <argument>--outdir=${project.basedir}/docs</argument>
+                        <argument>com.dotcms.cli.command.InstanceCommand</argument>
+                        <argument>com.dotcms.cli.command.LoginCommand</argument>
+                        <argument>com.dotcms.cli.command.PushCommand</argument>
+                        <argument>com.dotcms.cli.command.StatusCommand</argument>
+                        <argument>com.dotcms.cli.command.contenttype.ContentTypeCommand</argument>
+                        <argument>com.dotcms.cli.command.files.FilesCommand</argument>
+                        <argument>com.dotcms.cli.command.language.LanguageCommand</argument>
+                        <argument>com.dotcms.cli.command.site.SiteCommand</argument>
+                    </arguments>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>info.picocli</groupId>
+                        <artifactId>picocli-codegen</artifactId>
+                        <version>${picocli.codegen.version}</version>
+                        <type>jar</type>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
