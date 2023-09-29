@@ -44,6 +44,54 @@ const mockContentType: DotCMSContentType = {
     workflows: []
 };
 
+const mockContentType2: DotCMSContentType = {
+    baseType: 'CONTENT',
+    nEntries: 23,
+    clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+    defaultType: false,
+    fields: [],
+    fixed: false,
+    folder: 'SYSTEM_FOLDER',
+    host: 'SYSTEM_HOST',
+    iDate: 1667904275000,
+    icon: 'event_note',
+    id: 'ce930143870e11569f93f8a9fff5da19',
+    layout: [],
+    modDate: 1667904276000,
+    multilingualable: false,
+    name: 'Dot Favorite Page',
+    system: false,
+    systemActionMappings: {},
+    variable: 'test',
+    versionable: true,
+    workflows: []
+};
+
+const mockContentType3: DotCMSContentType = {
+    baseType: 'CONTENT',
+    nEntries: 23,
+    clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+    defaultType: false,
+    fields: [],
+    fixed: false,
+    folder: 'SYSTEM_FOLDER',
+    host: 'SYSTEM_HOST',
+    iDate: 1667904275000,
+    icon: 'event_note',
+    id: 'ce930143870e11569f93f8a9fff5da19',
+    layout: [],
+    modDate: 1667904276000,
+    multilingualable: false,
+    name: 'Dot Favorite Page',
+    system: false,
+    systemActionMappings: {},
+    variable: 'notAvailable',
+    versionable: true,
+    workflows: []
+};
+
+const mockContentTypes = [{ ...mockContentType }, { ...mockContentType2 }, { ...mockContentType3 }];
+
 class storeMock {
     get vm$() {
         return of({
@@ -70,7 +118,7 @@ class storeMock {
                 { label: 'ES-es', value: 2 }
             ],
             languageLabels: { 1: 'En-en', 2: 'Es-es' },
-            pageTypes: [mockContentType]
+            pageTypes: mockContentTypes
         });
     }
 
@@ -86,7 +134,10 @@ describe('DotPagesCreatePageDialogComponent', () => {
     let dotRouterService: DotRouterService;
     let store: DotPageStore;
 
-    const setupTestingModule = async (isContentEditor2Enabled = false) => {
+    const setupTestingModule = async (
+        isContentEditor2Enabled = false,
+        availableContentTypes = ['*']
+    ) => {
         await TestBed.resetTestingModule()
             .configureTestingModule({
                 imports: [DotPagesCreatePageDialogComponent, HttpClientTestingModule],
@@ -111,8 +162,9 @@ describe('DotPagesCreatePageDialogComponent', () => {
                         provide: DynamicDialogConfig,
                         useValue: {
                             data: {
-                                pageTypes: [{ ...mockContentType }],
-                                isContentEditor2Enabled
+                                pageTypes: mockContentTypes,
+                                isContentEditor2Enabled,
+                                availableContentTypes
                             }
                         }
                     },
@@ -168,7 +220,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
 
     it('should set pages types data when init', () => {
         fixture.componentInstance.pageTypes$.subscribe((data) => {
-            expect(data).toEqual([{ ...mockContentType }]);
+            expect(data).toEqual(mockContentTypes);
         });
     });
 
@@ -188,7 +240,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
         input.nativeElement.value = 'Dot Favorite Page';
         input.nativeElement.dispatchEvent(new Event('keyup'));
         fixture.componentInstance.pageTypes$.subscribe((data) => {
-            expect(data).toEqual([{ ...mockContentType }]);
+            expect(data).toEqual(mockContentTypes);
         });
     });
 
@@ -201,6 +253,33 @@ describe('DotPagesCreatePageDialogComponent', () => {
             expect(dotRouterService.goToURL).toHaveBeenCalledWith(
                 `content/new/${mockContentType.variable}`
             );
+            expect(dialogRef.close).toHaveBeenCalled();
+        });
+    });
+
+    describe("when it's content editor 2 enabled and limited content types", () => {
+        beforeEach(async () => await setupTestingModule(true, [mockContentType.variable, 'test']));
+
+        it('should redirect url when click on page', () => {
+            const pageType = de.query(By.css(`.dot-pages-create-page-dialog__page-item`));
+            pageType.triggerEventHandler('click', mockContentType.variable);
+            expect(dotRouterService.goToURL).toHaveBeenCalledWith(
+                `content/new/${mockContentType.variable}`
+            );
+            expect(dialogRef.close).toHaveBeenCalled();
+        });
+
+        it('should redirect url when click on page for content type test', () => {
+            const pageType = de.queryAll(By.css(`.dot-pages-create-page-dialog__page-item`))[1];
+            pageType.triggerEventHandler('click');
+            expect(dotRouterService.goToURL).toHaveBeenCalledWith(`content/new/test`);
+            expect(dialogRef.close).toHaveBeenCalled();
+        });
+
+        it('should not redirect to new edit content url when click on page', () => {
+            const pageType = de.queryAll(By.css(`.dot-pages-create-page-dialog__page-item`))[2];
+            pageType.triggerEventHandler('click');
+            expect(dotRouterService.goToURL).toHaveBeenCalledWith('/pages/new/notAvailable');
             expect(dialogRef.close).toHaveBeenCalled();
         });
     });

@@ -165,7 +165,8 @@ describe('DotPageStore', () => {
         spyOn(dialogService, 'open').and.callThrough();
         spyOn(dotHttpErrorManagerService, 'handle');
         spyOn(dotLocalstorageService, 'getItem').and.returnValue(`true`);
-        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('NOT_FOUND'));
+        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('*'));
+        spyOn(dotPropertiesService, 'getFeatureFlagValue').and.returnValue(of(false));
 
         dotPageStore.setInitialStateData(5);
         dotPageStore.setKeyword('test');
