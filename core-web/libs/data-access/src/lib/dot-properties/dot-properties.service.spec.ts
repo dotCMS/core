@@ -83,6 +83,7 @@ describe('DotPropertiesService', () => {
                 expect(result).toEqual(value);
                 done();
             });
+            httpMock.expectNone(`/api/v1/configuration/config?keys=${key}`);
         });
 
         it('should make an HTTP request if the key does not exist in featureConfig', (done) => {
