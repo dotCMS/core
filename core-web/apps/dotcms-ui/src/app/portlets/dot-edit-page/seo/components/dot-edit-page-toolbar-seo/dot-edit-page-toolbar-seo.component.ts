@@ -20,8 +20,6 @@ import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { take } from 'rxjs/operators';
-
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.module';
 import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
@@ -101,10 +99,9 @@ export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDest
     ngOnInit() {
         // TODO: Remove next line when total functionality of Favorite page is done for release
         this.dotConfigurationService
-            .getKey(FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE)
-            .pipe(take(1))
-            .subscribe((enabled: string) => {
-                this.showFavoritePageStar = enabled === 'true';
+            .getFeatureFlagValue(FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE)
+            .subscribe((enabled) => {
+                this.showFavoritePageStar = enabled;
             });
 
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();

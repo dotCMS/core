@@ -60,6 +60,9 @@ export class MockDotPropertiesService {
     getKey(): Observable<true> {
         return observableOf(true);
     }
+    getFeatureFlagValue(): Observable<boolean> {
+        return observableOf(true);
+    }
 }
 
 @Component({

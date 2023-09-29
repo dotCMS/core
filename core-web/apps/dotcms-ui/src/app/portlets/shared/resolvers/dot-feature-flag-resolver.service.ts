@@ -3,8 +3,6 @@ import { Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
-import { map } from 'rxjs/operators';
-
 import { DotPropertiesService } from '@dotcms/data-access';
 
 /**
@@ -21,27 +19,15 @@ import { DotPropertiesService } from '@dotcms/data-access';
  *  }
  */
 @Injectable()
-export class DotFeatureFlagResolver implements Resolve<Observable<Record<string, boolean>>> {
+export class DotFeatureFlagResolver
+    implements Resolve<Observable<Record<string, boolean>> | Observable<boolean>>
+{
     constructor(private readonly dotConfigurationService: DotPropertiesService) {}
 
     resolve(route: ActivatedRouteSnapshot) {
         if (route.data.featuredFlagsToCheck) {
-            return this.dotConfigurationService.getKeys(route.data.featuredFlagsToCheck).pipe(
-                map((result) =>
-                    route.data.featuredFlagsToCheck.reduce(
-                        (
-                            acc: {
-                                [key: string]: boolean;
-                            },
-                            key: string
-                        ) => {
-                            acc[key] = result && result[key] === 'true';
-
-                            return acc;
-                        },
-                        {}
-                    )
-                )
+            return this.dotConfigurationService.getFeatureFlagsValues(
+                route.data.featuredFlagsToCheck
             );
         }
 

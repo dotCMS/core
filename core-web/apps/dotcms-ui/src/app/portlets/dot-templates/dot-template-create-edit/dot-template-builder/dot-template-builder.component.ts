@@ -10,7 +10,7 @@ import {
     ViewChild
 } from '@angular/core';
 
-import { debounceTime, map, takeUntil } from 'rxjs/operators';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPropertiesService } from '@dotcms/data-access';
@@ -38,9 +38,8 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     permissionsUrl = '';
     historyUrl = '';
     readonly featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
-    featureFlagIsOn$ = this.propertiesService
-        .getKey(this.featureFlag)
-        .pipe(map((result) => result && result === 'true'));
+    featureFlagIsOn$ = this.propertiesService.getFeatureFlagValue(this.featureFlag);
+
     templateUpdate$ = new Subject<DotTemplateItem>();
     destroy$: Subject<boolean> = new Subject<boolean>();
     lastTemplate: DotTemplateItem;

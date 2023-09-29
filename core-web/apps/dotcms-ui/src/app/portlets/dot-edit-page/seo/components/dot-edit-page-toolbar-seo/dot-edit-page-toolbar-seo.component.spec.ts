@@ -117,7 +117,7 @@ class MockDotPageStateService {
 
 @Injectable()
 export class MockDotPropertiesService {
-    getKey(): Observable<true> {
+    getFeatureFlagValue(): Observable<true> {
         return of(true);
     }
 }
@@ -238,7 +238,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
         dotDialogService = de.injector.get(DialogService);
         dotPropertiesService = TestBed.inject(DotPropertiesService);
-        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+        spyOn(dotPropertiesService, 'getFeatureFlagValue').and.returnValue(of(true));
     });
 
     describe('elements', () => {

@@ -151,7 +151,7 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotPropertiesService,
                     useValue: {
-                        getKey: () => of('false')
+                        getFeatureFlagValue: () => of(false)
                     }
                 }
             ]
@@ -344,7 +344,7 @@ describe('DotEditLayoutComponent', () => {
 
     describe('New Template Builder', () => {
         beforeEach(() => {
-            spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+            spyOn(dotPropertiesService, 'getFeatureFlagValue').and.returnValue(of(true));
             fixture.detectChanges();
         });
 

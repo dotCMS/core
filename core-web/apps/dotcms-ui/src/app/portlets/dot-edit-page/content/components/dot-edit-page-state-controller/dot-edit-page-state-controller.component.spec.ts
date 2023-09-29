@@ -174,7 +174,7 @@ describe('DotEditPageStateControllerComponent', () => {
         spyOn(component.modeChange, 'emit');
         spyOn(dotPageStateService, 'setLock');
         spyOn(personalizeService, 'personalized').and.returnValue(of(null));
-        featFlagMock = spyOn(propertiesService, 'getKey').and.returnValue(of('false'));
+        featFlagMock = spyOn(propertiesService, 'getFeatureFlagValue').and.returnValue(of(false));
     });
 
     describe('elements', () => {
@@ -533,7 +533,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
     describe('feature flag edit URLContentMap is on', () => {
         beforeEach(() => {
-            featFlagMock.and.returnValue(of('true'));
+            featFlagMock.and.returnValue(of(true));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
                 { ...mockUser(), userId: '457' },
