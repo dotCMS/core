@@ -432,7 +432,8 @@ describe('DotPageStore', () => {
             width: '58rem',
             data: {
                 pageTypes: expectedInputArray,
-                isContentEditor2Enabled: false
+                isContentEditor2Enabled: false,
+                availableContentTypes: ['*']
             }
         });
     });
