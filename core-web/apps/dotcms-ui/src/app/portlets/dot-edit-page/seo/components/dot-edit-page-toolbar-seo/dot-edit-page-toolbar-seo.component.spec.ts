@@ -20,6 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
@@ -32,7 +33,8 @@ import {
     DotEventsService,
     DotLicenseService,
     DotMessageService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -171,6 +173,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 ])
             ],
             providers: [
+                DotSessionStorageService,
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
                 {
                     provide: DotMessageService,
@@ -199,6 +202,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 DotEventsService,
                 DotcmsEventsService,
                 DotEventsSocket,
+                DotContentletEditorService,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },

@@ -233,8 +233,8 @@ public class LanguagesResource {
         if(null == language){
            return Response.status(Status.NOT_FOUND).build();
         }
-        return Response.ok(new ResponseEntityView(language)).build(); // 200
 
+        return Response.ok(new ResponseEntityView(new LanguageView(language))).build();
     }
 
     private Locale validateLanguageTag(final String languageTag)throws DoesNotExistException {

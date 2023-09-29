@@ -24,15 +24,16 @@ on:
 jobs:
   publish_image:
     name: Publish DotCMS docker image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: GITHUB CONTEXT
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo 'Github Context'
-        if: env.DEBUG == 'true'
       - name: Checkout core
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Set Common Vars
         run: |
           BUILD_ID=$(basename "${{ github.ref }}")
@@ -68,13 +69,16 @@ jobs:
         with:
           platforms: ${{ env.PLATFORMS }}
           driver-opts: |
-            image=moby/buildkit:v0.10.6
+            image=moby/buildkit:v0.12.2
         if: github.event.inputs.multi_arch == 'true'
       - name: Docker Hub login
         uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Pre build
+        run: |
+          docker system prune --volumes -af
       - name: Build and push
         uses: docker/build-push-action@v5.0.0
         with:
@@ -82,7 +86,6 @@ jobs:
           push: true
           tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
           platforms: ${{ env.PLATFORMS }}
-          version: v0.7.0
           build-args: |
             BUILD_FROM=COMMIT
             BUILD_ID=${{ env.BUILD_ID }}

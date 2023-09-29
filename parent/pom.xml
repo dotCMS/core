@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-    <parent>
-        <artifactId>dotcms-root</artifactId>
-        <groupId>com.dotcms</groupId>
-        <version>1.0.0-SNAPSHOT</version>
-    </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.dotcms</groupId>
@@ -87,11 +82,11 @@
         <version.versions.plugin>2.8.1</version.versions.plugin>
         <version.maven.plugin.plugin>3.8.1</version.maven.plugin.plugin>
         <version.war.plugin>3.2.3</version.war.plugin>
+        <version.docker-maven.plugin>0.43.4</version.docker-maven.plugin>
         <test.working.dir>${project.build.directory}/testdata</test.working.dir>
         <test.temp.dir>${test.working.dir}/temp</test.temp.dir>
 
         <starter.version>empty_20230525</starter.version>
-        <turbo-maven-plugin.version>1.0.0</turbo-maven-plugin.version>
         <!--<starter.version>empty_20230509</starter.version>-->
 
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -110,9 +105,9 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.codehaus.cargo</groupId>
-                    <artifactId>cargo-maven3-plugin</artifactId>
-                    <version>${version.cargo.plugin}</version>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>${version.docker-maven.plugin}</version>
                 </plugin>
                 <plugin>
                     <groupId>com.dkanejs.maven.plugins</groupId>
@@ -251,7 +246,7 @@
                             <exclude>**/.angular/**</exclude>
                             <exclude>core-web/installs/**</exclude>
                             <exclude>core-web/dist/**</exclude>
-                            <exclude>plugins-core/**</exclude>
+                            <exclude>dotcms-plugins-core/**</exclude>
                             <exclusion>docker/docker-compose-examples/**</exclusion>
                         </exclusions>
                         <failOnDryRunResults>false</failOnDryRunResults>
@@ -435,6 +430,7 @@
                             <manifest>
                                 <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                                 <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                                <addBuildEnvironmentEntries>true</addBuildEnvironmentEntries>
                             </manifest>
                             <manifestEntries>
                                 <Implementation-URL>${project.url}</Implementation-URL>
@@ -444,8 +440,9 @@
                                 <Os-Name>${os.name}</Os-Name>
                                 <Os-Version>${os.version}</Os-Version>
                                 <Scm-Connection>${project.scm.connection}</Scm-Connection>
-                                <Scm-Revision>${buildNumber}</Scm-Revision>
                                 <Scm-Url>${project.scm.url}</Scm-Url>
+                                <Scm-Revision>${buildNumber}</Scm-Revision>
+                                <SCM-Build>${scmBranch}</SCM-Build>
                             </manifestEntries>
                         </archive>
                     </configuration>
@@ -506,18 +503,6 @@
                         <goals>deploy</goals>
                         <preparationGoals>clean install</preparationGoals>
                         <mavenExecutorId>forked-path</mavenExecutorId>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>no.sparebank1</groupId>
-                    <artifactId>turbo-maven-plugin</artifactId>
-                    <version>${turbo-maven-plugin.version}</version>
-                    <extensions>true</extensions>
-                    <configuration>
-                        <enabled>false</enabled>
-                        <!-- <ignoreChangesInFiles>swagger.json</ignoreChangesInFiles>
-                         <alwaysBuildModules>distribution</alwaysBuildModules>
-                         -->
                     </configuration>
                 </plugin>
                 <plugin>
@@ -663,13 +648,14 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.jboss.jandex</groupId>
+                    <artifactId>jandex-maven-plugin</artifactId>
+                    <version>1.2.3</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
-            <plugin>
-                <groupId>no.sparebank1</groupId>
-                <artifactId>turbo-maven-plugin</artifactId>
-            </plugin>
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
@@ -784,6 +770,12 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>buildnumber-maven-plugin</artifactId>
+                <configuration>
+                    <attach>true</attach>
+                    <!--make it available for jar/war classpath resource -->
+                    <addOutputDirectoryToResources>true</addOutputDirectoryToResources>
+                    <scmBranchPropertyName>scmBranch</scmBranchPropertyName>
+                </configuration>
                 <executions>
                     <execution>
                         <id>get-scm-revision</id>
@@ -796,7 +788,15 @@
                             <doUpdate>false</doUpdate>
                             <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
                             <revisionOnScmFailure>UNKNOWN</revisionOnScmFailure>
+                            <shortRevisionLength>7</shortRevisionLength>
+
                         </configuration>
+                    </execution>
+                    <execution>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>create-metadata</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -882,16 +882,6 @@
             </releases>
             <id>dotcms-libs</id>
             <url>https://repo.dotcms.com/artifactory/libs-release/</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <id>dotcms-libs-snapshot</id>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local/</url>
         </repository>
         <repository>
             <snapshots>
