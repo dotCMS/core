@@ -23,6 +23,7 @@ TODO: include here the command to be executed
 | [instance](cli/docs/instance.adoc)         | Prints a list of available dotCMS instances                                      |
 | [language](cli/docs/language.adoc)         | Performs operations over languages. For example: pull, push, remove              |
 | [login](cli/docs/login.adoc)               | Logs into a dotCMS instance                                                      |
+| [push](cli/docs/push.adoc)  | Global push command used to sync a GitHub repo with a target dotCMS environment  |
 | [site](cli/docs/site.adoc)                 | Performs operations over sites. For example: pull, push, remove                  |
 | [status](cli/docs/status.adoc)             | Provides information about the current logged-in user and dotCMS instance status |
 
