@@ -14,44 +14,56 @@ on:
     branches:
         - master
         - release-*
-    paths-ignore:
-      - '.gitignore'
-      - '.dockerignore'
-      - 'dotCMS/src/main/webapp/html/**'
-      - '!docker/**'
-      - 'tools/**'
-      - 'cicd/**'
-      - '.cicd/**'
-      - '*.md'
-      - '*.adoc'
-      - '*.txt'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '.github/workflows/build-report.yml'
   pull_request:
-    paths-ignore:
-      - '.gitignore'
-      - '.dockerignore'
-      - 'dotCMS/src/main/webapp/html/**'
-      - '!docker/**'
-      - 'tools/**'
-      - 'cicd/**'
-      - '.cicd/**'
-      - '*.md'
-      - '*.adoc'
-      - '*.txt'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '.github/workflows/build-report.yml'
   merge_group:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
   cancel-in-progress: true
 env:
   JVM_TEST_MAVEN_OPTS: "-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+  DOCKER_PLATFORMS: "linux/amd64,linux/arm64"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: dotcms/dotcms_test
 jobs:
+  #
+  # Detect Code that has changed and create outputs to uses as conditionals
+  #
+  changes:
+    name: Check Changed Files
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      build: ${{ steps.filter.outputs.build }}
+      jvm_unit_test: ${{ steps.filter.outputs.jvm_unit_test }}
+      cli: ${{ steps.filter.outputs.cli }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: .github/filters.yaml
+  #
+  # Initial JDK 11 Build
+  # Basic build and install all with maven without running tests.
+  # Provides local maven repo for subsequent steps
+  #
   build-jdk11:
     name: "Initial JDK 11 Build"
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-20.04
+    needs: changes
+    if: ${{ needs.changes.outputs.build == 'true' }}
+    outputs:
+      docker-tag: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+    env:
+      DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11
@@ -59,6 +71,48 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
+      # Docker setup
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.0.0
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: ${{ env.DOCKER_PLATFORMS }}
+      - id: docker-setup-buildx
+        name: Docker Setup Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: latest
+          platforms: ${{ env.DOCKER_PLATFORMS }}
+      - name: Docker Hub login
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          driver-opts: |
+            image=moby/buildkit:v0.12.2
+      - id: docker-login
+        name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,enable=true,priority=100,prefix=sha-,suffix=,format=short
+            type=raw,value=run-${{ github.run_id }}
+      - name: Debug docker metdata
+        run: |
+          echo "${{ fromJSON(steps.meta.outputs.json) }}"
+        shell: bash
       - name: Get Date
         id: get-date
         run: |
@@ -69,9 +123,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
           restore-keys: |
-            mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
             mavencore-${{ steps.get-date.outputs.date }}
       - name: Cache Node Binary
         id: cache-node-binary
@@ -89,42 +142,30 @@ jobs:
           # if specific cache does not exist then can base upon latest version
           key: npm-${{ hashFiles('core-web/package-lock.json') }}
           restore-keys: npm-
-      - name: Cache Node Modules
-        id: cache-node-modules
-        uses: actions/cache@v3
-        with:
-          path: core-web/node_modules
-          # only pull for exact version of package-lock
-          key: node-modules-${{ hashFiles('core-web/package-lock.json') }}
       - name: Maven Build No Test
         shell: bash
         env:
           NODE_CACHE_HIT: ${{ steps.cache-node-modules.outputs.cache-hit }}
-        run: ./mvnw -Dprod=true -Dskip.npm.install=${NODE_CACHE_HIT} --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
-      #- name: Tar Node Modules
-      #  shell: bash
-      #  run: tar -czf node-modules.tgz -C core-web node_modules
-
-      #- name: Tar Maven Repo
-      #  shell: bash
-      #  run: tar -czf maven-repo.tgz -C ~ .m2/repository
-
-      #- name: Persist Node Modules
-      #  uses: actions/upload-artifact@v3
-      #  with:
-      #    name: node-modules
-      #    path: node-modules.tgz
-
-      #- name: Persist Maven Repo
-      #  uses: actions/upload-artifact@v3
-      #  with:
-      #    name: maven-repo
-      #    path: maven-repo.tgz
-
-      #- name: Delete Local Artifacts From Cache
-      #  shell: bash
-      #  run: rm -rf ~/.m2/repository/com/dotcms/dotcms-* ~/.m2/repository/com/dotcms/core
-
+        run: |
+          echo "Creating $DOCKER_BUILD_CONTEXT"
+          mkdir -p $DOCKER_BUILD_CONTEXT
+          ./mvnw -Dprod=true $JVM_TEST_MAVEN_OPTS -Ddocker.buildArchiveOnly=$DOCKER_BUILD_CONTEXT -Dskip.npm.install=${NODE_CACHE_HIT} --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
+      - name: Setup Context
+        id: setup-docker-context
+        run: |
+          mkdir -p $DOCKER_BUILD_CONTEXT/context
+          tar -xvf $DOCKER_BUILD_CONTEXT/docker-build.tar -C $DOCKER_BUILD_CONTEXT/context
+      - name: Build base image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.DOCKER_BUILD_CONTEXT }}/context
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms : ${{ env.DOCKER_PLATFORMS }}
+          pull: true
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Upload build reports
         uses: actions/upload-artifact@v3
         if: ${{ always() }}
@@ -134,12 +175,14 @@ jobs:
             target/build-report.json
             LICENSE
           retention-days: 2
+  #
+  # Run all JVM Unit Tests in parallel with other tests
+  #
   linux-jvm-tests:
     name: JVM Unit Tests - JDK ${{matrix.java.name}}
-    runs-on: ubuntu-latest
-    # Skip master in forks
-    if: "github.repository == 'dotCMS/core' || !endsWith(github.ref, '/master')"
-    needs: build-jdk11
+    runs-on: ubuntu-20.04
+    if: ${{ needs.changes.outputs.jvm_unit_test == 'true' }}
+    needs: [changes,build-jdk11]
     timeout-minutes: 240
     env:
       MAVEN_OPTS: -Xmx2048m
@@ -161,15 +204,6 @@ jobs:
         with:
           java-version: ${{ matrix.java.java-version }}
           distribution: ${{ matrix.java.distribution }}
-
-      #- name: Download Maven Repo
-      #  uses: actions/download-artifact@v3
-      #  with:
-      #    name: maven-repo
-      #    path: .
-      #- name: Extract Maven Repo
-      #  shell: bash
-      #  run: tar -xzf maven-repo.tgz -C ~
       - name: Get Date
         id: get-date
         run: |
@@ -180,9 +214,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
       - name: Build
-        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS test -pl :dotcms-core ${{ matrix.java.maven_args}}
+        # exclude core web we aare testing that separately
+        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS test -pl \!:dotcms-core-web ${{ matrix.java.maven_args}}
       - name: Prepare reports archive (if maven failed)
         if: failure()
         shell: bash
@@ -203,18 +238,92 @@ jobs:
             target/build-report.json
             LICENSE
           retention-days: 2
-
-  linux-frontend-tests:
-    name: Frontend Unit Tests
-    runs-on: ubuntu-latest
-    # Skip master in forks
-    if: "github.repository == 'dotCMS/core' || !endsWith(github.ref, '/master')"
-    needs: build-jdk11
+  linux-cli-tests:
+    name: CLI Tests - JDK ${{matrix.java.name}}
+    runs-on: ubuntu-20.04
+    if: ${{ needs.changes.outputs.cli == 'true' || needs.changes.outputs.backend == 'true' }}
+    needs: [ changes,build-jdk11 ]
     timeout-minutes: 240
     env:
       MAVEN_OPTS: -Xmx2048m
     strategy:
-      fail-fast: false
+      fail-fast: true
+      matrix:
+        java:
+          - {
+            name: "11",
+            java-version: 11,
+            distribution: 'temurin',
+            maven_args: ""
+          }
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{ matrix.java.name }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ matrix.java.java-version }}
+          distribution: ${{ matrix.java.distribution }}
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+        shell: bash
+      - name: Restore Maven Repository
+        id: cache-maven
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+      - id: docker-login
+        name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: prepare-license
+        name: Prepare license
+        env:
+          DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+        run: |
+          DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/target/license
+          mkdir -p ${DOTCMS_LICENSE_PATH}
+          echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
+          echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
+      - name: Build
+        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS -Dtestcontainers.docker.image=${{ needs.build-jdk11.outputs.docker-tag }} -pl :dotcms-api-data-model,:dotcms-cli test ${{ matrix.java.maven_args}}
+      - name: Prepare reports archive (if maven failed)
+        if: failure()
+        shell: bash
+        run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
+      - name: Upload reports Archive (if maven failed)
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: test-reports-cli-jvm${{matrix.java.name}}
+          path: 'test-reports.tgz'
+      - name: cli-tests
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: "build-reports-cli - JDK ${{matrix.java.name}}"
+          path: |
+            **/target/*-reports/TEST-*.xml
+            target/build-report.json
+            LICENSE
+          retention-days: 2
+  #
+  # Run Frontend Tests
+  #
+  linux-frontend-tests:
+    name: Frontend Unit Tests
+    runs-on: ubuntu-20.04
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    needs: [changes,build-jdk11]
+    timeout-minutes: 240
+    env:
+      MAVEN_OPTS: -Xmx2048m
     steps:
       - uses: actions/checkout@v3
 
@@ -227,20 +336,6 @@ jobs:
         with:
           java-version: 11
           distribution: 'temurin'
-
-      #- name: Download Maven Repo
-      #  uses: actions/download-artifact@v3
-      #  with:
-      #    name: maven-repo
-      #    path: .
-      #- name: Download Node Modules
-      #  uses: actions/download-artifact@v3
-      #  with:
-      #    name: node-modules
-      #    path: .
-      #- name: Extract Maven Repo
-      #  shell: bash
-      #  run: tar -xzf maven-repo.tgz -C ~
       - name: Get Date
         id: get-date
         run: |
@@ -251,11 +346,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
-
-      #- name: Extract Node Modules
-      #  shell: bash
-      #  run: tar -xzf node-modules.tgz -C core-web
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
       - name: Restore Node Binary
         id: cache-node-binary
         uses: actions/cache/restore@v3
@@ -271,18 +362,18 @@ jobs:
             ~/.npm
           key: npm-${{ hashFiles('core-web/package-lock.json') }}
           restore-keys: npm-
-      - name: Restore Node Modules
-        id: cache-node-modules
-        uses: actions/cache/restore@v3
-        with:
-          path: core-web/node_modules
-          # only pull for exact version of package-lock
-          key: node-modules-${{ hashFiles('core-web/package-lock.json') }}
+      #- name: Restore Node Modules
+      #  id: cache-node-modules
+      #  uses: actions/cache/restore@v3
+      #  with:
+      #    path: core-web/node_modules
+      #    # only pull for exact version of package-lock
+      #    key: node-modules-${{ hashFiles('core-web/package-lock.json') }}
       - name: Build # expect node cache to exist from
         shell: bash
         env:
           NODE_CACHE_HIT: ${{ steps.cache-node-modules.outputs.cache-hit }}
-        run: eval ./mvnw -Dprod -Dskip.npm.install=${NODE_CACHE_HIT} $JVM_TEST_MAVEN_OPTS -pl :dotcms-core-web test
+        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS -Dskip.npm.install=${NODE_CACHE_HIT} $JVM_TEST_MAVEN_OPTS -pl :dotcms-core-web test
       - name: Prepare failure archive (if maven failed)
         if: failure()
         shell: bash
@@ -303,13 +394,15 @@ jobs:
             target/build-report.json
             LICENSE
           retention-days: 2
-
+  #
+  # Run Legacy Integration test suite batches
+  #
   linux-integration-tests:
     name: JVM IT Tests - JDK ${{matrix.java.name}} ${{matrix.suites.name}}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     # Skip master in forks
-    if: "github.repository == 'dotCMS/core' || !endsWith(github.ref, '/master')"
-    needs: build-jdk11
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    needs: [build-jdk11,changes]
     timeout-minutes: 240
     env:
       MAVEN_OPTS: -Xmx2048m
@@ -375,12 +468,12 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
 
       - name: Build
         env:
           DOT_DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
-        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-integration ${{ matrix.suites.maven_args}} ${{ matrix.java.maven_args}}
+        run: eval ./mvnw -Dit-tests -Dprod $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-integration ${{ matrix.suites.maven_args}} ${{ matrix.java.maven_args}}
       - name: Prepare reports archive (if maven failed)
         if: failure()
         shell: bash
@@ -401,11 +494,16 @@ jobs:
             target/build-report.json
             LICENSE
           retention-days: 2
+  #
+  # Collate reports and build status
+  #
   prepare-report-data:
     name: Prepare Report Data
-    runs-on: ubuntu-latest
-    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests ]
+    runs-on: ubuntu-20.04
+    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-cli-tests ]
     if: always()
+    outputs:
+      aggregate_status: ${{ steps.prepare-workflow-data.outputs.aggregate_status }}
     steps:
       - name: Download build reports
         uses: actions/download-artifact@v3
@@ -413,6 +511,7 @@ jobs:
           path: /tmp/build-step-reports
 
       - name: Prepare workflow data
+        id: prepare-workflow-data
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
@@ -532,8 +631,21 @@ jobs:
           fi
           echo '}' >> workflow-data.json
 
+          echo "aggregate_status=${AGGREGATE_STATUS}" >> $GITHUB_OUTPUT
       - name: Upload workflow data
         uses: actions/upload-artifact@v3
         with:
           name: workflow-data
           path: ./workflow-data.json
+  final-status:
+    name: Final Status
+    needs: prepare-report-data
+    if: always()
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check Final Status
+        run: |
+          if [ "${{ needs.prepare-report-data.outputs.aggregate_status }}" != "SUCCESS" ]; then
+            echo "One or more jobs failed!"
+            exit 1
+          fi
