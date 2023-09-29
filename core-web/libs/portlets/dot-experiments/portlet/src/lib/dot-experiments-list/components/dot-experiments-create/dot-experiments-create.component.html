@@ -2,8 +2,7 @@
     <p-sidebar [(visible)]="vm.sidebar.isOpen" (onHide)="closeSidebar()" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.create.form.sidebar.header' | dm }}"
-        ></dot-sidebar-header>
+            dotTitle="{{ 'experiments.create.form.sidebar.header' | dm }}"></dot-sidebar-header>
 
         <div class="experiment-create__form-wrapper">
             <form
@@ -12,8 +11,7 @@
                 #myForm="ngForm"
                 [formGroup]="form"
                 data-testId="new-experiment-form"
-                novalidate
-            >
+                novalidate>
                 <div class="field">
                     <label dotFieldRequired for="name">{{
                         'experiments.create.form.name.label' | dm
@@ -24,16 +22,15 @@
                         [tabindex]="1"
                         data-testId="add-experiment-name-input"
                         dotAutofocus
+                        dotTrimInput
                         formControlName="name"
                         name="name"
                         pInputText
                         placeholder="{{ 'experiments.create.form.name.placeholder' | dm }}"
                         required
-                        type="text"
-                    />
+                        type="text" />
                     <dot-field-validation-message
-                        [field]="form.controls.name"
-                    ></dot-field-validation-message>
+                        [field]="form.controls.name"></dot-field-validation-message>
                 </div>
 
                 <div class="field">
@@ -48,12 +45,10 @@
                         name="description"
                         pInputTextarea
                         placeholder="{{ 'experiments.create.form.description.placeholder' | dm }}"
-                        rows="6"
-                    ></textarea>
+                        rows="6"></textarea>
 
                     <dot-field-validation-message
-                        [field]="form.controls.description"
-                    ></dot-field-validation-message>
+                        [field]="form.controls.description"></dot-field-validation-message>
                 </div>
             </form>
         </div>
@@ -68,7 +63,6 @@
             form="new-experiment-form"
             label="{{ 'experiments.action.add' | dm }}"
             pButton
-            type="submit"
-        ></button>
+            type="submit"></button>
     </ng-template>
 </ng-container>
