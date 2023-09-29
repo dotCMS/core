@@ -28,6 +28,7 @@
     .p-tabview {
         height: 100%;
     }
+
     .p-tabview-panels {
         height: 100%;
         flex-grow: 1;
@@ -36,10 +37,13 @@
     }
 
     .p-tabview-nav-content {
-        border: 1px solid $input-border-color;
+        border: none;
     }
+
     .p-tabview-nav {
         padding: 0;
+        box-shadow: inset 0 0 0 1px #afb3c0;
+        border: none;
     }
 
     .p-tabview-panel {
@@ -64,24 +68,34 @@
         background: $color-palette-gray-200;
     }
 
-    .p-tabview .p-tabview-nav {
-        border: none;
-    }
-
     .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-        border-bottom: 2px solid $color-palette-secondary-500;
+        border-bottom: 4px solid $color-palette-secondary-500;
     }
 
     .p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
-        border-bottom: 2px solid $color-palette-secondary-500;
+        border-bottom: 4px solid $color-palette-secondary-500;
+    }
+
+    .p-tabview
+        .p-tabview-nav
+        li:not(.p-highlight):not(.p-disabled):hover:first-child
+        .p-tabview-nav-link {
+        border-bottom: none;
+        background: $color-palette-primary-500;
     }
 
     .p-tabview .p-tabview-nav li .p-tabview-nav-link {
         padding-left: $spacing-4;
         padding-right: $spacing-4;
+        text-wrap: nowrap;
     }
 
     .p-tabview .tab-panel-btn a.p-tabview-nav-link {
+        width: 62px;
+        height: 62px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         padding: 0;
     }
 
@@ -89,4 +103,11 @@
         display: inline-block;
         margin-right: $spacing-2;
     }
+}
+
+.add-tab-icon {
+    width: 100%;
+    height: 100%;
+    color: $white;
+    text-align: center;
 }

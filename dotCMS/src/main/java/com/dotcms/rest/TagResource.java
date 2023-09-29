@@ -106,7 +106,7 @@ public class TagResource {
         final User user = initDataObject.getUser();
 
         final List<Tag> tags = UtilMethods.isSet(tagName)
-                ? helper.searchTagsInternal(tagName, helper.getSiteId(siteId, request), user)
+                ? helper.searchTagsInternal(tagName, helper.getSiteId(siteId, request, user))
                 : helper.getTagsInternal();
 
         return toRestTagMap(tags);

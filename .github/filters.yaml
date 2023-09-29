@@ -1,0 +1,27 @@
+backend: &backend
+  - 'bom/**'
+  - 'build-parent/**'
+  - 'dotcms-core/**'
+  - 'dotcms-integration/**'
+  - 'independent-projects/**'
+  - 'maven-plugins/**'
+  - 'osgi-base/**'
+  - 'parent/**'
+  - 'plugins-core/**'
+  - 'core-web/pom.xml'
+  - 'reports/**'
+  - '.github/workflows/maven-cicd-pipeline.yml'
+frontend: &frontend
+  - 'core-web/**'
+cli: &cli
+  - 'tools/cli/**'
+
+jvm_unit_test:
+  - *backend
+  - *cli
+
+build:
+  - *frontend
+  - *backend
+  - *cli
+

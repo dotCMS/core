@@ -13,7 +13,8 @@ module.exports = {
         '../../../libs/template-builder/**/*.stories.@(js|jsx|ts|tsx|mdx)',
         '../../../libs/block-editor/**/*.stories.@(js|jsx|ts|tsx|mdx)',
         '../../../libs/contenttype-fields/**/*.stories.@(js|jsx|ts|tsx|mdx)',
-        '../../../libs/ui/**/*.stories.@(js|jsx|ts|tsx|mdx)'
+        '../../../libs/ui/**/*.stories.@(js|jsx|ts|tsx|mdx)',
+        '../../../libs/portlets/**/*.stories.@(js|jsx|ts|tsx|mdx)'
     ],
     addons: ['storybook-design-token', '@storybook/addon-essentials', ...rootMain.addons],
     features: {

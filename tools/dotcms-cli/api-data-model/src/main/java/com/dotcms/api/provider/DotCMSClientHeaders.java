@@ -25,9 +25,7 @@ public class DotCMSClientHeaders implements ClientHeadersFactory {
             MultivaluedMap<String, String> mm2) {
 
         authenticationContext.getToken().ifPresentOrElse(token -> mm2.add("Authorization", "Bearer  " + new String(token)),
-                () -> {
-                    logger.error("Unable to get a valid token from the authentication context.");
-                }
+                () -> logger.error("Unable to get a valid token from the authentication context.")
         );
 
         return mm2;
