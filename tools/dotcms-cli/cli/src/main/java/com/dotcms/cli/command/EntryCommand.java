@@ -26,7 +26,7 @@ import picocli.CommandLine.ParameterException;
 @CommandLine.Command(
         name = "dotCMS",
         mixinStandardHelpOptions = true,
-        version = {"dotCMS-cli 1.0", "picocli " + CommandLine.VERSION},
+        version = {"dotcms-cli 1.0", "picocli " + CommandLine.VERSION},
         description = {
                 "@|bold,underline,blue dotCMS|@ cli is a command line interface to interact with your @|bold,underline,blue dotCMS|@ instance.",
         },
