@@ -1,101 +1,102 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DebugElement, Pipe, PipeTransform } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { UntypedFormControl, Validators } from '@angular/forms';
-import { By } from '@angular/platform-browser';
+import { createHostFactory, SpectatorHost } from '@ngneat/spectator';
+import { byTestId } from '@ngneat/spectator/jest';
+
+import { Component } from '@angular/core';
+import { ReactiveFormsModule, UntypedFormControl, Validators } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldValidationMessageComponent } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-
-@Pipe({
-    name: 'dm'
-})
-class DotMessageMockPipe implements PipeTransform {
-    transform(): string {
-        return 'Required';
-    }
-}
 
 const messageServiceMock = new MockDotMessageService({
     'contentType.errors.input.maxlength': 'Value must be no more than {0} characters',
+    'error.form.validator.maxlength': 'Max length error',
+    'error.form.validator.required': 'Required error',
     'contentType.form.variable.placeholder': 'Will be auto-generated if left empty'
 });
 
+@Component({ selector: 'dot-custom-host', template: '' })
+class CustomHostComponent {
+    defaultMessage = 'Required';
+    control = new UntypedFormControl('', Validators.required);
+}
+
 describe('FieldValidationComponent', () => {
-    let de: DebugElement;
-    let el: HTMLElement;
-    let fixture: ComponentFixture<DotFieldValidationMessageComponent>;
-    let component: DotFieldValidationMessageComponent;
-
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            imports: [DotFieldValidationMessageComponent],
-            declarations: [DotMessageMockPipe],
-            providers: [
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                }
-            ]
-        }).compileComponents();
-    }));
-
-    beforeEach(() => {
-        fixture = TestBed.createComponent(DotFieldValidationMessageComponent);
-        component = fixture.debugElement.componentInstance;
+    let spectator: SpectatorHost<DotFieldValidationMessageComponent, CustomHostComponent>;
+    const createHost = createHostFactory({
+        component: DotFieldValidationMessageComponent,
+        host: CustomHostComponent,
+        imports: [ReactiveFormsModule, DotMessagePipe],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            }
+        ]
     });
 
-    it('should hide the message by default', () => {
-        const control = new UntypedFormControl('', Validators.required);
-        component.field = control;
-        fixture.detectChanges();
-        de = fixture.debugElement.query(By.css('[data-testId="dotErrorMsg"]'));
-        expect(de).toBeNull();
+    describe('Using default message', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `
+        <input [formControl]="control" />
+        <dot-field-validation-message [field]="control"></dot-field-validation-message>`
+            );
+        });
+
+        it('should hide the message by default', () => {
+            expect(spectator.queryHost(byTestId('error-msg'))).not.toExist();
+        });
+
+        it('should hide the message when field it is valid', () => {
+            expect(spectator.hostComponent.control.valid).toBe(false);
+            spectator.hostComponent.control.setValue('valid-content');
+
+            expect(spectator.hostComponent.control.valid).toBe(true);
+            expect(spectator.queryHost(byTestId('error-msg'))).not.toExist();
+        });
+
+        it('should show the default message when field it is dirty and invalid', () => {
+            expect(spectator.hostComponent.control.valid).toBe(false);
+            expect(spectator.hostComponent.control.dirty).toBe(false);
+
+            spectator.hostComponent.control.setValue('');
+            spectator.hostComponent.control.markAsDirty();
+
+            spectator.detectComponentChanges();
+
+            expect(spectator.hostComponent.control.valid).toBe(false);
+            expect(spectator.hostComponent.control.dirty).toBe(true);
+
+            expect(spectator.queryHost(byTestId('error-msg'))).toExist();
+        });
     });
 
-    it('should hide the message when field it is valid', () => {
-        const control = new UntypedFormControl('valid-content', Validators.required);
-        control.markAsDirty();
-        control.markAsTouched();
+    describe('Using validators messages', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `
+        <input [formControl]="control" />
+        <dot-field-validation-message [field]="control" [message]="defaultMessage"></dot-field-validation-message>`
+            );
+        });
 
-        component.field = control;
+        it('should show the message Input() when field it is dirty and invalid', () => {
+            expect(spectator.hostComponent.control.valid).toBe(false);
+            expect(spectator.hostComponent.control.dirty).toBe(false);
 
-        fixture.detectChanges();
-        de = fixture.debugElement.query(By.css('[data-testId="dotErrorMsg"]'));
+            spectator.hostComponent.control.setValue('');
+            spectator.hostComponent.control.markAsDirty();
 
-        expect(de).toBeNull();
-    });
+            spectator.detectComponentChanges();
 
-    it('should show the default message when field it is dirty and invalid', () => {
-        const control = new UntypedFormControl('', Validators.required);
-        control.markAsDirty();
-        control.markAsTouched();
-        component.field = control;
+            expect(spectator.hostComponent.control.valid).toBe(false);
+            expect(spectator.hostComponent.control.dirty).toBe(true);
 
-        fixture.detectChanges();
-
-        de = fixture.debugElement.query(By.css('[data-testId="dotErrorMsg"]'));
-        el = de.nativeElement;
-        expect(el).toBeDefined();
-        expect(el.textContent).toContain('Required');
-    });
-
-    it('should show the message when field it is dirty and invalid', () => {
-        const control = new UntypedFormControl('', Validators.required);
-        component.defaultMessage = 'Required';
-
-        control.markAsDirty();
-        control.markAsTouched();
-
-        component.field = control;
-        fixture.detectChanges();
-
-        de = fixture.debugElement.query(By.css('[data-testId="dotErrorMsg"]'));
-
-        el = de.nativeElement;
-        expect(el).toBeDefined();
-        expect(el.textContent).toContain('Required');
+            expect(spectator.queryHost(byTestId('error-msg'))).toExist();
+            expect(spectator.queryHost(byTestId('error-msg'))).toContainText('Required');
+        });
     });
 });
