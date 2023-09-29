@@ -58,7 +58,7 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.build == 'true' }}
     outputs:
-      docker-tags: ${{ steps.meta.outputs.tags }}
+      docker-tag: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
     env:
       DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
     permissions:
@@ -292,7 +292,7 @@ jobs:
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
       - name: Build
-        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS -Dtestcontainers.docker.image=${{ needs.build-jdk11.outputs.docker-tags }} -pl :dotcms-api-data-model,:dotcms-cli test ${{ matrix.java.maven_args}}
+        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS -Dtestcontainers.docker.image=${{ needs.build-jdk11.outputs.docker-tag }} -pl :dotcms-api-data-model,:dotcms-cli test ${{ matrix.java.maven_args}}
       - name: Prepare reports archive (if maven failed)
         if: failure()
         shell: bash
