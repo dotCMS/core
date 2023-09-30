@@ -10,7 +10,7 @@ declare module '@tiptap/core' {
             /**
              * Set Image Link mark
              */
-            setImageLink: (attributes: { href: string; target: string | null }) => ReturnType;
+            setImageLink: (attributes: { href: string; target?: string }) => ReturnType;
             /**
              * Unset Image Link mark
              */
