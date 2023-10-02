@@ -1,5 +1,15 @@
+import { Subject } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output
+} from '@angular/core';
 import {
     FormGroup,
     FormControl,
@@ -11,7 +21,12 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
+import { distinctUntilChanged, filter, takeUntil } from 'rxjs/operators';
+
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotBinaryFieldUrlModeStore } from './store/store/dot-binary-field-url-mode.store';
 
 @Component({
     selector: 'dot-dot-binary-field-url-mode',
@@ -24,35 +39,60 @@ import { DotMessagePipe } from '@dotcms/ui';
         InputTextModule,
         DotMessagePipe
     ],
+    providers: [DotBinaryFieldUrlModeStore],
     templateUrl: './dot-binary-field-url-mode.component.html',
     styleUrls: ['./dot-binary-field-url-mode.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldUrlModeComponent {
-    @Input() isLoading = false;
-    @Input() error = '';
+export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
+    @Input() maxFileSize: number;
+    @Input() accept: string[];
 
-    @Output() accept: EventEmitter<string> = new EventEmitter<string>();
-    @Output() cancel: EventEmitter<void> = new EventEmitter<void>();
+    @Output() tempFile: EventEmitter<DotCMSTempFile> = new EventEmitter<DotCMSTempFile>();
 
+    private readonly destroy$ = new Subject<void>();
+    private readonly urlError = 'dot.binary.field.action.import.from.url.error.message';
     private readonly validators = [
         Validators.required,
         Validators.pattern(/^(ftp|http|https):\/\/[^ "]+$/)
     ];
+
+    readonly vm$ = this.store.vm$;
     readonly form = new FormGroup({
         url: new FormControl('', this.validators)
     });
 
-    get urlControl(): FormControl {
-        return this.form.get('url') as FormControl;
+    private abortController: AbortController;
+
+    constructor(private readonly store: DotBinaryFieldUrlModeStore) {
+        this.store.tempFile$.pipe(takeUntil(this.destroy$)).subscribe((tempFile) => {
+            this.tempFile.emit(tempFile);
+            this.form.enable();
+        });
+
+        this.store.isLoading$.pipe(takeUntil(this.destroy$)).subscribe((isLoading) => {
+            isLoading ? this.form.disable() : this.form.enable();
+        });
     }
 
-    get isInvalid(): boolean {
-        return this.urlControl.invalid && !this.isPristine;
+    ngOnInit(): void {
+        this.store.setMaxFileSize(this.maxFileSize);
+
+        this.form.statusChanges
+            .pipe(
+                filter((status) => status !== 'DISABLED'), // Avoid mutating last value
+                distinctUntilChanged(), // Only emit when status really change.
+                takeUntil(this.destroy$)
+            )
+            .subscribe((status) => {
+                const error = status === 'INVALID' ? this.urlError : '';
+                this.store.setError(error);
+            });
     }
 
-    get isPristine(): boolean {
-        return !(this.urlControl.dirty || this.urlControl.touched);
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
     }
 
     onSubmit(): void {
@@ -60,7 +100,14 @@ export class DotBinaryFieldUrlModeComponent {
             return;
         }
 
-        this.accept.emit(this.form.value.url);
-        this.form.reset({ url: this.urlControl.value }); // Reset touch and dirty state
+        const url = this.form.get('url').value;
+        this.abortController = new AbortController();
+
+        this.store.uploadFile({ url, signal: this.abortController.signal });
+        this.form.reset({ url }); // Reset touch and dirty state
+    }
+
+    cancelUpload(): void {
+        this.abortController.abort();
     }
 }

@@ -1,34 +1,36 @@
-<form class="url-mode__form" [formGroup]="form" (ngSubmit)="onSubmit()" data-testId="form">
+<form
+    class="url-mode__form"
+    *ngIf="vm$ | async as vm"
+    [formGroup]="form"
+    (ngSubmit)="onSubmit()"
+    data-testId="form">
     <div class="url-mode__input-container">
         <span>{{ 'dot.binary.field.action.import.from.url' | dm }}</span>
         <input
-            [disabled]="isLoading"
             type="text"
             formControlName="url"
             pInputText
             placeholder="https://www.google.com/"
             data-testId="url-input" />
         <div class="error-message p-invalid" data-testId="error-message">
-            <span *ngIf="isInvalid">
-                {{ 'dot.binary.field.action.import.from.url.error.message' | dm }}
-            </span>
-
-            <span *ngIf="error && !isPristine">{{ error | dm }}</span>
+            <span *ngIf="vm.error">{{ vm.error | dm }}</span>
         </div>
     </div>
     <div class="url-mode__actions">
         <p-button
-            [label]="'dot.common.cancel' | dm"
-            (click)="cancel.emit()"
-            data-testId="action-cancel-btn"
-            styleClass="p-button-outlined"
-            icon="pi pi-times"></p-button>
-
-        <p-button
-            [disabled]="isLoading"
+            *ngIf="!vm.isLoading; else cancelButton"
             [label]="'dot.common.import' | dm"
             type="submit"
             data-testId="action-import-btn"
             icon="pi pi-link"></p-button>
+
+        <ng-template #cancelButton>
+            <p-button
+                [label]="'dot.common.cancel' | dm"
+                (click)="cancelUpload()"
+                data-testId="action-cancel-btn"
+                styleClass="p-button-outlined"
+                icon="pi pi-spin pi-spinner"></p-button>
+        </ng-template>
     </div>
 </form>

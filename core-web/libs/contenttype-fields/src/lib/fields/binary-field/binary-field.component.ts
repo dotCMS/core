@@ -208,6 +208,10 @@ export class DotBinaryFieldComponent implements OnInit {
         this.dotBinaryFieldStore.handleUploadFile(event);
     }
 
+    setTempFile(tempFile: DotCMSTempFile) {
+        this.dotBinaryFieldStore.setTempFile(tempFile);
+    }
+
     /**
      *  Handle file drop error
      *
