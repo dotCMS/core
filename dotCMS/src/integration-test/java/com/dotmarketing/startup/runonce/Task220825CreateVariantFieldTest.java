@@ -19,7 +19,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.After;
@@ -27,7 +26,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.postgresql.util.PSQLException;
 
 public class Task220825CreateVariantFieldTest {
 
@@ -40,25 +38,8 @@ public class Task220825CreateVariantFieldTest {
 
     @After
     public void createPrimaryKeyWithTwoFields() throws Exception {
-
-        final boolean hasContentletVersionInfoPK = hasContentletVersionInfoPK();
-
-        if (!hasContentletVersionInfoPK) {
-            try {
-                new DotConnect().executeStatement("ALTER TABLE contentlet_version_info "
-                        + " ADD CONSTRAINT contentlet_version_info_pkey PRIMARY KEY (identifier, lang)");
-            } catch (PSQLException e) {
-                //ignore
-                System.out.println("e = " + e);
-            }
-        }
-    }
-
-    public boolean hasContentletVersionInfoPK() throws SQLException {
-        final List<String> contentletVersionInfoPks = DotDatabaseMetaData.getPrimaryKeysFields(
-                "contentlet_version_info");
-
-        return contentletVersionInfoPks.contains("contentlet_version_info_pkey");
+        new DotConnect().executeStatement("ALTER TABLE contentlet_version_info "
+                + " ADD CONSTRAINT contentlet_version_info_pkey PRIMARY KEY (identifier, lang)");
     }
 
     @AfterClass
