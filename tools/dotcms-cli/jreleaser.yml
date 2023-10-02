@@ -60,4 +60,3 @@ upload:
           active: RELEASE
           fileTypes:
             - JAR
-            - ZIP
