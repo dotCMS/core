@@ -1,7 +1,7 @@
 backend: &backend
   - 'bom/**'
   - 'build-parent/**'
-  - 'dotcms-core/**'
+  - 'dotCMS/**'
   - 'dotcms-integration/**'
   - 'independent-projects/**'
   - 'maven-plugins/**'
@@ -11,6 +11,7 @@ backend: &backend
   - 'core-web/pom.xml'
   - 'reports/**'
   - '.github/workflows/maven-cicd-pipeline.yml'
+  - 'pom.xml'
 frontend: &frontend
   - 'core-web/**'
 cli: &cli
