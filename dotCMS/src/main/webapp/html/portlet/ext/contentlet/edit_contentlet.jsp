@@ -46,10 +46,12 @@
 
 </style>
 
-<!-- 
-	Uncomment this when we are ready to use the new content fields
+<%
+	String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+	if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+%>
 	<script src="/html/contenttype-fields.js"></script>
--->
+<% } %>
 
 <script type="text/javascript">
 

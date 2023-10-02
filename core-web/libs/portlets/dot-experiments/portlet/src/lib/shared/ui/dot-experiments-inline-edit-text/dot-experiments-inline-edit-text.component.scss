@@ -17,16 +17,14 @@
     }
 
     &::ng-deep {
-        .p-disabled,
-        .p-component {
-            width: 100%;
-
+        .p-disabled {
             &:disabled {
                 opacity: 0.8;
             }
         }
 
         p-inplace .p-inplace {
+            width: 100%;
             .p-inplace-display {
                 padding: 0;
                 white-space: pre-wrap;
