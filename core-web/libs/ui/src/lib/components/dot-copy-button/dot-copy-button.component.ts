@@ -1,3 +1,4 @@
+import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -6,7 +7,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
-import { NgIf } from '@angular/common';
 
 /**
  * Icon button to copy to clipboard the string you pass to it,
