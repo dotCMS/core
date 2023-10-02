@@ -14,17 +14,23 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableWorkflow.class)
 public interface Workflow {
 
-    @Nullable
-    Boolean archived();
+    @Value.Default
+    default Boolean archived() {
+        return false;
+    }
 
     @Nullable
     Date creationDate();
 
-    @Nullable
-    Boolean defaultScheme();
+    @Value.Default
+    default Boolean defaultScheme() {
+        return false;
+    }
 
-    @Nullable
-    String description();
+    @Value.Default
+    default String description() {
+        return "";
+    }
 
     @Nullable
     String entryActionId();
@@ -32,8 +38,10 @@ public interface Workflow {
     @Nullable
     String id();
 
-    @Nullable
-    Boolean mandatory();
+    @Value.Default
+    default Boolean mandatory() {
+        return false;
+    }
 
     @Nullable
     Date modDate();
@@ -41,7 +49,9 @@ public interface Workflow {
     @Nullable
     String name();
 
-    @Nullable
-    Boolean system();
+    @Value.Default
+    default Boolean system() {
+        return false;
+    }
 
 }

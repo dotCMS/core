@@ -1,0 +1,44 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+
+        <fileSet>
+            <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}</outputDirectory>
+            <excludes>
+                <exclude>**/*.sh</exclude>
+                <exclude>**/webapps/host-manager/**</exclude>
+                <exclude>**/webapps/manager/**</exclude>
+                <exclude>**/felix-cache/**</exclude>
+                <exclude>**/webapps/cargorpc/**</exclude>
+                <exclude>**/work/**</exclude>
+                <exclude>**/temp/**</exclude>
+                <exclude>**/logs/**</exclude>
+            </excludes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}</outputDirectory>
+            <includes>
+                <include>**/*.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+            <directoryMode>0755</directoryMode>
+        </fileSet>
+        <fileSet>
+            <directory>${docs-directory}</directory>
+            <outputDirectory>docs</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${exploded-webapp-dir}</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
+        </fileSet>
+    </fileSets>
+
+
+
+</assembly>

@@ -2,7 +2,7 @@
     <ng-template let-variable pTemplate="listItem">
         <div class="dot-add-variable-list__item">
             <div>
-                <h3>{{ variable?.name }}</h3>
+                <h3 [attr.data-testId]="'h3' + variable.variable">{{ variable?.name }}</h3>
                 <p>
                     <small>
                         {{ variable?.fieldTypeLabel }}
