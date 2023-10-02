@@ -887,7 +887,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 .pipe(map((environments: DotEnvironment[]) => !!environments.length)),
             this.getSessionStorageFilterParams(),
             this.getLocalStorageFavoritePanelParams(),
-            this.dotPropertiesService.getFeatureFlagValue(
+            this.dotPropertiesService.getFeatureFlag(
                 FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE
             ),
             this.dotPropertiesService

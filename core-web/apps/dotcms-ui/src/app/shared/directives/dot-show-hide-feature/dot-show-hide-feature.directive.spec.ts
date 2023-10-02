@@ -32,7 +32,7 @@ describe('DotShowHideFeatureDirective', () => {
             providers: [
                 ViewContainerRef,
                 TemplateRef,
-                { provide: DotPropertiesService, useValue: { getFeatureFlagValue: () => of(true) } }
+                { provide: DotPropertiesService, useValue: { getFeatureFlag: () => of(true) } }
             ]
         });
 
@@ -54,7 +54,7 @@ describe('DotShowHideFeatureDirective', () => {
 
     describe('with feature flag disabled', () => {
         beforeEach(() => {
-            spyOn(dotPropertiesService, 'getFeatureFlagValue').and.returnValue(of(false));
+            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(false));
             fixture.detectChanges();
         });
 
@@ -99,7 +99,7 @@ describe('DotShowHideFeatureDirective with alternate template', () => {
                 TemplateRef,
                 {
                     provide: DotPropertiesService,
-                    useValue: { getFeatureFlagValue: () => of(true) }
+                    useValue: { getFeatureFlag: () => of(true) }
                 }
             ]
         });
@@ -130,7 +130,7 @@ describe('DotShowHideFeatureDirective with alternate template', () => {
 
     describe('with feature flag disabled', () => {
         beforeEach(() => {
-            spyOn(dotPropertiesService, 'getFeatureFlagValue').and.returnValue(of(false));
+            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(false));
             fixture.detectChanges();
         });
 

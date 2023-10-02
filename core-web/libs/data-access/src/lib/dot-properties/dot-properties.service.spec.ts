@@ -79,7 +79,7 @@ describe('DotPropertiesService', () => {
         const featureFlag = 'featureFlag';
         expect(service).toBeTruthy();
 
-        service.getFeatureFlagValue(featureFlag).subscribe((response) => {
+        service.getFeatureFlag(featureFlag).subscribe((response) => {
             expect(response).toEqual(true);
             done();
         });
@@ -97,7 +97,7 @@ describe('DotPropertiesService', () => {
             }
         };
 
-        service.getFeatureFlagsValues(featureFlags).subscribe((response) => {
+        service.getFeatureFlags(featureFlags).subscribe((response) => {
             expect(response['featureFlag']).toBe(true);
             expect(response['featureFlag2']).toBe(false);
             done();

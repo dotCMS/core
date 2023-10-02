@@ -53,7 +53,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     ngOnInit() {
         // TODO: Remove next line when total functionality of Favorite page is done for release
         this.dotConfigurationService
-            .getFeatureFlagValue(FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE)
+            .getFeatureFlag(FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE)
             .subscribe((enabled) => {
                 this.showFavoritePageStar = enabled;
             });

@@ -74,7 +74,7 @@ export class DotPropertiesService {
      * @return {*}  {Observable<boolean>}
      * @memberof DotPropertiesService
      */
-    getFeatureFlagValue(key: string): Observable<boolean> {
+    getFeatureFlag(key: string): Observable<boolean> {
         return this.getKey(key).pipe(map((value) => value === 'true'));
     }
 
@@ -85,7 +85,7 @@ export class DotPropertiesService {
      * @return {*}  {Observable<Record<string, boolean>>}
      * @memberof DotPropertiesService
      */
-    getFeatureFlagsValues(keys: string[]): Observable<Record<string, boolean>> {
+    getFeatureFlags(keys: string[]): Observable<Record<string, boolean>> {
         return this.getKeys(keys).pipe(
             map((flags) => {
                 return Object.keys(flags).reduce((acc, key) => {

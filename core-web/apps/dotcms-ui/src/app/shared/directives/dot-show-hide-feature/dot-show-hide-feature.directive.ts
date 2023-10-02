@@ -63,7 +63,7 @@ export class DotShowHideFeatureDirective implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.dotPropertiesService.getFeatureFlagValue(this._featureFlag).subscribe((isEnabled) => {
+        this.dotPropertiesService.getFeatureFlag(this._featureFlag).subscribe((isEnabled) => {
             this.viewContainer.clear();
 
             if (isEnabled) {

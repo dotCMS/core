@@ -26,17 +26,17 @@ describe('EditContentGuard', () => {
         });
 
         dotPropertiesService = TestBed.inject(DotPropertiesService);
-        spyOn(dotPropertiesService, 'getFeatureFlagValue').and.callThrough();
+        spyOn(dotPropertiesService, 'getFeatureFlag').and.callThrough();
 
         return TestBed.runInInjectionContext(editContentGuard);
     };
 
     it('should allow access to Edit Content new form', (done) => {
         const guard = setup({
-            getFeatureFlagValue: () => of(true)
+            getFeatureFlag: () => of(true)
         });
 
-        expect(dotPropertiesService.getFeatureFlagValue).toHaveBeenCalledWith(
+        expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE
         );
 
@@ -48,10 +48,10 @@ describe('EditContentGuard', () => {
 
     it('should deny access to Edit Content new form', (done) => {
         const guard = setup({
-            getFeatureFlagValue: () => of(false)
+            getFeatureFlag: () => of(false)
         });
 
-        expect(dotPropertiesService.getFeatureFlagValue).toHaveBeenCalledWith(
+        expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE
         );
 

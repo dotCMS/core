@@ -174,7 +174,7 @@ describe('DotEditPageStateControllerComponent', () => {
         spyOn(component.modeChange, 'emit');
         spyOn(dotPageStateService, 'setLock');
         spyOn(personalizeService, 'personalized').and.returnValue(of(null));
-        featFlagMock = spyOn(propertiesService, 'getFeatureFlagValue').and.returnValue(of(false));
+        featFlagMock = spyOn(propertiesService, 'getFeatureFlag').and.returnValue(of(false));
     });
 
     describe('elements', () => {

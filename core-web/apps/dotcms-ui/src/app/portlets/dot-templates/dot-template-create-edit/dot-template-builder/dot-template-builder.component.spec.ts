@@ -181,7 +181,7 @@ describe('DotTemplateBuilderComponent', () => {
                 {
                     provide: DotPropertiesService,
                     useValue: {
-                        getFeatureFlagValue: () => of(false)
+                        getFeatureFlag: () => of(false)
                     }
                 },
                 DotEventsService,
@@ -264,7 +264,7 @@ describe('DotTemplateBuilderComponent', () => {
                 theme: '123',
                 live: true
             };
-            spyOn(dotPropertiesService, 'getFeatureFlagValue').and.returnValue(of(true));
+            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(true));
             fixture.detectChanges();
         });
 

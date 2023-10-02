@@ -133,7 +133,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
 
     ngOnInit(): void {
         this.dotPropertiesService
-            .getFeatureFlagValue(this.featureFlagEditURLContentMap)
+            .getFeatureFlag(this.featureFlagEditURLContentMap)
 
             .subscribe((result) => {
                 this.featureFlagEditURLContentMapIsOn = result;

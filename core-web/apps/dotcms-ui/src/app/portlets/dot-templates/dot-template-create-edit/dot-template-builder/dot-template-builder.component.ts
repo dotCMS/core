@@ -38,7 +38,7 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     permissionsUrl = '';
     historyUrl = '';
     readonly featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
-    featureFlagIsOn$ = this.propertiesService.getFeatureFlagValue(this.featureFlag);
+    featureFlagIsOn$ = this.propertiesService.getFeatureFlag(this.featureFlag);
 
     templateUpdate$ = new Subject<DotTemplateItem>();
     destroy$: Subject<boolean> = new Subject<boolean>();

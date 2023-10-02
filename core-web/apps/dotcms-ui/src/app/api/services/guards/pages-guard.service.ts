@@ -18,7 +18,7 @@ export class PagesGuardService implements CanActivate {
      * @returns Observable<boolean>
      */
     canActivate(): Observable<boolean> {
-        return this.dotConfigurationService.getFeatureFlagValue(
+        return this.dotConfigurationService.getFeatureFlag(
             FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE
         );
     }

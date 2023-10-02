@@ -26,9 +26,7 @@ export class DotFeatureFlagResolver
 
     resolve(route: ActivatedRouteSnapshot) {
         if (route.data.featuredFlagsToCheck) {
-            return this.dotConfigurationService.getFeatureFlagsValues(
-                route.data.featuredFlagsToCheck
-            );
+            return this.dotConfigurationService.getFeatureFlags(route.data.featuredFlagsToCheck);
         }
 
         return of(false);

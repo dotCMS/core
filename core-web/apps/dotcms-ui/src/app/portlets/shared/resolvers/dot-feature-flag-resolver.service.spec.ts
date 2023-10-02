@@ -49,13 +49,11 @@ describe('DotFeatureFlagResolver', () => {
             flag2: false
         };
 
-        spyOn(dotConfigurationService, 'getFeatureFlagsValues').and.returnValue(
-            of(expectedFlagsResult)
-        );
+        spyOn(dotConfigurationService, 'getFeatureFlags').and.returnValue(of(expectedFlagsResult));
 
         (resolver.resolve(route) as Observable<Record<string, boolean>>).subscribe(
             (result: Record<string, boolean>) => {
-                expect(dotConfigurationService.getFeatureFlagsValues).toHaveBeenCalledWith([
+                expect(dotConfigurationService.getFeatureFlags).toHaveBeenCalledWith([
                     'flag1',
                     'flag2'
                 ]);
