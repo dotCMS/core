@@ -123,7 +123,7 @@ jobs:
           JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         working-directory: ${{ github.workspace }}
         run: |
-          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -Djreleaser.git.root.search=true -pl :dotCMS-cli          
+          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE         
 
       - name: Setup git config
         run: |
