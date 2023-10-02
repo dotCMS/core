@@ -1,7 +1,12 @@
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 
-import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
+
 import { DotMessageService } from '@dotcms/data-access';
+
+import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
+import { NgIf } from '@angular/common';
 
 /**
  * Icon button to copy to clipboard the string you pass to it,
@@ -13,8 +18,11 @@ import { DotMessageService } from '@dotcms/data-access';
  */
 @Component({
     selector: 'dot-copy-button',
+    standalone: true,
+    providers: [DotClipboardUtil],
     templateUrl: './dot-copy-button.component.html',
     styleUrls: ['./dot-copy-button.component.scss'],
+    imports: [TooltipModule, ButtonModule, NgIf],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCopyButtonComponent implements OnInit {

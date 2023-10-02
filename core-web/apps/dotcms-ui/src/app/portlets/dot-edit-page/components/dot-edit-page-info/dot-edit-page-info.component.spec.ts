@@ -3,9 +3,8 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 
@@ -13,8 +12,7 @@ import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
     template: `<dot-edit-page-info
         [title]="title"
         [url]="url"
-        [apiLink]="apiLink"
-    ></dot-edit-page-info>`
+        [apiLink]="apiLink"></dot-edit-page-info>`
 })
 class TestHostComponent {
     title = 'A title';
@@ -31,7 +29,7 @@ describe('DotEditPageInfoComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent, DotEditPageInfoComponent],
-            imports: [DotApiLinkModule, DotCopyButtonModule, DotMessagePipe],
+            imports: [DotApiLinkModule, DotCopyButtonComponent, DotMessagePipe],
             providers: [
                 {
                     provide: DotMessageService,

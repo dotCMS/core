@@ -9,9 +9,8 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
