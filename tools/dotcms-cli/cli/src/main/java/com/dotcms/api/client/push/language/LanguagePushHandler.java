@@ -5,6 +5,7 @@ import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.push.PushHandler;
 import com.dotcms.model.language.Language;
 import java.io.File;
+import java.util.Map;
 import java.util.Optional;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -28,7 +29,7 @@ public class LanguagePushHandler implements PushHandler<Language> {
 
     @Override
     public String contentSimpleDisplay(Language language) {
-        
+
         if (language.id().isPresent()) {
             return String.format(
                     "id: [%s] code: [%s]",
@@ -45,7 +46,7 @@ public class LanguagePushHandler implements PushHandler<Language> {
 
     @ActivateRequestContext
     @Override
-    public void add(File localFile, Language localLanguage) {
+    public void add(File localFile, Language localLanguage, Map<String, Object> customOptions) {
 
         // Check if the language is missing some required values and trying to set them
         localLanguage = setMissingValues(localLanguage);
@@ -58,7 +59,8 @@ public class LanguagePushHandler implements PushHandler<Language> {
 
     @ActivateRequestContext
     @Override
-    public void edit(File localFile, Language localLanguage, Language serverLanguage) {
+    public void edit(File localFile, Language localLanguage, Language serverLanguage,
+            Map<String, Object> customOptions) {
 
         // Check if the language is missing some required values and trying to set them
         localLanguage = setMissingValues(localLanguage);
@@ -73,7 +75,7 @@ public class LanguagePushHandler implements PushHandler<Language> {
 
     @ActivateRequestContext
     @Override
-    public void remove(Language serverLanguage) {
+    public void remove(Language serverLanguage, Map<String, Object> customOptions) {
 
         final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
         languageAPI.delete(

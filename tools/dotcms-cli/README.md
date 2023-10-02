@@ -1,58 +1,101 @@
 # dotCMS CLI 
+The dotCMS CLI is a command-line tool that you can use to populate and modify your dotCMS instances from a command shell.
 
-This project acts as a maven reactor pom build 
-You can build at the top level to build all projects
-
-To run individual services or quarkus dev mode cd to the module you want to run
-making sure that dependencies have been installed first 
-
-For running DotCMS CLI tests you need a whole backend environment compose by PostgreSQL database, Elasticsearch service and DotCMS instance. By default, tests are running using Testcontainers, although you can also disable containers and provide your own environment backend.
-
-Before running tests, you need to set up the following environment variable:
-
-```shell
-# License file path is required to run tests (mandatory).
-export DOTCMS_LICENSE_FILE=license_file_path.dat
-```
-And then you can run the build command, it will run all the tests, and it will install all the dependencies:
-```shell script
-# From top level to build all.
-./mvnw -U clean install
-```
-In case we need to debug locally against a specific branch or revise the information stored in a local database, we can disable the Testcontainers as follow:
+## Installing the dotCMS CLI
+The dotCMS CLI is delivered as an uber jar that can be downloaded from [here](https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/).
+ Once downloaded, you just need to run it with: 
 
 ```shell script
-# NOTE: If you disable the Testcontainers, you must provide the backend environment.
-./mvnw -U clean install -Dtestcontainers.enabled=false
+java -jar dotcms-cli.jar
 ```
 
+## Using the dotCMS CLI from a docker installation
+In case you are using dotCMS installed in docker, you can run the CLI directly from the docker container with:
+```shell script
+TODO: include here the command to be executed
+```
 
-Skipping tests
+## Available commands
+| Command                                    | Description                                                                      |
+|--------------------------------------------|----------------------------------------------------------------------------------|
+| [content-type](cli/docs/content-type.adoc) | Performs operations over content types. For example: pull, push, remove          |
+| [files](cli/docs/files.adoc)               | Performs operations over files. For example: tree, ls, push                      |
+| [instance](cli/docs/instance.adoc)         | Prints a list of available dotCMS instances                                      |
+| [language](cli/docs/language.adoc)         | Performs operations over languages. For example: pull, push, remove              |
+| [login](cli/docs/login.adoc)               | Logs into a dotCMS instance                                                      |
+| [push](cli/docs/push.adoc)  | Global push command used to sync a GitHub repo with a target dotCMS environment  |
+| [site](cli/docs/site.adoc)                 | Performs operations over sites. For example: pull, push, remove                  |
+| [status](cli/docs/status.adoc)             | Provides information about the current logged-in user and dotCMS instance status |
+
+
+You can find more details about how to use the dotCMS CLI in the [Examples](#examples) section.
+
+
+
+## Examples
+
+1. Log in with an admin user
+```shell script
+login --user=admin@dotCMS.com --password=admin
+```
+2. List and choose the dotCMS instance we want to run against
+```shell script
+instance --list
+```
+3. Activate a dotCMS instance profile called `demo`
+```shell script
+instance --activate demo
+```
+4. Get info of the current instance running
+```shell script
+#Just run the status command
+status
+
+#You will get an output similar to:
+2023-02-22 11:25:29,499 INFO  [com.dot.api.cli.HybridServiceManagerImpl] (Quarkus Main Thread) Service [default] is missing credentials.
+2023-02-22 11:25:29,500 INFO  [com.dot.api.cli.HybridServiceManagerImpl] (Quarkus Main Thread) Service [demo] is missing credentials.
+Active instance is [demo] API is [https://demo.dotcms.com/api] No active user Use login Command.
+```
+5. Pull a content type
+```shell script
+content-type pull FileAsset
+```
+6. Create a new site
+```shell script
+site create "my.cool.bikes.site.com"
+```
+
+## Building the CLI (dev mode)
+
+The CLI is a quarkus/pico-cli project made up of two modules [cli](cli) and [api-data-module](api-data-model).
+This project acts as a maven reactor pom build. You can build at the top level to build the modules.
 
 ```shell script
-# From top level to build all.
 ./mvnw clean install -DskipTests=true
 ```
 
-### To run cli.
+We suggest to build the project ignoring test execution (`-DskipTests=true`). It will run faster and avoid setting up a testing environment.
 
-You might use [quarkus cli](https://es.quarkus.io/guides/cli-tooling) and [maven](https://maven.apache.org/install.html) 
+#### Running the CLI (dev mode)
 
-First Start a dotCMS instance locally
+You might use [quarkus cli](https://es.quarkus.io/guides/cli-tooling) or [maven](https://maven.apache.org/install.html)
+First, start a dotCMS instance locally. 
+Then, execute the following commands
 
-To run example API in dev mode
 ```shell script
-# From top level to build all.
+# from top level to build all
 cd cli
-../mvnw quarkus:dev
+# command is same as the following to run the quarkus build plugin
+# ../mvnw quarkus:dev 
+quarkus dev
 ```
-**NOTE:**  To reduce duplication in the multi-module project mvnw is not included in each submodule. 
+**NOTE:**  To reduce duplication in the multi-module project, mvnw is not included on each submodule.
 The quarkus command finds the executable
 
-To run mvnw from a submodule just use a relative path to the parent mvn
-if running from the submodule folder all dependencies will need to be up to date and installed to the local mvn with maven install
+To run mvnw from a submodule just use a relative path to the parent mvn.
+If running from a submodule folder, all the dependencies will need to be up to date and installed to the local mvn with maven install
 
-Alternatively you can specify the sub project from the parent folder
+Alternatively, you can specify the subproject from the parent folder
 ```shell script
 # from top level to build all
 cd cli
@@ -61,153 +104,34 @@ cd cli
 ../mvnw -pl cli quarkus:dev
 ```
 
-quarkus:dev can only run a single project, but for other maven options you can choose to work out the dependencies to build and skip unrelated submodules
-this uses the --am (also make) option.  In this way with the cli module will build the api-data-model but not build the rest-api module
+Once the cli is launched in dev mode it'll print out a list of available commands.
+
+followed by 
 
 ```shell script
-# From top level to build all
-# The command is same as the following to run the quarkus build plugin
-# ../mvnw quarkus:dev 
-./mvnw -pl cli --am install
+--
+Tests paused
+Press [space] to restart, [e] to edit command line args (currently ''), [r] to resume testing, [o] Toggle test output, [:] for the terminal, [h] for more options>
 ```
 
-
-## Project outline
-
-### api-data-model
-This module implements the base API defined in api-data-model using JAX-RS to
-provide a Rest interface for calling the api.   We make the rest classes call a delegate implementation
-of the service interface,  we could make the resource class implement the service interface itself
-but not doing so can provide some flexibility, e.g. you may not want all the public service methods to be rest calls
-or you may need to do some special JAX-RS handling to implement the method.  
-Any REST specific handling, e.g. authentication, Exception Mapping, Response object,  Streaming handling
-can be done in here that are not concerns of the underlying java interface.
-
-If the project using this allows for CDI it would be easy to add the API and inject the service implementations
-Otherwise the owner will need to manage the annotation processing itself and methods will need to be created to allow manual injection of the implementation
-
-### cli
-
-This module uses picocli to easily create a client application
-
-https://quarkus.io/guides/picocli
-https://picocli.info/
-
-The creation of individual subcommands becomes easy with picocli,  the current app demonstrates
-some examples of what we can do.
-
-#### LoginCommand
-Shows example of getting a token from demo.cms.com and storing it in users personal secure storage
-
-#### StatusCommand
-Checks the token status against the server and returns current user object.
-
-## Docker
-Checkout this link with a good description of the containerization and docker build options
-
-http://www.mastertheboss.com/soa-cloud/quarkus/building-container-ready-native-applications-with-quarkus/
-
-
-## Configuration
-Microprofile Configuration with quarkus makes configuration amazingly simple.   First place for all configuration
-in the code is to look in the resources/application.properties file.   
-
-https://quarkus.io/guides/config-reference
-
-
-https://quarkus.io/get-started/
-
-## Testing
-[Testcontainers](http://testcontainers.com/getting-started/) is a library that provides easy and lightweight APIs for bootstrapping local development and test dependencies with real services wrapped in Docker containers. Using Testcontainers, you can write tests that depend on the same services you use in production without mocks or in-memory services.
-
----
-
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
-
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
-
-## Running the application in dev mode
-
-You can run your application in dev mode that enables live coding using:
+We can also instruct Quarkus dev mode to launch our cli using a preconfigured param by doing:
 ```shell script
-./mvnw quarkus:dev
+../mvn quarkus:dev -Dquarkus.args=status
 ```
+This will launch the cli passing directly into it the arguments that tell them to execute the command status.
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
-
-## Packaging and running the application
-
-The application can be packaged using:
+## Building a CLI jar 
+In order to generate the cli as a jar packaged with all necessary dependencies you need to run the following command from the `cli` directory:
 ```shell script
-# Before packaging, make sure to provide the license file path. 
-# Which one is mandatory to run the tests application.
-
-export DOTCMS_LICENSE_FILE=license_file_path.dat
-
-./mvnw package
+../mvnw clean install package
 ```
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
+All the commands can be executed directly from the generated jar which can be found under `cli/target/quarkus-app/`.
 
-If you want to build an _über-jar_, execute the following command:
+Example:
 ```shell script
-# Before packaging, make sure to provide the license file path. 
-# Which one is mandatory to run the tests application.
-
-export DOTCMS_LICENSE_FILE=license_file_path.dat
-
-./mvnw package -Dquarkus.package.type=uber-jar
+java -jar ./cli/target/quarkus-app/quarkus-run.jar status
 ```
-
-Skipping tests
-
-```shell script
-./mvnw package -Dquarkus.package.type=uber-jar -DskipTests=true
-```
-
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using: 
-```shell script
-# Before packaging, make sure to provide the license file path. 
-# Which one is mandatory to run the tests application.
-
-export DOTCMS_LICENSE_FILE=license_file_path.dat
-
-./mvnw package -Pnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using: 
-```shell script
-# Before packaging, make sure to provide the license file path. 
-# Which one is mandatory to run the tests application.
-
-export DOTCMS_LICENSE_FILE=license_file_path.dat
-
-./mvnw package -Pnative -Dquarkus.native.container-build=true
-```
-
-Skipping tests
-
-```shell script
-./mvnw package -Pnative -Dquarkus.native.container-build=true -DskipTests=true
-```
-
-You can then execute your native executable with: `./target/code-with-quarkus-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult https://quarkus.io/guides/maven-tooling.
-
-## Provided Code
-
-### RESTEasy Reactive
-
-Easily start your Reactive RESTful Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
 
 ## Logging
 
@@ -219,7 +143,7 @@ executable is run.
 To increase the file log level to _DEBUG_ when running in dev mode, use the following command:
 
 ```shell
-./mvnw quarkus:dev -Dquarkus.log.file.level=DEBUG
+../mvnw quarkus:dev -Dquarkus.log.file.level=DEBUG
 ```
 
 #### Console log level
@@ -227,7 +151,7 @@ To increase the file log level to _DEBUG_ when running in dev mode, use the foll
 To increase the console log level to _DEBUG_ when running in dev mode, use the following command:
 
 ```shell
-./mvnw quarkus:dev -Dquarkus.log.handler.console.\"DOTCMS_CONSOLE\".level=DEBUG
+../mvnw quarkus:dev -Dquarkus.log.handler.console.\"DOTCMS_CONSOLE\".level=DEBUG
 ```
 
 #### File log location
@@ -248,5 +172,5 @@ java -jar cli-1.0.0-SNAPSHOT-runner.jar login -u admin@dotcms.com -p admin
 Example:
 
 ```shell
-./mvnw quarkus:dev -Dquarkus.log.file.path=/Users/my-user/CLI/dotcms-cli.log
+../mvnw quarkus:dev -Dquarkus.log.file.path=/Users/my-user/CLI/dotcms-cli.log
 ```

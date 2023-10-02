@@ -1,4 +1,4 @@
-import { InjectionToken, Provider } from '@angular/core';
+import { APP_INITIALIZER, InjectionToken, Provider } from '@angular/core';
 import { TitleStrategy } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -16,6 +16,7 @@ import {
     DotCrudService,
     DotLicenseService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
@@ -42,6 +43,10 @@ import { DotIframeService } from './view/components/_common/iframe/service/dot-i
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
+
+const featureFactory = (dotProperties: DotPropertiesService) => () => {
+    dotProperties.loadConfig();
+};
 
 const PROVIDERS: Provider[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
@@ -82,6 +87,12 @@ const PROVIDERS: Provider[] = [
     {
         provide: TitleStrategy,
         useClass: DotTitleStrategy
+    },
+    {
+        provide: APP_INITIALIZER,
+        useFactory: featureFactory,
+        deps: [DotPropertiesService],
+        multi: true
     }
 ];
 
