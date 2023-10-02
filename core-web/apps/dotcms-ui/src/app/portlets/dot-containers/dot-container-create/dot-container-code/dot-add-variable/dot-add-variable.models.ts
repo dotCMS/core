@@ -11,4 +11,5 @@ export interface DotVariableContent {
     name: string;
     fieldTypeLabel?: string;
     variable: string;
+    codeTemplate?: string;
 }
