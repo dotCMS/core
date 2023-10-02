@@ -20,5 +20,5 @@ public interface JavascriptReader {
      * @throws IOException
      * @throws DotDataException
      */
-    Reader getJavaScriptReader(final JsResource.JavascriptReaderParams params) throws DotSecurityException, IOException, DotDataException;
+    Reader getJavaScriptReader(final JavascriptReaderParams params) throws DotSecurityException, IOException, DotDataException;
 }

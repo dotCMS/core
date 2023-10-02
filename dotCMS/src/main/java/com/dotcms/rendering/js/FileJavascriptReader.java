@@ -33,10 +33,10 @@ import java.io.Reader;
  * </ul>
  */
 public class FileJavascriptReader implements JavascriptReader {
-    private static final String FILE_EXTENSION = ".jstl";
+    private static final String FILE_EXTENSION = ".js";
 
     @Override
-    public Reader getJavaScriptReader(final JsResource.JavascriptReaderParams params) throws DotSecurityException,
+    public Reader getJavaScriptReader(final JavascriptReaderParams params) throws DotSecurityException,
             IOException, DotDataException {
 
         final PageMode pageMode        = params.getPageMode();

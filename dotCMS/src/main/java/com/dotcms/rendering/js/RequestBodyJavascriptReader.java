@@ -21,7 +21,7 @@ public class RequestBodyJavascriptReader implements JavascriptReader {
     private static final String SCRIPTING_USER_ROLE_KEY = "Scripting Developer";
 
     @Override
-    public Reader getJavaScriptReader(final JsResource.JavascriptReaderParams params) throws DotSecurityException, DotDataException {
+    public Reader getJavaScriptReader(final JavascriptReaderParams params) throws DotSecurityException, DotDataException {
 
         final RoleAPI roleAPI = APILocator.getRoleAPI();
         final boolean canRenderVelocity = APILocator.getRoleAPI()

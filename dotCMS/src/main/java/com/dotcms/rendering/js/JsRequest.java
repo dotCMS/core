@@ -3,6 +3,8 @@ package com.dotcms.rendering.js;
 import com.dotmarketing.util.json.JSONObject;
 import io.vavr.control.Try;
 import org.graalvm.polyglot.HostAccess;
+import org.graalvm.polyglot.proxy.ProxyHashMap;
+import org.graalvm.polyglot.proxy.ProxyObject;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
@@ -57,14 +59,14 @@ public class JsRequest implements Serializable {
     @HostAccess.Export
     public boolean getBodyUsed() {
 
-        return bodyUsed;
+        return Try.of(()->request.getInputStream().isFinished()).getOrElse(bodyUsed);
     }
 
     @HostAccess.Export
-    public Map<String, String> getHeaders() {
+    public ProxyHashMap getHeaders() {
 
         final Enumeration<String> headerNames = this.request.getHeaderNames();
-        final Map<String, String> headersMap  = new HashMap<>();
+        final Map<Object, Object> headersMap  = new HashMap<>();
         if (headerNames != null) {
             while (headerNames.hasMoreElements()) {
 
@@ -74,7 +76,7 @@ public class JsRequest implements Serializable {
             }
         }
 
-        return headersMap;
+        return ProxyHashMap.from(headersMap);
     }
 
     @HostAccess.Export
@@ -84,7 +86,7 @@ public class JsRequest implements Serializable {
     }
 
     @HostAccess.Export
-    public String getReferrer() {
+    public String getReferer() {
 
         final String referrer = this.request.getHeader("referer");
         return referrer;
@@ -98,7 +100,7 @@ public class JsRequest implements Serializable {
     }
 
     @HostAccess.Export
-    public Collection<JsBlob> getBlob() {
+    public Collection<JsBlob> getBlob() { // todo: this should be the ProxyArray
 
         return Try.of(()->this.request.getParts().stream().map(JsBlob::new).collect(Collectors.toList())).getOrNull();
     }
@@ -119,7 +121,7 @@ public class JsRequest implements Serializable {
     }
 
     @HostAccess.Export
-    public JSONObject getJson() {
+    public JSONObject getJson() { // todo: we have to annotated the JSONObject with @HostAccess
 
         return new JSONObject(this.getText());
     }

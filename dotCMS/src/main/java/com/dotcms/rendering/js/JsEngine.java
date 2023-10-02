@@ -51,7 +51,7 @@ public class JsEngine implements ScriptEngine {
             if (eval.canExecute()) {
                 eval = contextParams.containsKey("dot:arguments")?
                         eval.execute(buildArgs(jsRequest, jsResponse, (Object[])contextParams.get("dot:arguments"))):
-                        eval.execute(buildArgs(jsRequest, jsResponse));
+                        eval.execute(buildArgs(jsRequest, jsResponse, null));
             }
             return CollectionsUtils.map("output", eval.asString(), "dotJSON", dotJSON);
         } catch (final IOException e) {
@@ -62,8 +62,11 @@ public class JsEngine implements ScriptEngine {
     }
 
     private Object[] buildArgs(final JsRequest request,
-                               final JsResponse response, Object... objects) {
-        final Object [] defaultArgsArray = new Object[]{request, response, JS_DOT_LOGGER};
+                               final JsResponse response,
+                               final Object[] objects) {
+        final Object [] defaultArgsArray = new Object[]{
+                new JsContext.Builder().request(request).response(response).logger(JS_DOT_LOGGER).build() };
+
         return null != objects && objects.length > 0?
                 CollectionsUtils.concat(defaultArgsArray, objects): defaultArgsArray;
     }

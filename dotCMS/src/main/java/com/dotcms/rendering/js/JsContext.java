@@ -1,5 +1,7 @@
 package com.dotcms.rendering.js;
 
+import org.graalvm.polyglot.HostAccess;
+
 import java.io.Serializable;
 
 /**
@@ -18,14 +20,17 @@ public class JsContext implements Serializable {
         this.logger = builder.logger;
     }
 
+    @HostAccess.Export
     public JsRequest getRequest() {
         return request;
     }
 
+    @HostAccess.Export
     public JsResponse getResponse() {
         return response;
     }
 
+    @HostAccess.Export
     public JsDotLogger getLogger() {
         return logger;
     }

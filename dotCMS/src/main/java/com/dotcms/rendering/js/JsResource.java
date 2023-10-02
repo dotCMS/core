@@ -28,6 +28,8 @@ import com.liferay.portal.model.User;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
+import org.graalvm.polyglot.proxy.ProxyArray;
+import org.graalvm.polyglot.proxy.ProxyHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -54,7 +56,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Implements a rest endpoints the allows to run javascript code (jstl).
+ * Implements a rest endpoints the allows to run javascript code (js).
  * @author jsanca
  */
 @Path("/js")
@@ -77,10 +79,10 @@ public class JsResource {
     }
 
     /**
-     * Returns the output of a convention based "get.jstl" file, located under the given {folder} after being evaluated
+     * Returns the output of a convention based "get.js" file, located under the given {folder} after being evaluated
      * using the javascript engine.
      *
-     * "get.jstl" code determines whether the response is a JSON object or anything else (XML, text-plain).
+     * "get.js" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
     @GET
     @Path("/{folder}/{pathParam:.*}")
@@ -89,7 +91,7 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        @PathParam("pathParam") final String pathParam, final Map<String, Object> bodyMap) {
+                        @PathParam("pathParam") final String pathParam, final Map<Object, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.GET, bodyMap);
     }
@@ -101,16 +103,16 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        final Map<String, Object> bodyMap) {
+                        final Map<Object, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.GET, bodyMap);
     }
 
     /**
-     * Returns the output of a convention based "post.jstl" file, located under the given {folder} after being evaluated
+     * Returns the output of a convention based "post.js" file, located under the given {folder} after being evaluated
      * using the javascript engine.
      *
-     * "post.jstl" code determines whether the response is a JSON object or anything else (XML, text-plain).
+     * "post.js" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
     @POST
     @Path("/{folder}/{pathParam: .*}")
@@ -121,7 +123,7 @@ public class JsResource {
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                @PathParam("pathParam") final String pathParam,
-                               final Map<String, Object> bodyMap) {
+                               final Map<Object, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, bodyMap);
     }
@@ -134,16 +136,16 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               final Map<String, Object> bodyMap) {
+                               final Map<Object, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap);
     }
 
     /**
-     * Returns the output of a convention based "put.jstl" file, located under the given {folder} after being evaluated
+     * Returns the output of a convention based "put.js" file, located under the given {folder} after being evaluated
      * using the javascript engine.
      *
-     * "put.jstl" code determines whether the response is a JSON object or anything else (XML, text-plain).
+     * "put.js" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
     @PUT
     @Path("/{folder}/{pathParam: .*}")
@@ -154,7 +156,7 @@ public class JsResource {
     public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                               @PathParam("pathParam") final String pathParam,
-                              final Map<String, Object> bodyMap) {
+                              final Map<Object, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, bodyMap);
     }
@@ -167,16 +169,16 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                              final Map<String, Object> bodyMap) {
+                              final Map<Object, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, bodyMap);
     }
 
     /**
-     * Returns the output of a convention based "patch.jstl" file, located under the given {folder} after being evaluated
+     * Returns the output of a convention based "patch.js" file, located under the given {folder} after being evaluated
      * using the javascript engine.
      *
-     * "patch.jstl" code determines whether the response is a JSON object or anything else (XML, text-plain).
+     * "patch.js" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
     @PATCH
     @Path("/{folder}/{pathParam: .*}")
@@ -187,7 +189,7 @@ public class JsResource {
     public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                 @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                 @PathParam("pathParam") final String pathParam,
-                                final Map<String, Object> bodyMap) {
+                                final Map<Object, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, bodyMap);
     }
@@ -200,16 +202,16 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                 @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                final Map<String, Object> bodyMap) {
+                                final Map<Object, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, bodyMap);
     }
 
     /**
-     * Returns the output of a convention based "delete.jstl" file, located under the given {folder} after being evaluated
+     * Returns the output of a convention based "delete.js" file, located under the given {folder} after being evaluated
      * using the javascript engine.
      *
-     * "delete.jstl" code determines whether the response is a JSON object or anything else (XML, text-plain).
+     * "delete.js" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
     @DELETE
     @Path("/{folder}/{pathParam: .*}")
@@ -220,7 +222,7 @@ public class JsResource {
     public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                  @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                  @PathParam("pathParam") final String pathParam,
-                                 final Map<String, Object> requestJSONMap) {
+                                 final Map<Object, Object> requestJSONMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.DELETE, requestJSONMap);
     }
@@ -233,7 +235,7 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                  @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                 final Map<String, Object> requestJSONMap) {
+                                 final Map<Object, Object> requestJSONMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.DELETE, requestJSONMap);
     }
@@ -253,7 +255,6 @@ public class JsResource {
                                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, multipart);
-
     }
 
     @POST
@@ -345,7 +346,7 @@ public class JsResource {
                                @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                final String bodyMapString) {
 
-        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
+        final Map<Object, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.GET, bodyMap);
     }
@@ -375,7 +376,7 @@ public class JsResource {
                                 @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                 final String bodyMapString) {
 
-        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
+        final Map<Object, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.POST, bodyMap);
     }
@@ -405,7 +406,7 @@ public class JsResource {
                                @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                final String bodyMapString) {
 
-        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
+        final Map<Object, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PUT, bodyMap);
     }
@@ -435,7 +436,7 @@ public class JsResource {
                                  @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                  final String bodyMapString) {
 
-        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
+        final Map<Object, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PATCH, bodyMap);
     }
@@ -454,7 +455,7 @@ public class JsResource {
                                   final @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                   final String bodyMapString) {
 
-        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
+        final Map<Object, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.DELETE, bodyMap);
     }
@@ -466,7 +467,7 @@ public class JsResource {
                                              final FormDataMultiPart multipart) {
         try {
             final List<File> binaries = getBinariesFromMultipart(multipart);
-            final Map<String, Object> bodyMap = getBodyMapFromMultipart(multipart);
+            final Map<Object, Object> bodyMap = getBodyMapFromMultipart(multipart);
 
             return processRequest(request, response, uriInfo, folderName, pathParam, httpMethod, bodyMap,
                     binaries.toArray(new File[0]));
@@ -476,7 +477,7 @@ public class JsResource {
         }
     }
 
-    private void validateBodyMap(final Map<String, Object> bodyMap, final HTTPMethod httpMethod) {
+    private void validateBodyMap(final Map bodyMap, final HTTPMethod httpMethod) {
 
         // if it is an update method (not get) and the
         if (UtilMethods.isSet(bodyMap) && bodyMap.containsKey(IDENTIFIER) &&
@@ -499,7 +500,7 @@ public class JsResource {
                                     final UriInfo uriInfo, final String folderName,
                                     final String pathParam,
                                     final HTTPMethod httpMethod,
-                                    final Map<String, Object> bodyMap,
+                                    final Map<Object, Object> bodyMap,
                                     final File...binaries) {
 
         try {
@@ -510,7 +511,6 @@ public class JsResource {
                     (null, request, response, false, null);
 
             final User user = initDataObject.getUser();
-
             final DotJSONCache cache = DotJSONCacheFactory.getCache(httpMethod);
             final Optional<DotJSON> dotJSONOptional = cache.get(request, user);
 
@@ -527,14 +527,13 @@ public class JsResource {
                     .setPageMode(PageMode.get(request))
                     .build();
 
-
             final JavascriptReader javascriptReader = JavascriptReaderFactory.getJavascriptReader(UtilMethods.isSet(folderName));
-
+            final Map queryParams = uriInfo.getQueryParameters();
             final Map<String, Object> contextParams = CollectionsUtils.map(
                     "pathParam", pathParam,
-                    "queryParams", uriInfo.getQueryParameters(),
-                    "bodyMap", bodyMap,
-                    "binaries", Arrays.asList(binaries));
+                    "queryParams", ProxyHashMap.from(queryParams),
+                    "bodyMap", ProxyHashMap.from(bodyMap),
+                    "binaries", ProxyArray.fromList(Arrays.asList(binaries)));
 
             try(Reader reader = javascriptReader.getJavaScriptReader(javascriptReaderParams)){
                 return evalJavascript(request, response, reader, contextParams,
@@ -558,7 +557,7 @@ public class JsResource {
         contextParams.forEach(context::put);
         final DotJSON dotJSON = new DotJSON();
         context.put("dotJSON", dotJSON);
-        context.put("user", user);
+        context.put("user", new JsUser(user));
 
         try {
 
@@ -610,7 +609,7 @@ public class JsResource {
         return result.toString();
     }
 
-    private Map<String, Object> getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
+    private Map getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
 
         return this.multiPartUtils.getBodyMapFromMultipart(multipart);
     }
@@ -620,94 +619,9 @@ public class JsResource {
         return this.multiPartUtils.getBinariesFromMultipart(multipart);
     }
 
-    static class JavascriptReaderParams {
-        private final HTTPMethod httpMethod;
-        private final HttpServletRequest request;
-        private final String folderName;
-        private final User user;
-        private final Map<String, Object> bodyMap;
-        private final PageMode pageMode;
 
-        JavascriptReaderParams(final HTTPMethod httpMethod, final HttpServletRequest request, final String folderName,
-                               final User user, final Map<String, Object> bodyMap, final PageMode pageMode) {
-            this.httpMethod = httpMethod;
-            this.request = request;
-            this.folderName = folderName;
-            this.user = user;
-            this.bodyMap = bodyMap;
-            this.pageMode = pageMode;
-        }
-
-        HTTPMethod getHttpMethod() {
-            return httpMethod;
-        }
-
-        public HttpServletRequest getRequest() {
-            return request;
-        }
-
-        public String getFolderName() {
-            return folderName;
-        }
-
-        public User getUser() {
-            return user;
-        }
-
-        Map<String, Object> getBodyMap() {
-            return bodyMap;
-        }
-
-        public PageMode getPageMode() {
-            return pageMode;
-        }
-
-        public static class JavascriptReaderParamsBuilder {
-            private HTTPMethod httpMethod;
-            private HttpServletRequest request;
-            private String folderName;
-            private User user;
-            private Map<String, Object> bodyMap;
-            private PageMode pageMode;
-
-            public JavascriptReaderParamsBuilder setPageMode(final PageMode pageMode) {
-                this.pageMode = pageMode;
-                return this;
-            }
-
-            public JavascriptReaderParamsBuilder setHttpMethod(final HTTPMethod httpMethod) {
-                this.httpMethod = httpMethod;
-                return this;
-            }
-
-            public JavascriptReaderParamsBuilder setRequest(final HttpServletRequest request) {
-                this.request = request;
-                return this;
-            }
-
-            public JavascriptReaderParamsBuilder setFolderName(final String folderName) {
-                this.folderName = folderName;
-                return this;
-            }
-
-            public JavascriptReaderParamsBuilder setUser(final User user) {
-                this.user = user;
-                return this;
-            }
-
-            public JavascriptReaderParamsBuilder setBodyMap(final Map<String, Object> bodyMap) {
-                this.bodyMap = bodyMap;
-                return this;
-            }
-
-            public JavascriptReaderParams build() {
-                return new JavascriptReaderParams(httpMethod, request, folderName, user, bodyMap, pageMode);
-            }
-        }
-    }
-
-    private Map<String, Object> parseBodyMap(final String bodyMapString) {
-        Map<String, Object> bodyMap = new HashMap<>();
+    private Map<Object, Object> parseBodyMap(final String bodyMapString) {
+        Map<Object, Object> bodyMap = new HashMap<>();
 
         // 1) try parsing as is
         try {
