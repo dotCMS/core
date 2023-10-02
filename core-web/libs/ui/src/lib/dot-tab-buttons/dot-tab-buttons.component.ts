@@ -5,7 +5,7 @@ import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '../dot-message/dot-message.pipe';
 
 interface TabButtonOptions {
     id: string;
