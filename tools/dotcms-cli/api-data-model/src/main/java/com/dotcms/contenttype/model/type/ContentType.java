@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -76,6 +77,13 @@ public abstract class ContentType {
     @Nullable
     public abstract String variable();
 
+    /**
+     * The modDate attribute is marked as auxiliary to exclude it from the equals, hashCode, and
+     * toString methods. This ensures that two instances of ContentType can be considered equal even
+     * if their modDate values differ. This decision was made because under certain circumstances,
+     * the modDate value is set using the current date.
+     */
+    @Value.Auxiliary
     @Nullable
     public abstract Date modDate();
 
@@ -85,9 +93,18 @@ public abstract class ContentType {
     @Nullable
     public abstract String expireDateVar();
 
-    @Nullable
-    public abstract Boolean fixed();
+    @Value.Default
+    public Boolean fixed() {
+        return false;
+    }
 
+    /**
+     * The iDate attribute is marked as auxiliary to exclude it from the equals, hashCode, and
+     * toString methods. This ensures that two instances of ContentType can be considered equal even
+     * if their iDate values differ. This decision was made because under certain circumstances, the
+     * iDate value is set using the current date.
+     */
+    @Value.Auxiliary
     @Nullable
     public abstract Date iDate();
 
@@ -115,14 +132,18 @@ public abstract class ContentType {
     @Nullable
     public abstract String description();
 
-    @Nullable
-    public abstract Boolean defaultType();
+    @Value.Default
+    public Boolean defaultType() {
+        return false;
+    }
 
     @Value.Default
     public BaseContentType baseType() { return BaseContentType.CONTENT; };
 
-    @Nullable
-    public abstract Boolean system();
+    @Value.Default
+    public Boolean system() {
+        return false;
+    }
 
     @Nullable
     public abstract String owner();
@@ -138,8 +159,10 @@ public abstract class ContentType {
     @Nullable
     public abstract String urlMapPattern();
 
-    @Nullable
-    public abstract List<Workflow> workflows();
+    @Value.Default
+    public List<Workflow> workflows() {
+        return Collections.emptyList();
+    }
 
     //System action mappings are rendered quite differently depending on what endpoint gets called
     //if it's coming from an endpoint that returns a list of CT we get a simplified version
