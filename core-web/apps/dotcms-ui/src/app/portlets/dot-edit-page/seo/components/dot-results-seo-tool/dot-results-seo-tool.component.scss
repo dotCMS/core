@@ -162,4 +162,10 @@
     .results-seo-tool__main-card .p-card .p-card-body {
         padding: $spacing-3;
     }
+
+    .results-seo-tool__read-more-label {
+        span {
+            display: inline-flex;
+        }
+    }
 }

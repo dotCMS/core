@@ -75,10 +75,12 @@
         </div>
     </ng-template>
     <ul class="results-seo-tool__result-card-list">
-        <li *ngFor="let item of readMore[seoMedia]">
+        <li *ngFor="let item of readMoreValues[seoMedia]">
             <i class="results-seo-tool__result-icon pi pi-info-circle"></i>
-            <span [innerHTML]="item.label | safeHtml"></span>
-            <i class="pi pi-external-link" *ngIf="item.link"></i>
+            <span
+                class="results-seo-tool__read-more-label"
+                [innerHTML]="item | safeHtml"
+                data-testId="readmore"></span>
         </li>
     </ul>
 </p-card>
