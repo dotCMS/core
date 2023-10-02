@@ -15,11 +15,10 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { of } from 'rxjs/internal/observable/of';
 
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, DotcmsConfigService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
@@ -142,7 +141,7 @@ describe('DotPagesListingPanelComponent', () => {
                     ButtonModule,
                     CheckboxModule,
                     DropdownModule,
-                    DotAutofocusModule,
+                    DotAutofocusDirective,
                     DotMessagePipe,
                     DotRelativeDatePipe,
                     InputTextModule,

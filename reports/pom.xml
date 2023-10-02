@@ -10,7 +10,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
-    <artifactId>reports</artifactId>
+    <artifactId>dotcms-reports</artifactId>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
@@ -29,9 +29,10 @@
 
         <dependency>
             <groupId>com.dotcms</groupId>
-            <artifactId>dotcms-war</artifactId>
+            <artifactId>dotcms-core</artifactId>
             <version>${project.version}</version>
             <type>war</type>
+            <classifier>war</classifier>
             <scope>compile</scope>
         </dependency>
 

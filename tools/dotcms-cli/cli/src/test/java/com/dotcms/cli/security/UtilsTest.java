@@ -1,6 +1,7 @@
 package com.dotcms.cli.security;
 
 import com.dotcms.security.Utils;
+import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -9,6 +10,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
+@QuarkusTest
 class UtilsTest {
 
     @Test
