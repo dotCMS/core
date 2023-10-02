@@ -10,4 +10,4 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
  * @returns Observable<boolean>
  */
 export const editContentGuard = (): Observable<boolean> =>
-    inject(DotPropertiesService).getFeatureFlag(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE);
+    inject(DotPropertiesService).getFeatureFlag(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED);

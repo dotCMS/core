@@ -37,7 +37,7 @@ describe('EditContentGuard', () => {
         });
 
         expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
-            FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE
+            FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
         );
 
         guard.subscribe((result) => {
@@ -52,7 +52,7 @@ describe('EditContentGuard', () => {
         });
 
         expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
-            FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE
+            FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
         );
 
         guard.subscribe((result) => {

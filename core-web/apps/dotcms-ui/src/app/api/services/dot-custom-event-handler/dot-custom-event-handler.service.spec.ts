@@ -73,7 +73,7 @@ describe('DotCustomEventHandlerService', () => {
         enabled: string = 'NOT_FOUND',
         contentType: string = '*'
     ) => ({
-        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE]: enabled,
+        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled,
         [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE]: contentType
     });
 

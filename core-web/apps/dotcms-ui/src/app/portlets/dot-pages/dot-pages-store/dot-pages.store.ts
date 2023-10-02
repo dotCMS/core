@@ -888,7 +888,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             this.getSessionStorageFilterParams(),
             this.getLocalStorageFavoritePanelParams(),
             this.dotPropertiesService.getFeatureFlag(
-                FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE
+                FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
             ),
             this.dotPropertiesService
                 .getKey(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE)

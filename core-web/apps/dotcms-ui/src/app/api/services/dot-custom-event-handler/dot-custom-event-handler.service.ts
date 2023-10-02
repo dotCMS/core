@@ -52,12 +52,12 @@ export class DotCustomEventHandlerService {
     ) {
         this.dotPropertiesService
             .getKeys([
-                FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE,
+                FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED,
                 FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE
             ])
             .subscribe((response) => {
                 const contentEditorFeatureFlag =
-                    response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLE] === 'true';
+                    response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === 'true';
                 const contentTypeFeatureFlag =
                     response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE];
 
