@@ -11,10 +11,10 @@ import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
-import { DotVariableContent, FilteredFieldTypes } from '../dot-add-variable.models';
+import { DotFieldContent, FilteredFieldTypes } from '../dot-add-variable.models';
 
 export interface DotAddVariableState {
-    variables: DotVariableContent[];
+    fields: DotFieldContent[];
 }
 
 @Injectable()
@@ -26,21 +26,21 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
         private dotMessage: DotMessageService
     ) {
         super({
-            variables: []
+            fields: []
         });
     }
 
-    readonly vm$ = this.select(({ variables }) => {
+    readonly vm$ = this.select(({ fields }) => {
         return {
-            variables
+            fields
         };
     });
 
-    readonly updateVariables = this.updater<DotCMSContentTypeField[]>(
-        (state: DotAddVariableState, variables: DotCMSContentTypeField[]) => {
+    readonly updateFields = this.updater<DotCMSContentTypeField[]>(
+        (state: DotAddVariableState, fields: DotCMSContentTypeField[]) => {
             return {
                 ...state,
-                variables: variables.reduce(
+                fields: fields.reduce(
                     (acc, field) => {
                         const { fieldType, name, variable, fieldTypeLabel } = field;
 
@@ -71,19 +71,19 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
                             fieldTypeLabel: this.dotMessage.get('Content-Identifier'),
                             codeTemplate: this.getCodeTemplate.default('ContentIdentifier')
                         }
-                    ] as DotVariableContent[]
+                    ] as DotFieldContent[]
                 )
             };
         }
     );
 
-    readonly getVariables = this.effect((origin$: Observable<string>) => {
+    readonly getFields = this.effect((origin$: Observable<string>) => {
         return origin$.pipe(
             switchMap((containerVariable) => {
                 return this.dotContentTypeService.getContentType(containerVariable);
             }),
             tap((contentType: DotCMSContentType) => {
-                this.updateVariables(contentType.fields);
+                this.updateFields(contentType.fields);
             }),
             catchError((err: HttpErrorResponse) => {
                 this.dotGlobalMessageService.error(err.statusText);
@@ -97,7 +97,7 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
     // You can add here a new fieldType and add the fields that it has
     private readonly extraFields: Record<
         string,
-        (variableContent: DotVariableContent) => DotVariableContent[]
+        (variableContent: DotFieldContent) => DotFieldContent[]
     > = {
         Image: ({ variable, name, fieldTypeLabel }) => [
             {

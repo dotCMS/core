@@ -4,9 +4,12 @@ import { Component, OnInit, inject } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotAddVariableStore } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
+import {
+    DotAddVariableState,
+    DotAddVariableStore
+} from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
 
-import { DotVariableContent, DotVariableList } from './dot-add-variable.models';
+import { DotFieldContent } from './dot-add-variable.models';
 
 @Component({
     selector: 'dot-add-variable',
@@ -19,19 +22,19 @@ export class DotAddVariableComponent implements OnInit {
     private readonly config = inject(DynamicDialogConfig);
     private readonly ref = inject(DynamicDialogRef);
 
-    vm$: Observable<DotVariableList> = this.store.vm$;
+    vm$: Observable<DotAddVariableState> = this.store.vm$;
 
     ngOnInit() {
-        this.store.getVariables(this.config.data?.contentTypeVariable);
+        this.store.getFields(this.config.data?.contentTypeVariable);
     }
 
     /**
      * handle save button
-     * @param {DotVariableContent} field
+     * @param {DotFieldContent} field
      * @returns void
      * @memberof DotAddVariableComponent
      */
-    addCustomCode({ codeTemplate }: DotVariableContent): void {
+    addCustomCode({ codeTemplate }: DotFieldContent): void {
         this.config.data?.onSave?.(codeTemplate);
         this.ref.close();
     }

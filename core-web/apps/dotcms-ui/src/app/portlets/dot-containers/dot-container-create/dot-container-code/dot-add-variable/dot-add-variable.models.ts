@@ -3,11 +3,7 @@ export enum FilteredFieldTypes {
     Row = 'Row'
 }
 
-export interface DotVariableList {
-    variables: DotVariableContent[];
-}
-
-export interface DotVariableContent {
+export interface DotFieldContent {
     name: string;
     fieldTypeLabel?: string;
     variable: string;
