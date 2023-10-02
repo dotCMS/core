@@ -14,6 +14,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
+
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -36,7 +38,6 @@ import {
 } from '../../store/dot-experiments-configuration-store';
 import { DotExperimentsConfigurationItemsCountComponent } from '../dot-experiments-configuration-items-count/dot-experiments-configuration-items-count.component';
 import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 
 @Component({
     selector: 'dot-experiments-configuration-variants',
