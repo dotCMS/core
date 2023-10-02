@@ -44,6 +44,7 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
                     (acc, field) => {
                         const { fieldType, name, variable, fieldTypeLabel } = field;
 
+                        // If you want to filter a new field type, add it to the FilteredFieldTypes enum
                         if ((Object.values(FilteredFieldTypes) as string[]).includes(fieldType)) {
                             return acc;
                         }

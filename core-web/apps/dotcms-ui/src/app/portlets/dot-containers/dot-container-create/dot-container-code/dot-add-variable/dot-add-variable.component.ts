@@ -31,8 +31,8 @@ export class DotAddVariableComponent implements OnInit {
      * @returns void
      * @memberof DotAddVariableComponent
      */
-    addCustomCode(field: DotVariableContent): void {
-        this.config.data?.onSave?.(field.codeTemplate);
+    addCustomCode({ codeTemplate }: DotVariableContent): void {
+        this.config.data?.onSave?.(codeTemplate);
         this.ref.close();
     }
 }
