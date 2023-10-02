@@ -4,6 +4,7 @@
 
 import { Subject } from 'rxjs';
 
+import { NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -17,6 +18,8 @@ import { takeUntil } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+
 type DefaultsNGValidatorsTypes = 'maxlength' | 'required';
 
 const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string> = {
@@ -26,7 +29,9 @@ const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string
 
 @Component({
     selector: 'dot-field-validation-message',
-    templateUrl: './dot-field-validation-message.html',
+    templateUrl: './dot-field-validation-message.component.html',
+    standalone: true,
+    imports: [NgIf, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFieldValidationMessageComponent implements OnDestroy {

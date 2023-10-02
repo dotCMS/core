@@ -94,10 +94,9 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
 
     ngOnInit(): void {
         this.dotPropertiesService
-            .getKey(this.featureFlagEditURLContentMap)
-            .pipe(take(1))
+            .getFeatureFlag(this.featureFlagEditURLContentMap)
             .subscribe((result) => {
-                this.featureFlagEditURLContentMapIsOn = result && result === 'true';
+                this.featureFlagEditURLContentMapIsOn = result;
 
                 if (this.featureFlagEditURLContentMapIsOn && this.pageState.params.urlContentMap) {
                     this.menuItems = this.getMenuItems();
