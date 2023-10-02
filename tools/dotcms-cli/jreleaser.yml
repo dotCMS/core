@@ -20,8 +20,8 @@ project:
 
 release:
   github:
-    tagName: 'dotcli{{projectVersion}}'
-    releaseName: 'DOTCLI - {{projectVersion}}'
+    tagName: 'dotcms-cli{{projectVersion}}'
+    releaseName: 'dotcms-cli - {{projectVersion}}'
     overwrite: false
     changelog:
       formatted: ALWAYS
@@ -42,8 +42,8 @@ distributions:
     active: ALWAYS
     stereotype: CLI
     artifacts:
-      - path: tools/dotcms-cli/cli/target/cli-{{projectVersion}}-runner.jar
-        transform: tools/dotcms-cli/cli/target/dotcli-{{projectVersion}}.jar
+      - path: tools/dotcms-cli/cli/target/dotcms-cli-{{projectVersion}}-runner.jar
+        transform: tools/dotcms-cli/cli/target/dotcms-cli-{{projectVersion}}.jar
 
 upload:
   artifactory:
@@ -60,9 +60,4 @@ upload:
           active: RELEASE
           fileTypes:
             - JAR
-#announce:
-#  slack:
-#    active: ALWAYS
-#    channel: '#jreleaser'
-#    message: '🚀 {{projectNameCapitalized}} {{projectVersion}} has been released!'
-
+            - ZIP
