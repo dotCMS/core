@@ -12,7 +12,6 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMenuServiceMock } from '@components/dot-navigation/services/dot-navigation.service.spec';
 import {
@@ -22,7 +21,7 @@ import {
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
@@ -103,7 +102,7 @@ describe('DotAddToMenuComponent', () => {
                 DotPipesModule,
                 DotMessagePipe,
                 HttpClientTestingModule,
-                DotFieldValidationMessageModule
+                DotFieldValidationMessageComponent
             ],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },

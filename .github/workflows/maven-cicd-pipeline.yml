@@ -307,7 +307,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: "build-reports-cli - JDK ${{matrix.java.name}}"
+          name: "build-reports-test-cli - JDK ${{matrix.java.name}}"
           path: |
             **/target/*-reports/TEST-*.xml
             target/build-report.json
