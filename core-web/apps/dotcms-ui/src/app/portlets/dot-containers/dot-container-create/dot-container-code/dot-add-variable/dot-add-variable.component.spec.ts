@@ -154,7 +154,8 @@ const mockContentTypes: DotCMSContentType = {
 
 const messageServiceMock = new MockDotMessageService({
     'containers.properties.add.variable.title': 'Title',
-    Add: 'Add'
+    Add: 'Add',
+    'Content-Identifier-value': 'Content Identifier Value'
 });
 
 describe('DotAddVariableComponent', () => {
@@ -261,6 +262,14 @@ describe('DotAddVariableComponent', () => {
                 expect(content).not.toEqual(FilteredFieldTypes.Column);
                 expect(content).not.toEqual(FilteredFieldTypes.Row);
             });
+        });
+
+        it('should contain a field with the text "Content Identifier Value"', () => {
+            const contentIdentifier = de.query(By.css(`[data-testId="h3ContentIdentifier"]`));
+
+            expect(contentIdentifier.nativeElement.textContent.trim()).toEqual(
+                'Content Identifier Value'
+            );
         });
     });
 });

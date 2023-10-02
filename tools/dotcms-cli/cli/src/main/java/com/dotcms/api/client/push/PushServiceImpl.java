@@ -14,7 +14,9 @@ import com.dotcms.model.push.PushOptions;
 import io.quarkus.arc.DefaultBean;
 import java.io.File;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -59,6 +61,29 @@ public class PushServiceImpl implements PushService {
             final OutputOptionMixin output, final ContentFetcher<T> provider,
             final ContentComparator<T> comparator, final PushHandler<T> pushHandler) {
 
+        push(localFileOrFolder, options, output, provider, comparator, pushHandler,
+                new HashMap<>());
+    }
+
+    /**
+     * Analyzes and pushes the changes to a remote repository.
+     *
+     * @param localFileOrFolder The local file or folder to push.
+     * @param options           The push options.
+     * @param output            The output option mixin.
+     * @param provider          The content fetcher provider.
+     * @param comparator        The content comparator.
+     * @param pushHandler       The push handler.
+     * @param customOptions     the custom options for the push operation that may be used by each
+     *                          push handler implementation
+     */
+    @ActivateRequestContext
+    @Override
+    public <T> void push(final File localFileOrFolder, final PushOptions options,
+            final OutputOptionMixin output, final ContentFetcher<T> provider,
+            final ContentComparator<T> comparator, final PushHandler<T> pushHandler,
+            final Map<String, Object> customOptions) {
+
         // ---
         // Analyzing what push operations need to be performed
         var results = analyze(localFileOrFolder, options, output, provider, comparator);
@@ -101,7 +126,7 @@ public class PushServiceImpl implements PushService {
             // ---
             // Pushing the changes
             if (!options.dryRun()) {
-                processPush(analysisResults, summary, options, output, pushHandler);
+                processPush(analysisResults, summary, options, output, pushHandler, customOptions);
             }
 
         } else {
@@ -183,12 +208,15 @@ public class PushServiceImpl implements PushService {
      * @param options         the push options
      * @param output          the output option mixin
      * @param pushHandler     the push handler for handling the push operations
+     * @param customOptions   the custom options for the push operation that may be used by each
+     *                        push handler implementation
      */
     private <T> void processPush(List<PushAnalysisResult<T>> analysisResults,
             PushAnalysisSummary<T> summary,
             final PushOptions options,
             final OutputOptionMixin output,
-            final PushHandler<T> pushHandler) {
+            final PushHandler<T> pushHandler,
+            final Map<String, Object> customOptions) {
 
         var retryAttempts = 0;
         var failed = false;
@@ -213,6 +241,7 @@ public class PushServiceImpl implements PushService {
                         var task = new PushTask<>(
                                 analysisResults,
                                 options.allowRemove(),
+                                customOptions,
                                 options.failFast(),
                                 pushHandler,
                                 mapperService,

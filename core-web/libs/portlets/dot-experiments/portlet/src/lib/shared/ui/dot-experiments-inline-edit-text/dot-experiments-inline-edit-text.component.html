@@ -10,8 +10,7 @@
                 [class]="inplaceSizes[inputSize].button"
                 data-testId="text-input-button"
                 icon="pi pi-pencil"
-                pButton
-            ></button>
+                pButton></button>
         </div>
 
         <ng-template #noTextDefinedTpl>
@@ -31,17 +30,16 @@
                     (keydown.escape)="deactivateInplace()"
                     data-testId="inplace-input"
                     dotAutofocus
+                    dotTrimInput
                     formControlName="text"
-                    pInputText
-                />
+                    pInputText />
                 <i
                     class="pi pi-times cursor-pointer"
                     (click)="deactivateInplace()"
-                    data-testId="variant-inplace-button"
-                ></i>
+                    data-testId="variant-inplace-button"></i>
             </div>
             <button
-                class="p-button-rounded p-button-sm p-button-text"
+                class="p-button-rounded p-button-text"
                 [class]="inplaceSizes[inputSize].button"
                 [disabled]="form.invalid || textControl.pristine"
                 [loading]="isLoading"
@@ -49,8 +47,7 @@
                 data-testId="text-save-btn"
                 icon="pi pi-save"
                 pButton
-                type="button"
-            ></button>
+                type="button"></button>
         </form>
 
         <ng-container *ngIf="form.invalid && showErrorMsg">

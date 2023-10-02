@@ -84,7 +84,8 @@ describe('DotPagesListingPanelComponent', () => {
                     { label: 'En-en', value: 1 },
                     { label: 'ES-es', value: 2 }
                 ],
-                languageLabels: { 1: 'En-en', 2: 'Es-es' }
+                languageLabels: { 1: 'En-en', 2: 'Es-es' },
+                isContentEditor2Enabled: false
             });
         }
 

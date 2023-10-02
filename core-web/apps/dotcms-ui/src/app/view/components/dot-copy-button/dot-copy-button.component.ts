@@ -5,7 +5,7 @@ import { DotMessageService } from '@dotcms/data-access';
 
 /**
  * Icon button to copy to clipboard the string you pass to it,
- * it use tooltip to indicate the user the action and the result.
+ * it uses tooltip to indicate the user the action and the result.
  *
  * @export
  * @class DotCopyButtonComponent
