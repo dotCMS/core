@@ -87,7 +87,7 @@
     display: flex;
     gap: $spacing-3;
     color: $black;
-    align-items: center;
+    align-items: flex-start;
 }
 
 .results-seo-tool__result-card-list li:not(:last-child) {
@@ -156,7 +156,7 @@
 
     .results-seo-tool__result-card-list .pi-external-link {
         color: $color-palette-gray-700;
-        font-size: 12px;
+        font-size: $font-size-xs;
     }
 
     .results-seo-tool__main-card .p-card .p-card-body {
@@ -164,8 +164,10 @@
     }
 
     .results-seo-tool__read-more-label {
+        display: flex;
         span {
             display: inline-flex;
+            padding: 0 $spacing-0;
         }
     }
 }
