@@ -15,7 +15,6 @@ import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Inplace } from 'primeng/inplace';
 import { Tooltip } from 'primeng/tooltip';
 
-import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_ID,
@@ -38,6 +37,7 @@ import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-
 
 import { DotExperimentsInlineEditTextComponent } from '../../../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
+import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.weight': 'weight',

@@ -17,16 +17,15 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
-    DotSessionStorageService,
     DotAlertConfirmService,
     DotEventsService,
-    DotPageRenderService
+    DotPageRenderService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -35,11 +34,12 @@ import {
     HttpCode,
     LoggerService,
     LoginService,
+    mockSites,
     SiteService,
-    StringUtils,
-    mockSites
+    StringUtils
 } from '@dotcms/dotcms-js';
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotFormatDateService } from '@dotcms/ui';
 import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,

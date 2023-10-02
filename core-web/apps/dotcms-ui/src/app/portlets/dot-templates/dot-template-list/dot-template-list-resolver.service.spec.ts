@@ -5,7 +5,6 @@ import { TestBed } from '@angular/core/testing';
 
 import { take } from 'rxjs/operators';
 
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotCurrentUserService, DotLicenseService } from '@dotcms/data-access';
 import {
@@ -16,6 +15,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@dotcms/ui';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotTemplateListResolver } from './dot-template-list-resolver.service';
