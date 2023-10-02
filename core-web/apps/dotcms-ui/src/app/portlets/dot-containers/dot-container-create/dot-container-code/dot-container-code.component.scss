@@ -68,12 +68,9 @@
         background: $color-palette-gray-200;
     }
 
-    .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-        border-bottom: 4px solid $color-palette-secondary-500;
-    }
-
     .p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
-        border-bottom: 4px solid $color-palette-secondary-500;
+        border-top: 1px solid #afb3c0;
+        border-bottom: 1px solid #afb3c0;
     }
 
     .p-tabview
@@ -88,6 +85,7 @@
         padding-left: $spacing-4;
         padding-right: $spacing-4;
         text-wrap: nowrap;
+        height: 100%;
     }
 
     .p-tabview .tab-panel-btn a.p-tabview-nav-link {
