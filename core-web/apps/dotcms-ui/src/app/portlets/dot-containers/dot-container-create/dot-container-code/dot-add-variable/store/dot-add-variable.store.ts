@@ -94,7 +94,7 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
         );
     });
 
-    // You can add here a new fieldType and add the fields that is has
+    // You can add here a new fieldType and add the fields that it has
     private readonly extraFields: Record<
         string,
         (variableContent: DotVariableContent) => DotVariableContent[]
