@@ -109,6 +109,27 @@ const mockContentTypes: DotCMSContentType = {
             sortOrder: 1,
             unique: false,
             variable: 'title'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableImageField',
+            contentTypeId: '60b5bce270de216d36eb1a07674c773b',
+            dataType: 'TEXT',
+            fieldType: 'Image',
+            fieldTypeLabel: 'Image',
+            fieldVariables: [],
+            fixed: false,
+            iDate: 1696260470000,
+            id: '27b59164438e70f11ead3a7318884af8',
+            indexed: false,
+            listed: false,
+            modDate: 1696260470000,
+            name: 'Test Image',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 2,
+            unique: false,
+            variable: 'testImage'
         }
     ],
     fixed: false,
@@ -155,7 +176,14 @@ const mockContentTypes: DotCMSContentType = {
 const messageServiceMock = new MockDotMessageService({
     'containers.properties.add.variable.title': 'Title',
     Add: 'Add',
-    'Content-Identifier-value': 'Content Identifier Value'
+    'Content-Identifier-value': 'Content Identifier Value',
+    'Content-Identifier': 'Content Identifier',
+    Image: 'Image',
+    'Image-Identifier': 'Image Identifier',
+    'Image-Title': 'Image Title',
+    'Image-Width': 'Image Width',
+    'Image-Extension': 'Image Extension',
+    'Image-Height': 'Image Height'
 });
 
 describe('DotAddVariableComponent', () => {
@@ -255,7 +283,7 @@ describe('DotAddVariableComponent', () => {
             expect(dialogRef.close).toHaveBeenCalled();
         });
 
-        it('should be a variable list without FielteredTypes', () => {
+        it('should be a field list without FielteredTypes', () => {
             const fieldTypes = fixture.nativeElement.querySelectorAll('small');
             fieldTypes.forEach((field) => {
                 const content = field.textContent.trim();
@@ -270,6 +298,29 @@ describe('DotAddVariableComponent', () => {
             expect(contentIdentifier.nativeElement.textContent.trim()).toEqual(
                 'Content Identifier Value'
             );
+        });
+
+        it('should contain 6 fields with the text label as "Image"', () => {
+            const fieldTypes = Array.from(fixture.nativeElement.querySelectorAll('small')).filter(
+                (fieldElement: HTMLElement) => {
+                    return fieldElement.textContent.trim() === 'Image';
+                }
+            );
+
+            expect(fieldTypes.length).toEqual(6);
+        });
+
+        it("should call dialog config on save with the custom codeTemplate when click on 'Add' button for Image field", () => {
+            const dialog = de.query(
+                By.css(`[data-testId="${mockContentTypes.fields[2].variable}Image"]`)
+            );
+
+            dialog.triggerEventHandler('click');
+
+            expect(dialogConfig.data.onSave).toHaveBeenCalledWith(
+                `#if ($UtilMethods.isSet(\${${mockContentTypes.fields[2].variable}ImageURI}))\n    <img src="$!{dotContentMap.${mockContentTypes.fields[2].variable}ImageURI}" alt="$!{dotContentMap.${mockContentTypes.fields[2].variable}ImageTitle}" />\n#end`
+            );
+            expect(dialogRef.close).toHaveBeenCalled();
         });
     });
 });
