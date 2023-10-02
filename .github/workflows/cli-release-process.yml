@@ -110,7 +110,8 @@ jobs:
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
           ./mvnw -U clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }}
-          ./mvnw package -Dquarkus.package.type=uber-jar -DskipTests
+          cd cli
+          ../mvnw package -Dquarkus.package.type=uber-jar -DskipTests
 
       - name: Releaser
         env:
