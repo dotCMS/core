@@ -51,6 +51,7 @@ import {
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotAddVariableComponent } from './dot-add-variable.component';
+import { FilteredFieldTypes } from './dot-add-variable.models';
 
 @Component({
     selector: 'dot-form-dialog',
@@ -153,7 +154,8 @@ const mockContentTypes: DotCMSContentType = {
 
 const messageServiceMock = new MockDotMessageService({
     'containers.properties.add.variable.title': 'Title',
-    Add: 'Add'
+    Add: 'Add',
+    'Content-Identifier-value': 'Content Identifier Value'
 });
 
 describe('DotAddVariableComponent', () => {
@@ -251,6 +253,23 @@ describe('DotAddVariableComponent', () => {
                 `$!{dotContentMap.${mockContentTypes.fields[0].variable}}`
             );
             expect(dialogRef.close).toHaveBeenCalled();
+        });
+
+        it('should be a variable list without FielteredTypes', () => {
+            const fieldTypes = fixture.nativeElement.querySelectorAll('small');
+            fieldTypes.forEach((field) => {
+                const content = field.textContent.trim();
+                expect(content).not.toEqual(FilteredFieldTypes.Column);
+                expect(content).not.toEqual(FilteredFieldTypes.Row);
+            });
+        });
+
+        it('should contain a field with the text "Content Identifier Value"', () => {
+            const contentIdentifier = de.query(By.css(`[data-testId="h3ContentIdentifier"]`));
+
+            expect(contentIdentifier.nativeElement.textContent.trim()).toEqual(
+                'Content Identifier Value'
+            );
         });
     });
 });

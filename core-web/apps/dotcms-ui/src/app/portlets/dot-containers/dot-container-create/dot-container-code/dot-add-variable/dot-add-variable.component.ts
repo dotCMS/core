@@ -1,8 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
+
+import { Component, OnInit, inject } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
+import { map } from 'rxjs/operators';
+
 import { DotAddVariableStore } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
+import { DotMessageService } from '@dotcms/data-access';
+
+import { DotVariableContent, DotVariableList, FilteredFieldTypes } from './dot-add-variable.models';
 
 @Component({
     selector: 'dot-add-variable',
@@ -11,13 +18,32 @@ import { DotAddVariableStore } from '@dotcms/app/portlets/dot-containers/dot-con
     providers: [DotAddVariableStore]
 })
 export class DotAddVariableComponent implements OnInit {
-    vm$ = this.store.vm$;
+    private readonly dotMessage = inject(DotMessageService);
+    private readonly store = inject(DotAddVariableStore);
+    private readonly config = inject(DynamicDialogConfig);
+    private readonly ref = inject(DynamicDialogRef);
 
-    constructor(
-        private store: DotAddVariableStore,
-        private config: DynamicDialogConfig,
-        private ref: DynamicDialogRef
-    ) {}
+    vm$: Observable<DotVariableList> = this.store.vm$.pipe(
+        map((res) => {
+            const variables: DotVariableContent[] = res.variables
+                .filter(
+                    (variable) =>
+                        variable.fieldType !== FilteredFieldTypes.Column &&
+                        variable.fieldType !== FilteredFieldTypes.Row
+                )
+                .map((variable) => ({
+                    name: variable.name,
+                    variable: variable.variable,
+                    fieldTypeLabel: variable.fieldTypeLabel
+                }));
+            variables.push({
+                name: this.dotMessage.get('Content-Identifier-value'),
+                variable: 'ContentIdentifier'
+            });
+
+            return { variables };
+        })
+    );
 
     ngOnInit() {
         this.store.getVariables(this.config.data?.contentTypeVariable);

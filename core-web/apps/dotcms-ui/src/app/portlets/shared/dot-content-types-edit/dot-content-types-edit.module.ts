@@ -37,11 +37,15 @@ import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-hel
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotRelationshipTreeModule } from '@components/dot-relationship-tree/dot-relationship-tree.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-access';
-import { DotFieldRequiredDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotIconModule,
+    DotMessagePipe
+} from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import {
     ContentTypeFieldsAddRowModule,
@@ -116,7 +120,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DialogModule,
         DotAddToBundleModule,
         DotApiLinkModule,
-        DotAutofocusModule,
+        DotAutofocusDirective,
         DotBaseTypeSelectorModule,
         DotContentTypeFieldsVariablesModule,
         DotContentTypesEditRoutingModule,

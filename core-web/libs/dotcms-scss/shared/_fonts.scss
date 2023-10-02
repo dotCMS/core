@@ -1,6 +1,6 @@
 @use "./colors" as *;
 
-$font-code: "Menlo", "Monaco", "Consolas";
+$font-code: "Red Hat Mono", "Monaco", "Consolas";
 $font-default: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
 $font-color-base: $black;
 
@@ -17,7 +17,7 @@ $font-size-xxl: 1.75rem;
 $font-size-xl: 1.5rem;
 $font-size-lg: 1.25rem;
 $font-size-md: $font-size-default; // 16px
-$font-size-sm: 0.75rem; // 12px
+$font-size-sm: 0.813rem; // 13px
 $font-size-xs: 0.625rem; // 10px
 
 $font-weight-regular-bold: 400;
