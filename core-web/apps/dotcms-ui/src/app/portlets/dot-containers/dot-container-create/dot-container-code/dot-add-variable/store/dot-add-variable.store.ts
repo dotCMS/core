@@ -42,7 +42,7 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
                 ...state,
                 fields: fields.reduce(
                     (acc, field) => {
-                        const { fieldType, name, variable, fieldTypeLabel } = field;
+                        const { fieldType } = field;
 
                         // If you want to filter a new field type, add it to the FilteredFieldTypes enum
                         if ((Object.values(FilteredFieldTypes) as string[]).includes(fieldType)) {
@@ -50,15 +50,8 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
                         }
 
                         acc.push(
-                            // This try to find the extra fields for the field type, if it doesn't exist it will use the default one
-                            ...(this.extraFields[fieldType]?.(field) ?? [
-                                {
-                                    name,
-                                    variable,
-                                    fieldTypeLabel,
-                                    codeTemplate: this.getCodeTemplate.default(variable)
-                                }
-                            ])
+                            // This try to find the fields by field type, if it doesn't exist it will use the default one
+                            ...(this.fields[fieldType]?.(field) ?? this.fields.default(field))
                         );
 
                         return acc;
@@ -95,7 +88,7 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
     });
 
     // You can add here a new fieldType and add the fields that it has
-    private readonly extraFields: Record<
+    private readonly fields: Record<
         string,
         (variableContent: DotFieldContent) => DotFieldContent[]
     > = {
@@ -109,7 +102,7 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
             {
                 name: `${name}: ${this.dotMessage.get('Image')}`,
                 variable: `${variable}Image`,
-                codeTemplate: this.getCodeTemplate.Image(variable),
+                codeTemplate: this.getCodeTemplate.image(variable),
                 fieldTypeLabel
             },
             {
@@ -136,12 +129,20 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
                 codeTemplate: this.getCodeTemplate.default(`${variable}ImageHeight)`),
                 fieldTypeLabel
             }
+        ],
+        default: ({ variable, name, fieldTypeLabel }) => [
+            {
+                name,
+                variable,
+                fieldTypeLabel,
+                codeTemplate: this.getCodeTemplate.default(variable)
+            }
         ]
     };
 
     // You can add here a new variable and add the custom code that it has
     private readonly getCodeTemplate: Record<string, (variable: string) => string> = {
-        Image: (variable) =>
+        image: (variable) =>
             `#if ($UtilMethods.isSet(\${${variable}ImageURI}))\n    <img src="$!{dotContentMap.${variable}ImageURI}" alt="$!{dotContentMap.${variable}ImageTitle}" />\n#end`,
         default: (variable) => `$!{dotContentMap.${variable}}`
     };

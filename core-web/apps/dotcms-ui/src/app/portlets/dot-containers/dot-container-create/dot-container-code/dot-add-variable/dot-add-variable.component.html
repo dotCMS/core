@@ -1,4 +1,4 @@
-<p-dataView *ngIf="vm$ | async as vm" [value]="vm.variables" layout="list">
+<p-dataView *ngIf="vm$ | async as vm" [value]="vm.fields" layout="list">
     <ng-template let-field pTemplate="listItem">
         <div class="dot-add-variable-list__item">
             <div>
