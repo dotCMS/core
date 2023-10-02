@@ -67,7 +67,7 @@ export class DotBinaryFieldUrlModeStore extends ComponentStore<DotBinaryFieldUrl
     });
 
     // Actions
-    readonly uploadFile = this.effect(
+    readonly uploadFileByUrl = this.effect(
         (
             data$: Observable<{
                 url: string;

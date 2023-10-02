@@ -144,3 +144,11 @@
     align-items: center;
     justify-content: flex-end;
 }
+
+p-dialog ::ng-deep {
+    .p-dialog-mask.p-component-overlay {
+        background-color: transparent;
+        -webkit-backdrop-filter: blur($blur-md);
+        backdrop-filter: blur($blur-md);
+    }
+}

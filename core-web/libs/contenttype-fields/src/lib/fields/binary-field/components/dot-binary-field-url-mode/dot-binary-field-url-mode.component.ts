@@ -49,6 +49,7 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
     @Input() accept: string[];
 
     @Output() tempFile: EventEmitter<DotCMSTempFile> = new EventEmitter<DotCMSTempFile>();
+    @Output() cancel: EventEmitter<void> = new EventEmitter<void>();
 
     private readonly destroy$ = new Subject<void>();
     private readonly urlError = 'dot.binary.field.action.import.from.url.error.message';
@@ -93,21 +94,27 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next();
         this.destroy$.complete();
+        this.abortController?.abort(); // Abort fetch request if component is destroyed
     }
 
     onSubmit(): void {
+        const control = this.form.get('url');
+
         if (this.form.invalid) {
+            this.store.setError(this.urlError);
+
             return;
         }
 
-        const url = this.form.get('url').value;
+        const url = control.value;
         this.abortController = new AbortController();
 
-        this.store.uploadFile({ url, signal: this.abortController.signal });
+        this.store.uploadFileByUrl({ url, signal: this.abortController.signal });
         this.form.reset({ url }); // Reset touch and dirty state
     }
 
     cancelUpload(): void {
-        this.abortController.abort();
+        this.abortController?.abort();
+        this.cancel.emit();
     }
 }

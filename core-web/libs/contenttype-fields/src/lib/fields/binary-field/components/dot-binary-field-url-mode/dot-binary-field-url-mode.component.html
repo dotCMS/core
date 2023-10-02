@@ -18,19 +18,22 @@
     </div>
     <div class="url-mode__actions">
         <p-button
-            *ngIf="!vm.isLoading; else cancelButton"
-            [label]="'dot.common.import' | dm"
-            type="submit"
-            data-testId="action-import-btn"
-            icon="pi pi-link"></p-button>
+            [label]="'dot.common.cancel' | dm"
+            (click)="cancelUpload()"
+            styleClass="p-button-outlined"
+            data-testId="cancel-button"></p-button>
 
-        <ng-template #cancelButton>
+        <div class="url-mode__actions--main">
             <p-button
-                [label]="'dot.common.cancel' | dm"
-                (click)="cancelUpload()"
-                data-testId="action-cancel-btn"
-                styleClass="p-button-outlined"
-                icon="pi pi-spin pi-spinner"></p-button>
-        </ng-template>
+                *ngIf="!vm.isLoading; else loadingButton"
+                [label]="'dot.common.import' | dm"
+                [icon]="'pi pi-download'"
+                type="submit"
+                data-testId="import-button"></p-button>
+
+            <ng-template #loadingButton>
+                <p-button [icon]="'pi pi-spin pi-spinner'" data-testId="loading-button"> </p-button>
+            </ng-template>
+        </div>
     </div>
 </form>

@@ -39,4 +39,19 @@
     display: flex;
     font-size: $font-size-sm;
     color: $color-alert-red;
+    height: $spacing-3;
+}
+
+.url-mode__actions--main {
+    width: 6.85rem;
+
+    &::ng-deep {
+        p-button .p-button {
+            width: 100%;
+        }
+
+        .p-button-icon-only {
+            border-radius: $border-radius-md;
+        }
+    }
 }

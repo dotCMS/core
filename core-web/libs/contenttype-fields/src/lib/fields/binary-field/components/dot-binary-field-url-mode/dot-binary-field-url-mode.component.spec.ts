@@ -3,19 +3,36 @@ import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 
 import { DotBinaryFieldUrlModeComponent } from './dot-binary-field-url-mode.component';
+import { DotBinaryFieldUrlModeStore } from './store/store/dot-binary-field-url-mode.store';
 
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../../../utils/mock';
+import { TEMP_FILE_MOCK } from '../../store/binary-field.store.spec';
 
 describe('DotBinaryFieldUrlModeComponent', () => {
     let spectator: Spectator<DotBinaryFieldUrlModeComponent>;
 
+    let store: DotBinaryFieldUrlModeStore;
+
     const createComponent = createComponentFactory({
         component: DotBinaryFieldUrlModeComponent,
         imports: [ButtonModule],
+        componentProviders: [DotBinaryFieldUrlModeStore],
         providers: [
+            {
+                provide: DotUploadService,
+                useValue: {
+                    uploadFile: ({ file }) => {
+                        return new Promise((resolve) => {
+                            if (file) {
+                                resolve(TEMP_FILE_MOCK);
+                            }
+                        });
+                    }
+                }
+            },
             {
                 provide: DotMessageService,
                 useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK
@@ -28,6 +45,7 @@ describe('DotBinaryFieldUrlModeComponent', () => {
             detectChanges: false
         });
 
+        store = spectator.inject(DotBinaryFieldUrlModeStore, true);
         spectator.detectChanges();
     });
 
@@ -39,34 +57,42 @@ describe('DotBinaryFieldUrlModeComponent', () => {
         expect(spectator.query(byTestId('url-input'))).not.toBeNull();
     });
 
-    describe('actions', () => {
-        it('should emit accept event with url value when form is valid', () => {
-            const sypAccept = jest.spyOn(spectator.component.accept, 'emit');
-            const button = spectator.query('[data-testId="action-import-btn"] button');
-            const url = 'http://dotcms.com';
+    it('should have a button to import', () => {
+        expect(spectator.query(byTestId('import-button'))).not.toBeNull();
+    });
 
-            spectator.component.form.setValue({ url });
+    describe('Actions', () => {
+        it('should upload file by url form when click on import button', async () => {
+            const spyUploadFileByUrl = jest.spyOn(store, 'uploadFileByUrl');
+            const button = spectator.query('[data-testId="import-button"] button');
+            const form = spectator.component.form;
 
+            form.setValue({ url: 'http://dotcms.com' });
             spectator.click(button);
-            expect(sypAccept).toHaveBeenCalledWith(url);
+
+            expect(spectator.component.form.valid).toBeTruthy();
+            expect(spyUploadFileByUrl).toHaveBeenCalled();
         });
 
-        it('should not emit accept event when form is invalid', () => {
-            const sypAccept = jest.spyOn(spectator.component.accept, 'emit');
-            const button = spectator.query('[data-testId="action-import-btn"] button');
-            const url = 'http://dotcms.com';
+        it('should cancel when click on cancel button', () => {
+            const spyCancel = jest.spyOn(spectator.component.cancel, 'emit');
+            const button = spectator.query('[data-testId="cancel-button"] button');
 
             spectator.click(button);
-            expect(sypAccept).not.toHaveBeenCalledWith(url);
+
+            expect(spyCancel).toHaveBeenCalled();
         });
 
-        it('should emit cancel when cancel button is clicked', () => {
-            const sypCancel = jest.spyOn(spectator.component.cancel, 'emit');
-            const cancelButton = spectator.query('[data-testId="action-cancel-btn"]');
+        it('should show loading button when isLoading', async () => {
+            store.setIsLoading(true);
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
 
-            spectator.click(cancelButton);
+            const loadingButton = spectator.query(byTestId('loading-button'));
+            const importButton = spectator.query(byTestId('import-button'));
 
-            expect(sypCancel).toHaveBeenCalled();
+            expect(loadingButton).toBeTruthy();
+            expect(importButton).not.toBeTruthy();
         });
     });
 
@@ -83,7 +109,19 @@ describe('DotBinaryFieldUrlModeComponent', () => {
 
         it('should be valid when url is valid', () => {
             spectator.component.form.setValue({ url: 'http://dotcms.com' });
-            expect(spectator.component.form.valid).toBe(true);
+            expect(spectator.component.form.valid).toBeTruthy();
+        });
+
+        it('should show error when value is empty and user is trying to upload file ', () => {
+            const spySetError = jest.spyOn(store, 'setError');
+            const button = spectator.query('[data-testId="import-button"] button');
+            const form = spectator.component.form;
+
+            form.setValue({ url: '' });
+            spectator.click(button);
+
+            expect(spectator.component.form.invalid).toBeTruthy();
+            expect(spySetError).toHaveBeenCalled();
         });
     });
 
@@ -94,7 +132,6 @@ describe('DotBinaryFieldUrlModeComponent', () => {
             input.focus(); // to trigger touched
             input.value = 'Not a url'; // to trigger invalid
             input.blur(); // to trigger dirty
-            spectator.detectChanges();
 
             expect(spectator.query(byTestId('error-message'))).toBeTruthy();
         });
