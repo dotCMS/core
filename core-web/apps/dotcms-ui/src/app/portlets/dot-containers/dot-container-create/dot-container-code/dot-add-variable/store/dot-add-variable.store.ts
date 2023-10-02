@@ -130,12 +130,17 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
                 fieldTypeLabel
             }
         ],
-        default: ({ variable, name, fieldTypeLabel }) => [
+        default: ({
+            variable,
+            name,
+            fieldTypeLabel,
+            codeTemplate = this.getCodeTemplate.default(variable)
+        }) => [
             {
                 name,
                 variable,
                 fieldTypeLabel,
-                codeTemplate: this.getCodeTemplate.default(variable)
+                codeTemplate
             }
         ]
     };
