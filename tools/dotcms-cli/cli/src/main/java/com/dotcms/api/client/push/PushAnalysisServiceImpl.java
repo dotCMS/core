@@ -167,7 +167,7 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
      */
     private List<File> readLocalContents(File localFile) {
 
-        if (localFile.isFile()) {
+        if (localFile.isFile() && !localFile.isHidden()) {
             return List.of(localFile);
         } else if (localFile.isDirectory()) {
             var foundFiles = localFile.listFiles(new HiddenFileFilter());
