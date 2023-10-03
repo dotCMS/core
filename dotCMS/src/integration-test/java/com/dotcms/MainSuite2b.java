@@ -154,6 +154,7 @@ import com.dotmarketing.startup.runonce.Task230922AddPublishDateToContentletVers
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230707CreateSystemTableTest;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
+import com.dotmarketing.startup.runonce.Task230922AddPublishDateToContentletVersionInfoTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
