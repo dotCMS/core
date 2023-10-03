@@ -36,57 +36,6 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
         };
     });
 
-    readonly updateFields = this.updater<DotCMSContentTypeField[]>(
-        (state: DotAddVariableState, fields: DotCMSContentTypeField[]) => {
-            return {
-                ...state,
-                fields: fields.reduce(
-                    (acc, field) => {
-                        const { fieldType } = field;
-
-                        // If you want to filter a new field type, add it to the FilteredFieldTypes enum
-                        if ((Object.values(FilteredFieldTypes) as string[]).includes(fieldType)) {
-                            return acc;
-                        }
-
-                        acc.push(
-                            // This try to find the fields by field type, if it doesn't exist it will use the default one
-                            ...(this.fields[fieldType]?.(field) ?? this.fields.default(field))
-                        );
-
-                        return acc;
-                    },
-                    [
-                        // We initialize the array with the Content Identifier field
-                        {
-                            name: this.dotMessage.get('Content-Identifier-value'),
-                            variable: 'ContentIdentifier',
-                            fieldTypeLabel: this.dotMessage.get('Content-Identifier'),
-                            codeTemplate: this.getCodeTemplate.default('ContentIdentifier')
-                        }
-                    ] as DotFieldContent[]
-                )
-            };
-        }
-    );
-
-    readonly getFields = this.effect((origin$: Observable<string>) => {
-        return origin$.pipe(
-            switchMap((containerVariable) => {
-                return this.dotContentTypeService.getContentType(containerVariable);
-            }),
-            tap((contentType: DotCMSContentType) => {
-                this.updateFields(contentType.fields);
-            }),
-            catchError((err: HttpErrorResponse) => {
-                this.dotGlobalMessageService.error(err.statusText);
-                this.dotHttpErrorManagerService.handle(err);
-
-                return of(null);
-            })
-        );
-    });
-
     // You can add here a new fieldType and add the fields that it has
     private readonly fields: Record<
         string,
@@ -150,5 +99,65 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
         image: (variable) =>
             `#if ($UtilMethods.isSet(\${${variable}ImageURI}))\n    <img src="$!{dotContentMap.${variable}ImageURI}" alt="$!{dotContentMap.${variable}ImageTitle}" />\n#end`,
         default: (variable) => `$!{dotContentMap.${variable}}`
+    };
+
+    private readonly CONTENT_IDENTIFIER_FIELD: DotFieldContent = {
+        name: this.dotMessage.get('Content-Identifier-value'),
+        variable: 'ContentIdentifier',
+        fieldTypeLabel: this.dotMessage.get('Content-Identifier'),
+        codeTemplate: this.getCodeTemplate.default('ContentIdentifier')
+    };
+
+    readonly updateFields = this.updater<DotCMSContentTypeField[]>(
+        (state: DotAddVariableState, fields: DotCMSContentTypeField[]) => {
+            return {
+                ...state,
+                fields: fields.reduce(this.reduceFields, [
+                    // We initialize the array with the Content Identifier field
+                    this.CONTENT_IDENTIFIER_FIELD
+                ])
+            };
+        }
+    );
+
+    readonly getFields = this.effect((origin$: Observable<string>) => {
+        return origin$.pipe(
+            switchMap((containerVariable) => {
+                return this.dotContentTypeService.getContentType(containerVariable);
+            }),
+            tap((contentType: DotCMSContentType) => {
+                this.updateFields(contentType.fields);
+            }),
+            catchError((err: HttpErrorResponse) => {
+                this.dotGlobalMessageService.error(err.statusText);
+                this.dotHttpErrorManagerService.handle(err);
+
+                return of(null);
+            })
+        );
+    });
+
+    /**
+     * This function will reduce the fields and return the new array of fields
+     *
+     * @private
+     * @param {DotFieldContent[]} fields
+     * @param {DotCMSContentTypeField} currentField
+     * @memberof DotAddVariableStore
+     */
+    private reduceFields = (fields: DotFieldContent[], currentField: DotCMSContentTypeField) => {
+        const { fieldType } = currentField;
+
+        // If you want to filter a new field type, add it to the FilteredFieldTypes enum
+        if ((Object.values(FilteredFieldTypes) as string[]).includes(fieldType)) {
+            return fields;
+        }
+
+        fields.push(
+            // This try to find the fields by field type, if it doesn't exist it will use the default one
+            ...(this.fields[fieldType]?.(currentField) ?? this.fields.default(currentField))
+        );
+
+        return fields;
     };
 }
