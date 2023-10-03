@@ -93,6 +93,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private pageStateInternal: DotPageRenderState;
+    private pageSaved$: Subject<void> = new Subject<void>();
 
     constructor(
         private dialogService: DialogService,
@@ -195,6 +196,13 @@ browse from the page internal links
             .subscribe((_event: NavigationStart) => {
                 this.getExperimentResolverData();
             });
+
+        this.pageSaved$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            // If this changes and the dialog closes we trigger a reload
+            this.dotContentletEditorService.close$.pipe(take(1)).subscribe(() => {
+                this.reload(null);
+            });
+        });
     }
 
     ngOnDestroy(): void {
@@ -292,6 +300,9 @@ browse from the page internal links
      * @memberof DotEditContentComponent
      */
     onCustomEvent($event: CustomEvent): void {
+        // If we save we trigger a change
+        if ($event.detail?.name === 'save-page') return this.pageSaved$.next();
+
         this.dotCustomEventHandlerService.handle($event);
     }
 
