@@ -14,6 +14,10 @@ jobs:
       DOT_REPO_BASE_PATH: ${{ vars.DOT_REPO_BASE_PATH }}
       # This is how we instruct the cli to create the workspace if it does not exist
       DOT_CREATE_WORKSPACE: ${{ vars.DOT_CREATE_WORKSPACE || 'true' }}
+      # This is the CLI version to use, but we can always override this value
+      DOT_CLI_JAR_DOWNLOAD_URL: ${{ vars.DOT_CLI_JAR_DOWNLOAD_URL || 'https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/1.0.0-SNAPSHOT/dotcms-cli-1.0.0-20231002.205953-1.jar' }}
+      # In case we want to force the download of the CLI jar
+      DOT_FORCE_DOWNLOAD: ${{ vars.DOT_FORCE_DOWNLOAD || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -76,8 +80,13 @@ jobs:
         id: dot-push
         run: |                                   
             chmod +x ./.github/workflows/scripts/run-push.sh
-            source ./.github/workflows/scripts/run-push.sh            
-            run_cli_push "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" "${{env.DOT_API_URL}}" "${{ secrets.DOT_TOKEN }}"
+            source ./.github/workflows/scripts/run-push.sh
+            install_cli "${{env.DOT_CLI_JAR_DOWNLOAD_URL}}" "${{env.DOT_FORCE_DOWNLOAD}}" "${{env.DOT_API_URL}}" 
+            run_cli_push "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" "${{ secrets.DOT_TOKEN }}"
             echo "exit-code=$exit_code" >> "$GITHUB_OUTPUT"
             print_log
+            if [ $exit_code -ne 0 ]; then
+              echo "Error running dotCMS CLI"
+              exit 1
+            fi
         shell: bash

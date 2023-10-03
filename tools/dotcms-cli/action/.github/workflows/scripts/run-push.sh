@@ -1,10 +1,5 @@
 #!/bin/sh
 
-  ## https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/1.0.0-SNAPSHOT/dotcli-1.0.0-SNAPSHOT.jar
-  CLI_RELEASE_DOWNLOAD_BASE_URL="https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/"
-  RUN_JAVA_VERSION=1.3.8
-  RUN_DOT_CLI_VERSION='1.0.0-SNAPSHOT'
-  CLI_RELEASE_DOWNLOAD_URL="${CLI_RELEASE_DOWNLOAD_BASE_URL}${RUN_DOT_CLI_VERSION}/dotcli-${RUN_DOT_CLI_VERSION}.jar"
   DOT_CLI_JAR="dot-cli.jar"
   DOT_CLI_HOME="/tmp/dot-cli/"
   DOT_SERVICE_YML="dot-service.yml"
@@ -15,18 +10,23 @@ SERVICES_FILE_CONTENT='
 '
 
 _make_home(){
-
   if [ ! -d "$DOT_CLI_HOME" ]; then
     mkdir $DOT_CLI_HOME
   fi
-  #echo $DOT_CLI_HOME
 }
 
 _get_CLI(){
-  # now lets get curl so we can download the CLI and the run-java.sh script
 
-  #echo "downloading dot CLI from ${CLI_RELEASE_DOWNLOAD_URL}"
-  curl ${CLI_RELEASE_DOWNLOAD_URL} -L -o ${DOT_CLI_HOME}${DOT_CLI_JAR}
+  cli_release_download_url=$1
+  force_download=$2
+
+  cliJar=${DOT_CLI_HOME}${DOT_CLI_JAR}
+  if [ -f $cliJar ] && ! [ "$force_download" = true  ] ; then
+    echo "dot-CLI already exists, skipping download"
+    return
+  fi
+
+  curl "$cli_release_download_url" -L -o ${DOT_CLI_HOME}${DOT_CLI_JAR}
   chmod 777 "${DOT_CLI_HOME}${DOT_CLI_JAR}"
 
   #Check the size of the file
@@ -39,14 +39,14 @@ _get_CLI(){
   fi
 }
 
-_install_CLI(){
-  workspace_path=$1
-  cp "$workspace_path"/dotcms-cli-1.0.0-SNAPSHOT-runner.jar ${DOT_CLI_HOME}${DOT_CLI_JAR}
-}
-
 _get_run_java_script(){
-    #echo "downloading run-java.sh"
-    curl https://repo1.maven.org/maven2/io/fabric8/run-java-sh/${RUN_JAVA_VERSION}/run-java-sh-${RUN_JAVA_VERSION}-sh.sh -o "${DOT_CLI_HOME}"run-java.sh
+   force_download=$1
+   runJava=${DOT_CLI_HOME}run-java.sh
+   if [ -f "$runJava" ] && ! [ "$force_download" = true  ] ; then
+      echo "run-java.sh already exists, skipping download"
+      return
+   fi
+    curl https://repo1.maven.org/maven2/io/fabric8/run-java-sh/"${RUN_JAVA_VERSION}"/run-java-sh-"${RUN_JAVA_VERSION}"-sh.sh -o "${DOT_CLI_HOME}"run-java.sh
     chmod 777 ${DOT_CLI_HOME}run-java.sh
 }
 
@@ -57,14 +57,16 @@ _setup_CLI(){
     DOT_SERVICES_HOME=$HOME/.dotcms/
     SERVICE_FILE=$DOT_SERVICES_HOME$DOT_SERVICE_YML
    # All we need is a file with an active profile that matches the server we want to connect to in this case we are using default
-
+   # If the directory does not exist we create it
     if [ ! -d "$DOT_SERVICES_HOME" ]; then
       mkdir "$DOT_SERVICES_HOME"
-      ## echo creating ::  "$SERVICE_FILE";
-      echo "$SERVICES_FILE_CONTENT" >> "$SERVICE_FILE";
-      #echo created file :: "$SERVICE_FILE"
-      #cat "$SERVICE_FILE";
+    else
+       # If the directory exists we remove it as we could be updating the server url
+       rm -rf "$DOT_SERVICES_HOME"
+       mkdir "$DOT_SERVICES_HOME"
     fi
+    # Now generate the file
+    echo "$SERVICES_FILE_CONTENT" >> "$SERVICE_FILE";
 
     #Tell the CLI to use the demo server through the profile "default"
     #The suffix value used to create the environment value must match the name on dot-service.yml file in this case we are using default
@@ -97,15 +99,20 @@ _run_cli_push(){
       echo $exit_code
 }
 
+install_dot_cli(){
+    cli_release_download_url=$1
+    force_download=$2
+    dotApiURL=$3
+
+    _make_home
+    _get_CLI "$cli_release_download_url" "$force_download"
+    _get_run_java_script "$force_download"
+    _setup_CLI "$dotApiURL"
+}
+
 run_cli_push(){
     workspace_path=$1
-    dotApiURL=$2
-    token=$3
-    _make_home
-    #_get_CLI
-    _install_CLI "$workspace_path"
-    _get_run_java_script
-    _setup_CLI "$dotApiURL"
+    token=$2
     return_code=$(_run_cli_push "$workspace_path" "$token")
     echo "$return_code"
 }
