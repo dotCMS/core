@@ -14,7 +14,6 @@ import { CalendarModule } from 'primeng/calendar';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { PushPublishEnvSelectorComponent } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.module';
@@ -31,7 +30,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotcmsConfigServiceMock,
@@ -143,7 +142,7 @@ xdescribe('DotPushPublishFormComponent', () => {
                 PushPublishEnvSelectorModule,
                 ReactiveFormsModule,
                 DropdownModule,
-                DotFieldValidationMessageModule,
+                DotFieldValidationMessageComponent,
                 SelectButtonModule,
                 DotPipesModule,
                 DotMessagePipe,

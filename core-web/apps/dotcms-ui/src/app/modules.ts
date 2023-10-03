@@ -28,10 +28,9 @@ import { DotContentCompareModule } from '@components/dot-content-compare/dot-con
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageDisplayModule } from '@components/dot-message-display/dot-message-display.module';
 import { DotToolbarModule } from '@components/dot-toolbar/dot-toolbar.module';
-import { DotIconModule } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotIconModule } from '@dotcms/ui';
 
 import { DotActionButtonModule } from './view/components/_common/dot-action-button/dot-action-button.module';
-import { DotFieldValidationMessageModule } from './view/components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotGenerateSecurePasswordModule } from './view/components/_common/dot-generate-secure-password/dot-generate-secure-password.module';
 import { DotSiteSelectorModule } from './view/components/_common/dot-site-selector/dot-site-selector.module';
 import { DotTextareaContentModule } from './view/components/_common/dot-textarea-content/dot-textarea-content.module';
@@ -51,7 +50,7 @@ export const CUSTOM_MODULES = [
     DotTextareaContentModule,
     DotWorkflowTaskDetailModule,
     DotMessageDisplayModule,
-    DotFieldValidationMessageModule,
+    DotFieldValidationMessageComponent,
     IFrameModule,
     DotListingDataTableModule,
     SearchableDropDownModule,

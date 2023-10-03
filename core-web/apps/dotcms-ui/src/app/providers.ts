@@ -1,4 +1,4 @@
-import { InjectionToken, Provider } from '@angular/core';
+import { APP_INITIALIZER, InjectionToken, Provider } from '@angular/core';
 import { TitleStrategy } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -16,15 +16,16 @@ import {
     DotCrudService,
     DotLicenseService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@dotcms/ui';
 import { CanDeactivateGuardService } from '@services/guards/can-deactivate-guard.service';
 import { DotTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 import { DotAccountService } from './api/services/dot-account-service';
-import { DotFormatDateService } from './api/services/dot-format-date-service';
 import { DotUiColorsService } from './api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotWorkflowEventHandlerService } from './api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
@@ -42,6 +43,10 @@ import { DotIframeService } from './view/components/_common/iframe/service/dot-i
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
+
+const featureFactory = (dotProperties: DotPropertiesService) => () => {
+    dotProperties.loadConfig();
+};
 
 const PROVIDERS: Provider[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
@@ -82,6 +87,12 @@ const PROVIDERS: Provider[] = [
     {
         provide: TitleStrategy,
         useClass: DotTitleStrategy
+    },
+    {
+        provide: APP_INITIALIZER,
+        useFactory: featureFactory,
+        deps: [DotPropertiesService],
+        multi: true
     }
 ];
 

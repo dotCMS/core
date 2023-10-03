@@ -28,6 +28,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@dotcms/ui';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotHttpErrorManagerService } from './../api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -35,7 +36,6 @@ import { DotIframeService } from './../view/components/_common/iframe/service/do
 
 import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotFormatDateService } from '../api/services/dot-format-date-service';
 import { DotRouterService } from '../api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 import { NGFACES_MODULES } from '../modules';

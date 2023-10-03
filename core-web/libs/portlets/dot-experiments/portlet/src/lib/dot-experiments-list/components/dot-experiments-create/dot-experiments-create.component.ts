@@ -9,11 +9,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SidebarModule } from 'primeng/sidebar';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
     DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
     DotMessagePipe,
     DotTrimInputDirective
 } from '@dotcms/ui';
@@ -42,7 +42,7 @@ interface CreateForm {
         DotSidebarDirective,
         DotSidebarHeaderComponent,
         DotMessagePipe,
-        DotFieldValidationMessageModule,
+        DotFieldValidationMessageComponent,
         DotAutofocusDirective,
         // PrimeNg
         InputTextareaModule,

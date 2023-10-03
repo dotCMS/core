@@ -116,13 +116,30 @@
     </style>
 
     <script type="text/javascript">
-    
+
     var _dotSelectedStructure = '<%=contentTypes.isEmpty()?"":contentTypes.get(0).id()%>';
-        function addNewContentlet(iNode) {
+
+    var _dotSelectedStructureVariable= '<%=contentTypes.isEmpty()?"":contentTypes.get(0).variable()%>';
+
+
+  function createContentlet(url, contentType) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "create-contentlet-from-edit-page",
+            data: {
+                url,
+				contentType
+            }
+        });
+
+        document.dispatchEvent(customEvent);
+    }
+
+        function addNewContentlet(iNode, contentType) {
             var href = "/c/portal/layout?p_l_id=<%=contentLayout.getId()%>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view";
             href += "&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=new";
             href += "&selectedStructure=" + (iNode || _dotSelectedStructure) + "&lang=" + getCurrentUrlLanguageId();
-            window.location = href;
+            createContentlet(href, contentType ||  _dotSelectedStructureVariable);
         }
 
         function contentSelected(content) {
@@ -165,7 +182,7 @@
             addContentDropdown+= '<ul class="content-search-dialog__content-type-menu" data-dojo-type="dijit/Menu" >';
             var addContentTypePrimaryMenu =  document.getElementById('addContentTypeDropdown');
             for ( var i = 1; contentSelector.containerStructures.length > i; i++) {
-                addContentDropdown+= '<li data-dojo-type="dijit/MenuItem" onClick="addNewContentlet(\'' + contentSelector.containerStructures[i].inode + '\')">' + contentSelector.containerStructures[i].name + '</li>';
+                addContentDropdown+= '<li data-dojo-type="dijit/MenuItem" onClick="addNewContentlet(\'' + contentSelector.containerStructures[i].inode + '\', \'' + contentSelector.containerStructures[i].variable + '\')">' + contentSelector.containerStructures[i].name + '</li>';
             }
             addContentDropdown+='</ul></div>';
             addContentTypePrimaryMenu.innerHTML= addContentDropdown;
