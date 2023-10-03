@@ -7,7 +7,12 @@ import { LazyLoadEvent } from 'primeng/api';
 
 import { debounceTime, map, take } from 'rxjs/operators';
 
-import { DotContentTypeService, DotESContentService, PaginatorService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotESContentService,
+    DotSessionStorageService,
+    PaginatorService
+} from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotCMSContentlet,
@@ -152,7 +157,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     constructor(
         private dotContentTypeService: DotContentTypeService,
         public paginatorESService: DotESContentService,
-        public paginationService: PaginatorService
+        public paginationService: PaginatorService,
+        private dotSessionStorageService: DotSessionStorageService
     ) {
         super({
             contentlets: null,
@@ -195,7 +201,10 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                         lang: languageId || '1',
                         filter: filter || '',
                         offset: (event && event.first.toString()) || '0',
-                        query: `+contentType: ${this.contentTypeVarName} +deleted: false`
+                        // query: `+contentType: ${this.contentTypeVarName} +deleted: false`  <---- This is the original query
+                        query: `+contentType: ${
+                            this.contentTypeVarName
+                        } +(variant:default OR variant:${this.dotSessionStorageService.getVariationId()}) +deleted: false`
                     })
                     .pipe(take(1))
                     .subscribe((response: ESContent) => {
