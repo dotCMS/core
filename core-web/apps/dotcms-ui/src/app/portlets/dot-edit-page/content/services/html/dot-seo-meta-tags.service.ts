@@ -19,11 +19,14 @@ import {
     SeoMediaKeys,
     ImageMetaData,
     OpenGraphOptions,
-    SEO_TAGS
+    SEO_TAGS,
+    SEO_MEDIA_TYPES
 } from '../dot-edit-content-html/models/meta-tags-model';
 
 @Injectable()
 export class DotSeoMetaTagsService {
+    readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
+
     constructor(
         private dotMessageService: DotMessageService,
         private dotUploadService: DotUploadService
@@ -589,6 +592,47 @@ export class DotSeoMetaTagsService {
         const regexPattern = new RegExp(SEO_TAGS.map((option) => `\\b${option}\\b`).join('|'), 'g');
 
         return message.replace(regexPattern, '<code>$&</code>');
+    }
+
+    public getReadMore(): Record<SEO_MEDIA_TYPES, string[]> {
+        return {
+            [SEO_MEDIA_TYPES.FACEBOOK]: [
+                this.dotMessageService.get('seo.rules.read-more.facebook.learn'),
+                this.dotMessageService.get('seo.rules.read-more.facebook.sharing'),
+                this.dotMessageService.get('seo.rules.read-more.facebook.title'),
+                this.dotMessageService.get('seo.rules.read-more.facebook.title.unique'),
+                this.dotMessageService.get('seo.rules.read-more.facebook.title.sizes'),
+                this.dotMessageService.get('seo.rules.read-more.facebook.og-image'),
+                this.dotMessageService.get('seo.rules.read-more.facebook.social')
+            ],
+            [SEO_MEDIA_TYPES.TWITTER]: [
+                this.dotMessageService.get('seo.rules.read-more.twitter.learn'),
+                this.dotMessageService.get('seo.rules.read-more.twitter.suggest'),
+                this.dotMessageService.get('seo.rules.read-more.twitter.twitter-card'),
+                this.dotMessageService.get('seo.rules.read-more.twitter.twitter-title'),
+                this.dotMessageService.get('seo.rules.read-more.twitter.twitter-title.content'),
+                this.dotMessageService.get('seo.rules.read-more.twitter.length'),
+                this.dotMessageService.get('seo.rules.read-more.twitter.twitter-image'),
+                this.dotMessageService.get('seo.rules.read-more.twitter.twitter-image.aspect'),
+                this.dotMessageService.get('seo.rules.read-more.twitter.twitter-image.content'),
+                this.dotMessageService.get('seo.rules.read-more.twitter.twitter-image.social')
+            ],
+            [SEO_MEDIA_TYPES.LINKEDIN]: [
+                this.dotMessageService.get('seo.rules.read-more.linkedin.learn'),
+                this.dotMessageService.get('seo.rules.read-more.linkedin.meta'),
+                this.dotMessageService.get('seo.rules.read-more.linkedin.summary')
+            ],
+            [SEO_MEDIA_TYPES.GOOGLE]: [
+                this.dotMessageService.get('seo.rules.read-more.google.favicons'),
+                this.dotMessageService.get('seo.rules.read-more.google.title'),
+                this.dotMessageService.get('seo.rules.read-more.google.title.unique'),
+                this.dotMessageService.get('seo.rules.read-more.google.description'),
+                this.dotMessageService.get('seo.rules.read-more.google.length'),
+                this.dotMessageService.get('seo.rules.read-more.google.meta-tags'),
+                this.dotMessageService.get('seo.rules.read-more.google.meta-description'),
+                this.dotMessageService.get('seo.rules.read-more.google.image-sizes')
+            ]
+        };
     }
 
     /**

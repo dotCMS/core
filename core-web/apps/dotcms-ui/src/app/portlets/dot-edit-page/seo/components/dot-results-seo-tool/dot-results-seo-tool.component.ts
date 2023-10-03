@@ -56,22 +56,12 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     @Input() seoOGTags: SeoMetaTags;
     @Input() seoOGTagsResults: Observable<SeoMetaTagsResult[]>;
     currentResults$: Observable<SeoMetaTagsResult[]>;
+    readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
 
     constructor(private dotSeoMetaTagsService: DotSeoMetaTagsService) {}
-
     allPreview: MetaTagsPreview[];
     mainPreview: MetaTagsPreview;
     seoMediaTypes = SEO_MEDIA_TYPES;
-    readMore = [
-        {
-            label: 'The Open Graph protocol',
-            url: 'https://ogp.me/'
-        },
-        {
-            label: 'Sharing Debugger - Meta for Developers',
-            url: 'https://developers.facebook.com/tools/debug/'
-        }
-    ];
 
     ngOnInit() {
         this.allPreview = [
@@ -99,6 +89,7 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
 
         const [preview] = this.allPreview;
         this.mainPreview = preview;
+        this.readMoreValues = this.dotSeoMetaTagsService.getReadMore();
     }
 
     ngOnChanges() {
