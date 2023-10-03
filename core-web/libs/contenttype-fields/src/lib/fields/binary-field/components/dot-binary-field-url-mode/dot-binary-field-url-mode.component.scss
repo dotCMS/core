@@ -1,10 +1,5 @@
 @use "variables" as *;
 
-:host ::ng-deep {
-    @import "libs/dotcms-scss/angular/dotcms-theme/utils/validation";
-    @import "libs/dotcms-scss/angular/dotcms-theme/components/form/inputtext";
-}
-
 .url-mode__form {
     display: flex;
     flex-direction: column;

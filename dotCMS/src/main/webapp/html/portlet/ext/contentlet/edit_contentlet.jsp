@@ -51,6 +51,7 @@
 	if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
 %>
 	<script src="/html/contenttype-fields.js"></script>
+	<link rel="stylesheet" href="/html/css/contenttype-fields-styles.css">
 <% } %>
 
 <script type="text/javascript">

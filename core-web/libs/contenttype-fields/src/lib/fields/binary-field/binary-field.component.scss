@@ -1,16 +1,5 @@
 @use "variables" as *;
 
-@import "libs/block-editor/src/fonts"; // Import PrimeNG Icon
-
-:host ::ng-deep {
-    @import "node_modules/primeicons/primeicons";
-    @import "node_modules/primeng/resources/primeng.min";
-    @import "libs/dotcms-scss/angular/dotcms-theme/misc";
-    @import "libs/dotcms-scss/angular/dotcms-theme/components/buttons/common";
-    @import "libs/dotcms-scss/angular/dotcms-theme/components/buttons/button";
-    @import "libs/dotcms-scss/angular/dotcms-theme/components/dialog";
-}
-
 .binary-field__container {
     display: flex;
     justify-content: center;
@@ -120,29 +109,6 @@
     border: 1px solid $input-border-color;
     display: block;
     height: 25rem;
-}
-
-.binary-field__external-source {
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-3;
-    justify-content: center;
-    align-items: flex-start;
-}
-
-.binary-field__external-source--input {
-    width: 100%;
-    display: flex;
-    gap: $spacing-1;
-    flex-direction: column;
-}
-
-.binary-field__external-source--action {
-    width: 100%;
-    display: flex;
-    gap: $spacing-1;
-    align-items: center;
-    justify-content: flex-end;
 }
 
 p-dialog ::ng-deep {

@@ -136,7 +136,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     }));
 
     //  Effects
-    readonly handleUploadFile = this.effect<File | string>((event$) => {
+    readonly handleUploadFile = this.effect<File>((event$) => {
         return event$.pipe(
             tap(() => this.setUploading()),
             switchMap((file) => this.uploadTempFile(file))
@@ -158,7 +158,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         this._maxFileSizeInMB = bytes / (1024 * 1024);
     }
 
-    private uploadTempFile(file: File | string): Observable<DotCMSTempFile> {
+    private uploadTempFile(file: File): Observable<DotCMSTempFile> {
         return from(
             this.dotUploadService.uploadFile({
                 file,
