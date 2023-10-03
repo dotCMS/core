@@ -198,14 +198,14 @@ public class ContentResource {
 
         if (UtilMethods.isSet(query)) {
 
-            final String queryDefaultVariant = query + " +variant:default";
+            final String realQuery = query.indexOf("variant:") != -1 ? query : query + " +variant:default";
 
             startAPISearchPull = Calendar.getInstance().getTimeInMillis();
-            resultsSize        = APILocator.getContentletAPI().indexCount(queryDefaultVariant, userForPull, pageMode.respectAnonPerms);
+            resultsSize        = APILocator.getContentletAPI().indexCount(realQuery, userForPull, pageMode.respectAnonPerms);
             afterAPISearchPull = Calendar.getInstance().getTimeInMillis();
 
             startAPIPull       = Calendar.getInstance().getTimeInMillis();
-            contentlets        = ContentUtils.pull(processQuery(queryDefaultVariant), offset, limit, sort, userForPull, tmDate, pageMode.respectAnonPerms);
+            contentlets        = ContentUtils.pull(processQuery(realQuery), offset, limit, sort, userForPull, tmDate, pageMode.respectAnonPerms);
             resultJson = getJSONObject(contentlets, request, response, render, user, depth,
                     pageMode.respectAnonPerms, language, pageMode.showLive, allCategoriesInfo);
 
