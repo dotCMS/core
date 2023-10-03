@@ -690,7 +690,8 @@
                     const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
                     const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                     const acceptArr = "<%= accept%>".split(',');
-                    const acceptTypes = acceptArr.map((type) => type.trim())
+                    const acceptTypes = acceptArr.map((type) => type.trim());
+                    const maxFileSize = Number("<%= maxFileLength%>");
 
                     // Creating the binary field dynamically
                     // Help us to set inputs before the ngInit is executed.
@@ -698,14 +699,16 @@
                     binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
                     binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>")
                     
+                    console.log(isNaN(maxFileSize));
+                    console.log(maxFileSize);
                     // Set the initial value.
-                    binaryField.maxFileSize = Number("<%= maxFileLength%>");
+                    binaryField.maxFileSize = isNaN(maxFileSize) ? 0 : maxFileSize;
                     binaryField.accept = acceptTypes;
                     binaryField.helperText ="<%= helperText%>";
                     
                     binaryField.addEventListener('tempFile', (event) => {
                         const tempFile = event.detail;
-                        field.value = tempFile.id;
+                        field.value = tempFile?.id || '';
                     });
 
                     binaryFieldContainer.appendChild(binaryField);
