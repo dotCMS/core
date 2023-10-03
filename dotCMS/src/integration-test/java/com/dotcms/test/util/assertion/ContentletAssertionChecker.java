@@ -8,10 +8,16 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -115,10 +121,23 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
     public Collection<File> getFile(final Contentlet contentlet, File bundleRoot) {
         try {
 
-            final List<File> fileList = list(
-                    FileBundlerTestUtil.getContentletPath(contentlet, bundleRoot),
-                    FileBundlerTestUtil.getWorkflowTaskFilePath(contentlet, bundleRoot)
-            );
+            final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
+                    .findContentletVersionInfos(contentlet.getIdentifier());
+
+            final boolean live = contentlet.isLive();
+            final List<Contentlet> contentlets = contentletVersionInfos.stream()
+                    .map(contentletVersionInfo -> getContentlet(contentletVersionInfo, live))
+                    .collect(Collectors.toList());
+
+            final List<File> fileList = new ArrayList<>();
+
+            int counter = 0;
+
+            for (final Contentlet innerContentlet : contentlets) {
+                fileList.add(FileBundlerTestUtil.getContentletPath(innerContentlet, bundleRoot, counter++));
+            }
+
+            fileList.add(FileBundlerTestUtil.getWorkflowTaskFilePath(contentlet, bundleRoot));
 
             final Optional<String> binaryFilePathOptional = getBinaryFilePath(contentlet);
 
@@ -130,6 +149,19 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
 
             return  fileList;
         } catch (DotDataException | DotSecurityException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Contentlet getContentlet(final ContentletVersionInfo contentletVersionInfo, final boolean live) {
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final User systemUser = APILocator.systemUser();
+
+        try {
+            return live ? contentletAPI.find(contentletVersionInfo.getLiveInode(), systemUser, false)
+                    : contentletAPI.find(contentletVersionInfo.getWorkingInode(), systemUser, false);
+        } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
     }

@@ -38,6 +38,7 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotFormatDateService } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
@@ -46,7 +47,6 @@ import {
 } from '@dotcms/utils-testing';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';

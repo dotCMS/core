@@ -58,6 +58,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import java.util.Date;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
 
@@ -355,6 +356,7 @@ public class PageResourceHelper implements Serializable {
             template.setDrawed(true);
             updateMultiTrees(page, pageForm);
 
+            template.setModDate(new Date());
             // permissions have been updated above
             return this.templateAPI.saveTemplate(template, host, APILocator.systemUser(), false);
         } catch (final DotDataException | DotSecurityException e) {
