@@ -60,11 +60,11 @@ public class DropOldContentVersionsJob implements StatefulJob {
     public static final String PULL_BATCH_PROP = "content.drop-versions.older-days.batch-size";
     public static final String JOB_NAME = "DropOldContentVersionsJob";
     public static final String JOB_GROUP = "DropOldContentVersionsJobGroup";
-    public static final Lazy<Boolean> ENABLED =
-            Lazy.of(() -> Config.getBooleanProperty(ENABLED_PROP, true));
     /** At 00:00:00am, on the 1st day, every month */
     private static final String CRON_EXPRESSION_DEFAULT = "0 0 0 1 * ? *";
 
+    public static final Lazy<Boolean> ENABLED =
+            Lazy.of(() -> Config.getBooleanProperty(ENABLED_PROP, true));
     public static final Lazy<String> CRON_EXPRESSION =
             Lazy.of(() -> Config.getStringProperty(CRON_EXPR_PROP, CRON_EXPRESSION_DEFAULT));
     private static final Lazy<Integer> PULL_BATCH_SIZE =

@@ -99,7 +99,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 		try {
 			//gets the user
-			_initCacheValues(req);
+			initCacheValues(req);
 
 			if (req.getWindowState().equals(WindowState.MAXIMIZED)) {
 				Logger.debug(this, "Showing view action cms maintenance maximized");
@@ -375,7 +375,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	 *
 	 * @param req The current {@link RenderRequest} instance.
 	 */
-	private void _initCacheValues(final RenderRequest req) {
+	private void initCacheValues(final RenderRequest req) {
 		int liveCount = 0;
 		int workingCount = 0;
 		try {

@@ -82,7 +82,7 @@ public class DotInitScheduler {
 			deleteOldJobs();
 
 
-			if(Config.getBooleanProperty("ENABLE_USERS_TO_DELETE_THREAD")) {
+			if(Config.getBooleanProperty("ENABLE_USERS_TO_DELETE_THREAD", false)) {
 				try {
 					isNew = false;
 
@@ -96,7 +96,7 @@ public class DotInitScheduler {
 						job = new JobDetail("UsersToDeleteJob", DOTCMS_JOB_GROUP_NAME, UsersToDeleteThread.class);
 						isNew = true;
 					}
-					calendar = GregorianCalendar.getInstance();
+					calendar = Calendar.getInstance();
 					calendar.add(Calendar.MINUTE, 6);
 					trigger = new CronTrigger("trigger7", "group7", "UsersToDeleteJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty("USERS_TO_DELETE_THREAD_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
@@ -117,11 +117,7 @@ public class DotInitScheduler {
 				}
 			}
 
-
-			// http://jira.dotmarketing.net/browse/DOTCMS-1073
-			// https://github.com/dotCMS/core/issues/25047
-			// https://github.com/dotCMS/core/issues/25677
-			if(UtilMethods.isSet(Config.getStringProperty("BINARY_CLEANUP_JOB_CRON_EXPRESSION"))) {
+			if(UtilMethods.isSet(Config.getStringProperty("BINARY_CLEANUP_JOB_CRON_EXPRESSION", null))) {
 				try {
 					isNew = false;
 
@@ -135,7 +131,7 @@ public class DotInitScheduler {
 						job = new JobDetail("BinaryCleanupJob", DOTCMS_JOB_GROUP_NAME, BinaryCleanupJob.class);
 						isNew = true;
 					}
-					calendar = GregorianCalendar.getInstance();
+					calendar = Calendar.getInstance();
 					calendar.add(Calendar.MINUTE, 7);
 				    trigger = new CronTrigger("trigger11", "group11", "BinaryCleanupJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,Config.getStringProperty("BINARY_CLEANUP_JOB_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
@@ -172,7 +168,7 @@ public class DotInitScheduler {
 						job = new JobDetail(publishQueueJobName, DOTCMS_JOB_GROUP_NAME, PublisherQueueJob.class);
 						isNew = true;
 					}
-					calendar = GregorianCalendar.getInstance();
+					calendar = Calendar.getInstance();
 					calendar.add(Calendar.MINUTE, 3);
 				    trigger = new CronTrigger("trigger19", "group19", publishQueueJobName, DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,Config.getStringProperty("PUBLISHER_QUEUE_THREAD_CRON_EXPRESSION","0 0/1 * * * "));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
@@ -213,7 +209,7 @@ public class DotInitScheduler {
 						job = new JobDetail(ETjobName, ETjobGroup, EscalationThread.class);
 						isNew = true;
 					}
-					calendar = GregorianCalendar.getInstance();
+					calendar = Calendar.getInstance();
 					calendar.add(Calendar.MINUTE, 10);
 					trigger = new CronTrigger(ETtriggerName, ETtriggerGroup, ETjobName, ETjobGroup, calendar.getTime(), null,Config.getStringProperty("ESCALATION_CHECK_INTERVAL_CRON", "0/30 * * * * ?"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
@@ -252,7 +248,7 @@ public class DotInitScheduler {
 						job = new JobDetail(FSCjobName, FSCobGroup, FreeServerFromClusterJob.class);
 						isNew = true;
 					}
-					calendar = GregorianCalendar.getInstance();
+					calendar = Calendar.getInstance();
 					calendar.add(Calendar.MINUTE, 2);
 					trigger = new CronTrigger(FSCtriggerName, FSCtriggerGroup, FSCjobName, FSCobGroup, calendar.getTime(), null,Config.getStringProperty("HEARTBEAT_CRON_EXPRESSION", "0 0/1 * * * ?"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
@@ -291,7 +287,7 @@ public class DotInitScheduler {
                         job = new JobDetail(CUUjobName, CUUjobGroup, CleanUnDeletedUsersJob.class);
                         isNew = true;
                     }
-                    calendar = GregorianCalendar.getInstance();
+                    calendar = Calendar.getInstance();
 					calendar.add(Calendar.MINUTE, 30);
                     //By default, the job runs once a day at 12 AM
                     trigger = new CronTrigger(CUUtriggerName, CUUtriggerGroup, CUUjobName, CUUjobGroup, calendar.getTime(), null,Config.getStringProperty("CLEAN_USERS_CRON_EXPRESSION", "0 0 0 1/1 * ? *"));
@@ -509,7 +505,7 @@ public class DotInitScheduler {
 				job = new JobDetail(jobBuilder.jobName, jobBuilder.jobGroup, jobBuilder.jobClass);
 				isNew = true;
 			}
-			final Calendar calendar = GregorianCalendar.getInstance();
+			final Calendar calendar = Calendar.getInstance();
 			final CronTrigger trigger = new CronTrigger(jobBuilder.triggerName, jobBuilder.triggerGroup, jobBuilder.jobName,
 					jobBuilder.jobGroup, calendar.getTime(), null, Config.getStringProperty(jobBuilder.cronExpressionProp,
 							jobBuilder.cronExpressionPropDefault));

@@ -29,6 +29,8 @@ public class MenuHelper implements Serializable {
     public static final MenuHelper INSTANCE =
             new MenuHelper();
 
+    private static final String PORTLET_DOESNT_EXIST_ERROR_MSG = "Portlet ID '%s' does not exist";
+
     private MenuHelper() {}
 
     /**
@@ -70,8 +72,7 @@ public class MenuHelper implements Serializable {
             final Class<?> classs = Class.forName(portletClass);
             return PortletController.class.isAssignableFrom(classs);
         } else {
-            Logger.error(this, String.format("The requested Portlet ID '%s' does not exist",
-                    portletId));
+            Logger.error(this, String.format(PORTLET_DOESNT_EXIST_ERROR_MSG, portletId));
         }
         return false;
     }
@@ -89,8 +90,7 @@ public class MenuHelper implements Serializable {
             final Class<?> classs = Class.forName(portletClass);
             return BaseRestPortlet.class.isAssignableFrom(classs);
         } else {
-            Logger.error(this, String.format("The requested Portlet ID '%s' does not exist",
-                    portletId));
+            Logger.error(this, String.format(PORTLET_DOESNT_EXIST_ERROR_MSG, portletId));
         }
 
         return false;
@@ -123,7 +123,7 @@ public class MenuHelper implements Serializable {
                 return StringPool.FORWARD_SLASH + menuContext.getPortletId();
             }
         } else {
-            Logger.error(this, String.format("The requested Portlet ID '%s' does not exist",
+            Logger.error(this, String.format(PORTLET_DOESNT_EXIST_ERROR_MSG,
                     menuContext.getPortletId()));
         }
 
