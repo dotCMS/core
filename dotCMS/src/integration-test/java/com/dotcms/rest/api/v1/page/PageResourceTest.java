@@ -108,6 +108,7 @@ import static org.mockito.Mockito.when;
 public class PageResourceTest {
     private ContentletAPI esapi;
     private PageResource pageResource;
+    private PageResource pageResourceWithHelper;
     private User user;
     private HttpServletRequest request;
     private HttpServletResponse response;
