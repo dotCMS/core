@@ -54,14 +54,13 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';

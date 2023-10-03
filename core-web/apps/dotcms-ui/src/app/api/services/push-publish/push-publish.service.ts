@@ -4,10 +4,10 @@ import { Injectable } from '@angular/core';
 
 import { filter, map, mergeMap, pluck, toArray } from 'rxjs/operators';
 
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotCurrentUserService } from '@dotcms/data-access';
 import { ApiRoot, CoreWebService } from '@dotcms/dotcms-js';
 import { DotAjaxActionResponseView, DotCurrentUser } from '@dotcms/dotcms-models';
+import { DotFormatDateService } from '@dotcms/ui';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 
@@ -19,7 +19,6 @@ import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publi
 @Injectable()
 export class PushPublishService {
     private pushEnvironementsUrl = '/api/environment/loadenvironments/roleId';
-    private _lastEnvironmentPushed: string[];
     /*
         TODO: I had to do this because this line concat'api/' into the URL
         https://github.com/dotCMS/dotcms-js/blob/master/src/core/core-web.service.ts#L169
@@ -33,6 +32,12 @@ export class PushPublishService {
         private currentUser: DotCurrentUserService,
         private dotFormatDateService: DotFormatDateService
     ) {}
+
+    private _lastEnvironmentPushed: string[];
+
+    get lastEnvironmentPushed(): string[] {
+        return this._lastEnvironmentPushed;
+    }
 
     /**
      * Get push publish environments.
@@ -119,9 +124,5 @@ export class PushPublishService {
         }
 
         return result;
-    }
-
-    get lastEnvironmentPushed(): string[] {
-        return this._lastEnvironmentPushed;
     }
 }

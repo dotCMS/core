@@ -17,10 +17,9 @@ import { MenuModule } from 'primeng/menu';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe, DotStringFormatPipe } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, DotRelativeDatePipe, DotStringFormatPipe } from "@dotcms/ui";
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
@@ -30,7 +29,6 @@ import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-men
 import { ActionHeaderComponent } from './action-header/action-header.component';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 
-import { DotRelativeDatePipe } from '../../pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 import { DotActionMenuButtonComponent } from '../_common/dot-action-menu-button/dot-action-menu-button.component';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
@@ -151,7 +149,6 @@ describe('DotListingDataTableComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 LoggerService,
-                DotFormatDateService,
                 DotAlertConfirmService,
                 ConfirmationService,
                 StringUtils,

@@ -22,7 +22,6 @@ import { SidebarModule } from 'primeng/sidebar';
 
 import { take } from 'rxjs/operators';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { ComponentStatus, TrafficProportionTypes, Variant } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
@@ -39,8 +38,6 @@ import {
     imports: [
         CommonModule,
         ReactiveFormsModule,
-
-        DotFieldValidationMessageModule,
         DotMessagePipe,
         DotSidebarHeaderComponent,
         DotSidebarDirective,

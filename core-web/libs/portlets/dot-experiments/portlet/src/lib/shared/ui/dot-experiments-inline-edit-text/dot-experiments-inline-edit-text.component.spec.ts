@@ -3,8 +3,8 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/j
 import { ButtonDirective } from 'primeng/button';
 import { Inplace } from 'primeng/inplace';
 
-import { DotFieldValidationMessageComponent } from '@components/_common/dot-field-validation-message/dot-field-validation-message';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsInlineEditTextComponent } from './dot-experiments-inline-edit-text.component';

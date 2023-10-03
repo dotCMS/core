@@ -21,7 +21,6 @@ import { SearchableDropDownModule } from '@components/_common/searchable-dropdow
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -40,7 +39,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotFormatDateService, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 

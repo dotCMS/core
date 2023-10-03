@@ -15,10 +15,9 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { of } from 'rxjs/internal/observable/of';
 
-import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, DotcmsConfigService } from '@dotcms/dotcms-js';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
@@ -84,7 +83,8 @@ describe('DotPagesListingPanelComponent', () => {
                     { label: 'En-en', value: 1 },
                     { label: 'ES-es', value: 2 }
                 ],
-                languageLabels: { 1: 'En-en', 2: 'Es-es' }
+                languageLabels: { 1: 'En-en', 2: 'Es-es' },
+                isContentEditor2Enabled: false
             });
         }
 

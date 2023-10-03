@@ -9,6 +9,7 @@ import { DotMessageDisplayServiceMock } from '@components/dot-message-display/do
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -16,7 +17,6 @@ import {
     MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';
-import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
