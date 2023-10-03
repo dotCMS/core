@@ -108,7 +108,6 @@ import static org.mockito.Mockito.when;
 public class PageResourceTest {
     private ContentletAPI esapi;
     private PageResource pageResource;
-    private PageResource pageResourceWithHelper;
     private User user;
     private HttpServletRequest request;
     private HttpServletResponse response;
@@ -1169,7 +1168,7 @@ public class PageResourceTest {
      * </ul>
      */
     @Test
-    public void testCleanUpSessionWhenDeviceInodeIsNull() throws DotDataException, DotSecurityException {
+    public void testCleanUpSessionWhenDeviceInodeIsBlank() throws DotDataException, DotSecurityException {
         pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), "");
 
         verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
