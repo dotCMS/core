@@ -698,9 +698,7 @@
                     const binaryField = document.createElement('dotcms-binary-field');
                     binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
                     binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>")
-                    
-                    console.log(isNaN(maxFileSize));
-                    console.log(maxFileSize);
+
                     // Set the initial value.
                     binaryField.maxFileSize = isNaN(maxFileSize) ? 0 : maxFileSize;
                     binaryField.accept = acceptTypes;
