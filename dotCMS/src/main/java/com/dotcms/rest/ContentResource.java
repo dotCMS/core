@@ -1463,6 +1463,7 @@ public class ContentResource {
 
         jsonObject.put("__icon__", UtilHTML.getIconClass(contentlet));
         jsonObject.put("contentTypeIcon", type.icon());
+        jsonObject.put("variant", contentlet.getVariantId());
         return jsonObject;
     }
 
