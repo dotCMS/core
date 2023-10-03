@@ -659,10 +659,10 @@ import org.junit.runners.Suite.SuiteClasses;
         FileStorageAPITest.class,
         Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
         BundleFactoryImplTest.class,
-        Task230922AddPublishDateToContentletVersionInfoTest.class,
         DropOldContentVersionsJobTest.class,
         ITConfigTest.class,
-        DotConnectTest.class
+        DotConnectTest.class,
+        Task230922AddPublishDateToContentletVersionInfoTest.class
 })
 
 public class MainSuite {

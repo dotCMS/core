@@ -31,12 +31,6 @@ public class Task230922AddPublishDateToContentletVersionInfoTest {
                 databaseMetaData.dropColumn(connection,
                         "contentlet_version_info", "publish_date");
             }
-            final boolean unpublishColumnExists = databaseMetaData.hasColumn(
-                    "contentlet_version_info", "unpublish_date");
-            if (unpublishColumnExists) {
-                databaseMetaData.dropColumn(connection,
-                        "contentlet_version_info", "unpublish_date");
-            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
