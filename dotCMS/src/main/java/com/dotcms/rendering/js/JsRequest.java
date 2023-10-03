@@ -4,7 +4,6 @@ import com.dotmarketing.util.json.JSONObject;
 import io.vavr.control.Try;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.proxy.ProxyHashMap;
-import org.graalvm.polyglot.proxy.ProxyObject;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
@@ -26,6 +25,10 @@ public class JsRequest implements Serializable {
     private final HttpServletRequest request;
     public JsRequest(final HttpServletRequest request) {
         this.request = request;
+    }
+
+    public HttpServletRequest getRequest() {
+        return request;
     }
 
     @HostAccess.Export
@@ -121,9 +124,10 @@ public class JsRequest implements Serializable {
     }
 
     @HostAccess.Export
-    public JSONObject getJson() { // todo: we have to annotated the JSONObject with @HostAccess
+    public ProxyHashMap getJson() {
 
-        return new JSONObject(this.getText());
+        final Map json = new JSONObject(this.getText());
+        return ProxyHashMap.from(json);
     }
 
     @HostAccess.Export

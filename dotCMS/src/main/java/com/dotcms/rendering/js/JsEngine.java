@@ -10,7 +10,6 @@ import org.graalvm.polyglot.Value;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Map;
@@ -42,7 +41,7 @@ public class JsEngine implements ScriptEngine {
             contextParams.entrySet().forEach(entry -> bindings.putMember(entry.getKey(), entry.getValue()));
             this.addTools(request, response, bindings, contextParams);
 
-            final JsRequest jsRequest   = new JsRequest(request);
+            final JsRequest  jsRequest  = new JsRequest(request);
             final JsResponse jsResponse = new JsResponse(response);
             bindings.putMember("dotJSON", dotJSON);
             bindings.putMember("request",  jsRequest);
@@ -64,6 +63,7 @@ public class JsEngine implements ScriptEngine {
     private Object[] buildArgs(final JsRequest request,
                                final JsResponse response,
                                final Object[] objects) {
+
         final Object [] defaultArgsArray = new Object[]{
                 new JsContext.Builder().request(request).response(response).logger(JS_DOT_LOGGER).build() };
 

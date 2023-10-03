@@ -565,21 +565,24 @@ public class JsResource {
 
             if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
 
-                final HttpServletResponse wrapperResponse = (HttpServletResponse) context.get("response");
+                final HttpServletResponse wrapperResponse = null != context.get("response")?(HttpServletResponse) context.get("response"): response;
+                if (!wrapperResponse.isCommitted()) {
 
-                final String contentType = (wrapperResponse!=null && wrapperResponse.getContentType()!=null) ?
-                        wrapperResponse.getContentType() : MediaType.TEXT_PLAIN_TYPE.toString();
+                    final String contentType = (wrapperResponse != null && wrapperResponse.getContentType() != null) ?
+                            wrapperResponse.getContentType() : MediaType.TEXT_PLAIN_TYPE.toString();
 
-                if(wrapperResponse!=null && wrapperResponse.getHeaderNames()!=null) {
-                    for(final String  headerName : wrapperResponse.getHeaderNames()) {
-                        response.setHeader(headerName, wrapperResponse.getHeader(headerName));
+                    if (wrapperResponse != null && wrapperResponse.getHeaderNames() != null) {
+                        for (final String headerName : wrapperResponse.getHeaderNames()) {
+                            response.setHeader(headerName, wrapperResponse.getHeader(headerName));
+                        }
                     }
+
+                    return UtilMethods.isSet(contentType)
+                            ? Response.ok(resultToString(result)).type(contentType).build()
+                            : Response.ok(resultToString(result)).type(MediaType.TEXT_PLAIN_TYPE).build();
                 }
 
-                return UtilMethods.isSet(contentType)
-                        ? Response.ok(resultToString(result)).type(contentType).build()
-                        : Response.ok(resultToString(result)).type(MediaType.TEXT_PLAIN_TYPE).build();
-
+                return Response.status(wrapperResponse.getStatus()).build();
             }
         } catch(MethodInvocationException e) {
 
