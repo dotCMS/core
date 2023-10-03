@@ -15,6 +15,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    DEFAULT_VARIANT_ID,
     DotCMSContentlet,
     DotCMSContentType,
     ESContent
@@ -201,10 +202,9 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                         lang: languageId || '1',
                         filter: filter || '',
                         offset: (event && event.first.toString()) || '0',
-                        // query: `+contentType: ${this.contentTypeVarName} +deleted: false`  <---- This is the original query
                         query: `+contentType: ${
                             this.contentTypeVarName
-                        } +(variant:default OR variant:${this.dotSessionStorageService.getVariationId()}) +deleted: false`
+                        } ${this.getExperimentVariantQueryField()} +deleted: false`
                     })
                     .pipe(take(1))
                     .subscribe((response: ESContent) => {
@@ -283,5 +283,18 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         this.setFilter('');
         this.loadContentlets(variableName);
         this.setContentTypes(this.initialContent);
+    }
+
+    /**
+     * Retrieves the experiment variant query field.
+     *
+     * @private
+     *
+     * @returns {string} The query field for the experiment variant.
+     */
+    private getExperimentVariantQueryField(): string {
+        return this.dotSessionStorageService.getVariationId() === DEFAULT_VARIANT_ID
+            ? `+variant:default`
+            : `+(variant:default OR variant:${this.dotSessionStorageService.getVariationId()})`;
     }
 }
