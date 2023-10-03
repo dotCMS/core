@@ -660,7 +660,7 @@
         %>
             
             <%
-                String accept="[]";
+                String accept="";
                 String maxFileLength="0";
                 String helperText="";
 
@@ -689,7 +689,7 @@
                 (function autoexecute() {
                     const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
                     const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
-                    const acceptArr = JSON.parse("<%= accept%>");
+                    const acceptArr = "<%= accept%>".split(',');
                     const acceptTypes = acceptArr.map((type) => type.trim())
 
                     // Creating the binary field dynamically
