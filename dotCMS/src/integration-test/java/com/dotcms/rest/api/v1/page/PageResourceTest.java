@@ -1146,4 +1146,32 @@ public class PageResourceTest {
         // Assertions
         assertTrue(containerRaw.toString().contains("data-dot-on-number-of-pages="));
     }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}</li>
+     *     <li><b>Given Scenario:</b> The deviceInode is not set as part of the request</li>
+     *     <li><b>Expected Result:</b> The {@link WebKeys#CURRENT_DEVICE} is removed from session</li>
+     * </ul>
+     */
+    @Test
+    public void testCleanUpSessionWhenDeviceInodeIsNull() throws DotDataException, DotSecurityException {
+        pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), null);
+
+        verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}</li>
+     *     <li><b>Given Scenario:</b> The deviceInode in the request is blank</li>
+     *     <li><b>Expected Result:</b> The {@link WebKeys#CURRENT_DEVICE} is removed from session</li>
+     * </ul>
+     */
+    @Test
+    public void testCleanUpSessionWhenDeviceInodeIsNull() throws DotDataException, DotSecurityException {
+        pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), "");
+
+        verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
+    }
 }
