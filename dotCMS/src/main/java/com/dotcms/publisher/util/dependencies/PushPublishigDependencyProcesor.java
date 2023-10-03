@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
@@ -56,10 +57,13 @@ import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -796,20 +800,14 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     private void processExperimentDependencies(final Experiment experiment)  {
         try {
 
-
-            final Contentlet parentPage = APILocator.getContentletAPI()
-                    .findContentletByIdentifierAnyLanguage(experiment.pageId());
+            final HTMLPageAsset parentPage = getLastModeDateVersionOfPage(experiment).orElseThrow(
+                    () -> new DotDataException(
+                            String.format("For Experiment '%s', no parent with ID '%s' could be found", experiment.id().orElse(""),
+                                    experiment.pageId())));
 
             final long languageId = parentPage.getLanguageId();
 
-            if (UtilMethods.isSet(parentPage)) {
-                tryToAddAsDependency(PusheableAsset.CONTENTLET, parentPage,
-                        experiment);
-            } else {
-                throw new DotDataException(
-                        String.format("For Experiment '%s', no parent with ID '%s' could be found", experiment.id().orElse(""),
-                                experiment.pageId()));
-            }
+            tryToAddAsDependency(PusheableAsset.CONTENTLET, parentPage, experiment);
 
             List<Variant> variants = experiment.trafficProportion().variants().stream()
                     .map((experimentVariant -> {
@@ -827,22 +825,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             final List<Contentlet> contentDependencies = new ArrayList<>();
 
             for (Variant variant : variants) {
-                List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
-                        .getMultiTreesByVariant(experiment.pageId(), variant.name());
-
-                for (MultiTree multiTree : multiTrees) {
-                    Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
-                            multiTree.getContentlet(), false, languageId, variant.name(), user,
-                            false);
-
-                    if(!UtilMethods.isSet(contentlet)) {
-                        contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
-                                multiTree.getContentlet(), false, languageId, DEFAULT_VARIANT.name(), user,
-                                false);
-                    }
-
-                    contentDependencies.add(contentlet);
-                }
+                contentDependencies.addAll(getContentByMultiTree(experiment, languageId, variant));
+                addVariantTemplateAsDependecyIfNeeded(experiment, parentPage, variant);
             }
 
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentDependencies,
@@ -852,6 +836,75 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             Logger.error(this, String.format("An error occurred when processing dependencies on Experiment '%s' [%s]: %s",
                     experiment.name(), experiment.id().orElse(""), e.getMessage()), e);
         }
+    }
+
+    private Optional<HTMLPageAsset> getLastModeDateVersionOfPage(final Experiment experiment) {
+
+        final Optional<Contentlet> contentlet = experiment.trafficProportion().variants().stream()
+                .map(experimentVariant -> experimentVariant.id())
+                .map(variantId -> {
+                    try {
+                        return APILocator.getContentletAPI()
+                                .findContentletByIdentifierAnyLanguage(experiment.pageId(),
+                                        variantId);
+                    } catch (DotDataException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(Contentlet::getModDate).reversed())
+                .findFirst();
+
+        if (contentlet.isPresent()) {
+            return Optional.of(APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet.get()));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private void addVariantTemplateAsDependecyIfNeeded(Experiment experiment, HTMLPageAsset parentPage, Variant variant)
+            throws DotDataException, DotSecurityException {
+        final Contentlet variantContentlet = contentletAPI.get()
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), variant.name());
+
+        if (UtilMethods.isSet(variantContentlet)) {
+            final HTMLPageAsset variantHtmlPageAsset = APILocator.getHTMLPageAssetAPI()
+                    .fromContentlet(variantContentlet);
+            final String variantTemplateId = variantHtmlPageAsset.getTemplateId();
+
+            final Template template = APILocator.getTemplateAPI()
+                    .findAllVersions(APILocator.getIdentifierAPI().find(variantTemplateId),
+                            APILocator.systemUser(), false, false).stream()
+                    .findFirst()
+                    .orElseThrow();
+
+            tryToAddAsDependency(PusheableAsset.TEMPLATE, template, variant);
+        }
+    }
+
+    private Collection<Contentlet> getContentByMultiTree(Experiment experiment, long languageId,
+            Variant variant) throws DotDataException, DotSecurityException {
+
+        final Collection<Contentlet> result = new ArrayList<>();
+
+        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
+                .getMultiTreesByVariant(experiment.pageId(), variant.name());
+
+        for (MultiTree multiTree : multiTrees) {
+            Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
+                    multiTree.getContentlet(), false, languageId, variant.name(), user,
+                    false);
+
+            if(!UtilMethods.isSet(contentlet)) {
+                contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
+                        multiTree.getContentlet(), false, languageId, DEFAULT_VARIANT.name(), user,
+                        false);
+            }
+
+            result.add(contentlet);
+        }
+
+        return result;
     }
 
     @Override
@@ -1116,17 +1169,17 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             INCLUDE, EXCLUDE, ALREADY_INCLUDE;
         }
 
-        Result result;
-        ManifestReason excludeReason;
+            Result result;
+            ManifestReason excludeReason;
 
-        public TryToAddResult(final Result result) {
-            this(result, null);
-        }
+            public TryToAddResult(final Result result) {
+                this(result, null);
+            }
 
-        public TryToAddResult(final Result result, final ManifestReason excludeReason) {
-            this.result = result;
-            this.excludeReason = excludeReason;
-        }
+            public TryToAddResult(final Result result, final ManifestReason excludeReason) {
+                this.result = result;
+                this.excludeReason = excludeReason;
+            }
     }
 
 }
