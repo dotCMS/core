@@ -17,7 +17,6 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -48,6 +47,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     LoginServiceMock,

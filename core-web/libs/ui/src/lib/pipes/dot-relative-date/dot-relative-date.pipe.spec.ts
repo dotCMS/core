@@ -1,10 +1,8 @@
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotFormatDateService, DotRelativeDatePipe } from '@dotcms/ui';
 import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
-
-import { DotRelativeDatePipe } from './dot-relative-date.pipe';
 
 const ONE_DAY = 86400000;
 

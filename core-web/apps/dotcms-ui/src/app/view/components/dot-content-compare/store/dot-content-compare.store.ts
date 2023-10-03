@@ -6,9 +6,9 @@ import { Injectable } from '@angular/core';
 import { map, switchMap, take } from 'rxjs/operators';
 
 import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotContentletService, DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotFormatDateService } from '@dotcms/ui';
 
 export interface DotContentCompareTableData {
     working: DotCMSContentlet;
@@ -56,33 +56,17 @@ export enum FieldWhiteList {
 @Injectable()
 export class DotContentCompareStore extends ComponentStore<DotContentCompareState> {
     systemTime;
-
-    constructor(
-        private dotContentTypeService: DotContentTypeService,
-        private dotContentletService: DotContentletService,
-        private dotFormatDateService: DotFormatDateService
-    ) {
-        super({
-            data: null,
-            showDiff: true
-        });
-    }
-
     readonly vm$ = this.state$;
-
+    readonly updateCompare = this.updater((state, compare: DotCMSContentlet) => {
+        return { ...state, data: { ...state.data, compare } };
+    });
+    readonly updateShowDiff = this.updater((state, showDiff: boolean) => {
+        return { ...state, showDiff };
+    });
     // UPDATERS
     private readonly updateData = this.updater((state, data: DotContentCompareTableData) => {
         return { ...state, data };
     });
-
-    readonly updateCompare = this.updater((state, compare: DotCMSContentlet) => {
-        return { ...state, data: { ...state.data, compare } };
-    });
-
-    readonly updateShowDiff = this.updater((state, showDiff: boolean) => {
-        return { ...state, showDiff };
-    });
-
     //Effects
     readonly loadData = this.effect((data$: Observable<DotContentCompareEvent>) => {
         return data$.pipe(
@@ -126,6 +110,17 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
             })
         );
     });
+
+    constructor(
+        private dotContentTypeService: DotContentTypeService,
+        private dotContentletService: DotContentletService,
+        private dotFormatDateService: DotFormatDateService
+    ) {
+        super({
+            data: null,
+            showDiff: true
+        });
+    }
 
     private filterFields(contentType: DotCMSContentType): DotCMSContentTypeField[] {
         return contentType.fields.filter((field) => FieldWhiteList[field.fieldType] != undefined);

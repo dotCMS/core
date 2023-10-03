@@ -10,7 +10,6 @@ import { ConfirmationService } from 'primeng/api';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -29,6 +28,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@dotcms/ui';
 import {
     cleanUpDialog,
     CoreWebServiceMock,

@@ -30,7 +30,6 @@ import { DotActionButtonModule } from '@components/_common/dot-action-button/dot
 import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
@@ -40,7 +39,7 @@ import {
     DotCMSContentTypeLayoutRow,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import { DotFieldValidationMessageComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotFormatDateService, DotIconModule, DotMessagePipe } from "@dotcms/ui";
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,
