@@ -21,20 +21,24 @@ public class Task230922AddPublishDateToContentletVersionInfoTest {
         LocalTransaction.wrap(Task230922AddPublishDateToContentletVersionInfoTest::dropPublishDateColumnIfExists);
     }
 
-    private static void dropPublishDateColumnIfExists() throws SQLException {
-        final Connection connection = DbConnectionFactory.getConnection();
-        final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
-        final boolean publishColumnExists = databaseMetaData.hasColumn(
-                "contentlet_version_info", "publish_date");
-        if (publishColumnExists) {
-            databaseMetaData.dropColumn(connection,
+    private static void dropPublishDateColumnIfExists() {
+        try {
+            final Connection connection = DbConnectionFactory.getConnection();
+            final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
+            final boolean publishColumnExists = databaseMetaData.hasColumn(
                     "contentlet_version_info", "publish_date");
-        }
-        final boolean unpublishColumnExists = databaseMetaData.hasColumn(
-                "contentlet_version_info", "unpublish_date");
-        if (unpublishColumnExists) {
-            databaseMetaData.dropColumn(connection,
+            if (publishColumnExists) {
+                databaseMetaData.dropColumn(connection,
+                        "contentlet_version_info", "publish_date");
+            }
+            final boolean unpublishColumnExists = databaseMetaData.hasColumn(
                     "contentlet_version_info", "unpublish_date");
+            if (unpublishColumnExists) {
+                databaseMetaData.dropColumn(connection,
+                        "contentlet_version_info", "unpublish_date");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
