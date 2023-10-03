@@ -145,6 +145,7 @@ import com.dotmarketing.startup.runonce.Task230707CreateSystemTableTest;
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
+import com.dotmarketing.startup.runonce.Task230922AddPublishDateToContentletVersionInfoTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
@@ -313,7 +314,8 @@ import org.junit.runners.Suite.SuiteClasses;
         IndexRegexUrlPatterStrategyIntegrationTest.class,
         RootIndexRegexUrlPatterStrategyIntegrationTest.class,
         SiteViewPaginatorIntegrationTest.class,
-        Task230523CreateVariantFieldInContentletIntegrationTest.class
+        Task230523CreateVariantFieldInContentletIntegrationTest.class,
+        Task230922AddPublishDateToContentletVersionInfoTest.class
 })
 
 public class MainSuite2b {

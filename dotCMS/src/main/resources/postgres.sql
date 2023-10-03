@@ -561,6 +561,8 @@ create table contentlet_version_info (
    locked_on timestamptz,
    version_ts timestamptz not null,
    variant_id varchar(255) default 'DEFAULT' not null,
+   publish_date timestamptz,
+   unpublish_date timestamptz,
    primary key (identifier, lang, variant_id)
 );
 create table fixes_audit (

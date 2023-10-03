@@ -148,6 +148,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -3235,11 +3238,18 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.publish(contentlet, user, false);
 
         //Verify if it was published
-        Boolean isLive = APILocator.getVersionableAPI().isLive(contentlet);
+        final boolean isLive = APILocator.getVersionableAPI().isLive(contentlet);
 
         //Validations
         assertNotNull(isLive);
         assertTrue(isLive);
+
+        final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getIdentifier(),
+                        contentlet.getLanguageId(), contentlet.getVariantId());
+        final Date publishDate = versionInfo.map(ContentletVersionInfo::getPublishDate).orElse(null);
+        assertNotNull(publishDate);
+
     }
 
     /**
@@ -3307,6 +3317,13 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Validations
         assertNotNull(isLive);
         assertFalse(isLive);
+
+        final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getIdentifier(),
+                        contentlet.getLanguageId(), contentlet.getVariantId());
+        final Date unpublishDate = versionInfo.map(ContentletVersionInfo::getUnpublishDate).orElse(null);
+        assertNotNull(unpublishDate);
+
     }
 
     /**
@@ -8326,5 +8343,64 @@ public class ContentletAPITest extends ContentletBaseTest {
                 assertEquals(checkout.getInode(), result.get("live_inode"));
             }
         }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#publish(Contentlet, User, boolean)}
+     * When: You have live and not live contentlets
+     * Should: Update publish_date when contentlet is published,
+     * update unpublish_date when contentlet is unpublished
+     */
+    @Test
+    public void getMostRecentPublishedContent() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String contentTypeVarName = contentType.variable();
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+        contentletDataGen.nextPersisted();
+        contentletDataGen.nextPersisted();
+
+        // query published contentlet in the last half hour
+        final Date currentDate = new Date();
+        final FastDateFormat datetimeFormat = FastDateFormat.getInstance(
+                "yyyy-MM-dd't'HH:mm:ssZ", APILocator.systemTimeZone());
+        final String currentDateForQuery = datetimeFormat.format(currentDate);
+
+        final Date currentDateLessHalfHour = DateUtils.addMinutes(currentDate, -30);
+        final String currentDateLessHalfHourForQuery = datetimeFormat.format(currentDateLessHalfHour);
+
+        final Contentlet mostRecentPublishedContent = contentletAPI.search(
+                String.format( "+contentType:%s +sysPublishDate:[%s TO %s]",
+                        contentTypeVarName, currentDateLessHalfHourForQuery, currentDateForQuery),
+                        -1, 0, "", user, false)
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(mostRecentPublishedContent);
+        assertEquals(contentInode, mostRecentPublishedContent.getInode());
+
+        // unpublish contentlet
+        ContentletDataGen.unpublish(publishedContentlet);
+
+        // query unpublished contentlet in the last half hour
+        final Date unpublishCurrentDate = new Date();
+        final String unpublishCurrentDateForQuery = datetimeFormat.format(unpublishCurrentDate);
+
+        final Contentlet mostRecentUnpublishedContent = contentletAPI.search(
+                String.format( "+contentType:%s +sysUnpublishDate:[%s TO %s]",
+                        contentTypeVarName, currentDateLessHalfHourForQuery, unpublishCurrentDateForQuery),
+                        -1, 0, "", user, false)
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(mostRecentUnpublishedContent);
+        assertEquals(contentInode, mostRecentUnpublishedContent.getInode());
+
     }
 }
