@@ -30,5 +30,8 @@ export enum FieldTypeWithExtraFields {
     MULTISELECT = 'Multi-Select',
     SELECT = 'Select',
     CHECKBOX = 'Checkbox',
-    RADIO = 'Radio'
+    RADIO = 'Radio',
+    DATE = 'Date',
+    DATE_AND_TIME = 'Date-and-Time',
+    TIME = 'Time'
 }

@@ -199,6 +199,62 @@ export class DotFieldsService {
                 fieldTypeLabel
             }
         ],
+        Date: ({ variable, name, fieldTypeLabel }) => [
+            {
+                name: `${name}: ${this.dotMessage.get(
+                    'contenttypes.field.properties.data_type.values.date'
+                )} ${this.dotMessage.get('mm-dd-yyyy')}`,
+                codeTemplate: this.getCodeTemplate.default(variable),
+                variable,
+                fieldTypeLabel
+            },
+            {
+                name: `${name}: ${this.dotMessage.get(
+                    'Date-Database-Format'
+                )} ${this.dotMessage.get('yyyy-mm-dd')}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}DBFormat`),
+                variable: `${variable}DBFormat`,
+                fieldTypeLabel
+            }
+        ],
+        Time: ({ variable, name, fieldTypeLabel }) => [
+            {
+                name: `${name}: ${this.dotMessage.get('Time')} ${this.dotMessage.get('hh-mm-ss')}`,
+                codeTemplate: this.getCodeTemplate.default(variable),
+                variable,
+                fieldTypeLabel
+            }
+        ],
+        'Date-and-Time': ({ variable, name, fieldTypeLabel }) => [
+            {
+                name: `${name}: ${this.dotMessage.get('Date')}`,
+                codeTemplate: this.getCodeTemplate.default(variable),
+                variable,
+                fieldTypeLabel
+            },
+            {
+                name: `${name}: ${this.dotMessage.get('Date-Short-String')} ${this.dotMessage.get(
+                    'mm-dd-yyyy'
+                )}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}ShortFormat`),
+                variable: `${variable}ShortFormat`,
+                fieldTypeLabel
+            },
+            {
+                name: `${name}: ${this.dotMessage.get('Date-Long-String')}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}LongFormat`),
+                variable: `${variable}LongFormat`,
+                fieldTypeLabel
+            },
+            {
+                name: `${name}: ${this.dotMessage.get(
+                    'Date-Database-Format'
+                )} ${this.dotMessage.get('yyyy-mm-dd')}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}DBFormat`),
+                variable: `${variable}DBFormat`,
+                fieldTypeLabel
+            }
+        ],
         default: ({
             variable,
             name,
