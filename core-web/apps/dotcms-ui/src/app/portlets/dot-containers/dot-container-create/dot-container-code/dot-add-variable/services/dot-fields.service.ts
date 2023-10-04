@@ -8,7 +8,7 @@ import { FieldTypeWithExtraFields, DotFieldContent } from '../dot-add-variable.m
 export class DotFieldsService {
     private dotMessage = inject(DotMessageService);
 
-    // TODO: MULTISELECT; SELECT; RADIO; CHECKBOX; DATE; TIME; DATE AND TIME
+    // TODO: DATE; TIME; DATE AND TIME
 
     // You can add here a new variable and add the custom code that it has
     private readonly getCodeTemplate: Record<string, (variable: string) => string> = {
@@ -140,6 +140,62 @@ export class DotFieldsService {
                 name: `${name}: ${this.dotMessage.get('Binary-File-Size')}`,
                 variable: `${variable}FileSize`,
                 codeTemplate: this.getCodeTemplate.default(`${variable}FileSize`),
+                fieldTypeLabel
+            }
+        ],
+        Select: ({ variable, name, fieldTypeLabel }) => [
+            {
+                name: `${name}: ${this.dotMessage.get('Selected-Value')}`,
+                codeTemplate: this.getCodeTemplate.default(variable),
+                variable,
+                fieldTypeLabel
+            },
+            {
+                name: `${name}: ${this.dotMessage.get('Labels-Values')}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}SelectLabelsValues`),
+                variable: `${variable}SelectLabelsValues`,
+                fieldTypeLabel
+            }
+        ],
+        'Multi-Select': ({ variable, name, fieldTypeLabel }) => [
+            {
+                name: `${name}: ${this.dotMessage.get('Selected-Values')}`,
+                codeTemplate: this.getCodeTemplate.default(variable),
+                variable,
+                fieldTypeLabel
+            },
+            {
+                name: `${name}: ${this.dotMessage.get('Labels-Values')}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}SelectLabelsValues`),
+                variable: `${variable}SelectLabelsValues`,
+                fieldTypeLabel
+            }
+        ],
+        Radio: ({ variable, name, fieldTypeLabel }) => [
+            {
+                name: `${name}: ${this.dotMessage.get('Selected-Value')}`,
+                codeTemplate: this.getCodeTemplate.default(variable),
+                variable,
+                fieldTypeLabel
+            },
+            {
+                name: `${name}: ${this.dotMessage.get('Labels-Values')}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}RadioLabelsValues`),
+                variable: `${variable}RadioLabelsValues`,
+                fieldTypeLabel
+            }
+        ],
+        Checkbox: ({ variable, name, fieldTypeLabel }) => [
+            {
+                name: `${name}: ${this.dotMessage.get('Selected-Values')}`,
+                codeTemplate: this.getCodeTemplate.default(variable),
+                variable,
+                fieldTypeLabel
+            },
+            {
+                name: `${name}: ${this.dotMessage.get('Labels-Values')}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}CheckboxLabelsValues`),
+                variable: `${variable}CheckboxLabelsValues`,
                 fieldTypeLabel
             }
         ],

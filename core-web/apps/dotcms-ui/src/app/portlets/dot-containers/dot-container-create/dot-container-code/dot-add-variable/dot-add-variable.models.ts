@@ -26,5 +26,9 @@ export enum FieldTypeWithExtraFields {
     FILE = 'File',
     DEFAULT = 'default',
     BLOCK_EDITOR = 'Story-Block',
-    BINARY = 'Binary'
+    BINARY = 'Binary',
+    MULTISELECT = 'Multi-Select',
+    SELECT = 'Select',
+    CHECKBOX = 'Checkbox',
+    RADIO = 'Radio'
 }
