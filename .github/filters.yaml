@@ -15,7 +15,7 @@ backend: &backend
 frontend: &frontend
   - 'core-web/**'
 cli: &cli
-  - 'tools/cli/**'
+  - 'tools/dotcms-cli/**'
 
 jvm_unit_test:
   - *backend
