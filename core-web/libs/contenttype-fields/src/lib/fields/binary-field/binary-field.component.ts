@@ -151,6 +151,15 @@ export class DotBinaryFieldComponent implements OnInit {
     }
 
     /**
+     * Close Dialog
+     *
+     * @memberof DotBinaryFieldComponent
+     */
+    closeDialog() {
+        this.dialogOpen = false;
+    }
+
+    /**
      * Listen to dialog close event
      *
      * @memberof DotBinaryFieldComponent
