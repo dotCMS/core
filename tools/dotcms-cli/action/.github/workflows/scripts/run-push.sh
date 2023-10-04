@@ -3,6 +3,7 @@
   DOT_CLI_JAR="dot-cli.jar"
   DOT_CLI_HOME="/tmp/dot-cli/"
   DOT_SERVICE_YML="dot-service.yml"
+  RUN_JAVA_VERSION=1.3.8
 
 SERVICES_FILE_CONTENT='
 - name: "default"
@@ -99,7 +100,7 @@ _run_cli_push(){
       echo $exit_code
 }
 
-install_dot_cli(){
+install_cli(){
     cli_release_download_url=$1
     force_download=$2
     dotApiURL=$3
