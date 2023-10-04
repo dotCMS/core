@@ -25,5 +25,6 @@ export enum FieldTypeWithExtraFields {
     HOST = 'Host-Folder',
     FILE = 'File',
     DEFAULT = 'default',
-    BLOCK_EDITOR = 'Story-Block'
+    BLOCK_EDITOR = 'Story-Block',
+    BINARY = 'Binary'
 }
