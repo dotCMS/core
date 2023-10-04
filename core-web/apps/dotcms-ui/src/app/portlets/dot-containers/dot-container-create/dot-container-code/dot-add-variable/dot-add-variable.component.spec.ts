@@ -70,11 +70,11 @@ const mockContentTypes: DotCMSContentType = {
     defaultType: false,
     fields: [
         {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
             contentTypeId: 'ce930143870e11569f93f8a9fff5da19',
             dataType: 'SYSTEM',
-            fieldType: 'Binary',
-            fieldTypeLabel: 'Binary',
+            fieldType: 'Text',
+            fieldTypeLabel: 'Text',
             fieldVariables: [],
             fixed: false,
             iDate: 1667904275000,
@@ -82,13 +82,13 @@ const mockContentTypes: DotCMSContentType = {
             indexed: false,
             listed: false,
             modDate: 1667904276000,
-            name: 'Screenshot',
+            name: 'Sub Title',
             readOnly: false,
             required: false,
             searchable: false,
             sortOrder: 0,
             unique: false,
-            variable: 'screenshot'
+            variable: 'subTitle'
         },
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
