@@ -159,7 +159,7 @@ export class DotFieldsService {
         ],
         'Multi-Select': ({ variable, name, fieldTypeLabel }) => [
             {
-                name: `${name}: ${this.dotMessage.get('Selected-Values')}`,
+                name: `${name}: ${this.dotMessage.get('Selected-Value')}`,
                 codeTemplate: this.getCodeTemplate.default(variable),
                 variable,
                 fieldTypeLabel
@@ -187,7 +187,7 @@ export class DotFieldsService {
         ],
         Checkbox: ({ variable, name, fieldTypeLabel }) => [
             {
-                name: `${name}: ${this.dotMessage.get('Selected-Values')}`,
+                name: `${name}: ${this.dotMessage.get('Selected-Value')}`,
                 codeTemplate: this.getCodeTemplate.default(variable),
                 variable,
                 fieldTypeLabel
