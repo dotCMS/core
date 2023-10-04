@@ -20,11 +20,9 @@ export class DotBinaryFieldUrlModeStore extends ComponentStore<DotBinaryFieldUrl
 
     readonly vm$ = this.select((state) => state);
 
-    readonly tempFile$ = this.select((state) => state.tempFile);
+    readonly tempFile$ = this.select(({ tempFile }) => tempFile);
 
-    readonly isLoading$ = this.select((state) => state.isLoading);
-
-    readonly error$ = this.select((state) => state.error);
+    readonly isLoading$ = this.select(({ isLoading }) => isLoading);
 
     constructor(private readonly dotUploadService: DotUploadService) {
         super({
@@ -52,13 +50,6 @@ export class DotBinaryFieldUrlModeStore extends ComponentStore<DotBinaryFieldUrl
     });
 
     readonly setError = this.updater((state, error: string) => {
-        return {
-            ...state,
-            error
-        };
-    });
-
-    readonly setRequestError = this.updater((state, error: string) => {
         return {
             ...state,
             isLoading: false,
@@ -97,7 +88,7 @@ export class DotBinaryFieldUrlModeStore extends ComponentStore<DotBinaryFieldUrl
                 (tempFile: DotCMSTempFile) => this.setTempFile(tempFile),
                 (error: DotHttpErrorResponse) => {
                     if (!signal?.aborted) {
-                        this.setRequestError(error.message);
+                        this.setError(error.message);
 
                         return;
                     }

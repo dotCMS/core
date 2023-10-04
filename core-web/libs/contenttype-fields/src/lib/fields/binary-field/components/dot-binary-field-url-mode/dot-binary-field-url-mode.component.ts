@@ -21,10 +21,10 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { distinctUntilChanged, filter, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldUrlModeStore } from './store/store/dot-binary-field-url-mode.store';
 
@@ -37,7 +37,8 @@ import { DotBinaryFieldUrlModeStore } from './store/store/dot-binary-field-url-m
         ReactiveFormsModule,
         ButtonModule,
         InputTextModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotFieldValidationMessageComponent
     ],
     providers: [DotBinaryFieldUrlModeStore],
     templateUrl: './dot-binary-field-url-mode.component.html',
@@ -48,17 +49,19 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
     @Input() maxFileSize: number;
     @Input() accept: string[];
 
-    @Output() tempFile: EventEmitter<DotCMSTempFile> = new EventEmitter<DotCMSTempFile>();
+    @Output() tempFileUploaded: EventEmitter<DotCMSTempFile> = new EventEmitter<DotCMSTempFile>();
     @Output() cancel: EventEmitter<void> = new EventEmitter<void>();
 
     private readonly destroy$ = new Subject<void>();
-    private readonly urlError = 'dot.binary.field.action.import.from.url.error.message';
     private readonly validators = [
         Validators.required,
         Validators.pattern(/^(ftp|http|https):\/\/[^ "]+$/)
     ];
 
+    readonly defaultError = 'dot.binary.field.action.import.from.url.error.message';
     readonly vm$ = this.store.vm$;
+    readonly isLoading$ = this.store.isLoading$;
+    readonly tempFileChanged$ = this.store.tempFile$;
     readonly form = new FormGroup({
         url: new FormControl('', this.validators)
     });
@@ -66,29 +69,18 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
     private abortController: AbortController;
 
     constructor(private readonly store: DotBinaryFieldUrlModeStore) {
-        this.store.tempFile$.pipe(takeUntil(this.destroy$)).subscribe((tempFile) => {
-            this.tempFile.emit(tempFile);
+        this.tempFileChanged$.pipe(takeUntil(this.destroy$)).subscribe((tempFile) => {
+            this.tempFileUploaded.emit(tempFile);
             this.form.enable();
         });
 
-        this.store.isLoading$.pipe(takeUntil(this.destroy$)).subscribe((isLoading) => {
+        this.isLoading$.pipe(takeUntil(this.destroy$)).subscribe((isLoading) => {
             isLoading ? this.form.disable() : this.form.enable();
         });
     }
 
     ngOnInit(): void {
         this.store.setMaxFileSize(this.maxFileSize);
-
-        this.form.statusChanges
-            .pipe(
-                filter((status) => status !== 'DISABLED'), // Avoid mutating last value
-                distinctUntilChanged(), // Only emit when status really change.
-                takeUntil(this.destroy$)
-            )
-            .subscribe((status) => {
-                const error = status === 'INVALID' ? this.urlError : '';
-                this.store.setError(error);
-            });
     }
 
     ngOnDestroy(): void {
@@ -101,8 +93,6 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
         const control = this.form.get('url');
 
         if (this.form.invalid) {
-            this.store.setError(this.urlError);
-
             return;
         }
 

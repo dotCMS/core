@@ -1,6 +1,8 @@
 import { expect, it } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
+import { By } from '@angular/platform-browser';
+
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
@@ -112,16 +114,22 @@ describe('DotBinaryFieldUrlModeComponent', () => {
             expect(spectator.component.form.valid).toBeTruthy();
         });
 
-        it('should show error when value is empty and user is trying to upload file ', () => {
-            const spySetError = jest.spyOn(store, 'setError');
+        it('should show error when value is empty and user is trying to upload file ', async () => {
             const button = spectator.query('[data-testId="import-button"] button');
             const form = spectator.component.form;
 
             form.setValue({ url: '' });
             spectator.click(button);
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+
+            const fieldMessage = spectator.fixture.debugElement.query(
+                By.css('dot-field-validation-message')
+            );
+            const error = fieldMessage.componentInstance.defaultMessage;
 
             expect(spectator.component.form.invalid).toBeTruthy();
-            expect(spySetError).toHaveBeenCalled();
+            expect(error).toBe('The URL you requested is not valid. Please try again.');
         });
     });
 

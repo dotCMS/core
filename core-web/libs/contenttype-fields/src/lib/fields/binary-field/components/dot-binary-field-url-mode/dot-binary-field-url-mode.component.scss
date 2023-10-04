@@ -28,15 +28,6 @@
     justify-content: flex-end;
 }
 
-.error-message {
-    justify-content: flex-start;
-    align-items: flex-start;
-    display: flex;
-    font-size: $font-size-sm;
-    color: $color-alert-red;
-    height: $spacing-3;
-}
-
 .url-mode__actions--main {
     width: 6.85rem;
 

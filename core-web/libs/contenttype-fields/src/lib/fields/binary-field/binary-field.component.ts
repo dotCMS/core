@@ -149,14 +149,13 @@ export class DotBinaryFieldComponent implements OnInit {
     }
 
     /**
-     * Listen to dialog visibility change
-     * and set mode to dropzone when dialog is closed
+     * Hide dialog
      *
      * @param {boolean} visibily
      * @memberof DotBinaryFieldComponent
      */
-    visibleChange(visibily: boolean) {
-        if (!visibily) {
+    hideDialog(hide: boolean) {
+        if (hide) {
             this.dotBinaryFieldStore.closeDialog();
         }
     }

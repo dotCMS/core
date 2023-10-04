@@ -87,18 +87,9 @@ describe('DotBinaryFieldUrlModeStore', () => {
             });
         });
 
-        it('should set error', (done) => {
-            store.setError('Error');
-
-            store.vm$.subscribe((state) => {
-                expect(state.error).toBe('Error');
-                done();
-            });
-        });
-
         it('should set error and isLoading to false', (done) => {
             store.setIsLoading(true); // Set isLoading to true
-            store.setRequestError('Request Error'); // Set error and isLoading to false
+            store.setError('Request Error'); // Set error and isLoading to false
 
             // Skip setIsLoading
             store.vm$.subscribe((state) => {

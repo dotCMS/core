@@ -50,8 +50,8 @@
 	String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
 	if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
 %>
-	<script src="/html/contenttype-fields.js"></script>
-	<link rel="stylesheet" href="/html/css/contenttype-fields-styles.css" />
+	<script src="/html/binary-field.js"></script>
+	<link rel="stylesheet" href="/html/css/binary-field.scss" />
 <% } %>
 
 <script type="text/javascript">

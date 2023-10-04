@@ -10,7 +10,12 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
-import { DotDropZoneComponent, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
+import {
+    DotDropZoneComponent,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotSpinnerModule
+} from '@dotcms/ui';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
@@ -36,7 +41,8 @@ export default {
                 DotMessagePipe,
                 DotSpinnerModule,
                 InputTextModule,
-                DotBinaryFieldUrlModeComponent
+                DotBinaryFieldUrlModeComponent,
+                DotFieldValidationMessageComponent
             ],
             providers: [
                 DotBinaryFieldStore,
