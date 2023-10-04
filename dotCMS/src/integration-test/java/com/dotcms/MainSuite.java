@@ -152,7 +152,7 @@ import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbor
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
-import com.dotmarketing.quartz.job.DropOldContentVersionsJob;
+import com.dotmarketing.quartz.job.DropOldContentVersionsJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
@@ -652,7 +652,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230701AddHashIndicesToWorkflowTablesTest.class,
         Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
         BundleFactoryImplTest.class,
-        DropOldContentVersionsJob.class
+        DropOldContentVersionsJobTest.class
 })
 
 public class MainSuite {

@@ -96,7 +96,7 @@ import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
-import com.dotmarketing.quartz.job.DropOldContentVersionsJob;
+import com.dotmarketing.quartz.job.DropOldContentVersionsJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorDataTest;
@@ -315,7 +315,7 @@ import org.junit.runners.Suite.SuiteClasses;
         RootIndexRegexUrlPatterStrategyIntegrationTest.class,
         SiteViewPaginatorIntegrationTest.class,
         Task230523CreateVariantFieldInContentletIntegrationTest.class,
-        DropOldContentVersionsJob.class
+        DropOldContentVersionsJobTest.class
 })
 
 public class MainSuite2b {
