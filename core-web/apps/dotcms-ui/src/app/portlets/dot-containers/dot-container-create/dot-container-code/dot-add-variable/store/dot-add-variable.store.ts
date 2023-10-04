@@ -7,11 +7,12 @@ import { Injectable } from '@angular/core';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotFieldContent, FilteredFieldTypes } from '../dot-add-variable.models';
+import { DotFieldsService } from '../services/dot-fields.service';
 
 export interface DotAddVariableState {
     fields: DotFieldContent[];
@@ -23,7 +24,7 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
         private dotContentTypeService: DotContentTypeService,
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotMessage: DotMessageService
+        private dotFieldsService: DotFieldsService
     ) {
         super({
             fields: []
@@ -36,85 +37,13 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
         };
     });
 
-    // You can add here a new fieldType and add the fields that it has
-    private readonly fields: Record<
-        string,
-        (variableContent: DotFieldContent) => DotFieldContent[]
-    > = {
-        Image: ({ variable, name, fieldTypeLabel }) => [
-            {
-                name: `${name}: ${this.dotMessage.get('Image-Identifier')}`,
-                variable: `${variable}ImageIdentifier`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}ImageIdentifier)`),
-                fieldTypeLabel
-            },
-            {
-                name: `${name}: ${this.dotMessage.get('Image')}`,
-                variable: `${variable}Image`,
-                codeTemplate: this.getCodeTemplate.image(variable),
-                fieldTypeLabel
-            },
-            {
-                name: `${name}: ${this.dotMessage.get('Image-Title')}`,
-                variable: `${variable}ImageTitle`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}ImageTitle)`),
-                fieldTypeLabel
-            },
-            {
-                name: `${name}: ${this.dotMessage.get('Image-Extension')}`,
-                variable: `${variable}ImageExtension`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}ImageExtension)`),
-                fieldTypeLabel
-            },
-            {
-                name: `${name}: ${this.dotMessage.get('Image-Width')}`,
-                variable: `${variable}ImageWidth`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}ImageWidth)`),
-                fieldTypeLabel
-            },
-            {
-                name: `${name}: ${this.dotMessage.get('Image-Height')}`,
-                variable: `${variable}ImageHeight`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}ImageHeight)`),
-                fieldTypeLabel
-            }
-        ],
-        default: ({
-            variable,
-            name,
-            fieldTypeLabel,
-            codeTemplate = this.getCodeTemplate.default(variable)
-        }) => [
-            {
-                name,
-                variable,
-                fieldTypeLabel,
-                codeTemplate
-            }
-        ]
-    };
-
-    // You can add here a new variable and add the custom code that it has
-    private readonly getCodeTemplate: Record<string, (variable: string) => string> = {
-        image: (variable) =>
-            `#if ($UtilMethods.isSet(\${${variable}ImageURI}))\n    <img src="$!{dotContentMap.${variable}ImageURI}" alt="$!{dotContentMap.${variable}ImageTitle}" />\n#end`,
-        default: (variable) => `$!{dotContentMap.${variable}}`
-    };
-
-    private readonly CONTENT_IDENTIFIER_FIELD: DotFieldContent = {
-        name: this.dotMessage.get('Content-Identifier-value'),
-        variable: 'ContentIdentifier',
-        fieldTypeLabel: this.dotMessage.get('Content-Identifier'),
-        codeTemplate: this.getCodeTemplate.default('ContentIdentifier')
-    };
-
     readonly updateFields = this.updater<DotCMSContentTypeField[]>(
         (state: DotAddVariableState, fields: DotCMSContentTypeField[]) => {
             return {
                 ...state,
                 fields: fields.reduce(this.reduceFields, [
                     // We initialize the array with the Content Identifier field
-                    this.CONTENT_IDENTIFIER_FIELD
+                    this.dotFieldsService.contentIdentifierField
                 ])
             };
         }
@@ -154,8 +83,9 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
         }
 
         fields.push(
-            // This try to find the fields by field type, if it doesn't exist it will use the default one
-            ...(this.fields[fieldType]?.(currentField) ?? this.fields.default(currentField))
+            // This will try to find the fields by field type, if it doesn't exist it will use the default one
+            ...(this.dotFieldsService.fields[fieldType]?.(currentField) ??
+                this.dotFieldsService.fields.default(currentField))
         );
 
         return fields;

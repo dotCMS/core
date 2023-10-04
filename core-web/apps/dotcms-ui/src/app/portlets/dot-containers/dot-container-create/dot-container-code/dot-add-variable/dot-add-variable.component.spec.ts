@@ -52,6 +52,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotAddVariableComponent } from './dot-add-variable.component';
 import { FilteredFieldTypes } from './dot-add-variable.models';
+import { DotFieldsService } from './services/dot-fields.service';
 
 @Component({
     selector: 'dot-form-dialog',
@@ -204,6 +205,7 @@ describe('DotAddVariableComponent', () => {
                 DotMessagePipe
             ],
             providers: [
+                DotFieldsService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
