@@ -28,6 +28,7 @@ import {
     DropZoneFileValidity
 } from '@dotcms/ui';
 
+import { DotBinaryFieldEditorComponent } from './components/dot-binary-field-editor/dot-binary-field-editor.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import {
     BINARY_FIELD_MODE,
@@ -60,7 +61,8 @@ const initialState: BinaryFieldState = {
         DotMessagePipe,
         DotBinaryFieldUiMessageComponent,
         DotSpinnerModule,
-        HttpClientModule
+        HttpClientModule,
+        DotBinaryFieldEditorComponent
     ],
     providers: [DotBinaryFieldStore],
     templateUrl: './binary-field.component.html',
