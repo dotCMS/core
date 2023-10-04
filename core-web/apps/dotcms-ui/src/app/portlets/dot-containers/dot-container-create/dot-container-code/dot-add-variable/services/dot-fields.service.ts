@@ -8,14 +8,12 @@ import { FieldTypeWithExtraFields, DotFieldContent } from '../dot-add-variable.m
 export class DotFieldsService {
     private dotMessage = inject(DotMessageService);
 
-    // TODO: DATE; TIME; DATE AND TIME
-
     // You can add here a new variable and add the custom code that it has
     private readonly getCodeTemplate: Record<string, (variable: string) => string> = {
         image: (variable) =>
             `#if ($UtilMethods.isSet(\${${variable}ImageURI}))\n    <img src="$!{dotContentMap.${variable}ImageURI}" alt="$!{dotContentMap.${variable}ImageTitle}" />\n#end`,
         file: (variable) =>
-            `#if (\${${variable}FileURI})\n    <a href="$!{dotContentMap.${variable}FileURI}">$!{dotContentMap.${variable}FileTitle}</a>\n#end `,
+            `#if (\${${variable}FileURI})\n    <a href="$!{dotContentMap.${variable}FileURI}">$!{dotContentMap.${variable}FileTitle}</a>\n#end`,
         binaryFile: (variable) =>
             `#if ($UtilMethods.isSet(\${${variable}BinaryFileURI}))\n    <a href="$!{dotContentMap.${variable}BinaryFileURI}?force_download=1&filename=$!{dotContentMap.${variable}BinaryFileTitle}">$!{dotContentMap.${variable}BinaryFileTitle}</a>\n#end`,
         binaryResized: (variable) =>
