@@ -255,7 +255,7 @@ describe('DotBinaryFieldComponent', () => {
         });
 
         it('should open dialog with code component when click on edit button', async () => {
-            const spyOpenDialog = jest.spyOn(store, 'openDialog');
+            const spySetMode = jest.spyOn(store, 'setMode');
             const editorBtn = spectator.query(byTestId('action-editor-btn')) as HTMLButtonElement;
             editorBtn.click();
 
@@ -263,13 +263,15 @@ describe('DotBinaryFieldComponent', () => {
             await spectator.fixture.whenStable();
 
             const editorElement = spectator.query(byTestId('editor'));
+            const isDialogOpen = spectator.fixture.componentInstance.openDialog;
 
             expect(editorElement).toBeTruthy();
-            expect(spyOpenDialog).toHaveBeenCalledWith(BINARY_FIELD_MODE.EDITOR);
+            expect(isDialogOpen).toBeTruthy();
+            expect(spySetMode).toHaveBeenCalledWith(BINARY_FIELD_MODE.EDITOR);
         });
 
         it('should open dialog with url componet component when click on url button', async () => {
-            const spyOpenDialog = jest.spyOn(store, 'openDialog');
+            const spySetMode = jest.spyOn(store, 'setMode');
             const urlBtn = spectator.query(byTestId('action-url-btn')) as HTMLButtonElement;
             urlBtn.click();
 
@@ -277,9 +279,11 @@ describe('DotBinaryFieldComponent', () => {
             await spectator.fixture.whenStable();
 
             const urlElement = spectator.query(byTestId('url'));
+            const isDialogOpen = spectator.fixture.componentInstance.openDialog;
 
             expect(urlElement).toBeTruthy();
-            expect(spyOpenDialog).toHaveBeenCalledWith(BINARY_FIELD_MODE.URL);
+            expect(isDialogOpen).toBeTruthy();
+            expect(spySetMode).toHaveBeenCalledWith(BINARY_FIELD_MODE.URL);
         });
     });
 

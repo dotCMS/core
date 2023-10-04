@@ -16,7 +16,6 @@ export interface BinaryFieldState {
     mode: BINARY_FIELD_MODE;
     status: BINARY_FIELD_STATUS;
     UiMessage: UiMessageI;
-    dialogOpen: boolean;
     dropZoneActive: boolean;
 }
 
@@ -64,11 +63,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         file
     }));
 
-    readonly setDialogOpen = this.updater<boolean>((state, dialogOpen) => ({
-        ...state,
-        dialogOpen
-    }));
-
     readonly setDropZoneActive = this.updater<boolean>((state, dropZoneActive) => ({
         ...state,
         dropZoneActive
@@ -76,7 +70,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     readonly setTempFile = this.updater<DotCMSTempFile>((state, tempFile) => ({
         ...state,
-        dialogOpen: false,
         status: BINARY_FIELD_STATUS.PREVIEW,
         tempFile
     }));
@@ -115,17 +108,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         dropZoneActive: false,
         UiMessage,
         status: BINARY_FIELD_STATUS.ERROR
-    }));
-
-    readonly openDialog = this.updater<BINARY_FIELD_MODE>((state, mode) => ({
-        ...state,
-        dialogOpen: true,
-        mode
-    }));
-
-    readonly closeDialog = this.updater((state) => ({
-        ...state,
-        dialogOpen: false
     }));
 
     readonly removeFile = this.updater((state) => ({

@@ -45,7 +45,6 @@ const initialState: BinaryFieldState = {
     tempFile: null,
     mode: BINARY_FIELD_MODE.DROPZONE,
     status: BINARY_FIELD_STATUS.INIT,
-    dialogOpen: false,
     dropZoneActive: false,
     UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT)
 };
@@ -90,6 +89,8 @@ export class DotBinaryFieldComponent implements OnInit {
     readonly BINARY_FIELD_STATUS = BINARY_FIELD_STATUS;
     readonly BINARY_FIELD_MODE = BINARY_FIELD_MODE;
     readonly vm$ = this.dotBinaryFieldStore.vm$;
+
+    dialogOpen = false;
 
     constructor(
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
@@ -145,19 +146,8 @@ export class DotBinaryFieldComponent implements OnInit {
      * @memberof DotBinaryFieldComponent
      */
     openDialog(mode: BINARY_FIELD_MODE) {
-        this.dotBinaryFieldStore.openDialog(mode);
-    }
-
-    /**
-     * Hide dialog
-     *
-     * @param {boolean} visibily
-     * @memberof DotBinaryFieldComponent
-     */
-    hideDialog(hide: boolean) {
-        if (hide) {
-            this.dotBinaryFieldStore.closeDialog();
-        }
+        this.dialogOpen = true;
+        this.dotBinaryFieldStore.setMode(mode);
     }
 
     /**
@@ -165,8 +155,8 @@ export class DotBinaryFieldComponent implements OnInit {
      *
      * @memberof DotBinaryFieldComponent
      */
-    dialogClosed() {
-        this.dotBinaryFieldStore.setMode(BINARY_FIELD_MODE.DROPZONE);
+    afterDialogClose() {
+        this.dotBinaryFieldStore.setMode(null);
     }
 
     /**
