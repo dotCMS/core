@@ -28,7 +28,7 @@
                     "libs/dotcms-scss/angular/dotcms-theme/components/_dialog.scss",
                     "libs/dotcms-scss/angular/dotcms-theme/components/form/_inputtext.scss",
                     "libs/dotcms-scss/angular/dotcms-theme/utils/_validation.scss",
-                    "libs/block-editor/src/fonts.scss"
+                    "libs/dotcms-scss/angular/_prime-icons.scss"
                 ],
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]

@@ -1,6 +1,6 @@
 @use "variables" as *;
 
-@import "libs/block-editor/src/fonts";
+@import "libs/dotcms-scss/angular/_prime-icons.scss";
 
 :host ::ng-deep {
     @import "libs/dotcms-scss/angular/styles";
