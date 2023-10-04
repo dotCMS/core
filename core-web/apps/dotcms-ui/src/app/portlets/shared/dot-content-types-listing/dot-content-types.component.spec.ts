@@ -15,7 +15,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService, SelectItem } from 'primeng/api';
 
 import { DotListingDataTableModule } from '@components/dot-listing-data-table/dot-listing-data-table.module';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import {
     DotHttpErrorHandled,
     DotHttpErrorManagerService
@@ -38,6 +37,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
+import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,

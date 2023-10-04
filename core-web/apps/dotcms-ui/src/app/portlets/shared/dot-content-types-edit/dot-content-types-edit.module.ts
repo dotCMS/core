@@ -18,7 +18,6 @@ import { TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotMenuModule } from '@components/_common/dot-menu/dot-menu.module';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
@@ -43,6 +42,7 @@ import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-acc
 import {
     DotAutofocusDirective,
     DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
     DotIconModule,
     DotMessagePipe
 } from '@dotcms/ui';
@@ -130,7 +130,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotPipesModule,
         DotSecondaryToolbarModule,
         DotFieldHelperModule,
-        DotFieldValidationMessageModule,
+        DotFieldValidationMessageComponent,
         TooltipModule,
         DotIconModule,
         DotMaxlengthModule,

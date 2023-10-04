@@ -5,7 +5,7 @@ import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '../dot-message/dot-message.pipe';
 
 interface TabButtonOptions {
     id: string;
@@ -28,7 +28,11 @@ interface TabButtonOptions {
     styleUrls: ['./dot-tab-buttons.component.scss']
 })
 export class DotTabButtonsComponent implements OnChanges {
-    @Output() openMenu = new EventEmitter<{ event: PointerEvent; menuId: string }>();
+    @Output() openMenu = new EventEmitter<{
+        event: PointerEvent;
+        menuId: string;
+        target?: HTMLElement;
+    }>();
     @Output() clickOption = new EventEmitter<{ event: PointerEvent; optionId: string }>();
     @Input() activeId: string;
     @Input() options: SelectItem<TabButtonOptions>[];
@@ -82,7 +86,10 @@ export class DotTabButtonsComponent implements OnChanges {
             return option;
         });
 
-        this.openMenu.emit({ event, menuId });
+        const target = event?.target as HTMLElement;
+        const menuOption = target?.closest('.dot-tab') as HTMLElement;
+
+        this.openMenu.emit({ event, menuId, target: menuOption });
     }
 
     /**

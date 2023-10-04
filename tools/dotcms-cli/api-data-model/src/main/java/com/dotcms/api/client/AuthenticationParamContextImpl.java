@@ -1,7 +1,7 @@
 package com.dotcms.api.client;
 
 import io.quarkus.arc.DefaultBean;
-import java.lang.ref.WeakReference;
+import java.util.Arrays;
 import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 
@@ -12,22 +12,18 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class AuthenticationParamContextImpl implements AuthenticationParam {
 
-    WeakReference<char[]> token;
+    char[] token;
 
     @Override
     public void setToken(final char[] token) {
-        this.token = new WeakReference<>(token);
+        this.token = Arrays.copyOf(token, token.length);
     }
 
     public Optional<char[]> getToken() {
-        if (null == token || null == token.get()) {
+        if (null == token || 0 == token.length) {
             return Optional.empty();
         }
-        try {
-            return Optional.ofNullable(token.get());
-        } finally {
-            token.clear();
-        }
+        return Optional.of(token);
     }
 
 }

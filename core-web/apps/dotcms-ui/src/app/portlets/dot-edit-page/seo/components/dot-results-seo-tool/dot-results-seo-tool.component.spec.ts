@@ -54,7 +54,67 @@ describe('DotResultsSeoToolComponent', () => {
                         'og:image metatag found, but is empty!',
                     'seo.rules.og-image.over': 'og:image metatag found, but image is over 8 MB.',
                     'seo.rules.og-image.found':
-                        'og:image metatag found, with an appropriate sized image!'
+                        'og:image metatag found, with an appropriate sized image!',
+
+                    'seo.rules.read-more.facebook.learn':
+                        'Learn more about <span><a target="_blank" href="https://ogp.me/">The Open Graph Protocol.</a> <i class="pi pi-external-link"></i></span>',
+                    'seo.rules.read-more.facebook.sharing':
+                        'Explore the <span><a target="_blank" href="https://developers.facebook.com/tools/debug/">Sharing Debugger - Meta for Developers</a> <i class="pi pi-external-link"></i></span>',
+                    'seo.rules.read-more.facebook.title':
+                        'Ensure that your <code>og:title</code> content is between 55 and 150 characters.',
+                    'seo.rules.read-more.facebook.title.unique':
+                        'Keep in mind that your <code>og:title</code> content should be unique across your site.',
+                    'seo.rules.read-more.facebook.title.sizes':
+                        'Optimize your <code>og:image</code> sizes to be under 1200 x 630 pixels.',
+                    'seo.rules.read-more.facebook.og-image':
+                        'Make sure your <code>og:image</code> file sizes are under 8 MB.',
+                    'seo.rules.read-more.facebook.social':
+                        'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a> <i class="pi pi-external-link"></i></span>',
+
+                    'seo.rules.read-more.twitter.learn':
+                        'Read more about <span><a target="_blank" href="https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/abouts-cards">About Twitter Cards</a> <i class="pi pi-external-link"></i></span> on the Twitter Developer Platform',
+                    'seo.rules.read-more.twitter.suggest':
+                        'Suggest using the <code>twitter:card</code> value of <span><a target="_blank" href="https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image">summary_large_image</a> <i class="pi pi-external-link"></i></span> for most content, which uses a 16:9 image aspect ratio; this is similar to other social media cards.',
+                    'seo.rules.read-more.twitter.twitter-card':
+                        'A <code>twitter:card</code> value of summary corresponds instead to a 1:1 image.',
+                    'seo.rules.read-more.twitter.twitter-title':
+                        '<code>twitter:title</code> content should be between 30 and 70 characters.',
+                    'seo.rules.read-more.twitter.twitter-title.content':
+                        '<code>twitter:title</code> content should be unique across your site.',
+                    'seo.rules.read-more.twitter.length':
+                        'The length of the description allowed will depend on the reader\'s device size; on the smallest size only about 110 characters are allowed. Longer descriptions will show up with some sort of "read more" or "expand" option.',
+                    'seo.rules.read-more.twitter.twitter-image':
+                        '<code>twitter:image</code> content should be in JPG, PNG, WEBP, or GIF format.',
+                    'seo.rules.read-more.twitter.twitter-image.aspect':
+                        '<code>twitter:image</code> content should use a 16:9 aspect ratio, with a max of 1200 x 675 pixels.',
+                    'seo.rules.read-more.twitter.twitter-image.content':
+                        '<code>twitter:image</code> content should be smaller than 5MB.',
+                    'seo.rules.read-more.twitter.twitter-image.social':
+                        'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a> <i class="pi pi-external-link"></i></span>',
+
+                    'seo.rules.read-more.linkedin.learn':
+                        'LinkedIn’s <span><a target="_blank"  href="https://www.linkedin.com/post-inspector/">Post Inspector</a> <i class="pi pi-external-link"></i></span> Tool',
+                    'seo.rules.read-more.linkedin.meta':
+                        'Meta Tags: Getting Them Right for <span><a target="_blank" href="https://www.linkedin.com/pulse/meta-tags-getting-them-right-linkedin-evelyn-pei/">LinkedIn.</a> <i class="pi pi-external-link"></i></span>',
+                    'seo.rules.read-more.linkedin.summary':
+                        'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a> <i class="pi pi-external-link"></i></span>',
+
+                    'seo.rules.read-more.google.favicons':
+                        'Favicons should be <span><a target="_blank" href="https://favicon.io/">.ico</a> <i class="pi pi-external-link"></i></span> files.',
+                    'seo.rules.read-more.google.title':
+                        'HTML Title content should be between 30 and 60 characters.',
+                    'seo.rules.read-more.google.title.unique':
+                        'HTML Title content should be unique per page across your site.',
+                    'seo.rules.read-more.google.description':
+                        'Meta Description tags should be under 160 characters.',
+                    'seo.rules.read-more.google.length':
+                        'The length of the Description allowed will depend on the reader\'s device size; on the smallest size only about 110 characters are allowed. Longer descriptions will show up with some sort of "read more" or "expand" option.',
+                    'seo.rules.read-more.google.meta-tags':
+                        'Meta Tags for SEO: A Simple Guide for Beginners <i class="pi pi-external-link"></i>',
+                    'seo.rules.read-more.google.meta-description':
+                        'What Are Meta Descriptions And How to Write Them <i class="pi pi-external-link"></i>',
+                    'seo.rules.read-more.google.image-sizes':
+                        'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a></span>'
                 })
             }
         ]
@@ -149,5 +209,146 @@ describe('DotResultsSeoToolComponent', () => {
             expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
             done();
         });
+    });
+
+    it('should render the result card title with title case', () => {
+        const expectedTitle = 'Title';
+        const expectedDescription = 'Description';
+
+        const resultKeyTitle = spectator.queryAll(byTestId('result-key'))[2];
+        const resultKeyDescription = spectator.queryAll(byTestId('result-key'))[1];
+
+        expect(resultKeyTitle).toExist();
+        expect(resultKeyDescription).toExist();
+        expect(resultKeyTitle).toContainText(expectedTitle);
+        expect(resultKeyDescription).toContainText(expectedDescription);
+    });
+
+    it('should render Readmore for Twitter', () => {
+        spectator.setInput({
+            seoMedia: SEO_MEDIA_TYPES.TWITTER
+        });
+        spectator.detectChanges();
+
+        const readmore = spectator.queryAll(byTestId('readmore'));
+        expect(readmore).toExist();
+
+        expect(readmore[0].innerHTML).toEqual(
+            'Read more about <span><a target="_blank" href="https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/abouts-cards">About Twitter Cards</a> <i class="pi pi-external-link"></i></span> on the Twitter Developer Platform'
+        );
+        expect(readmore[1].innerHTML).toEqual(
+            'Suggest using the <code>twitter:card</code> value of <span><a target="_blank" href="https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image">summary_large_image</a> <i class="pi pi-external-link"></i></span> for most content, which uses a 16:9 image aspect ratio; this is similar to other social media cards.'
+        );
+        expect(readmore[2].innerHTML).toEqual(
+            'A <code>twitter:card</code> value of summary corresponds instead to a 1:1 image.'
+        );
+        expect(readmore[3].innerHTML).toEqual(
+            '<code>twitter:title</code> content should be between 30 and 70 characters.'
+        );
+        expect(readmore[4].innerHTML).toEqual(
+            '<code>twitter:title</code> content should be unique across your site.'
+        );
+        expect(readmore[5].innerHTML).toEqual(
+            'The length of the description allowed will depend on the reader\'s device size; on the smallest size only about 110 characters are allowed. Longer descriptions will show up with some sort of "read more" or "expand" option.'
+        );
+        expect(readmore[6].innerHTML).toEqual(
+            '<code>twitter:image</code> content should be in JPG, PNG, WEBP, or GIF format.'
+        );
+        expect(readmore[7].innerHTML).toEqual(
+            '<code>twitter:image</code> content should use a 16:9 aspect ratio, with a max of 1200 x 675 pixels.'
+        );
+        expect(readmore[8].innerHTML).toEqual(
+            '<code>twitter:image</code> content should be smaller than 5MB.'
+        );
+        expect(readmore[9].innerHTML).toEqual(
+            'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a> <i class="pi pi-external-link"></i></span>'
+        );
+    });
+
+    it('should render Readmore for Facebook', () => {
+        spectator.setInput({
+            seoMedia: SEO_MEDIA_TYPES.FACEBOOK
+        });
+        spectator.detectChanges();
+
+        const readmore = spectator.queryAll(byTestId('readmore'));
+        expect(readmore).toExist();
+
+        expect(readmore[0].innerHTML).toEqual(
+            'Learn more about <span><a target="_blank" href="https://ogp.me/">The Open Graph Protocol.</a> <i class="pi pi-external-link"></i></span>'
+        );
+        expect(readmore[1].innerHTML).toEqual(
+            'Explore the <span><a target="_blank" href="https://developers.facebook.com/tools/debug/">Sharing Debugger - Meta for Developers</a> <i class="pi pi-external-link"></i></span>'
+        );
+        expect(readmore[2].innerHTML).toEqual(
+            'Ensure that your <code>og:title</code> content is between 55 and 150 characters.'
+        );
+        expect(readmore[3].innerHTML).toEqual(
+            'Keep in mind that your <code>og:title</code> content should be unique across your site.'
+        );
+        expect(readmore[4].innerHTML).toEqual(
+            'Optimize your <code>og:image</code> sizes to be under 1200 x 630 pixels.'
+        );
+        expect(readmore[5].innerHTML).toEqual(
+            'Make sure your <code>og:image</code> file sizes are under 8 MB.'
+        );
+        expect(readmore[6].innerHTML).toEqual(
+            'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a> <i class="pi pi-external-link"></i></span>'
+        );
+    });
+
+    it('should render Readmore for LinkedIn', () => {
+        spectator.setInput({
+            seoMedia: SEO_MEDIA_TYPES.LINKEDIN
+        });
+        spectator.detectChanges();
+
+        const readmore = spectator.queryAll(byTestId('readmore'));
+        expect(readmore).toExist();
+
+        expect(readmore[0].innerHTML).toEqual(
+            'LinkedIn’s <span><a target="_blank" href="https://www.linkedin.com/post-inspector/">Post Inspector</a> <i class="pi pi-external-link"></i></span> Tool'
+        );
+        expect(readmore[1].innerHTML).toEqual(
+            'Meta Tags: Getting Them Right for <span><a target="_blank" href="https://www.linkedin.com/pulse/meta-tags-getting-them-right-linkedin-evelyn-pei/">LinkedIn.</a> <i class="pi pi-external-link"></i></span>'
+        );
+        expect(readmore[2].innerHTML).toEqual(
+            'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a> <i class="pi pi-external-link"></i></span>'
+        );
+    });
+
+    it('should render Readmore for Google', () => {
+        spectator.setInput({
+            seoMedia: SEO_MEDIA_TYPES.GOOGLE
+        });
+        spectator.detectChanges();
+
+        const readmore = spectator.queryAll(byTestId('readmore'));
+        expect(readmore).toExist();
+
+        expect(readmore[0].innerHTML).toEqual(
+            'Favicons should be <span><a target="_blank" href="https://favicon.io/">.ico</a> <i class="pi pi-external-link"></i></span> files.'
+        );
+        expect(readmore[1].innerHTML).toEqual(
+            'HTML Title content should be between 30 and 60 characters.'
+        );
+        expect(readmore[2].innerHTML).toEqual(
+            'HTML Title content should be unique per page across your site.'
+        );
+        expect(readmore[3].innerHTML).toEqual(
+            'Meta Description tags should be under 160 characters.'
+        );
+        expect(readmore[4].innerHTML).toEqual(
+            'The length of the Description allowed will depend on the reader\'s device size; on the smallest size only about 110 characters are allowed. Longer descriptions will show up with some sort of "read more" or "expand" option.'
+        );
+        expect(readmore[5].innerHTML).toEqual(
+            'Meta Tags for SEO: A Simple Guide for Beginners <i class="pi pi-external-link"></i>'
+        );
+        expect(readmore[6].innerHTML).toEqual(
+            'What Are Meta Descriptions And How to Write Them <i class="pi pi-external-link"></i>'
+        );
+        expect(readmore[7].innerHTML).toEqual(
+            'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a></span>'
+        );
     });
 });
