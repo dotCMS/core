@@ -1,18 +1,23 @@
 <dot-portlet-base>
-    <dot-portlet-toolbar *ngIf="actions" [actions]="actions">
-        <dot-global-message right></dot-global-message>
-    </dot-portlet-toolbar>
-
     <form [formGroup]="form">
+        <dot-portlet-toolbar
+            *ngIf="actions"
+            [actions]="actions"
+            [form]="form"
+            (saveAndPublish)="saveAndPublish.emit($event)"
+        >
+            <dot-global-message right></dot-global-message>
+        </dot-portlet-toolbar>
+
         <dot-container-selector (swap)="containerChange($event)"> </dot-container-selector>
         <dot-textarea-content
-            formControlName="body"
             #value
+            [show]="['code']"
+            (monacoInit)="initEditor($event)"
+            formControlName="body"
             height="100%"
             formControlName="body"
-            [show]="['code']"
             language="html"
-            (monacoInit)="initEditor($event)"
         ></dot-textarea-content>
     </form>
 </dot-portlet-base>

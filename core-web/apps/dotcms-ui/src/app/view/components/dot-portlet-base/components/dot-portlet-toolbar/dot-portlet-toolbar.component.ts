@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { DotPortletToolbarActions } from '@shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
+import { UntypedFormGroup } from '@angular/forms';
 
 @Component({
     selector: 'dot-portlet-toolbar',
@@ -15,6 +16,11 @@ export class DotPortletToolbarComponent {
     @Input() actionsButtonLabel: string;
 
     @Input() actions: DotPortletToolbarActions;
+
+    @Input()
+    form: UntypedFormGroup;
+
+    @Output() saveAndPublish: EventEmitter<Event> = new EventEmitter();
 
     /**
      * Handle cancel button click
@@ -42,5 +48,9 @@ export class DotPortletToolbarComponent {
         } catch (error) {
             console.error(error);
         }
+    }
+
+    onSaveAndPublish(): void {
+        this.saveAndPublish.emit(this.form.value);
     }
 }
