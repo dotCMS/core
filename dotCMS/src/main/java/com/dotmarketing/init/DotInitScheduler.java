@@ -29,7 +29,6 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 
 import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.concurrent.TimeUnit;
 
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR;
@@ -356,7 +355,7 @@ public class DotInitScheduler {
 				.setCronExpressionProp(DropOldContentVersionsJob.CRON_EXPR_PROP)
 				.setCronExpressionPropDefault(DropOldContentVersionsJob.CRON_EXPRESSION.get())
 				.setCronMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
-		if (!DropOldContentVersionsJob.ENABLED.get()) {
+		if (Boolean.FALSE.equals(DropOldContentVersionsJob.ENABLED.get())) {
 			dropOldContentVersionsJob.enabled(false);
 		}
 		scheduleJob(dropOldContentVersionsJob);
