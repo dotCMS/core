@@ -15,10 +15,9 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { of } from 'rxjs/internal/observable/of';
 
-import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, DotcmsConfigService } from '@dotcms/dotcms-js';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,

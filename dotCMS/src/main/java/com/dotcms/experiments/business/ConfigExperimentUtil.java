@@ -75,7 +75,7 @@ public enum ConfigExperimentUtil {
      * @return
      */
     public long lookBackWindowDefaultExpireTime() {
-        return TimeUnit.MINUTES.toMillis(30);
+        return TimeUnit.DAYS.toMillis(ExperimentsAPI.EXPERIMENT_LOOKBACK_WINDOW.get());
     }
 
 

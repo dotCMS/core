@@ -10,7 +10,6 @@ import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
@@ -23,6 +22,7 @@ import {
     DotProcessedWorkflowPayload,
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
+import { DotFormatDateService } from '@dotcms/ui';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';

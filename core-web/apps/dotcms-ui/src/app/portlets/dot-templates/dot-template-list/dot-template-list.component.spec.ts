@@ -26,12 +26,10 @@ import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
-import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -49,7 +47,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotActionBulkResult, DotContentState, DotTemplate } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFormatDateService, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
