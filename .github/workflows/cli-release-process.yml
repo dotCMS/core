@@ -5,13 +5,13 @@ on:
       version:
         description: 'Release version'
         required: true
-      next:
-        description: 'Next version'
-        default: '1.0.0-SNAPSHOT'
-        required: false
       skipTests:
         description: 'Skip tests'
         default: true
+        required: false
+      packageType:
+        description: 'Package type'
+        default: 'uber-jar'
         required: false
 
 defaults:
@@ -21,6 +21,7 @@ defaults:
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
+  NEXT_VERSION: '1.0.0-SNAPSHOT'
 
 jobs:
   precheck:
@@ -62,7 +63,7 @@ jobs:
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
           RELEASE_VERSION=${{ github.event.inputs.version }}
-          NEXT_VERSION=${{ github.event.inputs.next }}          
+          NEXT_VERSION=${{ env.NEXT_VERSION }}          
           HEAD=${{ github.ref_name }}
           
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
@@ -107,11 +108,14 @@ jobs:
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
 
       - name: Build distribution
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli
+        working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw -U clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }}
-          cd cli
-          ../mvnw package -Dquarkus.package.type=uber-jar -DskipTests
+          ./mvnw -U clean install -am -pl :dotcms-cli -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }}
+
+      - name: Package distribution
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/cli
+        run: |
+          ./mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true
 
       - name: Releaser
         env:
