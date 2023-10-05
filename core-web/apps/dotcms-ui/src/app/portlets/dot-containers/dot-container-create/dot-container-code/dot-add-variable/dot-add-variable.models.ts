@@ -1,4 +1,6 @@
 // You can add here the field types you want to filter
+// Note: In the store when we get the fields for a fieldType this has priority
+// so if you add a field type here and is also in the FieldTypes enum, it will be filtered and will not be shown
 export enum FilteredFieldTypes {
     Column = 'Column',
     Row = 'Row',
@@ -19,8 +21,8 @@ export interface DotFieldContent {
     codeTemplate?: string;
 }
 
-// Here goes all the fieldTypes that have extra fields
-export enum FieldTypeWithExtraFields {
+// Here goes all the fieldTypes
+export enum FieldTypes {
     IMAGE = 'Image',
     HOST = 'Host-Folder',
     FILE = 'File',
@@ -35,3 +37,6 @@ export enum FieldTypeWithExtraFields {
     DATE_AND_TIME = 'Date-and-Time',
     TIME = 'Time'
 }
+
+// This is the function to create a getter for the fields. See getDefaultFields in dot-fields-service.ts as example
+export type GetFieldsFunction = (variableContent: DotFieldContent) => DotFieldContent[];

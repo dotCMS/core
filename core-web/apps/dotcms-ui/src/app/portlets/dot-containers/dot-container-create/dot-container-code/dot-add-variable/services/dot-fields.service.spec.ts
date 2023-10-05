@@ -5,7 +5,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotFieldsService } from './dot-fields.service';
 
-import { DotFieldContent, FieldTypeWithExtraFields } from '../dot-add-variable.models';
+import { DotFieldContent, FieldTypes } from '../dot-add-variable.models';
 
 const mockDotMessageService = new MockDotMessageService({
     'Content-Identifier-value': 'Content Identifier Value',
@@ -82,7 +82,7 @@ describe('DotFieldsService', () => {
         let imageFields: DotFieldContent[];
 
         beforeEach(() => {
-            imageFields = service.fields[FieldTypeWithExtraFields.IMAGE](mockContentTypeField);
+            imageFields = service.fields[FieldTypes.IMAGE](mockContentTypeField);
         });
 
         it('should return the Image fields', () => {
@@ -148,7 +148,7 @@ describe('DotFieldsService', () => {
         let hostFields: DotFieldContent[];
 
         beforeEach(() => {
-            hostFields = service.fields[FieldTypeWithExtraFields.HOST](mockContentTypeField);
+            hostFields = service.fields[FieldTypes.HOST](mockContentTypeField);
         });
 
         it('should return the Host fields', () => {
@@ -168,7 +168,7 @@ describe('DotFieldsService', () => {
         let fileFields: DotFieldContent[];
 
         beforeEach(() => {
-            fileFields = service.fields[FieldTypeWithExtraFields.FILE](mockContentTypeField);
+            fileFields = service.fields[FieldTypes.FILE](mockContentTypeField);
         });
 
         it('should return the File fields', () => {
@@ -206,8 +206,7 @@ describe('DotFieldsService', () => {
         let blockEditorFields: DotFieldContent[];
 
         beforeEach(() => {
-            blockEditorFields =
-                service.fields[FieldTypeWithExtraFields.BLOCK_EDITOR](mockContentTypeField);
+            blockEditorFields = service.fields[FieldTypes.BLOCK_EDITOR](mockContentTypeField);
         });
 
         it('should return the Block Editor fields', () => {
@@ -229,7 +228,7 @@ describe('DotFieldsService', () => {
         let binaryFields: DotFieldContent[];
 
         beforeEach(() => {
-            binaryFields = service.fields[FieldTypeWithExtraFields.BINARY](mockContentTypeField);
+            binaryFields = service.fields[FieldTypes.BINARY](mockContentTypeField);
         });
 
         it('should return the Binary fields', () => {
@@ -271,7 +270,7 @@ describe('DotFieldsService', () => {
         let selectFields: DotFieldContent[];
 
         beforeEach(() => {
-            selectFields = service.fields[FieldTypeWithExtraFields.SELECT](mockContentTypeField);
+            selectFields = service.fields[FieldTypes.SELECT](mockContentTypeField);
         });
 
         it('should return the Select fields', () => {
@@ -301,8 +300,7 @@ describe('DotFieldsService', () => {
         let multiSelectFields: DotFieldContent[];
 
         beforeEach(() => {
-            multiSelectFields =
-                service.fields[FieldTypeWithExtraFields.MULTISELECT](mockContentTypeField);
+            multiSelectFields = service.fields[FieldTypes.MULTISELECT](mockContentTypeField);
         });
 
         it('should return the Select fields', () => {
@@ -332,7 +330,7 @@ describe('DotFieldsService', () => {
         let radioFields: DotFieldContent[];
 
         beforeEach(() => {
-            radioFields = service.fields[FieldTypeWithExtraFields.RADIO](mockContentTypeField);
+            radioFields = service.fields[FieldTypes.RADIO](mockContentTypeField);
         });
 
         it('should return the Select fields', () => {
@@ -362,8 +360,7 @@ describe('DotFieldsService', () => {
         let checkboxFields: DotFieldContent[];
 
         beforeEach(() => {
-            checkboxFields =
-                service.fields[FieldTypeWithExtraFields.CHECKBOX](mockContentTypeField);
+            checkboxFields = service.fields[FieldTypes.CHECKBOX](mockContentTypeField);
         });
 
         it('should return the Select fields', () => {
@@ -393,7 +390,7 @@ describe('DotFieldsService', () => {
         let dateFields: DotFieldContent[];
 
         beforeEach(() => {
-            dateFields = service.fields[FieldTypeWithExtraFields.DATE](mockContentTypeField);
+            dateFields = service.fields[FieldTypes.DATE](mockContentTypeField);
         });
 
         it('should return the Date fields', () => {
@@ -421,7 +418,7 @@ describe('DotFieldsService', () => {
         let timeFields: DotFieldContent[];
 
         beforeEach(() => {
-            timeFields = service.fields[FieldTypeWithExtraFields.TIME](mockContentTypeField);
+            timeFields = service.fields[FieldTypes.TIME](mockContentTypeField);
         });
 
         it('should return the Time fields', () => {
@@ -441,8 +438,7 @@ describe('DotFieldsService', () => {
         let dateTimeFields: DotFieldContent[];
 
         beforeEach(() => {
-            dateTimeFields =
-                service.fields[FieldTypeWithExtraFields.DATE_AND_TIME](mockContentTypeField);
+            dateTimeFields = service.fields[FieldTypes.DATE_AND_TIME](mockContentTypeField);
         });
 
         it('should return the Date and Time fields', () => {
