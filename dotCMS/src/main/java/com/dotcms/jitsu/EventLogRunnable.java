@@ -74,7 +74,7 @@ public class EventLogRunnable implements Runnable {
                                     url,
                                     response.getStatusCode(),
                                     response.getResponse()));
-                    Logger.warn(this.getClass(), String.format("Failed log: " + payload.toString()));
+                    Logger.warn(this.getClass(), String.format("Failed log: %s", payload));
                 }
             });
         }
@@ -82,13 +82,13 @@ public class EventLogRunnable implements Runnable {
     }
 
     private CircuitBreakerUrlBuilder getCircuitBreakerUrlBuilder(String url) {
-        final CircuitBreakerUrlBuilder builder = CircuitBreakerUrl.builder()
-                .setMethod(Method.POST)
-                .setUrl(url)
-                .setParams(map("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
-                .setTimeout(4000)
-                .setHeaders(POSTING_HEADERS);
-        return builder;
+        return  CircuitBreakerUrl.builder()
+            .setMethod(Method.POST)
+            .setUrl(url)
+            .setParams(map("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
+            .setTimeout(4000)
+            .setHeaders(POSTING_HEADERS)
+            .setThrowWhenNot2xx(false);
     }
 
     public Optional<Response> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
