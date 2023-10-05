@@ -21,14 +21,14 @@
     </div>
     <div class="url-mode__actions">
         <p-button
-            class="p-button-outlined"
             [label]="'dot.common.cancel' | dm"
             (click)="cancelUpload()"
+            styleClass="p-button-outlined"
             type="button"
             aria-label="Cancel button"
             data-testId="cancel-button"></p-button>
 
-        <div class="url-mode__actions--main">
+        <div class="url-mode__actions--main" [style]="{ width: '6.85rem' }">
             <p-button
                 *ngIf="!vm.isLoading; else loadingButton"
                 [label]="'dot.common.import' | dm"

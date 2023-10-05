@@ -1,5 +1,18 @@
 @use "variables" as *;
 
+:host ::ng-deep {
+    display: block;
+    min-width: 32rem;
+
+    .p-button {
+        width: 100%;
+    }
+
+    .p-button-icon-only {
+        border-radius: $border-radius-md;
+    }
+}
+
 .url-mode__form {
     display: flex;
     flex-direction: column;
@@ -13,11 +26,6 @@
     display: flex;
     gap: $spacing-1;
     flex-direction: column;
-
-    input {
-        width: 100%;
-        min-width: 32rem;
-    }
 }
 
 .url-mode__actions {
@@ -26,18 +34,4 @@
     gap: $spacing-1;
     align-items: center;
     justify-content: flex-end;
-}
-
-.url-mode__actions--main {
-    width: 6.85rem;
-
-    &::ng-deep {
-        p-button .p-button {
-            width: 100%;
-        }
-
-        .p-button-icon-only {
-            border-radius: $border-radius-md;
-        }
-    }
 }
