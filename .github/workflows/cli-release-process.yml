@@ -108,7 +108,7 @@ jobs:
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
 
       - name: Build distribution
-        working-directory: ${{ github.workspace }}
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
         run: |
           ./mvnw -U clean install -am -pl :dotcms-cli -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }}
 
