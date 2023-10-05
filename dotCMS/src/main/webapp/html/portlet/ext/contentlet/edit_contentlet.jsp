@@ -51,7 +51,7 @@
 	if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
 %>
 	<script src="/html/binary-field.js"></script>
-	<link rel="stylesheet" href="/html/css/binary-field.scss" />
+	<link rel="stylesheet" href="/html/css/binary-field.css" />
 <% } %>
 
 <script type="text/javascript">
