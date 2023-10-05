@@ -30,7 +30,7 @@ public interface ExperimentsAPI {
     Lazy<Integer> EXPERIMENTS_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MAX_DURATION", 90));
     Lazy<Integer> EXPERIMENTS_DEFAULT_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_DEFAULT_DURATION", 14));
     Lazy<Integer> EXPERIMENTS_MIN_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MIN_DURATION", 7));
-    Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 10));
+    Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 14));
 
     enum Health {
         OK, NOT_CONFIGURED, CONFIGURATION_ERROR
@@ -102,6 +102,14 @@ public interface ExperimentsAPI {
      * already running for the same page, which would then be stopped.
      */
     Experiment forceStart(final String experimentId, final User user)
+            throws DotDataException, DotSecurityException;
+
+    /**
+     * Similar to #start when it is used with an Experiment with not null Scheduling,
+     * but it forces the start of the Experiment even if there is an Experiment
+     * already running for the same page, which would then be stopped.
+     */
+    Experiment forceScheduled(String experimentId, User user)
             throws DotDataException, DotSecurityException;
 
     /**

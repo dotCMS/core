@@ -14,9 +14,8 @@ import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-emp
 import { DotContentTypeSelectorModule } from '@components/dot-content-type-selector';
 import { ActionHeaderModule } from '@components/dot-listing-data-table/action-header/action-header.module';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotSiteBrowserService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import { DotContainerListResolver } from '@portlets/dot-containers/container-list/dot-container-list-resolver.service';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 

@@ -3,13 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>dotCMS-cli</artifactId>
+        <artifactId>dotcms-cli-parent</artifactId>
         <groupId>com.dotcms</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>api-data-model</artifactId>
+    <artifactId>dotcms-api-data-model</artifactId>
     <packaging>jar</packaging>
 
     <properties>
@@ -25,6 +25,9 @@
         <failsafe-plugin.version>3.0.0-M5</failsafe-plugin.version>
         <test.failure.ignore>false</test.failure.ignore>
         <maven.plugin.jar.version>3.3.0</maven.plugin.jar.version>
+        <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
+        <docker.version.tag>${project.version}</docker.version.tag>
+        <testcontainers.docker.image>${docker.output.image.name}/${docker.version.tag}</testcontainers.docker.image>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -117,6 +120,15 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.jboss.slf4j</groupId>
+            <artifactId>slf4j-jboss-logmanager</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>log4j2-jboss-logmanager</artifactId>
+        </dependency>
+
     </dependencies>
     <build>
         <plugins>
@@ -132,6 +144,11 @@
                             <goal>generate-code</goal>
                             <goal>generate-code-tests</goal>
                         </goals>
+                        <configuration>
+                            <properties>
+                                <testcontainers.docker.image>${testcontainers.docker.image}}</testcontainers.docker.image>
+                            </properties>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -151,9 +168,6 @@
                 <version>${failsafe-plugin.version}</version>
                 <configuration>
                     <testFailureIgnore>${test.failure.ignore}</testFailureIgnore>
-                    <includes>
-                        <include>**/*Test.java</include>
-                    </includes>
                 </configuration>
                 <executions>
                     <execution>

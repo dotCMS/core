@@ -3,7 +3,6 @@ package com.dotcms.analytics;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.analytics.model.AccessTokenFetchMode;
@@ -13,8 +12,8 @@ import com.dotcms.exception.UnrecoverableAnalyticsException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,7 +34,6 @@ import static org.junit.Assert.assertTrue;
 public class AnalyticsAPIImplTest extends IntegrationTestBase {
 
     private static AnalyticsAPI analyticsAPI;
-    private static AnalyticsCache analyticsCache;
     private Host host;
     private AnalyticsApp analyticsApp;
 
@@ -43,8 +41,15 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
     public static void beforeClass() throws Exception {
         IntegrationTestInitService.getInstance().init();
         analyticsAPI = APILocator.getAnalyticsAPI();
-        analyticsCache = CacheLocator.getAnalyticsCache();
         Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", true);
+        Config.setProperty(AnalyticsAPI.ANALYTICS_USE_DUMMY_TOKEN_KEY, false);
+        analyticsAPI = new AnalyticsAPIImpl();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        Config.setProperty(AnalyticsAPI.ANALYTICS_USE_DUMMY_TOKEN_KEY, true);
+        Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false);
     }
 
     @Before
@@ -62,7 +67,9 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
     public void test_getAccessToken_fetchWhenNotCached() throws Exception {
         AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp, AccessTokenFetchMode.BACKEND_FALLBACK);
         assertNotNull(accessToken);
-        assertTrue(analyticsCache.getAccessToken(analyticsApp.getAnalyticsProperties().clientId(), null).isPresent());
+        assertTrue(AccessTokens.get()
+            .getAccessToken(analyticsApp.getAnalyticsProperties().clientId(), null)
+            .isPresent());
     }
 
     /**
@@ -71,21 +78,21 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void test_getAccessToken() throws Exception {
-        analyticsCache.removeAccessToken(
+        AccessTokens.get().removeAccessToken(
             analyticsApp.getAnalyticsProperties().clientId(),
             AnalyticsHelper.get().resolveAudience(analyticsApp));
 
-        analyticsAPI.getAccessToken(analyticsApp);
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        analyticsAPI.getCachedAccessToken(analyticsApp);
+        AccessToken accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertNull(accessToken);
 
         analyticsAPI.getAccessToken(analyticsApp, AccessTokenFetchMode.BACKEND_FALLBACK);
-        accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertNotNull(accessToken);
 
         final Instant issueDate = accessToken.issueDate();
         analyticsAPI.getAccessToken(analyticsApp, AccessTokenFetchMode.FORCE_RENEW);
-        accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertNotEquals(issueDate, accessToken.issueDate());
         assertNotNull(accessToken);
     }
@@ -97,8 +104,8 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test(expected = AnalyticsException.class)
     public void test_getAccessToken_fail() throws Exception {
-        analyticsCache.removeAccessToken(analyticsApp.getAnalyticsProperties().clientId(), null);
-        new AnalyticsAPIImpl("http://some-host:9999", analyticsCache)
+        AccessTokens.get().removeAccessToken(analyticsApp.getAnalyticsProperties().clientId(), null);
+        new AnalyticsAPIImpl("http://some-host:9999")
             .getAccessToken(analyticsApp, AccessTokenFetchMode.FORCE_RENEW);
     }
 
@@ -109,15 +116,15 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test 
     public void test_refreshAccessToken() throws AnalyticsException {
-        analyticsCache.removeAccessToken(
+        AccessTokens.get().removeAccessToken(
             analyticsApp.getAnalyticsProperties().clientId(),
             AnalyticsHelper.get().resolveAudience(analyticsApp));
 
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        AccessToken accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertNull(accessToken);
 
         analyticsAPI.refreshAccessToken(analyticsApp);
-        accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertNotNull(accessToken);
     }
 
@@ -129,14 +136,14 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test(expected = AnalyticsException.class)
     public void test_refreshAccessToken_fail_wrongIdp() throws AnalyticsException {
-        analyticsCache.removeAccessToken(
+        AccessTokens.get().removeAccessToken(
             analyticsApp.getAnalyticsProperties().clientId(),
             AnalyticsHelper.get().resolveAudience(analyticsApp));
 
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        AccessToken accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertNull(accessToken);
 
-        new AnalyticsAPIImpl("http://some-host:9999", analyticsCache).refreshAccessToken(analyticsApp);
+        new AnalyticsAPIImpl("http://some-host:9999").refreshAccessToken(analyticsApp);
     }
 
     /**
@@ -149,11 +156,11 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
     public void test_refreshAccessToken_fail_wrong_clientId() throws Exception {
         analyticsApp = AnalyticsTestUtils.prepareAnalyticsApp(host, "some-client-id");
 
-        analyticsCache.removeAccessToken(
+        AccessTokens.get().removeAccessToken(
             analyticsApp.getAnalyticsProperties().clientId(),
             AnalyticsHelper.get().resolveAudience(analyticsApp));
 
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        AccessToken accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertNull(accessToken);
 
         analyticsAPI.refreshAccessToken(analyticsApp);
@@ -170,7 +177,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
         assertNotNull(accessToken);
 
         analyticsAPI.resetAccessToken(analyticsApp);
-        accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertNull(accessToken);
     }
 

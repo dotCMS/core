@@ -12,10 +12,10 @@ import { DotContentCompareTableComponent } from '@components/dot-content-compare
 import { dotContentCompareTableDataMock } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component.spec';
 import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
 import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotFormatDateService } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import {

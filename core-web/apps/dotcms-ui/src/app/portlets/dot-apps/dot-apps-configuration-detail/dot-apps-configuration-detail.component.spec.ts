@@ -11,12 +11,11 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
@@ -150,7 +149,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 ]),
                 ButtonModule,
                 CommonModule,
-                DotCopyButtonModule,
+                DotCopyButtonComponent,
                 DotAppsConfigurationHeaderModule,
                 DotPipesModule,
                 DotMessagePipe,

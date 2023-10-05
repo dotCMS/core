@@ -11,6 +11,7 @@ import { DotMessageDisplayService } from '@components/dot-message-display/servic
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotApps, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
+import { DotFormatDateService } from '@dotcms/ui';
 import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 import {
     CoreWebServiceMock,
@@ -22,7 +23,6 @@ import {
 
 import { DotAppsService } from './dot-apps.service';
 
-import { DotFormatDateService } from '../dot-format-date-service';
 import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
 

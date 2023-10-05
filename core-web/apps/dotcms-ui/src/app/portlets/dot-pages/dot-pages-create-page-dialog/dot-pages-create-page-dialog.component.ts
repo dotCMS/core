@@ -52,7 +52,15 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
      */
     goToCreatePage(variableName: string): void {
         this.ref.close();
-        this.dotRouterService.goToURL(`/pages/new/${variableName}`);
+
+        // Get the feature flag from the store and change the routing
+        const url =
+            this.config.data.isContentEditor2Enabled &&
+            !this.shouldRedirectToOldContentEditor(variableName)
+                ? `content/new/${variableName}`
+                : `/pages/new/${variableName}`;
+
+        this.dotRouterService.goToURL(url);
     }
 
     ngOnInit(): void {
@@ -63,22 +71,37 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
             switchMap((searchValue: string) => {
                 if (searchValue.length) {
                     return of(
-                        this.config.data.filter((pageType: DotCMSContentType) =>
+                        this.config.data.pageTypes.filter((pageType: DotCMSContentType) =>
                             pageType.name
                                 .toLocaleLowerCase()
                                 .includes(searchValue.toLocaleLowerCase())
                         )
                     );
                 } else {
-                    return of(this.config.data);
+                    return of(this.config.data.pageTypes);
                 }
             }),
-            startWith(this.config.data)
+            startWith(this.config.data.pageTypes)
         );
     }
 
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    /**
+     * Check if the content type is in the feature flag list
+     *
+     * @private
+     * @param {string} contentType
+     * @return {*}  {boolean}
+     * @memberof DotCustomEventHandlerService
+     */
+    private shouldRedirectToOldContentEditor(contentType: string): boolean {
+        return (
+            !this.config.data.availableContentTypes.includes('*') &&
+            this.config.data.availableContentTypes.indexOf(contentType) === -1
+        );
     }
 }

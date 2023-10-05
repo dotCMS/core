@@ -100,6 +100,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.nullable;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -1145,5 +1146,33 @@ public class PageResourceTest {
         final ContainerRaw containerRaw = htmlPageAssetRendered.getContainers().stream().findFirst().orElse(null);
         // Assertions
         assertTrue(containerRaw.toString().contains("data-dot-on-number-of-pages="));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}</li>
+     *     <li><b>Given Scenario:</b> The deviceInode is not set as part of the request</li>
+     *     <li><b>Expected Result:</b> The {@link WebKeys#CURRENT_DEVICE} is removed from session</li>
+     * </ul>
+     */
+    @Test
+    public void testCleanUpSessionWhenDeviceInodeIsNull() throws Exception {
+        pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), null);
+
+        verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}</li>
+     *     <li><b>Given Scenario:</b> The deviceInode in the request is blank</li>
+     *     <li><b>Expected Result:</b> The {@link WebKeys#CURRENT_DEVICE} is removed from session</li>
+     * </ul>
+     */
+    @Test
+    public void testCleanUpSessionWhenDeviceInodeIsBlank() throws Exception {
+        pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), "");
+
+        verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
     }
 }

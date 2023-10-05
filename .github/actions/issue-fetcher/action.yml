@@ -1,0 +1,23 @@
+# action.yml
+name: 'Issue Fetcher'
+description: 'Fetches issues from a repository'
+author: 'victoralfaro-dotcms'
+inputs:
+  fetch_operation:
+    description: 'Operation to perform on how to get the issues'
+    type: choice
+    options:
+      - WITH_LABELS
+    required: true
+  fetch_value:
+    description: 'Value to use to fetch the issues'
+    required: true
+  github_token:
+    description: 'Github token'
+    required: true
+outputs:
+  issues:
+    description: 'Fetched issues'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
