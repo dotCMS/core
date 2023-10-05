@@ -22,7 +22,7 @@
         "build:dev": "nx build dotcms-ui",
         "build:prod": "nx run dotcms-ui:build:production",
         "build:contenttype-fields": "nx run contenttype-fields-builder:build --configuration production --skip-nx-cache --optimization --output-hashing=none && cat dist/apps/contenttype-fields-builder/{generator-runtime,runtime,polyfills,main}.js > ../dotCMS/src/main/webapp/html/contenttype-fields.js",
-        "build:dotcms-block-editor": "ng build dotcms-block-editor --configuration production --optimization --output-hashing=none && cat dist/apps/dotcms-block-editor/{generator-runtime,runtime,polyfills,main}.js > ../dotCMS/src/main/webapp/html/dotcms-block-editor.js",
+        "build:dotcms-block-editor": "nx run dotcms-block-editor:build --configuration production --skip-nx-cache --optimization --output-hashing=none && cat dist/apps/dotcms-block-editor/{generator-runtime,runtime,polyfills,main}.js > ../dotCMS/src/main/webapp/html/dotcms-block-editor.js && cat dist/apps/dotcms-block-editor/styles.css >../dotCMS/src/main/webapp/html/css/dotcms-block-editor.css",
         "build:dotcms-webcomponents": "nx build dotcms-webcomponents",
         "docker:test": "npm run docker:build;IMAGE_BASE_NAME=core-web docker-compose -f docker-compose-running-test.yml up",
         "docker:build": "docker build -t core-web .",
