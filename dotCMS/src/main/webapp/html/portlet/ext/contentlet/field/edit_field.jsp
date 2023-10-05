@@ -199,7 +199,6 @@
                 }
             }
             %>
-            <script src="/html/dotcms-block-editor.js"></script>
             <script src="/html/showdown.min.js"></script>
             <dotcms-block-editor
                 id="block-editor-<%=field.getVelocityVarName()%>"
