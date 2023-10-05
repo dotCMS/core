@@ -110,14 +110,9 @@ jobs:
       - name: Build distribution
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
-          ./mvnw -U clean install -am -pl :dotcms-cli -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }}
+          ./mvnw -U clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }}
           cd cli
-          ../mvnw package -am -pl :dotcms-cli -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true
-
-      # - name: Package distribution
-      #   working-directory: ${{ github.workspace }}/tools/dotcms-cli/cli
-      #   run: |
-      #     ../mvnw package -pl :dotcms-cli -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true
+          ../mvnw package -Dquarkus.package.type=uber-jar -DskipTests
 
       - name: Releaser
         env:
