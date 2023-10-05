@@ -157,8 +157,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
 
     constructor(
         private dotContentTypeService: DotContentTypeService,
-        public paginatorESService: DotESContentService,
-        public paginationService: PaginatorService,
+        private paginatorESService: DotESContentService,
+        private paginationService: PaginatorService,
         private dotSessionStorageService: DotSessionStorageService
     ) {
         super({
@@ -190,7 +190,6 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                     .getWithOffset((event && event.first) || 0)
                     .pipe(take(1))
                     .subscribe((data: DotCMSContentlet[] | DotCMSContentType[]) => {
-                        data.forEach((item) => (item.contentType = item.variable = 'FORM'));
                         this.setLoaded();
                         this.setContentlets(data);
                         this.setTotalRecords(this.paginationService.totalRecords);
@@ -204,13 +203,27 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                         offset: (event && event.first.toString()) || '0',
                         query: `+contentType: ${
                             this.contentTypeVarName
-                        } ${this.getExperimentVariantQueryField()} +deleted: false`
+                        } +deleted: false ${this.getExperimentVariantQueryField()}`.trim()
                     })
                     .pipe(take(1))
                     .subscribe((response: ESContent) => {
                         this.setLoaded();
-                        this.setTotalRecords(response.resultsSize);
-                        this.setContentlets(response.jsonObjectView.contentlets);
+                        if (this.dotSessionStorageService.getVariationId() !== DEFAULT_VARIANT_ID) {
+                            // GH issue: https://github.com/dotCMS/core/issues/26363
+                            // This is a workaround to remove the original (variant: DEFAULT) when exist a modified contentlet inside a
+                            // variant (it make a copy of the original) the endpoint return the original and the derivated/duplicated.
+                            // We need to discus about create or not a new endpoint to get the contentlets taking
+                            // in consideration the variant contentlets, if you remove this, the contentlets will show the duplicated and the original contentlet
+                            const contentlets = this.removeDerivatedCotentlets(
+                                response.jsonObjectView.contentlets
+                            );
+
+                            this.setTotalRecords(contentlets.length);
+                            this.setContentlets(contentlets);
+                        } else {
+                            this.setTotalRecords(response.resultsSize);
+                            this.setContentlets(response.jsonObjectView.contentlets);
+                        }
                     });
             }
         });
@@ -293,8 +306,36 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
      * @returns {string} The query field for the experiment variant.
      */
     private getExperimentVariantQueryField(): string {
-        return this.dotSessionStorageService.getVariationId() === DEFAULT_VARIANT_ID
-            ? `+variant:default`
-            : `+(variant:default OR variant:${this.dotSessionStorageService.getVariationId()})`;
+        return this.dotSessionStorageService.getVariationId() !== DEFAULT_VARIANT_ID
+            ? `+(variant:default OR variant:${this.dotSessionStorageService.getVariationId()})`
+            : '';
+    }
+
+    /**
+     * If the contentlets have a derivated/duplicated contentlet, remove the original (variant: DEFAULT).
+     *
+     * @param {DotCMSContentlet[]} contentlets - The array of contentlets to remove derived contentlets from.
+     * @return {DotCMSContentlet[]} - The modified array of contentlets without the original contentlets.
+     */
+    private removeDerivatedCotentlets(contentlets: DotCMSContentlet[]) {
+        const currentVariationId = this.dotSessionStorageService.getVariationId();
+
+        const uniqueIdentifiersFromVariantContentlet = new Set(
+            contentlets
+                .filter((item) => item.variant === currentVariationId)
+                .map((item) => item.identifier)
+        );
+
+        const iNodesOfOriginalContentletToDelete = contentlets
+            .filter(
+                (item) =>
+                    uniqueIdentifiersFromVariantContentlet.has(item.identifier) &&
+                    item.variant != currentVariationId
+            )
+            .map((item) => item.inode);
+
+        return contentlets.filter(
+            (item) => !iNodesOfOriginalContentletToDelete.includes(item.inode)
+        );
     }
 }
