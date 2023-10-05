@@ -30,7 +30,7 @@ public interface ExperimentsAPI {
     Lazy<Integer> EXPERIMENTS_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MAX_DURATION", 90));
     Lazy<Integer> EXPERIMENTS_DEFAULT_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_DEFAULT_DURATION", 14));
     Lazy<Integer> EXPERIMENTS_MIN_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MIN_DURATION", 7));
-    Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 10));
+    Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 14));
 
     enum Health {
         OK, NOT_CONFIGURED, CONFIGURATION_ERROR
