@@ -1,13 +1,10 @@
-import { Meta, Story, moduleMetadata } from '@storybook/angular';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-
-import { DotCopyButtonComponent } from './dot-copy-button.component';
-
-import { DotClipboardUtil } from '../../../api/util/clipboard/ClipboardUtil';
+import { DotClipboardUtil, DotCopyButtonComponent } from '@dotcms/ui';
 
 export default {
     title: 'DotCMS/Copy Button',

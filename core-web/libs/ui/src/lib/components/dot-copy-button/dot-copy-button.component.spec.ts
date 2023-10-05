@@ -5,11 +5,9 @@ import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotClipboardUtil, DotCopyButtonComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-
-import { DotCopyButtonComponent } from './dot-copy-button.component';
 
 const messageServiceMock = new MockDotMessageService({
     Copy: 'Copy',
@@ -25,7 +23,6 @@ describe('DotCopyButtonComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotCopyButtonComponent],
             providers: [
                 {
                     provide: DotMessageService,
@@ -33,7 +30,7 @@ describe('DotCopyButtonComponent', () => {
                 },
                 DotClipboardUtil
             ],
-            imports: [TooltipModule, ButtonModule]
+            imports: [TooltipModule, ButtonModule, DotCopyButtonComponent]
         }).compileComponents();
     }));
 
