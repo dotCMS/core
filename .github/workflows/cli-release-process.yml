@@ -115,7 +115,7 @@ jobs:
       - name: Package distribution
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/cli
         run: |
-          ./mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true
+          ../mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true
 
       - name: Releaser
         env:
