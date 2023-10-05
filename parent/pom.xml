@@ -94,10 +94,6 @@
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/jacoco-results/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.language>java</sonar.language>
 
-        <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
-        <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>2.9.1.Final</quarkus.platform.version>
-
         <surefireArgline/>
         <integrationTestCoverageAgent/>
         <argLine/>
@@ -1105,16 +1101,5 @@
             <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
         </snapshotRepository>
     </distributionManagement>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>${quarkus.platform.group-id}</groupId>
-                <artifactId>${quarkus.platform.artifact-id}</artifactId>
-                <version>${quarkus.platform.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
 </project>
