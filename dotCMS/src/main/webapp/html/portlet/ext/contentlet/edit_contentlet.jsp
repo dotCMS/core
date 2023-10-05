@@ -34,7 +34,9 @@
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
+<!-- dotCMS Block Editor -->
 <link rel="stylesheet" href="/html/css/dotcms-block-editor.css" />
+<script src="/html/dotcms-block-editor.js"></script>
 
 <style>
 .dijitTree {
