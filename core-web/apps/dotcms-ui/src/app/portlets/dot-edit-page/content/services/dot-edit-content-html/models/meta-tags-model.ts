@@ -59,7 +59,6 @@ export interface SeoMetaTagsResult {
     keyColor: string;
     items: SeoRulesResult[];
     sort: number;
-    info?: string;
 }
 
 export interface SeoMetaTags {
@@ -93,7 +92,7 @@ export const SeoMediaKeys = {
         SEO_OPTIONS.TWITTER_DESCRIPTION,
         SEO_OPTIONS.TWITTER_IMAGE
     ],
-    linkedin: [SEO_OPTIONS.DESCRIPTION, SEO_OPTIONS.OG_IMAGE, SEO_OPTIONS.OG_TITLE],
+    linkedin: [SEO_OPTIONS.OG_DESCRIPTION, SEO_OPTIONS.OG_IMAGE, SEO_OPTIONS.OG_TITLE],
     all: [
         SEO_OPTIONS.DESCRIPTION,
         SEO_OPTIONS.OG_IMAGE,
@@ -148,3 +147,32 @@ export const SEO_TAGS = [
     SEO_OPTIONS.TWITTER_DESCRIPTION,
     SEO_OPTIONS.TWITTER_IMAGE
 ];
+
+export const socialMediaTiles = {
+    [SEO_MEDIA_TYPES.FACEBOOK]: {
+        label: 'Facebook',
+        value: SEO_MEDIA_TYPES.FACEBOOK,
+        icon: 'pi pi-facebook'
+    },
+    [SEO_MEDIA_TYPES.TWITTER]: {
+        label: 'X (Formerly Twitter)',
+        value: SEO_MEDIA_TYPES.TWITTER,
+        icon: 'pi pi-twitter'
+    },
+    [SEO_MEDIA_TYPES.LINKEDIN]: {
+        label: 'Linkedin',
+        value: SEO_MEDIA_TYPES.LINKEDIN,
+        icon: 'pi pi-linkedin'
+    },
+    [SEO_MEDIA_TYPES.GOOGLE]: {
+        label: 'Google',
+        value: SEO_MEDIA_TYPES.GOOGLE,
+        icon: 'pi pi-google'
+    }
+};
+
+export interface SocialMediaOption {
+    label: string;
+    value: SEO_MEDIA_TYPES;
+    icon: string;
+}

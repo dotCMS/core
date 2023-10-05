@@ -27,6 +27,7 @@ import {
     SEO_MEDIA_TYPES
 } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
+import { DotSelectSeoToolComponent } from '../dot-select-seo-tool/dot-select-seo-tool.component';
 
 @Component({
     selector: 'dot-results-seo-tool',
@@ -43,7 +44,8 @@ import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-me
         NgSwitchDefault,
         AsyncPipe,
         DotMessagePipe,
-        DotPipesModule
+        DotPipesModule,
+        DotSelectSeoToolComponent
     ],
     providers: [DotSeoMetaTagsService],
     templateUrl: './dot-results-seo-tool.component.html',
