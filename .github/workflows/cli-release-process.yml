@@ -113,7 +113,7 @@ jobs:
           pwd
           ls -la
           ./mvnw install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
-          ./mvnw package -DskipTests=true -Dquarkus.package.type=${{ github.event.inputs.packageType }} -am -pl :dotcms-cli
+          ./mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true -pl :dotcms-cli
           
       # ./mvnw -U clean install -am -pl :dotcms-cli -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -Dquarkus.package.type=${{ github.event.inputs.packageType }}
 
