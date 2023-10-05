@@ -117,33 +117,31 @@ jobs:
         run: |
           ./mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true -pl :dotcms-cli
           
-      # ./mvnw -U clean install -am -pl :dotcms-cli -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -Dquarkus.package.type=${{ github.event.inputs.packageType }}
+      - name: Releaser
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
+          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+          JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+          JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        working-directory: ${{ github.workspace }}
+        run: |
+          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE         
 
-      # - name: Releaser
-      #   env:
-      #     JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
-      #     JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-      #     JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
-      #     JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
-      #     JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      #   working-directory: ${{ github.workspace }}
-      #   run: |
-      #     tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE         
+      - name: Setup git config
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com" 
 
-      # - name: Setup git config
-      #   run: |
-      #     git config user.name "GitHub Actions"
-      #     git config user.email "actions@github.com" 
-
-      # - name: Set next version
-      #   working-directory: ${{ github.workspace }}/tools/dotcms-cli
-      #   run: |
-      #     RELEASE_VERSION=${{ needs.precheck.outputs.RELEASE_VERSION }}
-      #     NEXT_VERSION=${{ needs.precheck.outputs.NEXT_VERSION }}
-      #     HEAD=${{ needs.precheck.outputs.HEAD }}
+      - name: Set next version
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli
+        run: |
+          RELEASE_VERSION=${{ needs.precheck.outputs.RELEASE_VERSION }}
+          NEXT_VERSION=${{ needs.precheck.outputs.NEXT_VERSION }}
+          HEAD=${{ needs.precheck.outputs.HEAD }}
           
-      #     ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
+          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
 
-      #     git commit --allow-empty -a -m "⬆️  Next version $NEXT_VERSION"
-      #     git push origin "$HEAD"
+          git commit --allow-empty -a -m "⬆️  Next version $NEXT_VERSION"
+          git push origin "$HEAD"
