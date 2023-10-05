@@ -108,10 +108,11 @@ jobs:
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
 
       - name: Build distribution
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
           ./mvnw -U clean install -am -pl :dotcms-cli -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }}
-          ./mvnw package -am -pl :dotcms-cli -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true
+          cd cli
+          ../mvnw package -am -pl :dotcms-cli -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true
 
       # - name: Package distribution
       #   working-directory: ${{ github.workspace }}/tools/dotcms-cli/cli
