@@ -13,34 +13,14 @@
     <packaging>jar</packaging>
 
     <properties>
-        <compiler-plugin.version>3.8.1</compiler-plugin.version>
-        <failsafe.useModulePath>false</failsafe.useModulePath>
-        <maven.compiler.release>11</maven.compiler.release>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
-        <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>2.9.1.Final</quarkus.platform.version>
-        <exec.maven.plugin.version>3.0.0</exec.maven.plugin.version>
         <picocli.codegen.version>4.6.3</picocli.codegen.version>
         <testcontainers.version>1.17.6</testcontainers.version>
-        <failsafe-plugin.version>3.0.0-M5</failsafe-plugin.version>
         <test.failure.ignore>false</test.failure.ignore>
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
         <docker.version.tag>${project.version}</docker.version.tag>
         <testcontainers.docker.image>${docker.output.image.name}/${docker.version.tag}</testcontainers.docker.image>
+        <java.keytar.version>1.0.0</java.keytar.version>
     </properties>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>${quarkus.platform.group-id}</groupId>
-                <artifactId>${quarkus.platform.artifact-id}</artifactId>
-                <version>${quarkus.platform.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>com.dotcms</groupId>
@@ -99,7 +79,7 @@
         <dependency>
             <groupId>com.starxg</groupId>
             <artifactId>java-keytar</artifactId>
-            <version>1.0.0</version>
+            <version>${java.keytar.version}</version>
         </dependency>
 
         <dependency>
@@ -133,7 +113,6 @@
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${compiler-plugin.version}</version>
                 <configuration>
                     <compilerArgs>
                         <arg>-parameters</arg>
@@ -144,7 +123,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${failsafe-plugin.version}</version>
                 <configuration>
                     <testFailureIgnore>${test.failure.ignore}</testFailureIgnore>
                     <includes>
@@ -170,7 +148,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>${exec.maven.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>generateManPages</id>
@@ -220,7 +197,6 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${surefire-plugin.version}</version>
                         <executions>
                             <execution>
                                 <goals>
