@@ -261,8 +261,8 @@ export class DotFieldsService {
             },
             {
                 name: `${name}: ${this.dotMessage.get('Labels-Values')}`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}RadioLabelsValues`),
-                variable: `${variable}RadioLabelsValues`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}SelectLabelsValues`),
+                variable: `${variable}SelectLabelsValues`,
                 fieldTypeLabel
             }
         ];
