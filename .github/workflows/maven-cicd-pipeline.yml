@@ -54,7 +54,7 @@ jobs:
   #
   build-jdk11:
     name: "Initial JDK 11 Build"
-    runs-on: ubuntu-20.04
+    runs-on: dot-xl-runner
     needs: changes
     if: ${{ needs.changes.outputs.build == 'true' }}
     outputs:
@@ -180,7 +180,7 @@ jobs:
   #
   linux-jvm-tests:
     name: JVM Unit Tests - JDK ${{matrix.java.name}}
-    runs-on: ubuntu-20.04
+    runs-on: dot-xl-runner
     if: ${{ needs.changes.outputs.jvm_unit_test == 'true' }}
     needs: [changes,build-jdk11]
     timeout-minutes: 240
