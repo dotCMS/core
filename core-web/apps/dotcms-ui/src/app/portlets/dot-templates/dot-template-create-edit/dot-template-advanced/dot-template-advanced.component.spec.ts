@@ -171,9 +171,21 @@ describe('DotTemplateAdvancedComponent', () => {
     describe('events', () => {
         it('should emit updateTemplate event when the form changes', () => {
             const updateTemplate = spyOn(component.updateTemplate, 'emit');
-            component.form.get('body').setValue('<body></body>');
+            const body = '<body></body>';
+            const title = 'testTTl';
+            const image = 'testImg';
+            component.form.get('body').setValue(body);
+            component.form.get('title').setValue(title);
+            component.form.get('friendlyName').setValue(title + 'Fname');
+            component.form.get('image').setValue(image);
 
-            expect<any>(updateTemplate).toHaveBeenCalledWith({ body: '<body></body>' });
+            expect<any>(updateTemplate).toHaveBeenCalledWith({
+                title: title,
+                identifier: null,
+                body: '<body></body>',
+                friendlyName: title + 'Fname',
+                image: image
+            });
         });
 
         it('should have form and fields', () => {
