@@ -38,6 +38,7 @@
     padding: $spacing-2 $spacing-2;
     text-align: left;
     transition: none;
+    text-wrap: nowrap;
 
     &:first-child {
         padding-left: $spacing-5;
@@ -63,6 +64,7 @@
 }
 
 .p-datatable .p-sortable-column .p-sortable-column-icon {
+    display: inline-block;
     color: $color-palette-gray-700;
     margin-left: $spacing-1;
 }
