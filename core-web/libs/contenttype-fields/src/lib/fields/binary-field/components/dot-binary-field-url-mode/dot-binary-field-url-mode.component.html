@@ -9,6 +9,7 @@
         <input
             id="url-input"
             type="text"
+            autocomplete="off"
             formControlName="url"
             pInputText
             placeholder="https://www.dotcms.com/image.png"
@@ -28,7 +29,7 @@
             aria-label="Cancel button"
             data-testId="cancel-button"></p-button>
 
-        <div class="url-mode__actions--main" [style]="{ width: '6.85rem' }">
+        <div [style]="{ width: '6.85rem' }">
             <p-button
                 *ngIf="!vm.isLoading; else loadingButton"
                 [label]="'dot.common.import' | dm"
