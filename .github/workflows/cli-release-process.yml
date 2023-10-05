@@ -111,7 +111,7 @@ jobs:
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/
         run: |
           ./mvnw -U clean install -am -pl :dotcms-cli -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }}
-          ./mvnw package -pl :dotcms-cli -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true
+          ./mvnw package -am -pl :dotcms-cli -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true
 
       # - name: Package distribution
       #   working-directory: ${{ github.workspace }}/tools/dotcms-cli/cli
