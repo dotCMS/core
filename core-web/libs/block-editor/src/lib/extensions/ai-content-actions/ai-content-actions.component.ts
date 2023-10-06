@@ -1,4 +1,4 @@
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 
@@ -64,19 +64,22 @@ export class AIContentActionsComponent implements OnInit {
         event.value.callback();
     }
 
-    getLatestContent() {
-        const latestContent: string = this.aiContentService.getLastContentResponse();
-
-        return latestContent;
+    getLatestContent(contentType) {
+        if (contentType === 'text') {
+            return this.aiContentService.getLastContentResponse();
+        } else {
+            return this.aiContentService.getLastImageResponse();
+        }
     }
 
-    getNewContent(): Observable<string> {
-        const promptToUse: string = this.aiContentService.getLastUsedPrompt();
+    getNewContent(contentType: string): Observable<string> {
+        const contentPrompt: string = this.aiContentService.getLastUsedPrompt();
+        const imagePrompt: string = this.aiContentService.getLastImagePrompt();
 
-        if (promptToUse) {
-            return this.aiContentService.getIAContent(promptToUse);
+        if (contentType === 'text') {
+            return this.aiContentService.getIAContent(contentPrompt);
+        } else {
+            return this.aiContentService.getAIImage(imagePrompt);
         }
-
-        return of('');
     }
 }

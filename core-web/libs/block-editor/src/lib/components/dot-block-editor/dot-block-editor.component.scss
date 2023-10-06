@@ -314,6 +314,38 @@
                 border: 1px solid $color-palette-primary-300;
             }
         }
+
+        .loader-style {
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            min-height: 12.5rem;
+            min-width: 25rem;
+            width: 25.5625rem;
+            height: 17.375rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: 1.5px solid $color-palette-gray-400;
+        }
+
+        .p-progress-spinner {
+            border: 5px solid $color-palette-gray-300;
+            border-radius: 50%;
+            border-top: 5px solid $color-palette-primary;
+            width: 2.4rem;
+            height: 2.4rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
     }
 
     tiptap-editor {

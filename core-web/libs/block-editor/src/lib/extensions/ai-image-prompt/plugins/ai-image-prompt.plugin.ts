@@ -13,7 +13,6 @@ import { Editor } from '@tiptap/core';
 import { AIImagePromptComponent } from '../ai-image-prompt.component';
 import { AI_IMAGE_PROMPT_PLUGIN_KEY } from '../ai-image-prompt.extension';
 import { TIPPY_OPTIONS } from '../utils';
-import { getCursorPosition } from '../../../shared';
 
 interface AIImagePromptProps {
     pluginKey: PluginKey;
@@ -64,23 +63,32 @@ export class AIImagePromptView {
         this.pluginKey = pluginKey;
         this.component = component;
 
+        this.view.dom.addEventListener('keydown', this.handleKeyDown.bind(this));
+
         this.component.instance.formSubmission.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.editor.commands.closeImagePrompt();
+            this.editor.commands.insertLoaderNode();
         });
 
         this.component.instance.aiResponse
             .pipe(takeUntil(this.destroy$))
-            .subscribe((contentlet) => {
-                this.editor.commands.insertImage(contentlet);
-                this.editor.commands.openAIContentActions();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .subscribe((contentlet: any) => {
+                this.editor.commands.deleteSelection();
+                const data = Object.values(contentlet[0])[0];
 
-                console.warn('contentlet', contentlet);
-                if (contentlet.length > 0) {
-                    const { from } = getCursorPosition(view);
-
-                    this.editor.chain().insertImage(contentlet[0], from).addNextLine().run();
+                if (data) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    this.editor.commands.insertImage(data as any);
+                    this.editor.commands.handleContentType('text');
                 }
             });
+    }
+
+    private handleKeyDown(event: KeyboardEvent) {
+        if (event.key === 'Backspace') {
+            this.editor.commands.closeAIContentActions();
+        }
     }
 
     update(view: EditorView, prevState?: EditorState) {

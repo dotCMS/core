@@ -6,38 +6,44 @@
     left: 0%;
     transform: translate(-55%, -5%);
     width: 90vw;
-    height: 60vh;
-    padding: $spacing-5;
+    height: 75vh;
+    padding: $spacing-4;
     margin: $spacing-5;
-    border: 2px solid #d1d4db;
+    border: 2px solid $color-palette-gray-400;
     box-shadow: 0px 8px 16px 0px rgba(20, 21, 26, 0.08);
     border-radius: $border-radius-lg;
     z-index: 9999;
-    background: #fff;
+    background: $white;
 }
 
 .title {
     font-size: $font-size-xl;
     font-weight: $font-weight-semi-bold;
+    margin-bottom: $spacing-3 0;
+}
+
+form {
+    width: 100%;
 }
 
 .input-field-wrapper {
     width: 100%;
+    height: 7rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    margin: $spacing-3 0;
 
     .input-field {
         width: 100%;
-        height: 70%;
+        height: 100%;
         padding: $spacing-1;
         line-height: normal;
-        background-color: #fff;
+        background-color: $white;
         border: 1px solid #ccc;
         border-radius: $border-radius-sm;
-        color: #6c7389;
+        color: $color-palette-gray-700;
     }
 }
 
@@ -48,17 +54,16 @@
     margin-bottom: $spacing-1;
 }
 
-.choice-div,
-form {
+.choice-div {
     height: 100%;
     width: 48%;
     padding: $spacing-2;
-    border: 2px solid #d1d4db;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     border-radius: $border-radius-lg;
+    border: 2px solid $color-palette-gray-400;
     cursor: pointer;
 
     &:hover {
@@ -68,7 +73,6 @@ form {
 
 .choice-div .icon-wrapper,
 .submit-btn-container {
-    background-color: #d1d4db;
     margin-bottom: $spacing-3;
     display: flex;
     justify-content: center;
@@ -77,4 +81,8 @@ form {
 
 span {
     text-align: center;
+}
+
+.icon-wrapper {
+    background-color: $white;
 }

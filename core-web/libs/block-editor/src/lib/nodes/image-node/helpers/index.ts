@@ -26,17 +26,6 @@ export const getImageAttr = (
         return { src: attrs, data: 'null' };
     }
 
-    if ('url' in attrs) {
-        return { src: (attrs as { url: string }).url, data: 'null' };
-    }
-
-    if ('base64' in attrs) {
-        return {
-            src: `data:image/png;base64,${(attrs as { base64: string }).base64}`,
-            data: 'null'
-        };
-    }
-
     const { fileAsset, asset, title, languageId } = attrs as DotCMSContentlet;
 
     return {

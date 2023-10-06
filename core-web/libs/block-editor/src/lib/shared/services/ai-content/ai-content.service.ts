@@ -31,6 +31,14 @@ export class AiContentService {
         return this.lastContentResponse;
     }
 
+    getLastImagePrompt(): string | null {
+        return this.lastImagePrompt;
+    }
+
+    getLastImageResponse(): string | null {
+        return this.lastImageResponse;
+    }
+
     getIAContent(prompt: string): Observable<string> {
         this.lastUsedPrompt = prompt;
 

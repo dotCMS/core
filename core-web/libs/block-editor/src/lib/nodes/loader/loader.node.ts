@@ -2,19 +2,19 @@ import { Node } from '@tiptap/core';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
-        AIContentNode: {
-            insertAINode: (content?: string) => ReturnType;
+        LoaderNode: {
+            insertLoaderNode: (isLoading?: boolean) => ReturnType;
         };
     }
 }
 
-export const AIContentNode = Node.create({
-    name: 'aiContent',
+export const LoaderNode = Node.create({
+    name: 'loader',
 
     addAttributes() {
         return {
-            content: {
-                default: ''
+            isLoading: {
+                default: true
             }
         };
     },
@@ -22,7 +22,7 @@ export const AIContentNode = Node.create({
     parseHTML() {
         return [
             {
-                tag: 'div'
+                tag: 'div.p-d-flex.p-jc-center'
             }
         ];
     },
@@ -44,31 +44,32 @@ export const AIContentNode = Node.create({
     addCommands() {
         return {
             ...this.parent?.(),
-            insertAINode:
-                (content?: string) =>
+            insertLoaderNode:
+                (isLoading?: boolean) =>
                 ({ commands }) => {
                     return commands.insertContent({
                         type: this.name,
-                        attrs: { content: content }
+                        attrs: { isLoading: isLoading }
                     });
                 }
         };
     },
 
     renderHTML() {
-        return ['div'];
+        return ['div', { class: 'p-d-flex p-jc-center' }];
     },
 
     addNodeView() {
         return ({ node }) => {
             const dom = document.createElement('div');
-            const div = document.createElement('div');
 
-            div.innerHTML = node.attrs.content || '';
+            dom.classList.add('loader-style');
 
-            dom.contentEditable = 'true';
-            dom.classList.add('ai-content-container');
-            dom.append(div);
+            if (node.attrs.isLoading) {
+                const spinner = document.createElement('div');
+                spinner.classList.add('p-progress-spinner');
+                dom.append(spinner);
+            }
 
             return { dom };
         };

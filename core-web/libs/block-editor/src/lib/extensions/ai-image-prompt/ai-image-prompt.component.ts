@@ -14,13 +14,13 @@ import { AiContentService } from '../../shared/services/ai-content/ai-content.se
 })
 export class AIImagePromptComponent {
     form = this.fb.group({
-        firstInputField: ['', Validators.required],
-        secondInputField: ['', Validators.required]
+        promptGenerate: ['', Validators.required],
+        promptAutoGenerate: ['', Validators.required]
     });
 
     isFormSubmitting = false;
-    showForm1 = false;
-    showForm2 = false;
+    showFormOne = false;
+    showFormTwo = false;
 
     @Output() formSubmission = new EventEmitter<boolean>();
     @Output() aiResponse = new EventEmitter<string>();
@@ -29,16 +29,19 @@ export class AIImagePromptComponent {
 
     onSubmit() {
         this.isFormSubmitting = true;
-        const prompt = this.form.value.firstInputField;
+        const promptGenerate = this.form.value.promptGenerate;
+        const promptAutoGenerate = this.form.value.promptAutoGenerate;
+        const combinedPrompt = `${promptGenerate} ${promptAutoGenerate}`;
+
+        this.isFormSubmitting = false;
+        this.formSubmission.emit(true);
 
         if (prompt) {
             this.aiContentService
-                .getAIImage(prompt)
+                .getAIImage(combinedPrompt)
                 .pipe(
                     catchError(() => of(null)),
                     switchMap((imageId) => {
-                        console.warn('image_imageId', imageId);
-
                         if (!imageId) {
                             return of(null);
                         }
@@ -47,39 +50,24 @@ export class AIImagePromptComponent {
                     })
                 )
                 .subscribe((contentlet) => {
-                    this.isFormSubmitting = false;
-                    this.formSubmission.emit(true);
                     this.aiResponse.emit(contentlet);
                 });
         }
     }
 
-    onSecondSubmit() {
-        this.isFormSubmitting = true;
-        const prompt = this.form.value.secondInputField;
-
-        if (prompt) {
-            this.aiContentService.getAIImage(prompt);
-        }
+    openFormOne() {
+        this.showFormOne = true;
+        this.showFormTwo = false;
     }
 
-    toggleForm1() {
-        this.showForm1 = !this.showForm1;
-        if (this.showForm1) {
-            this.showForm2 = false;
-        }
-    }
-
-    toggleForm2() {
-        this.showForm2 = !this.showForm2;
-        if (this.showForm2) {
-            this.showForm1 = false;
-        }
+    openFormTwo() {
+        this.showFormTwo = true;
+        this.showFormOne = false;
     }
 
     cleanForm() {
         this.form.reset();
-        this.showForm1 = false;
-        this.showForm2 = false;
+        this.showFormOne = false;
+        this.showFormTwo = false;
     }
 }
