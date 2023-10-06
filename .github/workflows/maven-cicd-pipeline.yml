@@ -47,6 +47,7 @@ jobs:
         id: filter
         with:
           filters: .github/filters.yaml
+
   #
   # Initial JDK 11 Build
   # Basic build and install all with maven without running tests.
@@ -79,7 +80,7 @@ jobs:
           platforms: ${{ env.DOCKER_PLATFORMS }}
       - id: docker-setup-buildx
         name: Docker Setup Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3.0.0
         with:
           version: latest
           platforms: ${{ env.DOCKER_PLATFORMS }}
@@ -92,12 +93,11 @@ jobs:
             image=moby/buildkit:v0.12.2
       - id: docker-login
         name: Login to GHCR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3.0.0
         with:
           registry: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v4
@@ -109,7 +109,7 @@ jobs:
             type=ref,event=pr
             type=sha,enable=true,priority=100,prefix=sha-,suffix=,format=short
             type=raw,value=run-${{ github.run_id }}
-      - name: Debug docker metdata
+      - name: Debug docker metadata
         run: |
           echo "${{ fromJSON(steps.meta.outputs.json) }}"
         shell: bash
@@ -175,6 +175,7 @@ jobs:
             target/build-report.json
             LICENSE
           retention-days: 2
+
   #
   # Run all JVM Unit Tests in parallel with other tests
   #
@@ -198,7 +199,6 @@ jobs:
           }
     steps:
       - uses: actions/checkout@v3
-
       - name: Set up JDK ${{ matrix.java.name }}
         uses: actions/setup-java@v3
         with:
@@ -238,6 +238,7 @@ jobs:
             target/build-report.json
             LICENSE
           retention-days: 2
+
   linux-cli-tests:
     name: CLI Tests - JDK ${{matrix.java.name}}
     runs-on: ubuntu-20.04
@@ -281,7 +282,6 @@ jobs:
           registry: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - id: prepare-license
         name: Prepare license
         env:
@@ -307,12 +307,13 @@ jobs:
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: "build-reports-cli - JDK ${{matrix.java.name}}"
+          name: "build-reports-test-cli - JDK ${{matrix.java.name}}"
           path: |
             **/target/*-reports/TEST-*.xml
             target/build-report.json
             LICENSE
           retention-days: 2
+
   #
   # Run Frontend Tests
   #
@@ -326,11 +327,9 @@ jobs:
       MAVEN_OPTS: -Xmx2048m
     steps:
       - uses: actions/checkout@v3
-
       - name: apt clean
         shell: bash
         run: sudo apt-get clean
-
       - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
@@ -439,17 +438,14 @@ jobs:
           }
     steps:
       - uses: actions/checkout@v3
-
       - name: apt clean
         shell: bash
         run: sudo apt-get clean
-
       - name: Set up IT Tests ${{ matrix.java.name }} ${{ matrix.suites.name }}
         uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java.java-version }}
           distribution: ${{ matrix.java.distribution }}
-
       #- name: Download Maven Repo
       #  uses: actions/download-artifact@v3
       #  with:
@@ -469,7 +465,6 @@ jobs:
         with:
           path: ~/.m2/repository
           key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
-
       - name: Build
         env:
           DOT_DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
@@ -494,13 +489,104 @@ jobs:
             target/build-report.json
             LICENSE
           retention-days: 2
+
+  linux-postman-tests:
+    name: Run Postman Tests - ${{matrix.collection_group}}
+    runs-on: ubuntu-latest
+    needs: build-jdk11
+    if: "github.repository == 'dotCMS/core' || !endsWith(github.ref, '/master')"
+    strategy:
+      fail-fast: false
+      matrix:
+        collection_group: [ 'graphql', 'workflow', 'template', 'page', 'container', 'pp', 'experiment', 'default' ]
+    steps:
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+
+      - run: npm install --location=global newman
+
+      - id: docker-login
+        name: Login to GHCR
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - id: resolve-postman-collections
+        uses: ./.github/actions/resolve-postman-collections
+        with:
+          current: ${{ matrix.collection_group }}
+
+      - name: Prepare license
+        run: |
+          mkdir -p dotcms-postman/license
+          touch dotcms-postman/license/license.dat
+          echo "${{ secrets.DOTCMS_LICENSE }}" > dotcms-postman/license/license.dat
+          chmod 777 dotcms-postman/license/license.dat
+
+      - id: run-postman-tests
+        name: Run Postman Tests
+        timeout-minutes: 90
+        run: |
+          collections="${{ steps.resolve-postman-collections.outputs.collections_to_run }}"
+          #export DOTCMS_IMAGE='dotcms/dotcms:latest'
+          export DOTCMS_IMAGE="${{ needs.build-jdk11.outputs.docker-tag }}"
+
+          cmd="./mvnw $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-postman -Dpostman.collections=\"${collections}\""
+          echo "Running command: $cmd"
+          eval $cmd
+        env:
+          JVM_TEST_MAVEN_OPTS: "-e -B"
+
+      - name: Prepare reports archive (if maven failed)
+        if: failure()
+        shell: bash
+        run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
+
+      - name: Upload failure Archive (if maven failed)
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: test-reports-postman-${{ matrix.collection_group }}
+          path: 'test-reports.tgz'
+
+      - name: failsafe-postman-tests  # Uploads will be merged with same name
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: "build-reports-postman-tests - ${{ matrix.collection_group }}"
+          path: |
+            **/target/*-reports/TEST-*.xml
+            target/build-report.json
+            LICENSE
+          retention-days: 2
+
+  clean-up:
+    name: Clean up
+    runs-on: ubuntu-latest
+    needs: linux-postman-tests
+    if: (success() || failure()) && (github.repository == 'dotCMS/core' || !endsWith(github.ref, '/master'))
+    steps:
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+
+      - id: cleanup-package
+        name: Clean up CICD packages
+        uses: ./.github/actions/cleanup-gh-packages
+        with:
+          delete_tags: ${{ needs.build-jdk11.outputs.docker-tag }}
+          access_token: ${{ secrets.GHCR_TOKEN }}
+
   #
   # Collate reports and build status
   #
   prepare-report-data:
     name: Prepare Report Data
     runs-on: ubuntu-20.04
-    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-cli-tests ]
+    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-cli-tests,linux-postman-tests ]
     if: always()
     outputs:
       aggregate_status: ${{ steps.prepare-workflow-data.outputs.aggregate_status }}
@@ -515,8 +601,6 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-         
-          
           AGGREGATE_STATUS="SUCCESS"
           jobs_status="${{ toJson(needs) }}"
           echo "job status=${jobs_status}"
@@ -534,20 +618,12 @@ jobs:
             fi
           done < <(echo "$jobs_status" | awk -F': ' '/result:/ {print $1,$2}')
                                           
-                                          
-                                          
-                                          
           FIRST_FAIL_STEP=""
           FIRST_FAIL_MODULE=""
-          
-          
-          
           
           echo '{' > workflow-data.json
           
           EVENT_TYPE="${{ github.event_name }}"
-          
-          
           
           if [[ "$EVENT_TYPE" == "pull_request" ]]; then
             echo "Creating workflow data for pull request ${PR_TITLE}"
@@ -562,9 +638,6 @@ jobs:
           BRANCH="${BRANCH##*/}"
         
           PR_TITLE_JQ=$(jq --arg title "$PR_TITLE" -n '$title')
-          
-  
-          
           
           echo '"branch": "'$BRANCH'",' >> workflow-data.json
           echo '"run_id": "'${{ github.run_id }}'",' >> workflow-data.json
@@ -637,6 +710,7 @@ jobs:
         with:
           name: workflow-data
           path: ./workflow-data.json
+
   final-status:
     name: Final Status
     needs: prepare-report-data

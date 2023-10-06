@@ -34,11 +34,22 @@ public class BayesianAPIImpl implements BayesianAPI {
      */
     @Override
     public BayesianResult doBayesian(final BayesianInput input) {
+        final UUID metricId = UUID.randomUUID();
+        final long start = System.currentTimeMillis();
+        Logger.debug(this, String.format("BAYESIAN-CALCULATION [%s] START <<<<<", metricId));
+
         // validate input
-        return noopFallback(input)
+        final BayesianResult bayesianResult = noopFallback(input)
             .orElseGet(() -> input.type() == ABTestingType.AB
                 ? getAbBayesianResult(input)
                 : getAbcBayesianResult(input));
+
+        final long end = System.currentTimeMillis();
+        Logger.debug(
+            this,
+            String.format("BAYESIAN-CALCULATION [%s] END - took [%d] secs >>>>>", metricId, (end - start) / 1000));
+
+        return bayesianResult;
     }
 
     /**

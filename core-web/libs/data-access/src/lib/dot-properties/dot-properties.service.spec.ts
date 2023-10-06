@@ -2,7 +2,6 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotPropertiesService } from './dot-properties.service';
@@ -10,7 +9,8 @@ import { DotPropertiesService } from './dot-properties.service';
 const fakeResponse = {
     entity: {
         key1: 'data',
-        list: ['1', '2']
+        list: ['1', '2'],
+        featureFlag: 'true'
     }
 };
 
@@ -74,82 +74,36 @@ describe('DotPropertiesService', () => {
         req.flush(apiResponse);
     });
 
-    describe('getKey', () => {
-        it('should return the value of a key if it exists in featureConfig', (done) => {
-            const key = 'existingKey';
-            const value = 'existingValue';
-            service.featureConfig = { [key]: value };
-            service.getKey(key).subscribe((result) => {
-                expect(result).toEqual(value);
-                done();
-            });
-            httpMock.expectNone(`/api/v1/configuration/config?keys=${key}`);
-        });
+    it('should get feature flag value', (done) => {
+        const featureFlag = 'featureFlag';
+        expect(service).toBeTruthy();
 
-        it('should make an HTTP request if the key does not exist in featureConfig', (done) => {
-            const key = 'nonExistingKey';
-            const value = 'nonExistingValue';
-            service.getKey(key).subscribe((result) => {
-                expect(result).toEqual(value);
-                done();
-            });
-            const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${key}`);
-            expect(req.request.method).toEqual('GET');
-            req.flush({ entity: { [key]: value } });
+        service.getFeatureFlag(featureFlag).subscribe((response) => {
+            expect(response).toEqual(true);
+            done();
         });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(fakeResponse);
     });
 
-    describe('getKeys', () => {
-        it('should return the values of all keys if they exist in featureConfig', (done) => {
-            const keys = ['existingKey1', 'existingKey2'];
-            const values = { [keys[0]]: 'existingValue1', [keys[1]]: 'existingValue2' };
-            service.featureConfig = values;
-            service.getKeys(keys).subscribe((result) => {
-                expect(result).toEqual(values);
-                done();
-            });
+    it('should get feature flag values', (done) => {
+        const featureFlags = ['featureFlag', 'featureFlag2'];
+        const apiResponse = {
+            entity: {
+                featureFlag: 'true',
+                featureFlag2: 'NOT_FOUND'
+            }
+        };
+
+        service.getFeatureFlags(featureFlags).subscribe((response) => {
+            expect(response['featureFlag']).toBe(true);
+            expect(response['featureFlag2']).toBe(false);
+            done();
         });
-
-        it('should make an HTTP request if any key does not exist in featureConfig', (done) => {
-            const keys = ['existingKey', 'nonExistingKey'];
-            const values = { [keys[0]]: 'existingValue', [keys[1]]: 'nonExistingValue' };
-            service.getKeys(keys).subscribe((result) => {
-                expect(result).toEqual(values);
-                done();
-            });
-            const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${keys.join()}`);
-            expect(req.request.method).toEqual('GET');
-            req.flush({ entity: values });
-        });
-    });
-
-    describe('getKeyAsList', () => {
-        it('should make an HTTP request and return the value of a key as a list', (done) => {
-            const key = 'listKey';
-            const value = ['value1', 'value2'];
-            service.getKeyAsList(key).subscribe((result) => {
-                expect(result).toEqual(value);
-                done();
-            });
-            const req = httpMock.expectOne(`/api/v1/configuration/config?keys=list:${key}`);
-            expect(req.request.method).toEqual('GET');
-            req.flush({ entity: { [key]: value } });
-        });
-    });
-
-    describe('loadConfig', () => {
-        it('should load the configuration for the feature flags', () => {
-            const keys = Object.values(FeaturedFlags);
-            const values = { key1: 'value1', key2: 'value2' };
-
-            service.loadConfig();
-
-            const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${keys.join()}`);
-            expect(req.request.method).toBe('GET');
-            req.flush({ entity: values });
-
-            expect(service.featureConfig).toEqual(values);
-        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
     });
 
     afterEach(() => {

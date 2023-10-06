@@ -6,9 +6,9 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotCurrentUserService } from '@dotcms/data-access';
 import { ApiRoot, CoreWebService, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@dotcms/ui';
 import { CoreWebServiceMock, DotFormatDateServiceMock } from '@dotcms/utils-testing';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 
