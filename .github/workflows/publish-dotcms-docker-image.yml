@@ -1,4 +1,4 @@
-name: Publish DotCMS docker image
+name: Build/Push dotCMS docker image
 on:
   workflow_dispatch:
     inputs:
@@ -32,8 +32,6 @@ jobs:
         run: echo 'Github Context'
       - name: Checkout core
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Set Common Vars
         run: |
           BUILD_ID=$(basename "${{ github.ref }}")

@@ -58,7 +58,15 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberUtil;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -68,7 +76,6 @@ import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import java.util.Collection;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -107,6 +114,7 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -729,29 +737,36 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     /**
-     * Deletes the content data associated to the specified list of Inodes. Based on such a list, the {@code contentlet}
-     * will be cleaned up as well.
+     * Deletes the Contentlets - versions - that match the specified list of Inodes. To improve
+     * performance, the list of Inodes is split into smaller lists of 100 elements each.
      *
      * @param inodeList The list of Inodes that will be deleted.
      *
      * @throws DotDataException An error occurred when interacting with the data source.
      */
     private void deleteContentData(final List<String> inodeList) throws DotDataException {
+        if (UtilMethods.isNotSet(inodeList)) {
+            return;
+        }
         final int splitAt = 100;
         // Split all records into lists of size 'truncateAt'
         final List<List<String>> inodesToDelete = Lists.partition(inodeList, splitAt);
         final List<String> queries = Lists.newArrayList("DELETE FROM contentlet WHERE inode IN (?)",
                 "DELETE FROM inode WHERE inode IN (?)");
+        Logger.debug(this, String.format("Deleting %d Contentlets with the following Inodes:",
+                inodeList.size()));
         for (final String query : queries) {
             for (final List<String> inodes : inodesToDelete) {
                 final DotConnect dc = new DotConnect();
-                // Generate the "(?,?,?...)" string depending of the number of inodes
+                // Generate the "(?,?,?...)" string depending on the number of inodes
                 final String parameterPlaceholders = DotConnect.createParametersPlaceholder(inodes.size());
                 dc.setSQL(query.replace("?", parameterPlaceholders));
                 for (final String inode : inodes) {
                     dc.addParam(inode);
+                    Logger.debug(this, "-> " + inode);
                 }
                 dc.loadResult();
+                Logger.debug(this, String.format("%d Inodes have been deleted!", inodes.size()));
             }
         }
     }

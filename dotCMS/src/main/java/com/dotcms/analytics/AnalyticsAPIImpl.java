@@ -316,6 +316,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             .setTryAgainAttempts(ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS)
             .setHeaders(accessTokenHeaders())
             .setRawData(prepareRequestData(analyticsApp))
+            .setThrowWhenNot2xx(false)
             .build()
             .doResponse(AccessToken.class);
         logTokenResponse(response, analyticsApp);
@@ -366,6 +367,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             .setTimeout(ANALYTICS_KEY_RENEW_TIMEOUT)
             .setTryAgainAttempts(ANALYTICS_KEY_RENEW_ATTEMPTS)
             .setHeaders(analyticsKeyHeaders(accessToken))
+            .setThrowWhenNot2xx(false)
             .build()
             .doResponse(AnalyticsKey.class);
         logKeyResponse(response, analyticsApp);
