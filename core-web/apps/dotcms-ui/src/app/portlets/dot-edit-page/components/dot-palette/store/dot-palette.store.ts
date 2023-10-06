@@ -319,8 +319,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
      */
     private removeOriginalContentletsDuplicated(contentlets: DotCMSContentlet[]) {
         const currentVariationId = this.dotSessionStorageService.getVariationId();
-        let uniqueIdentifiersFromVariantContentlet = new Set();
-        let iNodesOfOriginalContentletToDelete = [];
+        const uniqueIdentifiersFromVariantContentlet = new Set();
+        const iNodesOfOriginalContentletToDelete = [];
 
         contentlets.reduce((acc, item) => {
             if (item.variant === currentVariationId) {
