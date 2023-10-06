@@ -337,7 +337,8 @@ const columnsMock = [
         fieldName: 'modDate',
         format: 'date',
         header: 'Last Edit',
-        sortable: true
+        sortable: true,
+        textAlign: 'left'
     }
 ];
 

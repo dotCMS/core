@@ -1,6 +1,6 @@
 # action.yml
 name: 'Issue Labeler'
-description: 'Geiven a JSON with issues and commits, it labels the issues with the corresponding labels'
+description: 'Given a JSON with issues and commits, it labels the issues with the corresponding labels'
 author: 'victoralfaro-dotcms'
 inputs:
   issues_json:

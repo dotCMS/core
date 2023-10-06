@@ -25,21 +25,6 @@
         color: $color-palette-primary;
     }
 
-    .p-tabview {
-        height: 100%;
-    }
-
-    .p-tabview-panels {
-        height: 100%;
-        flex-grow: 1;
-        flex-basis: 0;
-        overflow: auto;
-    }
-
-    .p-tabview-nav-content {
-        border: none;
-    }
-
     .p-tabview-nav {
         display: inline-flex;
         border: 1px solid $color-palette-gray-500;
@@ -77,9 +62,12 @@
     }
 
     .p-tabview .p-tabview-nav li .p-tabview-nav-link {
-        padding-left: $spacing-4;
-        padding-right: $spacing-4;
-        text-wrap: nowrap;
+        height: 100%;
+    }
+
+    .p-tabview-title {
+        display: inline-block;
+        margin-right: $spacing-2;
     }
 
     .p-tabview .tab-panel-btn a.p-tabview-nav-link {
@@ -89,11 +77,6 @@
         justify-content: center;
         align-items: center;
         padding: 0;
-    }
-
-    .p-tabview-title {
-        display: inline-block;
-        margin-right: $spacing-2;
     }
 }
 
