@@ -214,7 +214,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                             // variant (it make a copy of the original) the endpoint return the original and the derivated/duplicated.
                             // We need to discus about create or not a new endpoint to get the contentlets taking
                             // in consideration the variant contentlets, if you remove this, the contentlets will show the duplicated and the original contentlet
-                            const contentlets = this.removeDerivatedCotentlets(
+                            const contentlets = this.removeOriginalContentletsDuplicated(
                                 response.jsonObjectView.contentlets
                             );
 
@@ -317,22 +317,25 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
      * @param {DotCMSContentlet[]} contentlets - The array of contentlets to remove derived contentlets from.
      * @return {DotCMSContentlet[]} - The modified array of contentlets without the original contentlets.
      */
-    private removeDerivatedCotentlets(contentlets: DotCMSContentlet[]) {
+    private removeOriginalContentletsDuplicated(contentlets: DotCMSContentlet[]) {
         const currentVariationId = this.dotSessionStorageService.getVariationId();
+        let uniqueIdentifiersFromVariantContentlet = new Set();
+        let iNodesOfOriginalContentletToDelete = [];
 
-        const uniqueIdentifiersFromVariantContentlet = new Set(
-            contentlets
-                .filter((item) => item.variant === currentVariationId)
-                .map((item) => item.identifier)
-        );
+        contentlets.reduce((acc, item) => {
+            if (item.variant === currentVariationId) {
+                uniqueIdentifiersFromVariantContentlet.add(item.identifier);
+            }
 
-        const iNodesOfOriginalContentletToDelete = contentlets
-            .filter(
-                (item) =>
-                    uniqueIdentifiersFromVariantContentlet.has(item.identifier) &&
-                    item.variant != currentVariationId
-            )
-            .map((item) => item.inode);
+            if (
+                uniqueIdentifiersFromVariantContentlet.has(item.identifier) &&
+                item.variant !== currentVariationId
+            ) {
+                iNodesOfOriginalContentletToDelete.push(item.inode);
+            }
+
+            return acc;
+        }, {});
 
         return contentlets.filter(
             (item) => !iNodesOfOriginalContentletToDelete.includes(item.inode)
