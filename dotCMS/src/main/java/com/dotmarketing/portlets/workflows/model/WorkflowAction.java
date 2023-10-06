@@ -1,16 +1,24 @@
 package com.dotmarketing.portlets.workflows.model;
 
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.google.common.collect.ImmutableList;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Encapsulate the workflow action information.
@@ -27,7 +35,8 @@ public class WorkflowAction implements Permissionable, Serializable{
 	/**
 	 * Key to store when the next step is current step.
 	 */
-	public  static final String CURRENT_STEP = "currentstep";
+	public static final String CURRENT_STEP = "currentstep";
+	public static final String SEPARATOR = "SEPARATOR";
 
 	private String id;
 

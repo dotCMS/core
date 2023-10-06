@@ -47,6 +47,33 @@
     );
 
 %>
+
+<script type="text/javascript">
+
+    function addSeparator(schemeId, stepId) {
+        const xhrArgs = {
+            url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=save&stepId=" + stepId + "&schemeId=" + schemeId + "&actionId=SEPARATOR",
+            handle: function (dataOrError, ioArgs) {
+                if (dojo.isString(dataOrError)) {
+
+                    if (dataOrError.indexOf("FAILURE") === 0) {
+                        showDotCMSSystemMessage(dataOrError, true);
+                    } else {
+                        mainAdmin.refresh();
+                    }
+                } else {
+                    this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
+
+                }
+            }
+        };
+
+        dojo.xhrPost(xhrArgs);
+        mainAdmin.refresh();
+    }
+
+</script>
+
 <div class="list-wrapper wfStepInDrag" id="stepID<%=step.getId()%>" data-first="<%=isFirst%>">
     <div class="list-item"  onmouseout="colorMeNot()">
         <div class="wfStepTitle">
@@ -80,6 +107,9 @@
             <%
                 }
             %>
+            <div class="btn-flat btn-primary showPointer" onclick="addSeparator('<%=scheme.getId()%>', '<%=step.getId()%>');">
+                <i class="fa fa-plus" aria-hidden="true"></i> Add Separator
+            </div>
             <div class="btn-flat btn-primary showPointer" onclick="actionAdmin.addOrAssociatedAction('<%=scheme.getId()%>', '<%=step.getId()%>', 'step-action-<%=step.getId()%>');">
                 <i class="fa fa-plus" aria-hidden="true"></i> Add
             </div>
