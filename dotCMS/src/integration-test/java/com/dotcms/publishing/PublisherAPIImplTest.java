@@ -192,9 +192,9 @@ public class PublisherAPIImplTest {
                 getRuleWithDependencies(),
                 getContentWithSeveralVersions(),
                 getUser(),
-                getExperiment(),
-                getExperimentWithSystemTemplate()
-                //getExperimentVariantDifferentLayout() //for some rason it is failing on the cloud, we need to check it later
+                getExperiment()
+                getExperimentWithSystemTemplate() //for some reason it is failing on the cloud, we need to check it later
+                //getExperimentVariantDifferentLayout() //for some reason it is failing on the cloud, we need to check it later
         };
     }
 
