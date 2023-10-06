@@ -1,8 +1,5 @@
 package com.dotcms.experiments.business;
 
-import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.model.AccessToken;
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResults;
@@ -101,7 +98,7 @@ public interface ExperimentsAPI {
      * Similar to #start, but it forces the start of the Experiment even if there is an Experiment
      * already running for the same page, which would then be stopped.
      */
-    Experiment forceStart(final String experimentId, final User user)
+    Experiment forceStart(final String experimentId, final User user, Scheduling scheduling)
             throws DotDataException, DotSecurityException;
 
     /**
@@ -109,7 +106,7 @@ public interface ExperimentsAPI {
      * but it forces the start of the Experiment even if there is an Experiment
      * already running for the same page, which would then be stopped.
      */
-    Experiment forceScheduled(String experimentId, User user)
+    Experiment forceScheduled(final String experimentId, final User user, final Scheduling scheduling)
             throws DotDataException, DotSecurityException;
 
     /**

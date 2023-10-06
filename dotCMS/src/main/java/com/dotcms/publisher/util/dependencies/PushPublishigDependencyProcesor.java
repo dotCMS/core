@@ -1,6 +1,7 @@
 package com.dotcms.publisher.util.dependencies;
 
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import static com.dotmarketing.portlets.templates.model.Template.SYSTEM_TEMPLATE;
 
 import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -279,6 +280,10 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     private void processTemplateDependencies(final Template template) {
 
         try {
+
+            if (APILocator.getTemplateAPI().systemTemplate().equals(template)) {
+                return;
+            }
 
             final Template workingTemplate = template.isWorking() ? template
                     : APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(), user, false);
@@ -753,32 +758,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                             .onFailure(e->Logger.warnAndDebug(DependencyManager.class, e)).getOrNull();
 
             // working template working page
-            final Template workingTemplateWP = workingPage != null ?
-                    APILocator.getTemplateAPI()
-                            .findWorkingTemplate(workingPage.getTemplateId(), user, false) : null;
-
-            if (workingTemplateWP != null) {
-
-                // Templates dependencies
-                if(!(workingTemplateWP instanceof FileAssetTemplate)) {
-                    tryToAddAsDependency(PusheableAsset.TEMPLATE, workingTemplateWP, workingPage);
-                } else {
-                    dependencyProcessor.addAsset(workingTemplateWP, PusheableAsset.TEMPLATE);
-                }
-            }
-
-            final Template liveTemplateLP = livePage != null ?
-                    APILocator.getTemplateAPI()
-                            .findLiveTemplate(livePage.getTemplateId(), user, false) : null;
-
-            // Templates dependencies
-            if (liveTemplateLP != null ) {
-                if(!(liveTemplateLP instanceof FileAssetTemplate)) {
-                    tryToAddAsDependency(PusheableAsset.TEMPLATE, liveTemplateLP, workingPage);
-                } else {
-                    dependencyProcessor.addAsset(liveTemplateLP, PusheableAsset.TEMPLATE);
-                }
-            }
+            addTemplateAsDependency(workingPage);
+            addTemplateAsDependency(livePage);
 
             // Contents dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
@@ -794,6 +775,21 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             Logger.error(this,
                     String.format("An error occurred when processing dependencies on HTML Page with ID '%s': %s", pageId,
                             e.getMessage()), e);
+        }
+    }
+
+    private void addTemplateAsDependency(final IHTMLPage page)
+            throws DotDataException, DotSecurityException {
+        final Template template = page != null ?
+                APILocator.getTemplateAPI()
+                        .findWorkingTemplate(page.getTemplateId(), user, false) : null;
+
+        if (template != null) {
+            if(!(template instanceof FileAssetTemplate)) {
+                tryToAddAsDependency(PusheableAsset.TEMPLATE, template, page);
+            } else {
+                dependencyProcessor.addAsset(template, PusheableAsset.TEMPLATE);
+            }
         }
     }
 
@@ -868,17 +864,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), variant.name());
 
         if (UtilMethods.isSet(variantContentlet)) {
-            final HTMLPageAsset variantHtmlPageAsset = APILocator.getHTMLPageAssetAPI()
-                    .fromContentlet(variantContentlet);
-            final String variantTemplateId = variantHtmlPageAsset.getTemplateId();
-
-            final Template template = APILocator.getTemplateAPI()
-                    .findAllVersions(APILocator.getIdentifierAPI().find(variantTemplateId),
-                            APILocator.systemUser(), false, false).stream()
-                    .findFirst()
-                    .orElseThrow();
-
-            tryToAddAsDependency(PusheableAsset.TEMPLATE, template, variant);
+            this.addTemplateAsDependency(parentPage);
         }
     }
 
@@ -1154,7 +1140,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             } else if (SystemContainer.class.isInstance(dependency)) {
                 return Container.SYSTEM_CONTAINER.equals(SystemContainer.class.cast(dependency).getIdentifier());
             } else if (SystemTemplate.class.isInstance(dependency)) {
-                return Template.SYSTEM_TEMPLATE.equals(SystemTemplate.class.cast(dependency).getIdentifier());
+                return SYSTEM_TEMPLATE.equals(SystemTemplate.class.cast(dependency).getIdentifier());
             } else {
                 return false;
             }
