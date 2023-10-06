@@ -1,0 +1,15 @@
+.row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-gap: 10px;
+    margin-top: 1em;
+
+    .column {
+        border: 1px solid black;
+        min-height: 50px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}
